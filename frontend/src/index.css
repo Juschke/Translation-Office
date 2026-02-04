@@ -1,0 +1,95 @@
+@import "tailwindcss";
+@import "react-datepicker/dist/react-datepicker.css";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #008B8B;
+  --color-brand-800: #115e59;
+  --color-brand-900: #134e4a;
+}
+
+@layer base {
+  body {
+    @apply antialiased bg-[#F3F4F6] text-slate-700 font-sans h-screen flex flex-col overflow-hidden;
+  }
+
+  button,
+  [type='button'],
+  [type='submit'],
+  .btn {
+    @apply cursor-pointer transition-all duration-200 outline-none;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dropdown Animation */
+.dropdown-enter {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+.dropdown-enter-active {
+  transform: scale(1);
+  opacity: 1;
+  transition: all 0.1s ease-out;
+}
+
+.dropdown-leave {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.dropdown-leave-active {
+  transform: scale(0.95);
+  opacity: 0;
+  transition: all 0.1s ease-in;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Datepicker Customization */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container input {
+  width: 100%;
+  outline: none;
+}
