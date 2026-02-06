@@ -2,16 +2,28 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { FaCalendarAlt, FaDownload, FaChartLine, FaEuroSign, FaPercentage, FaLayerGroup } from 'react-icons/fa';
 import KPICard from '../components/common/KPICard';
+import { useQuery } from '@tanstack/react-query';
+import { reportService } from '../api/services';
+import ReportsSkeleton from '../components/common/ReportsSkeleton';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement);
 
 const Reports = () => {
+    const { data: revenueDataPoints, isLoading: isRevenueLoading } = useQuery({ queryKey: ['reports', 'revenue'], queryFn: () => reportService.getRevenue() });
+    const { data: profitDataPoints, isLoading: isProfitLoading } = useQuery({ queryKey: ['reports', 'profit'], queryFn: () => reportService.getProfitMargin() });
+    const { data: langDist, isLoading: isLangLoading } = useQuery({ queryKey: ['reports', 'languages'], queryFn: reportService.getLanguageDistribution });
+    const { data: kpis, isLoading: isKpiLoading } = useQuery({ queryKey: ['reports', 'kpis'], queryFn: reportService.getKPIs });
+
+    const isLoading = isRevenueLoading || isProfitLoading || isLangLoading || isKpiLoading;
+
+    if (isLoading) return <ReportsSkeleton />;
+
     const revenueData = {
-        labels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun'],
+        labels: revenueDataPoints?.labels || [],
         datasets: [
             {
                 label: 'Umsatz (€)',
-                data: [12000, 19000, 15000, 22000, 24000, 28000],
+                data: revenueDataPoints?.data || [],
                 borderColor: '#0d9488',
                 backgroundColor: 'rgba(13, 148, 136, 0.1)',
                 fill: true,
@@ -25,11 +37,11 @@ const Reports = () => {
     };
 
     const langData = {
-        labels: ['DE → EN', 'DE → FR', 'EN → DE', 'Sonstige'],
+        labels: langDist?.labels || [],
         datasets: [
             {
-                data: [45, 25, 20, 10],
-                backgroundColor: ['#0d9488', '#14b8a6', '#5eead4', '#99f6e4'],
+                data: langDist?.data || [],
+                backgroundColor: ['#0d9488', '#14b8a6', '#5eead4', '#99f6e4', '#ccfbf1'],
                 hoverOffset: 10,
                 borderWidth: 2,
                 borderColor: '#ffffff'
@@ -38,11 +50,11 @@ const Reports = () => {
     };
 
     const profitData = {
-        labels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun'],
+        labels: profitDataPoints?.labels || [],
         datasets: [
             {
                 label: 'Marge %',
-                data: [42, 38, 45, 41, 44, 46],
+                data: profitDataPoints?.data || [],
                 backgroundColor: '#cbd5e1',
                 borderRadius: 4,
                 hoverBackgroundColor: '#0d9488',
@@ -72,7 +84,7 @@ const Reports = () => {
                     color: '#f1f5f9'
                 },
                 ticks: {
-                    font: { size: 10, weight: '500' as const },
+                    font: { size: 10, weight: 'bold' as const },
                     color: '#64748b'
                 }
             },
@@ -81,7 +93,7 @@ const Reports = () => {
                     display: false
                 },
                 ticks: {
-                    font: { size: 10, weight: '500' as const },
+                    font: { size: 10, weight: 'bold' as const },
                     color: '#64748b'
                 }
             }
@@ -106,10 +118,10 @@ const Reports = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <KPICard label="Gesamtumsatz" value="118.000 €" icon={<FaEuroSign />} iconColor="text-brand-700" iconBg="bg-brand-50" />
-                <KPICard label="Netto-Marge Ø" value="42.5 %" icon={<FaPercentage />} iconColor="text-emerald-600" iconBg="bg-emerald-50" />
-                <KPICard label="Aufträge" value="142" icon={<FaLayerGroup />} iconColor="text-blue-600" iconBg="bg-blue-50" />
-                <KPICard label="Wachstum" value="+12." icon={<FaChartLine />} iconColor="text-indigo-600" iconBg="bg-indigo-50" subValue="vs. Vorjahreszeitraum" />
+                <KPICard label="Gesamtumsatz" value={`${kpis?.revenue?.toLocaleString('de-DE') || 0} €`} icon={<FaEuroSign />} iconColor="text-brand-700" iconBg="bg-brand-50" />
+                <KPICard label="Netto-Marge Ø" value={`${kpis?.margin || 0} %`} icon={<FaPercentage />} iconColor="text-emerald-600" iconBg="bg-emerald-50" />
+                <KPICard label="Aufträge" value={`${kpis?.jobs || 0}`} icon={<FaLayerGroup />} iconColor="text-blue-600" iconBg="bg-blue-50" />
+                <KPICard label="Wachstum" value={`${kpis?.growth > 0 ? '+' : ''}${kpis?.growth || 0}%`} icon={<FaChartLine />} iconColor="text-indigo-600" iconBg="bg-indigo-50" subValue="vs. Vorjahreszeitraum" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -142,12 +154,12 @@ const Reports = () => {
                             <div className="w-full max-w-[200px] aspect-square relative mb-8">
                                 <Doughnut data={langData} options={{ cutout: '75%', plugins: { legend: { display: false } } }} />
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <span className="text-2xl font-bold text-slate-800">142</span>
+                                    <span className="text-2xl font-bold text-slate-800">{kpis?.jobs || 0}</span>
                                     <span className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Jobs</span>
                                 </div>
                             </div>
                             <div className="w-full space-y-3">
-                                {langData.labels.map((label, i) => (
+                                {langData.labels.map((label: any, i: number) => (
                                     <div key={i} className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: langData.datasets[0].backgroundColor[i] }}></div>

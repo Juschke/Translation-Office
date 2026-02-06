@@ -65,8 +65,51 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
 
     if (!isOpen) return null;
 
+    const [errors, setErrors] = useState<Record<string, boolean>>({});
+
+    const validate = () => {
+        const newErrors: Record<string, boolean> = {};
+        if (type === 'languages') {
+            if (!formData.name_internal) newErrors.name_internal = true;
+            if (!formData.iso_code) newErrors.iso_code = true;
+            if (!formData.name_native) newErrors.name_native = true;
+        }
+        if (type === 'doc_types') {
+            if (!formData.name) newErrors.name = true;
+        }
+        if (type === 'services') {
+            if (!formData.name) newErrors.name = true;
+            if (!formData.base_price) newErrors.base_price = true;
+        }
+        if (type === 'email_templates') {
+            if (!formData.name) newErrors.name = true;
+            if (!formData.subject) newErrors.subject = true;
+            if (!formData.body) newErrors.body = true;
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = () => {
+        if (validate()) {
+            const payload = { ...formData };
+            // Ensure status is at least active if unset
+            if (!payload.status) payload.status = 'active';
+
+            // Specific backend mapping for Languages
+            if (type === 'languages') {
+                if (payload.status === 'inactive') payload.status = 'archived';
+            }
+
+            onSubmit(payload);
+        }
+    };
+
     const handleChange = (field: string, value: any) => {
         setFormData((prev: any) => ({ ...prev, [field]: value }));
+        if (errors[field]) {
+            setErrors(prev => ({ ...prev, [field]: false }));
+        }
     };
 
     const getTitle = () => {
@@ -117,14 +160,14 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</label>
                         <div className="flex bg-slate-100 p-0.5 rounded border border-slate-200 h-10">
                             <button
-                                onClick={() => handleChange('status', 'Aktiv')}
-                                className={clsx("flex-1 text-[9px] font-bold uppercase rounded flex items-center justify-center gap-2 transition", (formData.status || 'Aktiv') === 'Aktiv' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400")}
+                                onClick={() => handleChange('status', 'active')}
+                                className={clsx("flex-1 text-[9px] font-bold uppercase rounded flex items-center justify-center gap-2 transition", (formData.status || 'active') === 'active' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400")}
                             >
                                 <FaCheck className="text-[10px]" /> Aktiv
                             </button>
                             <button
-                                onClick={() => handleChange('status', 'Inaktiv')}
-                                className={clsx("flex-1 text-[9px] font-bold uppercase rounded flex items-center justify-center gap-2 transition", formData.status === 'Inaktiv' ? "bg-white text-slate-500 shadow-sm" : "text-slate-400")}
+                                onClick={() => handleChange('status', 'inactive')}
+                                className={clsx("flex-1 text-[9px] font-bold uppercase rounded flex items-center justify-center gap-2 transition", formData.status === 'inactive' ? "bg-white text-slate-500 shadow-sm" : "text-slate-400")}
                             >
                                 <FaBan className="text-[10px]" /> Inaktiv
                             </button>
@@ -135,35 +178,45 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {type === 'languages' && (
                         <>
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Name der Sprache</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Name der Sprache <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
-                                    className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm"
+                                    className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name_internal ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Deutsch (Deutschland)"
-                                    value={formData.name || ''}
-                                    onChange={(e) => handleChange('name', e.target.value)}
+                                    value={formData.name_internal || ''}
+                                    onChange={(e) => handleChange('name_internal', e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Name (Native) <span className="text-red-500">*</span></label>
+                                <input
+                                    type="text"
+                                    className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name_native ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                    placeholder="z.B. Deutsch"
+                                    value={formData.name_native || ''}
+                                    onChange={(e) => handleChange('name_native', e.target.value)}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">ISO Code</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">ISO Code <span className="text-red-500">*</span></label>
                                     <input
                                         type="text"
-                                        className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm font-mono"
+                                        className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm  transition-all", errors.iso_code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="de-DE"
-                                        value={formData.code || ''}
-                                        onChange={(e) => handleChange('code', e.target.value)}
+                                        value={formData.iso_code || ''}
+                                        onChange={(e) => handleChange('iso_code', e.target.value)}
                                     />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Flaggen-Code (2-Stellig)</label>
                                     <input
                                         type="text"
-                                        className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm font-mono"
+                                        className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm  bg-white"
                                         placeholder="de"
                                         maxLength={2}
-                                        value={formData.flagCode || ''}
-                                        onChange={(e) => handleChange('flagCode', e.target.value.toLowerCase())}
+                                        value={formData.flag_icon || ''}
+                                        onChange={(e) => handleChange('flag_icon', e.target.value.toLowerCase())}
                                     />
                                 </div>
                             </div>
@@ -173,10 +226,10 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {/* Doc Type Fields */}
                     {type === 'doc_types' && (
                         <div className="space-y-1.5">
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bezeichnung</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bezeichnung <span className="text-red-500">*</span></label>
                             <input
                                 type="text"
-                                className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm"
+                                className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                 placeholder="z.B. Marketing Broschüre"
                                 value={formData.name || ''}
                                 onChange={(e) => handleChange('name', e.target.value)}
@@ -188,10 +241,10 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {type === 'services' && (
                         <>
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Leistungs-Name</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Leistungs-Name <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
-                                    className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm"
+                                    className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Lektorat Premium"
                                     value={formData.name || ''}
                                     onChange={(e) => handleChange('name', e.target.value)}
@@ -213,13 +266,13 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Basispreis (€)</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Basispreis (€) <span className="text-red-500">*</span></label>
                                     <input
                                         type="text"
-                                        className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm"
-                                        placeholder="0,12 €"
-                                        value={formData.basePrice || ''}
-                                        onChange={(e) => handleChange('basePrice', e.target.value)}
+                                        className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.base_price ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                        placeholder="0.12"
+                                        value={formData.base_price || ''}
+                                        onChange={(e) => handleChange('base_price', e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -230,20 +283,20 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {type === 'email_templates' && (
                         <>
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vorlagen-Name</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vorlagen-Name <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
-                                    className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm"
+                                    className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Angebot versenden"
                                     value={formData.name || ''}
                                     onChange={(e) => handleChange('name', e.target.value)}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Betreff</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Betreff <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
-                                    className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm"
+                                    className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.subject ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="Ihre Anfrage bei Translation Office"
                                     value={formData.subject || ''}
                                     onChange={(e) => handleChange('subject', e.target.value)}
@@ -251,7 +304,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             </div>
                             <div className="space-y-1.5">
                                 <div className="flex justify-between items-end mb-1">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inhalt</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inhalt <span className="text-red-500">*</span></label>
                                     <button
                                         onClick={() => setShowPreview(!showPreview)}
                                         className="text-[10px] font-bold uppercase tracking-widest text-brand-600 hover:text-brand-700 flex items-center gap-1 bg-brand-50 px-2 py-0.5 rounded border border-brand-100"
@@ -280,7 +333,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                         </div>
                                         <textarea
                                             ref={textareaRef}
-                                            className="w-full h-32 px-3 py-2 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm font-mono bg-white"
+                                            className={clsx("w-full h-32 px-3 py-2 border rounded outline-none focus:border-brand-500 text-sm  bg-white transition-all", errors.body ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                             placeholder="Hallo {contact_person}, anbei erhalten Sie..."
                                             value={formData.body || ''}
                                             onChange={(e) => handleChange('body', e.target.value)}
@@ -301,7 +354,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                         Abbrechen
                     </button>
                     <button
-                        onClick={() => onSubmit(formData)}
+                        onClick={handleSubmit}
                         className="px-6 py-2.5 bg-brand-700 text-white rounded text-xs font-bold uppercase tracking-widest hover:bg-brand-800 shadow-md transition active:scale-95 flex items-center gap-2"
                     >
                         <FaSave /> Speichern

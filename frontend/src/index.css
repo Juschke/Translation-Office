@@ -2,7 +2,7 @@
 @import "react-datepicker/dist/react-datepicker.css";
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'Outfit', sans-serif;
 
   --color-brand-50: #f0fdfa;
   --color-brand-100: #ccfbf1;
@@ -16,13 +16,20 @@
 @layer base {
   body {
     @apply antialiased bg-[#F3F4F6] text-slate-700 font-sans h-screen flex flex-col overflow-hidden;
+    min-width: 320px;
   }
 
   button,
   [type='button'],
   [type='submit'],
   .btn {
-    @apply cursor-pointer transition-all duration-200 outline-none;
+    @apply cursor-pointer transition-all duration-200 outline-none rounded-none;
+    border-radius: 0 !important;
+  }
+
+  /* Global default for corners, can be overridden by utility classes */
+  * {
+    border-radius: 0;
   }
 }
 
@@ -77,7 +84,7 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 4px;
+  border-radius: 0px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {

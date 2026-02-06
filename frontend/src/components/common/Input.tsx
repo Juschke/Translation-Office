@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import clsx from 'clsx';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> {
@@ -7,6 +7,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTe
     helperText?: string;
     startIcon?: ReactNode;
     endIcon?: ReactNode;
+    onEndIconClick?: () => void;
     containerClassName?: string;
     isTextArea?: boolean;
     isSelect?: boolean;
@@ -18,6 +19,7 @@ const Input: React.FC<InputProps> = ({
     helperText,
     startIcon,
     endIcon,
+    onEndIconClick,
     className,
     containerClassName,
     isTextArea,
@@ -74,7 +76,13 @@ const Input: React.FC<InputProps> = ({
                 )}
 
                 {endIcon && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition-colors z-10 text-xs text-right">
+                    <div
+                        onClick={onEndIconClick}
+                        className={clsx(
+                            "absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors z-10 text-xs text-right",
+                            onEndIconClick ? "cursor-pointer hover:text-brand-600" : "pointer-events-none"
+                        )}
+                    >
                         {endIcon}
                     </div>
                 )}

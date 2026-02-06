@@ -3,16 +3,44 @@ import { FaLayerGroup, FaClock, FaEuroSign, FaEnvelope, FaPlus } from 'react-ico
 import NewProjectModal from '../components/modals/NewProjectModal';
 import RecentProjects from '../components/dashboard/RecentProjects';
 import { useState } from 'react';
-
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { dashboardService, projectService } from '../api/services';
 import KPICard from '../components/common/KPICard';
+import DashboardSkeleton from '../components/common/DashboardSkeleton';
 
 const Dashboard = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+
+    const { data: dashboardData, isLoading } = useQuery({
+        queryKey: ['dashboard', 'stats'],
+        queryFn: dashboardService.getStats
+    });
+
+    const createMutation = useMutation({
+        mutationFn: projectService.create,
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            navigate(`/projects/${data.id}`);
+        }
+    });
+
+    const stats = dashboardData?.stats || {
+        open_projects: 0,
+        deadlines_today: 0,
+        monthly_revenue: 0,
+        revenue_trend: 0,
+        active_customers: 0,
+        unread_emails: 0
+    };
+
+    if (isLoading) {
+        return <DashboardSkeleton />;
+    }
 
     return (
         <div className="flex flex-col h-full gap-6 fade-in">
-            {/* Header */}
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-slate-800">Dashboard Übersicht</h1>
                 <button
@@ -23,51 +51,50 @@ const Dashboard = () => {
                 </button>
             </div>
 
-            {/* Stats Widgets */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard
                     label="Offene Projekte"
-                    value="12"
+                    value={stats.open_projects}
                     icon={<FaLayerGroup />}
-                    progress={65}
-                    onClick={() => navigate('/projects')}
+                    onClick={() => navigate('/projects?filter=in_progress')}
                 />
                 <KPICard
                     label="Deadlines (Heute)"
-                    value="3"
+                    value={stats.deadlines_today}
                     icon={<FaClock />}
                     iconColor="text-red-600"
                     iconBg="bg-red-50"
-                    subValue="2 überfällig"
-                    onClick={() => navigate('/projects?filter=deadline')}
+                    subValue={stats.deadlines_today > 0 ? "Prüfung erforderlich" : "Alles im Plan"}
+                    onClick={() => navigate('/projects')}
                 />
                 <KPICard
-                    label="Umsatz (Monat)"
-                    value="14.250 €"
+                    label="Umsatz (Gesamt)"
+                    value={stats.monthly_revenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                     icon={<FaEuroSign />}
                     iconColor="text-green-600"
                     iconBg="bg-green-50"
-                    trend={{ value: '+12%', label: 'vs. Vormonat', isPositive: true }}
+                    subValue={`${stats.revenue_trend >= 0 ? '+' : ''}${stats.revenue_trend}% vs. Vormonat`}
                     onClick={() => navigate('/reports')}
                 />
                 <KPICard
-                    label="Neue E-Mails"
-                    value="8"
+                    label="Aktive Kunden"
+                    value={stats.active_customers}
                     icon={<FaEnvelope />}
                     iconColor="text-blue-600"
                     iconBg="bg-blue-50"
-                    subValue="Letzter Sync: vor 2 Min"
-                    onClick={() => navigate('/inbox')}
+                    onClick={() => navigate('/customers')}
                 />
             </div>
 
-            {/* Dashboard Project Widget */}
-            <RecentProjects />
+            <RecentProjects projects={dashboardData?.recent_projects || []} />
 
             <NewProjectModal
                 isOpen={isNewProjectModalOpen}
                 onClose={() => setIsNewProjectModalOpen(false)}
-                onSubmit={(data) => console.log(data)}
+                onSubmit={(data) => {
+                    createMutation.mutate(data);
+                }}
+                isLoading={createMutation.isPending}
             />
         </div>
     );

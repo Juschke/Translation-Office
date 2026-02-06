@@ -1,30 +1,69 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaLock, FaExclamationCircle } from 'react-icons/fa';
+import { FaUser, FaLock, FaExclamationCircle, FaShieldAlt } from 'react-icons/fa';
 import clsx from 'clsx';
+import { useAuth } from '../../context/AuthContext';
 
 const LoginPage = () => {
+    const { login } = useAuth();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
 
+    // 2FA State
+    const [showTwoFactor, setShowTwoFactor] = useState(false);
+    const [twoFactorCode, setTwoFactorCode] = useState('');
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
 
-        // Mock login
-        setTimeout(() => {
-            if (email === 'admin@translater.office' && password === 'password') {
-                localStorage.setItem('isAuthenticated', 'true'); // Simple mock auth
-                navigate('/');
-            } else {
-                setError('Ungültige E-Mail-Adresse oder Passwort.');
-                setIsLoading(false);
+        try {
+            const payload: any = { email, password };
+            if (showTwoFactor && twoFactorCode) {
+                payload.code = twoFactorCode;
             }
-        }, 1500);
+
+            // If we are in 2FA mode but code is empty, don't submit yet (prevent useless call)
+            if (showTwoFactor && !twoFactorCode) {
+                setError("Bitte geben Sie den Bestätigungscode ein.");
+                setIsLoading(false);
+                return;
+            }
+
+            const response = await login(payload);
+
+            if (response && response.two_factor) {
+                setShowTwoFactor(true);
+                // Clear any previous error
+                setIsLoading(false);
+                return;
+            }
+
+            navigate('/');
+        } catch (err: any) {
+            // Extract error message
+            let msg = 'Ungültige E-Mail-Adresse oder Passwort.';
+            if (err.response?.data?.errors) {
+                const errors = err.response.data.errors;
+                if (errors.code) msg = errors.code[0];
+                else if (errors.email) msg = errors.email[0];
+            } else if (err.response?.data?.message) {
+                msg = err.response.data.message;
+            }
+
+            setError(msg);
+
+            // If 2FA failed, maybe clear code
+            if (showTwoFactor) {
+                setTwoFactorCode('');
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -34,10 +73,10 @@ const LoginPage = () => {
                     TO
                 </div>
                 <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-gray-900">
-                    Willkommen zurück
+                    {showTwoFactor ? '2FA Bestätigung' : 'Willkommen zurück'}
                 </h2>
                 <p className="mt-2 text-center text-sm text-gray-600">
-                    Melden Sie sich an, um auf Ihr Dashboard zuzugreifen.
+                    {showTwoFactor ? 'Bitte geben Sie Ihren Authenticator-Code ein.' : 'Melden Sie sich an, um auf Ihr Dashboard zuzugreifen.'}
                 </p>
             </div>
 
@@ -57,56 +96,88 @@ const LoginPage = () => {
                             </div>
                         )}
 
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                                E-Mail-Adresse
-                            </label>
-                            <div className="mt-2 relative rounded-md shadow-sm">
-                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <FaUser className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                        {!showTwoFactor ? (
+                            <>
+                                <div>
+                                    <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+                                        E-Mail-Adresse
+                                    </label>
+                                    <div className="mt-2 relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <FaUser className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                        </div>
+                                        <input
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            autoComplete="email"
+                                            required
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="block w-full rounded-md border-0 py-2.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
+                                            placeholder="name@company.com"
+                                        />
+                                    </div>
                                 </div>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="block w-full rounded-md border-0 py-2.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
-                                    placeholder="name@company.com"
-                                />
-                            </div>
-                        </div>
 
-                        <div>
-                            <div className="flex items-center justify-between">
-                                <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
-                                    Passwort
+                                <div>
+                                    <div className="flex items-center justify-between">
+                                        <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
+                                            Passwort
+                                        </label>
+                                        <div className="text-sm">
+                                            <a href="#" className="font-semibold text-brand-600 hover:text-brand-500">
+                                                Passwort vergessen?
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <FaLock className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                        </div>
+                                        <input
+                                            id="password"
+                                            name="password"
+                                            type="password"
+                                            autoComplete="current-password"
+                                            required
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="block w-full rounded-md border-0 py-2.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div>
+                                <label htmlFor="code" className="block text-sm font-medium leading-6 text-gray-900">
+                                    Sicherheitscode / Recovery Code
                                 </label>
-                                <div className="text-sm">
-                                    <a href="#" className="font-semibold text-brand-600 hover:text-brand-500">
-                                        Passwort vergessen?
-                                    </a>
+                                <div className="mt-2 relative rounded-md shadow-sm">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <FaShieldAlt className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                    </div>
+                                    <input
+                                        id="code"
+                                        name="code"
+                                        type="text"
+                                        autoComplete="one-time-code"
+                                        required
+                                        autoFocus
+                                        value={twoFactorCode}
+                                        onChange={(e) => setTwoFactorCode(e.target.value)}
+                                        className="block w-full rounded-md border-0 py-2.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all tracking-widest"
+                                        placeholder="000 000"
+                                    />
+                                </div>
+                                <div className="mt-2 text-right">
+                                    <button type="button" onClick={() => setShowTwoFactor(false)} className="text-xs text-brand-600 hover:underline">
+                                        Zurück zur Anmeldung
+                                    </button>
                                 </div>
                             </div>
-                            <div className="mt-2 relative rounded-md shadow-sm">
-                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <FaLock className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                                </div>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full rounded-md border-0 py-2.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                        </div>
+                        )}
 
                         <div>
                             <button
@@ -123,33 +194,35 @@ const LoginPage = () => {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Anmelden...
+                                        {showTwoFactor ? 'Verifiziere...' : 'Anmelden...'}
                                     </span>
-                                ) : "Anmelden"}
+                                ) : (showTwoFactor ? 'Bestätigen' : 'Anmelden')}
                             </button>
                         </div>
                     </form>
 
-                    <div className="mt-6">
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-300" />
+                    {!showTwoFactor && (
+                        <div className="mt-6">
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-300" />
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="bg-white px-2 text-gray-500">Neu hier?</span>
+                                </div>
                             </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="bg-white px-2 text-gray-500">Neu hier?</span>
-                            </div>
-                        </div>
 
-                        <div className="mt-6 text-center">
-                            <Link to="/register" className="font-semibold leading-6 text-brand-600 hover:text-brand-500 transition-colors">
-                                Kostenloses Konto erstellen
-                            </Link>
+                            <div className="mt-6 text-center">
+                                <Link to="/register" className="font-semibold leading-6 text-brand-600 hover:text-brand-500 transition-colors">
+                                    Kostenloses Konto erstellen
+                                </Link>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 <p className="mt-8 text-center text-xs text-gray-500">
-                    &copy; 2024 Translater Office. Alle Rechte vorbehalten.
+                    &copy; 2024 Translator Office. Alle Rechte vorbehalten.
                 </p>
             </div>
         </div>

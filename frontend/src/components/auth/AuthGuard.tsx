@@ -1,0 +1,47 @@
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+
+export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user, isLoading } = useAuth();
+    const location = useLocation();
+
+    if (isLoading) {
+        return (
+            <div className="h-screen w-screen flex items-center justify-center bg-slate-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-600"></div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    // Check for onboarding
+    if (!user.tenant_id && location.pathname !== '/onboarding') {
+        return <Navigate to="/onboarding" replace />;
+    }
+
+    // If has tenant but tries to go to onboarding
+    if (user.tenant_id && location.pathname === '/onboarding') {
+        return <Navigate to="/" replace />;
+    }
+
+    return <>{children}</>;
+};
+
+export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user, isLoading } = useAuth();
+
+    if (isLoading) return null;
+
+    if (user) {
+        if (!user.tenant_id) {
+            return <Navigate to="/onboarding" replace />;
+        }
+        return <Navigate to="/" replace />;
+    }
+
+    return <>{children}</>;
+};

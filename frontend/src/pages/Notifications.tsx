@@ -1,53 +1,75 @@
-import { useState } from 'react';
 import { FaBell, FaCheck, FaCheckDouble, FaTrash } from 'react-icons/fa';
 import clsx from 'clsx';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { notificationService } from '../api/services';
+import { formatDistanceToNow } from 'date-fns';
+import { de } from 'date-fns/locale';
+import toast from 'react-hot-toast';
 
-// Mock data (should match what's in Navigation for consistency in a real app, 
-// but for now we'll just duplicate or use a shared state management solution if we had one.
-// Since we don't have a global store set up, I'll just create a standalone page layout.)
-
-interface Notification {
-    id: number;
+interface NotificationData {
     title: string;
     message: string;
-    date: string;
-    read: boolean;
     type: 'info' | 'success' | 'warning' | 'error';
 }
 
-const initialNotifications: Notification[] = [
-    { id: 1, title: 'Neue Rechnung bezahlt', message: 'Rechnung #2024-005 wurde von Kunde XY beglichen.', date: 'Vor 5 Min', read: false, type: 'success' },
-    { id: 2, title: 'Übersetzung geliefert', message: 'Partner S. Müller hat Dateien für P-2024-1002 hochgeladen.', date: 'Vor 2 Std', read: false, type: 'info' },
-    { id: 3, title: 'Neues Projekt erstellt', message: 'Projekt P-2024-1005 wurde erfolgreich angelegt.', date: 'Gestern', read: true, type: 'success' },
-    { id: 4, title: 'Deadline nähert sich', message: 'Projekt P-2024-098 ist fällig in 2 Tagen.', date: 'Gestern', read: true, type: 'warning' },
-    { id: 5, title: 'Systemwartung', message: 'Am Samstag findet eine geplante Wartung statt.', date: 'Vor 3 Tagen', read: true, type: 'info' },
-];
+interface Notification {
+    id: string;
+    data: NotificationData;
+    read_at: string | null;
+    created_at: string;
+}
 
 const Notifications = () => {
-    const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+    const queryClient = useQueryClient();
 
-    const markAsRead = (id: number) => {
-        setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
-    };
+    const { data: notifications = [], isLoading } = useQuery({
+        queryKey: ['notifications'],
+        queryFn: notificationService.getAll
+    });
 
-    const markAllAsRead = () => {
-        setNotifications(notifications.map(n => ({ ...n, read: true })));
-    };
+    const markAsReadMutation = useMutation({
+        mutationFn: notificationService.markAsRead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        }
+    });
 
-    const deleteNotification = (id: number) => {
-        setNotifications(notifications.filter(n => n.id !== id));
-    };
+    const markAllAsReadMutation = useMutation({
+        mutationFn: notificationService.markAllAsRead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            toast.success('Alle Benachrichtigungen wurden als gelesen markiert.');
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: notificationService.delete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        }
+    });
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-slate-800">Benachrichtigungen</h1>
-                <button
-                    onClick={markAllAsRead}
-                    className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-2 hover:bg-brand-50 px-3 py-2 rounded-lg transition-colors"
-                >
-                    <FaCheckDouble /> Alle als gelesen markieren
-                </button>
+                {notifications.length > 0 && notifications.some((n: Notification) => !n.read_at) && (
+                    <button
+                        onClick={() => markAllAsReadMutation.mutate()}
+                        disabled={markAllAsReadMutation.isPending}
+                        className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-2 hover:bg-brand-50 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        <FaCheckDouble /> Alle als gelesen markieren
+                    </button>
+                )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -59,33 +81,35 @@ const Notifications = () => {
                     </div>
                 ) : (
                     <div className="divide-y divide-slate-100">
-                        {notifications.map((notification) => (
+                        {notifications.map((notification: Notification) => (
                             <div
                                 key={notification.id}
                                 className={clsx(
                                     "p-4 hover:bg-slate-50 transition-colors flex gap-4 items-start group",
-                                    !notification.read ? "bg-brand-50/30" : ""
+                                    !notification.read_at ? "bg-brand-50/30" : ""
                                 )}
                             >
                                 <div className={clsx(
                                     "w-2 h-2 rounded-full mt-2 flex-shrink-0",
-                                    !notification.read ? "bg-brand-500" : "bg-transparent"
+                                    !notification.read_at ? "bg-brand-500" : "bg-transparent"
                                 )} />
 
                                 <div className="flex-1">
                                     <div className="flex justify-between items-start">
-                                        <h4 className={clsx("text-sm font-semibold", !notification.read ? "text-slate-900" : "text-slate-700")}>
-                                            {notification.title}
+                                        <h4 className={clsx("text-sm font-semibold", !notification.read_at ? "text-slate-900" : "text-slate-700")}>
+                                            {notification.data.title}
                                         </h4>
-                                        <span className="text-xs text-slate-400 whitespace-nowrap ml-4">{notification.date}</span>
+                                        <span className="text-xs text-slate-400 whitespace-nowrap ml-4">
+                                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: de })}
+                                        </span>
                                     </div>
-                                    <p className="text-sm text-slate-600 mt-1">{notification.message}</p>
+                                    <p className="text-sm text-slate-600 mt-1">{notification.data.message}</p>
                                 </div>
 
                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {!notification.read && (
+                                    {!notification.read_at && (
                                         <button
-                                            onClick={() => markAsRead(notification.id)}
+                                            onClick={() => markAsReadMutation.mutate(notification.id)}
                                             className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-full"
                                             title="Als gelesen markieren"
                                         >
@@ -93,7 +117,7 @@ const Notifications = () => {
                                         </button>
                                     )}
                                     <button
-                                        onClick={() => deleteNotification(notification.id)}
+                                        onClick={() => deleteMutation.mutate(notification.id)}
                                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full"
                                         title="Löschen"
                                     >

@@ -1,34 +1,133 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     FaUserTie, FaPlus, FaEye, FaEdit, FaTrash, FaGlobe, FaStar, FaHandshake,
-    FaCheck, FaBan, FaEnvelope, FaArchive, FaTimes, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore
+    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter
 } from 'react-icons/fa';
+
 import Checkbox from '../components/common/Checkbox';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
+import Switch from '../components/common/Switch';
 import KPICard from '../components/common/KPICard';
 import DataTable from '../components/common/DataTable';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { partnerService } from '../api/services';
+import TableSkeleton from '../components/common/TableSkeleton';
+import { getFlagUrl } from '../utils/flags';
+import ConfirmModal from '../components/common/ConfirmModal';
+import { BulkActions } from '../components/common/BulkActions';
+
 
 const Partners = () => {
+    const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [typeFilter, setTypeFilter] = useState('all');
     const [selectedPartners, setSelectedPartners] = useState<number[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingPartner, setEditingPartner] = useState<any>(null);
+    const [showTrash, setShowTrash] = useState(false);
+    const [showArchive, setShowArchive] = useState(false);
+    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
 
-    // Mock Data
-    const [partners, setPartners] = useState([
-        { id: 1, name: 'Sonia Müller', email: 's.mueller@translation.de', languages: 'DE, EN, FR', rating: 4.8, status: 'Aktiv', initials: 'SM', color: 'bg-indigo-50 text-indigo-600 border-indigo-100', category: 'Recht, Wirtschaft', type: 'Übersetzer' },
-        { id: 2, name: 'Global Translators Ltd.', email: 'projects@global-translators.com', languages: 'EN, ES, ZH', rating: 4.5, status: 'Aktiv', initials: 'GT', color: 'bg-amber-50 text-amber-600 border-amber-100', category: 'Technik, IT', type: 'Agentur' },
-        { id: 3, name: 'Jean Dupont', email: 'j.dupont@freelance.fr', languages: 'FR, DE', rating: 4.9, status: 'Ausgelastet', initials: 'JD', color: 'bg-rose-50 text-rose-600 border-rose-100', category: 'Medizin, Pharma', type: 'Dolmetscher' },
-        { id: 4, name: 'Maria Garcia', email: 'm.garcia@languages.es', languages: 'ES, DE, EN', rating: 4.7, status: 'Aktiv', initials: 'MG', color: 'bg-purple-50 text-purple-600 border-purple-100', category: 'Allgemein', type: 'Beides' }
-    ]);
+    const exportRef = useRef<HTMLDivElement>(null);
+    const viewSettingsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+                setIsExportOpen(false);
+            }
+            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
+                setIsViewSettingsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [partnerToDelete, setPartnerToDelete] = useState<number | null>(null);
+
+    const queryClient = useQueryClient();
+
+    const { data: partners = [], isLoading } = useQuery({
+        queryKey: ['partners'],
+        queryFn: partnerService.getAll
+    });
+
+    const { data: stats } = useQuery({
+        queryKey: ['partnerStats'],
+        queryFn: partnerService.getStats
+    });
+
+    const createMutation = useMutation({
+        mutationFn: partnerService.create,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setIsModalOpen(false);
+        }
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (data: any) => partnerService.update(data.id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setIsModalOpen(false);
+            setEditingPartner(null);
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: partnerService.delete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setSelectedPartners([]);
+        }
+    });
+
+    const bulkUpdateMutation = useMutation({
+        mutationFn: (args: { ids: number[], data: any }) => partnerService.bulkUpdate(args.ids, args.data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setSelectedPartners([]);
+        }
+    });
+
+    const activePartnersList = useMemo(() => {
+        return partners.filter((p: any) => {
+            const s = p.status?.toLowerCase();
+            return s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht';
+        });
+    }, [partners]);
+
+    const activePartnersCount = activePartnersList.length;
+    const languagePairsCount = useMemo(() => {
+        const pairs = new Set();
+        activePartnersList.forEach((p: any) => {
+            if (Array.isArray(p.languages)) {
+                p.languages.forEach((l: string) => pairs.add(l));
+            } else if (p.languages) {
+                pairs.add(p.languages);
+            }
+        });
+        return pairs.size;
+    }, [activePartnersList]);
 
     const filteredPartners = useMemo(() => {
-        return partners.filter(p => {
-            if (typeFilter === 'trash') return p.status === 'Gelöscht';
-            if (p.status === 'Gelöscht') return false;
+        if (!Array.isArray(partners)) return [];
+        return partners.filter((p: any) => {
+            const status = p.status?.toLowerCase();
+
+            if (typeFilter === 'trash') return status === 'deleted' || status === 'gelöscht';
+            if (typeFilter === 'archive') return status === 'archived' || status === 'archiviert';
+
+            // For all other tabs, exclude deleted and archived
+            if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
+
             if (typeFilter === 'all') return true;
-            return p.type === typeFilter;
+
+            const mappedType = p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type;
+            return mappedType === typeFilter;
         });
     }, [partners, typeFilter]);
 
@@ -44,31 +143,48 @@ const Partners = () => {
         }
     };
 
+    const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
+        if (filteredPartners.length === 0) return;
+        const headers = ['ID', 'Partner/Firma', 'E-Mail', 'Typ', 'Bewertung', 'Status'];
+        const rows = filteredPartners.map((p: any) => [
+            p.id, p.company || `${p.first_name} ${p.last_name}`, p.email || '', p.type || '', p.rating || '0', p.status || ''
+        ]);
+        const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Partner_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setIsExportOpen(false);
+    };
+
     const columns = [
         {
+            id: 'selection',
             header: (
-                <Checkbox
-                    checked={selectedPartners.length === filteredPartners.length && filteredPartners.length > 0}
-                    onChange={toggleSelectAll}
-                />
+                <Checkbox checked={selectedPartners.length === filteredPartners.length && filteredPartners.length > 0} onChange={toggleSelectAll} />
             ),
             accessor: (p: any) => (
-                <Checkbox
-                    checked={selectedPartners.includes(p.id)}
-                    onChange={() => toggleSelection(p.id)}
-                />
+                <Checkbox checked={selectedPartners.includes(p.id)} onChange={() => toggleSelection(p.id)} />
             ),
             className: 'w-10'
         },
         {
+            id: 'partner',
             header: 'Partner / Dienstleister',
             accessor: (p: any) => (
                 <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded shrink-0 ${p.color} flex items-center justify-center text-[10px] font-bold border`}>{p.initials}</div>
+                    <div className="w-8 h-8 rounded shrink-0 bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100">
+                        {p.first_name?.[0] || ''}{p.last_name?.[0] || 'P'}
+                    </div>
                     <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-slate-800 truncate">{p.name}</span>
+                        <span className="font-bold text-slate-800 truncate">{p.company || `${p.first_name} ${p.last_name}`}</span>
                         <div className="flex gap-2">
-                            <span className="text-[10px] text-slate-400 font-medium">{p.email}</span>
+                            <span className="text-[10px] text-slate-400 font-medium">ID: {p.id.toString().padStart(4, '0')}</span>
                             <span className="text-[10px] text-slate-300">•</span>
                             <span className="text-[10px] text-slate-500 font-medium">{p.type}</span>
                         </div>
@@ -76,23 +192,63 @@ const Partners = () => {
                 </div>
             ),
             sortable: true,
-            sortKey: 'name'
+            sortKey: 'last_name'
         },
         {
-            header: 'Sprachpaare / Fokus',
+            id: 'email',
+            header: 'E-Mail',
+            accessor: (p: any) => <span className="text-slate-600 truncate max-w-[150px] inline-block">{p.email || '-'}</span>,
+            sortable: true,
+            sortKey: 'email'
+        },
+        {
+            id: 'phone',
+            header: 'Telefon',
+            accessor: (p: any) => <span className="text-slate-600 whitespace-nowrap">{p.phone || '-'}</span>,
+            sortable: true,
+            sortKey: 'phone'
+        },
+        {
+            id: 'languages',
+            header: 'Sprachen',
             accessor: (p: any) => (
-                <div className="flex flex-col">
-                    <span className="font-medium text-slate-700 text-xs">{p.languages}</span>
-                    <span className="text-[10px] text-slate-400">{p.category}</span>
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                        {(Array.isArray(p.languages) ? p.languages : (p.languages ? [p.languages] : [])).map((lang: string, i: number) => (
+                            <span key={i} className="inline-flex items-center gap-2 px-2 py-1 bg-slate-50 text-slate-700 rounded border border-slate-200 text-[10px] font-bold uppercase shadow-sm">
+                                <img src={getFlagUrl(lang)} className="w-5 h-3.5 object-cover rounded-[1px] shadow-sm" alt={lang} />
+                                {lang}
+                            </span>
+                        ))}
+                    </div>
                 </div>
             ),
         },
         {
+            id: 'projects_count',
+            header: 'Projekte',
+            accessor: (p: any) => (
+                <div className="flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 border border-slate-200 shadow-sm">
+                        {p.projects_count || 0}
+                    </div>
+                </div>
+            ),
+            sortable: true,
+            sortKey: 'projects_count',
+            align: 'center' as const
+        },
+        {
+            id: 'rating',
             header: 'Bewertung',
             accessor: (p: any) => (
-                <div className="flex items-center gap-1.5">
-                    <FaStar className="text-amber-400 text-xs" />
-                    <span className="font-semibold text-slate-800 text-xs">{p.rating}</span>
+                <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                        <FaStar
+                            key={star}
+                            className={star <= (p.rating || 0) ? "text-amber-400 text-sm" : "text-slate-200 text-sm"}
+                        />
+                    ))}
                 </div>
             ),
             sortable: true,
@@ -100,17 +256,29 @@ const Partners = () => {
             align: 'center' as const
         },
         {
+            id: 'status',
             header: 'Status',
             accessor: (p: any) => {
-                const colors: { [key: string]: string } = {
-                    'Aktiv': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                    'Ausgelastet': 'bg-amber-50 text-amber-700 border-amber-200',
-                    'Inaktiv': 'bg-slate-50 text-slate-400 border-slate-200',
-                    'Gelöscht': 'bg-red-50 text-red-700 border-red-200'
+                const styles: { [key: string]: string } = {
+                    'available': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    'busy': 'bg-rose-50 text-rose-700 border-rose-200',
+                    'vacation': 'bg-amber-50 text-amber-700 border-amber-200',
+                    'blacklisted': 'bg-slate-900 text-white border-slate-900',
+                    'archived': 'bg-slate-800 text-white border-slate-700',
+                    'deleted': 'bg-red-50 text-red-700 border-red-200'
                 };
+                const labels: { [key: string]: string } = {
+                    'available': 'Verfügbar',
+                    'busy': 'Beschäftigt',
+                    'vacation': 'Urlaub',
+                    'blacklisted': 'Gesperrt',
+                    'archived': 'Archiviert',
+                    'deleted': 'Gelöscht'
+                };
+                const status = p.status?.toLowerCase();
                 return (
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border tracking-tight ${colors[p.status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
-                        {p.status}
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                        {labels[status] || p.status}
                     </span>
                 );
             },
@@ -119,160 +287,171 @@ const Partners = () => {
             align: 'center' as const
         },
         {
+            id: 'actions',
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition" title="Profil"><FaEye /></button>
+                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition" title="Details"><FaEye /></button>
                     <button onClick={() => { setEditingPartner(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition" title="Bearbeiten"><FaEdit /></button>
-                    <button className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded transition" title="Löschen"><FaTrash /></button>
+                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded transition" title="Löschen"><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
         }
     ];
 
-    const tabs = (
-        <div className="flex items-center gap-6">
-            <button
-                onClick={() => setTypeFilter('all')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Alle Partner
-            </button>
-            <button
-                onClick={() => setTypeFilter('Übersetzer')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Übersetzer' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Übersetzer
-            </button>
-            <button
-                onClick={() => setTypeFilter('Dolmetscher')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Dolmetscher' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Dolmetscher
-            </button>
-            <button
-                onClick={() => setTypeFilter('Beides')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Beides' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Beides
-            </button>
-            <button
-                onClick={() => setTypeFilter('Agentur')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Agentur' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Agentur
-            </button>
-            <button
-                onClick={() => setTypeFilter('trash')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Papierkorb
-            </button>
-        </div>
-    );
-
     const actions = (
-        <div className="relative group z-50">
-            <button
-                onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }}
-                className="px-3 py-1.5 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white flex items-center gap-2 shadow-sm transition"
-            >
+        <div className="relative group z-50" ref={exportRef}>
+            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white flex items-center gap-2 shadow-sm transition">
                 <FaDownload /> Export
             </button>
             {isExportOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
-                    <button className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)
-                    </button>
-                    <button className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)
-                    </button>
-                    <button className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition">
-                        <FaFilePdf className="text-red-600 text-sm" /> PDF Report
-                    </button>
+                    <button onClick={() => handleExport('xlsx')} className="w-full text-left HouseNo text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
+                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
+                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>
                 </div>
             )}
         </div>
     );
 
+    const tabs = (
+        <div className="flex items-center gap-6">
+            <button onClick={() => setTypeFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Alle Partner</button>
+            <button onClick={() => setTypeFilter('Übersetzer')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Übersetzer' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Übersetzer</button>
+            <button onClick={() => setTypeFilter('Dolmetscher')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Dolmetscher' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Dolmetscher</button>
+            <button onClick={() => setTypeFilter('Agentur')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Agentur' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Agenturen</button>
+
+            {(showTrash || typeFilter === 'trash') && (
+                <button
+                    onClick={() => setTypeFilter('trash')}
+                    className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                >
+                    Papierkorb
+                </button>
+            )}
+
+            {(showArchive || typeFilter === 'archive') && (
+                <button
+                    onClick={() => setTypeFilter('archive')}
+                    className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'archive' ? 'border-slate-600 text-slate-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                >
+                    Archiv
+                </button>
+            )}
+        </div>
+    );
+
+    const extraControls = (
+        <div className="relative" ref={viewSettingsRef}>
+            <button
+                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
+                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-brand-50 border-brand-200 text-brand-600" : ""}`}
+                title="Ansichtseinstellungen"
+            >
+                <FaFilter className="text-sm" />
+            </button>
+            {isViewSettingsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl border border-slate-100 z-[100] p-4 fade-in">
+                    <h4 className="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Ansicht anpassen</h4>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between p-1">
+                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
+                            <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
+                        </div>
+                        <div className="flex items-center justify-between p-1">
+                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
+                            <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    if (isLoading) return <TableSkeleton rows={8} columns={6} />;
+
     return (
-        <div className="flex flex-col gap-6 h-full fade-in" onClick={() => { setIsExportOpen(false); }}>
+        <div className="flex flex-col gap-6 h-full fade-in" onClick={() => setIsExportOpen(false)}>
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Partner & Übersetzer</h1>
-                    <p className="text-slate-500 text-sm">Verwaltung Ihres globalen Netzwerks an Fachübersetzern.</p>
+                    <h1 className="text-2xl font-bold text-slate-800">Partnernetzwerk</h1>
+                    <p className="text-slate-500 text-sm">Verwaltung externer Übersetzer, Dolmetscher und Agenturen.</p>
                 </div>
-                <button
-                    onClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
-                    className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95"
-                >
+                <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95">
                     <FaPlus className="text-xs" /> Neuer Partner
                 </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <KPICard label="Gesamtpartner" value={partners.length} icon={<FaUserTie />} />
-                <KPICard label="Sprachabdeckung" value="24" icon={<FaGlobe />} iconColor="text-blue-600" iconBg="bg-blue-50" subValue="Unikate Sprachpaare" />
-                <KPICard label="Aktive Kooperationen" value="8" icon={<FaHandshake />} iconColor="text-green-600" iconBg="bg-green-50" subValue="Projekte diesen Monat" />
+                <KPICard label="Aktive Partner" value={activePartnersCount} icon={<FaUserTie />} />
+                <KPICard label="Sprachabdeckung" value={languagePairsCount} icon={<FaGlobe />} iconColor="text-blue-600" iconBg="bg-blue-50" subValue="Verfügbare Sprachpaare" />
+                <KPICard label="Zusammenarbeit" value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" iconBg="bg-green-50" subValue="Projekte diesen Monat" />
             </div>
 
             <div className="flex-1 flex flex-col min-h-0 relative z-0">
-                {selectedPartners.length > 0 && (
-                    <div className="mb-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg flex justify-between items-center animate-fadeIn shadow-sm z-10 relative">
-                        <div className="flex items-center gap-4">
-                            <span className="text-slate-600 text-xs font-bold uppercase tracking-widest shrink-0">
-                                {selectedPartners.length} ausgewählt
-                            </span>
-                            <div className="h-4 w-px bg-slate-300"></div>
-                            <div className="flex items-center gap-2">
-                                <button className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                    <FaCheck className="text-xs" /> Genehmigen
-                                </button>
-                                <button className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                    <FaEnvelope className="text-xs" /> Email senden
-                                </button>
-                                <button className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                    <FaBan className="text-xs" /> Sperren
-                                </button>
-                                <button className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-800 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                    <FaArchive className="text-xs" /> Archivieren
-                                </button>
-                                {typeFilter === 'trash' ? (
-                                    <button
-                                        onClick={() => {
-                                            setPartners(prev => prev.map(p => selectedPartners.includes(p.id) ? { ...p, status: 'Aktiv' } : p));
-                                            setSelectedPartners([]);
-                                        }}
-                                        className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2"
-                                    >
-                                        <FaTrashRestore className="text-xs" /> Wiederherstellen
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            setPartners(prev => prev.map(p => selectedPartners.includes(p.id) ? { ...p, status: 'Gelöscht' } : p));
-                                            setSelectedPartners([]);
-                                        }}
-                                        className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2"
-                                    >
-                                        <FaTrash className="text-xs" /> Löschen
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        <button onClick={() => setSelectedPartners([])} className="text-slate-400 hover:text-slate-600 transition p-1 hover:bg-slate-200 rounded"><FaTimes /></button>
-                    </div>
-                )}
+                <BulkActions
+                    selectedCount={selectedPartners.length}
+                    onClearSelection={() => setSelectedPartners([])}
+                    actions={[
+                        {
+                            label: 'Aktivieren',
+                            icon: <FaCheck className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
+                            variant: 'success',
+                            show: typeFilter !== 'trash'
+                        },
+                        {
+                            label: 'E-Mail senden',
+                            icon: <FaEnvelope className="text-xs" />,
+                            onClick: () => { }, // TODO: Implement send email
+                            variant: 'primary',
+                            show: typeFilter !== 'trash'
+                        },
+                        {
+                            label: 'Sperren',
+                            icon: <FaBan className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'blacklisted' } }),
+                            variant: 'danger',
+                            show: typeFilter !== 'trash'
+                        },
+                        {
+                            label: 'Wiederherstellen',
+                            icon: <FaTrashRestore className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
+                            variant: 'success',
+                            show: typeFilter === 'trash'
+                        },
+                        {
+                            label: 'Löschen',
+                            icon: <FaTrash className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'deleted' } }),
+                            variant: 'danger',
+                            show: typeFilter !== 'trash'
+                        },
+                        {
+                            label: 'Endgültig löschen',
+                            icon: <FaTrash className="text-xs" />,
+                            onClick: () => {
+                                // Bulk permanent delete not implemented in frontend yet
+                            },
+                            variant: 'dangerSolid',
+                            show: false
+                        }
+                    ]}
+                />
 
                 <DataTable
                     data={filteredPartners}
                     columns={columns as any}
+                    onRowClick={(p) => navigate(`/partners/${p.id}`)}
                     pageSize={10}
-                    searchPlaceholder="Partner nach Name, Sprachen oder Fachbereich suchen..."
-                    searchFields={['name', 'languages', 'category']}
+                    searchPlaceholder="Partner nach Name, Sprache oder E-Mail suchen..."
+                    searchFields={['first_name', 'last_name', 'company', 'email']}
                     actions={actions}
                     tabs={tabs}
+                    extraControls={extraControls}
+                    onAddClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
                 />
             </div>
 
@@ -281,12 +460,35 @@ const Partners = () => {
                 onClose={() => { setIsModalOpen(false); setEditingPartner(null); }}
                 onSubmit={(data) => {
                     if (editingPartner) {
-                        setPartners(prev => prev.map(p => p.id === data.id ? data : p));
+                        updateMutation.mutate({ ...data, id: editingPartner.id });
                     } else {
-                        setPartners(prev => [...prev, { ...data, id: prev.length + 1 } as any]);
+                        createMutation.mutate(data);
                     }
                 }}
-                initialData={editingPartner}
+                initialData={editingPartner || (
+                    ['Übersetzer', 'Dolmetscher', 'Agentur'].includes(typeFilter)
+                        ? { type: typeFilter === 'Übersetzer' ? 'translator' : typeFilter === 'Dolmetscher' ? 'interpreter' : 'agency' }
+                        : undefined
+                )}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+            />
+
+            <ConfirmModal
+                isOpen={isConfirmOpen}
+                onClose={() => { setIsConfirmOpen(false); setPartnerToDelete(null); }}
+                onConfirm={() => {
+                    if (partnerToDelete) {
+                        deleteMutation.mutate(partnerToDelete, {
+                            onSuccess: () => {
+                                setIsConfirmOpen(false);
+                                setPartnerToDelete(null);
+                            }
+                        });
+                    }
+                }}
+                title="Partner löschen"
+                message="Sind Sie sicher, dass Sie diesen Partner in den Papierkorb verschieben möchten? Dieser Vorgang kann später im Papierkorb endgültig gelöscht oder wiederhergestellt werden."
+                isLoading={deleteMutation.isPending}
             />
         </div>
     );

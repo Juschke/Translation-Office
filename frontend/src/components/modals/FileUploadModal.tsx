@@ -71,6 +71,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
 
             onUpload(validFiles.map(f => ({
                 id: f.id,
+                file: f.file, // Pass the raw file
                 name: f.name,
                 ext: f.ext,
                 type: f.type,

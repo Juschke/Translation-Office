@@ -1,59 +1,149 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    FaPlus, FaArrowRight, FaTimes, FaFileCsv,
+    FaPlus, FaArrowRight, FaFileCsv,
     FaFilePdf, FaFileExcel, FaLayerGroup, FaChartLine, FaGlobe,
     FaEdit, FaTrash, FaEye, FaDownload,
-    FaCheck, FaUserPlus, FaArchive, FaTrashRestore
+    FaCheck, FaArchive, FaTrashRestore, FaEnvelope, FaFilter
 } from 'react-icons/fa';
+import clsx from 'clsx';
+import { useAuth } from '../context/AuthContext';
 import NewProjectModal from '../components/modals/NewProjectModal';
 import Checkbox from '../components/common/Checkbox';
+import Switch from '../components/common/Switch';
 import KPICard from '../components/common/KPICard';
 import DataTable from '../components/common/DataTable';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { projectService } from '../api/services';
+import { getFlagUrl } from '../utils/flags';
+import TableSkeleton from '../components/common/TableSkeleton';
+import KanbanBoard from '../components/projects/KanbanBoard';
+import ConfirmModal from '../components/common/ConfirmModal';
+import { BulkActions } from '../components/common/BulkActions';
+
 
 const Projects = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filter, setFilter] = useState('all');
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<any>(null);
+    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+    const [showTrash, setShowTrash] = useState(false);
+    const [showArchive, setShowArchive] = useState(false);
+    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
 
-    // Mock Data
-    const [projects, setProjects] = useState([
-        { id: 'P-2024-1001', name: 'Bedienungsanleitung TX-700', client: 'TechCorp GmbH', source: 'de', target: 'en', progress: 75, due: '2024-03-15', cost: 450.00, partnerCost: 280.00, status: 'in_progress', vol: '4.500 Wörter' },
-        { id: 'P-2024-1002', name: 'Ehevertrag Müller/Smith', client: 'Kanzlei Recht', source: 'en', target: 'de', progress: 100, due: '2024-03-10', cost: 120.50, partnerCost: 0, status: 'review', vol: '1.200 Wörter' },
-        { id: 'P-2024-1003', name: 'Marketing Broschüre Q1', client: 'Creative Agency', source: 'de', target: 'fr', progress: 10, due: '2024-03-20', cost: 890.00, partnerCost: 550.00, status: 'draft', vol: '8.900 Wörter' },
-        { id: 'P-2024-1004', name: 'Webseiten Lokalisation', client: 'Startup XY', source: 'de', target: 'es', progress: 0, due: '2024-04-01', cost: 2100.00, partnerCost: 1400.00, status: 'pending', vol: '15.000 Wörter' },
-        { id: 'P-2024-1005', name: 'Medizinischer Befund', client: 'Klinikum Nord', source: 'fr', target: 'de', progress: 100, due: '2024-03-12', cost: 150.00, partnerCost: 90.00, status: 'completed', vol: '1.500 Wörter' },
-        { id: 'P-2024-1006', name: 'Jahresbericht 2023', client: 'Bank AG', source: 'de', target: 'en', progress: 50, due: '2024-03-30', cost: 1200.00, partnerCost: 720.00, status: 'in_progress', vol: '12.000 Wörter' }
-    ]);
+    const exportRef = useRef<HTMLDivElement>(null);
+    const viewSettingsRef = useRef<HTMLDivElement>(null);
 
-    const flags: { [key: string]: string } = { 'de': '🇩🇪', 'en': '🇺🇸', 'fr': '🇫🇷', 'es': '🇪🇸' };
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+                setIsExportOpen(false);
+            }
+            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
+                setIsViewSettingsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+    // deleted/archived states removed in favor of filter
 
-    // Derived Stats
-    const totalProjects = projects.length;
-    const activeProjects = projects.filter(p => ['in_progress', 'review'].includes(p.status)).length;
-    const totalVolume = projects.reduce((acc, curr) => acc + parseInt(curr.vol.replace('.', '').split(' ')[0]), 0).toLocaleString('de-DE');
-    const totalRevenue = projects.reduce((acc, curr) => acc + curr.cost, 0);
-    const totalPartnerCosts = projects.reduce((acc, curr) => acc + (curr.partnerCost || 0), 0);
-    const avgProfitability = totalRevenue > 0 ? ((totalRevenue - totalPartnerCosts) / totalRevenue) * 100 : 0;
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [projectToDelete, setProjectToDelete] = useState<string | string[] | null>(null);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const queryClient = useQueryClient();
+    const { data: projects = [], isLoading } = useQuery({
+        queryKey: ['projects'],
+        queryFn: projectService.getAll
+    });
+
+    const createMutation = useMutation({
+        mutationFn: projectService.create,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            setIsModalOpen(false);
+        }
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (data: any) => projectService.update(data.id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            setIsModalOpen(false);
+            setEditingProject(null);
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: projectService.delete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            setSelectedProjects([]);
+        }
+    });
+
+    const bulkUpdateMutation = useMutation({
+        mutationFn: (args: { ids: string[], data: any }) => projectService.bulkUpdate(args.ids, args.data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            setSelectedProjects([]);
+        }
+    });
+
+    const bulkDeleteMutation = useMutation({
+        mutationFn: projectService.bulkDelete,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            setSelectedProjects([]);
+        }
+    });
+
+    const activeProjectsData = useMemo(() => {
+        return projects.filter((p: any) => {
+            const s = p.status?.toLowerCase();
+            return s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht';
+        });
+    }, [projects]);
+
+    const totalProjectsCount = activeProjectsData.length;
+    const activeProjectsCount = activeProjectsData.filter((p: any) => ['in_progress', 'review'].includes(p.status)).length;
+    const totalVolume = activeProjectsData.reduce((acc: number, curr: any) => acc + (curr.word_count || 0), 0);
+    const totalRevenue = activeProjectsData.reduce((acc: number, curr: any) => acc + parseFloat(curr.price_total || 0), 0);
 
     const filteredProjects = useMemo(() => {
-        return projects.filter(p => {
+        if (!Array.isArray(projects)) return [];
+        return projects.filter((p: any) => {
+            // Priority 1: Check for explicit Archive/Trash tabs
             if (filter === 'trash') return p.status === 'deleted';
-            if (p.status === 'deleted') return false; // Hide deleted from other tabs
+            if (filter === 'archive') return p.status === 'archived';
+
+            // For all other tabs, exclude deleted and archived
+            if (p.status === 'deleted' || p.status === 'archived') return false;
+
+            // Priority 2: Standard Tabs filtering
             if (filter === 'all') return true;
             if (filter === 'in_progress') return ['in_progress', 'review'].includes(p.status);
             if (filter === 'completed') return p.status === 'completed';
+
             return true;
         });
     }, [projects, filter]);
 
     const getStatusBadge = (status: string) => {
         const labels: { [key: string]: string } = {
-            'in_progress': 'In Bearbeitung', 'review': 'Lektorat', 'draft': 'Entwurf',
-            'pending': 'Angebot', 'completed': 'Abgeschlossen', 'deleted': 'Gelöscht'
+            'in_progress': 'In Bearbeitung',
+            'review': 'QS/Lektorat',
+            'draft': 'Entwurf',
+            'pending': 'Angebot',
+            'completed': 'Abgeschlossen',
+            'deleted': 'Gelöscht',
+            'archived': 'Archiviert',
+            'cancelled': 'Storniert'
         };
         const styles: { [key: string]: string } = {
             'in_progress': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -61,9 +151,11 @@ const Projects = () => {
             'draft': 'bg-slate-50 text-slate-600 border-slate-200',
             'pending': 'bg-orange-50 text-orange-700 border-orange-200',
             'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-            'deleted': 'bg-red-50 text-red-700 border-red-200'
+            'deleted': 'bg-red-50 text-red-700 border-red-200',
+            'archived': 'bg-slate-100 text-slate-500 border-slate-300',
+            'cancelled': 'bg-gray-100 text-gray-500 border-gray-300'
         };
-        return <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border tracking-tight ${styles[status]}`}>{labels[status]}</span>;
+        return <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase border tracking-tight ${styles[status] || styles['draft']}`}>{labels[status] || status}</span>;
     }
 
     const toggleSelection = (id: string) => {
@@ -74,12 +166,51 @@ const Projects = () => {
         if (selectedProjects.length === filteredProjects.length) {
             setSelectedProjects([]);
         } else {
-            setSelectedProjects(filteredProjects.map(p => p.id));
+            setSelectedProjects(filteredProjects.map((p: any) => p.id));
         }
+    };
+
+    const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
+        if (filteredProjects.length === 0) return;
+
+        const headers = ['ID', 'Projektname', 'Kunde', 'Quelle', 'Ziel', 'Status', 'Deadline', 'Preis'];
+        const rows = filteredProjects.map((p: any) => [
+            p.project_number || p.id,
+            p.project_name,
+            p.customer?.company_name || `${p.customer?.first_name} ${p.customer?.last_name}`,
+            p.source_language?.iso_code || '',
+            p.target_language?.iso_code || '',
+            p.status,
+            p.deadline ? new Date(p.deadline).toLocaleDateString('de-DE') : '',
+            p.price_total || '0'
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Projekte_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setIsExportOpen(false);
+    };
+
+    const getInitials = (name: string) => {
+        if (!name) return '?';
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .substring(0, 2)
+            .toUpperCase();
     };
 
     const columns = [
         {
+            id: 'selection',
             header: (
                 <Checkbox
                     checked={selectedProjects.length === filteredProjects.length && filteredProjects.length > 0}
@@ -92,72 +223,211 @@ const Projects = () => {
                     onChange={() => toggleSelection(p.id)}
                 />
             ),
-            className: 'w-10'
+            className: 'w-10',
+            hidden: filteredProjects.length === 0
         },
         {
-            header: 'Projekt / ID',
+            id: 'id',
+            header: 'Projekt',
             accessor: (p: any) => (
-                <div className="flex flex-col">
-                    <span className="font-bold text-slate-800">{p.name}</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.id}</span>
+                <div className="flex flex-col max-w-[150px]">
+                    <span className="font-semibold text-slate-800 truncate" title={p.project_name}>{p.project_name}</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.project_number || `P-${p.id}`}</span>
                 </div>
             ),
             sortable: true,
-            sortKey: 'name'
+            sortKey: 'project_name',
+            className: 'w-[150px]'
         },
         {
+            id: 'customer',
             header: 'Kunde',
-            accessor: 'client' as any,
-            sortable: true
+            accessor: (p: any) => {
+                const name = p.customer?.company_name || `${p.customer?.first_name} ${p.customer?.last_name}` || 'Unbekannt';
+                return (
+                    <div className="flex items-center gap-3 max-w-[240px]">
+                        <div className="w-9 h-9 bg-brand-50 border border-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm rounded-md">
+                            {getInitials(name)}
+                        </div>
+                        <div className="flex flex-col text-xs leading-tight overflow-hidden">
+                            <span className="font-semibold text-slate-800 truncate mb-0.5" title={name}>
+                                {name}
+                            </span>
+                            {p.customer?.email && (
+                                <a href={`mailto:${p.customer.email}`} className="text-[10px] text-slate-500 hover:text-brand-600 truncate flex items-center gap-1.5 transition-colors">
+                                    <FaEnvelope className="opacity-50" /> {p.customer.email}
+                                </a>
+                            )}
+                            {p.customer?.phone && (
+                                <span className="text-[10px] text-slate-400 truncate flex items-center gap-1.5">
+                                    <span className="opacity-50">Tel:</span> {p.customer.phone}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+            sortable: true,
+            sortKey: 'customer_id'
         },
         {
+            id: 'partner',
+            header: 'Übersetzer',
+            accessor: (p: any) => {
+                if (!p.partner) return <span className="text-slate-300 italic text-xs">-</span>;
+                const name = p.partner.company || `${p.partner.first_name} ${p.partner.last_name}`;
+                return (
+                    <div className="flex items-center gap-3 max-w-[240px]">
+                        <div className="w-9 h-9 bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm rounded-md">
+                            {getInitials(name)}
+                        </div>
+                        <div className="flex flex-col text-xs leading-tight overflow-hidden">
+                            <span className="font-semibold text-slate-800 truncate mb-0.5" title={name}>
+                                {name}
+                            </span>
+                            {p.partner.email && (
+                                <a href={`mailto:${p.partner.email}`} className="text-[10px] text-slate-500 hover:text-brand-600 truncate flex items-center gap-1.5 transition-colors">
+                                    <FaEnvelope className="opacity-50" /> {p.partner.email}
+                                </a>
+                            )}
+                            {p.partner.phone && (
+                                <span className="text-[10px] text-slate-400 truncate flex items-center gap-1.5">
+                                    <span className="opacity-50">Tel:</span> {p.partner.phone}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            id: 'languages',
             header: 'Sprachpaar',
             accessor: (p: any) => (
-                <div className="flex gap-2 items-center">
-                    <span title={p.source} className="text-sm">{flags[p.source]}</span>
-                    <FaArrowRight className="text-[10px] text-slate-300" />
-                    <span title={p.target} className="text-sm">{flags[p.target]}</span>
-                </div>
-            ),
-            sortable: true,
-            sortKey: 'source'
-        },
-        {
-            header: 'Fortschritt',
-            accessor: (p: any) => (
-                <div className="w-24">
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 mb-1.5 overflow-hidden">
-                        <div className="bg-brand-500 h-1.5 rounded-full transition-all duration-700" style={{ width: `${p.progress}%` }}></div>
+                <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-2" title="Ausgangssprache">
+                        <img
+                            src={getFlagUrl(p.source_language?.iso_code || p.source || 'de')}
+                            className="w-5 h-3.5 object-cover shadow-sm border border-slate-100"
+                            alt={p.source_language?.name}
+                        />
+                        <span className="font-medium text-slate-700 hidden xl:inline-block">{p.source_language?.name_internal || p.source_language?.name || p.source}</span>
+                        <span className="font-medium text-slate-700">{p.source_language?.iso_code}</span>
                     </div>
-                    <div className="text-[10px] font-black text-slate-400 text-right uppercase">{p.progress}%</div>
+                    <FaArrowRight className="text-slate-300 text-[10px] shrink-0" />
+                    <div className="flex items-center gap-2" title="Zielsprache">
+                        <img
+                            src={getFlagUrl(p.target_language?.iso_code || p.target || 'en')}
+                            className="w-5 h-3.5 object-cover shadow-sm border border-slate-100"
+                            alt={p.target_language?.name}
+                        />
+                        <span className="font-medium text-slate-700 hidden xl:inline-block">{p.target_language?.name_internal || p.target_language?.name || p.target}</span>
+                        <span className="font-medium text-slate-700 xl:hidden">{p.target_language?.iso_code}</span>
+                    </div>
                 </div>
             ),
-            sortable: true,
-            sortKey: 'progress'
         },
         {
-            header: 'Deadline',
+            id: 'down_payment',
+            header: 'Anzahlung',
             accessor: (p: any) => (
-                <span className="text-slate-600 font-medium">
-                    {new Date(p.due).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                <span className={clsx("text-xs", parseFloat(p.down_payment) > 0 ? "text-slate-600 font-medium" : "text-slate-300")}>
+                    {parseFloat(p.down_payment || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                 </span>
             ),
-            sortable: true,
-            sortKey: 'due'
+            align: 'right' as const
         },
         {
+            id: 'price_total',
+            header: 'Gesamtpreis',
+            accessor: (p: any) => (
+                <span className="font-semibold text-slate-800 text-xs">
+                    {parseFloat(p.price_total || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </span>
+            ),
+            align: 'right' as const
+        },
+        {
+            id: 'deadline',
+            header: 'Deadline',
+            accessor: (p: any) => {
+                if (!p.deadline) return <span className="text-slate-300">-</span>;
+                const date = new Date(p.deadline);
+                const today = new Date();
+                const diffTime = date.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                let badgeColor = 'bg-emerald-50 text-emerald-600 border-emerald-100';
+                let label = `${diffDays} Tage`;
+
+                if (diffDays < 0) {
+                    badgeColor = 'bg-red-50 text-red-600 border-red-100';
+                    label = `${Math.abs(diffDays)} Tage überfällig`;
+                } else if (diffDays === 0) {
+                    badgeColor = 'bg-orange-50 text-orange-600 border-orange-100';
+                    label = 'Heute fällig';
+                } else if (diffDays <= 2) {
+                    badgeColor = 'bg-orange-50 text-orange-600 border-orange-100';
+                }
+
+                return (
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
+                            <span>{date.toLocaleDateString('de-DE')}</span>
+                            <span className="text-slate-400 text-[10px]">
+                                {date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        </div>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight border w-fit ${badgeColor}`}>
+                            {label}
+                        </span>
+                    </div>
+                );
+            },
+            sortable: true,
+            sortKey: 'deadline'
+        },
+        {
+            id: 'status',
             header: 'Status',
             accessor: (p: any) => getStatusBadge(p.status),
             sortable: true,
             sortKey: 'status'
         },
         {
+            id: 'actions',
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1 relative" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/projects/${p.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition" title="Details"><FaEye /></button>
-                    <button onClick={() => { setEditingProject(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition" title="Bearbeiten"><FaEdit /></button>
-                    <button className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded transition" title="Löschen"><FaTrash /></button>
+                    <button onClick={() => navigate(`/projects/${p.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Details"><FaEye /></button>
+                    {p.status !== 'deleted' && (
+                        <button onClick={() => { setEditingProject(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Bearbeiten"><FaEdit /></button>
+                    )}
+                    {p.status === 'deleted' ? (
+                        <div className="flex gap-1">
+                            <button onClick={() => bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'in_progress' } })} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition" title="Wiederherstellen"><FaTrashRestore /></button>
+                            <button onClick={() => {
+                                setProjectToDelete(p.id);
+                                setConfirmTitle('Endgültig löschen');
+                                setConfirmMessage('Dieses Projekt wird unwiderruflich gelöscht. Fortfahren?');
+                                setIsConfirmOpen(true);
+                            }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Endgültig löschen"><FaTrash /></button>
+                        </div>
+                    ) : (
+                        <button onClick={() => {
+                            if (p.status === 'archived') {
+                                setProjectToDelete(p.id);
+                                setConfirmTitle('In den Papierkorb?');
+                                setConfirmMessage('Möchten Sie dieses archivierte Projekt in den Papierkorb verschieben?');
+                            } else {
+                                setProjectToDelete([p.id]); // Re-use state logic
+                                bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'deleted' } });
+                                return; // Skip modal for soft delete
+                            }
+                            // Fallback for direct trash action if needed, though usually handled via update
+                            bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'deleted' } });
+                        }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="In Papierkorb"><FaTrash /></button>
+                    )}
                 </div>
             ),
             align: 'right' as const
@@ -166,56 +436,83 @@ const Projects = () => {
 
     const tabs = (
         <div className="flex items-center gap-6">
-            <button
-                onClick={() => setFilter('all')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Alle Projekte
-            </button>
-            <button
-                onClick={() => setFilter('in_progress')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'in_progress' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Aktiv
-            </button>
-            <button
-                onClick={() => setFilter('completed')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'completed' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Beendet
-            </button>
-            <button
-                onClick={() => setFilter('trash')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-            >
-                Papierkorb
-            </button>
+            <button onClick={() => setFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Alle Projekte</button>
+            <button onClick={() => setFilter('in_progress')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'in_progress' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>In Bearbeitung</button>
+            <button onClick={() => setFilter('completed')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'completed' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abgeschlossen</button>
+
+            {(showTrash || filter === 'trash') && (
+                <button onClick={() => setFilter('trash')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Papierkorb</button>
+            )}
+            {(showArchive || filter === 'archive') && (
+                <button onClick={() => setFilter('archive')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'archive' ? 'border-slate-600 text-slate-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Archiv</button>
+            )}
         </div>
     );
 
     const actions = (
-        <div className="relative group z-50">
+        <div className="flex items-center gap-2">
+            <div className="flex border border-slate-200 p-1 bg-white shadow-sm mr-2">
+                <button
+                    onClick={() => setViewMode('list')}
+                    className={clsx("p-1.5 transition-all rounded-md", viewMode === 'list' ? "bg-brand-600 text-white" : "text-slate-400 hover:text-slate-600")}
+                    title="Listenansicht"
+                >
+                    <FaLayerGroup className="text-xs" />
+                </button>
+                <button
+                    onClick={() => setViewMode('kanban')}
+                    className={clsx("p-1.5 transition-all rounded-md", viewMode === 'kanban' ? "bg-brand-600 text-white" : "text-slate-400 hover:text-slate-600")}
+                    title="Kanban Board"
+                >
+                    <FaLayerGroup className="text-xs rotate-90" />
+                </button>
+            </div>
+
+            <div className="relative group z-50" ref={exportRef}>
+                <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white rounded-md flex items-center gap-2 shadow-sm transition">
+                    <FaDownload /> Export
+                </button>
+                {isExportOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-xl border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
+                        <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
+                        <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
+                        <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    const extraControls = (
+        <div className="relative" ref={viewSettingsRef}>
             <button
-                onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }}
-                className="px-3 py-1.5 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white flex items-center gap-2 shadow-sm transition"
+                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
+                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-brand-50 border-brand-200 text-brand-600" : ""}`}
+                title="Ansichtseinstellungen"
             >
-                <FaDownload /> Export
+                <FaFilter className="text-sm" />
             </button>
-            {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
-                    <button className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)
-                    </button>
-                    <button className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)
-                    </button>
-                    <button className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition">
-                        <FaFilePdf className="text-red-600 text-sm" /> PDF Report
-                    </button>
+            {isViewSettingsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl border border-slate-100 z-[100] p-4 fade-in">
+                    <h4 className="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Ansicht anpassen</h4>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between p-1">
+                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
+                            <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
+                        </div>
+                        <div className="flex items-center justify-between p-1">
+                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
+                            <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
     );
+
+
+
+    if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
         <div className="flex flex-col gap-6 h-full fade-in" onClick={() => { setIsExportOpen(false); }}>
@@ -225,77 +522,124 @@ const Projects = () => {
                     <p className="text-slate-500 text-sm">Verwalten und überwachen Sie alle Übersetzungsaufträge.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => { setEditingProject(null); setIsModalOpen(true); }}
-                        className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95"
-                    >
+                    <button onClick={() => { setEditingProject(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95">
                         <FaPlus className="text-xs" /> Neues Projekt
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <KPICard label="Gesamtprojekte" value={totalProjects} icon={<FaLayerGroup />} />
-                <KPICard label="Aktive Projekte" value={activeProjects} icon={<FaChartLine />} iconColor="text-blue-600" iconBg="bg-blue-50" />
-                <KPICard label="Gesamtvolumen" value={totalVolume} subValue="Wörter" icon={<FaGlobe />} />
-                <KPICard label="Marge Ø" value={`${avgProfitability.toFixed(1)} %`} icon={<FaChartLine />} iconColor="text-green-600" iconBg="bg-green-50" />
+                <KPICard label="Gesamtprojekte" value={totalProjectsCount} icon={<FaLayerGroup />} />
+                <KPICard label="Aktive Projekte" value={activeProjectsCount} icon={<FaChartLine />} iconColor="text-blue-600" iconBg="bg-blue-50" />
+                <KPICard label="Gesamtvolumen" value={totalVolume.toLocaleString('de-DE')} subValue="Wörter" icon={<FaGlobe />} />
+                <KPICard label="Umsatz YTD" value={totalRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaChartLine />} iconColor="text-green-600" iconBg="bg-green-50" />
             </div>
 
             <div className="flex-1 flex flex-col min-h-0 relative z-0">
-                {selectedProjects.length > 0 && (
-                    <div className="mb-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg flex justify-between items-center animate-fadeIn shadow-sm z-10 relative">
-                        <div className="flex items-center gap-4">
-                            <span className="text-slate-600 text-xs font-bold uppercase tracking-widest shrink-0">
-                                {selectedProjects.length} ausgewählt
-                            </span>
-                            <div className="h-4 w-px bg-slate-300"></div>
-                            <div className="flex items-center gap-2">
-                                <button className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                    <FaCheck className="text-xs" /> Erledigen
-                                </button>
-                                <button className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                    <FaUserPlus className="text-xs" /> Zuweisen
-                                </button>
-                                {filter === 'trash' ? (
-                                    <button
-                                        onClick={() => {
-                                            setProjects(prev => prev.map(p => selectedProjects.includes(p.id) ? { ...p, status: 'in_progress' } : p));
-                                            setSelectedProjects([]);
-                                        }}
-                                        className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2"
-                                    >
-                                        <FaTrashRestore className="text-xs" /> Wiederherstellen
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            setProjects(prev => prev.map(p => selectedProjects.includes(p.id) ? { ...p, status: 'deleted' } : p));
-                                            setSelectedProjects([]);
-                                        }}
-                                        className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2"
-                                    >
-                                        <FaTrash className="text-xs" /> Löschen
-                                    </button>
-                                )}
-                                <button className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-800 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                    <FaArchive className="text-xs" /> Archivieren
-                                </button>
+                <BulkActions
+                    selectedCount={selectedProjects.length}
+                    onClearSelection={() => setSelectedProjects([])}
+                    actions={[
+                        {
+                            label: 'Abschließen',
+                            icon: <FaCheck className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'completed', progress: 100 } }),
+                            variant: 'success',
+                            show: filter !== 'trash' && filter !== 'completed'
+                        },
+                        {
+                            label: 'Zurücksetzen',
+                            icon: <FaArrowRight className="text-xs rotate-180" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }),
+                            variant: 'default',
+                            show: filter === 'completed'
+                        },
+                        {
+                            label: 'E-Mail senden',
+                            icon: <FaEnvelope className="text-xs" />,
+                            onClick: () => {
+                                // Existing logic for single project email
+                                if (selectedProjects.length === 1) {
+                                    const p = projects.find((pro: any) => pro.id === selectedProjects[0]);
+                                    navigate('/inbox', {
+                                        state: {
+                                            compose: true,
+                                            to: p?.customer?.email,
+                                            subject: `Projekt: ${p?.project_name} (${p?.project_number || 'ID ' + p?.id})`,
+                                            body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p?.project_name}.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`,
+                                            attachments: p?.files || []
+                                        }
+                                    });
+                                }
+                            },
+                            variant: 'primary',
+                            show: selectedProjects.length === 1 && filter !== 'trash'
+                        },
+                        // Archive Action
+                        {
+                            label: 'Archivieren',
+                            icon: <FaArchive className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'archived' } }),
+                            variant: 'default',
+                            show: filter !== 'trash' && filter !== 'archive'
+                        },
+                        // Papierkorb Action (Soft delete)
+                        {
+                            label: 'Papierkorb',
+                            icon: <FaTrash className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'deleted' } }),
+                            variant: 'danger',
+                            show: filter !== 'trash' && filter !== 'deleted'
+                        },
+                        {
+                            label: 'Wiederherstellen',
+                            icon: <FaTrashRestore className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }),
+                            variant: 'success',
+                            show: filter === 'trash' || filter === 'deleted'
+                        },
+                        {
+                            label: 'Endgültig löschen',
+                            icon: <FaTrash className="text-xs" />,
+                            onClick: () => {
+                                setProjectToDelete(selectedProjects);
+                                setConfirmTitle('Projekte endgültig löschen');
+                                setConfirmMessage(`Sind Sie sicher, dass Sie ${selectedProjects.length} Projekte endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.`);
+                                setIsConfirmOpen(true);
+                            },
+                            variant: 'dangerSolid',
+                            show: filter === 'trash' || filter === 'deleted'
+                        }
+                    ]}
+                />
+
+
+                {viewMode === 'list' ? (
+                    <DataTable
+                        data={filteredProjects}
+                        columns={columns as any}
+                        onRowClick={(p) => navigate(`/projects/${p.id}`)}
+                        pageSize={window.innerWidth < 768 ? 5 : 10}
+                        searchPlaceholder="Suchen nach Projekten..."
+                        searchFields={['project_name', 'project_number']}
+                        actions={actions}
+                        tabs={tabs}
+                        extraControls={extraControls}
+                        onAddClick={() => { setEditingProject(null); setIsModalOpen(true); }}
+                    />
+                ) : (
+                    <div className="flex-1 min-h-0 bg-slate-50/50 p-6 border border-slate-200 shadow-inner overflow-hidden flex flex-col">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-lg font-bold text-slate-800">Projekt-Board</h2>
+                            <div className="flex gap-4">
+                                {actions}
                             </div>
                         </div>
-                        <button onClick={() => setSelectedProjects([])} className="text-slate-400 hover:text-slate-600 transition p-1 hover:bg-slate-200 rounded"><FaTimes /></button>
+                        <div className="flex-1 min-h-0">
+                            <KanbanBoard projects={filteredProjects} onProjectClick={(p) => navigate(`/projects/${p.id}`)} />
+                        </div>
                     </div>
                 )}
-
-                <DataTable
-                    data={filteredProjects}
-                    columns={columns as any}
-                    onRowClick={(p: any) => navigate(`/projects/${p.id}`)}
-                    pageSize={10}
-                    searchPlaceholder="Projekte nach ID, Name oder Kunde suchen..."
-                    searchFields={['id', 'name', 'client']}
-                    actions={actions}
-                    tabs={tabs}
-                />
             </div>
 
             <NewProjectModal
@@ -303,12 +647,43 @@ const Projects = () => {
                 onClose={() => { setIsModalOpen(false); setEditingProject(null); }}
                 onSubmit={(data) => {
                     if (editingProject) {
-                        setProjects(prev => prev.map(p => p.id === data.id ? data : p));
+                        updateMutation.mutate({ ...data, id: editingProject.id });
                     } else {
-                        setProjects(prev => [data as any, ...prev]);
+                        createMutation.mutate(data);
                     }
                 }}
                 initialData={editingProject}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+            />
+
+            <ConfirmModal
+                isOpen={isConfirmOpen}
+                onClose={() => {
+                    setIsConfirmOpen(false);
+                    setProjectToDelete(null);
+                }}
+                onConfirm={() => {
+                    if (projectToDelete) {
+                        if (Array.isArray(projectToDelete)) {
+                            bulkDeleteMutation.mutate(projectToDelete, {
+                                onSuccess: () => {
+                                    setIsConfirmOpen(false);
+                                    setProjectToDelete(null);
+                                }
+                            });
+                        } else {
+                            deleteMutation.mutate(projectToDelete as string, {
+                                onSuccess: () => {
+                                    setIsConfirmOpen(false);
+                                    setProjectToDelete(null);
+                                }
+                            });
+                        }
+                    }
+                }}
+                title={confirmTitle}
+                message={confirmMessage}
+                isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
             />
         </div>
     );

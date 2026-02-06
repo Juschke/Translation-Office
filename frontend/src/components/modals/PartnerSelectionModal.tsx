@@ -134,6 +134,14 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
         if (!editData?.lastName) errors.add('lastName');
         if (editData?.type === 'agency' && !editData?.company) errors.add('company');
         if (!editData?.emails?.[0]) errors.add('email');
+        if (!editData?.street) errors.add('street');
+        if (!editData?.houseNo) errors.add('houseNo');
+        if (!editData?.zip) errors.add('zip');
+        if (!editData?.city) errors.add('city');
+        if (!editData?.bankName) errors.add('bankName');
+        if (!editData?.bic) errors.add('bic');
+        if (!editData?.iban) errors.add('iban');
+        if (!editData?.taxId) errors.add('taxId');
 
         setValidationErrors(errors);
         if (errors.size > 0) return;
@@ -280,16 +288,16 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                                         {p.languages.length > 3 && <span className="text-[8px] text-slate-400 font-bold">+{p.languages.length - 3}</span>}
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-2.5 text-center font-mono text-[10px] font-bold text-slate-600">
+                                                <td className="px-4 py-2.5 text-center  text-[10px] font-bold text-slate-600">
                                                     {p.priceList?.find(pr => pr.unit.toLowerCase() === 'wort')?.price.toFixed(3) || '-'}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-center font-mono text-[10px] font-bold text-slate-600">
+                                                <td className="px-4 py-2.5 text-center  text-[10px] font-bold text-slate-600">
                                                     {p.priceList?.find(pr => pr.unit.toLowerCase() === 'zeile')?.price.toFixed(2) || '-'}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-center font-mono text-[10px] font-bold text-slate-600">
+                                                <td className="px-4 py-2.5 text-center  text-[10px] font-bold text-slate-600">
                                                     {p.priceList?.find(pr => pr.unit.toLowerCase() === 'stunde')?.price.toFixed(2) || '-'}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-center font-mono text-[10px] font-black text-teal-700">
+                                                <td className="px-4 py-2.5 text-center  text-[10px] font-black text-teal-700">
                                                     {p.priceList?.find(pr => pr.label.toLowerCase().includes('mindest'))?.price.toFixed(2) || '-'}
                                                 </td>
                                                 <td className="px-6 py-2.5 text-right">

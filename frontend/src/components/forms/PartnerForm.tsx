@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaTrash, FaStar } from 'react-icons/fa';
-import MultiSelect from '../common/MultiSelect';
+import { FaPlus, FaTrash, FaStar, FaCreditCard } from 'react-icons/fa';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
+import CountrySelect from '../common/CountrySelect';
 import clsx from 'clsx';
 
 interface PartnerFormProps {
@@ -28,10 +28,11 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
         houseNo: '',
         zip: '',
         city: '',
+        country: 'Deutschland',
         emails: [''],
         phones: [''],
         languages: [] as string[],
-        domains: [] as string[],
+        domains: '' as string | string[],
         software: '',
         priceMode: 'per_unit',
         unitRates: { word: '', line: '', hour: '' },
@@ -48,7 +49,45 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
 
     useEffect(() => {
         if (initialData) {
-            setFormData(prev => ({ ...prev, ...initialData }));
+            // Map snake_case from API to camelCase for form state
+            const mappedData = {
+                ...formData,
+                id: initialData.id,
+                type: initialData.type || formData.type,
+                salutation: initialData.salutation || formData.salutation,
+                firstName: initialData.first_name || initialData.firstName || formData.firstName,
+                lastName: initialData.last_name || initialData.lastName || formData.lastName,
+                company: initialData.company || formData.company,
+                street: initialData.address_street || initialData.street || formData.street,
+                houseNo: initialData.address_house_no || initialData.houseNo || formData.houseNo,
+                zip: initialData.address_zip || initialData.zip || formData.zip,
+                city: initialData.address_city || initialData.city || formData.city,
+                country: initialData.address_country || initialData.country || formData.country,
+                emails: initialData.email
+                    ? [initialData.email, ...(initialData.additional_emails || [])]
+                    : (initialData.emails || formData.emails),
+                phones: initialData.phone
+                    ? [initialData.phone, ...(initialData.additional_phones || [])]
+                    : (initialData.phones || formData.phones),
+                languages: initialData.languages || formData.languages,
+                domains: initialData.domains || formData.domains,
+                software: initialData.software || formData.software,
+                priceMode: initialData.price_mode || initialData.priceMode || formData.priceMode,
+                unitRates: initialData.unit_rates || initialData.unitRates || formData.unitRates,
+                flatRates: initialData.flat_rates || initialData.flatRates || formData.flatRates,
+                paymentTerms: String(initialData.payment_terms || initialData.paymentTerms || formData.paymentTerms),
+                taxId: initialData.tax_id || initialData.taxId || formData.taxId,
+                bankName: initialData.bank_name || initialData.bankName || formData.bankName,
+                iban: initialData.iban || formData.iban,
+                bic: initialData.bic || formData.bic,
+                notes: initialData.notes || formData.notes,
+                status: initialData.status || formData.status,
+                rating: initialData.rating !== undefined ? initialData.rating : formData.rating
+            };
+            setFormData(mappedData);
+            onChange(mappedData);
+        } else {
+            onChange(formData);
         }
     }, [initialData]);
 
@@ -75,12 +114,6 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
     };
 
 
-
-    const domainOptions = [
-        { value: 'legal', label: 'Recht' }, { value: 'tech', label: 'Technik' },
-        { value: 'med', label: 'Medizin' }, { value: 'marketing', label: 'Marketing' },
-        { value: 'it', label: 'IT & Software' }, { value: 'fin', label: 'Finanzen' }
-    ];
 
     const partnerTypes = [
         { value: 'translator', label: 'Übersetzer' },
@@ -178,38 +211,49 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                 <div className="grid grid-cols-12 gap-x-6 gap-y-4">
                     {!isCompact && (
                         <>
-                            <div className="col-span-9">
+                            <div className="col-span-12 md:col-span-9">
                                 <Input
-                                    label="Straße"
+                                    label="Straße *"
                                     placeholder="Straße"
                                     value={formData.street}
+                                    error={validationErrors.has('street')}
                                     onChange={e => updateFormData({ street: e.target.value })}
                                 />
                             </div>
-                            <div className="col-span-3">
+                            <div className="col-span-12 md:col-span-3">
                                 <Input
-                                    label="Nr."
+                                    label="Nr. *"
                                     placeholder="Nr."
                                     className="text-center"
                                     value={formData.houseNo}
+                                    error={validationErrors.has('houseNo')}
                                     onChange={e => updateFormData({ houseNo: e.target.value })}
                                 />
                             </div>
-                            <div className="col-span-4">
+                            <div className="col-span-12 md:col-span-3">
                                 <Input
-                                    label="PLZ"
+                                    label="PLZ *"
                                     placeholder="PLZ"
                                     value={formData.zip}
+                                    error={validationErrors.has('zip')}
                                     onChange={e => updateFormData({ zip: e.target.value })}
                                 />
                             </div>
-                            <div className="col-span-8">
+                            <div className="col-span-12 md:col-span-5">
                                 <Input
-                                    label="Stadt"
+                                    label="Stadt *"
                                     placeholder="Stadt"
                                     className="font-bold"
                                     value={formData.city}
+                                    error={validationErrors.has('city')}
                                     onChange={e => updateFormData({ city: e.target.value })}
+                                />
+                            </div>
+                            <div className="col-span-12 md:col-span-4">
+                                <CountrySelect
+                                    label="Land"
+                                    value={formData.country}
+                                    onChange={v => updateFormData({ country: v })}
                                 />
                             </div>
                         </>
@@ -290,13 +334,15 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                         </div>
 
                         <div className="grid grid-cols-2 gap-8">
-                            <MultiSelect
-                                label="Fachgebiete / Fokus"
-                                placeholder="Kompetenzen auswählen..."
-                                options={domainOptions}
-                                value={formData.domains}
-                                onChange={v => updateFormData({ domains: v })}
-                            />
+                            <div className="col-span-2">
+                                <Input
+                                    label="Fachgebiete / Sprachpaare / Fokus"
+                                    placeholder="z.B. Recht, Technik, DE-EN, EN-FR..."
+                                    value={Array.isArray(formData.domains) ? formData.domains.join(', ') : formData.domains}
+                                    onChange={e => updateFormData({ domains: e.target.value })}
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1 ml-1">Geben Sie hier Ihre Fachgebiete oder Sprachkombinationen als Freitext ein.</p>
+                            </div>
                             <div className="col-span-2">
                                 <Input
                                     label="Software-Kenntnisse (CAT Tools)"
@@ -317,13 +363,13 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
 
                         <div className="grid grid-cols-12 gap-6">
                             <div className="col-span-12 md:col-span-4">
-                                <Input label="Name der Bank" value={formData.bankName} onChange={e => updateFormData({ bankName: e.target.value })} placeholder="Hausbank" />
+                                <Input label="Name der Bank *" value={formData.bankName} error={validationErrors.has('bankName')} onChange={e => updateFormData({ bankName: e.target.value })} placeholder="Hausbank" />
                             </div>
                             <div className="col-span-6 md:col-span-3">
-                                <Input label="BIC" className="uppercase font-mono" value={formData.bic} onChange={e => updateFormData({ bic: e.target.value })} placeholder="BIC" />
+                                <Input label="BIC *" className="uppercase" value={formData.bic} error={validationErrors.has('bic')} onChange={e => updateFormData({ bic: e.target.value })} placeholder="BIC" />
                             </div>
                             <div className="col-span-6 md:col-span-5">
-                                <Input label="IBAN" className="font-bold font-mono" value={formData.iban} onChange={e => updateFormData({ iban: e.target.value })} placeholder="DE00 0000 0000 ..." />
+                                <Input label="IBAN *" className="font-bold" value={formData.iban} error={validationErrors.has('iban')} onChange={e => updateFormData({ iban: e.target.value })} placeholder="DE00 0000 0000 ..." />
                             </div>
 
                             <div className="col-span-4">
@@ -337,8 +383,9 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-8">
                                 <Input
-                                    label="USt-IdNr. / Steuer-ID"
+                                    label="USt-IdNr. / Steuer-ID *"
                                     value={formData.taxId}
+                                    error={validationErrors.has('taxId')}
                                     onChange={e => updateFormData({ taxId: e.target.value })}
                                     placeholder="z.B. DE123456789"
                                     className="font-bold"
@@ -441,7 +488,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="space-y-3">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bewertung / Ranking</label>
-                                <div className="flex items-center gap-3 h-11 bg-slate-50 border border-slate-200 rounded px-4">
+                                <div className="flex items-center gap-3 h-8 bg-white ">
                                     {[1, 2, 3, 4, 5].map(star => (
                                         <button
                                             key={star}
@@ -449,7 +496,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                                             onClick={() => updateFormData({ rating: star })}
                                             className={clsx("transition-all hover:scale-125", formData.rating >= star ? "text-amber-400" : "text-slate-200")}
                                         >
-                                            <FaStar size={18} />
+                                            <FaStar size={24} />
                                         </button>
                                     ))}
                                     <span className="ml-2 text-xs font-black text-slate-600">{formData.rating}.0</span>

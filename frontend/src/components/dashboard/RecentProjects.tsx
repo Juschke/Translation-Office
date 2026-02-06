@@ -3,28 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { FaArrowRight, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import clsx from 'clsx';
 
-const RecentProjects = () => {
+interface RecentProjectsProps {
+    projects: any[];
+}
+
+const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }) => {
     const navigate = useNavigate();
     const [filter, setFilter] = useState('all');
     const [page, setPage] = useState(1);
     const itemsPerPage = 5;
 
-    // Mock Data
-    const allProjects = [
-        { id: 'P-2024-1001', name: 'Bedienungsanleitung TX-700', client: 'TechCorp GmbH', source: 'de', target: 'en', progress: 75, due: '2024-03-15', status: 'In Bearbeitung' },
-        { id: 'P-2024-1002', name: 'Ehevertrag Müller/Smith', client: 'Kanzlei Recht', source: 'en', target: 'de', progress: 100, due: '2024-03-10', status: 'Lektorat' },
-        { id: 'P-2024-1003', name: 'Marketing Broschüre Q1', client: 'Creative Agency', source: 'de', target: 'fr', progress: 10, due: '2024-03-20', status: 'Entwurf' },
-        { id: 'P-2024-1004', name: 'Webseiten Lokalisation', client: 'Startup XY', source: 'de', target: 'es', progress: 0, due: '2024-04-01', status: 'Angebot' },
-        { id: 'P-2024-1005', name: 'Medizinischer Befund', client: 'Klinikum Nord', source: 'fr', target: 'de', progress: 100, due: '2024-03-12', status: 'Abgeschlossen' },
-        { id: 'P-2024-1006', name: 'AGB Update 2024', client: 'OnlineShop e.K.', source: 'de', target: 'en', progress: 45, due: '2024-03-25', status: 'In Bearbeitung' },
-    ];
-
-    const flags: { [key: string]: string } = { 'de': '🇩🇪', 'en': '🇺🇸', 'fr': '🇫🇷', 'es': '🇪🇸' };
+    const flags: { [key: string]: string } = {
+        'de': '🇩🇪', 'en': '🇺🇸', 'fr': '🇫🇷', 'es': '🇪🇸', 'it': '🇮🇹', 'pl': '🇵🇱', 'ru': '🇷🇺', 'tr': '🇹🇷'
+    };
 
     // Filter Logic
     const filteredProjects = allProjects.filter(p => {
         if (filter === 'all') return true;
-        if (filter === 'urgent') return new Date(p.due) < new Date('2024-03-20') && p.status !== 'Abgeschlossen';
+        if (filter === 'urgent') {
+            if (!p.deadline) return false;
+            const deadline = new Date(p.deadline);
+            const today = new Date();
+            const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 3600 * 24));
+            return diffDays <= 3 && p.status !== 'completed';
+        }
         return p.status === filter;
     });
 
@@ -34,13 +36,22 @@ const RecentProjects = () => {
 
     const getStatusBadge = (status: string) => {
         const styles: { [key: string]: string } = {
-            'In Bearbeitung': 'bg-blue-50 text-blue-700 border-blue-200',
-            'Lektorat': 'bg-purple-50 text-purple-700 border-purple-200',
-            'Entwurf': 'bg-slate-50 text-slate-600 border-slate-200',
-            'Angebot': 'bg-orange-50 text-orange-700 border-orange-200',
-            'Abgeschlossen': 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            'in_progress': 'bg-blue-50 text-blue-700 border-blue-200',
+            'review': 'bg-purple-50 text-purple-700 border-purple-200',
+            'quote_sent': 'bg-slate-50 text-slate-600 border-slate-200',
+            'pending': 'bg-orange-50 text-orange-700 border-orange-200',
+            'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200'
         };
-        return <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase border tracking-tight shrink-0", styles[status])}>{status}</span>;
+        const labels: { [key: string]: string } = {
+            'in_progress': 'Bearbeitung',
+            'review': 'Prüfung',
+            'quote_sent': 'Angebot',
+            'pending': 'Wartend',
+            'completed': 'Erledigt'
+        };
+        return <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase border tracking-tight shrink-0", styles[status] || styles['quote_sent'])}>
+            {labels[status] || status}
+        </span>;
     }
 
     return (
@@ -100,22 +111,22 @@ const RecentProjects = () => {
                                 <td className="px-6 py-4">
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-slate-800 group-hover:text-brand-700 transition">{p.name}</span>
-                                        <span className="text-[10px] text-slate-400 font-medium">{p.id}</span>
+                                        <span className="text-[10px] text-slate-400 font-medium">{p.project_number || p.id}</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 text-xs font-medium text-slate-600">{p.client}</td>
+                                <td className="px-6 py-4 text-xs font-medium text-slate-600">{p.customer?.name || 'Kein Kunde'}</td>
                                 <td className="px-6 py-4">
                                     <div className="flex gap-2 items-center text-sm">
-                                        <span title={p.source}>{flags[p.source]}</span>
+                                        <span title={p.source_language?.name || p.sourceLanguage?.name}>{flags[(p.sourceLanguage?.code || p.source_language?.code)?.toLowerCase()] || p.sourceLanguage?.code || p.source_language?.code}</span>
                                         <FaArrowRight className="text-[10px] text-slate-300" />
-                                        <span title={p.target}>{flags[p.target]}</span>
+                                        <span title={p.target_language?.name || p.targetLanguage?.name}>{flags[(p.targetLanguage?.code || p.target_language?.code)?.toLowerCase()] || p.targetLanguage?.code || p.target_language?.code}</span>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="w-full bg-slate-100 rounded-full h-1.5 mb-1 overflow-hidden">
-                                        <div className="bg-brand-500 h-full rounded-full transition-all duration-1000" style={{ width: `${p.progress}%` }}></div>
+                                        <div className="bg-brand-500 h-full rounded-full transition-all duration-1000" style={{ width: `${p.progress || 0}%` }}></div>
                                     </div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{p.progress}%</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{p.progress || 0}%</span>
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     {getStatusBadge(p.status)}

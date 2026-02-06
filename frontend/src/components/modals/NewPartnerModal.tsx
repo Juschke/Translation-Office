@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
+import clsx from 'clsx';
 import PartnerForm from '../forms/PartnerForm';
 
 interface NewPartnerModalProps {
@@ -7,9 +8,10 @@ interface NewPartnerModalProps {
     onClose: () => void;
     onSubmit: (data: any) => void;
     initialData?: any;
+    isLoading?: boolean;
 }
 
-const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
+const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
     const [formData, setFormData] = useState<any>(null);
     const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
 
@@ -17,15 +19,21 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
 
     const handleSubmit = () => {
         const errors = new Set<string>();
-        if (!formData?.firstName) errors.add('firstName');
-        if (!formData?.lastName) errors.add('lastName');
-        if (formData?.type === 'agency' && !formData?.company) errors.add('company');
-        if (!formData?.emails?.[0]) errors.add('email');
+        const data = formData || initialData;
+
+        if (!data?.lastName) errors.add('lastName');
+        if (data?.type === 'agency' && !data?.company) errors.add('company');
+
+        // Optional but recommended fields - we still validate them if they are empty
+        // but maybe we should only warn? For now let's keep them as required by UI
+        // but check if they exist in the combined data.
+        if (!data?.firstName) errors.add('firstName');
+        if (!data?.emails?.[0]) errors.add('email');
 
         setValidationErrors(errors);
         if (errors.size > 0) return;
 
-        onSubmit(formData);
+        onSubmit(data);
         onClose();
     };
 
@@ -64,9 +72,13 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
                     </button>
                     <button
                         onClick={handleSubmit}
-                        className="px-10 py-2.5 bg-brand-700 text-white rounded text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95"
+                        disabled={isLoading}
+                        className={clsx(
+                            "px-10 py-2.5 bg-brand-700 text-white rounded text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95",
+                            isLoading && "opacity-50 cursor-not-allowed"
+                        )}
                     >
-                        {initialData ? 'Änderungen speichern' : 'Partner anlegen'}
+                        {isLoading ? 'Verarbeitet...' : (initialData ? 'Änderungen speichern' : 'Partner anlegen')}
                     </button>
                 </div>
             </div>

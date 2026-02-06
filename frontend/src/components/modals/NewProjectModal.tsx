@@ -1,18 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import UniversalForm from '../common/UniversalForm'; // Keep for typings if needed, otherwise remove if used in other places. Actually FormField type is used.
+import { type FormField } from '../common/UniversalForm';
 import {
     FaTimes, FaPlus, FaCalendarAlt, FaFlag,
-    FaInfoCircle, FaTrash, FaSearch, FaEye, FaExternalLinkAlt
+    FaInfoCircle, FaTrash, FaClock, FaBolt, FaMagic
 } from 'react-icons/fa';
-import MultiSelect from '../common/MultiSelect';
 import SearchableSelect from '../common/SearchableSelect';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
 import PartnerSelectionModal from './PartnerSelectionModal';
-import PartnerForm from '../forms/PartnerForm';
+import NewCustomerModal from './NewCustomerModal';
+import NewPartnerModal from './NewPartnerModal';
 import ConfirmDialog from '../common/ConfirmDialog';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { de } from 'date-fns/locale/de';
 import clsx from 'clsx';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { customerService, partnerService, settingsService } from '../../api/services';
+import PaymentModal from './PaymentModal';
+import NewDocTypeModal from './NewDocTypeModal';
 
 registerLocale('de', de);
 
@@ -21,9 +27,12 @@ interface NewProjectModalProps {
     onClose: () => void;
     onSubmit: (data: any) => void;
     initialData?: any;
+    isLoading?: boolean;
 }
 
-const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
+const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
+    const queryClient = useQueryClient();
+
     // Basic States
     const [name, setName] = useState('');
     const [customer, setCustomer] = useState('');
@@ -31,9 +40,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [source, setSource] = useState('de');
     const [target, setTarget] = useState('en');
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
+    const [status, setStatus] = useState('draft');
 
     // Project Options & Extra Costs
-    const [isCertified, setIsCertified] = useState(true);
+    const [isCertified, setIsCertified] = useState(false);
     const [hasApostille, setHasApostille] = useState(false);
     const [isExpress, setIsExpress] = useState(false);
     const [classification, setClassification] = useState('nein');
@@ -44,62 +54,86 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [positions, setPositions] = useState<any[]>([
         {
             id: Date.now().toString(),
-            description: '',
+            description: 'Übersetzung',
             amount: '1',
             unit: 'Normzeile',
             quantity: '1',
-            partnerRate: '0.05',
+            partnerRate: '0.00',
             partnerMode: 'unit',
             partnerTotal: '0.00',
-            customerRate: '0.15',
+            customerRate: '0.00',
             customerTotal: '0.00',
             customerMode: 'unit',
             marginType: 'markup',
-            marginPercent: '30'
+            marginPercent: '0'
         }
     ]);
 
     const [docType, setDocType] = useState<string[]>([]);
-    const [translator, setTranslator] = useState<any>(null);
+    const [translator, setTranslator] = useState<string>('');
     const [totalPrice, setTotalPrice] = useState('');
     const [partnerPrice, setPartnerPrice] = useState('');
-    const [downPayment, setDownPayment] = useState('');
+    const [payments, setPayments] = useState<any[]>([]);
     const [notes, setNotes] = useState('');
 
     // UI States
-    const [isNewCustomerMode, setIsNewCustomerMode] = useState(false);
-
-    // Detailed Customer Form States
-    const [custType, setCustType] = useState<'private' | 'company' | 'authority'>('private');
-    const [custCompany, setCustCompany] = useState('');
-    const [custSalutation, setCustSalutation] = useState('Herr');
-    const [custFirstName, setCustFirstName] = useState('');
-    const [custLastName, setCustLastName] = useState('');
-    const [custStreet, setCustStreet] = useState('');
-    const [custHouseNo, setCustHouseNo] = useState('');
-    const [custZip, setCustZip] = useState('');
-    const [custCity, setCustCity] = useState('');
-    const [custEmail, setCustEmail] = useState('');
-
-    const [custOptions, setCustOptions] = useState([
-        { value: 'TechCorp GmbH', label: 'TechCorp GmbH' },
-        { value: 'Kanzlei Schmidt', label: 'Kanzlei Schmidt' },
-        { value: 'Creative Agency', label: 'Creative Agency' },
-    ]);
-
-    const [partnersList, setPartnersList] = useState([
-        { id: 1, name: 'Sabine Müller', email: 's.mueller@partner.de', phone: '+49 123 456789', languages: ['de', 'en', 'fr'], rating: 4.8 },
-        { id: 2, name: 'Dr. Jean Luc Picard', email: 'contact@picard-trans.com', phone: '+33 1 2345', languages: ['fr', 'en'], rating: 4.5 },
-        { id: 4, name: 'Maria Garcia', email: 'm.garcia@global.lingua.es', phone: '+34 91 123', languages: ['es', 'de'], rating: 5.0 }
-    ]);
-
+    const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [showPartnerModal, setShowPartnerModal] = useState(false);
+    const [showDocTypeModal, setShowDocTypeModal] = useState(false);
     const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
-    const [isNewPartnerMode, setIsNewPartnerMode] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [editingPayment, setEditingPayment] = useState<any>(null);
 
-    // New Partner Form State
-    const [newPartnerData, setNewPartnerData] = useState<any>(null);
+    // Detailed Customer Form States REMOVED - Using UniversalForm
+    // Detailed Partner Form States REMOVED - Using UniversalForm
 
-    // Confirmation Dialog State
+    // API Data
+    const { data: customersData = [] } = useQuery({
+        queryKey: ['customers'],
+        queryFn: customerService.getAll,
+        enabled: isOpen
+    });
+
+    const { data: partnersData = [] } = useQuery({
+        queryKey: ['partners'],
+        queryFn: partnerService.getAll,
+        enabled: isOpen
+    });
+
+    const { data: languages = [] } = useQuery({
+        queryKey: ['settings', 'languages'],
+        queryFn: settingsService.getLanguages,
+        enabled: isOpen
+    });
+
+    const { data: docTypes = [] } = useQuery({
+        queryKey: ['settings', 'docTypes'],
+        queryFn: settingsService.getDocTypes,
+        enabled: isOpen
+    });
+
+    const custOptions = useMemo(() => {
+        return Array.isArray(customersData) ? customersData.map((c: any) => ({
+            value: c.id.toString(),
+            label: c.company_name || `${c.first_name} ${c.last_name}`
+        })) : [];
+    }, [customersData]);
+
+    const partnerOptions = useMemo(() => {
+        return Array.isArray(partnersData) ? partnersData.map((p: any) => ({
+            value: p.id.toString(),
+            label: p.company_name || `${p.first_name} ${p.last_name}`
+        })) : [];
+    }, [partnersData]);
+
+    const suggestedPartners = useMemo(() => {
+        if (!source || !target) return [];
+        return Array.isArray(partnersData) ? partnersData.filter((p: any) => {
+            const langs = p.languages || [];
+            return langs.includes(source) && langs.includes(target);
+        }) : [];
+    }, [partnersData, source, target]);
+
     const [confirmConfig, setConfirmConfig] = useState<{
         isOpen: boolean;
         title: string;
@@ -116,156 +150,136 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
     const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
 
-    // Derived Metadata for Sidebar
+    // Mutations
+    const createCustomerMutation = useMutation({
+        mutationFn: customerService.create,
+        onSuccess: (newCust) => {
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
+            setCustomer(newCust.id.toString());
+            setShowCustomerModal(false);
+        }
+    });
+
+    const createPartnerMutation = useMutation({
+        mutationFn: partnerService.create,
+        onSuccess: (newPartner) => {
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setTranslator(newPartner.id.toString());
+            setShowPartnerModal(false);
+        }
+    });
+
+    const createDocTypeMutation = useMutation({
+        mutationFn: settingsService.createDocType,
+        onSuccess: (newDocType) => {
+            queryClient.invalidateQueries({ queryKey: ['settings', 'docTypes'] });
+            setDocType([newDocType.id.toString()]);
+            setShowDocTypeModal(false);
+        }
+    });
+
     const creationDate = initialData?.createdAt || new Date().toLocaleDateString('de-DE');
     const projectManager = initialData?.pm || 'Admin';
 
-    // Synchronize calculations for all positions
     useEffect(() => {
         const updatedPositions = positions.map(pos => {
             const amount = parseFloat(pos.amount) || 0;
             const qty = parseFloat(pos.quantity) || 0;
             const totalUnits = amount * qty;
 
-            // Partner Calculation
             let pRate = parseFloat(pos.partnerRate) || 0;
-            let pTotal = 0;
+            let pTotal = pos.partnerMode === 'unit' ? totalUnits * pRate : pRate;
 
-            if (pos.partnerMode === 'unit') {
-                pTotal = totalUnits * pRate;
-            } else {
-                pTotal = pRate;
-            }
-
-            // Customer Calculation
             let cTotal = 0;
             let cRate = 0;
 
             if (pos.customerMode === 'unit') {
-                // Calculate based on Margin logic
                 const margin = (parseFloat(pos.marginPercent) || 0) / 100;
-
-                // Basis is Partner Total
-                // Make sure margin doesn't break math (e.g. infinite)
-                if (pos.marginType === 'markup') {
-                    cTotal = pTotal * (1 + margin);
-                } else if (pos.marginType === 'discount') {
-                    // Discount on Partner Cost (Selling for less than cost? Unusual but following user logic)
-                    // Or implies Discount on intended price? 
-                    // Assuming: Price = Cost * (1 - Discount)
-                    cTotal = pTotal * (1 - margin);
-                } else {
-                    // 'flat' in marginType (shouldnt happen as mode switches)
-                    cTotal = pTotal;
-                }
-
-                if (totalUnits > 0) {
-                    cRate = cTotal / totalUnits;
-                }
+                cTotal = pTotal * (pos.marginType === 'markup' ? (1 + margin) : (1 - margin));
+                if (totalUnits > 0) cRate = cTotal / totalUnits;
             } else {
-                // Flat Mode: User enters the Total Price directly
                 cTotal = parseFloat(pos.customerRate) || 0;
             }
 
-            const newPos = {
+            return {
                 ...pos,
                 partnerTotal: pTotal.toFixed(2),
                 customerTotal: cTotal.toFixed(2),
+                customerRate: pos.customerMode === 'unit' ? cRate.toFixed(4) : pos.customerRate
             };
-
-            // Only update customerRate calculation if in Unit mode (calculated field)
-            // If in Flat mode, we preserve the user's input exactly to allow typing decimals
-            if (pos.customerMode === 'unit') {
-                newPos.customerRate = cRate.toFixed(4);
-            }
-
-            return newPos;
         });
 
-        // Deep comparison to prevent infinite loop
         const isContentChanged = JSON.stringify(updatedPositions) !== JSON.stringify(positions);
         if (isContentChanged) {
             setPositions(updatedPositions);
         }
 
-        // Update Project Totals
         const totalP = updatedPositions.reduce((sum, p) => sum + parseFloat(p.partnerTotal || '0'), 0);
         const totalC = updatedPositions.reduce((sum, p) => sum + parseFloat(p.customerTotal || '0'), 0);
-
         setPartnerPrice(totalP.toFixed(2));
         setTotalPrice(totalC.toFixed(2));
-
     }, [positions]);
 
     useEffect(() => {
         if (isOpen && initialData) {
-            setName(initialData.name || '');
-            setCustomer(initialData.client || '');
-            setDeadline(initialData.due || '');
-            setSource(initialData.source || 'de');
-            setTarget(initialData.target || 'en');
+            setName(initialData.name || initialData.project_name || '');
+            setCustomer(initialData.customer_id?.toString() || initialData.client_id?.toString() || '');
+            setDeadline(initialData.due || initialData.deadline || '');
+            setSource(initialData.source || initialData.source_language?.iso_code?.split('-')[0] || 'de');
+            setTarget(initialData.target || initialData.target_language?.iso_code?.split('-')[0] || 'en');
             setPriority(initialData.priority || 'medium');
-            setIsCertified(initialData.isCertified || false);
-            setHasApostille(initialData.hasApostille || false);
-            setIsExpress(initialData.isExpress || false);
-            setClassification(initialData.classification || 'nein');
-            setCopies(initialData.copies || 0);
-            setCopyPrice(String(initialData.copyPrice || '5'));
+            setStatus(initialData.status || 'draft');
+            setIsCertified(initialData.isCertified || !!initialData.is_certified);
+            setHasApostille(initialData.hasApostille || !!initialData.has_apostille);
+            setIsExpress(initialData.isExpress || !!initialData.is_express);
+            setClassification(initialData.classification === 'ja' || initialData.classification === true ? 'ja' : 'nein');
+            setCopies(initialData.copies || initialData.copies_count || 0);
+            setCopyPrice(String(initialData.copyPrice || initialData.copy_price || '5'));
 
-            setDocType(initialData.docType ? (Array.isArray(initialData.docType) ? initialData.docType : [initialData.docType]) : []);
-            setTranslator(initialData.translator ? {
-                name: initialData.translator,
-                email: 'partner@example.com',
-                phone: '+49 123 456789',
-                rating: 4.8,
-                projects: 12
-            } : null);
-            // Map legacy data to positions if no positions exist
+            const initialDocTypes: string[] = [];
+            if (initialData.document_type_id) initialDocTypes.push(initialData.document_type_id.toString());
+            if (initialData.additional_doc_types && Array.isArray(initialData.additional_doc_types)) {
+                initialDocTypes.push(...initialData.additional_doc_types.map((id: any) => id.toString()));
+            }
+            setDocType([...new Set(initialDocTypes)]);
+
+            setTranslator(initialData.partner?.id?.toString() || initialData.translator?.id?.toString() || '');
+
             if (initialData.positions && Array.isArray(initialData.positions)) {
-                setPositions(initialData.positions);
-            } else {
-                setPositions([{
-                    id: Date.now().toString(),
-                    description: 'Hauptleistung',
-                    amount: initialData.vol ? String(initialData.vol).replace(/\D/g, '') || '1' : '1',
-                    unit: initialData.vol ? String(initialData.vol).replace(/[0-9\s]/g, '') || 'Wörter' : 'Wörter',
-                    quantity: '1',
-                    partnerRate: String(initialData.partnerUnitPrice || '0.05'),
-                    partnerMode: initialData.partnerPriceMode || 'unit',
-                    customerRate: String(initialData.unitPrice || '0.15'),
-                    customerMode: initialData.priceMode || 'unit',
-                    marginType: 'markup',
-                    marginPercent: '30'
-                }]);
+                setPositions(initialData.positions.map((p: any) => ({
+                    ...p,
+                    id: p.id.toString(),
+                    unit: p.unit || 'Normzeile',
+                    partnerRate: p.partner_rate || p.partnerRate || '0',
+                    customerRate: p.customer_rate || p.customerRate || '0',
+                    partnerMode: p.partner_mode || 'unit',
+                    customerMode: p.customer_mode || 'unit'
+                })));
             }
 
-            setTotalPrice(String(initialData.cost || ''));
-            setPartnerPrice(String(initialData.partnerCost || ''));
-            setDownPayment(String(initialData.downPayment || ''));
+            if (initialData.payments && Array.isArray(initialData.payments) && initialData.payments.length > 0) {
+                setPayments(initialData.payments.map((pmnt: any) => ({
+                    ...pmnt,
+                    id: pmnt.id?.toString() || Date.now().toString() + Math.random()
+                })));
+            } else if (initialData.down_payment && parseFloat(initialData.down_payment) > 0) {
+                setPayments([{
+                    id: Date.now().toString(),
+                    amount: initialData.down_payment.toString(),
+                    payment_date: initialData.down_payment_date || new Date().toISOString(),
+                    payment_method: initialData.down_payment_method || 'Überweisung',
+                    note: initialData.down_payment_note || 'Anzahlung'
+                }]);
+            } else {
+                setPayments([]);
+            }
 
-            setIsNewCustomerMode(false);
-            resetCustomerForm();
-        } else if (isOpen && !initialData) {
+            setNotes(initialData.notes || '');
+            setShowCustomerModal(false);
+        } else if (isOpen) {
             resetForm();
         }
     }, [isOpen, initialData]);
-
-    const resetCustomerForm = () => {
-        setCustType('private');
-        setCustCompany('');
-        setCustSalutation('Herr');
-        setCustFirstName('');
-        setCustLastName('');
-        setCustStreet('');
-        setCustHouseNo('');
-        setCustZip('');
-        setCustCity('');
-        setCustEmail('');
-    };
-
-    const resetPartnerForm = () => {
-        // Obsolete
-    };
 
     const resetForm = () => {
         setName('');
@@ -274,77 +288,85 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setSource('de');
         setTarget('en');
         setPriority('low');
-        setIsCertified(true);
+        setStatus('draft');
+        setIsCertified(false);
         setHasApostille(false);
         setIsExpress(false);
         setClassification('nein');
         setCopies(0);
         setCopyPrice('5');
-        setIsNewCustomerMode(false);
-        resetCustomerForm();
         setDocType([]);
-        setTranslator(null);
+        setTranslator('');
         setPositions([{
             id: Date.now().toString(),
-            description: '',
+            description: 'Übersetzung',
             amount: '1',
             unit: 'Normzeile',
             quantity: '1',
-            partnerRate: '0.05',
+            partnerRate: '0.00',
             partnerMode: 'unit',
-            customerRate: '0.15',
+            customerRate: '0.00',
             customerMode: 'unit',
             marginType: 'markup',
-            marginPercent: '30'
+            marginPercent: '0'
         }]);
         setTotalPrice('');
         setPartnerPrice('');
-        setDownPayment('');
+        setPayments([]);
         setNotes('');
-        resetPartnerForm();
     };
 
     if (!isOpen) return null;
 
-    const handleApplyCustomer = () => {
-        // Validation logic for customer could be here
-        if (custType !== 'private' && !custCompany) return;
-        if (!custLastName) return;
-
-        const label = custType === 'private' ? `${custFirstName} ${custLastName}` : `${custCompany} (${custLastName})`;
-
-        // Add to options if not exists
-        if (!custOptions.find(o => o.value === label)) {
-            setCustOptions(prev => [...prev, { value: label, label }]);
-        }
-
-        setCustomer(label);
-        setIsNewCustomerMode(false);
+    const handleApplyCustomer = (data: any) => {
+        // Map modal data to API format if needed, NewCustomerModal uses relatively flat structure, check API expectations
+        createCustomerMutation.mutate({
+            company_name: data.company_name,
+            salutation: data.salutation,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            email: data.email,
+            address: data.address_street, // Check if backend expects structured address or single string
+            zip: data.address_zip,
+            city: data.address_city,
+            type: data.type
+            // Add other fields as necessary
+        });
     };
 
-    const handleEditCustomer = () => {
-        if (!customer) return;
-
-        // Simple mock parsing for demo purposes
-        // Real app would fetch customer data by ID
-        if (customer.includes('GmbH') || customer.includes('Agency') || customer.includes('Kanzlei')) {
-            setCustType('company');
-            setCustCompany(customer.split(' (')[0] || customer);
-            setCustLastName(customer.includes('(') ? customer.split('(')[1].replace(')', '') : '');
-        } else {
-            setCustType('private');
-            const parts = customer.split(' ');
-            setCustFirstName(parts[0] || '');
-            setCustLastName(parts.slice(1).join(' ') || '');
-        }
-        setIsNewCustomerMode(true);
+    const handleApplyPartner = (data: any) => {
+        // NewPartnerModal usually returns data ready for API or close to it.
+        // PartnerForm uses camelCase, API expects snake_case.
+        // We probably need a mapper if NewPartnerModal doesn't do it.
+        // Assuming PartnerForm returns roughly what we need, we might need to map keys.
+        // HOWEVER, partnerService.create expects snake_case.
+        const payload = {
+            company_name: data.company || data.company_name,
+            salutation: data.salutation, // Might be missing in PartnerForm? PartnerForm has simpler structure often.
+            first_name: data.firstName,
+            last_name: data.lastName,
+            email: data.emails?.[0] || data.email,
+            // Map other fields from PartnerForm output (camelCase) to snake_case
+            street: data.street,
+            zip: data.zip,
+            city: data.city,
+            phone: data.phones?.[0] || data.phone,
+            languages: data.languages,
+            price_list: data.priceList
+        };
+        createPartnerMutation.mutate(payload);
     };
 
-    const handleSubmit = () => {
-        // Validation logic
+    const handleApplyDocType = (data: any) => {
+        createDocTypeMutation.mutate(data);
+    };
+
+
+
+    const handleSubmit = async () => {
         const newErrors = new Set<string>();
         if (!name) newErrors.add('name');
-        if (!customer && !isNewCustomerMode) newErrors.add('customer');
+        if (!customer && !showCustomerModal) newErrors.add('customer');
         if (!source) newErrors.add('source');
         if (!target) newErrors.add('target');
         if (!deadline) newErrors.add('deadline');
@@ -352,31 +374,51 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setValidationErrors(newErrors);
         if (newErrors.size > 0) return;
 
-        onSubmit({
-            ...initialData,
-            id: initialData?.id || `P-2024-${Math.floor(Math.random() * 1000) + 1000}`,
-            name,
-            client: customer,
-            source,
-            target,
-            due: deadline,
+        const sourceLangId = languages.find((l: any) => l.iso_code.startsWith(source))?.id || 1;
+        const targetLangId = languages.find((l: any) => l.iso_code.startsWith(target))?.id || 2;
+
+        const payload = {
+            project_name: name,
+            customer_id: parseInt(customer),
+            partner_id: translator ? parseInt(translator) : null,
+            source_lang_id: sourceLangId,
+            target_lang_id: targetLangId,
+            deadline,
             priority,
-            isCertified,
-            hasApostille,
-            isExpress,
-            classification,
-            copies,
-            copyPrice: Number(copyPrice),
-            docType,
-            translator: translator ? translator.name : '',
-            positions,
-            cost: Number(totalPrice) || 0,
-            partnerCost: Number(partnerPrice) || 0,
-            downPayment: Number(downPayment) || 0,
+            status,
+            is_certified: isCertified,
+            has_apostille: hasApostille,
+            is_express: isExpress,
+            classification: classification === 'ja',
+            copies_count: copies,
+            copy_price: parseFloat(copyPrice) || 0,
+            price_total: parseFloat(totalPrice) || 0,
+            partner_cost_net: parseFloat(partnerPrice) || 0,
+            document_type_id: docType.length > 0 ? parseInt(docType[0]) : null,
+            additional_doc_types: docType.length > 1 ? docType.slice(1) : null,
             notes,
-        });
-        onClose();
-        if (!initialData) resetForm();
+            positions: positions.map(p => ({
+                description: p.description,
+                unit: p.unit,
+                amount: parseFloat(p.amount) || 0,
+                quantity: parseFloat(p.quantity) || 0,
+                partner_rate: parseFloat(p.partnerRate) || 0,
+                partner_mode: p.partnerMode,
+                partner_total: parseFloat(p.partnerTotal) || 0,
+                customer_rate: parseFloat(p.customerRate) || 0,
+                customer_mode: p.customerMode,
+                customer_total: parseFloat(p.customerTotal) || 0,
+                margin_type: p.marginType,
+                margin_percent: parseFloat(p.marginPercent) || 0
+            })),
+            payments: payments.map(p => ({
+                amount: parseFloat(p.amount) || 0,
+                payment_date: p.payment_date,
+                payment_method: p.payment_method,
+                note: p.note
+            }))
+        };
+        onSubmit(payload);
     };
 
     const handleDelete = () => {
@@ -393,909 +435,412 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         });
     };
 
-    // Calculations
     const extraCosts = (isCertified ? 5 : 0) + (hasApostille ? 15 : 0) + (isExpress ? 15 : 0) + (classification === 'ja' ? 15 : 0) + (copies * Number(copyPrice) || 0);
-    const baseNet = Number(totalPrice) || 0;
+    const baseNet = parseFloat(totalPrice) || 0;
     const calcNet = baseNet + extraCosts;
     const calcTax = calcNet * 0.19;
     const calcGross = calcNet + calcTax;
-    const remainingBalance = calcGross - (Number(downPayment) || 0);
-    const profit = calcNet - (Number(partnerPrice) || 0);
+    const totalPaid = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    const remainingBalance = calcGross - totalPaid;
+    const profit = calcNet - (parseFloat(partnerPrice) || 0);
     const profitMargin = calcNet > 0 ? (profit / calcNet) * 100 : 0;
 
     const handlePartnerSelect = (partner: any) => {
-        setTranslator(partner);
+        setTranslator(partner.id.toString());
         setIsPartnerModalOpen(false);
     };
 
-    const addPosition = () => {
-        setPositions([
-            ...positions,
-            {
-                id: Date.now().toString(),
-                description: '',
-                amount: '1',
-                unit: 'Normzeile',
-                quantity: '1',
-                partnerRate: '0.05',
-                partnerMode: 'unit',
-                partnerTotal: '0.00',
-                customerRate: '0.15',
-                customerTotal: '0.00',
-                customerMode: 'unit',
-                marginType: 'markup',
-                marginPercent: '30'
-            }
-        ]);
+    const handleSavePayment = (payment: any) => {
+        if (editingPayment) {
+            setPayments(payments.map(p => p.id === payment.id ? payment : p));
+        } else {
+            setPayments([...payments, payment]);
+        }
+        setIsPaymentModalOpen(false);
+        setEditingPayment(null);
+    };
+
+    const handleEditPayment = (payment: any) => {
+        setEditingPayment(payment);
+        setIsPaymentModalOpen(true);
+    };
+
+    const handleDeletePayment = (id: string) => {
+        setPayments(payments.filter(p => p.id !== id));
     };
 
     return (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-6xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] animate-fadeInUp">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] animate-fadeInUp">
                 {/* Header */}
                 <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
-                        <h3 className="font-bold text-slate-800 text-lg uppercase tracking-tight">
-                            {initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}
-                        </h3>
-                        <span className="text-[10px] font-bold text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded uppercase tracking-widest shadow-sm">
-                            ID: {initialData?.id || 'Entwurf'}
-                        </span>
+                        <h3 className="font-bold text-slate-800 text-lg uppercase tracking-tight">{initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}</h3>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="flex bg-slate-200/50 rounded-lg p-0.5 border border-slate-300/50 h-9">
                             {['low', 'medium', 'high'].map(p => (
-                                <button
-                                    key={p}
-                                    onClick={() => setPriority(p as any)}
-                                    className={clsx(
-                                        "px-3 h-full text-[10px] font-bold uppercase rounded-md transition-all flex items-center gap-2",
-                                        priority === p ? (
-                                            p === 'low' ? "bg-white text-emerald-700 shadow-sm" :
-                                                p === 'medium' ? "bg-white text-orange-700 shadow-sm" :
-                                                    "bg-white text-red-700 shadow-sm"
-                                        ) : "text-slate-500 hover:text-slate-700"
-                                    )}
-                                >
-                                    <FaFlag className={clsx("text-[8px]", priority === p ? (p === 'low' ? 'text-emerald-500' : p === 'medium' ? 'text-orange-500' : 'text-red-500') : 'text-slate-400')} />
+                                <button key={p} onClick={() => setPriority(p as any)} className={clsx("px-3 h-full text-[10px] font-bold uppercase rounded-md transition-all flex items-center gap-2", priority === p ? "bg-white text-brand-700 shadow-sm" : "text-slate-400 hover:text-slate-600")}>
+                                    {p === 'low' && <FaClock className="text-[8px]" />}
+                                    {p === 'medium' && <FaFlag className="text-[8px]" />}
+                                    {p === 'high' && <FaBolt className="text-[8px]" />}
                                     {p === 'low' ? 'Standard' : p === 'medium' ? 'Dringend' : 'Express'}
                                 </button>
                             ))}
                         </div>
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
-                            <FaTimes />
-                        </button>
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-hidden flex">
-                    {/* Left Column: Form */}
-                    <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar border-r border-slate-200 bg-white">
-                        {/* Section: Basisdaten */}
+                <div className="flex-1 lg:overflow-hidden overflow-y-auto flex flex-col lg:flex-row">
+                    {/* Left Column */}
+                    <div className="lg:flex-1 lg:overflow-y-auto p-3 sm:p-6 space-y-8 custom-scrollbar border-b lg:border-b-0 lg:border-r border-slate-200 bg-white">
+                        {/* Stammdaten */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">01</div>
-                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Projekt-Stammdaten</h4>
+                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Stammdaten</h4>
                             </div>
 
-                            <div className="space-y-6">
-                                <Input
-                                    label="Projektbezeichnung *"
-                                    placeholder="Name des Auftrags..."
-                                    value={name}
-                                    error={validationErrors.has('name')}
-                                    onChange={(e) => {
-                                        setName(e.target.value);
-                                        if (validationErrors.has('name')) {
-                                            const next = new Set(validationErrors);
-                                            next.delete('name');
-                                            setValidationErrors(next);
-                                        }
-                                    }}
-                                />
+                            <Input label="Projektname *" placeholder="Name..." value={name} onChange={e => setName(e.target.value)} error={validationErrors.has('name')} />
 
-                                {/* Customer Section - Full Width */}
-                                <div>
-                                    <div className="flex justify-between items-center mb-1.5">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kunde *</label>
-                                        {isNewCustomerMode && (
-                                            <button onClick={() => setIsNewCustomerMode(false)} className="text-[10px] text-brand-600 font-bold hover:underline flex items-center gap-1">
-                                                <FaTimes className="text-xs" /> Abbrechen
-                                            </button>
-                                        )}
+                            <div className="">
+                                <div className="flex items-end">
+                                    <div className="flex-1">
+                                        <SearchableSelect label="Kunde auswählen *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
                                     </div>
-
-                                    {!isNewCustomerMode ? (
-                                        <div className="space-y-2">
-                                            <div className="flex">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="bg-white rounded-l border border-r-0 border-slate-300 h-10 flex items-center">
-                                                        <SearchableSelect
-                                                            options={custOptions}
-                                                            value={customer}
-                                                            onChange={setCustomer}
-                                                            placeholder="Kunden suchen oder auswählen..."
-                                                            className="border-0 shadow-none focus:ring-0 rounded-l h-full"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <button
-                                                    onClick={() => {
-                                                        resetCustomerForm();
-                                                        setIsNewCustomerMode(true);
-                                                    }}
-                                                    className="h-10 px-4 bg-brand-700 text-white rounded-r hover:bg-brand-800 transition active:scale-95 flex items-center gap-2 shadow-sm border border-brand-700"
-                                                    title="Neuen Kunden anlegen"
-                                                >
-                                                    <FaPlus className="text-xs" />
-                                                    <span className="text-xs font-bold uppercase">Neu</span>
-                                                </button>
-                                            </div>
-
-                                            {customer && (
-                                                <div className="flex items-center gap-4 px-1 animate-fadeIn">
-                                                    <button onClick={handleEditCustomer} className="text-[10px] font-bold text-slate-500 hover:text-brand-600 flex items-center gap-1.5 group transition">
-                                                        <FaEye className="text-[10px] group-hover:scale-110 transition" /> Details ansehen
-                                                    </button>
-                                                    <span className="text-slate-300">|</span>
-                                                    <a href={`/customers/${encodeURIComponent(customer)}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-brand-600 hover:text-brand-800 flex items-center gap-1.5 group">
-                                                        <FaExternalLinkAlt className="text-[8px] group-hover:scale-110 transition" /> Kunden-Akte öffnen
-                                                    </a>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4 animate-fadeIn pt-2">
-                                            {/* Customer Type Toggle */}
-                                            <div className="flex justify-start">
-                                                <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
-                                                    {['private', 'company', 'authority'].map(t => (
-                                                        <button
-                                                            key={t}
-                                                            onClick={() => setCustType(t as any)}
-                                                            className={clsx(
-                                                                "px-4 py-1.5 text-[10px] font-bold uppercase rounded-md transition",
-                                                                custType === t ? "bg-slate-100 text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                                                            )}
-                                                        >
-                                                            {t === 'private' ? 'Privatperson' : t === 'company' ? 'Firma' : 'Behörde'}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Form Fields in Columns */}
-                                            <div className="grid grid-cols-2 gap-4">
-                                                {custType !== 'private' && (
-                                                    <div className="col-span-2">
-                                                        <Input
-                                                            placeholder={custType === 'company' ? 'Firmenname' : 'Behördenbezeichnung'}
-                                                            value={custCompany}
-                                                            onChange={e => setCustCompany(e.target.value)}
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                <div className="col-span-2 grid grid-cols-12 gap-3">
-                                                    <div className="col-span-3">
-                                                        <Input
-                                                            isSelect
-                                                            value={custSalutation}
-                                                            onChange={e => setCustSalutation(e.target.value)}
-                                                        >
-                                                            <option>Herr</option><option>Frau</option><option>Dr.</option><option>Prof.</option>
-                                                        </Input>
-                                                    </div>
-                                                    <div className="col-span-4">
-                                                        <Input
-                                                            placeholder="Vorname"
-                                                            value={custFirstName}
-                                                            onChange={e => setCustFirstName(e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <div className="col-span-5">
-                                                        <Input
-                                                            placeholder="Nachname"
-                                                            value={custLastName}
-                                                            onChange={e => setCustLastName(e.target.value)}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="col-span-2 grid grid-cols-4 gap-3">
-                                                    <div className="col-span-3">
-                                                        <Input
-                                                            placeholder="Straße"
-                                                            value={custStreet}
-                                                            onChange={e => setCustStreet(e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <div className="col-span-1">
-                                                        <Input
-                                                            placeholder="Nr."
-                                                            value={custHouseNo}
-                                                            onChange={e => setCustHouseNo(e.target.value)}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="col-span-1">
-                                                    <Input
-                                                        placeholder="PLZ"
-                                                        value={custZip}
-                                                        onChange={e => setCustZip(e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="col-span-1">
-                                                    <Input
-                                                        placeholder="Stadt"
-                                                        value={custCity}
-                                                        onChange={e => setCustCity(e.target.value)}
-                                                    />
-                                                </div>
-
-                                                <div className="col-span-2">
-                                                    <Input
-                                                        type="email"
-                                                        placeholder="E-Mail Adresse"
-                                                        value={custEmail}
-                                                        onChange={e => setCustEmail(e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="flex justify-end pt-2">
-                                                <button onClick={handleApplyCustomer} className="px-6 py-2.5 bg-brand-700 text-white rounded text-xs font-bold uppercase hover:bg-brand-800 shadow-md transition active:scale-95 flex items-center gap-2">
-                                                    <FaPlus /> Speichern & Übernehmen
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
+                                    <button onClick={() => setShowCustomerModal(true)} className="h-[38px] px-4 bg-brand-700 text-white rounded-r rounded-l-none hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-bold">NEU</span></button>
                                 </div>
+                            </div>
 
-                                {/* Row: Deadline & Languages */}
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Lieferdatum *</label>
-                                        <div className="relative h-10">
-                                            <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10" />
-                                            <DatePicker
-                                                selected={deadline ? new Date(deadline) : null}
-                                                onChange={(date: Date | null) => setDeadline(date ? date.toISOString().split('T')[0] : '')}
-                                                dateFormat="dd.MM.yyyy"
-                                                locale="de"
-                                                className="w-full h-10 border border-slate-300 rounded pl-9 pr-3 py-2 text-sm focus:border-brand-500 outline-none shadow-sm cursor-pointer"
-                                                placeholderText="Datum wählen"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <LanguageSelect
-                                            label="Ausgangssprache *"
-                                            value={source}
-                                            onChange={setSource}
-                                        />
-                                    </div>
-                                    <div>
-                                        <LanguageSelect
-                                            label="Zielsprache *"
-                                            value={target}
-                                            onChange={setTarget}
+                            <NewCustomerModal
+                                isOpen={showCustomerModal}
+                                onClose={() => setShowCustomerModal(false)}
+                                onSubmit={handleApplyCustomer}
+                            />
+
+
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <Input isSelect label="Status" value={status} onChange={e => setStatus(e.target.value)}>
+                                    <option value="draft">Entwurf</option>
+                                    <option value="pending">Angebot</option>
+                                    <option value="in_progress">In Bearbeitung</option>
+                                    <option value="review">QS / Lektorat</option>
+                                    <option value="completed">Abgeschlossen</option>
+                                </Input>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Lieferdatum *</label>
+                                    <div className={clsx("relative h-10 border rounded transition-all", validationErrors.has('deadline') ? "border-red-500" : "border-slate-300")}>
+                                        <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10" />
+                                        <DatePicker
+                                            selected={deadline ? new Date(deadline) : null}
+                                            onChange={(date: Date | null) => setDeadline(date ? date.toISOString() : '')}
+                                            showTimeSelect
+                                            timeFormat="HH:mm"
+                                            timeIntervals={15}
+                                            dateFormat="dd.MM.yyyy HH:mm"
+                                            locale="de"
+                                            className="w-full h-9 bg-transparent border-none pl-9 pr-3 py-2 text-sm font-bold text-slate-700 outline-none cursor-pointer"
+                                            placeholderText="Datum/Zeit wählen"
                                         />
                                     </div>
                                 </div>
+                            </div>
 
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <LanguageSelect label="Ausgangssprache *" value={source} onChange={setSource} error={validationErrors.has('source')} />
+                                <LanguageSelect label="Zielsprache *" value={target} onChange={setTarget} error={validationErrors.has('target')} />
+                            </div>
 
+                            {/* Partner Selection */}
+                            <div className="space-y-3">
+                                {suggestedPartners.length > 0 && !translator && (
+                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg overflow-hidden mb-2">
+                                        <div className="px-3 py-1.5 bg-emerald-100/50 text-emerald-800 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                            <FaMagic /> Empfohlene Übersetzer ({source.toUpperCase()} &rarr; {target.toUpperCase()})
+                                        </div>
+                                        <table className="w-full text-left">
+                                            <tbody className="divide-y divide-emerald-100/50">
+                                                {suggestedPartners.map((p: any) => (
+                                                    <tr key={p.id} className="hover:bg-emerald-100/30 cursor-pointer group transition-colors" onClick={() => setTranslator(p.id.toString())}>
+                                                        <td className="px-3 py-2">
+                                                            <div className="text-[11px] font-bold text-slate-700">{p.first_name} {p.last_name}</div>
+                                                            {p.company_name && <div className="text-[9px] text-slate-500">{p.company_name}</div>}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-right">
+                                                            <div className="flex items-center justify-end gap-1 text-[9px] font-bold text-emerald-600">
+                                                                <span>Übernehmen</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
 
-                                <div>
-                                    <MultiSelect
-                                        label="Dokumentenart"
-                                        options={[
-                                            { value: 'urkunde', label: 'Urkunde / Zeugnis' },
-                                            { value: 'vertrag', label: 'Vertrag / Recht' },
-                                            { value: 'medizin', label: 'Medizinischer Befund' },
-                                            { value: 'web', label: 'Website / Marketing' },
-                                            { value: 'technik', label: 'Techn. Dokumentation' }
-                                        ]}
-                                        value={docType}
-                                        onChange={setDocType}
-                                        placeholder="Art der Dokumente wählen..."
-                                    />
+                                <div className="flex items-end">
+                                    <div className="flex-1">
+                                        <SearchableSelect label="Übersetzer / Partner auswählen" options={partnerOptions} value={translator} onChange={setTranslator} />
+                                    </div>
+                                    <button onClick={() => setShowPartnerModal(true)} className="h-[38px] px-4 bg-brand-700 text-white rounded-r rounded-l-none hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-bold">NEU</span></button>
                                 </div>
                             </div>
+
+                            <NewPartnerModal
+                                isOpen={showPartnerModal}
+                                onClose={() => setShowPartnerModal(false)}
+                                onSubmit={handleApplyPartner}
+                                isLoading={createPartnerMutation.isPending}
+                            />
                         </div>
 
-                        {/* Section: Services & Options */}
+                        {/* Leistungen */}
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">02</div>
-                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Leistungen & Zusatzoptionen</h4>
+                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Leistungen & Optionen</h4>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-4">
-                                <div className="col-span-1">
-                                    <Input
-                                        label="Beglaubigung (5€)"
-                                        isSelect
-                                        value={isCertified ? 'ja' : 'nein'}
-                                        onChange={(e) => setIsCertified(e.target.value === 'ja')}
-                                    >
-                                        <option value="nein">Nein</option>
-                                        <option value="ja">Ja</option>
-                                    </Input>
-                                </div>
-                                <div className="col-span-1">
-                                    <Input
-                                        label="Express (+15€)"
-                                        isSelect
-                                        value={isExpress ? 'ja' : 'nein'}
-                                        onChange={(e) => setIsExpress(e.target.value === 'ja')}
-                                    >
-                                        <option value="nein">Nein</option>
-                                        <option value="ja">Ja</option>
-                                    </Input>
-                                </div>
-                                <div className="col-span-1">
-                                    <Input
-                                        label="Apostille (15€)"
-                                        isSelect
-                                        value={hasApostille ? 'ja' : 'nein'}
-                                        onChange={(e) => setHasApostille(e.target.value === 'ja')}
-                                    >
-                                        <option value="nein">Nein</option>
-                                        <option value="ja">Ja</option>
-                                    </Input>
-                                </div>
-                                <div className="col-span-1">
-                                    <Input
-                                        label="Führers.- Klassif. (15€)"
-                                        isSelect
-                                        value={classification}
-                                        onChange={(e) => setClassification(e.target.value)}
-                                    >
-                                        <option value="nein">Nein</option>
-                                        <option value="ja">Ja</option>
-                                    </Input>
-                                </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                <Input label="Beglaubigung" isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="Express" isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="Apostille" isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="FS-Klass." isSelect value={classification} onChange={(e) => setClassification(e.target.value)}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
                             </div>
-
-                            <div className="flex items-center gap-10 py-2 mb-2">
-                                <div className="flex items-center gap-3">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kopien</label>
-                                    <div className="flex items-center bg-white border border-slate-200 rounded-none overflow-hidden shadow-sm h-10">
-                                        <button onClick={() => setCopies(Math.max(0, copies - 1))} className="px-3 h-full hover:bg-slate-50 text-slate-400 font-bold transition">-</button>
-                                        <input type="number" readOnly value={copies} className="w-10 text-center text-sm font-bold bg-transparent outline-none" />
-                                        <button onClick={() => setCopies(copies + 1)} className="px-3 h-full hover:bg-slate-50 text-slate-400 font-bold transition">+</button>
+                            <div className="grid grid-cols-1">
+                                <div className="flex items-end">
+                                    <div className="flex-1">
+                                        <SearchableSelect
+                                            label="Dokumentenart"
+                                            value={docType[0] || ''}
+                                            onChange={(val) => setDocType([val])}
+                                            options={docTypes.map((dt: any) => ({ value: dt.id.toString(), label: dt.title || dt.name }))}
+                                        />
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-3 w-40">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Stk. Preis</label>
-                                    <Input
-                                        type="number"
-                                        step="0.0001"
-                                        value={copyPrice}
-                                        onChange={(e) => setCopyPrice(e.target.value)}
-                                        endIcon="€"
-                                        className="h-10 text-right font-bold"
-                                        containerClassName="flex-1"
-                                    />
-                                </div>
-                                <div className="ml-auto flex flex-col items-end">
-                                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-0.5">Kopien Summe</span>
-                                    <span className="text-sm font-black text-slate-600">{(copies * Number(copyPrice)).toFixed(2)} €</span>
+                                    <button onClick={() => setShowDocTypeModal(true)} className="h-[38px] px-4 bg-brand-700 text-white rounded-r rounded-l-none hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-bold">NEU</span></button>
                                 </div>
                             </div>
+                            <NewDocTypeModal
+                                isOpen={showDocTypeModal}
+                                onClose={() => setShowDocTypeModal(false)}
+                                onSubmit={handleApplyDocType}
+                                isLoading={createDocTypeMutation.isPending}
+                            />
                         </div>
 
-                        {/* Unified Section: Positions & Calculation */}
+                        {/* Positions */}
                         <div className="space-y-6 pt-4">
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">03</div>
-                                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Leistungen & Kalkulation</h4>
-                                </div>
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">03</div>
+                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Kalkulation Positionen</h4>
                             </div>
 
-                            {/* Partner Selection above positions */}
-                            <div className="border-t border-dotted border-slate-300 pt-6 pb-2">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Partner-Zuweisung (Global)</label>
-                                <div className="space-y-4">
-                                    {!isNewPartnerMode ? (
-                                        <div className="flex px-1">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="bg-white rounded-l border border-r-0 border-slate-300 h-10 flex items-center shadow-sm">
-                                                    <SearchableSelect
-                                                        options={partnersList.map(p => ({
-                                                            value: p.name,
-                                                            label: `${p.name} (${p.languages.join(', ').toUpperCase()})`
-                                                        }))}
-                                                        value={translator?.name || ''}
-                                                        onChange={(val) => {
-                                                            const p = partnersList.find(opt => opt.name === val);
-                                                            if (p) setTranslator(p);
-                                                            else setTranslator({ name: val });
-                                                        }}
-                                                        placeholder="Übersetzer suchen oder auswählen..."
-                                                        className="border-0 shadow-none focus:ring-0 rounded-l h-full"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    resetPartnerForm();
-                                                    setIsNewPartnerMode(true);
-                                                }}
-                                                className="h-10 px-4 bg-brand-700 text-white rounded-r hover:bg-brand-800 transition active:scale-95 flex items-center gap-2 shadow-sm border border-brand-700"
-                                                title="Neuen Partner anlegen"
-                                            >
-                                                <FaPlus className="text-xs" />
-                                                <span className="text-xs font-bold uppercase">Neu</span>
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="animate-fadeIn space-y-5 mx-1 relative pt-4">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Neuen Partner erfassen</h5>
-                                                <button
-                                                    onClick={() => setIsNewPartnerMode(false)}
-                                                    className="text-[10px] text-red-500 font-bold hover:text-red-700 transition flex items-center gap-1"
-                                                >
-                                                    <FaTimes className="text-xs" /> Abbrechen
-                                                </button>
-                                            </div>
-                                            <PartnerForm layout="compact" onChange={setNewPartnerData} validationErrors={validationErrors} />
-                                            <div className="flex justify-end pt-2">
-                                                <button onClick={() => {
-                                                    if (!newPartnerData?.firstName || !newPartnerData?.lastName) return;
-                                                    const fullNewName = `${newPartnerData.firstName} ${newPartnerData.lastName}`;
-                                                    const newPartner = {
-                                                        ...newPartnerData,
-                                                        id: Date.now(),
-                                                        name: fullNewName,
-                                                        languages: newPartnerData.languages || []
-                                                    };
-                                                    setPartnersList(prev => [...prev, newPartner]);
-                                                    setTranslator(newPartner);
-                                                    setIsNewPartnerMode(false);
-                                                }} className="px-6 py-2.5 bg-brand-700 text-white rounded text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-brand-800 transition active:scale-95">Partner übernehmen</button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {!isNewPartnerMode && (
-                                        <div className="flex justify-start px-1 mt-2">
-                                            <button
-                                                onClick={() => setIsPartnerModalOpen(true)}
-                                                className="text-[10px] text-blue-600 font-bold hover:underline transition flex items-center gap-1.5 px-1"
-                                            >
-                                                <FaSearch className="text-[9px]" /> Suche nach weiteren Partnern
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* LEISTUNGEN START */}
                             <div className="space-y-4">
                                 {positions.map((pos, index) => (
-                                    <div key={pos.id} className="border border-slate-200 rounded-lg mb-4 overflow-hidden shadow-sm bg-white">
-                                        {/* Header: Number & Description */}
+                                    <div key={pos.id} className="border border-slate-200 rounded-lg overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
                                         <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex items-center gap-3">
-                                            <span className="text-xs font-black text-slate-400 font-mono">
-                                                {String(index + 1).padStart(2, '0')}.
-                                            </span>
-                                            <div className="flex-1">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Positionsbeschreibung (z.B. Übersetzung Dokument...)"
-                                                    className="w-full bg-transparent border-none text-sm font-bold text-slate-800 focus:ring-0 placeholder:text-slate-400 p-0"
-                                                    value={pos.description}
-                                                    onChange={(e) => {
-                                                        const newPos = [...positions];
-                                                        newPos[index].description = e.target.value;
-                                                        setPositions(newPos);
-                                                    }}
-                                                />
-                                            </div>
-                                            {positions.length > 1 && (
-                                                <button
-                                                    onClick={() => setPositions(positions.filter(p => p.id !== pos.id))}
-                                                    className="text-slate-300 hover:text-red-500 transition p-1 hover:bg-slate-100 rounded"
-                                                    title="Position löschen"
-                                                >
-                                                    <FaTrash size={12} />
-                                                </button>
-                                            )}
+                                            <span className="text-xs font-black text-slate-400">{String(index + 1).padStart(2, '0')}.</span>
+                                            <input type="text" placeholder="Bezeichnung..." className="flex-1 bg-transparent border-none text-sm font-bold text-slate-800 focus:ring-0" value={pos.description} onChange={e => { const n = [...positions]; n[index].description = e.target.value; setPositions(n); }} />
+                                            {positions.length > 1 && <button onClick={() => setPositions(positions.filter(p => p.id !== pos.id))} className="text-slate-300 hover:text-red-500 transition p-1"><FaTrash /></button>}
                                         </div>
-
-                                        <div className="p-4 grid grid-cols-12 gap-6 items-end">
-                                            {/* Column 1: Quantity & Unit */}
-                                            <div className="col-span-12 md:col-span-4 space-y-4">
-                                                <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Menge & Einheit</label>
-                                                    <div className="flex gap-2">
-                                                        {/* Quantity */}
-                                                        <div className="w-16 flex-shrink-0">
-                                                            <div className="flex border border-slate-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-brand-500 focus-within:border-brand-500 transition-all bg-white h-9">
-                                                                <input
-                                                                    type="number"
-                                                                    className="w-full h-full px-1 text-center text-sm font-bold text-slate-700 outline-none border-none bg-transparent"
-                                                                    value={pos.quantity}
-                                                                    onChange={(e) => {
-                                                                        const n = [...positions]; n[index].quantity = e.target.value; setPositions(n);
-                                                                    }}
-                                                                    placeholder="1"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex-1 flex gap-2">
-                                                            <div className="flex-1 flex border border-slate-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-brand-500 focus-within:border-brand-500 transition-all bg-white h-9">
-                                                                <input
-                                                                    type="number"
-                                                                    className="w-full h-full px-3 text-sm font-bold text-slate-700 outline-none border-none bg-transparent min-w-0"
-                                                                    value={pos.amount}
-                                                                    onChange={(e) => {
-                                                                        const n = [...positions]; n[index].amount = e.target.value; setPositions(n);
-                                                                    }}
-                                                                    placeholder="0"
-                                                                />
-                                                            </div>
-                                                            <div className="w-[100px] flex-shrink-0 border border-slate-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-brand-500 focus-within:border-brand-500 transition-all bg-slate-50 h-9">
-                                                                <select
-                                                                    className="w-full h-full px-2 text-[11px] font-bold text-slate-600 bg-transparent outline-none cursor-pointer hover:bg-slate-100 transition-colors"
-                                                                    value={pos.unit}
-                                                                    onChange={(e) => {
-                                                                        const n = [...positions]; n[index].unit = e.target.value; setPositions(n);
-                                                                    }}
-                                                                >
-                                                                    <option>Wörter</option>
-                                                                    <option>Normzeile</option>
-                                                                    <option>Seiten</option>
-                                                                    <option>Stunden</option>
-                                                                    <option>Stück</option>
-                                                                    <option>Pauschal</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                        <div className="p-3 grid grid-cols-12 gap-x-4 gap-y-4 items-start">
+                                            <div className="col-span-12 md:col-span-6 lg:col-span-4 space-y-2">
+                                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menge & Einheit</label>
+                                                <div className="flex border border-slate-300 rounded overflow-hidden h-9">
+                                                    <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 outline-none" value={pos.amount} onChange={e => { const n = [...positions]; n[index].amount = e.target.value; setPositions(n); }} />
+                                                    <select className="w-24 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.unit} onChange={e => { const n = [...positions]; n[index].unit = e.target.value; setPositions(n); }}>
+                                                        <option>Wörter</option><option>Normzeile</option><option>Seiten</option><option>Stunden</option><option>Pauschal</option>
+                                                    </select>
                                                 </div>
                                             </div>
-
-                                            {/* Column 2: Purchase (Partner) */}
-                                            <div className="col-span-12 md:col-span-4 pl-0 md:pl-6 border-l-0 md:border-l border-slate-100">
-                                                <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Einkauf (Partner)</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-brand-500 focus-within:border-brand-500 transition-all bg-white h-9">
-                                                        <input
-                                                            type="number"
-                                                            step="0.001"
-                                                            className="flex-1 h-full px-3 text-sm font-bold text-slate-700 outline-none border-none bg-transparent min-w-0"
-                                                            value={pos.partnerRate}
-                                                            onChange={(e) => {
-                                                                const n = [...positions]; n[index].partnerRate = e.target.value; setPositions(n);
-                                                            }}
-                                                            placeholder="0.00"
-                                                        />
-                                                        <div className="w-[1px] bg-slate-200"></div>
-                                                        <select
-                                                            className="w-[110px] flex-shrink-0 h-full px-2 text-[11px] font-bold text-slate-600 bg-slate-50 outline-none cursor-pointer hover:bg-slate-100 transition-colors border-l-0"
-                                                            value={pos.partnerMode}
-                                                            onChange={(e) => {
-                                                                const n = [...positions]; n[index].partnerMode = e.target.value; setPositions(n);
-                                                            }}
-                                                        >
-                                                            <option value="unit">Einheitspreis</option>
-                                                            <option value="flat">Pauschal</option>
-                                                        </select>
-                                                    </div>
+                                            <div className="col-span-12 md:col-span-6 lg:col-span-4 space-y-2">
+                                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">EK (Partner)</label>
+                                                <div className="flex border border-slate-300 rounded overflow-hidden h-9">
+                                                    <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.partnerRate} onChange={e => { const n = [...positions]; n[index].partnerRate = e.target.value; setPositions(n); }} />
+                                                    <select className="w-24 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.partnerMode} onChange={e => { const n = [...positions]; n[index].partnerMode = e.target.value; setPositions(n); }}>
+                                                        <option value="unit">Rate</option><option value="flat">Pauschal</option>
+                                                    </select>
                                                 </div>
+                                                <div className="text-[10px] text-right text-slate-400 italic">EK-Gesamt: {pos.partnerTotal} €</div>
                                             </div>
-
-                                            {/* Column 3: Sales (Customer) */}
-                                            <div className="col-span-12 md:col-span-4 pl-0 md:pl-6 border-l-0 md:border-l border-slate-100">
-                                                <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Verkauf (Kunde)</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-brand-500 focus-within:border-brand-500 transition-all bg-white h-9">
-                                                        {pos.customerMode === 'unit' ? (
-                                                            <>
-                                                                <input
-                                                                    type="number"
-                                                                    className="flex-1 h-full px-3 text-sm font-bold text-slate-700 outline-none border-none bg-transparent min-w-0"
-                                                                    value={pos.marginPercent}
-                                                                    onChange={(e) => {
-                                                                        const n = [...positions];
-                                                                        let val = e.target.value;
-                                                                        // Validate Max 100% for Discount
-                                                                        if (pos.marginType === 'discount' && parseFloat(val) > 100) {
-                                                                            val = '100';
-                                                                        }
-                                                                        n[index].marginPercent = val;
-                                                                        n[index].customerMode = 'unit';
-                                                                        setPositions(n);
-                                                                    }}
-                                                                    placeholder="0"
-                                                                />
-                                                                <div className="w-[1px] bg-slate-200"></div>
-                                                                <select
-                                                                    className="w-[110px] flex-shrink-0 h-full px-2 text-[11px] font-bold text-slate-600 bg-slate-50 outline-none cursor-pointer hover:bg-slate-100 transition-colors border-l-0"
-                                                                    value={`${pos.marginType}`}
-                                                                    onChange={(e) => {
-                                                                        const val = e.target.value;
-                                                                        const n = [...positions];
-                                                                        if (val === 'flat') {
-                                                                            n[index].customerMode = 'flat';
-                                                                        } else {
-                                                                            n[index].customerMode = 'unit';
-                                                                            n[index].marginType = val;
-                                                                        }
-                                                                        setPositions(n);
-                                                                    }}
-                                                                >
-                                                                    <option value="markup">% Aufschlag</option>
-                                                                    <option value="discount">% Rabatt</option>
-                                                                    <option value="flat">Pauschal</option>
-                                                                </select>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <input
-                                                                    type="number"
-                                                                    step="0.001"
-                                                                    className="flex-1 h-full px-3 text-sm font-bold text-slate-700 outline-none border-none bg-transparent min-w-0"
-                                                                    value={pos.customerRate}
-                                                                    onChange={(e) => {
-                                                                        const n = [...positions]; n[index].customerRate = e.target.value; setPositions(n);
-                                                                    }}
-                                                                    placeholder="0.00"
-                                                                />
-                                                                <div className="w-[1px] bg-slate-200"></div>
-                                                                <select
-                                                                    className="w-[110px] flex-shrink-0 h-full px-2 text-[11px] font-bold text-slate-600 bg-slate-50 outline-none cursor-pointer hover:bg-slate-100 transition-colors border-l-0"
-                                                                    value="flat"
-                                                                    onChange={(e) => {
-                                                                        const val = e.target.value;
-                                                                        const n = [...positions];
-                                                                        if (val === 'flat') {
-                                                                            n[index].customerMode = 'flat';
-                                                                        } else {
-                                                                            n[index].customerMode = 'unit';
-                                                                            n[index].marginType = val;
-                                                                        }
-                                                                        setPositions(n);
-                                                                    }}
-                                                                >
-                                                                    <option value="markup">% Aufschlag</option>
-                                                                    <option value="discount">% Rabatt</option>
-                                                                    <option value="flat">Pauschal</option>
-                                                                </select>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                            <div className="col-span-12 lg:col-span-4 space-y-2 lg:pl-4 lg:border-l border-slate-100">
+                                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">VK (Kunde)</label>
+                                                <div className="flex border border-slate-300 rounded overflow-hidden h-9">
+                                                    {pos.customerMode === 'flat' ? (
+                                                        <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.customerRate} onChange={e => { const n = [...positions]; n[index].customerRate = e.target.value; setPositions(n); }} />
+                                                    ) : (
+                                                        <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.marginPercent} onChange={e => { const n = [...positions]; n[index].marginPercent = e.target.value; setPositions(n); }} />
+                                                    )}
+                                                    <div className="bg-white px-2 flex items-center text-[10px] font-bold text-slate-400 border-l border-r border-slate-100">{pos.customerMode === 'flat' ? '€' : '%'}</div>
+                                                    <select className="flex-1 w-24  bg-slate-50 text-[11px] font-bold text-slate-600 outline-none min-w-[90px]" value={pos.customerMode === 'flat' ? 'flat' : pos.marginType} onChange={e => {
+                                                        const n = [...positions];
+                                                        const v = e.target.value;
+                                                        if (v === 'flat') { n[index].customerMode = 'flat'; n[index].marginType = 'markup'; }
+                                                        else { n[index].customerMode = 'unit'; n[index].marginType = v; }
+                                                        setPositions(n);
+                                                    }}>
+                                                        <option value="markup">Aufschlag</option><option value="discount">Rabatt</option><option value="flat">Pauschal</option>
+                                                    </select>
                                                 </div>
+                                                <div className="text-[10px] text-right text-slate-800 font-bold">VK-Gesamt: {pos.customerTotal} €</div>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
+                                <button onClick={() => setPositions([...positions, { id: Date.now().toString(), description: 'Zusatzleistung', amount: '1', unit: 'Normzeile', quantity: '1', partnerRate: '0.00', partnerMode: 'unit', customerRate: '0.00', customerMode: 'unit', marginType: 'markup', marginPercent: '0' }])} className="mx-auto flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-100 transition-all active:scale-95"><FaPlus /> Position hinzufügen</button>
                             </div>
+                        </div>
 
-                            {/* Add Position Button - Below List */}
-                            {/* Add Position Button - Below List */}
-                            <div className="mb-6 flex justify-center">
+                        {/* Multiple Payments */}
+                        <div className="space-y-6 pt-4">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded bg-emerald-50 text-emerald-700 flex items-center justify-center text-[10px] font-bold">04</div>
+                                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Teilzahlungen / Anzahlungen</h4>
+                                </div>
                                 <button
-                                    onClick={() => setPositions([...positions, {
-                                        id: Date.now().toString(),
-                                        description: `Sprachübersetzung ${source.toUpperCase()} - ${target.toUpperCase()}`,
-                                        amount: '1',
-                                        unit: 'Normzeile',
-                                        quantity: '1',
-                                        partnerRate: '0.05',
-                                        partnerMode: 'unit',
-                                        customerRate: '0.15',
-                                        customerMode: 'unit',
-                                        marginType: 'markup',
-                                        marginPercent: '30'
-                                    }])}
-                                    className="px-3 py-1.5 bg-brand-50 text-brand-700 border border-brand-200 rounded text-[9px] font-black uppercase hover:bg-brand-100 transition flex items-center gap-2"
+                                    onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
+                                    className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-black uppercase flex items-center gap-1.5 hover:bg-emerald-100 transition-all active:scale-95 shadow-sm"
                                 >
-                                    <FaPlus /> Position hinzufügen
+                                    <FaPlus /> Zahlung erfassen
                                 </button>
                             </div>
 
-
-                            {/* Calculation Summary Footer */}
-                            <div className="flex justify-end gap-8 pt-6 border-t border-slate-100 items-center">
-                                <div className="text-right">
-                                    <Input
-                                        label="Anzahlung (Brutto)"
-                                        type="number"
-                                        containerClassName="w-32"
-                                        className="text-right font-bold h-9"
-                                        value={downPayment}
-                                        onChange={(e) => setDownPayment(e.target.value)}
-                                        placeholder="0.00"
-                                        endIcon="€"
-                                    />
+                            {payments.length === 0 ? (
+                                <div className="text-[10px] text-slate-400 italic py-2 text-center border-2 border-dashed border-slate-50 rounded">Keine Zahlungen erfasst.</div>
+                            ) : (
+                                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-50/80 border-b border-slate-200">
+                                                <th className="px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest w-44">Datum & Uhrzeit</th>
+                                                <th className="px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest w-32 text-right">Betrag (Brutto)</th>
+                                                <th className="px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest w-40">Zahlmittel</th>
+                                                <th className="px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Anmerkung</th>
+                                                <th className="px-4 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest w-20 text-center">Aktion</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {payments.map((p, i) => (
+                                                <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
+                                                    <td className="px-4 py-2 text-[11px] font-bold text-slate-700">
+                                                        <div className="flex items-center gap-2">
+                                                            <FaCalendarAlt className="text-slate-400 text-[10px]" />
+                                                            {new Date(p.payment_date).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-2 text-[11px] font-black text-emerald-600 text-right">
+                                                        {parseFloat(p.amount).toFixed(2)} €
+                                                    </td>
+                                                    <td className="px-4 py-2 text-[10px] font-bold text-slate-600">
+                                                        {p.payment_method}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-[10px] italic text-slate-400">
+                                                        {p.note || '-'}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-center flex justify-center gap-2">
+                                                        {/* Edit Button is implicitly handled by clicking row? No, explicit button better */}
+                                                        <button
+                                                            onClick={() => handleEditPayment(p)}
+                                                            className="text-slate-300 hover:text-brand-600 transition p-1 hover:bg-brand-50 rounded"
+                                                        >
+                                                            <FaInfoCircle className="text-[10px]" /> {/* Using Info/Edit icon */}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeletePayment(p.id)}
+                                                            className="text-slate-300 hover:text-red-500 transition p-1 hover:bg-red-50 rounded"
+                                                        >
+                                                            <FaTrash className="text-[10px]" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-[9px] font-bold text-slate-400 uppercase">Summe Einkauf (Netto)</div>
-                                    <div className="text-lg font-black text-slate-700">{partnerPrice} €</div>
-                                </div>
-                                <div className="text-right px-6 py-2">
-                                    <div className="text-[9px] font-bold text-slate-400 uppercase">Summe Kunde (Netto)</div>
-                                    <div className="text-xl font-black text-slate-800">{totalPrice} €</div>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
-                        <div className="pt-4">
-                            <Input
-                                isTextArea
-                                label="Interne Anmerkungen"
-                                placeholder="Notizen für Projektmanager..."
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                            />
+                        <div className="space-y-6 pt-4">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">05</div>
+                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Anmerkungen</h4>
+                            </div>
+                            <Input isTextArea label="Interne Anmerkungen" placeholder="Wichtige Hinweise zum Projekt..." value={notes} onChange={e => setNotes(e.target.value)} />
                         </div>
                     </div>
 
-                    {/* Right Column: Information & Actions */}
-                    <div className="w-80 bg-slate-50 flex flex-col shrink-0 border-l border-slate-200 h-full">
-                        {/* Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar">
-                            {/* Meta Information Section */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
-                                    <FaInfoCircle className="text-slate-400 text-xs" />
-                                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Meta Information</h4>
-                                </div>
-                                <div className="space-y-2 text-xs">
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-500">Erstellt:</span>
-                                        <span className="font-bold text-slate-700">{creationDate}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-500">Manager:</span>
-                                        <span className="font-bold text-slate-700">{projectManager}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-slate-500">Status:</span>
-                                        <span className="px-1.5 py-0.5 bg-slate-200 text-slate-600 font-bold uppercase text-[9px] rounded-sm">
-                                            {initialData?.status || 'Neu'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rechnungsvorschau</h4>
-
-                                <div className="bg-white p-4 rounded border border-slate-200 shadow-sm space-y-3">
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-500">Basis Netto</span>
-                                        <span className="font-medium text-slate-700">{baseNet.toFixed(2)} €</span>
-                                    </div>
-
-                                    {/* Extra Costs Breakdown */}
-                                    {(isCertified || hasApostille || isExpress || classification === 'ja' || copies > 0) && (
-                                        <div className="pt-2 border-t border-slate-100">
-                                            <div className="text-[9px] font-bold text-slate-400 uppercase mb-2">Zusatzleistungen</div>
-                                            {isCertified && (
-                                                <div className="flex justify-between items-center text-[10px] text-slate-600 mb-1">
-                                                    <span>• Beglaubigung</span>
-                                                    <span className="font-medium">5.00 €</span>
-                                                </div>
-                                            )}
-                                            {hasApostille && (
-                                                <div className="flex justify-between items-center text-[10px] text-slate-600 mb-1">
-                                                    <span>• Apostille</span>
-                                                    <span className="font-medium">15.00 €</span>
-                                                </div>
-                                            )}
-                                            {isExpress && (
-                                                <div className="flex justify-between items-center text-[10px] text-slate-600 mb-1">
-                                                    <span>• Express</span>
-                                                    <span className="font-medium">15.00 €</span>
-                                                </div>
-                                            )}
-                                            {classification === 'ja' && (
-                                                <div className="flex justify-between items-center text-[10px] text-slate-600 mb-1">
-                                                    <span>• Führerschein-Klassifizierung</span>
-                                                    <span className="font-medium">15.00 €</span>
-                                                </div>
-                                            )}
-                                            {copies > 0 && (
-                                                <div className="flex justify-between items-center text-[10px] text-slate-600 mb-1">
-                                                    <span>• Kopien ({copies} × {Number(copyPrice).toFixed(2)} €)</span>
-                                                    <span className="font-medium">{(copies * Number(copyPrice)).toFixed(2)} €</span>
-                                                </div>
-                                            )}
-                                            <div className="flex justify-between items-center text-xs font-bold text-slate-700 mt-2 pt-2 border-t border-slate-100">
-                                                <span>Extras Gesamt</span>
-                                                <span>{extraCosts.toFixed(2)} €</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Netto</span>
-                                        <span className="text-sm font-bold text-slate-800">{calcNet.toFixed(2)} €</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px]">
-                                        <span className="text-slate-400 uppercase">MwSt. 19%</span>
-                                        <span className="font-medium text-slate-600">{calcTax.toFixed(2)} €</span>
-                                    </div>
-                                    <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-800">Gesamt</span>
-                                        <span className="text-base font-black text-slate-800">{calcGross.toFixed(2)} €</span>
-                                    </div>
-                                    {Number(downPayment) > 0 && (
-                                        <div className="flex justify-between items-center text-xs text-emerald-600 pt-1">
-                                            <span className="font-bold">- Anzahlung</span>
-                                            <span className="font-bold">-{Number(downPayment).toFixed(2)} €</span>
-                                        </div>
-                                    )}
-                                    <div className="pt-2 border-t border-slate-100 flex justify-between items-center bg-slate-50 -mx-4 -mb-4 p-4 rounded-b">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Offener Betrag</span>
-                                        <span className="text-lg font-black text-brand-700">{remainingBalance.toFixed(2)} €</span>
-                                    </div>
-                                </div>
-
-                                {/* Compact Profit */}
-                                <div className="bg-slate-100 p-3 rounded border border-slate-200">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[9px] font-bold uppercase text-slate-500">Rohertrag</span>
-                                        <span className={clsx("text-xs font-black", profit >= 0 ? "text-slate-700" : "text-red-600")}>{profit.toFixed(2)} €</span>
-                                    </div>
-                                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                                        <div className={clsx("h-full", profitMargin > 20 ? "bg-emerald-500" : profitMargin > 10 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${Math.min(100, Math.max(0, profitMargin))}%` }}></div>
-                                    </div>
-                                    <div className="text-right mt-1">
-                                        <span className="text-[9px] font-bold text-slate-400">{profitMargin.toFixed(1)}% Marge</span>
-                                    </div>
-                                </div>
+                    {/* Sidebar / Preview */}
+                    <div className="w-full lg:w-80 bg-slate-50 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 h-auto lg:h-full lg:overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200"><FaInfoCircle className="text-slate-400 text-xs" /><h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Meta Info</h4></div>
+                            <div className="space-y-2 text-xs">
+                                <div className="flex justify-between"><span className="text-slate-500">Erstellt:</span><span className="font-bold text-slate-700">{creationDate}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-500">Manager:</span><span className="font-bold text-slate-700">{projectManager}</span></div>
                             </div>
                         </div>
 
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rechnungsvorschau</h4>
+                            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm space-y-3 relative overflow-hidden">
+                                <div className="flex justify-between text-xs text-slate-500"><span>Positionen Netto</span><span>{baseNet.toFixed(2)} €</span></div>
+                                <div className="flex justify-between text-xs text-slate-500"><span>Zusatzleistungen</span><span>{extraCosts.toFixed(2)} €</span></div>
+                                <div className="pt-2 border-t border-slate-100 flex justify-between font-bold text-slate-800"><span>Gesamt Netto</span><span>{calcNet.toFixed(2)} €</span></div>
+                                <div className="flex justify-between text-[10px] text-slate-400"><span>MwSt. 19%</span><span>{calcTax.toFixed(2)} €</span></div>
+                                <div className="pt-2 border-t-2 border-brand-100 flex justify-between text-xl font-black text-slate-900 transition-all"><span>Gesamt</span><span>{calcGross.toFixed(2)} €</span></div>
 
+                                {totalPaid > 0 && (
+                                    <div className="pt-2 flex justify-between text-xs text-emerald-600 font-bold border-t border-slate-50">
+                                        <span>Geleistete Zahlungen</span>
+                                        <span>-{totalPaid.toFixed(2)} €</span>
+                                    </div>
+                                )}
+
+                                <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center bg-slate-50 -mx-4 -mb-4 p-4 rounded-b">
+                                    <span className="text-[10px] font-black uppercase text-slate-600 tracking-wider">Restbetrag</span>
+                                    <span className={clsx("text-lg font-black", remainingBalance <= 0.01 ? "text-emerald-600" : "text-brand-700")}>
+                                        {remainingBalance <= 0.01 ? 'BEZAHLT' : `${remainingBalance.toFixed(2)} €`}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Profit Margin */}
+                            <div className="bg-slate-100 p-4 rounded-lg border border-slate-200 hover:bg-slate-200/50 transition-colors">
+                                <div className="flex justify-between items-center mb-1.5">
+                                    <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tighter">Voraussichtl. Gewinn</span>
+                                    <span className={clsx("text-xs font-black", profit >= 0 ? "text-slate-800" : "text-red-600")}>{profit.toFixed(2)} €</span>
+                                </div>
+                                <div className="w-full bg-slate-300 rounded-full h-2 overflow-hidden shadow-inner">
+                                    <div className={clsx("h-full transition-all duration-500", profitMargin > 40 ? "bg-emerald-500" : profitMargin > 20 ? "bg-brand-500" : "bg-amber-500")} style={{ width: `${Math.min(100, Math.max(0, profitMargin))}%` }}></div>
+                                </div>
+                                <div className="text-right mt-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest">{profitMargin.toFixed(1)}% Marge</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Footer Actions */}
+                {/* Footer */}
                 <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-between items-center shrink-0">
-                    <div className="flex items-center">
+                    <div>
                         {initialData && (
-                            <button onClick={handleDelete} className="text-red-500 hover:text-red-700 transition text-xs font-bold uppercase tracking-wider flex items-center gap-2 px-3 py-2 rounded hover:bg-red-50 border border-transparent hover:border-red-100">
-                                <FaTrash className="text-[10px]" /> Projekt Löschen
-                            </button>
+                            <button onClick={handleDelete} className="text-red-500 text-xs font-bold uppercase flex items-center gap-2 hover:bg-red-50 px-3 py-2 rounded transition-colors active:scale-95"><FaTrash /> Projekt Löschen</button>
                         )}
                     </div>
-                    <div className="flex items-center gap-3">
-                        <button onClick={onClose} className="px-6 py-2.5 bg-white border border-slate-300 text-slate-600 font-bold rounded text-xs uppercase tracking-widest hover:bg-slate-50 transition shadow-sm">
-                            Abbrechen
-                        </button>
-                        <button onClick={handleSubmit} className="px-8 py-2.5 bg-brand-700 hover:bg-brand-800 text-white font-bold rounded text-xs uppercase tracking-widest shadow-md transition active:scale-95">
-                            {initialData ? 'Speichern' : 'Erstellen'}
+                    <div className="flex items-center gap-4">
+                        <button onClick={onClose} className="px-6 py-2 bg-white border border-slate-300 rounded text-xs font-bold uppercase hover:bg-slate-50 transition active:scale-95">Abbrechen</button>
+                        <button onClick={handleSubmit} disabled={isLoading || createCustomerMutation.isPending} className="px-8 py-2 bg-brand-700 text-white rounded text-xs font-bold uppercase shadow-lg shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95 transform">
+                            {isLoading ? 'Speichere...' : initialData ? 'Projekt Aktualisieren' : 'Projekt Anlegen'}
                         </button>
                     </div>
                 </div>
             </div>
 
-            <PartnerSelectionModal
-                isOpen={isPartnerModalOpen}
-                onClose={() => setIsPartnerModalOpen(false)}
-                onSelect={handlePartnerSelect}
-            />
-
-            <ConfirmDialog
-                isOpen={confirmConfig.isOpen}
-                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
-                onConfirm={confirmConfig.onConfirm}
-                title={confirmConfig.title}
-                message={confirmConfig.message}
-                type={confirmConfig.type}
-                confirmLabel={confirmConfig.confirmLabel}
-            />
-        </div >
+            <PartnerSelectionModal isOpen={isPartnerModalOpen} onClose={() => setIsPartnerModalOpen(false)} onSelect={handlePartnerSelect} />
+            <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={handleSavePayment} initialData={editingPayment} totalAmount={calcGross} />
+            <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
+        </div>
     );
 };
 

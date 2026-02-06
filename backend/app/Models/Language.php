@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Language extends Model
 {
-    use \App\Traits\BelongsToTenant;
+    use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity;
 
     protected $fillable = [
         'iso_code',
