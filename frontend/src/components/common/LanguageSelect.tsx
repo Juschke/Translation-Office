@@ -9,6 +9,7 @@ import { settingsService } from '../../api/services';
 interface LanguageOption {
     code: string;
     name: string;
+    flagCode?: string;
 }
 
 const DEFAULT_LANGUAGES: LanguageOption[] = [
@@ -57,7 +58,8 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     const languages = useMemo(() => {
         const mappedServer = serverLanguages.map((l: any) => ({
             code: l.iso_code,
-            name: l.name_internal || l.name
+            name: l.name_internal || l.name,
+            flagCode: l.flag_icon
         }));
         const all = [...DEFAULT_LANGUAGES, ...mappedServer];
         const unique = Array.from(new Map(all.map(item => [item.code, item])).values());
@@ -148,7 +150,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 "flex items-center gap-1.5",
                                 isMulti ? "bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700" : "text-sm font-bold text-slate-800"
                             )}>
-                                <img src={getFlagUrl(v)} className="w-6 h-4.5 object-cover shadow-sm shrink-0" alt="" />
+                                <img src={getFlagUrl(v.includes('-') ? v : (languages.find(l => l.code === v)?.flagCode || v))} className="w-6 h-4.5 object-cover shadow-sm shrink-0" alt="" />
                                 <span className="truncate">{getLangLabel(v)}</span>
                                 {isMulti && (
                                     <FaTimes
@@ -198,7 +200,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 py-0.5 flex items-center justify-center shrink-0">
-                                            <img src={getFlagUrl(opt.code)} className="w-7 h-5 object-cover shadow-sm" alt="" />
+                                            <img src={getFlagUrl(opt.flagCode || opt.code)} className="w-7 h-5 object-cover shadow-sm" alt="" />
                                         </div>
                                         <span>{opt.name}</span>
                                         <span className="text-[10px] uppercase text-slate-300  tracking-tighter">{opt.code}</span>

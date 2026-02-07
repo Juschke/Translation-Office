@@ -22,6 +22,7 @@ const Dashboard = () => {
         mutationFn: projectService.create,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             navigate(`/projects/${data.id}`);
         }
     });

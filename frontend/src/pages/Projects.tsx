@@ -66,6 +66,7 @@ const Projects = () => {
         mutationFn: projectService.create,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
         }
     });
@@ -74,6 +75,7 @@ const Projects = () => {
         mutationFn: (data: any) => projectService.update(data.id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingProject(null);
         }
@@ -83,6 +85,7 @@ const Projects = () => {
         mutationFn: projectService.delete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedProjects([]);
         }
     });
@@ -99,6 +102,7 @@ const Projects = () => {
         mutationFn: projectService.bulkDelete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedProjects([]);
         }
     });

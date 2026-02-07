@@ -67,6 +67,7 @@ const Customers = () => {
         mutationFn: customerService.create,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
         }
     });
@@ -75,6 +76,7 @@ const Customers = () => {
         mutationFn: (data: any) => customerService.update(data.id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingCustomer(null);
         }
@@ -84,6 +86,7 @@ const Customers = () => {
         mutationFn: customerService.delete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
         }
     });
@@ -92,6 +95,7 @@ const Customers = () => {
         mutationFn: (args: { ids: number[], data: any }) => customerService.bulkUpdate(args.ids, args.data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
         }
     });
@@ -100,6 +104,7 @@ const Customers = () => {
         mutationFn: customerService.bulkDelete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
         }
     });

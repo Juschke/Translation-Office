@@ -70,11 +70,12 @@ export const projectService = {
         const response = await api.post('/projects/bulk-delete', { ids });
         return response.data;
     },
-    uploadFile: async (id: string, formData: FormData) => {
+    uploadFile: async (id: string, formData: FormData, onUploadProgress?: (progressEvent: any) => void) => {
         const response = await api.post(`/projects/${id}/files`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            onUploadProgress
         });
         return response.data;
     },
@@ -185,6 +186,26 @@ export const invoiceService = {
     delete: async (id: number) => {
         const response = await api.delete(`/invoices/${id}`);
         return response.data;
+    },
+    sendEmail: async (id: number) => {
+        const response = await api.post(`/invoices/${id}/send`);
+        return response.data;
+    },
+    generatePdf: async (id: number) => {
+        const response = await api.post(`/invoices/${id}/generate-pdf`);
+        return response.data;
+    },
+    download: async (id: number) => {
+        const response = await api.get(`/invoices/${id}/download`, {
+            responseType: 'blob'
+        });
+        return response;
+    },
+    print: async (id: number) => {
+        const response = await api.get(`/invoices/${id}/print`, {
+            responseType: 'blob'
+        });
+        return response;
     },
     bulkUpdate: async (ids: number[], data: any) => {
         const response = await api.post('/invoices/bulk-update', { ids, data });

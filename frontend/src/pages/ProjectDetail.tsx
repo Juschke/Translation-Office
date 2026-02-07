@@ -1,16 +1,20 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaPhone, FaEnvelope, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaCalendarAlt, FaTrashAlt, FaDownload, FaTrash, FaTimes } from 'react-icons/fa';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaPhone, FaEnvelope, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaCalendarAlt, FaTrashAlt, FaDownload, FaTrash, FaTimes, FaPaperclip, FaUserPlus, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
+import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
 import NewProjectModal from '../components/modals/NewProjectModal';
 import FileUploadModal from '../components/modals/FileUploadModal';
 import NewInvoiceModal from '../components/modals/NewInvoiceModal';
+import ConfirmModal from '../components/modals/ConfirmModal';
 import Input from '../components/common/Input';
 import Checkbox from '../components/common/Checkbox';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, invoiceService } from '../api/services';
+
 import TableSkeleton from '../components/common/TableSkeleton';
+import FilePreviewModal from '../components/modals/FilePreviewModal';
 
 interface ProjectPosition {
     id: string;
@@ -46,8 +50,19 @@ interface ProjectData {
     name: string;
     client: string;
     customer_id?: number;
+    customer: {
+        id: string;
+        name: string;
+        contact: string;
+        email: string;
+        phone: string;
+        initials: string;
+        type: string;
+    };
     source: string;
     target: string;
+    source_language?: any;
+    target_language?: any;
     progress: number;
     status: string;
     priority: string;
@@ -60,6 +75,7 @@ interface ProjectData {
     copyPrice: number;
     docType: string[];
     translator: {
+        id?: string;
         name: string;
         email: string;
         initials: string;
@@ -69,10 +85,7 @@ interface ProjectData {
     pm: string;
     createdAt: string;
     positions: ProjectPosition[];
-    downPayment: number;
-    downPaymentNote?: string;
-    downPaymentDate?: string;
-    downPaymentMethod?: string;
+    payments: any[];
     notes: string;
     files: ProjectFile[];
     [key: string]: any;
@@ -81,13 +94,20 @@ interface ProjectData {
 const ProjectDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('overview');
     const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type?: string } | null>(null);
     const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+    const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
+    const [historySearch, setHistorySearch] = useState('');
+    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+    const [deleteFileConfirm, setDeleteFileConfirm] = useState<{ isOpen: boolean; fileId: string | null; fileName: string }>({ isOpen: false, fileId: null, fileName: '' });
 
     // Inline Editing State
     const [editingCell, setEditingCell] = useState<{ id: string, field: string } | null>(null);
@@ -114,8 +134,19 @@ const ProjectDetail = () => {
                 name: projectResponse.project_name || '',
                 client: projectResponse.customer?.company_name || `${projectResponse.customer?.first_name} ${projectResponse.customer?.last_name}` || 'Unbekannter Kunde',
                 customer_id: projectResponse.customer_id,
-                source: projectResponse.source_language?.iso_code?.split('-')[0] || projectResponse.source || 'de',
-                target: projectResponse.target_language?.iso_code?.split('-')[0] || projectResponse.target || 'en',
+                customer: projectResponse.customer ? {
+                    id: projectResponse.customer.id.toString(),
+                    name: projectResponse.customer.company_name || `${projectResponse.customer.first_name} ${projectResponse.customer.last_name}`,
+                    contact: projectResponse.customer.company_name ? `${projectResponse.customer.first_name} ${projectResponse.customer.last_name}` : 'Privatkunde',
+                    email: projectResponse.customer.email || '',
+                    phone: projectResponse.customer.phone || '',
+                    initials: ((projectResponse.customer.first_name?.[0] || '') + (projectResponse.customer.last_name?.[0] || 'K')).toUpperCase(),
+                    type: projectResponse.customer.type || 'client'
+                } : { id: '', name: 'Unbekannt', contact: '', email: '', phone: '', initials: '?', type: '' },
+                source: projectResponse.source_language?.iso_code || projectResponse.source || 'de',
+                target: projectResponse.target_language?.iso_code || projectResponse.target || 'en',
+                source_language: projectResponse.source_language,
+                target_language: projectResponse.target_language,
                 progress: projectResponse.progress || 0,
                 status: projectResponse.status || 'draft',
                 priority: projectResponse.priority || 'medium',
@@ -128,6 +159,7 @@ const ProjectDetail = () => {
                 copyPrice: parseFloat(projectResponse.copy_price) || 5,
                 docType: projectResponse.document_type ? [projectResponse.document_type.name] : [],
                 translator: projectResponse.partner ? {
+                    id: projectResponse.partner.id.toString(),
                     name: projectResponse.partner.company || `${projectResponse.partner.first_name} ${projectResponse.partner.last_name}`,
                     email: projectResponse.partner.email,
                     initials: ((projectResponse.partner.first_name?.[0] || '') + (projectResponse.partner.last_name?.[0] || 'P')).toUpperCase(),
@@ -156,22 +188,35 @@ const ProjectDetail = () => {
                     marginType: p.margin_type,
                     marginPercent: p.margin_percent?.toString() || '0'
                 })),
-                downPayment: parseFloat(projectResponse.down_payment) || 0,
-                downPaymentNote: projectResponse.down_payment_note || '',
-                downPaymentDate: projectResponse.down_payment_date || '',
-                downPaymentMethod: projectResponse.down_payment_method || 'Überweisung',
+                payments: projectResponse.payments || (projectResponse.down_payment ? [{
+                    amount: projectResponse.down_payment,
+                    payment_date: projectResponse.down_payment_date,
+                    payment_method: projectResponse.down_payment_method,
+                    note: projectResponse.down_payment_note
+                }] : []),
                 notes: projectResponse.notes || '',
                 files: (projectResponse.files || []).map((f: any) => ({
                     id: f.id.toString(),
-                    name: f.file_name,
-                    ext: (f.file_name || '').split('.').pop()?.toUpperCase() || '',
+                    name: f.file_name || f.original_name,
+                    fileName: f.file_name || f.original_name,
+                    original_name: f.original_name,
+                    ext: f.extension || (f.file_name || f.original_name || '').split('.').pop()?.toUpperCase() || '',
+                    extension: f.extension,
                     type: f.type,
+                    mime_type: f.mime_type,
                     version: f.version || '1.0',
-                    size: f.file_size || '0 KB',
+                    size: f.file_size,
+                    file_size: f.file_size,
                     words: f.word_count || 0,
                     chars: f.char_count || 0,
-                    createdAt: new Date(f.created_at).toLocaleString('de-DE'),
-                    status: f.status
+                    word_count: f.word_count || 0,
+                    char_count: f.char_count || 0,
+                    status: f.status || 'ready',
+                    uploaded_by: f.uploader?.name || f.uploader?.email || 'System',
+                    uploader: f.uploader,
+                    created_at: f.created_at,
+                    upload_date: f.created_at,
+                    upload_time: f.created_at ? new Date(f.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''
                 }))
             };
             setProjectData(mapped);
@@ -246,19 +291,47 @@ const ProjectDetail = () => {
     };
 
     const getLanguageInfo = (code: string) => {
-        const langs: any = {
-            'de': { flag: '🇩🇪', name: 'Deutsch' },
-            'en': { flag: '🇬🇧', name: 'Englisch' },
-            'fr': { flag: '🇫🇷', name: 'Französisch' },
-            'es': { flag: '🇪🇸', name: 'Spanisch' },
+        const fullCode = code.toLowerCase();
+        // Map language code to country code for flags if necessary
+        const flagMap: { [key: string]: string } = {
+            'en': 'gb',
+            'cs': 'cz',
+            'da': 'dk',
+            'el': 'gr',
+            'et': 'ee',
+            'ja': 'jp',
+            'ko': 'kr',
+            'sv': 'se',
+            'uk': 'ua',
+            'zh': 'cn',
         };
-        return langs[code] || { flag: '🌐', name: code.toUpperCase() };
+        const countryCode = flagMap[fullCode] || fullCode;
+
+        const langs: any = {
+            'de': 'Deutsch',
+            'en': 'Englisch',
+            'fr': 'Französisch',
+            'es': 'Spanisch',
+            'it': 'Italienisch',
+            'nl': 'Niederländisch',
+            'pl': 'Polnisch',
+            'ru': 'Russisch',
+            'tr': 'Türkisch',
+            'pt': 'Portugiesisch',
+            'ua': 'Ukrainisch'
+        };
+
+        return {
+            flagUrl: `https://flagcdn.com/w40/${countryCode}.png`,
+            name: langs[fullCode] || code.toUpperCase()
+        };
     };
 
     const updateProjectMutation = useMutation({
         mutationFn: (data: any) => projectService.update(id!, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsEditModalOpen(false);
         }
     });
@@ -412,12 +485,17 @@ const ProjectDetail = () => {
     };
 
     const uploadFileMutation = useMutation({
-        mutationFn: async (files: any[]) => {
+        mutationFn: async ({ files, onProgress }: { files: any[], onProgress: (id: string, p: number) => void }) => {
             for (const f of files) {
                 const formData = new FormData();
                 formData.append('file', f.file);
                 formData.append('type', f.type);
-                await projectService.uploadFile(id!, formData);
+                await projectService.uploadFile(id!, formData, (progressEvent) => {
+                    if (progressEvent.total) {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        onProgress(f.id, percentCompleted);
+                    }
+                });
             }
         },
         onSuccess: () => {
@@ -425,140 +503,65 @@ const ProjectDetail = () => {
         }
     });
 
-    const deleteFileMutation = useMutation({
-        mutationFn: (fileId: string) => projectService.deleteFile(id!, fileId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['projects', id] });
-        }
-    });
-
-    const handleFileUpload = (newFiles: any[]) => {
-        uploadFileMutation.mutate(newFiles);
+    const formatFileSize = (bytes: any) => {
+        if (!bytes) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    const handleFileDelete = (fileId: string) => {
-        if (window.confirm('Datei wirklich löschen?')) {
-            deleteFileMutation.mutate(fileId);
-            setSelectedFileIds(prev => prev.filter(id => id !== fileId));
-        }
-    };
-
-    const handleBulkDelete = async () => {
-        if (!projectData) return;
-        if (!window.confirm(`${selectedFileIds.length} Dateien wirklich löschen?`)) return;
-
-        for (const fileId of selectedFileIds) {
-            await deleteFileMutation.mutateAsync(fileId);
-        }
-        setSelectedFileIds([]);
-    };
-
-    const handleFileDownload = async (fileId: string, fileName: string) => {
+    const handleDownloadFile = async (file: any) => {
         try {
-            const response = await projectService.downloadFile(id!, fileId);
-            const blob = response.data;
-            const url = window.URL.createObjectURL(blob);
+            // Robust filename fallback, ensuring extension
+            let fileName = file.name || file.fileName || file.original_name || 'download_file';
+            const fileExt = file.extension || fileName.split('.').pop();
+
+            if (!fileName.includes('.') && fileExt) {
+                fileName = `${fileName}.${fileExt}`;
+            }
+
+            // Assuming downloadFile returns a response with blob data
+            const response = await projectService.downloadFile(id!, file.id);
+
+            // Basic mime checking if extension is still missing
+            if (!fileName.includes('.')) {
+                const mime = response.headers['content-type'];
+                if (mime === 'application/pdf') fileName += '.pdf';
+                else if (mime === 'image/jpeg') fileName += '.jpg';
+                else if (mime === 'image/png') fileName += '.png';
+                else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') fileName += '.docx';
+            }
+
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
-            link.parentNode?.removeChild(link);
+            link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Download failed:', error);
-            alert('Download fehlgeschlagen.');
+            alert('Fehler beim Herunterladen der Datei.');
         }
     };
 
-    const toggleSelectFile = (fileId: string) => {
-        setSelectedFileIds(prev => prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]);
-    };
-
-    const toggleSelectAllFiles = () => {
-        if (!projectData) return;
-        if (selectedFileIds.length === projectData.files.length) {
-            setSelectedFileIds([]);
-        } else {
-            setSelectedFileIds(projectData.files.map((f: any) => f.id));
+    const deleteFileMutation = useMutation({
+        mutationFn: async (fileId: string) => {
+            await projectService.deleteFile(id!, fileId);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+        },
+        onError: () => {
+            alert('Fehler beim Löschen der Datei.');
         }
-    };
+    });
 
-    const handleFileRename = (fileId: string, newBaseName: string) => {
-        setProjectData((prev: any) => ({
-            ...prev,
-            files: prev.files.map((f: any) => {
-                if (f.id === fileId) {
-                    const parts = f.name.split('.');
-                    const ext = parts.length > 1 ? parts.pop() : '';
-                    return { ...f, name: `${newBaseName}.${ext}` };
-                }
-                return f;
-            })
-        }));
-    };
-
-    const renderEditableFileCell = (file: any) => {
-        const isEditing = editingCell?.id === file.id && editingCell?.field === 'filename';
-        const parts = (file.name || '').split('.');
-        const ext = parts.length > 1 ? parts.pop() : '';
-        const baseName = parts.join('.');
-        if (isEditing) {
-            return (
-                <div className="flex items-center gap-1">
-                    <input
-                        autoFocus
-                        defaultValue={baseName}
-                        className="bg-white border-2 border-brand-500 rounded px-2 py-0.5 outline-none text-xs font-bold shadow-sm w-full max-w-[200px]"
-                        onBlur={(e) => { handleFileRename(file.id, e.target.value); setEditingCell(null); }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') { handleFileRename(file.id, (e.target as HTMLInputElement).value); setEditingCell(null); }
-                            if (e.key === 'Escape') setEditingCell(null);
-                        }}
-                    />
-                    <span className="text-slate-400 font-bold text-xs">.{ext}</span>
-                </div>
-            );
-        }
-        return (
-            <div onClick={() => setEditingCell({ id: file.id, field: 'filename' })} className="cursor-pointer hover:bg-brand-50 hover:text-brand-700 px-2 py-1 rounded transition max-w-fit">
-                <span className="font-bold text-slate-800">{baseName}</span>
-                <span className="text-slate-400 font-bold text-[11px]">.{ext}</span>
-            </div>
-        );
-    };
-
-    const renderEditableFileStatCell = (file: any, field: 'words' | 'chars') => {
-        const isEditing = editingCell?.id === file.id && editingCell?.field === field;
-        const value = file[field];
-        if (isEditing) {
-            return (
-                <input
-                    autoFocus
-                    type="number"
-                    defaultValue={value}
-                    className="w-20 px-2 py-1 bg-white border-2 border-brand-500 rounded text-right text-xs font-bold outline-none shadow-sm"
-                    onBlur={(e) => {
-                        const newVal = parseInt(e.target.value) || 0;
-                        setProjectData((prev: any) => ({ ...prev, files: prev.files.map((f: any) => f.id === file.id ? { ...f, [field]: newVal } : f) }));
-                        setEditingCell(null);
-                    }}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            const newVal = parseInt((e.target as HTMLInputElement).value) || 0;
-                            setProjectData((prev: any) => ({ ...prev, files: prev.files.map((f: any) => f.id === file.id ? { ...f, [field]: newVal } : f) }));
-                            setEditingCell(null);
-                        }
-                        if (e.key === 'Escape') setEditingCell(null);
-                    }}
-                />
-            );
-        }
-        return (
-            <div onClick={() => setEditingCell({ id: file.id, field })} className="cursor-pointer hover:bg-slate-50 hover:text-brand-600 px-2 py-1 rounded transition text-right">
-                {value.toLocaleString()}
-            </div>
-        );
+    const handleFileUpload = async (newFiles: any[], onProgress: (id: string, p: number) => void) => {
+        await uploadFileMutation.mutateAsync({ files: newFiles, onProgress });
     };
 
     const invoiceMutation = useMutation({
@@ -606,10 +609,10 @@ const ProjectDetail = () => {
                             <span>ID: {projectData.id}</span>
                             <span className="text-slate-300">•</span>
                             <div className="flex items-center gap-2 text-xs font-bold bg-slate-50 rounded-md px-2 py-1 border border-slate-200">
-                                <span>{sourceLang.flag}</span>
+                                <img src={sourceLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
                                 <span className="text-slate-600">{sourceLang.name}</span>
                                 <span className="text-slate-300 mx-1">→</span>
-                                <span>{targetLang.flag}</span>
+                                <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
                                 <span className="text-slate-600">{targetLang.name}</span>
                             </div>
                         </p>
@@ -632,7 +635,7 @@ const ProjectDetail = () => {
 
                 {/* Tab Navigation */}
                 <div className="px-6 border-t border-slate-100 flex gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    {['overview', 'files', 'finances', 'messages'].map((tab) => (
+                    {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -645,7 +648,8 @@ const ProjectDetail = () => {
                         >
                             {tab === 'overview' ? 'Projekt-Cockpit' :
                                 tab === 'files' ? `Dateien (${projectData.files.length})` :
-                                    tab === 'finances' ? 'Kalkulation & Marge' : 'Kommunikation'}
+                                    tab === 'finances' ? 'Kalkulation & Marge' :
+                                        tab === 'history' ? 'Historie' : 'Kommunikation'}
                         </button>
                     ))}
                 </div>
@@ -654,475 +658,682 @@ const ProjectDetail = () => {
             {/* Tab Contents */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {activeTab === 'overview' && (
-                    <div className="flex flex-col lg:flex-row gap-8 items-start h-full pb-10">
-                        {/* Main Content */}
-                        <div className="flex-1 space-y-8 bg-white p-8 rounded-lg border border-slate-200 shadow-sm">
-                            {/* Section 1: Basisdaten */}
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                    <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">01</div>
-                                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Projekt-Stammdaten</h4>
-                                </div>
-                                <div className="grid grid-cols-12 gap-6">
-                                    <div className="col-span-12">
-                                        <Input label="Projektbezeichnung" value={projectData.name} readOnly className="bg-slate-50/50" />
-                                    </div>
-                                    <div className="col-span-12 md:col-span-8">
-                                        <Input
-                                            label="Kunde"
-                                            value={projectData.client}
-                                            readOnly
-                                            className="bg-slate-50/50"
-                                            onEndIconClick={() => projectData.customer_id && navigate(`/customers/${projectData.customer_id}`)}
-                                            endIcon={<FaExternalLinkAlt className="cursor-pointer hover:text-brand-600 text-[10px]" title="Kundenakte öffnen" />}
-                                        />
-                                    </div>
-                                    <div className="col-span-12 md:col-span-4 relative">
-                                        <div className="flex justify-between items-center mb-1.5 ml-1">
-                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lieferdatum</label>
-                                            <div className="flex gap-1">
-                                                {[3, 5, 7].map(d => (
-                                                    <button
-                                                        key={d}
-                                                        onClick={() => addWorkingDays(d)}
-                                                        className="text-[8px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 transition-all active:scale-95 uppercase tracking-tighter"
-                                                    >
-                                                        {d}T
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="relative h-11">
-                                            <input
-                                                type="date"
-                                                value={projectData.due}
-                                                onChange={(e) => setProjectData({ ...projectData, due: e.target.value })}
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                                            />
-                                            <div className="w-full h-full px-3 flex items-center justify-between bg-slate-50/50 border border-slate-200 shadow-sm text-sm font-bold text-slate-700 rounded pointer-events-none">
-                                                <div className="flex items-center gap-2">
-                                                    <FaCalendarAlt className="text-slate-400 text-xs" />
-                                                    <span>{projectData.due ? new Date(projectData.due).toLocaleDateString('de-DE') : '-'}</span>
-                                                </div>
-                                                <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight border shadow-sm", deadlineStatus.color)}>
-                                                    {deadlineStatus.label}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-6">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Ausgangssprache</label>
-                                        <div className="w-full h-11 px-3 flex items-center gap-2 bg-slate-50/50 border border-slate-200 shadow-sm text-sm font-bold text-slate-700 rounded">
-                                            <span className="text-2xl">{sourceLang.flag}</span>
-                                            <span>{sourceLang.name} ({projectData.source.toUpperCase()})</span>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-6">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Zielsprache</label>
-                                        <div className="w-full h-11 px-3 flex items-center gap-2 bg-slate-50/50 border border-slate-200 shadow-sm text-sm font-bold text-slate-700 rounded">
-                                            <span className="text-2xl">{targetLang.flag}</span>
-                                            <span>{targetLang.name} ({projectData.target.toUpperCase()})</span>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-12 pt-6 mt-2 border-t border-slate-50">
-                                        <div className="flex flex-col md:flex-row gap-6 items-start">
-                                            <div className="w-full md:w-32">
-                                                <Input
-                                                    label="Anzahlung"
-                                                    value={projectData.downPayment.toString()}
-                                                    type="number"
-                                                    onChange={(e) => updateProjectMutation.mutate({ down_payment: parseFloat(e.target.value) || 0 })}
-                                                    endIcon={<span className="text-[10px] font-bold">€</span>}
-                                                    className="bg-emerald-50/20 border-emerald-100 font-bold text-emerald-700"
-                                                />
-                                            </div>
-                                            <div className="w-full md:w-40">
-                                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Zahlmittel</label>
-                                                <select
-                                                    value={projectData.downPaymentMethod}
-                                                    onChange={(e) => updateProjectMutation.mutate({ down_payment_method: e.target.value })}
-                                                    className="w-full h-11 px-3 text-sm font-bold border border-slate-200 rounded bg-white shadow-sm outline-none focus:border-brand-500 transition-colors"
-                                                >
-                                                    <option>Bar</option>
-                                                    <option>Überweisung</option>
-                                                    <option>PayPal</option>
-                                                    <option>Kreditkarte</option>
-                                                </select>
-                                            </div>
-                                            <div className="flex-1 w-full">
-                                                <Input
-                                                    label="Vermerk zur Anzahlung"
-                                                    value={projectData.downPaymentNote}
-                                                    onChange={(e) => updateProjectMutation.mutate({ down_payment_note: e.target.value })}
-                                                    placeholder="z.B. Bar erhalten..."
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-10">
+                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                            <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                <FaFileInvoiceDollar className="text-brand-500" /> Projekt-Stammdaten
+                            </h3>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setIsEditModalOpen(true)}
+                                    className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline"
+                                >
+                                    Bearbeiten
+                                </button>
                             </div>
-
-                            {/* Section 2: Team */}
-                            <div className="space-y-6 pt-4">
-                                <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                    <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">02</div>
-                                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Projekt-Team</h4>
-                                </div>
-                                <div className="grid grid-cols-12 gap-6">
-                                    <div className="col-span-12 md:col-span-6">
-                                        <Input
-                                            label="Project Manager"
-                                            value={projectData.pm}
-                                            readOnly
-                                            className="bg-slate-50/50"
-                                            startIcon={<div className="w-4 h-4 rounded-full bg-slate-800 text-white text-[8px] flex items-center justify-center font-bold">PM</div>}
-                                            helperText={`Erstellt am ${projectData.createdAt}`}
-                                        />
-                                    </div>
-                                    <div className="col-span-12 md:col-span-6">
-                                        <div className="p-0 rounded-lg border-none bg-transparent">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ausführender Partner</label>
-                                                <button onClick={() => setIsPartnerModalOpen(true)} className="text-[10px] text-brand-600 font-bold hover:underline">Ändern</button>
-                                            </div>
-                                            <div className="flex items-start gap-3 mb-4">
-                                                <div className="w-10 h-10 rounded bg-white border border-slate-200 text-brand-700 flex items-center justify-center text-xs font-black uppercase shadow-sm shrink-0">
-                                                    {projectData.translator?.initials}
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="font-bold text-slate-800 text-sm mb-1">{projectData.translator?.name || '-'}</div>
-                                                    <div className="text-xs text-slate-500 flex flex-col gap-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <FaEnvelope className="text-slate-300 text-[10px]" />
-                                                            <span className="truncate">{projectData.translator?.email}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <FaPhone className="text-slate-300 text-[10px]" />
-                                                            <span>{projectData.translator?.phone || '-'}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={clsx("w-2 h-2 rounded-full", projectData.documentsSent ? "bg-emerald-500" : "bg-slate-300")}></div>
-                                                    <span className={clsx("text-[10px] font-bold uppercase tracking-wider", projectData.documentsSent ? "text-emerald-600" : "text-slate-400")}>
-                                                        {projectData.documentsSent ? 'Versendet' : 'Ausstehend'}
-                                                    </span>
-                                                </div>
-                                                {!projectData.documentsSent ? (
-                                                    <button
-                                                        className="px-3 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded hover:bg-brand-700 transition shadow-sm flex items-center gap-2"
-                                                        onClick={() => updateProjectMutation.mutate({ documents_sent: true })}
-                                                    >
-                                                        <FaPaperPlane /> Senden
-                                                    </button>
-                                                ) : (
-                                                    <button className="px-3 py-1.5 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase rounded cursor-default border border-slate-200 flex items-center gap-1">
-                                                        <FaCheckCircle className="text-emerald-500" /> Erledigt
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* Section 3: Notes */}
-                            {projectData.notes && (
-                                <div className="space-y-6 pt-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">03</div>
-                                        <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Anmerkungen</h4>
-                                    </div>
-                                    <Input isTextArea value={projectData.notes} readOnly className="bg-amber-50/30 border-amber-100 text-slate-600 italic text-xs" />
-                                </div>
-                            )}
                         </div>
 
-                        {/* Right Sidebar */}
-                        <div className="w-full lg:w-80 space-y-6 shrink-0">
-                            {/* Financial Dashboard */}
-                            {/* Project Summary */}
-                            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm space-y-3 relative overflow-hidden">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-2">Rechnungsvorschau</h3>
-                                <div className="flex justify-between text-xs text-slate-500"><span>Positionen Netto</span><span>{financials.positionsTotal.toFixed(2)} €</span></div>
-                                <div className="flex justify-between text-xs text-slate-500"><span>Zusatzleistungen</span><span>{financials.extraTotal.toFixed(2)} €</span></div>
-                                <div className="pt-2 border-t border-slate-100 flex justify-between font-bold text-slate-800"><span>Gesamt Netto</span><span>{financials.netTotal.toFixed(2)} €</span></div>
-                                <div className="flex justify-between text-[10px] text-slate-400"><span>MwSt. 19%</span><span>{financials.tax.toFixed(2)} €</span></div>
-                                <div className="pt-2 border-t-2 border-brand-100 flex justify-between text-xl font-black text-slate-900 transition-all"><span>Gesamt</span><span>{financials.grossTotal.toFixed(2)} €</span></div>
+                        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-y-10 gap-x-12">
+                            {/* Left Column: Core Info & Customer */}
+                            <div className="space-y-8">
+                                {/* Section: Basisdaten */}
+                                <div>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Basisdaten</h4>
+                                    <div className="grid grid-cols-[110px_1fr] gap-y-3 gap-x-4 text-sm">
+                                        <span className="text-slate-500 font-medium">Bezeichnung</span>
+                                        <span className="text-slate-800 font-semibold">{projectData.name}</span>
 
-                                {projectData.downPayment > 0 && (
-                                    <div className="pt-2 flex justify-between text-xs text-emerald-600 font-bold border-t border-slate-50">
-                                        <span>Geleistete Zahlungen</span>
-                                        <span>-{projectData.downPayment.toFixed(2)} €</span>
-                                    </div>
-                                )}
+                                        <span className="text-slate-500 font-medium">Projekt-ID</span>
+                                        <span className="text-slate-600 font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded w-fit">{projectData.id}</span>
 
-                                <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center bg-slate-50 -mx-4 -mb-4 p-4 rounded-b">
-                                    <span className="text-[10px] font-black uppercase text-slate-600 tracking-wider">Restbetrag</span>
-                                    <span className={clsx("text-lg font-black", (financials.grossTotal - projectData.downPayment) <= 0.01 ? "text-emerald-600" : "text-brand-700")}>
-                                        {(financials.grossTotal - projectData.downPayment) <= 0.01 ? 'BEZAHLT' : `${(financials.grossTotal - projectData.downPayment).toFixed(2)} €`}
-                                    </span>
-                                </div>
-                            </div>
+                                        <span className="text-slate-500 font-medium">Status</span>
+                                        <div>{getStatusBadge(projectData.status)}</div>
 
-                            {/* Profit Margin */}
-                            <div className="bg-slate-100 p-4 rounded-lg border border-slate-200 hover:bg-slate-200/50 transition-colors">
-                                <div className="flex justify-between items-center mb-1.5">
-                                    <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tighter">Voraussichtl. Gewinn</span>
-                                    <span className={clsx("text-xs font-black", financials.profit >= 0 ? "text-slate-800" : "text-red-600")}>{financials.profit.toFixed(2)} €</span>
-                                </div>
-                                <div className="w-full bg-slate-300 rounded-full h-2 overflow-hidden shadow-inner">
-                                    <div className={clsx("h-full transition-all duration-500", financials.margin > 40 ? "bg-emerald-500" : financials.margin > 20 ? "bg-brand-500" : "bg-amber-500")} style={{ width: `${Math.min(100, Math.max(0, financials.margin))}%` }}></div>
-                                </div>
-                                <div className="text-right mt-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest">{financials.margin.toFixed(1)}% Marge</div>
-                            </div>
+                                        <span className="text-slate-500 font-medium">Lieferdatum</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-semibold text-slate-800">{projectData.due ? new Date(projectData.due).toLocaleDateString('de-DE') : '-'}</span>
+                                            <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight border shadow-sm", deadlineStatus.color)}>
+                                                {deadlineStatus.label}
+                                            </div>
+                                        </div>
 
-                            {/* Workflow Widget Removed */}
-
-                            {/* Options */}
-                            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm space-y-4">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Details & Optionen</h3>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Dokumentenart</label>
-                                        <div className="flex flex-wrap gap-1">
-                                            {projectData.docType.map((d: string) => (
-                                                <span key={d} className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase border border-slate-200">{d}</span>
-                                            ))}
+                                        <span className="text-slate-500 font-medium">Priorität</span>
+                                        <div className="flex items-center gap-2">
+                                            {projectData.priority === 'low' && <span className="text-slate-600">Normal</span>}
+                                            {projectData.priority !== 'low' && (
+                                                <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase border tracking-tight flex items-center gap-1 w-fit",
+                                                    projectData.priority === 'express' ? "bg-red-50 text-red-700 border-red-200" : "bg-orange-50 text-orange-700 border-orange-200"
+                                                )}>
+                                                    <FaFlag className="text-[9px]" /> {projectData.priority === 'express' ? 'Express' : 'Dringend'}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="text-[9px] font-bold text-slate-500 uppercase block mb-2 tracking-widest">Zusatzoptionen</label>
-                                        <div className="space-y-1.5">
-                                            {[
-                                                { key: 'isCertified', label: 'Beglaubigung', icon: <FaCheckCircle /> },
-                                                { key: 'hasApostille', label: 'Apostille', icon: <FaCheckCircle /> },
-                                                { key: 'isExpress', label: 'Express', icon: <FaCheckCircle />, danger: true }
-                                            ].map((opt) => (
+                                </div>
+
+                                {/* Section: Kunde */}
+                                <div>
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-4">
+                                        <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Kunde / Auftraggeber</h4>
+                                        <div className="flex gap-3">
+                                            {projectData.customer_id && (
                                                 <button
-                                                    key={opt.key}
-                                                    onClick={() => updateProjectMutation.mutate({ [opt.key === 'isCertified' ? 'is_certified' : opt.key === 'hasApostille' ? 'has_apostille' : 'is_express']: !projectData[opt.key] })}
-                                                    disabled={updateProjectMutation.isPending}
-                                                    className={clsx(
-                                                        "w-full flex items-center justify-between p-2.5 rounded border transition-all active:scale-[0.98]",
-                                                        projectData[opt.key]
-                                                            ? (opt.danger ? "bg-red-50 border-red-200 text-red-700 shadow-sm" : "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm")
-                                                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
-                                                    )}
+                                                    onClick={() => navigate(`/customers/${projectData.customer_id}`, { state: { from: location.pathname } })}
+                                                    className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
                                                 >
-                                                    <span className="text-[10px] font-black uppercase tracking-tight">{opt.label}</span>
-                                                    {projectData[opt.key] ? (
-                                                        <div className={clsx("text-xs", opt.danger ? "text-red-500" : "text-emerald-500")}>{opt.icon}</div>
-                                                    ) : (
-                                                        <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-200"></div>
-                                                    )}
+                                                    <FaExternalLinkAlt /> Akte
                                                 </button>
-                                            ))}
+                                            )}
+                                            <button onClick={() => setIsCustomerSearchOpen(true)} className="text-[10px] text-brand-600 font-bold hover:underline">Ändern</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/50 rounded-lg border border-slate-100 p-4">
+                                        <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
+                                            <span className="text-slate-500 font-medium">Firma/Name</span>
+                                            <span className="text-slate-800 font-bold">{projectData.customer.name}</span>
+
+                                            <span className="text-slate-500 font-medium">Ansprechpartner</span>
+                                            <span className="text-slate-800">{projectData.customer.contact}</span>
+
+                                            <span className="text-slate-500 font-medium">Email</span>
+                                            <a href={`mailto:${projectData.customer.email}`} className="text-brand-600 hover:underline truncate block">{projectData.customer.email || '-'}</a>
+
+                                            <span className="text-slate-500 font-medium">Telefon</span>
+                                            <span className="text-slate-800">{projectData.customer.phone || '-'}</span>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-slate-200">
+                                            <button className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm">
+                                                <FaClock className="text-slate-400" /> Mahnung
+                                            </button>
+                                            <button className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm">
+                                                <FaPaperPlane className="text-slate-400" /> Abhol-Best.
+                                            </button>
+                                            <button className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm">
+                                                <FaCheckCircle className="text-slate-400" /> Anfrage-Best.
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Right Column: Order Details & Partner */}
+                            <div className="space-y-8">
+                                {/* Section: Auftragsdetails */}
+                                <div>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Auftragsdetails</h4>
+                                    <div className="grid grid-cols-[110px_1fr] gap-y-3 gap-x-4 text-sm">
+                                        <span className="text-slate-500 font-medium">Sprachpaar</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded shadow-sm text-slate-700">
+                                                <img src={sourceLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
+                                                <span>{sourceLang.name}</span>
+                                            </div>
+                                            <FaArrowLeft className="rotate-180 text-slate-300 text-xs" />
+                                            <div className="flex items-center gap-1.5 text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded shadow-sm text-slate-700">
+                                                <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
+                                                <span>{targetLang.name}</span>
+                                            </div>
+                                        </div>
+
+                                        <span className="text-slate-500 font-medium mt-1">Dokumentenart</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {projectData.docType.length > 0 ? projectData.docType.map((d: string) => (
+                                                <span key={d} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase border border-slate-200 tracking-wide">{d}</span>
+                                            )) : <span className="text-slate-400 text-xs italic">-</span>}
+                                        </div>
+
+                                        <span className="text-slate-500 font-medium mt-1">Besonderheiten</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {projectData.isCertified && (
+                                                <span title="Beglaubigung" className="w-6 h-6 rounded flex items-center justify-center bg-blue-50 text-blue-600 border border-blue-200"><FaCheckCircle className="text-xs" /></span>
+                                            )}
+                                            {projectData.hasApostille && (
+                                                <span title="Apostille" className="w-6 h-6 rounded flex items-center justify-center bg-purple-50 text-purple-600 border border-purple-200"><span className="text-[10px] font-black">A</span></span>
+                                            )}
+                                            {!projectData.isCertified && !projectData.hasApostille && <span className="text-slate-400 text-xs italic">-</span>}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section: Partner */}
+                                <div>
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-4">
+                                        <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Ausführender Partner</h4>
+                                        <div className="flex gap-3">
+                                            {projectData.translator?.id && (
+                                                <button
+                                                    onClick={() => navigate(`/partners/${projectData.translator.id}`, { state: { from: location.pathname } })}
+                                                    className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
+                                                >
+                                                    <FaExternalLinkAlt /> Akte
+                                                </button>
+                                            )}
+                                            <button onClick={() => setIsPartnerModalOpen(true)} className="text-[10px] text-brand-600 font-bold hover:underline">Ändern</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/50 rounded-lg border border-slate-100 p-4">
+                                        <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
+                                            <span className="text-slate-500 font-medium">Name</span>
+                                            <span className="text-slate-800 font-bold">{projectData.translator?.name || '-'}</span>
+
+                                            <span className="text-slate-500 font-medium">Email</span>
+                                            <a href={`mailto:${projectData.translator?.email}`} className="text-brand-600 hover:underline truncate block">{projectData.translator?.email || '-'}</a>
+
+                                            <span className="text-slate-500 font-medium">Status</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className={clsx("w-2 h-2 rounded-full", projectData.documentsSent ? "bg-emerald-500" : "bg-slate-300")}></div>
+                                                <span className={clsx("text-xs font-medium", projectData.documentsSent ? "text-emerald-700" : "text-slate-500")}>
+                                                    {projectData.documentsSent ? 'Dokumente versendet' : 'Wartet auf Versand'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {!projectData.documentsSent ? (
+                                            <button
+                                                className="w-full py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded hover:bg-brand-700 transition shadow-sm flex items-center justify-center gap-2"
+                                                onClick={() => updateProjectMutation.mutate({ documents_sent: true })}
+                                            >
+                                                <FaPaperPlane /> Dokumente senden
+                                            </button>
+                                        ) : (
+                                            <div className="w-full py-1.5 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded flex items-center justify-center gap-2 border border-brand-100">
+                                                <FaCheckCircle /> Versand bestätigt
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Full Width: Notes */}
+                            <div className="lg:col-span-2 pt-4 border-t border-slate-100">
+                                <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Interne Notizen</h4>
+                                <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50/50 p-3 rounded border border-slate-100 min-h-[60px]">
+                                    {projectData.notes || <span className="italic text-slate-400">Keine Notizen hinterlegt.</span>}
+                                </p>
                             </div>
                         </div>
                     </div>
-                )}
+                )
+                }
+
+
 
                 {activeTab === 'files' && (
-                    <div className="flex flex-col gap-3 animate-fadeIn pb-10 px-8">
-                        {selectedFileIds.length > 0 && (
-                            <div className="px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg flex justify-between items-center animate-fadeIn shadow-sm z-10 relative">
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10">
+                        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center bg-white gap-4">
+                            <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-4">
-                                    <span className="text-slate-600 text-xs font-bold uppercase tracking-widest shrink-0">{selectedFileIds.length} ausgewählt</span>
-                                    <div className="h-4 w-px bg-slate-300"></div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => window.alert('Bulk Download gestartet...')} className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                            <FaDownload className="text-xs" /> Herunterladen
-                                        </button>
-                                        <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2">
-                                            <FaTrash className="text-xs" /> {deleteFileMutation.isPending ? 'Löscht...' : 'Löschen'}
-                                        </button>
-                                    </div>
+                                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Projekt-Dateien</h3>
+                                    <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">{projectData.files.length}</span>
                                 </div>
-                                <button onClick={() => setSelectedFileIds([])} className="text-slate-400 hover:text-slate-600 transition p-1 hover:bg-slate-200 rounded"><FaTimes /></button>
-                            </div>
-                        )}
-                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Projekt-Dateien</h3>
-                                        <p className="text-[10px] text-slate-400 font-bold">Verwaltung von Quell- und Zieltexten</p>
-                                    </div>
+                                <div className="flex bg-slate-100 p-1 rounded-lg w-fit">
+                                    <button
+                                        onClick={() => setFileFilterTab('all')}
+                                        className={clsx("px-3 py-1 text-[10px] font-bold rounded-md transition", fileFilterTab === 'all' ? "bg-white text-brand-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                                    >
+                                        Alle
+                                    </button>
+                                    <button
+                                        onClick={() => setFileFilterTab('source')}
+                                        className={clsx("px-3 py-1 text-[10px] font-bold rounded-md transition", fileFilterTab === 'source' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                                    >
+                                        Quelle
+                                    </button>
+                                    <button
+                                        onClick={() => setFileFilterTab('target')}
+                                        className={clsx("px-3 py-1 text-[10px] font-bold rounded-md transition", fileFilterTab === 'target' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                                    >
+                                        Ziel
+                                    </button>
                                 </div>
-                                <button onClick={() => setIsUploadModalOpen(true)} className="px-4 py-2 bg-brand-700 text-white rounded text-[10px] font-black uppercase tracking-wider hover:bg-brand-800 transition flex items-center gap-2 shadow-sm active:scale-95">
-                                    <FaCloudUploadAlt className="text-sm" /> Dateimanager öffnen
-                                </button>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-slate-50/80 text-slate-400 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
-                                        <tr>
-                                            <th className="px-6 py-4 w-10"><Checkbox checked={projectData.files.length > 0 && selectedFileIds.length === projectData.files.length} onChange={toggleSelectAllFiles} /></th>
-                                            <th className="px-2 py-4">Dateiname</th>
-                                            <th className="px-6 py-4">Kategorie</th>
-                                            <th className="px-6 py-4 text-right">Wörter</th>
-                                            <th className="px-6 py-4 text-right">Zeichen</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Aktionen</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-[13px]">
-                                        {projectData.files.length === 0 ? (
-                                            <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">Keine Dateien vorhanden.</td></tr>
-                                        ) : projectData.files.map((file: any) => (
-                                            <tr key={file.id} className={clsx("group hover:bg-slate-50 transition-colors", selectedFileIds.includes(file.id) && "bg-brand-50/30")}>
-                                                <td className="px-6 py-4"><Checkbox checked={selectedFileIds.includes(file.id)} onChange={() => toggleSelectFile(file.id)} /></td>
-                                                <td className="px-2 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">{file.ext}</div>
-                                                        <div>{renderEditableFileCell(file)}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={clsx("px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-tight border shadow-xs transition-colors cursor-pointer",
-                                                        file.type === 'source' ? "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100" : "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
-                                                    )} onClick={() => {
-                                                        setProjectData((prev: any) => ({
-                                                            ...prev,
-                                                            files: prev.files.map((f: any) => f.id === file.id ? { ...f, type: f.type === 'source' ? 'target' : 'source' } : f)
-                                                        }));
-                                                    }}>{file.type === 'source' ? 'Quelle' : 'Ziel'}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right font-bold text-slate-700 tabular-nums">{renderEditableFileStatCell(file, 'words')}</td>
-                                                <td className="px-6 py-4 text-right font-medium text-slate-400 tabular-nums text-xs">{renderEditableFileStatCell(file, 'chars')}</td>
-                                                <td className="px-6 py-4"><span className="text-slate-500 font-medium text-xs">{file.status}</span></td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex justify-end gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                                                        <button
-                                                            onClick={() => handleFileDownload(file.id, file.name)}
-                                                            className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-200 rounded transition shadow-xs"
-                                                            title="Herunterladen"
-                                                        >
-                                                            <FaDownload className="text-[10px]" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleFileDelete(file.id)}
-                                                            className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 rounded transition shadow-xs"
-                                                            title="Löschen"
-                                                        >
-                                                            <FaTrash className="text-[10px]" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'finances' && (
-                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn mx-8 mb-10">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-                            <div className="flex items-center gap-4">
-                                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Detaillierte Kalkulation</h3>
-                                <button
-                                    onClick={handleSavePositions}
-                                    disabled={updateProjectMutation.isPending}
-                                    className="px-4 py-2 bg-emerald-600 text-white rounded text-[10px] font-black uppercase hover:bg-emerald-700 transition shadow-sm disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    <FaCheckCircle className="text-[10px]" /> {updateProjectMutation.isPending ? 'Wird gespeichert...' : 'Preise speichern'}
-                                </button>
-                            </div>
-                            <button onClick={addPosition} className="px-4 py-2 bg-brand-50 text-brand-700 border border-brand-200 rounded text-[10px] font-black uppercase hover:bg-brand-100 transition shadow-sm">
-                                <FaPlus className="inline mr-1 mb-0.5" /> Position hinzufügen
+                            <button
+                                onClick={() => setIsUploadModalOpen(true)}
+                                className="px-4 py-2 bg-brand-600 text-white rounded text-[10px] font-black uppercase hover:bg-brand-700 transition shadow-sm flex items-center gap-2"
+                            >
+                                <FaCloudUploadAlt className="text-sm" /> Datei hochladen
                             </button>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse min-w-[900px]">
+                            <table className="w-full text-left border-collapse">
                                 <thead className="bg-slate-50/80 text-slate-400 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
                                     <tr>
-                                        <th className="px-4 py-3 w-10 text-center">#</th>
-                                        <th className="px-4 py-3">Beschreibung</th>
-                                        <th className="px-4 py-3 w-32">Menge / Einh.</th>
-                                        <th className="px-4 py-3 w-32 text-right bg-red-50/30 text-red-500 border-l border-slate-100">EK Rate/Gesamt</th>
-                                        <th className="px-4 py-3 w-32 text-right bg-emerald-50/30 text-emerald-700 border-l border-slate-100">VK Rate/Gesamt</th>
-                                        <th className="px-4 py-3 w-10"></th>
+                                        <th className="px-6 py-4">Dateiname</th>
+                                        <th className="px-6 py-4">Typ</th>
+                                        <th className="px-6 py-4">Vers.</th>
+                                        <th className="px-6 py-4">Größe</th>
+                                        <th className="px-6 py-4">Hochgeladen von</th>
+                                        <th className="px-6 py-4">Datum / Zeit</th>
+                                        <th className="px-6 py-4 text-right">Aktionen</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-xs">
-                                    {projectData.positions.map((pos: any, idx: number) => (
-                                        <tr key={pos.id} className="group hover:bg-slate-50 transition-colors">
-                                            <td className="px-4 py-4 text-center text-slate-400">{idx + 1}</td>
-                                            <td className="px-4 py-4">{renderEditableCell(pos.id, 'description', pos.description, 'text', 'font-bold text-slate-800')}</td>
-                                            <td className="px-4 py-4">
-                                                <div className="flex flex-col gap-1">
-                                                    {renderEditableCell(pos.id, 'amount', pos.amount, 'number', 'w-16')}
-                                                    <select value={pos.unit} onChange={(e) => handleCellUpdate(pos.id, 'unit', e.target.value)} className="text-[9px] font-bold uppercase text-slate-400 bg-transparent outline-none cursor-pointer">
-                                                        <option value="Wörter">Wörter</option> <option value="Stunden">Stunden</option> <option value="Seiten">Seiten</option> <option value="Zeilen">Zeilen</option> <option value="Pauschal">Pauschal</option>
-                                                    </select>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4 text-right bg-red-50/10 border-l border-slate-100">
-                                                <div className="font-bold text-slate-500">{renderEditableCell(pos.id, 'partnerRate', pos.partnerRate, 'number', 'text-right')}</div>
-                                                <div className="text-[10px] text-red-400 font-black">{parseFloat(pos.partnerTotal).toFixed(2)} €</div>
-                                            </td>
-                                            <td className="px-4 py-4 text-right bg-emerald-50/10 border-l border-slate-100">
-                                                <div className="font-bold text-slate-500">{renderEditableCell(pos.id, 'customerRate', pos.customerRate, 'number', 'text-right')}</div>
-                                                <div className="text-[10px] text-emerald-600 font-black">{parseFloat(pos.customerTotal).toFixed(2)} €</div>
-                                            </td>
-                                            <td className="px-2 py-4 text-center">
-                                                <button onClick={() => deletePosition(pos.id)} className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"><FaTrashAlt className="text-[10px]" /></button>
+                                    {projectData.files
+                                        .filter((f: any) => fileFilterTab === 'all' || f.type === fileFilterTab)
+                                        .length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
+                                                Keine Dateien für diesen Filter vorhanden.
                                             </td>
                                         </tr>
-                                    ))}
-                                    <tr className="bg-slate-100 border-t-2 border-slate-200">
-                                        <td colSpan={3} className="px-4 py-3 text-right font-black text-slate-600 uppercase tracking-widest text-[10px]">Netto Ergebnis</td>
-                                        <td className="px-4 py-3 text-right font-bold text-red-400">{financials.partnerTotal.toFixed(2)} € (EK)</td>
-                                        <td className="px-4 py-3 text-right font-black text-lg text-slate-800">{financials.netTotal.toFixed(2)} € (VK)</td>
-                                        <td></td>
-                                    </tr>
+                                    ) : (
+                                        projectData.files
+                                            .filter((f: any) => fileFilterTab === 'all' || f.type === fileFilterTab)
+                                            .map((file: any) => {
+                                                const fileName = file.name || file.fileName || file.file_name || file.original_name || 'Unbenannte Datei';
+                                                const fileType = file.type || file.mime_type || (fileName.includes('.') ? fileName.split('.').pop() : 'FILE');
+
+                                                // Robust size calculation
+                                                let displaySize = file.size || file.file_size || '0 B';
+                                                if (typeof displaySize === 'number' || (typeof displaySize === 'string' && !isNaN(Number(displaySize)))) {
+                                                    displaySize = formatFileSize(Number(displaySize));
+                                                }
+
+                                                // Robust date with full time
+                                                const rawDate = file.upload_date || file.created_at;
+                                                const dateObj = rawDate ? new Date(rawDate) : null;
+                                                const isValidDate = dateObj && !isNaN(dateObj.getTime());
+                                                const displayDate = isValidDate ? dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+                                                const displayTime = isValidDate ? dateObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+
+                                                return (
+                                                    <tr key={file.id} className="hover:bg-slate-50 transition-colors group">
+                                                        <td className="px-6 py-4 font-bold text-slate-700 flex items-center gap-3">
+                                                            {fileName.endsWith('.pdf') ? <FaFilePdf className="text-red-500 text-lg" /> :
+                                                                fileName.endsWith('.doc') || fileName.endsWith('.docx') ? <FaFileWord className="text-blue-500 text-lg" /> :
+                                                                    fileName.endsWith('.xls') || fileName.endsWith('.xlsx') ? <FaFileExcel className="text-emerald-500 text-lg" /> :
+                                                                        fileName.endsWith('.jpg') || fileName.endsWith('.png') ? <FaFileImage className="text-purple-500 text-lg" /> :
+                                                                            fileName.endsWith('.zip') || fileName.endsWith('.rar') ? <FaFileArchive className="text-orange-500 text-lg" /> :
+                                                                                <FaFileAlt className="text-slate-400 text-lg" />}
+                                                            <div className="flex flex-col">
+                                                                <span>{fileName}</span>
+                                                                <span className="text-[8px] text-slate-400 font-normal uppercase tracking-tighter">{file.original_name}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={clsx(
+                                                                "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tight border",
+                                                                file.type === 'source' ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
+                                                                    file.type === 'target' ? "bg-blue-50 text-blue-700 border-blue-100" :
+                                                                        "bg-slate-50 text-slate-600 border-slate-100"
+                                                            )}>
+                                                                {file.type === 'source' ? 'Quelle' : file.type === 'target' ? 'Ziel' : file.type}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">V{file.version || '1.0'}</span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-slate-500">{displaySize}</td>
+                                                        <td className="px-6 py-4 text-slate-600">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-5 h-5 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-[9px] font-bold text-brand-600">
+                                                                    {(file.uploaded_by?.[0] || file.uploader?.name?.[0] || '?')}
+                                                                </div>
+                                                                <span className="font-medium">{file.uploaded_by || file.uploader?.name || 'System'}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-slate-500">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold">{displayDate}</span>
+                                                                <span className="text-[10px] text-slate-400">{displayTime}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <button
+                                                                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition"
+                                                                    title="Ansehen"
+                                                                    onClick={() => setPreviewFile({ name: fileName, url: file.url, type: fileType })}
+                                                                >
+                                                                    <FaEye className="text-[12px]" />
+                                                                </button>
+                                                                <button
+                                                                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition"
+                                                                    title="Herunterladen"
+                                                                    onClick={() => handleDownloadFile(file)}
+                                                                >
+                                                                    <FaDownload className="text-[12px]" />
+                                                                </button>
+                                                                <button
+                                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition"
+                                                                    title="Löschen"
+                                                                    onClick={() => setDeleteFileConfirm({ isOpen: true, fileId: file.id, fileName: fileName })}
+                                                                >
+                                                                    <FaTrashAlt className="text-[12px]" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 )}
 
-                {activeTab === 'messages' && (
-                    <div className="bg-white rounded-none md:rounded-lg border-y md:border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-200px)] md:h-[500px] md:mx-8 mb-0 md:mb-10">
-                        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                            <FaComments className="text-brand-600" />
-                            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Projekt-Chat</h3>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
-                            {projectMessages.map((msg) => (
-                                <div key={msg.id} className={clsx("flex w-full", msg.from === 'Admin' ? "justify-end" : "justify-start")}>
-                                    <div className={clsx("p-3 shadow-sm border rounded-2xl max-w-[85%] md:max-w-[70%]", msg.from === 'Admin' ? "bg-brand-50 border-brand-100" : "bg-white border-slate-200")}>
-                                        <div className="flex justify-between items-center gap-4 mb-1">
-                                            <span className="font-bold text-[10px] text-slate-800">{msg.from}</span>
-                                            <span className="text-[9px] text-slate-400">{msg.timestamp}</span>
-                                        </div>
-                                        <p className="text-sm text-slate-700 leading-snug break-words">{msg.message}</p>
-                                    </div>
+                {
+                    activeTab === 'finances' && (
+                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10">
+                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                                <div className="flex items-center gap-4">
+                                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Detaillierte Kalkulation</h3>
+                                    <button
+                                        onClick={handleSavePositions}
+                                        disabled={updateProjectMutation.isPending}
+                                        className="px-4 py-2 bg-emerald-600 text-white rounded text-[10px] font-black uppercase hover:bg-emerald-700 transition shadow-sm disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        <FaCheckCircle className="text-[10px]" /> {updateProjectMutation.isPending ? 'Wird gespeichert...' : 'Preise speichern'}
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
-                        <div className="p-3 md:p-4 border-t border-slate-200 bg-white sticky bottom-0">
-                            <div className="flex gap-2">
-                                <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Nachricht..." className="flex-1 h-10 px-4 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500/20" />
-                                <button onClick={handleSendMessage} className="px-4 bg-brand-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-800 transition shrink-0">Senden</button>
+                                <button onClick={addPosition} className="px-4 py-2 bg-brand-50 text-brand-700 border border-brand-200 rounded text-[10px] font-black uppercase hover:bg-brand-100 transition shadow-sm">
+                                    <FaPlus className="inline mr-1 mb-0.5" /> Position hinzufügen
+                                </button>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse min-w-[900px]">
+                                    <thead className="bg-slate-50/80 text-slate-400 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
+                                        <tr>
+                                            <th className="px-4 py-3 w-10 text-center">#</th>
+                                            <th className="px-4 py-3">Beschreibung</th>
+                                            <th className="px-4 py-3 w-32">Menge / Einh.</th>
+                                            <th className="px-4 py-3 w-32 text-right bg-red-50/30 text-red-500 border-l border-slate-100">EK Rate/Gesamt</th>
+                                            <th className="px-4 py-3 w-32 text-right bg-emerald-50/30 text-emerald-700 border-l border-slate-100">VK Rate/Gesamt</th>
+                                            <th className="px-4 py-3 w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 text-xs">
+                                        {projectData.positions.map((pos: any, idx: number) => (
+                                            <tr key={pos.id} className="group hover:bg-slate-50 transition-colors">
+                                                <td className="px-4 py-4 text-center text-slate-400">{idx + 1}</td>
+                                                <td className="px-4 py-4">{renderEditableCell(pos.id, 'description', pos.description, 'text', 'font-bold text-slate-800')}</td>
+                                                <td className="px-4 py-4">
+                                                    <div className="flex flex-col gap-1">
+                                                        {renderEditableCell(pos.id, 'amount', pos.amount, 'number', 'w-16')}
+                                                        <select value={pos.unit} onChange={(e) => handleCellUpdate(pos.id, 'unit', e.target.value)} className="text-[9px] font-bold uppercase text-slate-400 bg-transparent outline-none cursor-pointer">
+                                                            <option value="Wörter">Wörter</option> <option value="Stunden">Stunden</option> <option value="Seiten">Seiten</option> <option value="Zeilen">Zeilen</option> <option value="Pauschal">Pauschal</option>
+                                                        </select>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right bg-red-50/10 border-l border-slate-100">
+                                                    <div className="font-bold text-slate-500">{renderEditableCell(pos.id, 'partnerRate', pos.partnerRate, 'number', 'text-right')}</div>
+                                                    <div className="text-[10px] text-red-400 font-black">{parseFloat(pos.partnerTotal).toFixed(2)} €</div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right bg-emerald-50/10 border-l border-slate-100">
+                                                    <div className="font-bold text-slate-500">{renderEditableCell(pos.id, 'customerRate', pos.customerRate, 'number', 'text-right')}</div>
+                                                    <div className="text-[10px] text-emerald-600 font-black">{parseFloat(pos.customerTotal).toFixed(2)} €</div>
+                                                </td>
+                                                <td className="px-2 py-4 text-center">
+                                                    <button onClick={() => deletePosition(pos.id)} className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"><FaTrashAlt className="text-[10px]" /></button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        <tr className="bg-slate-100 border-t-2 border-slate-200">
+                                            <td colSpan={3} className="px-4 py-3 text-right font-black text-slate-600 uppercase tracking-widest text-[10px]">Netto Ergebnis</td>
+                                            <td className="px-4 py-3 text-right font-bold text-red-400">{financials.partnerTotal.toFixed(2)} € (EK)</td>
+                                            <td className="px-4 py-3 text-right font-black text-lg text-slate-800">{financials.netTotal.toFixed(2)} € (VK)</td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+
+
+
+                {
+                    activeTab === 'history' && (
+                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10 h-full">
+                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                        <FaClock className="text-lg" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Projekt-Historie</h3>
+                                        <p className="text-[10px] text-slate-400 font-bold">Vollständiges Änderungsprotokoll</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 max-w-xs w-full">
+                                    <Input
+                                        value={historySearch}
+                                        onChange={(e: any) => setHistorySearch(e.target.value)}
+                                        placeholder="Suchen..."
+                                        className="h-9 text-xs"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-slate-50/80 text-slate-400 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
+                                        <tr>
+                                            <th className="px-6 py-4">Wann</th>
+                                            <th className="px-6 py-4">Wer</th>
+                                            <th className="px-6 py-4">Feld / Aktion</th>
+                                            <th className="px-6 py-4">Von Wert</th>
+                                            <th className="px-6 py-4">Zu Wert</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 text-xs">
+                                        {(projectData.history || [
+                                            // Fallback Dynamic History if no real history exists yet
+                                            { date: new Date().toLocaleDateString('de-DE') + ' ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }), user: 'System', action: 'Ansicht geöffnet', from: '-', to: '-' },
+                                            { date: projectData.due ? new Date(new Date(projectData.due).getTime() - 86400000).toLocaleDateString('de-DE') + ' 14:30' : '-', user: projectData.pm || 'PM', action: 'Lieferdatum gesetzt', from: '-', to: projectData.due || '-' },
+                                            ...(projectData.documentsSent ? [{ date: new Date().toLocaleDateString('de-DE') + ' 09:15', user: projectData.pm || 'PM', action: 'Dokumente versendet', from: 'Ausstehend', to: 'Versendet' }] : []),
+                                            { date: projectData.createdAt ? new Date(projectData.createdAt).toLocaleDateString('de-DE') + ' 10:00' : '01.01.2024 10:00', user: projectData.pm || 'Admin', action: 'Projekt erstellt', from: '-', to: 'Neu' },
+                                        ]).filter((item: any) =>
+                                            // Safe filtering
+                                            (item.action && item.action.toLowerCase().includes(historySearch.toLowerCase())) ||
+                                            (item.user && item.user.toLowerCase().includes(historySearch.toLowerCase()))
+                                        ).map((item: any, i: number) => (
+                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4 font-bold text-slate-700 whitespace-nowrap">{item.date}</td>
+                                                <td className="px-6 py-4 text-slate-600 flex items-center gap-2">
+                                                    <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-500">
+                                                        {item.user?.[0] || '?'}
+                                                    </div>
+                                                    {item.user}
+                                                </td>
+                                                <td className="px-6 py-4 font-bold text-slate-800">{item.action}</td>
+                                                <td className="px-6 py-4 text-slate-400 italic font-medium max-w-[150px] truncate">{item.from}</td>
+                                                <td className="px-6 py-4 text-emerald-600 font-bold bg-emerald-50/10 max-w-[150px] truncate">{item.to}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )
+                }
+
+                {
+                    activeTab === 'messages' && (
+                        <div className="bg-white rounded-none md:rounded-lg border-y md:border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-200px)] md:h-[600px] px-0 md:px-0 mx-0 md:mx-6 mb-0 md:mb-10">
+
+                            {/* Main Chat Area */}
+                            <div className="flex-1 flex flex-col h-full relative">
+                                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <FaComments className="text-brand-600" />
+                                        <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Projekt-Chat</h3>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> Online
+                                    </span>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/30 custom-scrollbar">
+                                    {projectMessages.map((msg) => (
+                                        <div key={msg.id} className={clsx("flex w-full group", msg.from === 'Admin' ? "justify-end" : "justify-start")}>
+                                            <div className={clsx("flex flex-col max-w-[85%] md:max-w-[70%]", msg.from === 'Admin' ? "items-end" : "items-start")}>
+                                                <div className="flex items-center gap-2 mb-1 px-1">
+                                                    <span className="font-bold text-[10px] text-slate-700">{msg.from}</span>
+                                                    <span className="text-[9px] text-slate-400">{msg.timestamp}</span>
+                                                </div>
+                                                <div className={clsx("p-3.5 shadow-sm border rounded-2xl relative",
+                                                    msg.from === 'Admin'
+                                                        ? "bg-brand-600 text-white border-brand-700 rounded-tr-none"
+                                                        : "bg-white text-slate-700 border-slate-200 rounded-tl-none")}>
+                                                    <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.message}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="p-3 md:p-4 border-t border-slate-200 bg-white">
+                                    <div className="flex gap-2 items-end">
+                                        <div className="flex-1 relative">
+                                            <textarea
+                                                value={newMessage}
+                                                onChange={(e) => setNewMessage(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSendMessage();
+                                                    }
+                                                }}
+                                                placeholder="Schreiben Sie eine Nachricht..."
+                                                className="w-full min-h-[44px] max-h-[120px] py-2.5 pl-4 pr-12 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 resize-none"
+                                                rows={1}
+                                            />
+                                            <div className="absolute right-2 bottom-2 flex gap-1">
+                                                <button className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded transition" title="Datei anhängen">
+                                                    <FaPaperclip className="text-xs" />
+                                                </button>
+                                                <button className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded transition" title="Erwähnen (@)">
+                                                    <FaAt className="text-xs" />
+                                                </button>
+                                                <button className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded transition" title="Referenz (#)">
+                                                    <FaHashtag className="text-xs" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button onClick={handleSendMessage} className="h-[44px] px-4 bg-brand-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-700 transition shrink-0 shadow-sm flex items-center gap-2">
+                                            <FaPaperPlane />
+                                            <span className="hidden md:inline">Senden</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Team Sidebar */}
+                            <div className="w-full lg:w-64 border-l border-slate-200 bg-white flex flex-col h-full">
+                                <div className="p-4 border-b border-slate-100">
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Projekt-Teilnehmer</h4>
+                                    <div className="space-y-3">
+
+                                        {/* Current User */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold border border-brand-200 shadow-sm relative">
+                                                AD
+                                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></div>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs font-bold text-slate-800 truncate">Admin User</div>
+                                                <div className="text-[9px] text-slate-400 truncate">Projektmanager</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Translator */}
+                                        {projectData.translator && (
+                                            <div className="flex items-center gap-3 opacity-90">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold border border-slate-200 shadow-sm">
+                                                    {projectData.translator.initials}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-xs font-bold text-slate-800 truncate">{projectData.translator.name}</div>
+                                                    <div className="text-[9px] text-slate-400 truncate">Übersetzer</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Customer */}
+                                        <div className="flex items-center gap-3 opacity-90">
+                                            <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xs font-bold border border-purple-100 shadow-sm">
+                                                K
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs font-bold text-slate-800 truncate">{projectData.customer.name}</div>
+                                                <div className="text-[9px] text-slate-400 truncate">Kunde (Read-Only)</div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div className="p-4 mt-auto border-t border-slate-100 bg-slate-50">
+                                    <button className="w-full flex items-center justify-center gap-2 py-2 border border-dashed border-slate-300 rounded text-slate-500 text-[10px] font-bold uppercase hover:bg-white hover:border-brand-300 hover:text-brand-600 transition">
+                                        <FaUserPlus /> Teilnehmer einladen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            </div >
+
+            <CustomerSelectionModal
+                isOpen={isCustomerSearchOpen}
+                onClose={() => setIsCustomerSearchOpen(false)}
+                onSelect={(customer) => {
+                    updateProjectMutation.mutate({ customer_id: customer.id });
+                    // Optimistically update local state to reflect the change immediately
+                    if (projectData) {
+                        setProjectData({
+                            ...projectData,
+                            customer_id: customer.id,
+                            customer: {
+                                ...projectData.customer,
+                                id: customer.id.toString(),
+                                name: customer.company || customer.name,
+                                contact: customer.contact || '-',
+                                email: customer.email || '',
+                                phone: customer.phone || '',
+                                initials: customer.initials,
+                                type: customer.type
+                            },
+                            // Also update 'client' display field if used
+                            client: customer.company || customer.name
+                        });
+                    }
+
+                    setIsCustomerSearchOpen(false);
+                }}
+            />
 
             <PartnerSelectionModal isOpen={isPartnerModalOpen} onClose={() => setIsPartnerModalOpen(false)} onSelect={handlePartnerSelect} />
             <NewProjectModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSubmit={handleEditSubmit} initialData={projectData} />
             <FileUploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleFileUpload} />
             <NewInvoiceModal isOpen={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} onSubmit={(data) => invoiceMutation.mutate(data)} project={{ ...projectData, financials }} isLoading={invoiceMutation.isPending} />
+            <FilePreviewModal
+                isOpen={!!previewFile}
+                onClose={() => setPreviewFile(null)}
+                file={previewFile}
+                onDownload={() => previewFile && handleDownloadFile({ name: previewFile.name, id: projectData.files.find((f: any) => f.url === previewFile.url)?.id })}
+            />
+            <ConfirmModal
+                isOpen={deleteFileConfirm.isOpen}
+                onClose={() => setDeleteFileConfirm({ isOpen: false, fileId: null, fileName: '' })}
+                onConfirm={() => {
+                    if (deleteFileConfirm.fileId) {
+                        deleteFileMutation.mutate(deleteFileConfirm.fileId);
+                        setDeleteFileConfirm({ isOpen: false, fileId: null, fileName: '' });
+                    }
+                }}
+                title="Datei löschen"
+                message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                confirmText="Löschen"
+                cancelText="Abbrechen"
+                type="danger"
+                isLoading={deleteFileMutation.isPending}
+            />
         </div >
     );
 };

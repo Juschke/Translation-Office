@@ -20,11 +20,15 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        // Create user without tenant first
+        // tenant_id will be null initially, which is allowed by migration
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'admin',
+            'status' => 'active',
+            'is_admin' => false,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -32,8 +36,9 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user,
-        ]);
+            'user' => $user->load('tenant'),
+            'message' => 'Registrierung erfolgreich! Bitte vervollständigen Sie Ihr Profil.',
+        ], 201);
     }
 
     public function login(Request $request)
@@ -82,7 +87,9 @@ class AuthController extends Controller
             }
         }
 
-        // Handle Re-hashing if needed (optional)
+        // Update last login timestamp
+        $user->last_login_at = now();
+        $user->save();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

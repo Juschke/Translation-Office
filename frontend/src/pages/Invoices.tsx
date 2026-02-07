@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import {
     FaPlus, FaCheckCircle, FaHistory,
     FaFileExcel, FaFileCsv, FaTrash,
-    FaCheck, FaPaperPlane, FaDownload, FaFilePdf, FaFileInvoiceDollar, FaEye, FaTrashRestore, FaFilter
+    FaCheck, FaPaperPlane, FaDownload, FaPrint, FaFilePdf, FaFileInvoiceDollar, FaEye, FaTrashRestore, FaFilter
 } from 'react-icons/fa';
 
 import Checkbox from '../components/common/Checkbox';
@@ -10,6 +10,7 @@ import Switch from '../components/common/Switch';
 import DataTable from '../components/common/DataTable';
 import KPICard from '../components/common/KPICard';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
+import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
@@ -22,6 +23,7 @@ const Invoices = () => {
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
+    const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
     const [showTrash, setShowTrash] = useState(false);
     const [showArchive, setShowArchive] = useState(false);
     const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
@@ -54,10 +56,19 @@ const Invoices = () => {
         queryFn: invoiceService.getAll
     });
 
+    const createMutation = useMutation({
+        mutationFn: invoiceService.create,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            setIsNewInvoiceOpen(false);
+        }
+    });
+
     const deleteMutation = useMutation({
         mutationFn: invoiceService.delete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
         }
     });
@@ -66,6 +77,7 @@ const Invoices = () => {
         mutationFn: (args: { ids: number[], data: any }) => invoiceService.bulkUpdate(args.ids, args.data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
         }
     });
@@ -74,6 +86,7 @@ const Invoices = () => {
         mutationFn: invoiceService.bulkDelete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
         }
     });
@@ -85,13 +98,19 @@ const Invoices = () => {
 
             if (statusFilter === 'trash') return status === 'deleted' || status === 'gelöscht';
             if (statusFilter === 'archive') return status === 'archived' || status === 'archiviert';
+            if (statusFilter === 'cancelled') return status === 'cancelled' || status === 'storniert';
+            if (statusFilter === 'paid') return status === 'paid' || status === 'bezahlt';
 
-            // For all other tabs, exclude deleted and archived
-            if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
+            // For all other tabs, exclude deleted, archived and cancelled
+            if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert' || status === 'cancelled' || status === 'storniert') {
+                if (statusFilter === 'all') return false; // In "All", we don't show trash/archive/cancelled usually
+                if (statusFilter === status) return true; // Unless explicitly filtered
+                return false;
+            }
 
             if (statusFilter === 'all') return true;
 
-            return inv.status === statusFilter;
+            return status === statusFilter;
         });
     }, [invoices, statusFilter]);
 
@@ -132,16 +151,92 @@ const Invoices = () => {
         setIsExportOpen(false);
     };
 
+    const handlePrint = async (inv: any) => {
+        try {
+            // Show a small toast or indicator if possible, but the print dialog is the goal
+            const response = await invoiceService.print(inv.id);
+
+            // Create blob URL
+            const blob = response.data;
+            const url = window.URL.createObjectURL(blob);
+
+            // Create an iframe for direct printing without opening a new window
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = 'none';
+            iframe.src = url;
+
+            document.body.appendChild(iframe);
+
+            iframe.onload = () => {
+                try {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                } catch (e) {
+                    // Fallback to new window if iframe print fails
+                    const printWindow = window.open(url, '_blank');
+                    if (printWindow) {
+                        printWindow.onload = () => printWindow.print();
+                    }
+                }
+
+                // Cleanup after print dialog is closed or started
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    window.URL.revokeObjectURL(url);
+                }, 2000);
+            };
+        } catch (error) {
+            console.error('Print error:', error);
+            alert('Fehler beim Öffnen der PDF-Datei zum Drucken.');
+        }
+    };
+
+    const handleDownload = async (inv: any) => {
+        try {
+            // Use the authenticated download endpoint
+            const response = await invoiceService.download(inv.id);
+
+            // Create blob and trigger download
+            const blob = response.data;
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Rechnung_${inv.invoice_number}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Download error:', error);
+            alert('Fehler beim Herunterladen der PDF-Datei.');
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         const styles: { [key: string]: string } = {
             'paid': 'bg-emerald-50 text-emerald-700 border-emerald-200',
             'overdue': 'bg-red-50 text-red-700 border-red-200',
             'pending': 'bg-amber-50 text-amber-700 border-amber-200',
+            'sent': 'bg-blue-50 text-blue-700 border-blue-200',
+            'cancelled': 'bg-slate-100 text-slate-600 border-slate-300',
+            'storniert': 'bg-slate-100 text-slate-600 border-slate-300',
             'deleted': 'bg-slate-50 text-slate-500 border-slate-200',
             'archived': 'bg-slate-800 text-white border-slate-700'
         };
         const labels: { [key: string]: string } = {
-            'paid': 'Bezahlt', 'overdue': 'Überfällig', 'pending': 'Offen', 'deleted': 'Gelöscht'
+            'paid': 'Bezahlt',
+            'overdue': 'Überfällig',
+            'pending': 'Offen',
+            'sent': 'Gesendet',
+            'cancelled': 'Storniert',
+            'storniert': 'Storniert',
+            'deleted': 'Gelöscht',
+            'archived': 'Archiviert'
         };
         return <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase border tracking-tight ${styles[status] || styles['pending']}`}>{labels[status] || status}</span>;
     }
@@ -200,7 +295,7 @@ const Invoices = () => {
             id: 'amount',
             header: 'Betrag (Brutto)',
             accessor: (inv: any) => (
-                <span className="font-semibold text-slate-800">{parseFloat(inv.amount_gross).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                <span className="font-semibold text-slate-800">{parseFloat(inv.amount_gross || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
             ),
             sortable: true,
             sortKey: 'amount_gross',
@@ -219,14 +314,17 @@ const Invoices = () => {
             header: '',
             accessor: (inv: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Details"><FaEye /></button>
-                    <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="PDF Laden"><FaDownload /></button>
+                    <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Ansehen">
+                        <FaEye />
+                    </button>
+                    <button onClick={() => handlePrint(inv)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition" title="Drucken"><FaPrint /></button>
+                    <button onClick={() => handleDownload(inv)} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition" title="Download"><FaDownload /></button>
                     <button onClick={() => {
                         setInvoiceToDelete(inv.id);
                         setConfirmTitle('Rechnung löschen');
                         setConfirmMessage('Sind Sie sicher, dass Sie diese Rechnung in den Papierkorb verschieben möchten?');
                         setIsConfirmOpen(true);
-                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Löschen"><FaTrash /></button>
+                    }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Löschen"><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -235,9 +333,11 @@ const Invoices = () => {
 
     const tabs = (
         <div className="flex items-center gap-6">
-            <button onClick={() => setStatusFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Alle Rechnungen</button>
+            <button onClick={() => setStatusFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Alle</button>
             <button onClick={() => setStatusFilter('pending')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'pending' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Offen</button>
+            <button onClick={() => setStatusFilter('paid')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'paid' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Bezahlt</button>
             <button onClick={() => setStatusFilter('overdue')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'overdue' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Überfällig</button>
+            <button onClick={() => setStatusFilter('cancelled')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'cancelled' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Storniert</button>
 
             {(showTrash || statusFilter === 'trash') && (
                 <button onClick={() => setStatusFilter('trash')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Papierkorb</button>
@@ -319,7 +419,10 @@ const Invoices = () => {
                     <h1 className="text-2xl font-bold text-slate-800">Finanzen</h1>
                     <p className="text-slate-500 text-sm">Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.</p>
                 </div>
-                <button className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95">
+                <button
+                    onClick={() => setIsNewInvoiceOpen(true)}
+                    className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95"
+                >
                     <FaPlus className="text-xs" /> Neue Rechnung
                 </button>
             </div>
@@ -340,21 +443,38 @@ const Invoices = () => {
                             icon: <FaCheck className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }),
                             variant: 'success',
-                            show: statusFilter !== 'trash'
+                            show: statusFilter !== 'trash' && statusFilter !== 'cancelled' && statusFilter !== 'paid'
                         },
                         {
                             label: 'Senden',
                             icon: <FaPaperPlane className="text-xs" />,
-                            onClick: () => { }, // TODO: Implement send
+                            onClick: () => {
+                                alert(`${selectedInvoices.length} Rechnungen werden gesendet...`);
+                                bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'sent' } });
+                            },
                             variant: 'primary',
-                            show: statusFilter !== 'trash'
+                            show: statusFilter !== 'trash' && statusFilter !== 'cancelled'
+                        },
+                        {
+                            label: 'Offen setzen',
+                            icon: <FaHistory className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'pending' } }),
+                            variant: 'primary',
+                            show: statusFilter === 'paid' || statusFilter === 'cancelled'
+                        },
+                        {
+                            label: 'Stornieren',
+                            icon: <FaTrash className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'cancelled' } }),
+                            variant: 'warning',
+                            show: statusFilter !== 'trash' && statusFilter !== 'cancelled'
                         },
                         {
                             label: 'Wiederherstellen',
                             icon: <FaTrashRestore className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'pending' } }),
                             variant: 'success',
-                            show: statusFilter === 'trash'
+                            show: statusFilter === 'trash' || statusFilter === 'cancelled'
                         },
                         {
                             label: 'Papierkorb',
@@ -392,6 +512,13 @@ const Invoices = () => {
             </div>
 
             <InvoicePreviewModal isOpen={!!previewInvoice} onClose={() => setPreviewInvoice(null)} invoice={previewInvoice} />
+
+            <NewInvoiceModal
+                isOpen={isNewInvoiceOpen}
+                onClose={() => setIsNewInvoiceOpen(false)}
+                onSubmit={(data: any) => createMutation.mutate(data)}
+                isLoading={createMutation.isPending}
+            />
 
             <ConfirmModal
                 isOpen={isConfirmOpen}

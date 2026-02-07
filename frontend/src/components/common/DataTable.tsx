@@ -49,17 +49,10 @@ const DataTable = <T extends { id: string | number }>({
     const [searchTerm, setSearchTerm] = useState('');
     const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(columns.filter(c => c.defaultVisible !== false).map(c => c.id)));
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
     const settingsRef = useRef<HTMLDivElement>(null);
+    const tableContainerRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
-                setIsSettingsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     // Filter by Visibility
     const activeColumns = useMemo(() => columns.filter(col => visibleColumns.has(col.id)), [columns, visibleColumns]);
@@ -131,6 +124,49 @@ const DataTable = <T extends { id: string | number }>({
         setSearchTerm(e.target.value);
         setCurrentPage(1);
     };
+
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only handle if we have data and we aren't focused on an input
+            if (sortedData.length === 0) return;
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) return;
+
+            // Should strictly check if table is in view or focused, but globally for now per user request context often implies focus.
+            // Check if arrow keys to avoid swallowing specific inputs.
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedRowIndex(prev => Math.min(prev + 1, paginatedData.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedRowIndex(prev => Math.max(prev - 1, 0));
+            } else if (e.key === 'Enter') {
+                if (selectedRowIndex >= 0 && selectedRowIndex < paginatedData.length) {
+                    onRowClick?.(paginatedData[selectedRowIndex]);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [paginatedData, selectedRowIndex, onRowClick, sortedData.length]);
+
+    // Reset selection when page changes
+    useEffect(() => {
+        setSelectedRowIndex(-1);
+    }, [currentPage, searchTerm, sortConfig]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+                setIsSettingsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
         <div className="flex flex-col h-full bg-white border border-slate-200 shadow-sm fade-in">
@@ -239,11 +275,16 @@ const DataTable = <T extends { id: string | number }>({
                                 <tr
                                     key={item.id || rowIdx}
                                     className={clsx(
-                                        "hover:bg-slate-50/80 transition-all border-b border-slate-100 group",
+                                        "hover:bg-slate-50/80 transition-all border-b border-slate-100 group outline-none",
                                         onRowClick && "cursor-pointer active:bg-slate-100",
-                                        rowIdx % 2 !== 0 ? "bg-slate-50/40" : "bg-white"
+                                        rowIdx === selectedRowIndex && "bg-brand-50/50 ring-1 ring-inset ring-brand-300 z-10",
+                                        rowIdx % 2 !== 0 && rowIdx !== selectedRowIndex ? "bg-slate-50/40" : (rowIdx !== selectedRowIndex ? "bg-white" : "")
                                     )}
-                                    onClick={() => onRowClick && onRowClick(item)}
+                                    // Make row focusable for accessibility? Actually we handle global keydown for now as per request for "table navigation"
+                                    onClick={() => {
+                                        setSelectedRowIndex(rowIdx);
+                                        onRowClick && onRowClick(item);
+                                    }}
                                 >
                                     {activeColumns.map((col, colIdx) => (
                                         <td

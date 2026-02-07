@@ -1,11 +1,10 @@
 
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { partnerService } from '../api/services';
 import {
-    FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaGlobe, FaStar,
-    FaUserTie, FaMapMarkerAlt, FaPhone, FaBuilding, FaLanguage, FaBan, FaCheck,
-    FaMoneyBillWave, FaFileContract
+    FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaStar,
+    FaUserTie, FaMapMarkerAlt, FaFileContract
 } from 'react-icons/fa';
 import TableSkeleton from '../components/common/TableSkeleton';
 import { getFlagUrl } from '../utils/flags';
@@ -16,6 +15,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 const PartnerDetail = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const queryClient = useQueryClient();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -55,7 +55,7 @@ const PartnerDetail = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => navigate('/partners')}
+                            onClick={() => location.state?.from ? navigate(location.state.from) : navigate('/partners')}
                             className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition"
                         >
                             <FaArrowLeft />
@@ -138,10 +138,7 @@ const PartnerDetail = () => {
                                 <span className="text-slate-800">{partner.phone || '-'}</span>
 
                                 <span className="text-slate-500 font-medium">Mobil</span>
-                                <span className="text-slate-800">{partner.mobile || '-'}</span>
-
-                                <span className="text-slate-500 font-medium mt-2">Webseite</span>
-                                <span className="text-brand-600 mt-2 truncate hover:underline cursor-pointer">{partner.website || '-'}</span>
+                                <span className="text-slate-800">{partner.additional_phones?.[0] || '-'}</span>
                             </div>
                         </div>
 

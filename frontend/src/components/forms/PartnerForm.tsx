@@ -167,8 +167,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     </div>
                     <div className="col-span-12 md:col-span-5">
                         <Input
-                            label="Vorname *"
-                            placeholder="Vorname"
+                            placeholder="Vorname *"
                             value={formData.firstName}
                             error={validationErrors.has('firstName')}
                             onChange={e => updateFormData({ firstName: e.target.value })}
@@ -176,8 +175,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     </div>
                     <div className="col-span-12 md:col-span-5">
                         <Input
-                            label="Nachname *"
-                            placeholder="Nachname"
+                            placeholder="Nachname *"
                             value={formData.lastName}
                             error={validationErrors.has('lastName')}
                             onChange={e => updateFormData({ lastName: e.target.value })}
@@ -187,8 +185,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     {formData.type === 'agency' && (
                         <div className="col-span-12 animate-fadeIn">
                             <Input
-                                label="Agenturname / Firma *"
-                                placeholder="Name der Agentur oder Firma"
+                                placeholder="Agenturname / Firma *"
                                 value={formData.company}
                                 error={validationErrors.has('company')}
                                 onChange={e => updateFormData({ company: e.target.value })}
@@ -213,8 +210,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                         <>
                             <div className="col-span-12 md:col-span-9">
                                 <Input
-                                    label="Straße *"
-                                    placeholder="Straße"
+                                    placeholder="Straße *"
                                     value={formData.street}
                                     error={validationErrors.has('street')}
                                     onChange={e => updateFormData({ street: e.target.value })}
@@ -222,8 +218,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-12 md:col-span-3">
                                 <Input
-                                    label="Nr. *"
-                                    placeholder="Nr."
+                                    placeholder="Nr. *"
                                     className="text-center"
                                     value={formData.houseNo}
                                     error={validationErrors.has('houseNo')}
@@ -232,8 +227,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-12 md:col-span-3">
                                 <Input
-                                    label="PLZ *"
-                                    placeholder="PLZ"
+                                    placeholder="PLZ *"
                                     value={formData.zip}
                                     error={validationErrors.has('zip')}
                                     onChange={e => updateFormData({ zip: e.target.value })}
@@ -241,8 +235,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-12 md:col-span-5">
                                 <Input
-                                    label="Stadt *"
-                                    placeholder="Stadt"
+                                    placeholder="Stadt *"
                                     className="font-bold"
                                     value={formData.city}
                                     error={validationErrors.has('city')}
@@ -251,7 +244,8 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-12 md:col-span-4">
                                 <CountrySelect
-                                    label="Land"
+                                    label=""
+                                    placeholder="Land *"
                                     value={formData.country}
                                     onChange={v => updateFormData({ country: v })}
                                 />
@@ -260,13 +254,12 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     )}
 
                     <div className="col-span-12 md:col-span-6 space-y-3">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">E-Mail Adresse *</label>
                         <div className="space-y-2">
                             {formData.emails.map((email, i) => (
                                 <div key={i} className="flex gap-2 group">
                                     <Input
                                         type="email"
-                                        placeholder="email@beispiel.de"
+                                        placeholder={i === 0 ? "E-Mail Adresse *" : "Weitere E-Mail Adresse"}
                                         value={email}
                                         error={validationErrors.has('email') && i === 0}
                                         onChange={e => updateEmail(i, e.target.value)}
@@ -287,17 +280,16 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     </div>
 
                     <div className="col-span-12 md:col-span-6 space-y-3">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Telefonnummer</label>
                         <div className="space-y-2">
                             {formData.phones.map((phone, i) => (
                                 <div key={i} className="flex gap-2 group">
                                     <Input
                                         type="tel"
-                                        placeholder="+49 ..."
+                                        placeholder={i === 0 ? "Telefon" : i === 1 ? "Mobil" : "Weitere Nummer"}
                                         value={phone}
                                         onChange={e => updatePhone(i, e.target.value)}
                                     />
-                                    {(formData.phones.length > 1 || !isCompact) && formData.phones.length > 1 && (
+                                    {(formData.phones.length > 1) && (
                                         <button onClick={() => removePhone(i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0">
                                             <FaTrash size={12} />
                                         </button>
@@ -336,8 +328,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                         <div className="grid grid-cols-2 gap-8">
                             <div className="col-span-2">
                                 <Input
-                                    label="Fachgebiete / Sprachpaare / Fokus"
-                                    placeholder="z.B. Recht, Technik, DE-EN, EN-FR..."
+                                    placeholder="Fachgebiete / Sprachpaare / Fokus"
                                     value={Array.isArray(formData.domains) ? formData.domains.join(', ') : formData.domains}
                                     onChange={e => updateFormData({ domains: e.target.value })}
                                 />
@@ -345,8 +336,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-2">
                                 <Input
-                                    label="Software-Kenntnisse (CAT Tools)"
-                                    placeholder="SDL Trados Studio, memoQ, Memsource, Wordfast..."
+                                    placeholder="Software-Kenntnisse (CAT Tools)"
                                     value={formData.software}
                                     onChange={e => updateFormData({ software: e.target.value })}
                                 />
@@ -363,13 +353,13 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
 
                         <div className="grid grid-cols-12 gap-6">
                             <div className="col-span-12 md:col-span-4">
-                                <Input label="Name der Bank *" value={formData.bankName} error={validationErrors.has('bankName')} onChange={e => updateFormData({ bankName: e.target.value })} placeholder="Hausbank" />
+                                <Input placeholder="Name der Bank *" value={formData.bankName} error={validationErrors.has('bankName')} onChange={e => updateFormData({ bankName: e.target.value })} />
                             </div>
                             <div className="col-span-6 md:col-span-3">
-                                <Input label="BIC *" className="uppercase" value={formData.bic} error={validationErrors.has('bic')} onChange={e => updateFormData({ bic: e.target.value })} placeholder="BIC" />
+                                <Input placeholder="BIC *" className="uppercase" value={formData.bic} error={validationErrors.has('bic')} onChange={e => updateFormData({ bic: e.target.value })} />
                             </div>
                             <div className="col-span-6 md:col-span-5">
-                                <Input label="IBAN *" className="font-bold" value={formData.iban} error={validationErrors.has('iban')} onChange={e => updateFormData({ iban: e.target.value })} placeholder="DE00 0000 0000 ..." />
+                                <Input placeholder="IBAN *" className="font-bold" value={formData.iban} error={validationErrors.has('iban')} onChange={e => updateFormData({ iban: e.target.value })} />
                             </div>
 
                             <div className="col-span-4">
@@ -383,11 +373,10 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-8">
                                 <Input
-                                    label="USt-IdNr. / Steuer-ID *"
+                                    placeholder="USt-IdNr. / Steuer-ID *"
                                     value={formData.taxId}
                                     error={validationErrors.has('taxId')}
                                     onChange={e => updateFormData({ taxId: e.target.value })}
-                                    placeholder="z.B. DE123456789"
                                     className="font-bold"
                                 />
                             </div>
@@ -505,8 +494,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             <div className="col-span-2">
                                 <Input
                                     isTextArea
-                                    label="Interne Anmerkungen / Erfahrungen"
-                                    placeholder="Zusätzliche Infos, Team-Feedback, Spezialprojekte..."
+                                    placeholder="Interne Anmerkungen / Erfahrungen / Feedback..."
                                     value={formData.notes}
                                     onChange={(e) => updateFormData({ notes: e.target.value })}
                                 />

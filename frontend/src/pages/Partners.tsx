@@ -64,6 +64,7 @@ const Partners = () => {
         mutationFn: partnerService.create,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
         }
     });
@@ -72,6 +73,7 @@ const Partners = () => {
         mutationFn: (data: any) => partnerService.update(data.id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingPartner(null);
         }
@@ -81,6 +83,7 @@ const Partners = () => {
         mutationFn: partnerService.delete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedPartners([]);
         }
     });
@@ -89,6 +92,7 @@ const Partners = () => {
         mutationFn: (args: { ids: number[], data: any }) => partnerService.bulkUpdate(args.ids, args.data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedPartners([]);
         }
     });

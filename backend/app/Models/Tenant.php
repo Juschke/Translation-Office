@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Tenant extends Model
 {
     protected $fillable = [
+        'name',
         'company_name',
         'legal_form',
         'domain',
@@ -22,12 +23,34 @@ class Tenant extends Model
         'bank_bic',
         'subscription_plan',
         'license_key',
-        'status'
+        'status',
+        'is_active',
+        'settings',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'settings' => 'array',
     ];
 
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function partners()
+    {
+        return $this->hasMany(Partner::class);
     }
 
     public function settings()

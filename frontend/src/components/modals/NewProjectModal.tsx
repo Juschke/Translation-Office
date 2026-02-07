@@ -616,7 +616,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             label="Dokumentenart"
                                             value={docType[0] || ''}
                                             onChange={(val) => setDocType([val])}
-                                            options={docTypes.map((dt: any) => ({ value: dt.id.toString(), label: dt.title || dt.name }))}
+                                            options={docTypes.map((dt: any) => ({
+                                                value: dt.id.toString(),
+                                                label: dt.name,
+                                                group: dt.category
+                                            }))}
                                         />
                                     </div>
                                     <button onClick={() => setShowDocTypeModal(true)} className="h-[38px] px-4 bg-brand-700 text-white rounded-r rounded-l-none hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-bold">NEU</span></button>

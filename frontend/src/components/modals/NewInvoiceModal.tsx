@@ -1,17 +1,21 @@
-import { useState, useEffect } from 'react';
-import { FaTimes, FaFileInvoiceDollar, FaEuroSign, FaCheck } from 'react-icons/fa';
+import { useState, useEffect, useMemo } from 'react';
+import { FaTimes, FaFileInvoiceDollar, FaEuroSign, FaCheck, FaProjectDiagram } from 'react-icons/fa';
 import Input from '../common/Input';
 import { Button } from '../common/Button';
+import SearchableSelect from '../common/SearchableSelect';
+import { useQuery } from '@tanstack/react-query';
+import { projectService } from '../../api/services';
 
 interface NewInvoiceModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: any) => void;
-    project: any;
+    project?: any;
     isLoading?: boolean;
 }
 
 const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewInvoiceModalProps) => {
+    const [selectedProjectId, setSelectedProjectId] = useState<string>('');
     const [formData, setFormData] = useState({
         invoice_number: '',
         date: new Date().toISOString().split('T')[0],
@@ -27,29 +31,47 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
         customer_id: ''
     });
 
+    const { data: projects = [] } = useQuery({
+        queryKey: ['projects', 'active'],
+        queryFn: () => projectService.getAll(),
+        enabled: isOpen && !project
+    });
+
+    const projectOptions = useMemo(() => {
+        return (Array.isArray(projects) ? projects : []).map((p: any) => ({
+            value: p.id.toString(),
+            label: `${p.project_number} - ${p.project_name} (${p.customer?.company_name || p.customer?.first_name || 'Unbekannt'})`
+        }));
+    }, [projects]);
+
+    const activeProject = useMemo(() => {
+        if (project) return project;
+        return projects.find((p: any) => p.id.toString() === selectedProjectId);
+    }, [project, selectedProjectId, projects]);
+
     useEffect(() => {
-        if (project) {
-            // Generate a temporary invoice number or fetch from backend
+        if (activeProject) {
             const tempNumber = `RE-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-            // Calculate totals from project
-            const net = parseFloat(project.financials?.netTotal || 0);
+            // Financials might be direct or nested
+            const financials = activeProject.financials || activeProject;
+            const net = parseFloat(financials.netTotal || financials.price_total || 0);
             const taxRate = 19.00;
             const tax = net * (taxRate / 100);
             const gross = net + tax;
 
             setFormData(prev => ({
                 ...prev,
-                invoice_number: tempNumber,
+                invoice_number: prev.invoice_number || tempNumber,
                 amount_net: net.toFixed(2),
                 tax_rate: taxRate.toFixed(2),
                 amount_tax: tax.toFixed(2),
                 amount_gross: gross.toFixed(2),
-                project_id: project.id,
-                customer_id: project.customer_id || project.customer?.id
+                project_id: activeProject.id,
+                customer_id: activeProject.customer_id || activeProject.customer?.id
             }));
         }
-    }, [project]);
+    }, [activeProject]);
 
     const handleCalculate = () => {
         const net = parseFloat(formData.amount_net) || 0;
@@ -79,7 +101,9 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                         </div>
                         <div>
                             <h2 className="text-lg font-black text-slate-800 tracking-tight">Rechnung erstellen</h2>
-                            <p className="text-xs text-slate-500 font-medium">Projekt: {project?.name || project?.project_name}</p>
+                            <p className="text-xs text-slate-500 font-medium">
+                                {activeProject ? `Projekt: ${activeProject.project_name || activeProject.name}` : 'Projekt auswählen'}
+                            </p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors leading-none">
@@ -89,6 +113,19 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
 
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="grid grid-cols-12 gap-6">
+                        {!project && (
+                            <div className="col-span-12">
+                                <SearchableSelect
+                                    label="Projekt auswählen"
+                                    options={projectOptions}
+                                    value={selectedProjectId}
+                                    onChange={setSelectedProjectId}
+                                    placeholder="Projekt suchen..."
+                                    startIcon={<FaProjectDiagram className="text-slate-400" />}
+                                />
+                            </div>
+                        )}
+
                         {/* Basic Info */}
                         <div className="col-span-12 md:col-span-6">
                             <Input
@@ -121,7 +158,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                         <div className="col-span-12 md:col-span-6">
                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Kunde</label>
                             <div className="w-full h-11 px-3 flex items-center bg-slate-50 border border-slate-200 text-sm font-bold text-slate-500 rounded">
-                                {project?.client || project?.customer?.company_name || 'Unbekannter Kunde'}
+                                {activeProject?.customer?.company_name || activeProject?.customer?.first_name || 'Wähle ein Projekt...'}
                             </div>
                         </div>
 
@@ -191,6 +228,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                     <Button
                         onClick={() => onSubmit(formData)}
                         isLoading={isLoading}
+                        disabled={!activeProject || !formData.invoice_number}
                         className="shadow-lg shadow-emerald-200/50"
                         variant="primary"
                     >

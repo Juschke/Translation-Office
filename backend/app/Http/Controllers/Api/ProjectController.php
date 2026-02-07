@@ -27,7 +27,7 @@ class ProjectController extends Controller
 
     public function index()
     {
-        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'positions', 'files', 'payments'])->get());
+        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'positions', 'files.uploader', 'payments'])->get());
     }
 
     public function store(Request $request)
@@ -102,7 +102,7 @@ class ProjectController extends Controller
 
     public function show($id)
     {
-        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'files', 'positions', 'payments'])->findOrFail($id));
+        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'files.uploader', 'positions', 'payments'])->findOrFail($id));
     }
 
     public function update(Request $request, $id)

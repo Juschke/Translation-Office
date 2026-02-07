@@ -1,5 +1,5 @@
 
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService, settingsService, projectService } from '../api/services';
 import {
@@ -14,6 +14,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 const CustomerDetail = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const queryClient = useQueryClient();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -57,7 +58,7 @@ const CustomerDetail = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => navigate('/customers')}
+                            onClick={() => location.state?.from ? navigate(location.state.from) : navigate('/customers')}
                             className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition"
                         >
                             <FaArrowLeft />

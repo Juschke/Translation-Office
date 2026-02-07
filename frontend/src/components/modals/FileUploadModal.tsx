@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
-import { FaCloudUploadAlt, FaTimes, FaFileAlt, FaCheckCircle, FaExclamationTriangle, FaTrash } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTimes, FaTrash } from 'react-icons/fa';
 import clsx from 'clsx';
 
 interface FileUploadModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onUpload: (files: any[]) => void;
+    onUpload: (files: any[], onProgress: (fileId: string, progress: number) => void) => Promise<void>;
 }
 
 const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) => {
@@ -60,32 +60,32 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
         const validFiles = selectedFiles.filter(f => f.isValid);
         if (validFiles.length > 0) {
             setUploading(true);
+            try {
+                await onUpload(validFiles.map(f => ({
+                    id: f.id,
+                    file: f.file, // Pass the raw file
+                    name: f.name,
+                    ext: f.ext,
+                    type: f.type,
+                    version: '1.0',
+                    size: f.size,
+                    words: f.words,
+                    chars: f.chars,
+                    createdAt: new Date().toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                    status: 'ready'
+                })), (fileId, p) => {
+                    setProgress(prev => ({ ...prev, [fileId]: p }));
+                });
 
-            // Simulate progress for each file
-            for (const file of validFiles) {
-                for (let p = 0; p <= 100; p += 20) {
-                    setProgress(prev => ({ ...prev, [file.id]: p }));
-                    await new Promise(resolve => setTimeout(resolve, 150));
-                }
+                setUploading(false);
+                setProgress({});
+                setSelectedFiles([]);
+                onClose();
+            } catch (error) {
+                console.error("Upload failed in modal:", error);
+                setUploading(false);
+                // Optionally show error in UI
             }
-
-            onUpload(validFiles.map(f => ({
-                id: f.id,
-                file: f.file, // Pass the raw file
-                name: f.name,
-                ext: f.ext,
-                type: f.type,
-                version: '1.0',
-                size: f.size,
-                words: f.words,
-                chars: f.chars,
-                createdAt: new Date().toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-                status: 'ready'
-            })));
-            setUploading(false);
-            setProgress({});
-            setSelectedFiles([]);
-            onClose();
         }
     };
 

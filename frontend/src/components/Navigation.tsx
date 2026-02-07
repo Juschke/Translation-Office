@@ -35,7 +35,8 @@ const Navigation = () => {
 
     const { data: dashboardData } = useQuery({
         queryKey: ['dashboard', 'stats'],
-        queryFn: dashboardService.getStats
+        queryFn: dashboardService.getStats,
+        refetchInterval: 10000, // Refetch every 10 seconds for live updates
     });
 
     const unreadEmails = dashboardData?.stats?.unread_emails || 0;
@@ -43,7 +44,7 @@ const Navigation = () => {
     const { data: notifications = [] } = useQuery({
         queryKey: ['notifications'],
         queryFn: notificationService.getAll,
-        refetchInterval: 30000, // Refetch every 30 seconds for "dynamic" feel
+        refetchInterval: 10000, // Refetch every 10 seconds for "dynamic" feel
     });
 
     const markAllAsReadMutation = useMutation({
