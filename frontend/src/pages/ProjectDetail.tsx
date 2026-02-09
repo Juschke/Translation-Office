@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaCalendarAlt, FaTrashAlt, FaDownload, FaTrash, FaTimes, FaPaperclip, FaUserPlus, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye } from 'react-icons/fa';
+import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -12,7 +13,6 @@ import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
 import Input from '../components/common/Input';
-import Checkbox from '../components/common/Checkbox';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, invoiceService, customerService, partnerService } from '../api/services';
@@ -117,7 +117,6 @@ const ProjectDetail = () => {
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type?: string } | null>(null);
-    const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
     const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
     const [historySearch, setHistorySearch] = useState('');
     const [historySortKey, setHistorySortKey] = useState<'date' | 'user' | 'action'>('date');
@@ -147,12 +146,13 @@ const ProjectDetail = () => {
         onSuccess: (data: any) => {
             if (data.url) {
                 window.open(data.url, '_blank');
+                toast.success('Dokument erfolgreich generiert');
             } else {
-                alert(data.message || 'Dokument erstellt!');
+                toast.success(data.message || 'Dokument erstellt!');
             }
         },
         onError: (err: any) => {
-            alert(err.response?.data?.error || 'Fehler beim Erstellen des Dokuments.');
+            toast.error(err.response?.data?.error || 'Fehler beim Erstellen des Dokuments.');
         }
     });
 
@@ -342,6 +342,10 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsEditModalOpen(false);
+            toast.success('Projekt erfolgreich aktualisiert');
+        },
+        onError: () => {
+            toast.error('Fehler beim Aktualisieren des Projekts');
         }
     });
 
@@ -362,6 +366,10 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             setIsCustomerEditModalOpen(false);
+            toast.success('Kundendaten erfolgreich aktualisiert');
+        },
+        onError: () => {
+            toast.error('Fehler beim Aktualisieren der Kundendaten');
         }
     });
 
@@ -376,6 +384,10 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             setIsPartnerEditModalOpen(false);
+            toast.success('Partnerdaten erfolgreich aktualisiert');
+        },
+        onError: () => {
+            toast.error('Fehler beim Aktualisieren der Partnerdaten');
         }
     });
 
@@ -554,6 +566,10 @@ const ProjectDetail = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            toast.success('Dateien erfolgreich hochgeladen');
+        },
+        onError: () => {
+            toast.error('Fehler beim Hochladen der Dateien');
         }
     });
 
@@ -598,7 +614,7 @@ const ProjectDetail = () => {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Download failed:', error);
-            alert('Fehler beim Herunterladen der Datei.');
+            toast.error('Fehler beim Herunterladen der Datei.');
         }
     };
 
@@ -608,9 +624,10 @@ const ProjectDetail = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            toast.success('Datei erfolgreich gelöscht');
         },
         onError: () => {
-            alert('Fehler beim Löschen der Datei.');
+            toast.error('Fehler beim Löschen der Datei.');
         }
     });
 
@@ -624,6 +641,10 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             setIsInvoiceModalOpen(false);
             navigate('/invoices');
+            toast.success('Rechnung erfolgreich erstellt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Erstellen der Rechnung');
         }
     });
 

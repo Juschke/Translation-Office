@@ -15,6 +15,7 @@ class DocumentTypeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'category' => 'nullable|string',
             'name' => 'required|string',
             'default_price' => 'nullable|numeric',
             'vat_rate' => 'numeric',
@@ -35,6 +36,7 @@ class DocumentTypeController extends Controller
         $documentType = \App\Models\DocumentType::findOrFail($id);
 
         $validated = $request->validate([
+            'category' => 'nullable|string',
             'name' => 'string',
             'default_price' => 'nullable|numeric',
             'vat_rate' => 'numeric',

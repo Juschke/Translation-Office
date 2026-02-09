@@ -1,15 +1,8 @@
 export const getFlagUrl = (code: string) => {
     if (!code) return '';
 
-    // Normalize code (e.g., "de-DE" -> "de", "US" -> "us")
-    let c = code.toLowerCase().trim();
-
-    // If it's a full locale (e.g., de-de), take the region part if it exists
-    if (c.includes('-')) {
-        const parts = c.split('-');
-        // For locales like en-US, pt-BR, the second part is the country
-        c = parts[parts.length - 1];
-    }
+    const original = code.toLowerCase().trim();
+    let c = original;
 
     // Special cases for language codes that don't match country codes
     const map: Record<string, string> = {
@@ -74,10 +67,24 @@ export const getFlagUrl = (code: string) => {
         'eu': 'es-pv',  // Basque -> Basque Country (Region)
         'gl': 'es-ga',  // Galician -> Galicia (Region)
         'cy': 'gb-wls', // Welsh -> Wales
+        'so': 'so',     // Somali -> Somalia
+        'sw': 'ke',     // Swahili -> Kenya
+        'ti': 'er',     // Tigrinya -> Eritrea
     };
 
-    const flagCode = map[c] || c;
+    // 1. Try full code mapping (e.g. 'ca-es' -> 'es-ct' or 'de' -> 'de')
+    if (map[c]) return `https://flagcdn.com/w80/${map[c]}.png`;
 
-    // Return FlagCDN URL (w80 for clarity)
-    return `https://flagcdn.com/w80/${flagCode}.png`;
+    // 2. Try falling back to the country part for locales (e.g. 'en-us' -> 'us')
+    if (c.includes('-')) {
+        const parts = c.split('-');
+        const country = parts[parts.length - 1];
+        // If country part is in map (e.g. 'en-gb' -> 'gb'), use mapped value
+        if (map[country]) return `https://flagcdn.com/w80/${map[country]}.png`;
+        // Use the country code directly
+        return `https://flagcdn.com/w80/${country}.png`;
+    }
+
+    // 3. Last fallback
+    return `https://flagcdn.com/w80/${c}.png`;
 };

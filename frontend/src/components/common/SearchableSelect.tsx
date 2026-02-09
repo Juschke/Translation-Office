@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { FaChevronDown, FaSearch, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaChevronDown, FaSearch, FaCheck, FaTimes, FaPlus } from 'react-icons/fa';
 import clsx from 'clsx';
 
 interface SearchableSelectProps {
@@ -11,9 +11,15 @@ interface SearchableSelectProps {
     label?: string;
     error?: boolean;
     className?: string;
+    onAddNew?: () => void;
+    addNewLabel?: string;
+    id?: string;
 }
 
-const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "" }) => {
+const SearchableSelect: React.FC<SearchableSelectProps> = ({
+    options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
+    onAddNew, addNewLabel = "Neu hinzufügen", id
+}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [activeIndex, setActiveIndex] = useState(-1);
@@ -222,6 +228,22 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onC
                     <div className="px-4 py-8 text-sm text-slate-400 text-center italic">Keine Ergebnisse</div>
                 )}
             </div>
+            {onAddNew && (
+                <div
+                    className="p-2 border-t border-slate-100 bg-slate-50 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button
+                        onClick={() => {
+                            onAddNew();
+                            setIsOpen(false);
+                        }}
+                        className="w-full py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded text-[10px] font-bold text-brand-700 uppercase tracking-widest flex items-center justify-center gap-2 transition"
+                    >
+                        <FaPlus className="text-[10px]" /> {addNewLabel}
+                    </button>
+                </div>
+            )}
         </div>
     );
 
@@ -229,6 +251,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onC
         <div className="relative w-full" ref={wrapperRef} data-error={error}>
             {label && <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5">{label}</label>}
             <div
+                id={id}
                 className={clsx(
                     "w-full border px-3 py-2 text-sm bg-white flex justify-between items-center cursor-pointer transition h-10",
                     error ? "border-red-500 ring-2 ring-red-500/10" : "border-slate-300 hover:border-slate-400",
@@ -262,7 +285,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onC
             </div>
 
             {isOpen && createPortal(dropdownContent, document.body)}
-        </div>
+        </div >
     );
 };
 

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
@@ -69,6 +70,10 @@ const Customers = () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
+            toast.success('Kunde erfolgreich angelegt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Anlegen des Kunden');
         }
     });
 
@@ -79,6 +84,10 @@ const Customers = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingCustomer(null);
+            toast.success('Kunde erfolgreich aktualisiert');
+        },
+        onError: () => {
+            toast.error('Fehler beim Aktualisieren des Kunden');
         }
     });
 
@@ -88,24 +97,36 @@ const Customers = () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
+            toast.success('Kunde erfolgreich gelöscht');
+        },
+        onError: () => {
+            toast.error('Fehler beim Löschen des Kunden');
         }
     });
 
     const bulkUpdateMutation = useMutation({
         mutationFn: (args: { ids: number[], data: any }) => customerService.bulkUpdate(args.ids, args.data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
+            toast.success(`${variables.ids.length} Kunden aktualisiert`);
+        },
+        onError: () => {
+            toast.error('Fehler beim Aktualisieren der Kunden');
         }
     });
 
     const bulkDeleteMutation = useMutation({
         mutationFn: customerService.bulkDelete,
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
+            toast.success(`${variables.length} Kunden endgültig gelöscht`);
+        },
+        onError: () => {
+            toast.error('Fehler beim endgültigen Löschen');
         }
     });
 
@@ -546,9 +567,10 @@ const Customers = () => {
                     }
                 }}
                 initialData={editingCustomer || (
-                    ['Firma', 'Privat', 'Behörde'].includes(typeFilter)
-                        ? { type: typeFilter }
-                        : undefined
+                    typeFilter === 'Firma' ? { type: 'company' } as any :
+                        typeFilter === 'Privat' ? { type: 'private' } as any :
+                            typeFilter === 'Behörde' ? { type: 'authority' } as any :
+                                undefined
                 )}
             />
 

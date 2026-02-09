@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
 import Input from '../common/Input';
 import CountrySelect from '../common/CountrySelect';
 import PhoneInput from '../common/PhoneInput';
@@ -60,20 +60,26 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         if (!data.last_name) newErrors.last_name = 'Nachname ist ein Pflichtfeld';
         else if (data.last_name.length < 2) newErrors.last_name = 'Nachname muss mindestens 2 Zeichen lang sein';
 
-        if (data.first_name && data.first_name.length < 2) newErrors.first_name = 'Vorname muss mindestens 2 Zeichen lang sein';
+        if (!data.first_name) newErrors.first_name = 'Vorname ist ein Pflichtfeld';
+        else if (data.first_name.length < 2) newErrors.first_name = 'Vorname muss mindestens 2 Zeichen lang sein';
 
         // Company Validation
         if ((data.type === 'company' || data.type === 'authority') && !data.company_name) {
             newErrors.company_name = data.type === 'authority' ? 'Name der Behörde ist erforderlich' : 'Firmenname ist erforderlich';
         }
 
-        // Email Validation
-        if (!data.email) newErrors.email = 'E-Mail ist erforderlich';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) newErrors.email = 'Ungültiges E-Mail-Format';
-
         // Address Validation
-        if (data.address_zip && data.address_country === 'Deutschland' && !/^\d{5}$/.test(data.address_zip)) {
+        if (!data.address_street) newErrors.address_street = 'Straße ist erforderlich';
+        if (!data.address_house_no) newErrors.address_house_no = 'Nr. ist erforderlich';
+        if (!data.address_zip) newErrors.address_zip = 'PLZ ist erforderlich';
+        else if (data.address_country === 'Deutschland' && !/^\d{5}$/.test(data.address_zip)) {
             newErrors.address_zip = 'PLZ muss exakt 5 Ziffern enthalten';
+        }
+        if (!data.address_city) newErrors.address_city = 'Stadt ist erforderlich';
+
+        // Email Validation
+        if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+            newErrors.email = 'Ungültiges E-Mail-Format';
         }
 
         // Phone Validation (basic check if provided)
@@ -104,8 +110,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                 ...initialData,
                 additional_emails: initialData.additional_emails || [],
                 additional_phones: initialData.additional_phones || [],
-                type: (initialData.type === 'Firma' || initialData.type === 'company') ? 'company' :
-                    (initialData.type === 'Privat' || initialData.type === 'private') ? 'private' : 'authority',
+                type: ((initialData.type as any) === 'Firma' || initialData.type === 'company') ? 'company' :
+                    ((initialData.type as any) === 'Privat' || initialData.type === 'private') ? 'private' : 'authority',
             });
         } else if (isOpen) {
             setFormData({
@@ -246,10 +252,11 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 </div>
                                 <div className="col-span-12 md:col-span-4">
                                     <Input
-                                        label="Vorname"
+                                        label="Vorname *"
                                         name="first_name"
                                         value={formData.first_name}
                                         onChange={handleChange}
+                                        required
                                         placeholder="Max"
                                         helperText={getError('first_name') || 'Vorname des Ansprechpartners'}
                                         error={!!getError('first_name')}
@@ -270,84 +277,22 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             </div>
                         </div>
 
-                        {/* Section 2: Address */}
+                        {/* Section 2: Contact */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">02</div>
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Standort & Adresse</h4>
-                            </div>
-
-                            <div className="grid grid-cols-12 gap-x-8 gap-y-6">
-                                <div className="col-span-12 md:col-span-9">
-                                    <Input
-                                        label="Straße"
-                                        name="address_street"
-                                        value={formData.address_street}
-                                        onChange={handleChange}
-                                        placeholder="Königsplatz"
-                                        helperText="Straßenname ohne Hausnummer"
-                                    />
-                                </div>
-                                <div className="col-span-12 md:col-span-3">
-                                    <Input
-                                        label="Nr."
-                                        name="address_house_no"
-                                        value={formData.address_house_no}
-                                        onChange={handleChange}
-                                        placeholder="10"
-                                        className="text-center"
-                                        helperText="Nr. / Zusatz"
-                                    />
-                                </div>
-                                <div className="col-span-12 md:col-span-4">
-                                    <Input
-                                        label="PLZ"
-                                        name="address_zip"
-                                        value={formData.address_zip}
-                                        placeholder="34117"
-                                        maxLength={10}
-                                        onChange={handleChange}
-                                        helperText={getError('address_zip') || '5-stellige Postleitzahl'}
-                                        error={!!getError('address_zip')}
-                                    />
-                                </div>
-                                <div className="col-span-12 md:col-span-8">
-                                    <Input
-                                        label="Stadt"
-                                        name="address_city"
-                                        value={formData.address_city}
-                                        onChange={handleChange}
-                                        placeholder="Kassel"
-                                        className="font-bold"
-                                        helperText="Vollständiger Name der Stadt"
-                                    />
-                                </div>
-                                <div className="col-span-12">
-                                    <CountrySelect
-                                        label="Land"
-                                        value={formData.address_country || 'Deutschland'}
-                                        onChange={(val) => setFormData(prev => ({ ...prev, address_country: val }))}
-                                        helperText="Land für steuerliche Zuordnung"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section 3: Contact */}
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">03</div>
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kommunikation</h4>
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kontaktdaten</h4>
                             </div>
 
                             <div className="grid grid-cols-12 gap-x-12 gap-y-8">
                                 <div className="col-span-12 md:col-span-6 space-y-6">
                                     <Input
-                                        label="E-Mail (Primär) *"
+                                        label="E-Mail (Primär)"
                                         name="email"
                                         value={formData.email}
                                         onChange={handleChange}
                                         type="email"
+                                        startIcon={<FaEnvelope />}
                                         placeholder="max.mustermann@beispiel.de"
                                         helperText={getError('email') || 'Hauptadresse für E-Mails und Dokumente'}
                                         error={!!getError('email')}
@@ -400,6 +345,75 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                             <FaPlus size={8} /> Weitere Nummer hinzufügen
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 3: Address */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">03</div>
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Standort & Adresse</h4>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+                                <div className="col-span-12 md:col-span-9">
+                                    <Input
+                                        label="Straße *"
+                                        name="address_street"
+                                        value={formData.address_street}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Königsplatz"
+                                        helperText={getError('address_street') || 'Straßenname ohne Hausnummer'}
+                                        error={!!getError('address_street')}
+                                    />
+                                </div>
+                                <div className="col-span-12 md:col-span-3">
+                                    <Input
+                                        label="Nr. *"
+                                        name="address_house_no"
+                                        value={formData.address_house_no}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="10"
+                                        helperText={getError('address_house_no') || 'Nr. / Zusatz'}
+                                        error={!!getError('address_house_no')}
+                                    />
+                                </div>
+                                <div className="col-span-12 md:col-span-4">
+                                    <Input
+                                        label="PLZ *"
+                                        name="address_zip"
+                                        value={formData.address_zip}
+                                        placeholder="34117"
+                                        maxLength={10}
+                                        onChange={handleChange}
+                                        required
+                                        helperText={getError('address_zip') || '5-stellige Postleitzahl'}
+                                        error={!!getError('address_zip')}
+                                    />
+                                </div>
+                                <div className="col-span-12 md:col-span-8">
+                                    <Input
+                                        label="Stadt *"
+                                        name="address_city"
+                                        value={formData.address_city}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Kassel"
+                                        className="font-bold"
+                                        helperText={getError('address_city') || 'Vollständiger Name der Stadt'}
+                                        error={!!getError('address_city')}
+                                    />
+                                </div>
+                                <div className="col-span-12">
+                                    <CountrySelect
+                                        label="Land"
+                                        value={formData.address_country || 'Deutschland'}
+                                        onChange={(val) => setFormData(prev => ({ ...prev, address_country: val }))}
+                                        helperText="Land für steuerliche Zuordnung"
+                                    />
                                 </div>
                             </div>
                         </div>

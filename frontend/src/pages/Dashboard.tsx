@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaLayerGroup, FaClock, FaEuroSign, FaEnvelope, FaPlus, FaTasks, FaCalendarAlt } from 'react-icons/fa';
 import NewProjectModal from '../components/modals/NewProjectModal';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService, projectService, invoiceService } from '../api/services';
 import ActiveTasksTable from '../components/dashboard/ActiveTasksTable';
@@ -54,6 +55,10 @@ const Dashboard = () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             navigate(`/projects/${data.id}`);
+            toast.success('Projekt wurde angelegt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Anlegen des Projekts');
         }
     });
 

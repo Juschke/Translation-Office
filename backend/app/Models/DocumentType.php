@@ -9,6 +9,8 @@ class DocumentType extends Model
     use \App\Traits\BelongsToTenant;
 
     protected $fillable = [
+        'tenant_id',
+        'category',
         'name',
         'default_price',
         'vat_rate',

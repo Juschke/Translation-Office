@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import {
     FaPlus, FaCheckCircle, FaHistory,
     FaFileExcel, FaFileCsv, FaTrash,
@@ -61,6 +62,10 @@ const Invoices = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             setIsNewInvoiceOpen(false);
+            toast.success('Rechnung erfolgreich erstellt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Erstellen der Rechnung');
         }
     });
 
@@ -70,24 +75,36 @@ const Invoices = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
+            toast.success('Rechnung erfolgreich gelöscht');
+        },
+        onError: () => {
+            toast.error('Fehler beim Löschen der Rechnung');
         }
     });
 
     const bulkUpdateMutation = useMutation({
         mutationFn: (args: { ids: number[], data: any }) => invoiceService.bulkUpdate(args.ids, args.data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
+            toast.success(`${variables.ids.length} Rechnungen aktualisiert`);
+        },
+        onError: () => {
+            toast.error('Rechnungen konnten nicht aktualisiert werden');
         }
     });
 
     const bulkDeleteMutation = useMutation({
         mutationFn: invoiceService.bulkDelete,
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
+            toast.success(`${variables.length} Rechnungen endgültig gelöscht`);
+        },
+        onError: () => {
+            toast.error('Fehler beim endgültigen Löschen');
         }
     });
 
@@ -192,7 +209,7 @@ const Invoices = () => {
             };
         } catch (error) {
             console.error('Print error:', error);
-            alert('Fehler beim Öffnen der PDF-Datei zum Drucken.');
+            toast.error('Fehler beim Öffnen der PDF-Datei zum Drucken.');
         }
     };
 
@@ -213,7 +230,7 @@ const Invoices = () => {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Download error:', error);
-            alert('Fehler beim Herunterladen der PDF-Datei.');
+            toast.error('Fehler beim Herunterladen der PDF-Datei.');
         }
     };
 
@@ -449,7 +466,7 @@ const Invoices = () => {
                             label: 'Senden',
                             icon: <FaPaperPlane className="text-xs" />,
                             onClick: () => {
-                                alert(`${selectedInvoices.length} Rechnungen werden gesendet...`);
+                                toast.loading(`${selectedInvoices.length} Rechnungen werden gesendet...`, { duration: 2000 });
                                 bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'sent' } });
                             },
                             variant: 'primary',

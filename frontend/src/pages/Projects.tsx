@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import {
     FaPlus, FaArrowRight, FaFileCsv,
@@ -70,6 +71,10 @@ const Projects = () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
+            toast.success('Projekt erfolgreich erstellt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Erstellen des Projekts');
         }
     });
 
@@ -80,6 +85,10 @@ const Projects = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingProject(null);
+            toast.success('Projekt erfolgreich aktualisiert');
+        },
+        onError: () => {
+            toast.error('Fehler beim Aktualisieren des Projekts');
         }
     });
 
@@ -89,23 +98,39 @@ const Projects = () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedProjects([]);
+            toast.success('Projekt erfolgreich gelöscht');
+        },
+        onError: () => {
+            toast.error('Fehler beim Löschen des Projekts');
         }
     });
 
     const bulkUpdateMutation = useMutation({
         mutationFn: (args: { ids: string[], data: any }) => projectService.bulkUpdate(args.ids, args.data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             setSelectedProjects([]);
+            const count = variables.ids.length;
+            const message = variables.data.status === 'deleted'
+                ? `${count} Projekte in den Papierkorb verschoben`
+                : `${count} Projekte aktualisiert`;
+            toast.success(message);
+        },
+        onError: () => {
+            toast.error('Massenvorgang fehlgeschlagen');
         }
     });
 
     const bulkDeleteMutation = useMutation({
         mutationFn: projectService.bulkDelete,
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedProjects([]);
+            toast.success(`${variables.length} Projekte endgültig gelöscht`);
+        },
+        onError: () => {
+            toast.error('Fehler beim endgültigen Löschen');
         }
     });
 

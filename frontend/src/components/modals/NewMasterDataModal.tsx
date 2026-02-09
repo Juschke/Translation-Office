@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaSave, FaLanguage, FaFileAlt, FaGlobe, FaCheck, FaBan, FaEnvelopeOpenText, FaEye, FaCode } from 'react-icons/fa';
+import toast from 'react-hot-toast';
+import { FaTimes, FaSave, FaLanguage, FaFileAlt, FaGlobe, FaCheck, FaBan, FaEnvelopeOpenText, FaEye, FaCode, FaPlus } from 'react-icons/fa';
 import { clsx } from 'clsx';
+import SearchableSelect from '../common/SearchableSelect';
+import { settingsService } from '../../api/services';
 
 interface NewMasterDataModalProps {
     isOpen: boolean;
@@ -13,6 +16,9 @@ interface NewMasterDataModalProps {
 const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose, onSubmit, type, initialData }) => {
     const [formData, setFormData] = useState<any>({});
     const [showPreview, setShowPreview] = useState(false);
+    const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+    const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
     const availableVariables = [
@@ -57,37 +63,79 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
             .replace('{deadline}', '15.03.2024');
     };
 
+    const [errors, setErrors] = useState<Record<string, boolean>>({});
+
     useEffect(() => {
         if (isOpen) {
             setFormData(initialData || {});
+            setErrors({});
+
+            // Fetch existing categories if type is doc_types
+            if (type === 'doc_types') {
+                settingsService.getDocTypes().then(data => {
+                    const uniqueCategories = Array.from(new Set(data.map((d: any) => d.category).filter(Boolean))) as string[];
+
+                    // Ensure the current category of the item being edited is in the list
+                    if (initialData?.category && !uniqueCategories.includes(initialData.category)) {
+                        uniqueCategories.push(initialData.category);
+                    }
+
+                    setCategories(uniqueCategories.map(cat => ({ value: cat, label: cat })));
+                });
+            }
         }
-    }, [isOpen, initialData]);
+    }, [isOpen, initialData, type]);
+
+    const handleAddNewCategory = () => {
+        if (newCategoryName.trim()) {
+            const newCat = newCategoryName.trim();
+            // Check if already exists
+            if (!categories.find(c => c.value === newCat)) {
+                setCategories(prev => [...prev, { value: newCat, label: newCat }]);
+            }
+            handleChange('category', newCat);
+            setNewCategoryName('');
+            setIsAddCategoryModalOpen(false);
+        }
+    };
 
     if (!isOpen) return null;
 
-    const [errors, setErrors] = useState<Record<string, boolean>>({});
-
     const validate = () => {
         const newErrors: Record<string, boolean> = {};
+        let firstErrorId = '';
+
         if (type === 'languages') {
-            if (!formData.name_internal) newErrors.name_internal = true;
-            if (!formData.iso_code) newErrors.iso_code = true;
-            if (!formData.name_native) newErrors.name_native = true;
+            if (!formData.name_internal) { newErrors.name_internal = true; if (!firstErrorId) firstErrorId = 'name_internal'; }
+            if (!formData.name_native) { newErrors.name_native = true; if (!firstErrorId) firstErrorId = 'name_native'; }
+            if (!formData.iso_code) { newErrors.iso_code = true; if (!firstErrorId) firstErrorId = 'iso_code'; }
         }
         if (type === 'doc_types') {
-            if (!formData.name) newErrors.name = true;
+            if (!formData.category) { newErrors.category = true; if (!firstErrorId) firstErrorId = 'category'; }
+            if (!formData.name) { newErrors.name = true; if (!firstErrorId) firstErrorId = 'name'; }
         }
         if (type === 'services') {
-            if (!formData.name) newErrors.name = true;
-            if (!formData.base_price) newErrors.base_price = true;
+            if (!formData.name) { newErrors.name = true; if (!firstErrorId) firstErrorId = 'name'; }
+            if (!formData.base_price) { newErrors.base_price = true; if (!firstErrorId) firstErrorId = 'base_price'; }
         }
         if (type === 'email_templates') {
-            if (!formData.name) newErrors.name = true;
-            if (!formData.subject) newErrors.subject = true;
-            if (!formData.body) newErrors.body = true;
+            if (!formData.name) { newErrors.name = true; if (!firstErrorId) firstErrorId = 'name'; }
+            if (!formData.subject) { newErrors.subject = true; if (!firstErrorId) firstErrorId = 'subject'; }
+            if (!formData.body) { newErrors.body = true; if (!firstErrorId) firstErrorId = 'body'; }
         }
+
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+
+        if (firstErrorId) {
+            const el = document.getElementById(firstErrorId);
+            if (el) {
+                el.focus();
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return false;
+        }
+
+        return true;
     };
 
     const handleSubmit = () => {
@@ -102,6 +150,8 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
             }
 
             onSubmit(payload);
+        } else {
+            toast.error('Bitte füllen Sie alle markierten Pflichtfelder aus.');
         }
     };
 
@@ -180,6 +230,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="space-y-1.5">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Name der Sprache <span className="text-red-500">*</span></label>
                                 <input
+                                    id="name_internal"
                                     type="text"
                                     className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name_internal ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Deutsch (Deutschland)"
@@ -190,6 +241,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="space-y-1.5">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Name (Native) <span className="text-red-500">*</span></label>
                                 <input
+                                    id="name_native"
                                     type="text"
                                     className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name_native ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Deutsch"
@@ -201,6 +253,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <div className="space-y-1.5">
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">ISO Code <span className="text-red-500">*</span></label>
                                     <input
+                                        id="iso_code"
                                         type="text"
                                         className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm  transition-all", errors.iso_code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="de-DE"
@@ -225,15 +278,31 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
 
                     {/* Doc Type Fields */}
                     {type === 'doc_types' && (
-                        <div className="space-y-1.5">
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bezeichnung <span className="text-red-500">*</span></label>
-                            <input
-                                type="text"
-                                className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
-                                placeholder="z.B. Marketing Broschüre"
-                                value={formData.name || ''}
-                                onChange={(e) => handleChange('name', e.target.value)}
-                            />
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <SearchableSelect
+                                    id="category"
+                                    label="Kategorie"
+                                    placeholder="Wählen oder neu suchen..."
+                                    options={categories}
+                                    value={formData.category || ''}
+                                    onChange={(val) => handleChange('category', val)}
+                                    onAddNew={() => setIsAddCategoryModalOpen(true)}
+                                    addNewLabel="Neue Kategorie..."
+                                    error={errors.category}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bezeichnung <span className="text-red-500">*</span></label>
+                                <input
+                                    id="name"
+                                    type="text"
+                                    className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                    placeholder="z.B. Marketing Broschüre"
+                                    value={formData.name || ''}
+                                    onChange={(e) => handleChange('name', e.target.value)}
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -243,6 +312,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="space-y-1.5">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Leistungs-Name <span className="text-red-500">*</span></label>
                                 <input
+                                    id="name"
                                     type="text"
                                     className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Lektorat Premium"
@@ -268,6 +338,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <div className="space-y-1.5">
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Basispreis (€) <span className="text-red-500">*</span></label>
                                     <input
+                                        id="base_price"
                                         type="text"
                                         className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.base_price ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="0.12"
@@ -285,6 +356,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="space-y-1.5">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vorlagen-Name <span className="text-red-500">*</span></label>
                                 <input
+                                    id="name"
                                     type="text"
                                     className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Angebot versenden"
@@ -295,6 +367,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="space-y-1.5">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Betreff <span className="text-red-500">*</span></label>
                                 <input
+                                    id="subject"
                                     type="text"
                                     className={clsx("w-full h-10 px-3 border rounded outline-none focus:border-brand-500 text-sm transition-all", errors.subject ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="Ihre Anfrage bei Translation Office"
@@ -332,6 +405,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                             ))}
                                         </div>
                                         <textarea
+                                            id="body"
                                             ref={textareaRef}
                                             className={clsx("w-full h-32 px-3 py-2 border rounded outline-none focus:border-brand-500 text-sm  bg-white transition-all", errors.body ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                             placeholder="Hallo {contact_person}, anbei erhalten Sie..."
@@ -361,6 +435,44 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     </button>
                 </div>
             </div>
+
+            {/* Sub-Modal for adding new category */}
+            {isAddCategoryModalOpen && (
+                <div className="fixed inset-0 bg-slate-900/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden animate-scaleIn">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                            <h4 className="font-bold text-slate-800 text-xs uppercase tracking-widest">Neue Kategorie</h4>
+                            <button onClick={() => setIsAddCategoryModalOpen(false)} className="text-slate-400 hover:text-slate-600"><FaTimes /></button>
+                        </div>
+                        <div className="p-6">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Name der Kategorie</label>
+                            <input
+                                autoFocus
+                                type="text"
+                                className="w-full h-10 px-3 border border-slate-300 rounded outline-none focus:border-brand-500 text-sm"
+                                placeholder="z.B. Medizinische Dokumente"
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddNewCategory()}
+                            />
+                        </div>
+                        <div className="bg-slate-50 px-6 py-4 flex justify-end gap-2">
+                            <button
+                                onClick={() => setIsAddCategoryModalOpen(false)}
+                                className="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider"
+                            >
+                                Abbrechen
+                            </button>
+                            <button
+                                onClick={handleAddNewCategory}
+                                className="px-4 py-2 bg-brand-700 text-white rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                            >
+                                <FaPlus className="text-[10px]" /> Hinzufügen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

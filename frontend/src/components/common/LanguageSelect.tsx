@@ -12,18 +12,6 @@ interface LanguageOption {
     flagCode?: string;
 }
 
-const DEFAULT_LANGUAGES: LanguageOption[] = [
-    { code: 'af', name: 'Afrikaans (Afrikaans)' },
-    { code: 'sq', name: 'Albanisch (Shqip)' },
-    { code: 'ar', name: 'Arabisch (العربية)' },
-    { code: 'de', name: 'Deutsch (Deutsch)' },
-    { code: 'en', name: 'Englisch (English)' },
-    { code: 'fr', name: 'Französisch (Français)' },
-    { code: 'es', name: 'Spanisch (Español)' },
-    { code: 'it', name: 'Italienisch (Italiano)' },
-    { code: 'ru', name: 'Russisch (Русский)' },
-    { code: 'tr', name: 'Türkisch (Türkçe)' },
-];
 
 interface LanguageSelectProps {
     label?: string;
@@ -56,17 +44,16 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     });
 
     const languages = useMemo(() => {
-        const mappedServer = serverLanguages.map((l: any) => ({
-            code: l.iso_code,
-            name: l.name_internal || l.name,
-            flagCode: l.flag_icon
-        }));
-        const all = [...DEFAULT_LANGUAGES, ...mappedServer];
-        const unique = Array.from(new Map(all.map(item => [item.code, item])).values());
-        return unique.sort((a, b) => a.name.localeCompare(b.name));
+        return serverLanguages
+            .map((l: any) => ({
+                code: l.iso_code,
+                name: l.name_internal || l.name,
+                flagCode: l.flag_icon
+            }))
+            .sort((a: any, b: any) => a.name.localeCompare(b.name));
     }, [serverLanguages]);
 
-    const filteredOptions = languages.filter(opt =>
+    const filteredOptions = languages.filter((opt: LanguageOption) =>
         opt.name.toLowerCase().includes(search.toLowerCase()) ||
         opt.code.toLowerCase().includes(search.toLowerCase())
     );
@@ -126,7 +113,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     };
 
     const getLangLabel = (code: string) => {
-        const lang = languages.find(l => l.code === code);
+        const lang = languages.find((l: LanguageOption) => l.code === code);
         return lang ? lang.name : code;
     };
 
@@ -145,21 +132,28 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
             >
                 <div className="flex-1 flex flex-wrap gap-1.5 overflow-hidden">
                     {values.length > 0 ? (
-                        values.map(v => (
-                            <div key={v} className={clsx(
-                                "flex items-center gap-1.5",
-                                isMulti ? "bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700" : "text-sm font-bold text-slate-800"
-                            )}>
-                                <img src={getFlagUrl(v.includes('-') ? v : (languages.find(l => l.code === v)?.flagCode || v))} className="w-6 h-4.5 object-cover shadow-sm shrink-0" alt="" />
-                                <span className="truncate">{getLangLabel(v)}</span>
-                                {isMulti && (
-                                    <FaTimes
-                                        className="ml-1 text-slate-300 hover:text-red-500 cursor-pointer text-[10px]"
-                                        onClick={(e) => { e.stopPropagation(); handleSelect(v); }}
-                                    />
-                                )}
-                            </div>
-                        ))
+                        <>
+                            {(isMulti && values.length >= 4 ? values.slice(0, 3) : values).map(v => (
+                                <div key={v} className={clsx(
+                                    "flex items-center gap-1.5",
+                                    isMulti ? "bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700" : "text-sm font-bold text-slate-800"
+                                )}>
+                                    <img src={getFlagUrl(v.includes('-') ? v : (languages.find((l: LanguageOption) => l.code === v)?.flagCode || v))} className="w-6 h-4.5 object-cover shadow-sm shrink-0" alt="" />
+                                    <span className="truncate">{getLangLabel(v)}</span>
+                                    {isMulti && (
+                                        <FaTimes
+                                            className="ml-1 text-slate-300 hover:text-red-500 cursor-pointer text-[10px]"
+                                            onClick={(e) => { e.stopPropagation(); handleSelect(v); }}
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                            {isMulti && values.length >= 4 && (
+                                <div className="bg-brand-50 border border-brand-100 px-2 py-0.5 text-[10px] font-black uppercase text-brand-700">
+                                    + {values.length - 3} weitere
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <span className="text-slate-400 text-sm">{placeholder}</span>
                     )}
@@ -188,7 +182,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
 
                     <div className="overflow-y-auto custom-scrollbar flex-1 py-1" ref={listRef}>
                         {filteredOptions.length > 0 ? (
-                            filteredOptions.map((opt, index) => (
+                            filteredOptions.map((opt: LanguageOption, index: number) => (
                                 <div
                                     key={opt.code}
                                     className={clsx(

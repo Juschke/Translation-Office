@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
 import {
     FaPaperPlane, FaTrash, FaTimes, FaPaperclip, FaPlus, FaEdit,
@@ -72,6 +73,10 @@ const CommunicationHub = () => {
             queryClient.invalidateQueries({ queryKey: ['mails'] });
             setIsComposeOpen(false);
             resetCompose();
+            toast.success('E-Mail erfolgreich gesendet');
+        },
+        onError: () => {
+            toast.error('Fehler beim Senden der E-Mail');
         }
     });
 

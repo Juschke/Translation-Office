@@ -282,6 +282,17 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                         />
                     </div>
 
+                    <div className="col-span-12 space-y-2 animate-fadeIn">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Sprachen *</label>
+                        <LanguageSelect
+                            isMulti={true}
+                            value={formData.languages}
+                            onChange={v => updateFormData({ languages: v })}
+                            placeholder="Sprachen auswählen..."
+                        />
+                        <p className="mt-1 text-[10px] text-slate-400 font-medium ml-1">Präferenz für Projektzuweisungen</p>
+                    </div>
+
                     {formData.type === 'agency' && (
                         <div className="col-span-12 animate-fadeIn">
                             <Input
@@ -299,12 +310,81 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                 </div>
             </div>
 
-            {/* Section: Kontakt & Sprachen */}
+            {/* Section: Kontaktdaten */}
             <div className="space-y-6">
                 {!isCompact && (
                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                         <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">02</div>
-                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kontakt & Standort</h4>
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kontaktdaten</h4>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+                    <div className="col-span-12 md:col-span-6 space-y-6">
+                        <div className="space-y-4">
+                            {formData.emails.map((email, i) => (
+                                <div key={i} className="flex gap-2 group animate-fadeIn">
+                                    <Input
+                                        label={i === 0 ? "E-Mail (Primär) *" : "Zusätzliche E-Mails"}
+                                        type="email"
+                                        placeholder={i === 0 ? "haupt.partner@beispiel.de" : "zusatz.partner@beispiel.de"}
+                                        value={email}
+                                        error={i === 0 && !!getError('email')}
+                                        onChange={e => updateEmail(i, e.target.value)}
+                                        helperText={i === 0 ? (getError('email') || "Hauptkontakt für alle Projektanfragen") : "Weitere Adresse für Kopien"}
+                                    />
+                                    {formData.emails.length > 1 && (
+                                        <button type="button" onClick={() => removeEmail(i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5">
+                                            <FaTrash size={12} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            {!isCompact && (
+                                <button type="button" onClick={addEmail} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-1 ml-1">
+                                    <FaPlus size={8} /> Weitere E-Mail hinzufügen
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="col-span-12 md:col-span-6 space-y-6">
+                        <div className="space-y-4">
+                            {formData.phones.map((phone, i) => (
+                                <div key={i} className="flex gap-2 group animate-fadeIn">
+                                    <PhoneInput
+                                        label={i === 0 ? "Telefon (Primär) *" : "Zusätzliche Nummern"}
+                                        value={phone}
+                                        onChange={val => {
+                                            const newPhones = [...formData.phones];
+                                            newPhones[i] = val;
+                                            updateFormData({ phones: newPhones });
+                                        }}
+                                        helperText={i === 0 ? "Direkte Erreichbarkeit" : "Weitere Rufnummer"}
+                                    />
+                                    {formData.phones.length > 1 && (
+                                        <button type="button" onClick={() => removePhone(i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5">
+                                            <FaTrash size={12} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            {!isCompact && (
+                                <button type="button" onClick={addPhone} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-1 ml-1">
+                                    <FaPlus size={8} /> Weitere Nummer hinzufügen
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Section: Standort & Adresse */}
+            <div className="space-y-6">
+                {!isCompact && (
+                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                        <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">03</div>
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Standort & Adresse</h4>
                     </div>
                 )}
 
@@ -324,7 +404,6 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                                 <Input
                                     label="Nr."
                                     placeholder="10"
-                                    className="text-center"
                                     value={formData.houseNo}
                                     onChange={e => updateFormData({ houseNo: e.target.value })}
                                     helperText="Hausnummer"
@@ -363,74 +442,6 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                         </>
                     )}
-
-                    <div className="col-span-12 md:col-span-6 space-y-6">
-                        <div className="space-y-4">
-                            {formData.emails.map((email, i) => (
-                                <div key={i} className="flex gap-2 group animate-fadeIn">
-                                    <Input
-                                        label={i === 0 ? "E-Mail (Primär) *" : "Zusätzliche E-Mail"}
-                                        type="email"
-                                        placeholder={i === 0 ? "haupt.partner@beispiel.de" : "zusatz.partner@beispiel.de"}
-                                        value={email}
-                                        error={i === 0 && !!getError('email')}
-                                        onChange={e => updateEmail(i, e.target.value)}
-                                        helperText={i === 0 ? (getError('email') || "Hauptkontakt für alle Projektanfragen") : "Weitere Adresse für Kopien"}
-                                    />
-                                    {formData.emails.length > 1 && (
-                                        <button type="button" onClick={() => removeEmail(i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5">
-                                            <FaTrash size={12} />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                            {!isCompact && (
-                                <button type="button" onClick={addEmail} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-1 ml-1">
-                                    <FaPlus size={8} /> Weitere E-Mail hinzufügen
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="col-span-12 md:col-span-6 space-y-6">
-                        <div className="space-y-4">
-                            {formData.phones.map((phone, i) => (
-                                <div key={i} className="flex gap-2 group animate-fadeIn">
-                                    <PhoneInput
-                                        label={i === 0 ? "Telefon (Primär) *" : "Zusätzliche Nummer"}
-                                        value={phone}
-                                        onChange={val => {
-                                            const newPhones = [...formData.phones];
-                                            newPhones[i] = val;
-                                            updateFormData({ phones: newPhones });
-                                        }}
-                                        helperText={i === 0 ? "Direkte Erreichbarkeit" : "Weitere Rufnummer"}
-                                    />
-                                    {formData.phones.length > 1 && (
-                                        <button type="button" onClick={() => removePhone(i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5">
-                                            <FaTrash size={12} />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                            {!isCompact && (
-                                <button type="button" onClick={addPhone} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-1 ml-1">
-                                    <FaPlus size={8} /> Weitere Nummer hinzufügen
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="col-span-12 space-y-4">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Arbeitssprachen (Aktiv) *</label>
-                        <LanguageSelect
-                            isMulti={true}
-                            value={formData.languages}
-                            onChange={v => updateFormData({ languages: v })}
-                            placeholder="Sprachen auswählen..."
-                        />
-                        <p className="mt-1 text-[10px] text-slate-400 font-medium ml-1">Wählen Sie alle Sprachen aus, in denen der Partner qualifizierte Leistungen erbringt</p>
-                    </div>
                 </div>
             </div>
 
@@ -439,7 +450,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     {/* Section: Kompetenzen */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                            <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">03</div>
+                            <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">04</div>
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kompetenzen & IT</h4>
                         </div>
 
@@ -468,7 +479,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     {/* Section: Bankdaten */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                            <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">04</div>
+                            <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">05</div>
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Finanzen & Steuer</h4>
                         </div>
 
@@ -510,7 +521,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     {/* Section: Tarife */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                            <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">05</div>
+                            <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">06</div>
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Konditionen & Tarife</h4>
                         </div>
 
@@ -586,7 +597,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     {/* Section: Internes */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                            <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">06</div>
+                            <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">07</div>
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Interne Akte & Notizen</h4>
                         </div>
 

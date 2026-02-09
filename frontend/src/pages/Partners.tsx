@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import {
     FaUserTie, FaPlus, FaEye, FaEdit, FaTrash, FaGlobe, FaStar, FaHandshake,
@@ -67,6 +68,10 @@ const Partners = () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
+            toast.success('Partner erfolgreich angelegt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Anlegen des Partners');
         }
     });
 
@@ -77,6 +82,10 @@ const Partners = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingPartner(null);
+            toast.success('Partner erfolgreich aktualisiert');
+        },
+        onError: () => {
+            toast.error('Fehler beim Aktualisieren des Partners');
         }
     });
 
@@ -86,15 +95,23 @@ const Partners = () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedPartners([]);
+            toast.success('Partner erfolgreich gelöscht');
+        },
+        onError: () => {
+            toast.error('Fehler beim Löschen des Partners');
         }
     });
 
     const bulkUpdateMutation = useMutation({
         mutationFn: (args: { ids: number[], data: any }) => partnerService.bulkUpdate(args.ids, args.data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedPartners([]);
+            toast.success(`${variables.ids.length} Partner aktualisiert`);
+        },
+        onError: () => {
+            toast.error('Massenvorgang fehlgeschlagen');
         }
     });
 

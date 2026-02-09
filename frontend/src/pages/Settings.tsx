@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     FaBuilding, FaDatabase, FaHistory, FaSave, FaPlus, FaTrash,
@@ -13,7 +14,37 @@ import NewMasterDataModal from '../components/modals/NewMasterDataModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import Input from '../components/common/Input';
 import CountrySelect from '../components/common/CountrySelect';
+import SearchableSelect from '../components/common/SearchableSelect';
 import { getFlagUrl } from '../utils/flags';
+
+const legalFormOptions = [
+    { value: 'Einzelunternehmen', label: 'Einzelunternehmen' },
+    { value: 'GbR', label: 'GbR (Gesellschaft bürgerlichen Rechts)' },
+    { value: 'GmbH', label: 'GmbH (Gesellschaft mit beschränkter Haftung)' },
+    { value: 'GmbH & Co. KG', label: 'GmbH & Co. KG' },
+    { value: 'UG (haftungsbeschränkt)', label: 'UG (haftungsbeschränkt)' },
+    { value: 'AG', label: 'AG (Aktiengesellschaft)' },
+    { value: 'KG', label: 'KG (Kommanditgesellschaft)' },
+    { value: 'OHG', label: 'OHG (Offene Handelsgesellschaft)' },
+    { value: 'e.K.', label: 'e.K. (eingetragener Kaufmann / -frau)' },
+    { value: 'PartG', label: 'PartG (Partnerschaftsgesellschaft)' },
+    { value: 'eG', label: 'eG (eingetragene Genossenschaft)' },
+    { value: 'e.V.', label: 'e.V. (eingetragener Verein)' },
+    { value: 'Stiftung', label: 'Stiftung' },
+    { value: 'Körperschaft d.ö.R.', label: 'Körperschaft d.ö.R.' }
+];
+
+const SettingRow = ({ label, description, children, className }: any) => (
+    <div className={clsx("grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start", className)}>
+        <div className="col-span-12 md:col-span-4 space-y-1">
+            <label className="block text-sm font-bold text-slate-700">{label}</label>
+            {description && <p className="text-xs text-slate-500 leading-relaxed">{description}</p>}
+        </div>
+        <div className="col-span-12 md:col-span-8">
+            {children}
+        </div>
+    </div>
+);
 
 const Settings: React.FC = () => {
     const queryClient = useQueryClient();
@@ -64,7 +95,10 @@ const Settings: React.FC = () => {
         mutationFn: settingsService.updateCompany,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['companySettings'] });
-            alert('Einstellungen gespeichert!');
+            toast.success('Einstellungen erfolgreich gespeichert!');
+        },
+        onError: () => {
+            toast.error('Fehler beim Speichern der Einstellungen.');
         }
     });
 
@@ -208,7 +242,7 @@ const Settings: React.FC = () => {
         if (validateCompanyData()) {
             updateCompanyMutation.mutate(companyData);
         } else {
-            alert('Bitte füllen Sie alle Pflichtfelder aus.');
+            toast.error('Bitte füllen Sie alle Pflichtfelder aus.');
         }
     };
 
@@ -270,17 +304,7 @@ const Settings: React.FC = () => {
         }
     };
 
-    const SettingRow = ({ label, description, children, className }: any) => (
-        <div className={clsx("grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start", className)}>
-            <div className="col-span-12 md:col-span-4 space-y-1">
-                <label className="block text-sm font-bold text-slate-700">{label}</label>
-                {description && <p className="text-xs text-slate-500 leading-relaxed">{description}</p>}
-            </div>
-            <div className="col-span-12 md:col-span-8">
-                {children}
-            </div>
-        </div>
-    );
+
 
     const renderCompanySettings = () => (
         <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden animate-fadeIn">
@@ -314,10 +338,12 @@ const Settings: React.FC = () => {
                     </SettingRow>
                     <SettingRow label="Rechtsform & Marke" description="Rechtsform (z.B. GmbH) und öffentlicher Markenname falls abweichend.">
                         <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                placeholder="Rechtsform"
+                            <SearchableSelect
+                                placeholder="Rechtsform wählen..."
+                                options={legalFormOptions}
                                 value={companyData.legal_form || ''}
-                                onChange={(e) => handleInputMetaChange('legal_form', e.target.value)}
+                                onChange={(val) => handleInputMetaChange('legal_form', val)}
+                                className="h-10"
                             />
                             <Input
                                 placeholder="Markenname"
@@ -592,7 +618,8 @@ const Settings: React.FC = () => {
                         { id: 'status', header: 'Status', accessor: (l: any) => <span className={clsx("px-2 py-0.5 text-[10px] font-bold uppercase border tracking-tight rounded-[4px]", l.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{l.status}</span>, align: 'center' },
                         { id: 'actions', header: '', accessor: (l: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(l)} className="p-2 text-slate-400 hover:text-brand-600 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(l)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
                     ]} pageSize={10} />)}
-                    {masterTab === 'doc_types' && (isDocTypesLoading ? <TableSkeleton rows={5} columns={3} /> : <DataTable isLoading={isDocTypesLoading} data={docTypes} columns={[
+                    {masterTab === 'doc_types' && (isDocTypesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isDocTypesLoading} data={docTypes} columns={[
+                        { id: 'category', header: 'Kategorie', accessor: (d: any) => <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{d.category || '-'}</span>, className: 'w-48' },
                         { id: 'name', header: 'Dokumentart', accessor: (d: any) => <span className="font-bold text-slate-800 text-sm">{d.name}</span> },
                         { id: 'status', header: 'Status', accessor: () => <span className="bg-emerald-50 text-emerald-700 border-emerald-200 px-2 py-0.5 text-[10px] font-bold uppercase border tracking-tight rounded-[4px]">Aktiv</span>, align: 'center' },
                         { id: 'actions', header: '', accessor: (d: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(d)} className="p-2 text-slate-400 hover:text-brand-600 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(d)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
