@@ -365,20 +365,21 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
     const handleSubmit = async () => {
         const newErrors = new Set<string>();
-        if (!name) newErrors.add('name');
-        if (!customer && !showCustomerModal) newErrors.add('customer');
-        if (!source) newErrors.add('source');
-        if (!target) newErrors.add('target');
-        if (!deadline) newErrors.add('deadline');
-
         setValidationErrors(newErrors);
         if (newErrors.size > 0) return;
+
+        // Auto-generate name if empty
+        let finalName = name;
+        if (!finalName) {
+            const customerName = customersData.find((c: any) => c.id.toString() === customer)?.company_name || 'Project';
+            finalName = `${customerName}_${source.toUpperCase()}-${target.toUpperCase()}_${new Date().toLocaleDateString('de-DE').replace(/\./g, '')}`;
+        }
 
         const sourceLangId = languages.find((l: any) => l.iso_code.startsWith(source))?.id || 1;
         const targetLangId = languages.find((l: any) => l.iso_code.startsWith(target))?.id || 2;
 
         const payload = {
-            project_name: name,
+            project_name: finalName,
             customer_id: parseInt(customer),
             partner_id: translator ? parseInt(translator) : null,
             source_lang_id: sourceLangId,
@@ -502,37 +503,61 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Stammdaten</h4>
                             </div>
 
-                            <Input label="Projektname *" placeholder="Name..." value={name} onChange={e => setName(e.target.value)} error={validationErrors.has('name')} />
-
-                            <div className="">
-                                <div className="flex items-end">
-                                    <div className="flex-1">
-                                        <SearchableSelect label="Kunde auswählen *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
-                                    </div>
-                                    <button onClick={() => setShowCustomerModal(true)} className="h-[38px] px-4 bg-brand-700 text-white rounded-r rounded-l-none hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-bold">NEU</span></button>
+                            <div className="grid grid-cols-12 gap-4">
+                                {/* Row 1: Project Name */}
+                                <div className="col-span-12">
+                                    <Input
+                                        label="Projektname"
+                                        placeholder="Projektname eingeben"
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                    />
                                 </div>
-                            </div>
 
-                            <NewCustomerModal
-                                isOpen={showCustomerModal}
-                                onClose={() => setShowCustomerModal(false)}
-                                onSubmit={handleApplyCustomer}
-                            />
+                                {/* Row 2: Languages */}
+                                <div className="col-span-12 md:col-span-6">
+                                    <LanguageSelect label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} />
+                                </div>
+                                <div className="col-span-12 md:col-span-6">
+                                    <LanguageSelect label="Nach *" value={target} onChange={setTarget} error={validationErrors.has('target')} />
+                                </div>
 
+                                {/* Row 3: Customer and Translator */}
+                                <div className="col-span-12 md:col-span-6">
+                                    <div className="flex items-end">
+                                        <div className="flex-1">
+                                            <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
+                                        </div>
+                                        <button onClick={() => setShowCustomerModal(true)} className="h-10 px-4 bg-emerald-600 text-white rounded-r border-l-0 hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm" title="Neuer Kunde">
+                                            <FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="col-span-12 md:col-span-6">
+                                    <div className="flex items-end">
+                                        <div className="flex-1">
+                                            <SearchableSelect label="Übersetzer" options={partnerOptions} value={translator} onChange={setTranslator} />
+                                        </div>
+                                        <button onClick={() => setShowPartnerModal(true)} className="h-10 px-4 bg-emerald-600 text-white rounded-r border-l-0 hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm" title="Neuer Übersetzer">
+                                            <FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span>
+                                        </button>
+                                    </div>
+                                </div>
 
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <Input isSelect label="Status" value={status} onChange={e => setStatus(e.target.value)}>
-                                    <option value="draft">Entwurf</option>
-                                    <option value="pending">Angebot</option>
-                                    <option value="in_progress">In Bearbeitung</option>
-                                    <option value="review">QS / Lektorat</option>
-                                    <option value="completed">Abgeschlossen</option>
-                                </Input>
-                                <div>
+                                {/* Row 4: Status and Deadline */}
+                                <div className="col-span-12 md:col-span-6">
+                                    <Input isSelect label="Status" value={status} onChange={e => setStatus(e.target.value)}>
+                                        <option value="offer">Angebot</option>
+                                        <option value="in_progress">In Bearbeitung</option>
+                                        <option value="ready_for_pickup">Dokument(e) Abholbereit</option>
+                                        <option value="completed">Abgeschlossen</option>
+                                        <option value="cancelled">Storniert</option>
+                                    </Input>
+                                </div>
+                                <div className="col-span-12 md:col-span-6">
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Lieferdatum *</label>
-                                    <div className={clsx("relative h-10 border rounded transition-all", validationErrors.has('deadline') ? "border-red-500" : "border-slate-300")}>
-                                        <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10" />
+                                    <div className={clsx("relative h-10 border rounded transition-all bg-white flex items-center", validationErrors.has('deadline') ? "border-red-500" : "border-slate-300")}>
+                                        <FaCalendarAlt className="absolute left-3 text-slate-400 text-xs z-10" />
                                         <DatePicker
                                             selected={deadline ? new Date(deadline) : null}
                                             onChange={(date: Date | null) => setDeadline(date ? date.toISOString() : '')}
@@ -541,58 +566,43 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             timeIntervals={15}
                                             dateFormat="dd.MM.yyyy HH:mm"
                                             locale="de"
-                                            className="w-full h-9 bg-transparent border-none pl-9 pr-3 py-2 text-sm font-bold text-slate-700 outline-none cursor-pointer"
-                                            placeholderText="Datum/Zeit wählen"
+                                            className="w-full h-full bg-transparent border-none pl-9 pr-3 py-2 text-sm font-bold text-slate-700 outline-none cursor-pointer rounded"
+                                            placeholderText="Datum wählen"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <LanguageSelect label="Ausgangssprache *" value={source} onChange={setSource} error={validationErrors.has('source')} />
-                                <LanguageSelect label="Zielsprache *" value={target} onChange={setTarget} error={validationErrors.has('target')} />
-                            </div>
-
-                            {/* Partner Selection */}
-                            <div className="space-y-3">
-                                {suggestedPartners.length > 0 && !translator && (
-                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg overflow-hidden mb-2">
-                                        <div className="px-3 py-1.5 bg-emerald-100/50 text-emerald-800 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                            <FaMagic /> Empfohlene Übersetzer ({source.toUpperCase()} &rarr; {target.toUpperCase()})
-                                        </div>
-                                        <table className="w-full text-left">
-                                            <tbody className="divide-y divide-emerald-100/50">
-                                                {suggestedPartners.map((p: any) => (
-                                                    <tr key={p.id} className="hover:bg-emerald-100/30 cursor-pointer group transition-colors" onClick={() => setTranslator(p.id.toString())}>
-                                                        <td className="px-3 py-2">
-                                                            <div className="text-[11px] font-bold text-slate-700">{p.first_name} {p.last_name}</div>
-                                                            {p.company_name && <div className="text-[9px] text-slate-500">{p.company_name}</div>}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-right">
-                                                            <div className="flex items-center justify-end gap-1 text-[9px] font-bold text-emerald-600">
-                                                                <span>Übernehmen</span>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                            {/* Suggested Partners - Only show if useful */}
+                            {suggestedPartners.length > 0 && !translator && (
+                                <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg overflow-hidden mt-2">
+                                    <div className="px-3 py-1.5 bg-emerald-100/50 text-emerald-800 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                        <FaMagic /> Empfohlene Übersetzer
                                     </div>
-                                )}
-
-                                <div className="flex items-end">
-                                    <div className="flex-1">
-                                        <SearchableSelect label="Übersetzer / Partner auswählen" options={partnerOptions} value={translator} onChange={setTranslator} />
+                                    <div className="flex flex-wrap gap-2 p-2">
+                                        {suggestedPartners.map((p: any) => (
+                                            <div
+                                                key={p.id}
+                                                className="px-2 py-1 bg-white border border-emerald-200 rounded text-[10px] font-bold text-emerald-700 cursor-pointer hover:bg-emerald-50 transition shadow-sm"
+                                                onClick={() => setTranslator(p.id.toString())}
+                                            >
+                                                {p.first_name} {p.last_name}
+                                            </div>
+                                        ))}
                                     </div>
-                                    <button onClick={() => setShowPartnerModal(true)} className="h-[38px] px-4 bg-brand-700 text-white rounded-r rounded-l-none hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-bold">NEU</span></button>
                                 </div>
-                            </div>
+                            )}
 
                             <NewPartnerModal
                                 isOpen={showPartnerModal}
                                 onClose={() => setShowPartnerModal(false)}
                                 onSubmit={handleApplyPartner}
                                 isLoading={createPartnerMutation.isPending}
+                            />
+                            <NewCustomerModal
+                                isOpen={showCustomerModal}
+                                onClose={() => setShowCustomerModal(false)}
+                                onSubmit={handleApplyCustomer}
                             />
                         </div>
 
@@ -623,7 +633,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             }))}
                                         />
                                     </div>
-                                    <button onClick={() => setShowDocTypeModal(true)} className="h-[38px] px-4 bg-brand-700 text-white rounded-r rounded-l-none hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-bold">NEU</span></button>
+                                    <button onClick={() => setShowDocTypeModal(true)} className="h-10 px-4 bg-emerald-600 text-white rounded-r border-l-0 hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
                                 </div>
                             </div>
                             <NewDocTypeModal

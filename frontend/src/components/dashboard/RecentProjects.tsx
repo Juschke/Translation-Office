@@ -97,7 +97,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                             <th className="px-6 py-3 border-b border-slate-100">Projekt</th>
                             <th className="px-6 py-3 border-b border-slate-100">Kunde</th>
                             <th className="px-6 py-3 border-b border-slate-100">Sprachen</th>
-                            <th className="px-6 py-3 border-b border-slate-100 w-32">Fortschritt</th>
+                            <th className="px-6 py-3 border-b border-slate-100 text-right">Deadline</th>
                             <th className="px-6 py-3 border-b border-slate-100 text-right">Status</th>
                         </tr>
                     </thead>
@@ -122,11 +122,10 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                         <span title={p.target_language?.name || p.targetLanguage?.name}>{flags[(p.targetLanguage?.code || p.target_language?.code)?.toLowerCase()] || p.targetLanguage?.code || p.target_language?.code}</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">
-                                    <div className="w-full bg-slate-100 rounded-full h-1.5 mb-1 overflow-hidden">
-                                        <div className="bg-brand-500 h-full rounded-full transition-all duration-1000" style={{ width: `${p.progress || 0}%` }}></div>
-                                    </div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{p.progress || 0}%</span>
+                                <td className="px-6 py-4 text-right">
+                                    <span className="text-xs font-medium text-slate-600">
+                                        {p.deadline ? new Date(p.deadline).toLocaleDateString('de-DE') : '-'}
+                                    </span>
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     {getStatusBadge(p.status)}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaTrash, FaStar, FaCreditCard } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaStar } from 'react-icons/fa';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
 import CountrySelect from '../common/CountrySelect';
@@ -167,6 +167,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     </div>
                     <div className="col-span-12 md:col-span-5">
                         <Input
+                            label="Vorname"
                             placeholder="Vorname *"
                             value={formData.firstName}
                             error={validationErrors.has('firstName')}
@@ -175,6 +176,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     </div>
                     <div className="col-span-12 md:col-span-5">
                         <Input
+                            label="Nachname"
                             placeholder="Nachname *"
                             value={formData.lastName}
                             error={validationErrors.has('lastName')}
@@ -185,6 +187,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     {formData.type === 'agency' && (
                         <div className="col-span-12 animate-fadeIn">
                             <Input
+                                label="Agenturname / Firma"
                                 placeholder="Agenturname / Firma *"
                                 value={formData.company}
                                 error={validationErrors.has('company')}
@@ -210,6 +213,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                         <>
                             <div className="col-span-12 md:col-span-9">
                                 <Input
+                                    label="Straße"
                                     placeholder="Straße *"
                                     value={formData.street}
                                     error={validationErrors.has('street')}
@@ -218,6 +222,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-12 md:col-span-3">
                                 <Input
+                                    label="Nr."
                                     placeholder="Nr. *"
                                     className="text-center"
                                     value={formData.houseNo}
@@ -225,16 +230,27 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                                     onChange={e => updateFormData({ houseNo: e.target.value })}
                                 />
                             </div>
-                            <div className="col-span-12 md:col-span-3">
+                            <div className="col-span-12 md:col-span-4">
                                 <Input
+                                    label="PLZ"
                                     placeholder="PLZ *"
                                     value={formData.zip}
                                     error={validationErrors.has('zip')}
-                                    onChange={e => updateFormData({ zip: e.target.value })}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        // Simple simulated autofill for demo purposes if country is DE
+                                        let cityUpdate = {};
+                                        if (formData.country === 'Deutschland' && val.length === 5) {
+                                            // TODO: Real lookup
+                                            // updateFormData({ zip: val, city: 'Musterstadt' }); // Example
+                                        }
+                                        updateFormData({ zip: val, ...cityUpdate });
+                                    }}
                                 />
                             </div>
-                            <div className="col-span-12 md:col-span-5">
+                            <div className="col-span-12 md:col-span-8">
                                 <Input
+                                    label="Stadt"
                                     placeholder="Stadt *"
                                     className="font-bold"
                                     value={formData.city}
@@ -242,11 +258,13 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                                     onChange={e => updateFormData({ city: e.target.value })}
                                 />
                             </div>
-                            <div className="col-span-12 md:col-span-4">
+
+                            {/* Country in its own row */}
+                            <div className="col-span-12">
                                 <CountrySelect
-                                    label=""
+                                    label="Land"
                                     placeholder="Land *"
-                                    value={formData.country}
+                                    value={formData.country || 'Deutschland'}
                                     onChange={v => updateFormData({ country: v })}
                                 />
                             </div>
@@ -258,6 +276,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             {formData.emails.map((email, i) => (
                                 <div key={i} className="flex gap-2 group">
                                     <Input
+                                        label={i === 0 ? "E-Mail" : undefined}
                                         type="email"
                                         placeholder={i === 0 ? "E-Mail Adresse *" : "Weitere E-Mail Adresse"}
                                         value={email}
@@ -284,6 +303,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             {formData.phones.map((phone, i) => (
                                 <div key={i} className="flex gap-2 group">
                                     <Input
+                                        label={i === 0 ? "Telefon/Mobil" : undefined}
                                         type="tel"
                                         placeholder={i === 0 ? "Telefon" : i === 1 ? "Mobil" : "Weitere Nummer"}
                                         value={phone}
@@ -328,6 +348,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                         <div className="grid grid-cols-2 gap-8">
                             <div className="col-span-2">
                                 <Input
+                                    label="Fachgebiete / Spezialisierung"
                                     placeholder="Fachgebiete / Sprachpaare / Fokus"
                                     value={Array.isArray(formData.domains) ? formData.domains.join(', ') : formData.domains}
                                     onChange={e => updateFormData({ domains: e.target.value })}
@@ -336,6 +357,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-2">
                                 <Input
+                                    label="Software-Kenntnisse"
                                     placeholder="Software-Kenntnisse (CAT Tools)"
                                     value={formData.software}
                                     onChange={e => updateFormData({ software: e.target.value })}
@@ -353,13 +375,13 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
 
                         <div className="grid grid-cols-12 gap-6">
                             <div className="col-span-12 md:col-span-4">
-                                <Input placeholder="Name der Bank *" value={formData.bankName} error={validationErrors.has('bankName')} onChange={e => updateFormData({ bankName: e.target.value })} />
+                                <Input label="Name der Bank" placeholder="Name der Bank" value={formData.bankName} error={validationErrors.has('bankName')} onChange={e => updateFormData({ bankName: e.target.value })} />
                             </div>
                             <div className="col-span-6 md:col-span-3">
-                                <Input placeholder="BIC *" className="uppercase" value={formData.bic} error={validationErrors.has('bic')} onChange={e => updateFormData({ bic: e.target.value })} />
+                                <Input label="BIC" placeholder="BIC" className="uppercase" value={formData.bic} error={validationErrors.has('bic')} onChange={e => updateFormData({ bic: e.target.value })} />
                             </div>
                             <div className="col-span-6 md:col-span-5">
-                                <Input placeholder="IBAN *" className="font-bold" value={formData.iban} error={validationErrors.has('iban')} onChange={e => updateFormData({ iban: e.target.value })} />
+                                <Input label="IBAN" placeholder="IBAN" className="font-bold" value={formData.iban} error={validationErrors.has('iban')} onChange={e => updateFormData({ iban: e.target.value })} />
                             </div>
 
                             <div className="col-span-4">
@@ -373,7 +395,8 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-8">
                                 <Input
-                                    placeholder="USt-IdNr. / Steuer-ID *"
+                                    label="Steuer-ID / USt-IdNr."
+                                    placeholder="USt-IdNr. / Steuer-ID"
                                     value={formData.taxId}
                                     error={validationErrors.has('taxId')}
                                     onChange={e => updateFormData({ taxId: e.target.value })}
@@ -390,66 +413,62 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Konditionen & Tarife</h4>
                         </div>
 
-                        <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 shadow-inner space-y-8">
-                            <div className="flex bg-slate-200 p-0.5 rounded-lg border border-slate-300 h-10 w-fit mx-auto">
-                                <button type="button" onClick={() => updateFormData({ priceMode: 'per_unit' })} className={clsx("px-6 text-[10px] font-bold uppercase rounded-md transition-all", formData.priceMode === 'per_unit' ? "bg-white text-brand-700 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Basisraten per Einheit</button>
-                                <button type="button" onClick={() => updateFormData({ priceMode: 'flat' })} className={clsx("px-6 text-[10px] font-bold uppercase rounded-md transition-all", formData.priceMode === 'flat' ? "bg-white text-brand-700 shadow-sm" : "text-slate-500 hover:text-slate-700")}>Pauschalpreise</button>
-                                <button type="button" onClick={() => updateFormData({ priceMode: 'matrix' })} className={clsx("px-6 text-[10px] font-bold uppercase rounded-md transition-all", formData.priceMode === 'matrix' ? "bg-white text-brand-700 shadow-sm" : "text-slate-500 hover:text-slate-700")}>TM-Preismatrix</button>
+                        <div className="grid grid-cols-12 gap-x-6 gap-y-6">
+                            <div className="col-span-12 md:col-span-4">
+                                <Input
+                                    label="Wortpreis (Netto)"
+                                    type="number"
+                                    step="0.001"
+                                    placeholder="0.080"
+                                    value={formData.unitRates.word}
+                                    onChange={e => updateFormData({ unitRates: { ...formData.unitRates, word: e.target.value } })}
+                                    endIcon={<span className="text-[10px] font-bold text-slate-300">€</span>}
+                                />
                             </div>
-
-                            {formData.priceMode === 'per_unit' && (
-                                <div className="grid grid-cols-3 gap-6 animate-fadeIn">
-                                    <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col items-center">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-widest">Wortpreis (Netto)</label>
-                                        <div className="relative w-28">
-                                            <input type="number" step="0.001" className="w-full h-10 border border-slate-300 rounded-md px-3 text-sm font-black text-center outline-none focus:border-brand-500" value={formData.unitRates.word} onChange={e => updateFormData({ unitRates: { ...formData.unitRates, word: e.target.value } })} placeholder="0.080" />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300">€</span>
-                                        </div>
-                                    </div>
-                                    <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col items-center">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-widest">Zeilenpreis (Netto)</label>
-                                        <div className="relative w-28">
-                                            <input type="number" step="0.01" className="w-full h-10 border border-slate-300 rounded-md px-3 text-sm font-black text-center outline-none focus:border-brand-500" value={formData.unitRates.line} onChange={e => updateFormData({ unitRates: { ...formData.unitRates, line: e.target.value } })} placeholder="1.20" />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300">€</span>
-                                        </div>
-                                    </div>
-                                    <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col items-center">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-widest">Stundensatz (Netto)</label>
-                                        <div className="relative w-28">
-                                            <input type="number" step="1" className="w-full h-10 border border-slate-300 rounded-md px-3 text-sm font-black text-center outline-none focus:border-brand-500" value={formData.unitRates.hour} onChange={e => updateFormData({ unitRates: { ...formData.unitRates, hour: e.target.value } })} placeholder="55.00" />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300">€</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {formData.priceMode === 'flat' && (
-                                <div className="space-y-4 animate-fadeIn">
-                                    <div className="bg-white p-4 rounded-lg border border-slate-200 flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-600">Mindestpauschale (Kleineinsätze)</span>
-                                        <div className="relative w-32">
-                                            <input type="number" className="w-full h-10 border border-slate-300 rounded-md px-4 text-right text-sm font-black pr-8 outline-none focus:border-brand-500" value={formData.flatRates.minimum} onChange={e => updateFormData({ flatRates: { ...formData.flatRates, minimum: e.target.value } })} placeholder="45.00" />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300">€</span>
-                                        </div>
-                                    </div>
-                                    <div className="bg-white p-4 rounded-lg border border-slate-200 flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-600">Beglaubigungsgebühr (Fixum pro Dok.)</span>
-                                        <div className="relative w-32">
-                                            <input type="number" className="w-full h-10 border border-slate-300 rounded-md px-4 text-right text-sm font-black pr-8 outline-none focus:border-brand-500" value={formData.flatRates.cert} onChange={e => updateFormData({ flatRates: { ...formData.flatRates, cert: e.target.value } })} placeholder="5.00" />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300">€</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {formData.priceMode === 'matrix' && (
-                                <div className="animate-fadeIn p-8 border-2 border-dashed border-slate-300 rounded-lg bg-white text-center">
-                                    <FaCreditCard className="mx-auto text-slate-200 text-3xl mb-3" />
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Detaillierte TM-Analyse-Sätze</p>
-                                    <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">Hier können Sie individuelle Rabattstaffeln für Matches (100%, 95-99%, etc.) konfigurieren.</p>
-                                    <button type="button" className="px-6 py-2 bg-brand-50 text-brand-700 rounded text-[10px] font-black uppercase hover:bg-brand-100 transition border border-brand-200">Matrix-Editor öffnen</button>
-                                </div>
-                            )}
+                            <div className="col-span-12 md:col-span-4">
+                                <Input
+                                    label="Zeilenpreis (Netto)"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="1.20"
+                                    value={formData.unitRates.line}
+                                    onChange={e => updateFormData({ unitRates: { ...formData.unitRates, line: e.target.value } })}
+                                    endIcon={<span className="text-[10px] font-bold text-slate-300">€</span>}
+                                />
+                            </div>
+                            <div className="col-span-12 md:col-span-4">
+                                <Input
+                                    label="Stundensatz (Netto)"
+                                    type="number"
+                                    step="1"
+                                    placeholder="55.00"
+                                    value={formData.unitRates.hour}
+                                    onChange={e => updateFormData({ unitRates: { ...formData.unitRates, hour: e.target.value } })}
+                                    endIcon={<span className="text-[10px] font-bold text-slate-300">€</span>}
+                                />
+                            </div>
+                            <div className="col-span-12 md:col-span-6">
+                                <Input
+                                    label="Mindestpauschale"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="45.00"
+                                    value={formData.flatRates.minimum}
+                                    onChange={e => updateFormData({ flatRates: { ...formData.flatRates, minimum: e.target.value } })}
+                                    endIcon={<span className="text-[10px] font-bold text-slate-300">€</span>}
+                                />
+                            </div>
+                            <div className="col-span-12 md:col-span-6">
+                                <Input
+                                    label="Beglaubigungsgebühr"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="5.00"
+                                    value={formData.flatRates.cert}
+                                    onChange={e => updateFormData({ flatRates: { ...formData.flatRates, cert: e.target.value } })}
+                                    endIcon={<span className="text-[10px] font-bold text-slate-300">€</span>}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -493,6 +512,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                             </div>
                             <div className="col-span-2">
                                 <Input
+                                    label="Interne Notizen"
                                     isTextArea
                                     placeholder="Interne Anmerkungen / Erfahrungen / Feedback..."
                                     value={formData.notes}

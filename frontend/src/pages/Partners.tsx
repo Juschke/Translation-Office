@@ -4,6 +4,7 @@ import {
     FaUserTie, FaPlus, FaEye, FaEdit, FaTrash, FaGlobe, FaStar, FaHandshake,
     FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter
 } from 'react-icons/fa';
+import clsx from 'clsx';
 
 import Checkbox from '../components/common/Checkbox';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
@@ -213,6 +214,17 @@ const Partners = () => {
             sortKey: 'phone'
         },
         {
+            id: 'domains',
+            header: 'Fachgebiete',
+            accessor: (p: any) => (
+                <div className="max-w-[120px]">
+                    <p className="text-[10px] text-slate-500 truncate" title={Array.isArray(p.domains) ? p.domains.join(', ') : (p.domains || '-')}>
+                        {Array.isArray(p.domains) ? p.domains.join(', ') : (p.domains || '-')}
+                    </p>
+                </div>
+            )
+        },
+        {
             id: 'languages',
             header: 'Sprachen',
             accessor: (p: any) => (
@@ -229,13 +241,23 @@ const Partners = () => {
             ),
         },
         {
+            id: 'location',
+            header: 'Standort',
+            accessor: (p: any) => (
+                <div className="flex flex-col">
+                    <span className="text-slate-700 text-xs font-medium">{p.address_city || '-'}</span>
+                    <span className="text-[10px] text-slate-400 capitalize">{p.address_country || ''}</span>
+                </div>
+            ),
+            sortable: true,
+            sortKey: 'address_city'
+        },
+        {
             id: 'projects_count',
             header: 'Projekte',
             accessor: (p: any) => (
-                <div className="flex items-center justify-center">
-                    <div className="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 border border-slate-200 shadow-sm">
-                        {p.projects_count || 0}
-                    </div>
+                <div className="flex flex-col items-center">
+                    <span className="text-xs font-black text-slate-700">{p.projects_count || 0}</span>
                 </div>
             ),
             sortable: true,
@@ -246,11 +268,14 @@ const Partners = () => {
             id: 'rating',
             header: 'Bewertung',
             accessor: (p: any) => (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
                         <FaStar
                             key={star}
-                            className={star <= (p.rating || 0) ? "text-amber-400 text-sm" : "text-slate-200 text-sm"}
+                            className={clsx(
+                                "text-[10px]",
+                                star <= (p.rating || 0) ? "text-amber-400" : "text-slate-200"
+                            )}
                         />
                     ))}
                 </div>
@@ -408,7 +433,24 @@ const Partners = () => {
                         {
                             label: 'E-Mail senden',
                             icon: <FaEnvelope className="text-xs" />,
-                            onClick: () => { }, // TODO: Implement send email
+                            onClick: () => {
+                                // Get emails from selected partners
+                                const selectedEmails = partners
+                                    .filter((p: any) => selectedPartners.includes(p.id))
+                                    .map((p: any) => p.email)
+                                    .filter(Boolean)
+                                    .join(', ');
+
+                                if (selectedEmails) {
+                                    navigate('/inbox', {
+                                        state: {
+                                            compose: true,
+                                            to: selectedEmails,
+                                            subject: 'Nachricht an Partner'
+                                        }
+                                    });
+                                }
+                            },
                             variant: 'primary',
                             show: typeFilter !== 'trash'
                         },

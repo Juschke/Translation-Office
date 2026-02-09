@@ -100,3 +100,120 @@
   width: 100%;
   outline: none;
 }
+
+/* Email Content Rendering Styles */
+.email-content-container img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem 0;
+}
+
+.email-content-container table {
+  width: 100% !important;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.email-content-container a {
+  color: #008B8B;
+  text-decoration: underline;
+}
+
+.email-content-container p {
+  margin-bottom: 1rem;
+}
+
+/* Quill Editor Customization */
+.quill-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+}
+
+.quill-container .ql-container {
+  flex: 1;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.quill-container .ql-editor {
+  min-height: 200px;
+  background: white;
+}
+
+.quill-container .ql-toolbar {
+  background: #f8fafc;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.no-rounded {
+  border-radius: 0 !important;
+}
+
+.no-rounded * {
+  border-radius: 0 !important;
+}
+
+/* Modern Quill for Communication Hub */
+.quill-modern {
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.quill-modern .ql-toolbar {
+  border: none !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  background: white !important;
+  padding: 12px !important;
+}
+
+.quill-modern .ql-container {
+  border: none !important;
+  flex: 1;
+  font-family: inherit;
+  font-size: 0.875rem;
+  background: white;
+}
+
+.quill-modern .ql-editor {
+  min-height: 300px;
+  padding: 20px !important;
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeInRight {
+  animation: fadeInRight 0.3s ease-out;
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeInLeft {
+  animation: fadeInLeft 0.3s ease-out;
+}

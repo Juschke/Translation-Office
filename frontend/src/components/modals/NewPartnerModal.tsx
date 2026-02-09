@@ -30,6 +30,13 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
         if (!data?.firstName) errors.add('firstName');
         if (!data?.emails?.[0]) errors.add('email');
 
+        // Bank details: Optional, but if one is filled, all must be filled
+        if (data?.bankName || data?.bic || data?.iban) {
+            if (!data?.bankName) errors.add('bankName');
+            if (!data?.bic) errors.add('bic');
+            if (!data?.iban) errors.add('iban');
+        }
+
         setValidationErrors(errors);
         if (errors.size > 0) return;
 

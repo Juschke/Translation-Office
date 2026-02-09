@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     FaBuilding, FaDatabase, FaHistory, FaSave, FaPlus, FaTrash,
     FaGlobe, FaEdit, FaEnvelopeOpenText, FaLanguage, FaFileAlt,
-    FaUserShield, FaLandmark, FaIdCard, FaCcPaypal, FaCcStripe, FaCcVisa, FaUniversity
+    FaUserShield, FaCcPaypal, FaCcStripe, FaCcVisa, FaUniversity
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { settingsService } from '../api/services';
 import DataTable from '../components/common/DataTable';
 import TableSkeleton from '../components/common/TableSkeleton';
 import NewMasterDataModal from '../components/modals/NewMasterDataModal';
+import ConfirmModal from '../components/modals/ConfirmModal';
 import Input from '../components/common/Input';
 import CountrySelect from '../components/common/CountrySelect';
 import { getFlagUrl } from '../utils/flags';
@@ -25,6 +26,7 @@ const Settings: React.FC = () => {
     const [isValidatingZip, setIsValidatingZip] = useState(false);
     const [isValidatingIban, setIsValidatingIban] = useState(false);
     const [streetSuggestions, setStreetSuggestions] = useState<string[]>([]);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; item: any | null }>({ isOpen: false, item: null });
 
     // API Data Fetching
     const { data: serverCompanyData } = useQuery({
@@ -240,344 +242,322 @@ const Settings: React.FC = () => {
     };
 
     const handleDeleteMasterData = (item: any) => {
-        if (!window.confirm(`Möchten Sie "${item.name || item.name_internal || item.subject}" wirklich löschen?`)) return;
-        if (masterTab === 'languages') deleteLanguageMutation.mutate(item.id);
-        else if (masterTab === 'doc_types') deleteDocTypeMutation.mutate(item.id);
-        else if (masterTab === 'services') deleteServiceMutation.mutate(item.id);
-        else if (masterTab === 'email_templates') deleteTemplateMutation.mutate(item.id);
+        setDeleteConfirm({ isOpen: true, item });
     };
 
+    const confirmDelete = () => {
+        if (deleteConfirm.item) {
+            const id = deleteConfirm.item.id;
+            if (masterTab === 'languages') deleteLanguageMutation.mutate(id);
+            else if (masterTab === 'doc_types') deleteDocTypeMutation.mutate(id);
+            else if (masterTab === 'services') deleteServiceMutation.mutate(id);
+            else if (masterTab === 'email_templates') deleteTemplateMutation.mutate(id);
+        }
+    };
+
+    const handleModalSubmit = (data: any) => {
+        if (editingItem) {
+            const id = editingItem.id;
+            if (masterTab === 'languages') updateLanguageMutation.mutate({ id, data });
+            else if (masterTab === 'doc_types') updateDocTypeMutation.mutate({ id, data });
+            else if (masterTab === 'services') updateServiceMutation.mutate({ id, data });
+            else if (masterTab === 'email_templates') updateTemplateMutation.mutate({ id, data });
+        } else {
+            if (masterTab === 'languages') createLanguageMutation.mutate(data);
+            else if (masterTab === 'doc_types') createDocTypeMutation.mutate(data);
+            else if (masterTab === 'services') createServiceMutation.mutate(data);
+            else if (masterTab === 'email_templates') createTemplateMutation.mutate(data);
+        }
+    };
+
+    const SettingRow = ({ label, description, children, className }: any) => (
+        <div className={clsx("grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start", className)}>
+            <div className="col-span-12 md:col-span-4 space-y-1">
+                <label className="block text-sm font-bold text-slate-700">{label}</label>
+                {description && <p className="text-xs text-slate-500 leading-relaxed">{description}</p>}
+            </div>
+            <div className="col-span-12 md:col-span-8">
+                {children}
+            </div>
+        </div>
+    );
+
     const renderCompanySettings = () => (
-        <div className="space-y-8">
-            <div className="flex justify-end p-2 bg-white shadow-sm border border-slate-200 mb-4 sticky top-0 z-10 gap-3">
+        <div className="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden animate-fadeIn">
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold border border-brand-100 rounded"><FaBuilding /></div>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Unternehmensdaten</h3>
+                    </div>
+                </div>
                 <button
                     onClick={handleSaveCompany}
                     disabled={updateCompanyMutation.isPending}
                     className="flex items-center gap-2 px-6 py-2 bg-brand-900 text-white text-xs font-bold uppercase tracking-widest hover:bg-black transition active:scale-95 shadow-lg disabled:opacity-50 rounded"
                 >
-                    <FaSave /> {updateCompanyMutation.isPending ? 'Speichert...' : 'Alles Speichern'}
+                    <FaSave /> {updateCompanyMutation.isPending ? 'Speichert...' : 'Speichern'}
                 </button>
             </div>
 
-            {/* Section 1: Stammdaten */}
-            <div className="bg-white shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold border border-brand-100 rounded"><FaBuilding /></div>
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Stammdaten</h3>
-                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Allgemeine Unternehmensinformationen</p>
-                    </div>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <Input
-                        label="Offizieller Firmenname *"
-                        placeholder="Beispiel GmbH & Co. KG"
-                        value={companyData.company_name || ''}
-                        onChange={(e) => handleInputMetaChange('company_name', e.target.value)}
-                        error={!!errors.company_name}
-                        containerClassName="lg:col-span-1"
-                    />
-                    <Input
-                        label="Rechtsform"
-                        placeholder="GmbH, e.K., Freelancer"
-                        value={companyData.legal_form || ''}
-                        onChange={(e) => handleInputMetaChange('legal_form', e.target.value)}
-                    />
-                    <Input
-                        label="Markenname / Portal-Name"
-                        placeholder="Translation Hub"
-                        value={companyData.domain || ''}
-                        onChange={(e) => handleInputMetaChange('domain', e.target.value)}
-                    />
-                    <Input
-                        label="Webseite"
-                        placeholder="https://www.beispiel.de"
-                        value={companyData.website || ''}
-                        onChange={(e) => handleInputMetaChange('website', e.target.value)}
-                    />
-                    <Input
-                        isSelect
-                        label="Währung (Standard)"
-                        value={companyData.currency || 'EUR'}
-                        onChange={(e) => handleInputMetaChange('currency', e.target.value)}
-                    >
-                        <option value="EUR">EUR (€) - Euro</option>
-                        <option value="USD">USD ($) - US Dollar</option>
-                        <option value="CHF">CHF (Fr.) - Schweizer Franken</option>
-                    </Input>
-                    <Input
-                        label="Steuernummer"
-                        placeholder="12/345/67890"
-                        value={companyData.tax_number || ''}
-                        onChange={(e) => handleInputMetaChange('tax_number', e.target.value)}
-                    />
-                    <Input
-                        label="USt-IdNr."
-                        placeholder="DE123456789"
-                        value={companyData.vat_id || ''}
-                        onChange={(e) => handleInputMetaChange('vat_id', e.target.value)}
-                    />
-                    <Input
-                        label="Wirtschafts-ID (tax_id)"
-                        placeholder="DE123456789"
-                        value={companyData.tax_id || ''}
-                        onChange={(e) => handleInputMetaChange('tax_id', e.target.value)}
-                    />
-                </div>
-            </div>
-
-            {/* Section: SMTP Einstellungen */}
-            <div className="bg-white shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] rounded"><FaEnvelopeOpenText /></div>
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">SMTP-Einstellungen</h4>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mail Host</label>
-                        <input type="text" placeholder="smtp.example.com" value={companyData.mail_host || ''} onChange={(e) => handleInputMetaChange('mail_host', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm focus:border-brand-500 outline-none h-10 shadow-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mail Port</label>
-                        <input type="text" placeholder="587" value={companyData.mail_port || ''} onChange={(e) => handleInputMetaChange('mail_port', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm focus:border-brand-500 outline-none h-10 shadow-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Verschlüsselung</label>
-                        <select value={companyData.mail_encryption || 'tls'} onChange={(e) => handleInputMetaChange('mail_encryption', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm cursor-pointer font-medium">
-                            <option value="tls">TLS</option>
-                            <option value="ssl">SSL</option>
-                            <option value="none">Keine</option>
-                        </select>
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Benutzername</label>
-                        <input type="text" placeholder="user@example.com" value={companyData.mail_username || ''} onChange={(e) => handleInputMetaChange('mail_username', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm focus:border-brand-500 outline-none h-10 shadow-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Passwort</label>
-                        <input type="password" placeholder="********" value={companyData.mail_password || ''} onChange={(e) => handleInputMetaChange('mail_password', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm focus:border-brand-500 outline-none h-10 shadow-sm" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Section: Nummernkreise & IDs */}
-            <div className="bg-white shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] rounded"><FaIdCard /></div>
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Nummernkreise & IDs</h4>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kunden (z.B. K-)</label>
-                        <input type="text" placeholder="K-" value={companyData.customer_id_prefix || ''} onChange={(e) => handleInputMetaChange('customer_id_prefix', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500 font-bold text-slate-700" />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Partner (z.B. D-)</label>
-                        <input type="text" placeholder="D-" value={companyData.partner_id_prefix || ''} onChange={(e) => handleInputMetaChange('partner_id_prefix', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500 font-bold text-slate-700" />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Projekte (z.B. PO-)</label>
-                        <input type="text" placeholder="PO-" value={companyData.project_id_prefix || ''} onChange={(e) => handleInputMetaChange('project_id_prefix', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500 font-bold text-slate-700" />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Rechnungen (z.B. RE-)</label>
-                        <input type="text" placeholder="RE-" value={companyData.invoice_id_prefix || ''} onChange={(e) => handleInputMetaChange('invoice_id_prefix', e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500 font-bold text-slate-700" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Section 2: Address */}
-            <div className="bg-white shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] rounded"><FaGlobe /></div>
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Adresse</h4>
-                </div>
-                <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div className="md:col-span-3">
+            <div className="p-8">
+                {/* Section: Basisdaten */}
+                <div className="mb-8">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Basisinformationen</h4>
+                    <SettingRow label="Firmenname" description="Der offizielle Name Ihres Unternehmens, wie er auf Rechnungen erscheint.">
+                        <Input
+                            placeholder="Beispiel GmbH & Co. KG"
+                            value={companyData.company_name || ''}
+                            onChange={(e) => handleInputMetaChange('company_name', e.target.value)}
+                            error={!!errors.company_name}
+                        />
+                    </SettingRow>
+                    <SettingRow label="Rechtsform & Marke" description="Rechtsform (z.B. GmbH) und öffentlicher Markenname falls abweichend.">
+                        <div className="grid grid-cols-2 gap-4">
                             <Input
-                                label="Straße *"
-                                placeholder="Straße"
-                                list="street-suggestions"
-                                value={companyData.address_street || ''}
-                                onChange={(e) => handleInputMetaChange('address_street', e.target.value)}
-                                error={!!errors.address_street}
+                                placeholder="Rechtsform"
+                                value={companyData.legal_form || ''}
+                                onChange={(e) => handleInputMetaChange('legal_form', e.target.value)}
                             />
-                            <datalist id="street-suggestions">
-                                {streetSuggestions.map(s => <option key={s} value={s} />)}
-                            </datalist>
-                        </div>
-                        <div>
                             <Input
-                                label="Hausnummer"
-                                placeholder="Nr."
-                                value={companyData.address_house_no || ''}
-                                onChange={(e) => handleInputMetaChange('address_house_no', e.target.value)}
+                                placeholder="Markenname"
+                                value={companyData.domain || ''}
+                                onChange={(e) => handleInputMetaChange('domain', e.target.value)}
                             />
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="relative">
-                            <Input
-                                label="Postleitzahl *"
-                                placeholder="PLZ"
-                                value={companyData.address_zip || ''}
-                                onChange={(e) => handleInputMetaChange('address_zip', e.target.value)}
-                                onBlur={handleZipBlur}
-                                error={!!errors.address_zip}
-                                endIcon={isValidatingZip ? <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div> : null}
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                label="Stadt *"
-                                placeholder="Stadt"
-                                value={companyData.address_city || ''}
-                                onChange={(e) => handleInputMetaChange('address_city', e.target.value)}
-                                error={!!errors.address_city}
-                            />
-                        </div>
-                    </div>
-
-                    <CountrySelect
-                        value={companyData.address_country || 'Deutschland'}
-                        onChange={(val) => handleInputMetaChange('address_country', val)}
-                        label="Land"
-                    />
-                </div>
-            </div>
-
-            {/* Section 3: Payment */}
-            <div className="bg-white shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] border border-brand-100 rounded"><FaLandmark /></div>
-                        <div>
-                            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Zahlungsinformationen</h4>
-                            <p className="text-[9px] text-slate-400 font-medium uppercase tracking-tight">Standard-Zahlungsweg für Ausgangsrechnungen auswählen</p>
-                        </div>
-                    </div>
-                    <div className="flex bg-slate-200/50 p-1 gap-1">
-                        {(['bank', 'card', 'paypal', 'stripe'] as const).map(type => (
-                            <button
-                                key={type}
-                                onClick={() => handleInputMetaChange('payment_method_type', type)}
-                                className={clsx(
-                                    "flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-all shadow-sm rounded",
-                                    (companyData.payment_method_type || 'bank') === type
-                                        ? "bg-white text-brand-900 scale-105"
-                                        : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                                )}
-                            >
-                                {type === 'bank' && <FaUniversity className="text-xs" />}
-                                {type === 'card' && <FaCcVisa className="text-xs" />}
-                                {type === 'paypal' && <FaCcPaypal className="text-xs" />}
-                                {type === 'stripe' && <FaCcStripe className="text-xs" />}
-                                {type === 'bank' ? 'Überweisung' : type === 'card' ? 'Kreditkarte' : type.charAt(0).toUpperCase() + type.slice(1)}
-                            </button>
-                        ))}
-                    </div>
+                    </SettingRow>
+                    <SettingRow label="Webseite" description="Ihre offizielle Webseite.">
+                        <Input
+                            placeholder="https://www.beispiel.de"
+                            value={companyData.website || ''}
+                            onChange={(e) => handleInputMetaChange('website', e.target.value)}
+                        />
+                    </SettingRow>
+                    <SettingRow label="Währung" description="Die Standardwährung für Ihr System.">
+                        <Input
+                            isSelect
+                            value={companyData.currency || 'EUR'}
+                            onChange={(e) => handleInputMetaChange('currency', e.target.value)}
+                        >
+                            <option value="EUR">EUR (€) - Euro</option>
+                            <option value="USD">USD ($) - US Dollar</option>
+                            <option value="CHF">CHF (Fr.) - Schweizer Franken</option>
+                        </Input>
+                    </SettingRow>
                 </div>
 
-                <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1.5">
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">BIC</label>
-                            <input
-                                type="text"
-                                placeholder="ABCDEFGH"
-                                value={companyData.bank_bic || ''}
-                                onChange={(e) => handleInputMetaChange('bank_bic', e.target.value)}
-                                onBlur={handleBicBlur}
-                                className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500"
+                {/* Section: Steuer & Rechtliches */}
+                <div className="mb-8">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Steuern & Identifikation</h4>
+                    <SettingRow label="Steuernummern" description="Hinterlegen Sie hier Ihre steuerlichen Identifikationsnummern.">
+                        <div className="grid grid-cols-3 gap-4">
+                            <Input
+                                label="Steuernummer"
+                                placeholder="12/345/67890"
+                                value={companyData.tax_number || ''}
+                                onChange={(e) => handleInputMetaChange('tax_number', e.target.value)}
+                            />
+                            <Input
+                                label="USt-IdNr."
+                                placeholder="DE123456789"
+                                value={companyData.vat_id || ''}
+                                onChange={(e) => handleInputMetaChange('vat_id', e.target.value)}
+                            />
+                            <Input
+                                label="Wirtschafts-ID"
+                                placeholder="DE123456789"
+                                value={companyData.tax_id || ''}
+                                onChange={(e) => handleInputMetaChange('tax_id', e.target.value)}
                             />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kreditinstitut</label>
-                            <input
-                                type="text"
-                                placeholder="Musterbank AG"
-                                value={companyData.bank_name || ''}
-                                onChange={(e) => handleInputMetaChange('bank_name', e.target.value)}
-                                className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500"
-                            />
+                    </SettingRow>
+                    <SettingRow label="Nummernkreise (IDs)" description="Definieren Sie die Präfixe für Ihre Dokumente (z.B. R-2024-001).">
+                        <div className="grid grid-cols-4 gap-4">
+                            <Input label="Kunden (K-)" placeholder="K-" value={companyData.customer_id_prefix || ''} onChange={(e) => handleInputMetaChange('customer_id_prefix', e.target.value)} />
+                            <Input label="Partner (D-)" placeholder="D-" value={companyData.partner_id_prefix || ''} onChange={(e) => handleInputMetaChange('partner_id_prefix', e.target.value)} />
+                            <Input label="Projekte (PO-)" placeholder="PO-" value={companyData.project_id_prefix || ''} onChange={(e) => handleInputMetaChange('project_id_prefix', e.target.value)} />
+                            <Input label="Rechnungen (RE-)" placeholder="RE-" value={companyData.invoice_id_prefix || ''} onChange={(e) => handleInputMetaChange('invoice_id_prefix', e.target.value)} />
                         </div>
-                    </div>
+                    </SettingRow>
+                </div>
 
-                    <div className="pt-4 border-t border-slate-100">
-                        {(!companyData.payment_method_type || companyData.payment_method_type === 'bank') && (
-                            <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">IBAN</label>
+                {/* Section: Adresse */}
+                <div className="mb-8">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Standort & Adresse</h4>
+                    <SettingRow label="Anschrift" description="Der Hauptsitz Ihres Unternehmens.">
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-3">
+                                    <Input
+                                        label="Straße *"
+                                        placeholder="Straße"
+                                        list="street-suggestions"
+                                        value={companyData.address_street || ''}
+                                        onChange={(e) => handleInputMetaChange('address_street', e.target.value)}
+                                        error={!!errors.address_street}
+                                    />
+                                    <datalist id="street-suggestions">
+                                        {streetSuggestions.map(s => <option key={s} value={s} />)}
+                                    </datalist>
+                                </div>
+                                <Input
+                                    label="Nr."
+                                    placeholder="Nr."
+                                    value={companyData.address_house_no || ''}
+                                    onChange={(e) => handleInputMetaChange('address_house_no', e.target.value)}
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
                                 <div className="relative">
-                                    <input
-                                        type="text"
+                                    <Input
+                                        label="PLZ *"
+                                        placeholder="PLZ"
+                                        value={companyData.address_zip || ''}
+                                        onChange={(e) => handleInputMetaChange('address_zip', e.target.value)}
+                                        onBlur={handleZipBlur}
+                                        error={!!errors.address_zip}
+                                        endIcon={isValidatingZip ? <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div> : null}
+                                    />
+                                </div>
+                                <div className="col-span-2">
+                                    <Input
+                                        label="Stadt *"
+                                        placeholder="Stadt"
+                                        value={companyData.address_city || ''}
+                                        onChange={(e) => handleInputMetaChange('address_city', e.target.value)}
+                                        error={!!errors.address_city}
+                                    />
+                                </div>
+                            </div>
+                            <CountrySelect
+                                value={companyData.address_country || 'Deutschland'}
+                                onChange={(val) => handleInputMetaChange('address_country', val)}
+                                label="Land"
+                            />
+                        </div>
+                    </SettingRow>
+                </div>
+
+                {/* Section: Bankverbindung */}
+                <div className="mb-8">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Finanzen & Zahlung</h4>
+                    <SettingRow label="Zahlungsart (Ausgang)" description="Bevorzugte Zahlungsmethode für Ihre Kunden.">
+                        <div className="flex bg-slate-100 p-1 gap-1 rounded w-fit">
+                            {(['bank', 'card', 'paypal', 'stripe'] as const).map(type => (
+                                <button
+                                    key={type}
+                                    onClick={() => handleInputMetaChange('payment_method_type', type)}
+                                    className={clsx(
+                                        "flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm rounded",
+                                        (companyData.payment_method_type || 'bank') === type
+                                            ? "bg-white text-brand-900 scale-105 shadow-md"
+                                            : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                                    )}
+                                >
+                                    {type === 'bank' && <FaUniversity className="text-xs" />}
+                                    {type === 'card' && <FaCcVisa className="text-xs" />}
+                                    {type === 'paypal' && <FaCcPaypal className="text-xs" />}
+                                    {type === 'stripe' && <FaCcStripe className="text-xs" />}
+                                    {type === 'bank' ? 'Überweisung' : type === 'card' ? 'Kreditkarte' : type.charAt(0).toUpperCase() + type.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                    </SettingRow>
+
+                    {(!companyData.payment_method_type || companyData.payment_method_type === 'bank') && (
+                        <SettingRow label="Bankverbindung" description="Ihre IBAN und BIC für Überweisungen.">
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input
+                                        label="Bankname"
+                                        placeholder="Musterbank AG"
+                                        value={companyData.bank_name || ''}
+                                        onChange={(e) => handleInputMetaChange('bank_name', e.target.value)}
+                                    />
+                                    <Input
+                                        label="BIC"
+                                        placeholder="ABCDEFGH"
+                                        value={companyData.bank_bic || ''}
+                                        onChange={(e) => handleInputMetaChange('bank_bic', e.target.value)}
+                                        onBlur={handleBicBlur}
+                                    />
+                                </div>
+                                <div className="relative">
+                                    <Input
+                                        label="IBAN"
                                         placeholder="DE00 0000 0000 0000 0000 00"
                                         value={companyData.bank_iban || ''}
                                         onChange={(e) => handleInputMetaChange('bank_iban', e.target.value)}
                                         onBlur={handleIbanBlur}
-                                        className={clsx("w-full px-3 py-2 bg-white border text-sm outline-none h-10 shadow-sm tracking-tight", errors.bank_iban ? "border-red-500 focus:border-red-500" : "border-slate-300 focus:border-brand-500")}
+                                        error={!!errors.bank_iban}
+                                        className="font-mono tracking-wide"
+                                        endIcon={isValidatingIban ? <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div> : null}
                                     />
-                                    {isValidatingIban && <div className="absolute right-3 top-2.5 w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>}
+                                    {errors.bank_iban && <span className="text-[10px] text-red-500 font-bold block mt-1">{errors.bank_iban}</span>}
                                 </div>
-                                {errors.bank_iban && <span className="text-[10px] text-red-500 font-bold">{errors.bank_iban}</span>}
                             </div>
-                        )}
+                        </SettingRow>
+                    )}
 
-                        {companyData.payment_method_type === 'card' && (
-                            <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kreditkarten-Anbieter</label>
-                                <select
-                                    value={companyData.credit_card_provider || ''}
-                                    onChange={(e) => handleInputMetaChange('credit_card_provider', e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm cursor-pointer"
-                                >
-                                    <option value="">Wählen...</option>
-                                    <option value="visa">Visa</option>
-                                    <option value="mastercard">Mastercard</option>
-                                    <option value="amex">American Express</option>
-                                </select>
-                            </div>
-                        )}
+                    {companyData.payment_method_type === 'paypal' && (
+                        <SettingRow label="PayPal" description="Konfiguration für PayPal Zahlungen.">
+                            <Input
+                                label="PayPal Email"
+                                type="email"
+                                placeholder="ihre-email@paypal.com"
+                                value={companyData.paypal_email || ''}
+                                onChange={(e) => handleInputMetaChange('paypal_email', e.target.value)}
+                            />
+                        </SettingRow>
+                    )}
 
-                        {companyData.payment_method_type === 'paypal' && (
-                            <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">PayPal Email</label>
-                                <input
-                                    type="email"
-                                    placeholder="your-paypal@email.com"
-                                    value={companyData.paypal_email || ''}
-                                    onChange={(e) => handleInputMetaChange('paypal_email', e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500"
+                    {companyData.payment_method_type === 'stripe' && (
+                        <SettingRow label="Stripe API" description="API Schlüssel für Stripe Integration.">
+                            <div className="space-y-4">
+                                <Input
+                                    label="Publishable Key"
+                                    value={companyData.stripe_api_key || ''}
+                                    onChange={(e) => handleInputMetaChange('stripe_api_key', e.target.value)}
+                                />
+                                <Input
+                                    type="password"
+                                    label="Secret Key"
+                                    value={companyData.stripe_secret || ''}
+                                    onChange={(e) => handleInputMetaChange('stripe_secret', e.target.value)}
                                 />
                             </div>
-                        )}
+                        </SettingRow>
+                    )}
+                </div>
 
-                        {companyData.payment_method_type === 'stripe' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Stripe Publishable Key</label>
-                                    <input
-                                        type="text"
-                                        placeholder="pk_test_..."
-                                        value={companyData.stripe_api_key || ''}
-                                        onChange={(e) => handleInputMetaChange('stripe_api_key', e.target.value)}
-                                        className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500"
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Stripe Secret Key</label>
-                                    <input
-                                        type="password"
-                                        placeholder="sk_test_..."
-                                        value={companyData.stripe_secret || ''}
-                                        onChange={(e) => handleInputMetaChange('stripe_secret', e.target.value)}
-                                        className="w-full px-3 py-2 bg-white border border-slate-300 text-sm outline-none h-10 shadow-sm focus:border-brand-500"
-                                    />
-                                </div>
+                {/* Section: Email / SMTP */}
+                <div className="mb-8">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">SMTP Server (Email)</h4>
+                    <SettingRow label="Verbindung" description="Host und Port Ihres Email-Providers.">
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="col-span-2">
+                                <Input label="Mail Host" placeholder="smtp.example.com" value={companyData.mail_host || ''} onChange={(e) => handleInputMetaChange('mail_host', e.target.value)} />
                             </div>
-                        )}
-                    </div>
+                            <Input label="Port" placeholder="587" value={companyData.mail_port || ''} onChange={(e) => handleInputMetaChange('mail_port', e.target.value)} />
+                        </div>
+                    </SettingRow>
+                    <SettingRow label="Authentifizierung" description="Zugangsdaten für den SMTP Server.">
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input label="Benutzername" placeholder="user@example.com" value={companyData.mail_username || ''} onChange={(e) => handleInputMetaChange('mail_username', e.target.value)} />
+                            <Input type="password" label="Passwort" placeholder="••••••••" value={companyData.mail_password || ''} onChange={(e) => handleInputMetaChange('mail_password', e.target.value)} />
+                        </div>
+                    </SettingRow>
+                    <SettingRow label="Verschlüsselung">
+                        <select
+                            value={companyData.mail_encryption || 'tls'}
+                            onChange={(e) => handleInputMetaChange('mail_encryption', e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-sm outline-none h-10 shadow-sm cursor-pointer font-medium"
+                        >
+                            <option value="tls">TLS (Empfohlen)</option>
+                            <option value="ssl">SSL</option>
+                            <option value="none">Keine</option>
+                        </select>
+                    </SettingRow>
                 </div>
             </div>
         </div>
@@ -597,14 +577,14 @@ const Settings: React.FC = () => {
                     <FaPlus className="text-[10px]" /> Neu hinzufügen
                 </button>
             </div>
-            <div className="bg-white shadow-xl border border-slate-200 overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <div className="bg-white shadow-xl border border-slate-200 rounded-lg overflow-hidden flex flex-col h-[600px]">
+                <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
                     <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center gap-3">
                         {masterTab === 'languages' ? <FaLanguage /> : masterTab === 'doc_types' ? <FaFileAlt /> : masterTab === 'services' ? <FaGlobe /> : <FaEnvelopeOpenText />}
                         {masterTab === 'languages' ? 'Sprachkonfiguration' : masterTab === 'doc_types' ? 'Dokumenten-Kategorien' : masterTab === 'services' ? 'Leistungskatalog' : 'Email Textvorlagen'}
                     </h3>
                 </div>
-                <div className="flex-1 min-h-[400px]">
+                <div className="flex-1 overflow-hidden flex flex-col">
                     {masterTab === 'languages' && (isLanguagesLoading ? <TableSkeleton rows={5} columns={5} /> : <DataTable isLoading={isLanguagesLoading} data={languages} columns={[
                         { id: 'code', header: 'Code (ISO)', accessor: (l: any) => <span className=" text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 border border-slate-100 uppercase tracking-tight rounded">{l.iso_code}</span>, className: 'w-32' },
                         { id: 'name', header: 'Sprache / Flagge', accessor: (l: any) => <div className="flex items-center gap-3"><div className="w-8 h-6 overflow-hidden shadow-sm border border-slate-200 bg-slate-50 rounded-sm">{l.flag_icon && <img src={getFlagUrl(l.flag_icon)} className="w-full h-full object-cover" />}</div><span className="font-bold text-slate-800 text-sm">{l.name_internal}</span></div> },
@@ -694,6 +674,26 @@ const Settings: React.FC = () => {
                     {activeTab === 'audit' && renderAuditLogs()}
                 </div>
             </div>
+
+            <NewMasterDataModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleModalSubmit}
+                type={masterTab}
+                initialData={editingItem}
+            />
+
+            <ConfirmModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
+                onConfirm={confirmDelete}
+                title="Datensatz löschen?"
+                message={`Möchten Sie "${deleteConfirm.item?.name || deleteConfirm.item?.name_internal || deleteConfirm.item?.subject || 'Eintrag'}" wirklich löschen?`}
+                confirmText="Löschen"
+                cancelText="Abbrechen"
+                type="danger"
+                isLoading={deleteLanguageMutation.isPending || deleteDocTypeMutation.isPending || deleteServiceMutation.isPending || deleteTemplateMutation.isPending}
+            />
         </div>
     );
 };

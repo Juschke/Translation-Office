@@ -1,347 +1,505 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FaInbox, FaPaperPlane, FaTrash, FaSearch, FaEnvelopeOpen, FaTimes, FaReply, FaPrint, FaPaperclip, FaPlus } from 'react-icons/fa';
+import {
+    FaPaperPlane, FaTrash, FaTimes, FaPaperclip, FaPlus, FaEdit,
+    FaFileAlt, FaUserCircle, FaKey, FaChevronRight, FaEye, FaTrashAlt,
+    FaFolderOpen, FaDownload
+} from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { mailService, dashboardService } from '../api/services';
-import InboxSkeleton from '../components/common/InboxSkeleton';
+import { mailService } from '../api/services';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
-const Inbox = () => {
+const CommunicationHub = () => {
     const location = useLocation();
     const queryClient = useQueryClient();
-    const [activeFolder, setActiveFolder] = useState('inbox');
-    const [selectedMail, setSelectedMail] = useState<any>(null);
-    const [isComposeOpen, setIsComposeOpen] = useState(false);
-    const [isComposeMinimized, setIsComposeMinimized] = useState(false);
 
-    // Compose States
-    const [composeFrom, setComposeFrom] = useState('');
+    const [activeTab, setActiveTab] = useState('sent');
+    const [isComposeOpen, setIsComposeOpen] = useState(false);
+
+    const [selectedAccount, setSelectedAccount] = useState<any>(null);
     const [composeTo, setComposeTo] = useState('');
-    const [composeCc, setComposeCc] = useState('');
     const [composeSubject, setComposeSubject] = useState('');
     const [composeBody, setComposeBody] = useState('');
-    const [composeAttachments, setComposeAttachments] = useState<any[]>([]);
+    const [composeAttachments, setComposeAttachments] = useState<File[]>([]);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const { data: sentMessages = [], isLoading: isLoadingSent } = useQuery({
+        queryKey: ['mails', 'sent'],
+        queryFn: () => mailService.getAll('sent')
+    });
+
+    const { data: accounts = [] } = useQuery({
+        queryKey: ['mail', 'accounts'],
+        queryFn: mailService.getAccounts
+    });
+
+    const { data: templates = [] } = useQuery({
+        queryKey: ['mail', 'templates'],
+        queryFn: mailService.getTemplates
+    });
+
+    useEffect(() => {
+        if (accounts.length > 0 && !selectedAccount) {
+            setSelectedAccount(accounts.find((a: any) => a.is_default) || accounts[0]);
+        }
+    }, [accounts]);
 
     useEffect(() => {
         if (location.state?.compose) {
             setComposeTo(location.state.to || '');
             setComposeSubject(location.state.subject || '');
             setComposeBody(location.state.body || '');
-            setComposeAttachments(location.state.attachments || []);
             setIsComposeOpen(true);
         }
     }, [location.state]);
 
-    const { data: messages = [], isLoading } = useQuery({
-        queryKey: ['mails', activeFolder],
-        queryFn: () => mailService.getAll(activeFolder)
-    });
-
-    // Fetch stats for unread count
-    const { data: dashboardData } = useQuery({
-        queryKey: ['dashboard', 'stats'],
-        queryFn: dashboardService.getStats
-    });
-
-    const unreadCount = dashboardData?.stats?.unread_emails || 0;
-
     const sendMutation = useMutation({
-        mutationFn: mailService.send,
+        mutationFn: (data: any) => {
+            const formData = new FormData();
+            formData.append('mail_account_id', data.mail_account_id);
+            formData.append('to', data.to);
+            formData.append('subject', data.subject);
+            formData.append('body', data.body);
+            composeAttachments.forEach((file, index) => {
+                formData.append(`attachments[${index}]`, file);
+            });
+            return mailService.send(formData);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mails'] });
             setIsComposeOpen(false);
-            setIsComposeMinimized(false);
-            // Reset form
-            setComposeFrom('');
-            setComposeTo('');
-            setComposeCc('');
-            setComposeSubject('');
-            setComposeBody('');
-            setComposeAttachments([]);
+            resetCompose();
         }
     });
 
-    const deleteMutation = useMutation({
-        mutationFn: mailService.delete,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['mails'] });
-            setSelectedMail(null);
-        }
-    });
+    const resetCompose = () => {
+        setComposeTo('');
+        setComposeSubject('');
+        setComposeBody('');
+        setComposeAttachments([]);
+    };
 
-    const markReadMutation = useMutation({
-        mutationFn: mailService.markAsRead,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['mails'] });
-        }
-    });
-
-    const handleSelectMail = (mail: any) => {
-        setSelectedMail(mail);
-        if (!mail.read) {
-            markReadMutation.mutate(mail.id);
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setComposeAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
         }
     };
 
-    // Helper to send mail
-    const handleSendMail = () => {
-        sendMutation.mutate({
-            from: composeFrom.split(',').map(s => s.trim()).filter(Boolean),
-            to: composeTo.split(',').map(s => s.trim()).filter(Boolean),
-            cc: composeCc.split(',').map(s => s.trim()).filter(Boolean),
-            subject: composeSubject,
-            body: composeBody,
-            attachments: composeAttachments
-        });
+    const removeAttachment = (index: number) => {
+        setComposeAttachments(prev => prev.filter((_, i) => i !== index));
     };
 
-    if (isLoading) return <InboxSkeleton />;
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
+    const handleApplyTemplate = (template: any) => {
+        setComposeSubject(template.subject);
+        setComposeBody(template.body);
+    };
+
+    const quillModules = {
+        toolbar: [
+            [{ 'header': [1, 2, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link', 'clean']
+        ],
+    };
+
+    if (isLoadingSent) return <div className="p-10 text-center font-bold text-slate-400">Lädt...</div>;
 
     return (
-        <div className="flex flex-col h-full gap-6 fade-in">
-            <div className="flex justify-between items-center">
+        <div className="flex flex-col h-full gap-0 fade-in bg-white border border-slate-200 shadow-2xl">
+            <div className="flex justify-between items-center p-6 border-b border-slate-200">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Inbox</h1>
-                    <p className="text-slate-500 text-sm">Zentrale Kommunikation mit Kunden und Partnern.</p>
+                    <h1 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Email Management</h1>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Zentrale Verwaltung</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    {/* Drafts / Minimized Mail Bar */}
-                    {isComposeOpen && isComposeMinimized && (
-                        <div
-                            onClick={() => setIsComposeMinimized(false)}
-                            className="flex items-center gap-2 bg-white border border-brand-200 px-3 py-1.5 rounded-md shadow-sm hover:bg-brand-50 cursor-pointer animate-fadeInLeft"
-                        >
-                            <div className="w-2 h-2 rounded-full bg-brand-500"></div>
-                            <span className="text-xs font-semibold text-brand-700">
-                                {composeSubject || '(Kein Betreff)'}
-                            </span>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsComposeOpen(false);
-                                    setIsComposeMinimized(false);
-                                }}
-                                className="ml-2 text-slate-400 hover:text-red-500"
-                            >
-                                <FaTimes className="text-[10px]" />
-                            </button>
-                        </div>
-                    )}
-                    <button
-                        onClick={() => {
-                            setIsComposeOpen(true);
-                            setIsComposeMinimized(false);
-                        }}
-                        className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95"
-                    >
-                        <FaPlus className="text-xs" /> Neue Nachricht
-                    </button>
-                </div>
+                <button
+                    onClick={() => setIsComposeOpen(true)}
+                    className="bg-brand-700 hover:bg-brand-800 text-white px-6 py-2.5 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition"
+                >
+                    <FaPlus /> Neue Email
+                </button>
             </div>
 
-            <div className="flex-1 flex bg-white border border-slate-300 rounded-lg shadow-xl overflow-hidden relative">
-                {/* Sidebar */}
-                <div className="w-60 bg-slate-50 border-r border-slate-200 flex flex-col">
-                    <nav className="flex-1 p-3 space-y-1">
-                        <button
-                            onClick={() => setActiveFolder('inbox')}
-                            className={clsx(
-                                "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors",
-                                activeFolder === 'inbox' ? 'bg-white shadow-sm border border-slate-200 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-200/50'
-                            )}
-                        >
-                            <span className="flex items-center gap-3"><FaInbox className={activeFolder === 'inbox' ? 'text-brand-600' : 'text-slate-400'} /> Posteingang</span>
-                            {activeFolder === 'inbox' && unreadCount > 0 && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-brand-100 text-brand-700">{unreadCount}</span>
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setActiveFolder('sent')}
-                            className={clsx(
-                                "w-full flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-                                activeFolder === 'sent' ? 'bg-white shadow-sm border border-slate-200 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-200/50'
-                            )}
-                        >
-                            <FaPaperPlane className={clsx("mr-3", activeFolder === 'sent' ? 'text-brand-600' : 'text-slate-400')} /> Gesendet
-                        </button>
-                        <button
-                            onClick={() => setActiveFolder('trash')}
-                            className={clsx(
-                                "w-full flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-                                activeFolder === 'trash' ? 'bg-white shadow-sm border border-slate-200 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-200/50'
-                            )}
-                        >
-                            <FaTrash className={clsx("mr-3", activeFolder === 'trash' ? 'text-brand-600' : 'text-slate-400')} /> Papierkorb
-                        </button>
+            <div className="flex-1 flex overflow-hidden">
+                <div className="w-16 md:w-56 bg-white border-r border-slate-200 flex flex-col shrink-0">
+                    <nav className="flex-1 p-2 space-y-1">
+                        <TabButton
+                            active={activeTab === 'sent'}
+                            onClick={() => setActiveTab('sent')}
+                            icon={<FaPaperPlane />}
+                            label="Gesendet"
+                        />
+                        <TabButton
+                            active={activeTab === 'templates'}
+                            onClick={() => setActiveTab('templates')}
+                            icon={<FaFileAlt />}
+                            label="Vorlagen"
+                        />
+                        <TabButton
+                            active={activeTab === 'accounts'}
+                            onClick={() => setActiveTab('accounts')}
+                            icon={<FaUserCircle />}
+                            label="Konten"
+                        />
                     </nav>
                 </div>
 
-                {/* Mail List */}
-                <div className="w-80 border-r border-slate-200 flex flex-col">
-                    <div className="p-3 border-b border-slate-100 bg-white">
-                        <div className="relative">
-                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
-                            <input
-                                type="text"
-                                placeholder="Suche..."
-                                className="w-full pl-8 pr-4 py-2 bg-slate-100 border-none rounded-md text-xs focus:ring-1 focus:ring-brand-500 outline-none"
+                <div className="flex-1 overflow-hidden flex flex-col bg-slate-50">
+                    {activeTab === 'sent' && (
+                        <div className="flex-1 flex flex-col min-h-0 bg-white">
+                            <EmailTable mails={sentMessages} />
+                        </div>
+                    )}
+
+                    {activeTab === 'templates' && (
+                        <div className="flex-1 p-6 overflow-auto">
+                            <ResourceTable
+                                title="E-Mail Vorlagen"
+                                items={templates}
+                                type="template"
+                                headers={['Name', 'Betreff', 'Kategorie']}
+                                renderRow={(tpl: any) => (
+                                    <>
+                                        <td className="px-6 py-4 text-xs font-bold text-slate-800">{tpl.name}</td>
+                                        <td className="px-6 py-4 text-xs text-slate-500">{tpl.subject}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2 py-0.5 bg-slate-100 text-[9px] font-black uppercase">{tpl.category || 'Allgemein'}</span>
+                                        </td>
+                                    </>
+                                )}
                             />
                         </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        {messages.map((m: any) => (
-                            <div
-                                key={m.id}
-                                onClick={() => handleSelectMail(m)}
-                                className={clsx(
-                                    "p-4 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition group",
-                                    selectedMail?.id === m.id ? 'bg-brand-50/30' : '',
-                                    !m.read && "border-l-2 border-l-brand-600"
+                    )}
+
+                    {activeTab === 'accounts' && (
+                        <div className="flex-1 p-6 overflow-auto">
+                            <ResourceTable
+                                title="E-Mail Konten"
+                                items={accounts}
+                                type="account"
+                                headers={['Bezeichnung', 'Email', 'Server', 'Status']}
+                                renderRow={(acc: any) => (
+                                    <>
+                                        <td className="px-6 py-4 text-xs font-bold text-slate-800">
+                                            <div className="flex items-center gap-2">
+                                                {acc.name}
+                                                {acc.is_default && <span className="bg-brand-50 text-brand-700 text-[9px] px-1.5 py-0.5 font-black uppercase">Standard</span>}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-xs font-mono text-slate-500">{acc.email}</td>
+                                        <td className="px-6 py-4 text-xs font-mono text-slate-400">{acc.host}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                                        </td>
+                                    </>
                                 )}
-                            >
-                                <div className="flex justify-between items-start mb-1">
-                                    <span className={clsx("text-xs truncate mr-2", !m.read ? "font-semibold text-slate-900" : "text-slate-600")}>{m.from}</span>
-                                    <span className="text-[10px] text-slate-400 shrink-0">{m.time}</span>
-                                </div>
-                                <div className={clsx("text-xs mb-1 truncate", !m.read ? "font-semibold text-slate-800" : "text-slate-600")}>{m.subject}</div>
-                                <div className="text-[11px] text-slate-400 line-clamp-1">{m.preview}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Mail Content */}
-                <div className="flex-1 flex flex-col bg-slate-50/30 overflow-hidden relative">
-                    {!selectedMail ? (
-                        <div className="flex items-center justify-center h-full text-slate-300 flex-col opacity-40">
-                            <FaEnvelopeOpen className="text-5xl mb-4" />
-                            <p className="text-sm font-medium">Wähle eine Nachricht aus</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col h-full bg-white">
-                            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                                <div>
-                                    <h2 className="text-base font-semibold text-slate-800">{selectedMail.subject}</h2>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <div className="w-5 h-5 rounded-md bg-brand-100 flex items-center justify-center text-[10px] text-brand-700 font-semibold uppercase">{selectedMail.from.charAt(0)}</div>
-                                        <p className="text-xs text-slate-500">Von: <span className="text-slate-700 font-medium">{selectedMail.from}</span></p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button className="p-2 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded-md transition"><FaReply className="text-sm" /></button>
-                                    <button className="p-2 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded-md transition"><FaPrint className="text-sm" /></button>
-                                    <button onClick={() => deleteMutation.mutate(selectedMail.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition ml-2"><FaTrash className="text-sm" /></button>
-                                </div>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/20">
-                                <div className="max-w-3xl mx-auto space-y-6">
-                                    {/* Thread Example */}
-                                    <div className="flex gap-4 opacity-50 justify-end">
-                                        <div className="flex flex-col items-end">
-                                            <div className="text-xs bg-brand-600 text-white p-3 rounded-2xl rounded-tr-none shadow-sm max-w-md">
-                                                Guten Tag Herr Mustermann, wir haben Ihre Anfrage erhalten und prüfen die Dateien.
-                                            </div>
-                                            <span className="text-[10px] mt-1 text-slate-400">Gestern, 09:15</span>
-                                        </div>
-                                        <div className="w-8 h-8 rounded-md bg-brand-200 shrink-0 flex items-center justify-center text-[10px] text-brand-800 font-semibold">JD</div>
-                                    </div>
-
-                                    <div className="flex gap-4">
-                                        <div className="w-8 h-8 rounded-md bg-slate-200 shrink-0 flex items-center justify-center text-[10px] text-slate-600 font-semibold">{selectedMail.from.charAt(0)}</div>
-                                        <div className="flex flex-col">
-                                            <div className="text-xs bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-none shadow-sm max-w-md text-slate-700 leading-relaxed">
-                                                {selectedMail.preview} <br /><br />
-                                                Vielen Dank für die schnelle Rückmeldung. Benötigen Sie noch weitere Informationen von unserer Seite bezüglich des Fachgebiets?
-                                                <br /><br />
-                                                Mit freundlichen Grüßen,<br />
-                                                {selectedMail.from}
-                                            </div>
-                                            <span className="text-[10px] mt-1 text-slate-400">{selectedMail.time}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-4 border-t border-slate-100 bg-white">
-                                <div className="max-w-3xl mx-auto flex gap-3 p-1.5 border border-slate-200 rounded-xl focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500/20 transition-all bg-slate-50/50">
-                                    <button className="p-2 text-slate-400 hover:text-brand-600 transition self-end"><FaPaperclip className="text-sm" /></button>
-                                    <textarea
-                                        rows={1}
-                                        placeholder={`Antworten an ${selectedMail.from}...`}
-                                        className="flex-1 bg-transparent border-none outline-none text-xs py-2 px-1 min-h-[40px] max-h-32 resize-none"
-                                    ></textarea>
-                                    <button className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-xs font-semibold self-end transition">Senden</button>
-                                </div>
-                            </div>
+                            />
                         </div>
                     )}
                 </div>
+            </div>
 
-                {/* Compose Panel (Slide-In Sidebar) */}
-                {isComposeOpen && !isComposeMinimized && (
-                    <div className="absolute right-0 top-0 bottom-0 z-50 flex justify-end pointer-events-none">
-                        <div className="relative w-[500px] h-full bg-white shadow-[-10px_0_30px_rgba(0,0,0,0.1)] flex flex-col animate-fadeInRight border-l border-slate-200 z-10 pointer-events-auto">
-                            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                <span className="font-semibold text-slate-800 text-sm">Neue Nachricht verfassen</span>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setIsComposeMinimized(true)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors" title="Minimieren">
-                                        <span className="block w-3 h-0.5 bg-current"></span>
-                                    </button>
-                                    <button onClick={() => setIsComposeOpen(false)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"><FaTimes /></button>
-                                </div>
+            {isComposeOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 bg-slate-900/80 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-6xl h-full md:h-[90vh] flex flex-col shadow-2xl">
+                        <div className="px-8 py-5 border-b border-slate-200 flex justify-between items-center bg-white">
+                            <div>
+                                <h3 className="font-black text-slate-800 uppercase tracking-tighter">Neue Nachricht</h3>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{selectedAccount?.email}</span>
                             </div>
-                            <div className="p-6 flex-1 flex flex-col space-y-4 overflow-y-auto custom-scrollbar">
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Absender</label>
-                                    <input value={composeFrom} onChange={(e) => setComposeFrom(e.target.value)} type="text" placeholder="Ihre Email oder Alias" className="w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-brand-500" />
+                            <button onClick={() => setIsComposeOpen(false)} className="text-slate-400 hover:text-red-500 transition">
+                                <FaTimes size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 flex overflow-hidden">
+                            <div className="flex-1 p-8 overflow-y-auto flex flex-col space-y-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-24 shrink-0 pt-2">
+                                        <label className="text-xs font-black text-slate-600 uppercase tracking-wider">Von</label>
+                                    </div>
+                                    <div className="flex-1 flex gap-2">
+                                        <select
+                                            value={selectedAccount?.id}
+                                            onChange={(e) => setSelectedAccount(accounts.find((a: any) => a.id === parseInt(e.target.value)))}
+                                            className="flex-1 bg-white border border-slate-300 px-4 py-2.5 text-xs font-bold outline-none focus:border-brand-500 transition-all"
+                                        >
+                                            {accounts.map((acc: any) => (
+                                                <option key={acc.id} value={acc.id}>{acc.name} ({acc.email})</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            onClick={() => {
+                                                const name = prompt('Name des Kontos:');
+                                                const email = prompt('E-Mail Adresse:');
+                                                if (name && email) {
+                                                    mailService.createAccount({
+                                                        name, email, host: 'mail.test.de', port: 587,
+                                                        encryption: 'tls', username: email, password: 'password'
+                                                    }).then(() => queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] }));
+                                                }
+                                            }}
+                                            className="w-10 h-10 flex items-center justify-center border border-slate-300 text-slate-500 hover:bg-brand-600 hover:text-white hover:border-brand-600 transition"
+                                        >
+                                            <FaPlus />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Empfänger (mit Komma trennen)</label>
-                                    <input value={composeTo} onChange={(e) => setComposeTo(e.target.value)} type="text" placeholder="name@email.com, colleague@email.com" className="w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-brand-500" />
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-24 shrink-0 pt-2">
+                                        <label className="text-xs font-black text-slate-600 uppercase tracking-wider">An</label>
+                                    </div>
+                                    <input
+                                        value={composeTo}
+                                        onChange={(e) => setComposeTo(e.target.value)}
+                                        className="flex-1 bg-white border border-slate-300 px-4 py-2.5 text-xs font-bold outline-none focus:border-brand-500 transition-all"
+                                        placeholder="empfaenger@beispiel.de"
+                                    />
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">CC</label>
-                                    <input value={composeCc} onChange={(e) => setComposeCc(e.target.value)} type="text" placeholder="copy@email.com" className="w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-brand-500" />
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-24 shrink-0 pt-2">
+                                        <label className="text-xs font-black text-slate-600 uppercase tracking-wider">Betreff</label>
+                                    </div>
+                                    <input
+                                        value={composeSubject}
+                                        onChange={(e) => setComposeSubject(e.target.value)}
+                                        className="flex-1 bg-white border border-slate-300 px-4 py-2.5 text-xs font-bold outline-none focus:border-brand-500 transition-all text-slate-800"
+                                        placeholder="Betreff eingeben..."
+                                    />
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Betreff</label>
-                                    <input value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} type="text" placeholder="Worum geht es?" className="w-full border-b border-slate-200 py-2 text-sm outline-none focus:border-brand-500 font-semibold" />
-                                </div>
-                                <div className="flex-1">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Nachricht</label>
-                                    <textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} className="w-full h-full min-h-[200px] py-2 text-sm outline-none resize-none border-none" placeholder="Schreibe deine Nachricht hier..."></textarea>
+
+                                <div className="flex items-start gap-4 flex-1 min-h-0">
+                                    <div className="w-24 shrink-0 pt-2">
+                                        <label className="text-xs font-black text-slate-600 uppercase tracking-wider">Nachricht</label>
+                                    </div>
+                                    <div className="flex-1 flex flex-col min-h-[300px]">
+                                        <ReactQuill
+                                            theme="snow"
+                                            value={composeBody}
+                                            onChange={setComposeBody}
+                                            modules={quillModules}
+                                            className="flex-1 flex flex-col quill-modern no-rounded"
+                                        />
+                                    </div>
                                 </div>
 
                                 {composeAttachments.length > 0 && (
-                                    <div className="flex gap-2 flex-wrap">
-                                        {composeAttachments.map((file, i) => (
-                                            <div key={i} className="bg-slate-100 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs border border-slate-200">
-                                                <FaPaperclip className="text-slate-400 shrink-0" />
-                                                <span className="truncate max-w-[150px] font-medium text-slate-700">{file.original_name || file.name}</span>
-                                                <button onClick={() => setComposeAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-500 ml-1"><FaTimes /></button>
-                                            </div>
-                                        ))}
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-24 shrink-0 pt-2">
+                                            <label className="text-xs font-black text-slate-600 uppercase tracking-wider">Anhänge</label>
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            {composeAttachments.map((f, i) => (
+                                                <div key={i} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200">
+                                                    <div className="flex items-center gap-3">
+                                                        <FaPaperclip className="text-slate-400" />
+                                                        <div>
+                                                            <div className="text-xs font-bold text-slate-700">{f.name}</div>
+                                                            <div className="text-[10px] text-slate-400">{formatFileSize(f.size)}</div>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => removeAttachment(i)} className="text-slate-400 hover:text-red-500 p-2">
+                                                        <FaTimes />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
-                            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-                                <button className="p-2 text-slate-400 hover:text-brand-600 transition flex items-center gap-2">
-                                    <FaPaperclip /> <span className="text-xs">Anhang hinzufügen</span>
-                                </button>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setIsComposeMinimized(true)} className="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium">Als Entwurf</button>
-                                    <button onClick={handleSendMail} disabled={sendMutation.isPending} className="bg-brand-700 hover:bg-brand-800 text-white px-6 py-2 rounded-md text-sm font-semibold shadow-sm transition active:scale-95 disabled:opacity-50">
-                                        {sendMutation.isPending ? 'Sende...' : 'Nachricht senden'}
-                                    </button>
+
+                            <div className="w-80 border-l border-slate-200 bg-slate-50 flex flex-col shrink-0 p-6 overflow-y-auto space-y-8">
+                                <div>
+                                    <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center justify-between">
+                                        <span><FaFileAlt className="inline mr-2" /> Vorlagen</span>
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {templates.map((tpl: any) => (
+                                            <button
+                                                key={tpl.id}
+                                                onClick={() => handleApplyTemplate(tpl)}
+                                                className="w-full text-left p-3 bg-white border border-slate-200 hover:border-brand-500 transition text-[11px]"
+                                            >
+                                                <div className="font-black text-slate-800 mb-0.5">{tpl.name}</div>
+                                                <div className="text-slate-400 truncate uppercase text-[9px] font-bold tracking-tight">{tpl.category}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4">
+                                        <FaKey className="inline mr-2" /> Variablen
+                                    </h4>
+                                    <div className="grid grid-cols-1 gap-1">
+                                        {['customer_name', 'project_id', 'delivery_date', 'total_amount'].map(key => (
+                                            <button
+                                                key={key}
+                                                onClick={() => setComposeBody(prev => prev + ` {{${key}}}`)}
+                                                className="p-2 border border-slate-200 bg-white hover:bg-slate-50 text-[10px] font-mono text-slate-600 flex items-center justify-between"
+                                            >
+                                                <span>{`{{${key}}}`}</span>
+                                                <FaChevronRight size={8} />
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <div className="px-8 py-5 border-t border-slate-200 bg-white flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <input
+                                    type="file"
+                                    multiple
+                                    className="hidden"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition"
+                                >
+                                    <FaPaperclip /> Anhängen ({composeAttachments.length})
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={resetCompose}
+                                    className="px-4 py-2 text-slate-400 hover:text-red-500 font-black text-[10px] uppercase tracking-widest"
+                                >
+                                    Verwerfen
+                                </button>
+                                <button
+                                    onClick={() => sendMutation.mutate({
+                                        mail_account_id: selectedAccount?.id,
+                                        to: composeTo,
+                                        subject: composeSubject,
+                                        body: composeBody
+                                    })}
+                                    disabled={sendMutation.isPending}
+                                    className="bg-brand-700 hover:bg-brand-800 text-white px-10 py-3 text-xs font-black uppercase tracking-widest shadow-xl flex items-center gap-3 transition disabled:opacity-50"
+                                >
+                                    {sendMutation.isPending ? 'Sende...' : 'Senden'} <FaPaperPlane />
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };
 
-export default Inbox;
+const TabButton = ({ active, onClick, icon, label }: any) => (
+    <button
+        onClick={onClick}
+        className={clsx(
+            "w-full flex items-center gap-3 px-4 py-3 text-xs transition-all uppercase tracking-widest",
+            active
+                ? "bg-slate-100 text-slate-800 font-black border-r-4 border-brand-600"
+                : "text-slate-400 hover:bg-slate-50 hover:text-slate-600 font-bold"
+        )}
+    >
+        <span className={clsx("text-base", active ? "text-brand-600" : "")}>{icon}</span>
+        <span className="hidden md:inline">{label}</span>
+    </button>
+);
+
+const EmailTable = ({ mails }: any) => (
+    <div className="flex-1 overflow-auto">
+        <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-white z-10">
+                <tr className="border-b border-slate-200">
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Empfänger</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Betreff</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Datum</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Anhänge</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+                {mails.length === 0 ? (
+                    <tr>
+                        <td colSpan={5} className="px-6 py-10 text-center text-xs text-slate-400 font-bold uppercase">Keine gesendeten E-Mails</td>
+                    </tr>
+                ) : (
+                    mails.map((mail: any) => (
+                        <tr key={mail.id} className="hover:bg-slate-50 transition group">
+                            <td className="px-6 py-4 text-xs font-bold text-slate-700">{mail.to_emails?.join(', ')}</td>
+                            <td className="px-6 py-4 text-xs text-slate-500 font-black">{mail.subject}</td>
+                            <td className="px-6 py-4 text-[10px] text-slate-400 font-mono">{mail.full_time}</td>
+                            <td className="px-6 py-4">
+                                {mail.attachments?.length > 0 && (
+                                    <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                                        <FaPaperclip /> {mail.attachments.length}
+                                    </span>
+                                )}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                    <button className="p-2 text-slate-300 hover:text-brand-600 transition" title="Ansehen"><FaEye /></button>
+                                    <button className="p-2 text-slate-300 hover:text-red-500 transition" title="Löschen"><FaTrashAlt /></button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))
+                )}
+            </tbody>
+        </table>
+    </div>
+);
+
+const ResourceTable = ({ title, items, headers, renderRow, type }: any) => (
+    <div className="bg-white border border-slate-200">
+        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white/50">
+            <h2 className="text-xs font-black text-slate-800 uppercase tracking-widest">{title}</h2>
+            <button className="text-[10px] font-black bg-brand-600 text-white px-3 py-1.5 uppercase transition hover:bg-brand-700">
+                Neu+
+            </button>
+        </div>
+        <table className="w-full text-left">
+            <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50">
+                    {headers.map((h: string) => (
+                        <th key={h} className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                    ))}
+                    <th className="px-6 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+                {items.length === 0 ? (
+                    <tr>
+                        <td colSpan={headers.length + 1} className="px-6 py-10 text-center text-xs text-slate-400 font-bold uppercase">Keine Daten vorhanden</td>
+                    </tr>
+                ) : (
+                    items.map((item: any) => (
+                        <tr key={item.id} className="hover:bg-slate-50 transition border-b border-slate-50">
+                            {renderRow(item)}
+                            <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                    <button className="p-2 text-slate-300 hover:text-brand-600 transition" title="Bearbeiten"><FaEdit /></button>
+                                    <button className="p-2 text-slate-300 hover:text-slate-800 transition" title="Details"><FaFolderOpen /></button>
+                                    <button className="p-2 text-slate-300 hover:text-red-500 transition" title="Entfernen"><FaTrashAlt /></button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))
+                )}
+            </tbody>
+        </table>
+    </div>
+);
+
+export default CommunicationHub;

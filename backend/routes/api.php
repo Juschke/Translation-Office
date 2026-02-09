@@ -72,12 +72,17 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('projects/bulk-update', [\App\Http\Controllers\Api\ProjectController::class, 'bulkUpdate']);
     Route::post('projects/bulk-delete', [\App\Http\Controllers\Api\ProjectController::class, 'bulkDelete']);
     Route::apiResource('projects', \App\Http\Controllers\Api\ProjectController::class);
+    Route::post('projects/{project}/invite', [\App\Http\Controllers\Api\ProjectController::class, 'inviteParticipant']);
+    Route::post('projects/{project}/generate-document', [\App\Http\Controllers\Api\ProjectController::class, 'generateDocument']);
     
     // Reports
     Route::get('/reports/revenue', [\App\Http\Controllers\Api\ReportController::class, 'revenue']);
     Route::get('/reports/profit-margin', [\App\Http\Controllers\Api\ReportController::class, 'profitMargin']);
     Route::get('/reports/language-distribution', [\App\Http\Controllers\Api\ReportController::class, 'languageDistribution']);
     Route::get('/reports/kpis', [\App\Http\Controllers\Api\ReportController::class, 'kpis']);
+    Route::get('/reports/summary', [\App\Http\Controllers\Api\ReportController::class, 'summary']);
+    Route::get('/reports/customers', [\App\Http\Controllers\Api\ReportController::class, 'customers']);
+    Route::get('/reports/project-status', [\App\Http\Controllers\Api\ReportController::class, 'projectStatus']);
 
     Route::post('invoices/bulk-update', [\App\Http\Controllers\Api\InvoiceController::class, 'bulkUpdate']);
     Route::post('invoices/bulk-delete', [\App\Http\Controllers\Api\InvoiceController::class, 'bulkDelete']);
@@ -85,6 +90,23 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('invoices/{invoice}/download', [\App\Http\Controllers\Api\InvoiceController::class, 'download']);
     Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Api\InvoiceController::class, 'print']);
     Route::apiResource('invoices', \App\Http\Controllers\Api\InvoiceController::class);
+
+    // Mails
+    Route::get('mails', [\App\Http\Controllers\Api\MailController::class, 'index']);
+    Route::post('mails/send', [\App\Http\Controllers\Api\MailController::class, 'send']);
+    Route::post('mails/sync', [\App\Http\Controllers\Api\MailController::class, 'sync']);
+    Route::post('mails/{id}/read', [\App\Http\Controllers\Api\MailController::class, 'markAsRead']);
+
+    Route::get('mail/accounts', [\App\Http\Controllers\Api\MailResourceController::class, 'getAccounts']);
+    Route::post('mail/accounts', [\App\Http\Controllers\Api\MailResourceController::class, 'storeAccount']);
+    Route::put('mail/accounts/{id}', [\App\Http\Controllers\Api\MailResourceController::class, 'updateAccount']);
+    Route::delete('mail/accounts/{id}', [\App\Http\Controllers\Api\MailResourceController::class, 'deleteAccount']);
+
+    Route::get('mail/templates', [\App\Http\Controllers\Api\MailResourceController::class, 'getTemplates']);
+    Route::post('mail/templates', [\App\Http\Controllers\Api\MailResourceController::class, 'storeTemplate']);
+    Route::put('mail/templates/{id}', [\App\Http\Controllers\Api\MailResourceController::class, 'updateTemplate']);
+    Route::delete('mail/templates/{id}', [\App\Http\Controllers\Api\MailResourceController::class, 'deleteTemplate']);
+    Route::delete('mails/{id}', [\App\Http\Controllers\Api\MailController::class, 'destroy']);
 
     // Notifications
     Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);

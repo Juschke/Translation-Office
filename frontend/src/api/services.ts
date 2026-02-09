@@ -1,8 +1,8 @@
 import api from './axios';
 
 export const dashboardService = {
-    getStats: async () => {
-        const response = await api.get('/dashboard/stats');
+    getStats: async (params?: any) => {
+        const response = await api.get('/dashboard/stats', { params });
         return response.data;
     }
 };
@@ -88,6 +88,14 @@ export const projectService = {
             responseType: 'blob'
         });
         return response; // Return the full response to access headers if needed, or just data
+    },
+    invite: async (projectId: string, data: any) => {
+        const response = await api.post(`/projects/${projectId}/invite`, data);
+        return response.data;
+    },
+    generateDocument: async (projectId: string, type: 'confirmation' | 'pickup' | 'reminder') => {
+        const response = await api.post(`/projects/${projectId}/generate-document`, { type });
+        return response.data;
     }
 };
 
@@ -355,26 +363,91 @@ export const mailService = {
         return response.data;
     },
     markAsRead: async (id: number) => {
-        const response = await api.put(`/mails/${id}/read`);
+        const response = await api.post(`/mails/${id}/read`);
+        return response.data;
+    },
+    sync: async () => {
+        const response = await api.post('/mails/sync');
+        return response.data;
+    },
+    // Settings & Resources
+    getAccounts: async () => {
+        const response = await api.get('/mail/accounts');
+        return response.data;
+    },
+    createAccount: async (data: any) => {
+        const response = await api.post('/mail/accounts', data);
+        return response.data;
+    },
+    updateAccount: async (id: number, data: any) => {
+        const response = await api.put(`/mail/accounts/${id}`, data);
+        return response.data;
+    },
+    deleteAccount: async (id: number) => {
+        const response = await api.delete(`/mail/accounts/${id}`);
+        return response.data;
+    },
+    getTemplates: async () => {
+        const response = await api.get('/mail/templates');
+        return response.data;
+    },
+    createTemplate: async (data: any) => {
+        const response = await api.post('/mail/templates', data);
+        return response.data;
+    },
+    updateTemplate: async (id: number, data: any) => {
+        const response = await api.put(`/mail/templates/${id}`, data);
+        return response.data;
+    },
+    deleteTemplate: async (id: number) => {
+        const response = await api.delete(`/mail/templates/${id}`);
+        return response.data;
+    },
+    getSignatures: async () => {
+        const response = await api.get('/mail/signatures');
+        return response.data;
+    },
+    createSignature: async (data: any) => {
+        const response = await api.post('/mail/signatures', data);
+        return response.data;
+    },
+    updateSignature: async (id: number, data: any) => {
+        const response = await api.put(`/mail/signatures/${id}`, data);
+        return response.data;
+    },
+    deleteSignature: async (id: number) => {
+        const response = await api.delete(`/mail/signatures/${id}`);
         return response.data;
     }
 };
 
 export const reportService = {
-    getRevenue: async (period: string = '6m') => {
-        const response = await api.get('/reports/revenue', { params: { period } });
+    getRevenue: async (params?: any) => {
+        const response = await api.get('/reports/revenue', { params });
         return response.data;
     },
-    getProfitMargin: async (period: string = '6m') => {
-        const response = await api.get('/reports/profit-margin', { params: { period } });
+    getProfitMargin: async (params?: any) => {
+        const response = await api.get('/reports/profit-margin', { params });
         return response.data;
     },
-    getLanguageDistribution: async () => {
-        const response = await api.get('/reports/language-distribution');
+    getLanguageDistribution: async (params?: any) => {
+        const response = await api.get('/reports/language-distribution', { params });
         return response.data;
     },
-    getKPIs: async () => {
-        const response = await api.get('/reports/kpis');
+    getKPIs: async (params?: any) => {
+        const response = await api.get('/reports/kpis', { params });
+        return response.data;
+    },
+    getSummary: async (params?: any) => {
+        const response = await api.get('/reports/summary', { params });
+        return response.data;
+    },
+    getTopCustomers: async (params?: any) => {
+        const response = await api.get('/reports/customers', { params });
+        return response.data;
+    },
+    getProjectStatus: async (params?: any) => {
+        const response = await api.get('/reports/project-status', { params });
         return response.data;
     }
 };

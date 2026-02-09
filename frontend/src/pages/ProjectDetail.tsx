@@ -1,17 +1,24 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaPhone, FaEnvelope, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaCalendarAlt, FaTrashAlt, FaDownload, FaTrash, FaTimes, FaPaperclip, FaUserPlus, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye } from 'react-icons/fa';
+import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaCalendarAlt, FaTrashAlt, FaDownload, FaTrash, FaTimes, FaPaperclip, FaUserPlus, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
+import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
 import NewProjectModal from '../components/modals/NewProjectModal';
+import NewCustomerModal from '../components/modals/NewCustomerModal';
+import NewPartnerModal from '../components/modals/NewPartnerModal';
 import FileUploadModal from '../components/modals/FileUploadModal';
 import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
+import InviteParticipantModal from '../components/modals/InviteParticipantModal';
 import Input from '../components/common/Input';
 import Checkbox from '../components/common/Checkbox';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectService, invoiceService } from '../api/services';
+import { projectService, invoiceService, customerService, partnerService } from '../api/services';
+import { getFlagUrl } from '../utils/flags';
+import { getLanguageLabel } from '../utils/languages';
+import { getCountryName } from '../utils/countries';
 
 import TableSkeleton from '../components/common/TableSkeleton';
 import FilePreviewModal from '../components/modals/FilePreviewModal';
@@ -58,6 +65,12 @@ interface ProjectData {
         phone: string;
         initials: string;
         type: string;
+        // Address fields
+        address_street?: string;
+        address_house_no?: string;
+        address_zip?: string;
+        address_city?: string;
+        address_country?: string;
     };
     source: string;
     target: string;
@@ -102,19 +115,22 @@ const ProjectDetail = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type?: string } | null>(null);
     const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
     const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
     const [historySearch, setHistorySearch] = useState('');
+    const [historySortKey, setHistorySortKey] = useState<'date' | 'user' | 'action'>('date');
+    const [historySortDir, setHistorySortDir] = useState<'asc' | 'desc'>('asc');
     const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+    const [isCustomerEditModalOpen, setIsCustomerEditModalOpen] = useState(false);
+    const [isPartnerEditModalOpen, setIsPartnerEditModalOpen] = useState(false);
     const [deleteFileConfirm, setDeleteFileConfirm] = useState<{ isOpen: boolean; fileId: string | null; fileName: string }>({ isOpen: false, fileId: null, fileName: '' });
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
     // Inline Editing State
     const [editingCell, setEditingCell] = useState<{ id: string, field: string } | null>(null);
-    const [projectMessages, setProjectMessages] = useState<any[]>([
-        { id: '1', from: 'Admin', message: 'Projekt wurde erstellt und Partner zugewiesen.', timestamp: '01.02.2024 10:30' },
-        { id: '2', from: 'Sabine Müller', message: 'Dokumente erhalten, beginne mit der Übersetzung.', timestamp: '02.02.2024 09:15' }
-    ]);
+    const [projectMessages, setProjectMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState('');
 
     // Comprehensive Project State
@@ -124,6 +140,20 @@ const ProjectDetail = () => {
         queryKey: ['projects', id],
         queryFn: () => projectService.getById(id!),
         enabled: !!id
+    });
+
+    const generateDocumentMutation = useMutation({
+        mutationFn: (type: 'confirmation' | 'pickup' | 'reminder') => projectService.generateDocument(id!, type),
+        onSuccess: (data: any) => {
+            if (data.url) {
+                window.open(data.url, '_blank');
+            } else {
+                alert(data.message || 'Dokument erstellt!');
+            }
+        },
+        onError: (err: any) => {
+            alert(err.response?.data?.error || 'Fehler beim Erstellen des Dokuments.');
+        }
     });
 
     useEffect(() => {
@@ -141,7 +171,13 @@ const ProjectDetail = () => {
                     email: projectResponse.customer.email || '',
                     phone: projectResponse.customer.phone || '',
                     initials: ((projectResponse.customer.first_name?.[0] || '') + (projectResponse.customer.last_name?.[0] || 'K')).toUpperCase(),
-                    type: projectResponse.customer.type || 'client'
+                    type: projectResponse.customer.type || 'client',
+                    // Address fields from backend
+                    address_street: projectResponse.customer.address_street || '',
+                    address_house_no: projectResponse.customer.address_house_no || '',
+                    address_zip: projectResponse.customer.address_zip || '',
+                    address_city: projectResponse.customer.address_city || '',
+                    address_country: projectResponse.customer.address_country || ''
                 } : { id: '', name: 'Unbekannt', contact: '', email: '', phone: '', initials: '?', type: '' },
                 source: projectResponse.source_language?.iso_code || projectResponse.source || 'de',
                 target: projectResponse.target_language?.iso_code || projectResponse.target || 'en',
@@ -291,39 +327,12 @@ const ProjectDetail = () => {
     };
 
     const getLanguageInfo = (code: string) => {
-        const fullCode = code.toLowerCase();
-        // Map language code to country code for flags if necessary
-        const flagMap: { [key: string]: string } = {
-            'en': 'gb',
-            'cs': 'cz',
-            'da': 'dk',
-            'el': 'gr',
-            'et': 'ee',
-            'ja': 'jp',
-            'ko': 'kr',
-            'sv': 'se',
-            'uk': 'ua',
-            'zh': 'cn',
-        };
-        const countryCode = flagMap[fullCode] || fullCode;
-
-        const langs: any = {
-            'de': 'Deutsch',
-            'en': 'Englisch',
-            'fr': 'Französisch',
-            'es': 'Spanisch',
-            'it': 'Italienisch',
-            'nl': 'Niederländisch',
-            'pl': 'Polnisch',
-            'ru': 'Russisch',
-            'tr': 'Türkisch',
-            'pt': 'Portugiesisch',
-            'ua': 'Ukrainisch'
-        };
+        if (!code) return { flagUrl: '', name: '-' };
+        const cleanCode = code.split('-')[0].toLowerCase();
 
         return {
-            flagUrl: `https://flagcdn.com/w40/${countryCode}.png`,
-            name: langs[fullCode] || code.toUpperCase()
+            flagUrl: getFlagUrl(code),
+            name: getLanguageLabel(cleanCode)
         };
     };
 
@@ -341,6 +350,34 @@ const ProjectDetail = () => {
         updateProjectMutation.mutate({ partner_id: partner.id });
         setIsPartnerModalOpen(false);
     };
+
+    // Mutation für Kunden-Update
+    const updateCustomerMutation = useMutation({
+        mutationFn: (data: any) => {
+            const customerId = projectData?.customer_id;
+            if (!customerId) return Promise.reject('Keine Kunden-ID gefunden');
+            return customerService.update(customerId, data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
+            setIsCustomerEditModalOpen(false);
+        }
+    });
+
+    // Mutation für Partner-Update
+    const updatePartnerMutation = useMutation({
+        mutationFn: (data: any) => {
+            const partnerId = projectData?.translator?.id;
+            if (!partnerId) return Promise.reject('Keine Partner-ID gefunden');
+            return partnerService.update(Number(partnerId), data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setIsPartnerEditModalOpen(false);
+        }
+    });
 
     const handleEditSubmit = (updatedData: any) => {
         updateProjectMutation.mutate(updatedData);
@@ -422,16 +459,31 @@ const ProjectDetail = () => {
     };
 
     const getStatusBadge = (status: string) => {
+        const labels: { [key: string]: string } = {
+            'draft': 'Entwurf',
+            'offer': 'Angebot',
+            'pending': 'Angebot',
+            'in_progress': 'In Bearbeitung',
+            'review': 'QS/Lektorat',
+            'ready_for_pickup': 'Abholbereit',
+            'delivered': 'Ausgeliefert',
+            'completed': 'Abgeschlossen',
+            'cancelled': 'Storniert',
+            'archived': 'Archiviert',
+            'deleted': 'Gelöscht'
+        };
         const styles: { [key: string]: string } = {
+            'draft': 'bg-slate-50 text-slate-600 border-slate-200',
+            'offer': 'bg-orange-50 text-orange-700 border-orange-200',
+            'pending': 'bg-orange-50 text-orange-700 border-orange-200',
             'in_progress': 'bg-blue-50 text-blue-700 border-blue-200',
             'review': 'bg-purple-50 text-purple-700 border-purple-200',
-            'draft': 'bg-slate-50 text-slate-600 border-slate-200',
-            'pending': 'bg-orange-50 text-orange-700 border-orange-200',
-            'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200'
-        };
-        const labels: { [key: string]: string } = {
-            'in_progress': 'Aktiv', 'review': 'QS/Lektorat', 'draft': 'Entwurf',
-            'pending': 'Angebot', 'completed': 'Abgeschlossen'
+            'ready_for_pickup': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            'delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            'completed': 'bg-emerald-600 text-white border-emerald-700',
+            'cancelled': 'bg-gray-100 text-gray-500 border-gray-300',
+            'archived': 'bg-slate-100 text-slate-500 border-slate-300',
+            'deleted': 'bg-red-50 text-red-700 border-red-200'
         };
         return <span className={clsx("px-2.5 py-0.5 rounded text-[10px] font-bold uppercase border tracking-tight shadow-sm", styles[status] || styles['draft'])}>{labels[status] || status}</span>;
     }
@@ -635,23 +687,40 @@ const ProjectDetail = () => {
 
                 {/* Tab Navigation */}
                 <div className="px-6 border-t border-slate-100 flex gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={clsx(
-                                "py-3 text-[11px] font-black uppercase tracking-widest border-b-2 transition relative shrink-0",
-                                activeTab === tab
-                                    ? 'border-brand-500 text-brand-700'
-                                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                            )}
-                        >
-                            {tab === 'overview' ? 'Projekt-Cockpit' :
-                                tab === 'files' ? `Dateien (${projectData.files.length})` :
-                                    tab === 'finances' ? 'Kalkulation & Marge' :
-                                        tab === 'history' ? 'Historie' : 'Kommunikation'}
-                        </button>
-                    ))}
+                    {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
+                        let badgeCount = 0;
+                        if (tab === 'files') badgeCount = projectData?.files?.length || 0;
+                        if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                        if (tab === 'messages') badgeCount = projectMessages.length;
+                        if (tab === 'history') badgeCount = (projectData?.history?.length || 0);
+
+                        return (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={clsx(
+                                    "py-3 text-[11px] font-black uppercase tracking-widest border-b-2 transition relative shrink-0 flex items-center gap-2",
+                                    activeTab === tab
+                                        ? 'border-brand-500 text-brand-700'
+                                        : 'border-transparent text-slate-400 hover:text-slate-600'
+                                )}
+                            >
+                                {tab === 'overview' ? 'Projekt-Cockpit' :
+                                    tab === 'files' ? 'Dateien' :
+                                        tab === 'finances' ? 'Kalkulation & Marge' :
+                                            tab === 'history' ? 'Historie' : 'Kommunikation'}
+
+                                {tab !== 'overview' && (
+                                    <span className={clsx(
+                                        "px-1.5 py-0.5 rounded-full text-[9px] font-bold",
+                                        activeTab === tab ? "bg-brand-100 text-brand-700" : "bg-slate-100 text-slate-500"
+                                    )}>
+                                        {badgeCount}
+                                    </span>
+                                )}
+                            </button>
+                        )
+                    })}
                 </div>
             </div>
 
@@ -675,7 +744,7 @@ const ProjectDetail = () => {
 
                         <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-y-10 gap-x-12">
                             {/* Left Column: Core Info & Customer */}
-                            <div className="space-y-8">
+                            <div className="flex flex-col gap-8 h-full">
                                 {/* Section: Basisdaten */}
                                 <div>
                                     <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Basisdaten</h4>
@@ -712,29 +781,58 @@ const ProjectDetail = () => {
                                 </div>
 
                                 {/* Section: Kunde */}
-                                <div>
+                                <div className="flex flex-col flex-1">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-4">
                                         <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Kunde / Auftraggeber</h4>
                                         <div className="flex gap-3">
                                             {projectData.customer_id && (
-                                                <button
-                                                    onClick={() => navigate(`/customers/${projectData.customer_id}`, { state: { from: location.pathname } })}
-                                                    className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
-                                                >
-                                                    <FaExternalLinkAlt /> Akte
-                                                </button>
+                                                <>
+                                                    <button
+                                                        onClick={() => setIsCustomerEditModalOpen(true)}
+                                                        className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
+                                                    >
+                                                        <FaEdit /> Bearbeiten
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate(`/customers/${projectData.customer_id}`, { state: { from: location.pathname } })}
+                                                        className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
+                                                    >
+                                                        <FaExternalLinkAlt /> Akte
+                                                    </button>
+                                                </>
                                             )}
                                             <button onClick={() => setIsCustomerSearchOpen(true)} className="text-[10px] text-brand-600 font-bold hover:underline">Ändern</button>
                                         </div>
                                     </div>
 
-                                    <div className="bg-slate-50/50 rounded-lg border border-slate-100 p-4">
+                                    <div className="rounded-lg border border-slate-200 p-4 flex-1 flex flex-col justify-between">
                                         <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
                                             <span className="text-slate-500 font-medium">Firma/Name</span>
                                             <span className="text-slate-800 font-bold">{projectData.customer.name}</span>
 
                                             <span className="text-slate-500 font-medium">Ansprechpartner</span>
                                             <span className="text-slate-800">{projectData.customer.contact}</span>
+
+                                            <span className="text-slate-500 font-medium">Adresse</span>
+                                            <div className="text-slate-800">
+                                                {projectData.customer.address_street ? (
+                                                    <>
+                                                        <span className="block">
+                                                            {projectData.customer.address_street} {projectData.customer.address_house_no || ''}
+                                                        </span>
+                                                        <span className="block">
+                                                            {projectData.customer.address_zip} {projectData.customer.address_city}
+                                                        </span>
+                                                        {projectData.customer.address_country && (
+                                                            <span className="block text-slate-500 text-xs">
+                                                                {getCountryName(projectData.customer.address_country)}
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-slate-400 italic">Keine Adresse hinterlegt</span>
+                                                )}
+                                            </div>
 
                                             <span className="text-slate-500 font-medium">Email</span>
                                             <a href={`mailto:${projectData.customer.email}`} className="text-brand-600 hover:underline truncate block">{projectData.customer.email || '-'}</a>
@@ -744,14 +842,26 @@ const ProjectDetail = () => {
                                         </div>
 
                                         <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-slate-200">
-                                            <button className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm">
+                                            <button
+                                                onClick={() => generateDocumentMutation.mutate('reminder')}
+                                                disabled={generateDocumentMutation.isPending}
+                                                title="Zahlungserinnerung / Mahnung erstellen"
+                                                className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm disabled:opacity-50">
                                                 <FaClock className="text-slate-400" /> Mahnung
                                             </button>
-                                            <button className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm">
+                                            <button
+                                                onClick={() => generateDocumentMutation.mutate('pickup')}
+                                                disabled={generateDocumentMutation.isPending}
+                                                title="Abholbestätigung erstellen"
+                                                className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm disabled:opacity-50">
                                                 <FaPaperPlane className="text-slate-400" /> Abhol-Best.
                                             </button>
-                                            <button className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm">
-                                                <FaCheckCircle className="text-slate-400" /> Anfrage-Best.
+                                            <button
+                                                onClick={() => generateDocumentMutation.mutate('confirmation')}
+                                                disabled={generateDocumentMutation.isPending}
+                                                title="Auftragsbestätigung erstellen"
+                                                className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm disabled:opacity-50">
+                                                <FaCheckCircle className="text-slate-400" /> Auftrags-Best.
                                             </button>
                                         </div>
                                     </div>
@@ -759,7 +869,7 @@ const ProjectDetail = () => {
                             </div>
 
                             {/* Right Column: Order Details & Partner */}
-                            <div className="space-y-8">
+                            <div className="flex flex-col gap-8 h-full">
                                 {/* Section: Auftragsdetails */}
                                 <div>
                                     <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Auftragsdetails</h4>
@@ -798,23 +908,31 @@ const ProjectDetail = () => {
                                 </div>
 
                                 {/* Section: Partner */}
-                                <div>
+                                <div className="flex flex-col flex-1">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-4">
                                         <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Ausführender Partner</h4>
                                         <div className="flex gap-3">
                                             {projectData.translator?.id && (
-                                                <button
-                                                    onClick={() => navigate(`/partners/${projectData.translator.id}`, { state: { from: location.pathname } })}
-                                                    className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
-                                                >
-                                                    <FaExternalLinkAlt /> Akte
-                                                </button>
+                                                <>
+                                                    <button
+                                                        onClick={() => setIsPartnerEditModalOpen(true)}
+                                                        className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
+                                                    >
+                                                        <FaEdit /> Bearbeiten
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate(`/partners/${projectData.translator.id}`, { state: { from: location.pathname } })}
+                                                        className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
+                                                    >
+                                                        <FaExternalLinkAlt /> Akte
+                                                    </button>
+                                                </>
                                             )}
                                             <button onClick={() => setIsPartnerModalOpen(true)} className="text-[10px] text-brand-600 font-bold hover:underline">Ändern</button>
                                         </div>
                                     </div>
 
-                                    <div className="bg-slate-50/50 rounded-lg border border-slate-100 p-4">
+                                    <div className="rounded-lg border border-slate-200 p-4 flex-1 flex flex-col justify-between">
                                         <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
                                             <span className="text-slate-500 font-medium">Name</span>
                                             <span className="text-slate-800 font-bold">{projectData.translator?.name || '-'}</span>
@@ -1091,14 +1209,9 @@ const ProjectDetail = () => {
                     activeTab === 'history' && (
                         <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10 h-full">
                             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white gap-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                                        <FaClock className="text-lg" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Projekt-Historie</h3>
-                                        <p className="text-[10px] text-slate-400 font-bold">Vollständiges Änderungsprotokoll</p>
-                                    </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Projekt-Historie</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold">Vollständiges Änderungsprotokoll</p>
                                 </div>
                                 <div className="flex items-center gap-2 max-w-xs w-full">
                                     <Input
@@ -1110,42 +1223,243 @@ const ProjectDetail = () => {
                                 </div>
                             </div>
 
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-slate-50/80 text-slate-400 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
+                            <div className="overflow-y-auto max-h-[600px] custom-scrollbar border border-slate-200 rounded-lg">
+                                <table className="w-full text-left border-collapse relative">
+                                    <thead className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                                         <tr>
-                                            <th className="px-6 py-4">Wann</th>
-                                            <th className="px-6 py-4">Wer</th>
-                                            <th className="px-6 py-4">Feld / Aktion</th>
-                                            <th className="px-6 py-4">Von Wert</th>
-                                            <th className="px-6 py-4">Zu Wert</th>
+                                            <th className="px-4 py-3 w-10 text-center bg-slate-50">#</th>
+                                            <th
+                                                className="px-6 py-3 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
+                                                onClick={() => {
+                                                    if (historySortKey === 'date') {
+                                                        setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
+                                                    } else {
+                                                        setHistorySortKey('date');
+                                                        setHistorySortDir('desc');
+                                                    }
+                                                }}
+                                            >
+                                                <span className="flex items-center gap-1">
+                                                    Wann
+                                                    {historySortKey === 'date' && (
+                                                        <span className="text-brand-500">{historySortDir === 'asc' ? '↑' : '↓'}</span>
+                                                    )}
+                                                </span>
+                                            </th>
+                                            <th
+                                                className="px-6 py-3 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
+                                                onClick={() => {
+                                                    if (historySortKey === 'user') {
+                                                        setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
+                                                    } else {
+                                                        setHistorySortKey('user');
+                                                        setHistorySortDir('asc');
+                                                    }
+                                                }}
+                                            >
+                                                <span className="flex items-center gap-1">
+                                                    Wer
+                                                    {historySortKey === 'user' && (
+                                                        <span className="text-brand-500">{historySortDir === 'asc' ? '↑' : '↓'}</span>
+                                                    )}
+                                                </span>
+                                            </th>
+                                            <th
+                                                className="px-6 py-3 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
+                                                onClick={() => {
+                                                    if (historySortKey === 'action') {
+                                                        setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
+                                                    } else {
+                                                        setHistorySortKey('action');
+                                                        setHistorySortDir('asc');
+                                                    }
+                                                }}
+                                            >
+                                                <span className="flex items-center gap-1">
+                                                    Feld / Aktion
+                                                    {historySortKey === 'action' && (
+                                                        <span className="text-brand-500">{historySortDir === 'asc' ? '↑' : '↓'}</span>
+                                                    )}
+                                                </span>
+                                            </th>
+                                            <th className="px-6 py-3 bg-slate-50">Von Wert</th>
+                                            <th className="px-6 py-3 bg-slate-50">Zu Wert</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-xs">
-                                        {(projectData.history || [
-                                            // Fallback Dynamic History if no real history exists yet
-                                            { date: new Date().toLocaleDateString('de-DE') + ' ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }), user: 'System', action: 'Ansicht geöffnet', from: '-', to: '-' },
-                                            { date: projectData.due ? new Date(new Date(projectData.due).getTime() - 86400000).toLocaleDateString('de-DE') + ' 14:30' : '-', user: projectData.pm || 'PM', action: 'Lieferdatum gesetzt', from: '-', to: projectData.due || '-' },
-                                            ...(projectData.documentsSent ? [{ date: new Date().toLocaleDateString('de-DE') + ' 09:15', user: projectData.pm || 'PM', action: 'Dokumente versendet', from: 'Ausstehend', to: 'Versendet' }] : []),
-                                            { date: projectData.createdAt ? new Date(projectData.createdAt).toLocaleDateString('de-DE') + ' 10:00' : '01.01.2024 10:00', user: projectData.pm || 'Admin', action: 'Projekt erstellt', from: '-', to: 'Neu' },
-                                        ]).filter((item: any) =>
-                                            // Safe filtering
-                                            (item.action && item.action.toLowerCase().includes(historySearch.toLowerCase())) ||
-                                            (item.user && item.user.toLowerCase().includes(historySearch.toLowerCase()))
-                                        ).map((item: any, i: number) => (
-                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4 font-bold text-slate-700 whitespace-nowrap">{item.date}</td>
-                                                <td className="px-6 py-4 text-slate-600 flex items-center gap-2">
-                                                    <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-500">
-                                                        {item.user?.[0] || '?'}
-                                                    </div>
-                                                    {item.user}
-                                                </td>
-                                                <td className="px-6 py-4 font-bold text-slate-800">{item.action}</td>
-                                                <td className="px-6 py-4 text-slate-400 italic font-medium max-w-[150px] truncate">{item.from}</td>
-                                                <td className="px-6 py-4 text-emerald-600 font-bold bg-emerald-50/10 max-w-[150px] truncate">{item.to}</td>
-                                            </tr>
-                                        ))}
+                                        {(() => {
+                                            // Helper for date formatting
+                                            const formatDate = (date: Date) => {
+                                                if (!date) return '-';
+                                                return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+                                                    ' ' +
+                                                    date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                                            };
+
+                                            // Build real history from project data
+                                            const historyItems: { date: Date; dateStr: string; user: string; action: string; from: string; to: string }[] = [];
+
+                                            // Project creation
+                                            if (projectData?.createdAt || projectData?.created_at) {
+                                                const createdDate = new Date(projectData.createdAt || projectData.created_at);
+                                                historyItems.push({
+                                                    date: createdDate,
+                                                    dateStr: formatDate(createdDate),
+                                                    user: projectData.pm || 'System',
+                                                    action: 'Projekt erstellt',
+                                                    from: '-',
+                                                    to: projectData.name
+                                                });
+                                            }
+
+                                            // Status changes
+                                            if (projectData?.status) {
+                                                const statusDate = projectData.updated_at ? new Date(projectData.updated_at) : new Date();
+                                                historyItems.push({
+                                                    date: statusDate,
+                                                    dateStr: formatDate(statusDate),
+                                                    user: projectData.pm || 'System',
+                                                    action: 'Status',
+                                                    from: 'Neu',
+                                                    to: projectData.status === 'new' ? 'Neu' :
+                                                        projectData.status === 'in_progress' ? 'In Bearbeitung' :
+                                                            projectData.status === 'completed' ? 'Abgeschlossen' :
+                                                                projectData.status === 'cancelled' ? 'Storniert' : projectData.status
+                                                });
+                                            }
+
+                                            // Customer assigned
+                                            if (projectData?.customer?.name) {
+                                                const customerDate = projectData.createdAt ? new Date(new Date(projectData.createdAt).getTime() + 60000) : new Date();
+                                                historyItems.push({
+                                                    date: customerDate,
+                                                    dateStr: formatDate(customerDate),
+                                                    user: projectData.pm || 'System',
+                                                    action: 'Kunde zugewiesen',
+                                                    from: '-',
+                                                    to: projectData.customer.name
+                                                });
+                                            }
+
+                                            // Translator assigned
+                                            if (projectData?.translator?.name) {
+                                                const translatorDate = projectData.createdAt ? new Date(new Date(projectData.createdAt).getTime() + 120000) : new Date();
+                                                historyItems.push({
+                                                    date: translatorDate,
+                                                    dateStr: formatDate(translatorDate),
+                                                    user: projectData.pm || 'System',
+                                                    action: 'Übersetzer zugewiesen',
+                                                    from: '-',
+                                                    to: projectData.translator.name
+                                                });
+                                            }
+
+                                            // Documents sent
+                                            if (projectData?.documentsSent) {
+                                                const sentDate = projectData.updated_at ? new Date(projectData.updated_at) : new Date();
+                                                historyItems.push({
+                                                    date: sentDate,
+                                                    dateStr: formatDate(sentDate),
+                                                    user: projectData.pm || 'System',
+                                                    action: 'Dokumente versendet',
+                                                    from: 'Ausstehend',
+                                                    to: 'Versendet'
+                                                });
+                                            }
+
+                                            // Delivery date set
+                                            if (projectData?.due) {
+                                                const dueSetDate = projectData.createdAt ? new Date(new Date(projectData.createdAt).getTime() + 180000) : new Date();
+                                                historyItems.push({
+                                                    date: dueSetDate,
+                                                    dateStr: formatDate(dueSetDate),
+                                                    user: projectData.pm || 'System',
+                                                    action: 'Lieferdatum gesetzt',
+                                                    from: '-',
+                                                    to: new Date(projectData.due).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                                });
+                                            }
+
+                                            // Files uploaded
+                                            if (projectData?.files && projectData.files.length > 0) {
+                                                projectData.files.forEach((file: any) => {
+                                                    const fileDate = file.created_at ? new Date(file.created_at) : new Date();
+                                                    historyItems.push({
+                                                        date: fileDate,
+                                                        dateStr: formatDate(fileDate),
+                                                        user: file.uploaded_by || file.uploader?.name || 'System',
+                                                        action: 'Datei hochgeladen',
+                                                        from: '-',
+                                                        to: file.name || file.original_name || 'Datei'
+                                                    });
+                                                });
+                                            }
+
+                                            // Use backend history if available
+                                            if (projectData?.history && Array.isArray(projectData.history) && projectData.history.length > 0) {
+                                                projectData.history.forEach((item: any) => {
+                                                    const itemDate = item.created_at ? new Date(item.created_at) : new Date(item.date || Date.now());
+                                                    historyItems.push({
+                                                        date: itemDate,
+                                                        dateStr: formatDate(itemDate),
+                                                        user: item.user || item.changed_by || 'System',
+                                                        action: item.action || item.field || 'Änderung',
+                                                        from: item.from || item.old_value || '-',
+                                                        to: item.to || item.new_value || '-'
+                                                    });
+                                                });
+                                            }
+
+                                            // Filter
+                                            const filtered = historyItems.filter(item =>
+                                                item.action.toLowerCase().includes(historySearch.toLowerCase()) ||
+                                                item.user.toLowerCase().includes(historySearch.toLowerCase()) ||
+                                                item.to.toLowerCase().includes(historySearch.toLowerCase())
+                                            );
+
+                                            // Sort
+                                            const sorted = [...filtered].sort((a, b) => {
+                                                let cmp = 0;
+                                                if (historySortKey === 'date') {
+                                                    cmp = a.date.getTime() - b.date.getTime();
+                                                } else if (historySortKey === 'user') {
+                                                    cmp = a.user.localeCompare(b.user);
+                                                } else if (historySortKey === 'action') {
+                                                    cmp = a.action.localeCompare(b.action);
+                                                }
+                                                return historySortDir === 'asc' ? cmp : -cmp;
+                                            });
+
+                                            if (sorted.length === 0) {
+                                                return (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
+                                                            Keine Historie-Einträge gefunden.
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+
+                                            return sorted.map((item, i) => (
+                                                <tr key={i} className="hover:bg-slate-50 transition-colors border-b border-slate-50">
+                                                    <td className="px-4 py-3 text-center text-[10px] text-slate-400 font-mono">
+                                                        {i + 1}
+                                                    </td>
+                                                    <td className="px-6 py-3 font-bold text-slate-700 whitespace-nowrap text-xs">{item.dateStr}</td>
+                                                    <td className="px-6 py-3 text-slate-600 text-xs">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-500">
+                                                                {item.user?.[0] || '?'}
+                                                            </div>
+                                                            {item.user}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-3 font-bold text-slate-800 text-xs">{item.action}</td>
+                                                    <td className="px-6 py-3 text-slate-400 italic font-medium max-w-[150px] truncate text-xs" title={item.from}>{item.from}</td>
+                                                    <td className="px-6 py-3 text-emerald-600 font-bold max-w-[150px] truncate text-xs" title={item.to}>{item.to}</td>
+                                                </tr>
+                                            ));
+                                        })()}
                                     </tbody>
                                 </table>
                             </div>
@@ -1170,22 +1484,43 @@ const ProjectDetail = () => {
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/30 custom-scrollbar">
-                                    {projectMessages.map((msg) => (
-                                        <div key={msg.id} className={clsx("flex w-full group", msg.from === 'Admin' ? "justify-end" : "justify-start")}>
-                                            <div className={clsx("flex flex-col max-w-[85%] md:max-w-[70%]", msg.from === 'Admin' ? "items-end" : "items-start")}>
-                                                <div className="flex items-center gap-2 mb-1 px-1">
-                                                    <span className="font-bold text-[10px] text-slate-700">{msg.from}</span>
-                                                    <span className="text-[9px] text-slate-400">{msg.timestamp}</span>
-                                                </div>
-                                                <div className={clsx("p-3.5 shadow-sm border rounded-2xl relative",
-                                                    msg.from === 'Admin'
-                                                        ? "bg-brand-600 text-white border-brand-700 rounded-tr-none"
-                                                        : "bg-white text-slate-700 border-slate-200 rounded-tl-none")}>
-                                                    <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.message}</p>
+                                    {projectMessages.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                                            <FaComments className="text-4xl mb-3 opacity-20" />
+                                            <p className="text-sm font-medium">Keine Nachrichten vorhanden.</p>
+                                            <p className="text-xs opacity-60">Beginnen Sie eine Konversation mit dem Team.</p>
+                                            <button
+                                                onClick={() => navigate('/inbox', {
+                                                    state: {
+                                                        compose: true,
+                                                        to: projectData.customer.email,
+                                                        subject: `Projekt: ${projectData.name} (Ref: ${projectData.id})`,
+                                                        body: `<p>Sehr geehrter Kunde,</p><p>bezüglich des Projekts ${projectData.name}...</p>`
+                                                    }
+                                                })}
+                                                className="mt-6 px-6 py-2.5 bg-brand-600 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center gap-2"
+                                            >
+                                                <FaPaperPlane className="text-[10px]" /> Email an Kunden senden
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        projectMessages.map((msg) => (
+                                            <div key={msg.id} className={clsx("flex w-full group", msg.from === 'Admin' ? "justify-end" : "justify-start")}>
+                                                <div className={clsx("flex flex-col max-w-[85%] md:max-w-[70%]", msg.from === 'Admin' ? "items-end" : "items-start")}>
+                                                    <div className="flex items-center gap-2 mb-1 px-1">
+                                                        <span className="font-bold text-[10px] text-slate-700">{msg.from}</span>
+                                                        <span className="text-[9px] text-slate-400">{msg.timestamp}</span>
+                                                    </div>
+                                                    <div className={clsx("p-3.5 shadow-sm border rounded-2xl relative",
+                                                        msg.from === 'Admin'
+                                                            ? "bg-brand-600 text-white border-brand-700 rounded-tr-none"
+                                                            : "bg-white text-slate-700 border-slate-200 rounded-tl-none")}>
+                                                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.message}</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
 
                                 <div className="p-3 md:p-4 border-t border-slate-200 bg-white">
@@ -1269,7 +1604,9 @@ const ProjectDetail = () => {
                                     </div>
                                 </div>
                                 <div className="p-4 mt-auto border-t border-slate-100 bg-slate-50">
-                                    <button className="w-full flex items-center justify-center gap-2 py-2 border border-dashed border-slate-300 rounded text-slate-500 text-[10px] font-bold uppercase hover:bg-white hover:border-brand-300 hover:text-brand-600 transition">
+                                    <button
+                                        onClick={() => setIsInviteModalOpen(true)}
+                                        className="w-full flex items-center justify-center gap-2 py-2 border border-dashed border-slate-300 rounded text-slate-500 text-[10px] font-bold uppercase hover:bg-white hover:border-brand-300 hover:text-brand-600 transition">
                                         <FaUserPlus /> Teilnehmer einladen
                                     </button>
                                 </div>
@@ -1312,6 +1649,35 @@ const ProjectDetail = () => {
             <NewProjectModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSubmit={handleEditSubmit} initialData={projectData} />
             <FileUploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleFileUpload} />
             <NewInvoiceModal isOpen={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} onSubmit={(data) => invoiceMutation.mutate(data)} project={{ ...projectData, financials }} isLoading={invoiceMutation.isPending} />
+            <PaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                onSave={(payment) => {
+                    const newPayments = [...(projectData?.payments || []), payment];
+                    if (projectData) {
+                        setProjectData({ ...projectData, payments: newPayments });
+                        updateProjectMutation.mutate({ payments: newPayments });
+                    }
+                }}
+                totalAmount={financials.grossTotal}
+            />
+
+            {/* Kunden-Bearbeitungsmodal */}
+            <NewCustomerModal
+                isOpen={isCustomerEditModalOpen}
+                onClose={() => setIsCustomerEditModalOpen(false)}
+                onSubmit={(data) => updateCustomerMutation.mutate(data)}
+                initialData={projectResponse?.customer}
+            />
+
+            {/* Partner-Bearbeitungsmodal */}
+            <NewPartnerModal
+                isOpen={isPartnerEditModalOpen}
+                onClose={() => setIsPartnerEditModalOpen(false)}
+                onSubmit={(data) => updatePartnerMutation.mutate(data)}
+                initialData={projectResponse?.partner}
+                isLoading={updatePartnerMutation.isPending}
+            />
             <FilePreviewModal
                 isOpen={!!previewFile}
                 onClose={() => setPreviewFile(null)}
@@ -1333,6 +1699,11 @@ const ProjectDetail = () => {
                 cancelText="Abbrechen"
                 type="danger"
                 isLoading={deleteFileMutation.isPending}
+            />
+            <InviteParticipantModal
+                isOpen={isInviteModalOpen}
+                onClose={() => setIsInviteModalOpen(false)}
+                projectId={id!}
             />
         </div >
     );

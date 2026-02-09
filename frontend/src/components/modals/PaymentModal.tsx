@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaCalendarAlt, FaPercentage, FaEuroSign } from 'react-icons/fa';
+import { FaTimes, FaCalendarAlt, FaEuroSign } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import Input from '../common/Input';
-import clsx from 'clsx';
 import { registerLocale } from "react-datepicker";
 import { de } from 'date-fns/locale/de';
 
@@ -18,7 +17,7 @@ interface PaymentModalProps {
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, initialData, totalAmount }) => {
     const [amount, setAmount] = useState('');
-    const [amountType, setAmountType] = useState<'flat' | 'percent'>('flat');
+    // const [amountType, setAmountType] = useState<'flat' | 'percent'>('flat'); // Removed
     const [date, setDate] = useState<Date>(new Date());
     const [method, setMethod] = useState('Überweisung');
     const [note, setNote] = useState('');
@@ -27,15 +26,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
         if (isOpen) {
             if (initialData) {
                 setAmount(initialData.amount);
-                // If we had stored percentage logic we could restore it, but usually we just store amount.
-                // We default to flat for editing unless we infer it.
-                setAmountType('flat');
+                // setAmountType('flat'); 
                 setDate(initialData.payment_date ? new Date(initialData.payment_date) : new Date());
                 setMethod(initialData.payment_method || 'Überweisung');
                 setNote(initialData.note || '');
             } else {
                 setAmount('');
-                setAmountType('flat');
+                // setAmountType('flat');
                 setDate(new Date());
                 setMethod('Überweisung');
                 setNote('');
@@ -44,9 +41,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
     }, [isOpen, initialData]);
 
     const handleSave = () => {
-        const finalAmount = amountType === 'percent'
-            ? (totalAmount * (parseFloat(amount) / 100)).toFixed(2)
-            : parseFloat(amount).toFixed(2);
+        const finalAmount = parseFloat(amount).toFixed(2);
 
         onSave({
             id: initialData?.id || Date.now().toString(),
@@ -59,11 +54,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
     };
 
     const handleSetFullAmount = () => {
-        if (amountType === 'flat') {
-            setAmount(totalAmount.toFixed(2));
-        } else {
-            setAmount('100');
-        }
+        setAmount(totalAmount.toFixed(2));
     };
 
     if (!isOpen) return null;
@@ -84,53 +75,29 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
                     {/* Amount Section */}
                     <div className="space-y-2">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Betrag ({amountType === 'flat' ? 'Brutto' : 'Prozent'})
+                            Betrag (Brutto)
                         </label>
                         <div className="flex gap-2">
                             <div className="flex-1">
                                 <Input
                                     type="number"
                                     value={amount}
-                                    onChange={e => setAmount(e.target.value)}
-                                    placeholder={amountType === 'flat' ? "0.00" : "0"}
-                                    endIcon={amountType === 'flat' ? <FaEuroSign /> : <FaPercentage />}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    placeholder="0.00"
+                                    endIcon={<FaEuroSign />}
                                     className="font-bold text-right"
                                 />
-                            </div>
-                            <div className="flex rounded border border-slate-300 overflow-hidden bg-slate-50 shrink-0">
-                                <button
-                                    onClick={() => setAmountType('flat')}
-                                    className={clsx(
-                                        "px-3 py-2 text-[10px] font-bold uppercase transition-colors",
-                                        amountType === 'flat' ? "bg-white text-brand-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                                    )}
-                                >
-                                    Pauschal
-                                </button>
-                                <div className="w-px bg-slate-200"></div>
-                                <button
-                                    onClick={() => setAmountType('percent')}
-                                    className={clsx(
-                                        "px-3 py-2 text-[10px] font-bold uppercase transition-colors",
-                                        amountType === 'percent' ? "bg-white text-brand-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                                    )}
-                                >
-                                    Prozent
-                                </button>
                             </div>
                         </div>
                         <div className="flex justify-between items-center px-1">
                             <span className="text-[10px] text-slate-400 italic">
-                                {amountType === 'percent' && amount && !isNaN(Number(amount))
-                                    ? `= ${(totalAmount * (parseFloat(amount) / 100)).toFixed(2)} €`
-                                    : 'Projekt-Gesamtbetrag: ' + totalAmount.toFixed(2) + ' €'
-                                }
+                                Projekt-Gesamtbetrag: {totalAmount.toFixed(2)} €
                             </span>
                             <button
                                 onClick={handleSetFullAmount}
                                 className="text-[10px] font-bold text-brand-600 hover:text-brand-700 underline decoration-dotted uppercase"
                             >
-                                100% Bezahlt
+                                Vollständig Bezahlt
                             </button>
                         </div>
                     </div>
@@ -154,16 +121,17 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
                         </div>
                     </div>
 
-                    {/* Method */}
                     <div className="space-y-2">
-                        <Input isSelect label="Zahlmittel" value={method} onChange={e => setMethod(e.target.value)}>
-                            <option value="Überweisung">Überweisung</option>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Zahlungsmethode</label>
+                        <select
+                            className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-brand-500 transition-colors"
+                            value={method}
+                            onChange={(e) => setMethod(e.target.value)}
+                        >
                             <option value="Bar">Bar</option>
-                            <option value="PayPal">PayPal</option>
-                            <option value="Kreditkarte">Kreditkarte</option>
-                            <option value="Vorkasse">Vorkasse</option>
-                            <option value="Lastschrift">Lastschrift</option>
-                        </Input>
+                            <option value="Karte">Karte</option>
+                            <option value="Sonstige">Sontige Zahlungsmethode</option>
+                        </select>
                     </div>
 
                     {/* Note */}

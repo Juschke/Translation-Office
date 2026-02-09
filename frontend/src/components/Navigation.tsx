@@ -164,7 +164,7 @@ const Navigation = () => {
                             </Link>
 
                             <Link to="/inbox" className={navLinkClass("/inbox")}>
-                                Inbox
+                                Email
                                 <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
                             </Link>
 
@@ -310,7 +310,7 @@ const Navigation = () => {
                             />
                         </Link>
                         <Link to="/inbox" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                            Inbox
+                            Email
                             <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
                         </Link>
                         <Link to="/reports" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Auswertung</Link>

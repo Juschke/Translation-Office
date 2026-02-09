@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { FaTimes, FaDownload, FaPrint, FaEnvelope, FaCheck, FaTrash, FaHistory } from 'react-icons/fa';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { invoiceService } from '../../api/services';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { invoiceService, settingsService } from '../../api/services';
 
 interface InvoicePreviewModalProps {
     isOpen: boolean;
@@ -50,7 +50,25 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
         }
     });
 
+    // Load company settings for dynamic invoice header
+    const { data: companyData } = useQuery({
+        queryKey: ['companySettings'],
+        queryFn: settingsService.getCompany,
+        staleTime: 1000 * 60 * 5 // Cache for 5 minutes
+    });
+
     if (!isOpen || !invoice) return null;
+
+    // Company data from settings
+    const companyName = companyData?.company_name || companyData?.domain || 'Translation Office';
+    const companyAddress = companyData?.address_street
+        ? `${companyData.address_street} ${companyData.address_house_no || ''}`.trim()
+        : '';
+    const companyCity = companyData?.address_zip && companyData?.address_city
+        ? `${companyData.address_zip} ${companyData.address_city}`
+        : '';
+    const companyCountry = companyData?.address_country || 'Deutschland';
+    const companyIban = companyData?.bank_iban || '';
 
     const invoiceNumber = invoice.invoice_number || invoice.nr || '-';
     const amountNet = parseFloat(invoice.amount_net || invoice.amount || 0);
@@ -58,6 +76,15 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
     const amountTax = parseFloat(invoice.amount_tax || (amountNet * taxRate));
     const amountGross = parseFloat(invoice.amount_gross || (amountNet + amountTax));
     const customerName = invoice.customer ? (invoice.customer.company_name || `${invoice.customer.first_name} ${invoice.customer.last_name}`) : (invoice.client || '-');
+
+    // Customer address from invoice data
+    const customerAddress = invoice.customer?.address_street
+        ? `${invoice.customer.address_street} ${invoice.customer.address_house_no || ''}`.trim()
+        : '';
+    const customerCity = invoice.customer?.address_zip && invoice.customer?.address_city
+        ? `${invoice.customer.address_zip} ${invoice.customer.address_city}`
+        : '';
+
     const projectName = invoice.project ? (invoice.project.project_name || invoice.project.project_number) : (invoice.project || '-');
     const invoiceDate = invoice.date ? new Date(invoice.date).toLocaleDateString('de-DE') : '-';
 
@@ -222,11 +249,15 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                         id="invoice-content"
                         className="bg-white w-[210mm] min-h-[297mm] shadow-lg p-[20mm] text-slate-800 text-sm relative print:shadow-none print:w-full"
                     >
-                        {/* Invoice Content Mockup */}
+                        {/* Invoice Content - Dynamic Data */}
                         <div className="flex justify-between items-start mb-12">
                             <div>
-                                <h1 className="text-2xl font-bold text-brand-700 mb-2">Translation Office</h1>
-                                <p className="text-xs text-slate-500">Musterstraße 123<br />10115 Berlin<br />Deutschland</p>
+                                <h1 className="text-2xl font-bold text-brand-700 mb-2">{companyName}</h1>
+                                <p className="text-xs text-slate-500">
+                                    {companyAddress && <>{companyAddress}<br /></>}
+                                    {companyCity && <>{companyCity}<br /></>}
+                                    {companyCountry}
+                                </p>
                             </div>
                             <div className="text-right">
                                 <h2 className="text-xl font-bold text-slate-700 uppercase tracking-widest mb-1">Rechnung</h2>
@@ -238,7 +269,10 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                         <div className="mb-12">
                             <p className="text-xs text-slate-400 uppercase tracking-widest mb-2">Empfänger</p>
                             <div className="font-bold text-lg">{customerName}</div>
-                            <p className="text-slate-600">Am Business Park 1<br />12345 Business City</p>
+                            <p className="text-slate-600">
+                                {customerAddress && <>{customerAddress}<br /></>}
+                                {customerCity || 'Adresse nicht hinterlegt'}
+                            </p>
                         </div>
 
                         <table className="w-full mb-8">
@@ -283,10 +317,10 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                         <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-end">
                             <div className="text-xs text-slate-400">
                                 <p>Zahlbar innerhalb von 14 Tagen ohne Abzug.</p>
-                                <p>Bankverbindung: DE12 3456 7890 1234 5678 90</p>
+                                {companyIban && <p>Bankverbindung: {companyIban}</p>}
                             </div>
                             <div className="text-right">
-                                <p className="font-bold text-brand-700 font-cursive text-xl">Translation Office</p>
+                                <p className="font-bold text-brand-700 font-cursive text-xl">{companyName}</p>
                             </div>
                         </div>
                     </div>

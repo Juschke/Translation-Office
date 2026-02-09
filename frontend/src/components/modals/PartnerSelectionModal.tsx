@@ -4,6 +4,8 @@ import LanguageSelect from '../common/LanguageSelect';
 import clsx from 'clsx';
 import PartnerForm from '../forms/PartnerForm';
 import { getFlagUrl } from '../../utils/flags';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { partnerService } from '../../api/services';
 
 interface PriceEntry {
     id: string;
@@ -41,6 +43,7 @@ interface PartnerSelectionModalProps {
 }
 
 const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, onClose, onSelect }) => {
+    const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterLanguage, setFilterLanguage] = useState('');
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'name', direction: 'asc' });
@@ -51,39 +54,60 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
     const [expandedPartnerId, setExpandedPartnerId] = useState<number | null>(null);
     const PAGE_SIZE = 8;
 
-    // Partners State with initial Mock Data
-    const [partners, setPartners] = useState<Partner[]>([
-        {
-            id: 1, name: 'Sabine Müller', company: 'Freelance Services',
-            email: 's.mueller@partner.de', phone: '+49 123 456789', street: 'Musterstraße 1', zip: '12345', city: 'Berlin',
-            languages: ['de', 'en', 'fr'], tags: ['Recht', 'Marketing'], status: 'verified', rating: 5, capacity: 85, initials: 'SM', color: 'bg-teal-50 text-teal-700',
-            priceList: [
-                { id: '1', label: 'DE > EN', unit: 'Wort', price: 0.12 },
-                { id: '2', label: 'EN > DE', unit: 'Wort', price: 0.11 },
-                { id: '3', label: 'Korrektorat', unit: 'Stunde', price: 45.00 }
-            ],
-            bankName: 'Deutsche Bank', iban: 'DE12 3456 7890 1234 5678 90', bic: 'DEUTDEBX'
-        },
-        {
-            id: 2, name: 'Dr. Jean Luc Picard', company: 'Picard Translations',
-            email: 'contact@picard-trans.com', phone: '+33 1 2345678', street: 'Rue de Vin', zip: '75000', city: 'Paris',
-            languages: ['fr', 'en'], tags: ['Technik', 'Wissenschaft'], status: 'verified', rating: 4, capacity: 40, initials: 'JP', color: 'bg-slate-100 text-slate-700',
-            priceList: [
-                { id: '1', label: 'FR > EN', unit: 'Wort', price: 0.14 },
-                { id: '2', label: 'Fachübersetzung', unit: 'Wort', price: 0.16 },
-                { id: '3', label: 'Consulting', unit: 'Stunde', price: 60.00 }
-            ]
-        },
-        {
-            id: 4, name: 'Maria Garcia', company: 'Global Linguistics',
-            email: 'm.garcia@global-lingua.es', phone: '+34 91 1234567', street: 'Calle del Sol', zip: '28001', city: 'Madrid',
-            languages: ['es', 'de'], tags: ['Tourismus'], status: 'verified', rating: 5, capacity: 90, initials: 'MG', color: 'bg-teal-50 text-teal-700',
-            priceList: [
-                { id: '1', label: 'Standard', unit: 'Wort', price: 0.11 },
-                { id: '2', label: 'Beglaubigung', unit: 'Seite', price: 35.00 }
-            ]
+    // Load partners from API
+    const { data: apiPartners = [], isLoading } = useQuery({
+        queryKey: ['partners'],
+        queryFn: partnerService.getAll,
+        enabled: isOpen
+    });
+
+    // Map API data to component format
+    const partners: Partner[] = useMemo(() => {
+        return apiPartners
+            .filter((p: any) => p.status !== 'deleted' && p.status !== 'archived')
+            .map((p: any) => ({
+                id: p.id,
+                name: p.company || `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+                company: p.company || '',
+                email: p.email || '',
+                phone: p.phone || '',
+                street: p.address_street || '',
+                zip: p.address_zip || '',
+                city: p.address_city || '',
+                languages: Array.isArray(p.languages) ? p.languages : (p.languages ? [p.languages] : []),
+                tags: Array.isArray(p.domains) ? p.domains : [],
+                status: p.status === 'available' ? 'verified' : p.status || 'active',
+                rating: p.rating || 0,
+                capacity: Math.floor(Math.random() * 100), // capacity not stored in DB, placeholder
+                initials: ((p.first_name?.[0] || '') + (p.last_name?.[0] || 'P')).toUpperCase(),
+                color: 'bg-teal-50 text-teal-700',
+                priceList: Array.isArray(p.unit_rates) ? p.unit_rates.map((r: any, i: number) => ({
+                    id: String(i + 1),
+                    label: r.label || 'Standard',
+                    unit: r.unit || 'Wort',
+                    price: parseFloat(r.price) || 0
+                })) : [],
+                bankName: p.bank_name,
+                iban: p.bank_iban,
+                bic: p.bank_bic
+            }));
+    }, [apiPartners]);
+
+    const createMutation = useMutation({
+        mutationFn: partnerService.create,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setMode('list');
         }
-    ]);
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (data: any) => partnerService.update(data.id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setMode('list');
+        }
+    });
 
     const handleSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc';
@@ -146,24 +170,30 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
         setValidationErrors(errors);
         if (errors.size > 0) return;
 
-        const fullName = `${editData.firstName} ${editData.lastName}`;
-        const finalPartner: Partner = {
+        // Prepare data for API
+        const apiData = {
             ...editData,
-            id: mode === 'create' ? Math.max(0, ...partners.map(p => p.id)) + 1 : editData.id,
-            name: fullName,
-            initials: (editData.firstName[0] || '') + (editData.lastName[0] || ''),
-            color: 'bg-teal-50 text-teal-700',
-            priceList: editData.priceList || [],
-            languages: editData.languages || [],
-            tags: editData.domains || []
+            first_name: editData.firstName,
+            last_name: editData.lastName,
+            address_street: editData.street,
+            address_house_no: editData.houseNo,
+            address_zip: editData.zip,
+            address_city: editData.city,
+            bank_name: editData.bankName,
+            bank_bic: editData.bic,
+            bank_iban: editData.iban,
+            tax_id: editData.taxId,
+            email: editData.emails?.[0],
+            phone: editData.phones?.[0],
+            unit_rates: editData.priceList || [],
+            domains: editData.domains || []
         };
 
         if (mode === 'create') {
-            setPartners([...partners, finalPartner]);
+            createMutation.mutate(apiData);
         } else {
-            setPartners(partners.map(p => p.id === finalPartner.id ? finalPartner : p));
+            updateMutation.mutate({ ...apiData, id: editData.id });
         }
-        setMode('list');
     };
 
     if (!isOpen) return null;
@@ -255,7 +285,22 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white">
-                                    {paginatedPartners.map(p => (
+                                    {isLoading ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-12 text-center">
+                                                <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                    <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                                                    <span className="text-xs font-medium">Partner werden geladen...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : paginatedPartners.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-12 text-center">
+                                                <div className="text-slate-400 text-sm">Keine Partner gefunden.</div>
+                                            </td>
+                                        </tr>
+                                    ) : paginatedPartners.map(p => (
                                         <React.Fragment key={p.id}>
                                             <tr
                                                 className={clsx(

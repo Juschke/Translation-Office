@@ -167,8 +167,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             <label className="block text-xs font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
                                 <FaMapMarkerAlt className="text-brand-600" /> Adresse
                             </label>
-                            <div className="grid grid-cols-4 gap-4">
-                                <div className="col-span-3">
+                            <div className="grid grid-cols-6 gap-4">
+                                <div className="col-span-5">
                                     <Input
                                         label="Straße"
                                         name="address_street"
@@ -184,15 +184,23 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         onChange={handleChange}
                                     />
                                 </div>
-                                <div className="col-span-1">
+                                <div className="col-span-2">
                                     <Input
                                         label="PLZ"
                                         name="address_zip"
                                         value={formData.address_zip}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setFormData(prev => ({ ...prev, address_zip: val }));
+                                            // Simple simulated autofill for demo
+                                            if (formData.address_country === 'DE' && val.length === 5) {
+                                                // TODO: Real lookup
+                                                // setFormData(prev => ({ ...prev, address_city: 'Musterstadt' }));
+                                            }
+                                        }}
                                     />
                                 </div>
-                                <div className="col-span-2">
+                                <div className="col-span-4">
                                     <Input
                                         label="Stadt"
                                         name="address_city"
@@ -200,10 +208,10 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         onChange={handleChange}
                                     />
                                 </div>
-                                <div className="col-span-1">
+                                <div className="col-span-6">
                                     <CountrySelect
                                         label="Land"
-                                        value={formData.address_country}
+                                        value={formData.address_country || 'DE'}
                                         onChange={(val) => setFormData(prev => ({ ...prev, address_country: val }))}
                                     />
                                 </div>

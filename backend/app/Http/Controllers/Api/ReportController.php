@@ -10,21 +10,32 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    private function getDateRange(Request $request) {
+        $startDateStr = $request->query('startDate');
+        $endDateStr = $request->query('endDate');
+
+        $start = ($startDateStr && $startDateStr !== 'undefined' && $startDateStr !== 'null') 
+            ? Carbon::parse($startDateStr)->startOfDay() 
+            : Carbon::now()->subMonths(5)->startOfMonth();
+
+        $end = ($endDateStr && $endDateStr !== 'undefined' && $endDateStr !== 'null') 
+            ? Carbon::parse($endDateStr)->endOfDay() 
+            : Carbon::now()->endOfMonth();
+
+        return [$start, $end];
+    }
+
     public function revenue(Request $request)
     {
         Carbon::setLocale('de');
-        $period = $request->query('period', '6m');
-        $months = 6;
-        if ($period === '1y')
-            $months = 12;
-
-        $startDate = Carbon::now()->subMonths($months - 1)->startOfMonth();
-
+        [$startDate, $endDate] = $this->getDateRange($request);
+        
         $data = Project::select(
             DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+            DB::raw('DATE_FORMAT(created_at, "%Y-%m-%d") as date_val'),
             DB::raw('SUM(price_total) as total')
         )
-            ->where('created_at', '>=', $startDate)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('month')
             ->orderBy('month')
             ->get();
@@ -32,14 +43,17 @@ class ReportController extends Controller
         $labels = [];
         $values = [];
 
+        // Fill gaps if range is small enough, otherwise just show months
         $current = $startDate->copy();
-        for ($i = 0; $i < $months; $i++) {
+        while ($current <= $endDate) {
             $m = $current->format('Y-m');
             $labels[] = $current->translatedFormat('M Y');
-
-            $match = $data->firstWhere('month', $m);
+            
+            $match = $data->first(function($item) use ($m) {
+                return str_starts_with($item->month, $m);
+            });
             $values[] = $match ? (float) $match->total : 0;
-
+            
             $current->addMonth();
         }
 
@@ -52,19 +66,14 @@ class ReportController extends Controller
     public function profitMargin(Request $request)
     {
         Carbon::setLocale('de');
-        $period = $request->query('period', '6m');
-        $months = 6;
-        if ($period === '1y')
-            $months = 12;
-
-        $startDate = Carbon::now()->subMonths($months - 1)->startOfMonth();
+        [$startDate, $endDate] = $this->getDateRange($request);
 
         $data = Project::select(
             DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
             DB::raw('SUM(price_total) as revenue'),
             DB::raw('SUM(partner_cost_net) as cost')
         )
-            ->where('created_at', '>=', $startDate)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('month')
             ->get();
 
@@ -72,11 +81,14 @@ class ReportController extends Controller
         $margins = [];
 
         $current = $startDate->copy();
-        for ($i = 0; $i < $months; $i++) {
+        while ($current <= $endDate) {
             $m = $current->format('Y-m');
             $labels[] = $current->translatedFormat('M Y');
 
-            $match = $data->firstWhere('month', $m);
+            $match = $data->first(function($item) use ($m) {
+                return str_starts_with($item->month, $m);
+            });
+            
             if ($match && $match->revenue > 0) {
                 $profit = $match->revenue - $match->cost;
                 $margin = ($profit / $match->revenue) * 100;
@@ -94,50 +106,63 @@ class ReportController extends Controller
         ]);
     }
 
-    public function languageDistribution()
+    public function languageDistribution(Request $request)
     {
+        [$startDate, $endDate] = $this->getDateRange($request);
+
         $data = Project::join('languages', 'projects.target_lang_id', '=', 'languages.id')
-            ->select('languages.name_internal', DB::raw('count(*) as count'))
+            ->select(
+                'languages.name_internal', 
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(projects.price_total) as revenue')
+            )
+            ->whereBetween('projects.created_at', [$startDate, $endDate])
             ->groupBy('languages.name_internal')
-            ->orderByDesc('count')
-            ->limit(5)
+            ->orderByDesc('revenue')
+            ->limit(10)
             ->get();
 
         $total = $data->sum('count');
         $labels = $data->pluck('name_internal')->toArray();
+        $revenues = $data->pluck('revenue')->map(fn($v) => round($v, 2))->toArray();
         $percentages = $data->map(fn($item) => $total > 0 ? round(($item->count / $total) * 100, 1) : 0)->toArray();
 
+        // frontend expects { labels, data (percentages/counts), revenue (actual amounts) }
         return response()->json([
             'labels' => $labels,
-            'data' => $percentages
+            'data' => $percentages,
+            'revenue' => $revenues,
+            'count' => $data->pluck('count')->toArray()
         ]);
     }
 
-    public function kpis()
+    public function kpis(Request $request)
     {
-        $totalRevenue = (float) Project::sum('price_total');
-        $totalCost = (float) Project::sum('partner_cost_net');
-        $totalJobs = Project::count();
+        [$startDate, $endDate] = $this->getDateRange($request);
+
+        $query = Project::whereBetween('created_at', [$startDate, $endDate]);
+        
+        $totalRevenue = (float) $query->sum('price_total');
+        $totalCost = (float) $query->sum('partner_cost_net');
+        $totalJobs = $query->count();
 
         $margin = 0;
         if ($totalRevenue > 0) {
             $margin = round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1);
         }
 
-        // GROWTH - Compare current month to same month last year (simple version)
-        $currentMonthRevenue = Project::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->sum('price_total');
+        // GROWTH: Compare to previous period of SAME LENGTH
+        $diffInDays = $startDate->diffInDays($endDate) + 1;
+        $prevStartDate = $startDate->copy()->subDays($diffInDays);
+        $prevEndDate = $endDate->copy()->subDays($diffInDays);
 
-        $lastYearMonthRevenue = Project::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->subYear()->year)
-            ->sum('price_total');
-
+        $prevRevenue = Project::whereBetween('created_at', [$prevStartDate, $prevEndDate])->sum('price_total');
+        
         $growth = 0;
-        if ($lastYearMonthRevenue > 0) {
-            $growth = round((($currentMonthRevenue - $lastYearMonthRevenue) / $lastYearMonthRevenue) * 100, 1);
-        } else if ($currentMonthRevenue > 0) {
-            $growth = 100; // First year growth
+        if ($prevRevenue > 0) {
+            $growth = round((($totalRevenue - $prevRevenue) / $prevRevenue) * 100, 1);
+        } else if ($totalRevenue > 0) {
+            $growth = 100;
         }
 
         return response()->json([
@@ -145,6 +170,69 @@ class ReportController extends Controller
             'margin' => $margin,
             'jobs' => $totalJobs,
             'growth' => $growth
+        ]);
+    }
+
+    public function customers(Request $request)
+    {
+        [$startDate, $endDate] = $this->getDateRange($request);
+        
+        $data = Project::join('customers', 'projects.customer_id', '=', 'customers.id')
+            ->select(
+                'customers.name', // Assuming customer has 'name'
+                DB::raw('SUM(projects.price_total) as revenue')
+            )
+            ->whereBetween('projects.created_at', [$startDate, $endDate])
+            ->groupBy('customers.name')
+            ->orderByDesc('revenue')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'labels' => $data->pluck('name')->toArray(),
+            'revenue' => $data->pluck('revenue')->map(fn($v) => round($v, 2))->toArray()
+        ]);
+    }
+
+    public function summary(Request $request)
+    {
+        return response()->json([
+            'kpis' => $this->kpis($request)->original,
+            'revenue' => $this->revenue($request)->original,
+            'profit' => $this->profitMargin($request)->original,
+            'languages' => $this->languageDistribution($request)->original,
+            'customers' => $this->customers($request)->original,
+            'status' => $this->projectStatus($request)->original,
+        ]);
+    }
+
+    public function projectStatus(Request $request)
+    {
+        [$startDate, $endDate] = $this->getDateRange($request);
+        
+        $data = Project::select('status', DB::raw('count(*) as count'))
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->groupBy('status')
+            ->get();
+            
+        return response()->json([
+            'labels' => $data->pluck('status')->map(function($s) {
+                // simple mapping, ideally use a helper or enum
+                $map = [
+                    'request' => 'Anfrage',
+                    'calculation' => 'Kalkulation',
+                    'offer' => 'Angebot',
+                    'ordered' => 'Beauftragt',
+                    'in_progress' => 'In Bearbeitung',
+                    'review' => 'Lektorat',
+                    'delivered' => 'Geliefert',
+                    'invoiced' => 'Abgerechnet',
+                    'paid' => 'Bezahlt',
+                    'archived' => 'Archiviert'
+                ];
+                return $map[$s] ?? ucfirst($s);
+            })->toArray(),
+            'data' => $data->pluck('count')->toArray()
         ]);
     }
 }

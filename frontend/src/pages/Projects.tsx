@@ -4,7 +4,8 @@ import {
     FaPlus, FaArrowRight, FaFileCsv,
     FaFilePdf, FaFileExcel, FaLayerGroup, FaChartLine, FaGlobe,
     FaEdit, FaTrash, FaEye, FaDownload,
-    FaCheck, FaArchive, FaTrashRestore, FaEnvelope, FaFilter
+    FaCheck, FaArchive, FaTrashRestore, FaEnvelope, FaFilter,
+    FaListUl, FaColumns
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +17,7 @@ import DataTable from '../components/common/DataTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '../api/services';
 import { getFlagUrl } from '../utils/flags';
+import { getLanguageLabel } from '../utils/languages';
 import TableSkeleton from '../components/common/TableSkeleton';
 import KanbanBoard from '../components/projects/KanbanBoard';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -115,7 +117,7 @@ const Projects = () => {
     }, [projects]);
 
     const totalProjectsCount = activeProjectsData.length;
-    const activeProjectsCount = activeProjectsData.filter((p: any) => ['in_progress', 'review'].includes(p.status)).length;
+    const activeProjectsCount = activeProjectsData.filter((p: any) => ['in_progress', 'review', 'ready_for_pickup'].includes(p.status)).length;
     const totalVolume = activeProjectsData.reduce((acc: number, curr: any) => acc + (curr.word_count || 0), 0);
     const totalRevenue = activeProjectsData.reduce((acc: number, curr: any) => acc + parseFloat(curr.price_total || 0), 0);
 
@@ -131,8 +133,10 @@ const Projects = () => {
 
             // Priority 2: Standard Tabs filtering
             if (filter === 'all') return true;
-            if (filter === 'in_progress') return ['in_progress', 'review'].includes(p.status);
-            if (filter === 'completed') return p.status === 'completed';
+            if (filter === 'offer') return p.status === 'offer' || p.status === 'pending' || p.status === 'draft';
+            if (filter === 'in_progress') return p.status === 'in_progress' || p.status === 'review';
+            if (filter === 'ready_for_pickup') return p.status === 'ready_for_pickup';
+            if (filter === 'completed') return p.status === 'completed' || p.status === 'delivered';
 
             return true;
         });
@@ -140,24 +144,30 @@ const Projects = () => {
 
     const getStatusBadge = (status: string) => {
         const labels: { [key: string]: string } = {
-            'in_progress': 'In Bearbeitung',
-            'review': 'QS/Lektorat',
-            'draft': 'Entwurf',
+            'draft': 'Angebot',
+            'offer': 'Angebot',
             'pending': 'Angebot',
+            'in_progress': 'In Bearbeitung',
+            'review': 'In Bearbeitung',
+            'ready_for_pickup': 'Dokument(e) Abholbereit',
+            'delivered': 'Abgeschlossen',
             'completed': 'Abgeschlossen',
-            'deleted': 'Gelöscht',
+            'cancelled': 'Storniert',
             'archived': 'Archiviert',
-            'cancelled': 'Storniert'
+            'deleted': 'Gelöscht'
         };
         const styles: { [key: string]: string } = {
+            'draft': 'bg-slate-50 text-slate-600 border-slate-200',
+            'offer': 'bg-orange-50 text-orange-700 border-orange-200',
+            'pending': 'bg-orange-50 text-orange-700 border-orange-200',
             'in_progress': 'bg-blue-50 text-blue-700 border-blue-200',
             'review': 'bg-purple-50 text-purple-700 border-purple-200',
-            'draft': 'bg-slate-50 text-slate-600 border-slate-200',
-            'pending': 'bg-orange-50 text-orange-700 border-orange-200',
-            'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-            'deleted': 'bg-red-50 text-red-700 border-red-200',
+            'ready_for_pickup': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            'delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            'completed': 'bg-emerald-600 text-white border-emerald-700',
+            'cancelled': 'bg-gray-100 text-gray-500 border-gray-300',
             'archived': 'bg-slate-100 text-slate-500 border-slate-300',
-            'cancelled': 'bg-gray-100 text-gray-500 border-gray-300'
+            'deleted': 'bg-red-50 text-red-700 border-red-200'
         };
         return <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase border tracking-tight ${styles[status] || styles['draft']}`}>{labels[status] || status}</span>;
     }
@@ -307,29 +317,47 @@ const Projects = () => {
         {
             id: 'languages',
             header: 'Sprachpaar',
-            accessor: (p: any) => (
-                <div className="flex items-center gap-2 text-xs">
-                    <div className="flex items-center gap-2" title="Ausgangssprache">
-                        <img
-                            src={getFlagUrl(p.source_language?.iso_code || p.source || 'de')}
-                            className="w-5 h-3.5 object-cover shadow-sm border border-slate-100"
-                            alt={p.source_language?.name}
-                        />
-                        <span className="font-medium text-slate-700 hidden xl:inline-block">{p.source_language?.name_internal || p.source_language?.name || p.source}</span>
-                        <span className="font-medium text-slate-700">{p.source_language?.iso_code}</span>
+            accessor: (p: any) => {
+                const sourceCode = p.source_language?.iso_code || p.source || 'de';
+                const sCode = sourceCode.split('-')[0].toLowerCase();
+                const sourceName = p.source_language?.name_internal || p.source_language?.name || getLanguageLabel(sCode);
+
+                const targetCode = p.target_language?.iso_code || p.target || 'en';
+                const tCode = targetCode.split('-')[0].toLowerCase();
+                const targetName = p.target_language?.name_internal || p.target_language?.name || getLanguageLabel(tCode);
+
+                return (
+                    <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-0.5 min-w-[60px]">
+                            <div className="flex items-center gap-1.5" title={`Quelle: ${sourceName}`}>
+                                <img
+                                    src={getFlagUrl(sourceCode)}
+                                    className="w-4 h-3 object-cover shadow-[0_1px_2px_rgba(0,0,0,0.1)] border border-slate-200 rounded-[1px]"
+                                    alt={sourceName}
+                                />
+                                <span className="text-[10px] font-bold text-slate-700 uppercase">{sCode}</span>
+                            </div>
+                            <span className="text-[9px] text-slate-400 font-medium truncate max-w-[80px] leading-tight" title={sourceName}>{sourceName}</span>
+                        </div>
+
+                        <div className="flex flex-col items-center justify-center -mt-2">
+                            <FaArrowRight className="text-slate-300 text-[10px]" />
+                        </div>
+
+                        <div className="flex flex-col gap-0.5 min-w-[60px]">
+                            <div className="flex items-center gap-1.5" title={`Ziel: ${targetName}`}>
+                                <img
+                                    src={getFlagUrl(targetCode)}
+                                    className="w-4 h-3 object-cover shadow-[0_1px_2px_rgba(0,0,0,0.1)] border border-slate-200 rounded-[1px]"
+                                    alt={targetName}
+                                />
+                                <span className="text-[10px] font-bold text-slate-700 uppercase">{tCode}</span>
+                            </div>
+                            <span className="text-[9px] text-slate-400 font-medium truncate max-w-[80px] leading-tight" title={targetName}>{targetName}</span>
+                        </div>
                     </div>
-                    <FaArrowRight className="text-slate-300 text-[10px] shrink-0" />
-                    <div className="flex items-center gap-2" title="Zielsprache">
-                        <img
-                            src={getFlagUrl(p.target_language?.iso_code || p.target || 'en')}
-                            className="w-5 h-3.5 object-cover shadow-sm border border-slate-100"
-                            alt={p.target_language?.name}
-                        />
-                        <span className="font-medium text-slate-700 hidden xl:inline-block">{p.target_language?.name_internal || p.target_language?.name || p.target}</span>
-                        <span className="font-medium text-slate-700 xl:hidden">{p.target_language?.iso_code}</span>
-                    </div>
-                </div>
-            ),
+                );
+            },
         },
         {
             id: 'down_payment',
@@ -441,7 +469,9 @@ const Projects = () => {
     const tabs = (
         <div className="flex items-center gap-6">
             <button onClick={() => setFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Alle Projekte</button>
+            <button onClick={() => setFilter('offer')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'offer' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Angebot</button>
             <button onClick={() => setFilter('in_progress')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'in_progress' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>In Bearbeitung</button>
+            <button onClick={() => setFilter('ready_for_pickup')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'ready_for_pickup' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Dokument(e) Abholbereit</button>
             <button onClick={() => setFilter('completed')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'completed' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abgeschlossen</button>
 
             {(showTrash || filter === 'trash') && (
@@ -455,23 +485,6 @@ const Projects = () => {
 
     const actions = (
         <div className="flex items-center gap-2">
-            <div className="flex border border-slate-200 p-1 bg-white shadow-sm mr-2">
-                <button
-                    onClick={() => setViewMode('list')}
-                    className={clsx("p-1.5 transition-all rounded-md", viewMode === 'list' ? "bg-brand-600 text-white" : "text-slate-400 hover:text-slate-600")}
-                    title="Listenansicht"
-                >
-                    <FaLayerGroup className="text-xs" />
-                </button>
-                <button
-                    onClick={() => setViewMode('kanban')}
-                    className={clsx("p-1.5 transition-all rounded-md", viewMode === 'kanban' ? "bg-brand-600 text-white" : "text-slate-400 hover:text-slate-600")}
-                    title="Kanban Board"
-                >
-                    <FaLayerGroup className="text-xs rotate-90" />
-                </button>
-            </div>
-
             <div className="relative group z-50" ref={exportRef}>
                 <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white rounded-md flex items-center gap-2 shadow-sm transition">
                     <FaDownload /> Export
@@ -486,7 +499,6 @@ const Projects = () => {
             </div>
         </div>
     );
-
     const extraControls = (
         <div className="relative" ref={viewSettingsRef}>
             <button
@@ -514,8 +526,6 @@ const Projects = () => {
         </div>
     );
 
-
-
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
@@ -537,6 +547,35 @@ const Projects = () => {
                 <KPICard label="Aktive Projekte" value={activeProjectsCount} icon={<FaChartLine />} iconColor="text-blue-600" iconBg="bg-blue-50" />
                 <KPICard label="Gesamtvolumen" value={totalVolume.toLocaleString('de-DE')} subValue="Wörter" icon={<FaGlobe />} />
                 <KPICard label="Umsatz YTD" value={totalRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaChartLine />} iconColor="text-green-600" iconBg="bg-green-50" />
+            </div>
+
+            <div className="flex justify-end -mb-2">
+                <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 overflow-hidden">
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={clsx(
+                            "flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-md",
+                            viewMode === 'list'
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                        )}
+                        title="Tabellenansicht"
+                    >
+                        <FaListUl className="text-xs" />
+                    </button>
+                    <button
+                        onClick={() => setViewMode('kanban')}
+                        className={clsx(
+                            "flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-md",
+                            viewMode === 'kanban'
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                        )}
+                        title="Kanban-Ansicht"
+                    >
+                        <FaColumns className="text-xs" />
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 flex flex-col min-h-0 relative z-0">
@@ -632,19 +671,26 @@ const Projects = () => {
                         onAddClick={() => { setEditingProject(null); setIsModalOpen(true); }}
                     />
                 ) : (
-                    <div className="flex-1 min-h-0 bg-slate-50/50 p-6 border border-slate-200 shadow-inner overflow-hidden flex flex-col">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-lg font-bold text-slate-800">Projekt-Board</h2>
-                            <div className="flex gap-4">
-                                {actions}
-                            </div>
+                    <div className="flex-1 min-h-0 flex flex-col pt-4 overflow-x-hidden">
+                        <div className="flex justify-between items-center mb-6 px-4">
+                            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Projekt-Board</h2>
                         </div>
-                        <div className="flex-1 min-h-0">
-                            <KanbanBoard projects={filteredProjects} onProjectClick={(p) => navigate(`/projects/${p.id}`)} />
+                        <div className="flex-1 min-h-0 px-4 overflow-y-auto pb-10 custom-scrollbar">
+                            <KanbanBoard
+                                projects={filteredProjects}
+                                onProjectClick={(p) => navigate(`/projects/${p.id}`)}
+                                onStatusChange={(projectId, newStatus) => {
+                                    updateMutation.mutate({ id: projectId, status: newStatus });
+                                }}
+                                onEdit={(p) => {
+                                    setEditingProject(p);
+                                    setIsModalOpen(true);
+                                }}
+                            />
                         </div>
-                    </div>
+                    </div >
                 )}
-            </div>
+            </div >
 
             <NewProjectModal
                 isOpen={isModalOpen}
@@ -689,7 +735,7 @@ const Projects = () => {
                 message={confirmMessage}
                 isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
             />
-        </div>
+        </div >
     );
 };
 

@@ -463,7 +463,24 @@ const Customers = () => {
                         {
                             label: 'E-Mail senden',
                             icon: <FaEnvelope className="text-xs" />,
-                            onClick: () => { }, // TODO: Implement send email
+                            onClick: () => {
+                                // Get emails from selected customers
+                                const selectedEmails = customers
+                                    .filter((c: any) => selectedCustomers.includes(c.id))
+                                    .map((c: any) => c.email)
+                                    .filter(Boolean)
+                                    .join(', ');
+
+                                if (selectedEmails) {
+                                    navigate('/inbox', {
+                                        state: {
+                                            compose: true,
+                                            to: selectedEmails,
+                                            subject: 'Nachricht an Kunden'
+                                        }
+                                    });
+                                }
+                            },
                             variant: 'primary',
                             show: typeFilter !== 'trash'
                         },

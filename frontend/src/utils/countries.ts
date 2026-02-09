@@ -219,3 +219,20 @@ export const countries = [
     { "code": "CF", "name": "Zentralafrikanische Republik" },
     { "code": "CY", "name": "Zypern" }
 ].sort((a, b) => a.name.localeCompare(b.name));
+
+/**
+ * Get country name from country code or name
+ * @param codeOrName - ISO 2-letter country code or country name
+ * @returns The country name, or the input if not found
+ */
+export const getCountryName = (codeOrName: string): string => {
+    if (!codeOrName) return '';
+
+    // If it's already a full name, return it
+    const byName = countries.find(c => c.name.toLowerCase() === codeOrName.toLowerCase());
+    if (byName) return byName.name;
+
+    // Otherwise look up by code
+    const byCode = countries.find(c => c.code.toUpperCase() === codeOrName.toUpperCase());
+    return byCode ? byCode.name : codeOrName;
+};

@@ -199,13 +199,21 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                     onClick={(e) => { e.stopPropagation(); handleSelect(opt.code); }}
                                 >
                                     <div className="flex items-center gap-3">
+                                        {isMulti && (
+                                            <div className={clsx(
+                                                "w-4 h-4 border rounded flex items-center justify-center transition-all",
+                                                values.includes(opt.code) ? "bg-brand-600 border-brand-600" : "border-slate-300 bg-white"
+                                            )}>
+                                                {values.includes(opt.code) && <FaCheck className="text-white text-[8px]" />}
+                                            </div>
+                                        )}
                                         <div className="w-8 py-0.5 flex items-center justify-center shrink-0">
                                             <img src={getFlagUrl(opt.flagCode || opt.code)} className="w-7 h-5 object-cover shadow-sm" alt="" />
                                         </div>
                                         <span>{opt.name}</span>
                                         <span className="text-[10px] uppercase text-slate-300  tracking-tighter">{opt.code}</span>
                                     </div>
-                                    {values.includes(opt.code) && <FaCheck className="text-brand-500 text-xs" />}
+                                    {!isMulti && values.includes(opt.code) && <FaCheck className="text-brand-500 text-xs" />}
                                 </div>
                             ))
                         ) : (
