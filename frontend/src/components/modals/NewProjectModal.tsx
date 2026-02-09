@@ -220,6 +220,16 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setTotalPrice(totalC.toFixed(2));
     }, [positions]);
 
+    // Auto-generate project name when customer, source, or target changes
+    useEffect(() => {
+        if (!initialData && customer && source && target) {
+            const customerName = customersData.find((c: any) => c.id.toString() === customer)?.company_name || customersData.find((c: any) => c.id.toString() === customer)?.last_name || 'Projekt';
+            const dateStr = new Date().toLocaleDateString('de-DE').replace(/\./g, '');
+            const generatedName = `${customerName}_${source.toUpperCase()}-${target.toUpperCase()}_${dateStr}`;
+            setName(generatedName);
+        }
+    }, [customer, source, target, customersData, initialData]);
+
     useEffect(() => {
         if (isOpen && initialData) {
             setName(initialData.name || initialData.project_name || '');
@@ -507,10 +517,12 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 {/* Row 1: Project Name */}
                                 <div className="col-span-12">
                                     <Input
-                                        label="Projektname"
-                                        placeholder="Projektname eingeben"
+                                        label="Projektname (automatisch generiert)"
+                                        placeholder="Wird automatisch generiert..."
                                         value={name}
                                         onChange={e => setName(e.target.value)}
+                                        readOnly
+                                        className="bg-slate-50 cursor-not-allowed"
                                     />
                                 </div>
 
@@ -560,7 +572,18 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         <FaCalendarAlt className="absolute left-3 text-slate-400 text-xs z-10" />
                                         <DatePicker
                                             selected={deadline ? new Date(deadline) : null}
-                                            onChange={(date: Date | null) => setDeadline(date ? date.toISOString() : '')}
+                                            onChange={(date: Date | null) => {
+                                                if (date) {
+                                                    // Set time to 12:00 if not already set
+                                                    const newDate = new Date(date);
+                                                    if (newDate.getHours() === 0 && newDate.getMinutes() === 0) {
+                                                        newDate.setHours(12, 0, 0, 0);
+                                                    }
+                                                    setDeadline(newDate.toISOString());
+                                                } else {
+                                                    setDeadline('');
+                                                }
+                                            }}
                                             showTimeSelect
                                             timeFormat="HH:mm"
                                             timeIntervals={15}
