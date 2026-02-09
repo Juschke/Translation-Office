@@ -4,16 +4,25 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class LanguageController extends Controller
 {
+
     public function index()
     {
-        return response()->json(\App\Models\Language::all());
+        $tenantId = Auth::user()->tenant_id;
+        $cacheKey = "languages_all_{$tenantId}";
+        return Cache::remember($cacheKey, 86400, function () {
+            return \App\Models\Language::all();
+        });
     }
 
     public function store(Request $request)
     {
+        $tenantId = Auth::user()->tenant_id;
+        $cacheKey = "languages_all_{$tenantId}";
         $validated = $request->validate([
             'iso_code' => 'required|string|max:10',
             'name_internal' => 'required|string',
@@ -25,6 +34,7 @@ class LanguageController extends Controller
         ]);
 
         $language = \App\Models\Language::create($validated);
+        Cache::forget($cacheKey);
         return response()->json($language, 201);
     }
 
@@ -35,6 +45,8 @@ class LanguageController extends Controller
 
     public function update(Request $request, $id)
     {
+        $tenantId = Auth::user()->tenant_id;
+        $cacheKey = "languages_all_{$tenantId}";
         $language = \App\Models\Language::findOrFail($id);
 
         $validated = $request->validate([
@@ -48,12 +60,16 @@ class LanguageController extends Controller
         ]);
 
         $language->update($validated);
+        Cache::forget($cacheKey);
         return response()->json($language);
     }
 
     public function destroy($id)
     {
+        $tenantId = Auth::user()->tenant_id;
+        $cacheKey = "languages_all_{$tenantId}";
         \App\Models\Language::findOrFail($id)->delete();
+        Cache::forget($cacheKey);
         return response()->json(['message' => 'Language deleted']);
     }
 }

@@ -43,8 +43,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
 
     const columns = [
         { id: 'offer', title: 'Angebot', icon: <FaFileInvoice className="text-slate-500" />, bg: 'bg-slate-50/50' },
-        { id: 'in_progress', title: 'In Bearbeitung', icon: <FaTools className="text-slate-500" />, bg: 'bg-slate-50/50' },
-        { id: 'ready_for_pickup', title: 'Dokument(e) Abholbereit', icon: <FaBoxOpen className="text-slate-500" />, bg: 'bg-slate-50/50' },
+        { id: 'in_progress', title: 'Bearbeitung', icon: <FaTools className="text-slate-500" />, bg: 'bg-slate-50/50' },
+        { id: 'ready_for_pickup', title: 'Abholbereit', icon: <FaBoxOpen className="text-slate-500" />, bg: 'bg-slate-50/50' },
+        { id: 'invoiced', title: 'Rechnung', icon: <FaFileInvoice className="text-slate-500" />, bg: 'bg-slate-50/50' },
+        { id: 'delivered', title: 'Geliefert', icon: <FaFlagCheckered className="text-slate-500" />, bg: 'bg-slate-50/50' },
         { id: 'completed', title: 'Abgeschlossen', icon: <FaFlagCheckered className="text-slate-500" />, bg: 'bg-slate-50/50' },
     ];
 
@@ -54,7 +56,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
             if (columnId === 'offer') return s === 'offer' || s === 'pending' || s === 'draft';
             if (columnId === 'in_progress') return s === 'in_progress' || s === 'review';
             if (columnId === 'ready_for_pickup') return s === 'ready_for_pickup';
-            if (columnId === 'completed') return s === 'completed' || s === 'delivered';
+            if (columnId === 'invoiced') return s === 'invoiced';
+            if (columnId === 'delivered') return s === 'delivered';
+            if (columnId === 'completed') return s === 'completed';
             return false;
         });
     };
@@ -192,7 +196,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                     onDragLeave={() => setDropTargetStatus(null)}
                     onDrop={(e) => handleDrop(e, col.id)}
                     className={clsx(
-                        "flex-1 min-w-[280px] flex flex-col border transition-all duration-300 overflow-hidden h-[calc(100vh-500px)] min-h-[350px] rounded-none",
+                        "flex-1 min-w-[280px] flex flex-col border transition-all duration-300 overflow-hidden h-[calc(100vh-450px)] min-h-[400px] rounded-none",
                         dropTargetStatus === col.id
                             ? "bg-brand-50/50 border-brand-300 ring-2 ring-brand-100 scale-[1.005] shadow-lg"
                             : "bg-white border-slate-200 shadow-sm"

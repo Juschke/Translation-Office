@@ -133,10 +133,12 @@ const Projects = () => {
 
             // Priority 2: Standard Tabs filtering
             if (filter === 'all') return true;
-            if (filter === 'offer') return p.status === 'offer' || p.status === 'pending' || p.status === 'draft';
-            if (filter === 'in_progress') return p.status === 'in_progress' || p.status === 'review';
+            if (filter === 'offer') return ['offer', 'pending', 'draft'].includes(p.status);
+            if (filter === 'in_progress') return ['in_progress', 'review'].includes(p.status);
             if (filter === 'ready_for_pickup') return p.status === 'ready_for_pickup';
-            if (filter === 'completed') return p.status === 'completed' || p.status === 'delivered';
+            if (filter === 'invoiced') return p.status === 'invoiced';
+            if (filter === 'delivered') return p.status === 'delivered';
+            if (filter === 'completed') return p.status === 'completed';
 
             return true;
         });
@@ -147,10 +149,11 @@ const Projects = () => {
             'draft': 'Angebot',
             'offer': 'Angebot',
             'pending': 'Angebot',
-            'in_progress': 'In Bearbeitung',
-            'review': 'In Bearbeitung',
-            'ready_for_pickup': 'Dokument(e) Abholbereit',
-            'delivered': 'Abgeschlossen',
+            'in_progress': 'Bearbeitung',
+            'review': 'Bearbeitung',
+            'ready_for_pickup': 'Abholbereit',
+            'invoiced': 'Rechnung',
+            'delivered': 'Geliefert',
             'completed': 'Abgeschlossen',
             'cancelled': 'Storniert',
             'archived': 'Archiviert',
@@ -161,8 +164,9 @@ const Projects = () => {
             'offer': 'bg-orange-50 text-orange-700 border-orange-200',
             'pending': 'bg-orange-50 text-orange-700 border-orange-200',
             'in_progress': 'bg-blue-50 text-blue-700 border-blue-200',
-            'review': 'bg-purple-50 text-purple-700 border-purple-200',
+            'review': 'bg-blue-50 text-blue-700 border-blue-200',
             'ready_for_pickup': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            'invoiced': 'bg-purple-50 text-purple-700 border-purple-200',
             'delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
             'completed': 'bg-emerald-600 text-white border-emerald-700',
             'cancelled': 'bg-gray-100 text-gray-500 border-gray-300',
@@ -468,10 +472,12 @@ const Projects = () => {
 
     const tabs = (
         <div className="flex items-center gap-6">
-            <button onClick={() => setFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Alle Projekte</button>
+            <button onClick={() => setFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Übersicht</button>
             <button onClick={() => setFilter('offer')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'offer' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Angebot</button>
-            <button onClick={() => setFilter('in_progress')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'in_progress' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>In Bearbeitung</button>
-            <button onClick={() => setFilter('ready_for_pickup')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'ready_for_pickup' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Dokument(e) Abholbereit</button>
+            <button onClick={() => setFilter('in_progress')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'in_progress' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Bearbeitung</button>
+            <button onClick={() => setFilter('ready_for_pickup')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'ready_for_pickup' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abholbereit</button>
+            <button onClick={() => setFilter('invoiced')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'invoiced' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Rechnung</button>
+            <button onClick={() => setFilter('delivered')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'delivered' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Geliefert</button>
             <button onClick={() => setFilter('completed')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'completed' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abgeschlossen</button>
 
             {(showTrash || filter === 'trash') && (

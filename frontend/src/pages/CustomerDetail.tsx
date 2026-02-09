@@ -10,6 +10,7 @@ import TableSkeleton from '../components/common/TableSkeleton';
 import { useState } from 'react';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
+import clsx from 'clsx';
 
 const CustomerDetail = () => {
     const { id } = useParams<{ id: string }>();
@@ -313,10 +314,23 @@ const RecentProjectsList = ({ customerId }: { customerId: string }) => {
                         <tr key={p.id} onClick={() => navigate(`/projects/${p.id}`)} className="hover:bg-slate-50 cursor-pointer transition-colors group">
                             <td className="px-6 py-3 font-medium text-brand-600 group-hover:underline">{p.title || `Projekt #${p.id}`}</td>
                             <td className="px-6 py-3">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${p.status === 'Abgeschlossen' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                    p.status === 'In Bearbeitung' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                        'bg-slate-100 text-slate-500 border-slate-200'
-                                    }`}>{p.status}</span>
+                                <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase border",
+                                    p.status === 'completed' ? 'bg-emerald-600 text-white border-emerald-700' :
+                                        ['in_progress', 'review'].includes(p.status) ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                            p.status === 'ready_for_pickup' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                                                p.status === 'invoiced' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                                    p.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                        ['offer', 'pending', 'draft'].includes(p.status) ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                                            'bg-slate-100 text-slate-500 border-slate-200'
+                                )}>
+                                    {p.status === 'completed' ? 'Abgeschlossen' :
+                                        ['in_progress', 'review'].includes(p.status) ? 'Bearbeitung' :
+                                            p.status === 'ready_for_pickup' ? 'Abholbereit' :
+                                                p.status === 'invoiced' ? 'Rechnung' :
+                                                    p.status === 'delivered' ? 'Geliefert' :
+                                                        ['offer', 'pending', 'draft'].includes(p.status) ? 'Angebot' :
+                                                            p.status}
+                                </span>
                             </td>
                             <td className="px-6 py-3 text-right font-medium text-slate-700">{p.total_amount ? Number(p.total_amount).toFixed(2) + ' €' : '-'}</td>
                             <td className="px-6 py-3 text-right text-slate-500">{new Date(p.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>

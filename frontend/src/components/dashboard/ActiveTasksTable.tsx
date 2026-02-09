@@ -26,11 +26,20 @@ const ActiveTasksTable: React.FC<ActiveTasksTableProps> = ({ tasks }) => {
     const getStatusInfo = (status: string) => {
         switch (status) {
             case 'in_progress':
-                return { label: 'In Bearbeitung', icon: FaClock, color: 'text-slate-600', bg: 'bg-slate-100' };
             case 'review':
-                return { label: 'Im Lektorat', icon: FaExclamationCircle, color: 'text-slate-600', bg: 'bg-slate-100' };
+                return { label: 'Bearbeitung', icon: FaClock, color: 'text-blue-600', bg: 'bg-blue-50' };
+            case 'ready_for_pickup':
+                return { label: 'Abholbereit', icon: FaExclamationCircle, color: 'text-indigo-600', bg: 'bg-indigo-50' };
             case 'pending':
-                return { label: 'Wartet auf Start', icon: FaClock, color: 'text-slate-500', bg: 'bg-slate-50' };
+            case 'offer':
+            case 'draft':
+                return { label: 'Angebot', icon: FaClock, color: 'text-slate-500', bg: 'bg-slate-50' };
+            case 'invoiced':
+                return { label: 'Rechnung', icon: FaClock, color: 'text-purple-600', bg: 'bg-purple-50' };
+            case 'delivered':
+                return { label: 'Geliefert', icon: FaClock, color: 'text-emerald-600', bg: 'bg-emerald-50' };
+            case 'completed':
+                return { label: 'Abgeschlossen', icon: FaClock, color: 'text-emerald-700', bg: 'bg-emerald-100' };
             default:
                 return { label: status, icon: FaClock, color: 'text-slate-500', bg: 'bg-slate-50' };
         }

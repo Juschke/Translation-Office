@@ -10,6 +10,7 @@ interface CountrySelectProps {
     error?: boolean;
     className?: string;
     placeholder?: string;
+    helperText?: string;
 }
 
 const CountrySelect: React.FC<CountrySelectProps> = ({
@@ -18,7 +19,8 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
     label = "Land",
     error,
     className,
-    placeholder = "Land auswählen..."
+    placeholder = "Land auswählen...",
+    helperText
 }) => {
     const options = countries.map(c => ({
         value: c.name,
@@ -41,6 +43,11 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
                 error={error}
                 className="h-11"
             />
+            {helperText && (
+                <p className={`mt-1.5 text-[10px] font-medium ml-1 ${error ? "text-red-500" : "text-slate-400"}`}>
+                    {helperText}
+                </p>
+            )}
         </div>
     );
 };

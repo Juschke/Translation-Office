@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import UniversalForm from '../common/UniversalForm'; // Keep for typings if needed, otherwise remove if used in other places. Actually FormField type is used.
-import { type FormField } from '../common/UniversalForm';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    FaTimes, FaPlus, FaCalendarAlt, FaFlag,
-    FaInfoCircle, FaTrash, FaClock, FaBolt, FaMagic
+    FaTimes, FaPlus, FaTrash,
+    FaInfoCircle,
+    FaCalendarAlt, FaFlag, FaClock, FaBolt, FaMagic
 } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
 import LanguageSelect from '../common/LanguageSelect';
@@ -15,12 +15,29 @@ import ConfirmDialog from '../common/ConfirmDialog';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { de } from 'date-fns/locale/de';
 import clsx from 'clsx';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService, partnerService, settingsService } from '../../api/services';
 import PaymentModal from './PaymentModal';
 import NewDocTypeModal from './NewDocTypeModal';
 
+import "react-datepicker/dist/react-datepicker.css";
+
 registerLocale('de', de);
+
+interface ProjectPosition {
+    id: string;
+    description: string;
+    amount: string;
+    unit: string;
+    quantity: string;
+    partnerRate: string;
+    partnerMode: string;
+    partnerTotal: string;
+    customerRate: string;
+    customerTotal: string;
+    customerMode: string;
+    marginType: string;
+    marginPercent: string;
+}
 
 interface NewProjectModalProps {
     isOpen: boolean;
@@ -43,7 +60,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [status, setStatus] = useState('draft');
 
     // Project Options & Extra Costs
-    const [isCertified, setIsCertified] = useState(false);
+    const [isCertified, setIsCertified] = useState(true);
     const [hasApostille, setHasApostille] = useState(false);
     const [isExpress, setIsExpress] = useState(false);
     const [classification, setClassification] = useState('nein');
@@ -51,7 +68,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [copyPrice, setCopyPrice] = useState('5');
 
     // Unified Position State
-    const [positions, setPositions] = useState<any[]>([
+    const [positions, setPositions] = useState<ProjectPosition[]>([
         {
             id: Date.now().toString(),
             description: 'Übersetzung',
@@ -83,9 +100,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [editingPayment, setEditingPayment] = useState<any>(null);
-
-    // Detailed Customer Form States REMOVED - Using UniversalForm
-    // Detailed Partner Form States REMOVED - Using UniversalForm
 
     // API Data
     const { data: customersData = [] } = useQuery({
@@ -149,6 +163,43 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     });
 
     const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
+
+    const resetForm = () => {
+        setName('');
+        setCustomer('');
+        setDeadline('');
+        setSource('de');
+        setTarget('en');
+        setPriority('low');
+        setStatus('draft');
+        setIsCertified(true);
+        setHasApostille(false);
+        setIsExpress(false);
+        setClassification('nein');
+        setCopies(0);
+        setCopyPrice('5');
+        setDocType([]);
+        setTranslator('');
+        setPositions([{
+            id: Date.now().toString(),
+            description: 'Übersetzung',
+            amount: '1',
+            unit: 'Normzeile',
+            quantity: '1',
+            partnerRate: '0.00',
+            partnerMode: 'unit',
+            partnerTotal: '0.00',
+            customerRate: '0.00',
+            customerMode: 'unit',
+            customerTotal: '0.00',
+            marginType: 'markup',
+            marginPercent: '0'
+        }]);
+        setTotalPrice('');
+        setPartnerPrice('');
+        setPayments([]);
+        setNotes('');
+    };
 
     // Mutations
     const createCustomerMutation = useMutation({
@@ -291,72 +342,30 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         }
     }, [isOpen, initialData]);
 
-    const resetForm = () => {
-        setName('');
-        setCustomer('');
-        setDeadline('');
-        setSource('de');
-        setTarget('en');
-        setPriority('low');
-        setStatus('draft');
-        setIsCertified(false);
-        setHasApostille(false);
-        setIsExpress(false);
-        setClassification('nein');
-        setCopies(0);
-        setCopyPrice('5');
-        setDocType([]);
-        setTranslator('');
-        setPositions([{
-            id: Date.now().toString(),
-            description: 'Übersetzung',
-            amount: '1',
-            unit: 'Normzeile',
-            quantity: '1',
-            partnerRate: '0.00',
-            partnerMode: 'unit',
-            customerRate: '0.00',
-            customerMode: 'unit',
-            marginType: 'markup',
-            marginPercent: '0'
-        }]);
-        setTotalPrice('');
-        setPartnerPrice('');
-        setPayments([]);
-        setNotes('');
-    };
 
     if (!isOpen) return null;
 
     const handleApplyCustomer = (data: any) => {
-        // Map modal data to API format if needed, NewCustomerModal uses relatively flat structure, check API expectations
         createCustomerMutation.mutate({
             company_name: data.company_name,
             salutation: data.salutation,
             first_name: data.first_name,
             last_name: data.last_name,
             email: data.email,
-            address: data.address_street, // Check if backend expects structured address or single string
+            address: data.address_street,
             zip: data.address_zip,
             city: data.address_city,
             type: data.type
-            // Add other fields as necessary
         });
     };
 
     const handleApplyPartner = (data: any) => {
-        // NewPartnerModal usually returns data ready for API or close to it.
-        // PartnerForm uses camelCase, API expects snake_case.
-        // We probably need a mapper if NewPartnerModal doesn't do it.
-        // Assuming PartnerForm returns roughly what we need, we might need to map keys.
-        // HOWEVER, partnerService.create expects snake_case.
         const payload = {
             company_name: data.company || data.company_name,
-            salutation: data.salutation, // Might be missing in PartnerForm? PartnerForm has simpler structure often.
+            salutation: data.salutation,
             first_name: data.firstName,
             last_name: data.lastName,
             email: data.emails?.[0] || data.email,
-            // Map other fields from PartnerForm output (camelCase) to snake_case
             street: data.street,
             zip: data.zip,
             city: data.city,
@@ -371,14 +380,48 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         createDocTypeMutation.mutate(data);
     };
 
-
-
     const handleSubmit = async () => {
-        const newErrors = new Set<string>();
-        setValidationErrors(newErrors);
-        if (newErrors.size > 0) return;
+        const errors: string[] = [];
+        const newErrorSet = new Set<string>();
 
-        // Auto-generate name if empty
+        if (!customer) {
+            errors.push("Kunde ist ein Pflichtfeld");
+            newErrorSet.add('customer');
+        }
+        if (!source) {
+            errors.push("Quellsprache ist erforderlich");
+            newErrorSet.add('source');
+        }
+        if (!target) {
+            errors.push("Zielsprache ist erforderlich");
+            newErrorSet.add('target');
+        }
+        if (!translator) {
+            errors.push("Übersetzer ist ein Pflichtfeld");
+            newErrorSet.add('translator');
+        }
+
+        setValidationErrors(newErrorSet);
+
+        if (errors.length > 0) {
+            setConfirmConfig({
+                isOpen: true,
+                title: "Validierungsfehler",
+                message: "Bitte korrigieren Sie folgende Fehler, um fortzufahren:\n\n" + errors.join("\n"),
+                type: 'warning',
+                confirmLabel: 'OK',
+                onConfirm: () => {
+                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                    const firstErrorField = Array.from(newErrorSet)[0];
+                    const element = document.getElementById(`field-container-${firstErrorField}`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+            return;
+        }
+
         let finalName = name;
         if (!finalName) {
             const customerName = customersData.find((c: any) => c.id.toString() === customer)?.company_name || 'Project';
@@ -527,54 +570,42 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 </div>
 
                                 {/* Row 2: Languages */}
-                                <div className="col-span-12 md:col-span-6">
+                                <div className="col-span-12 md:col-span-6" id="field-container-source">
                                     <LanguageSelect label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} />
                                 </div>
-                                <div className="col-span-12 md:col-span-6">
+                                <div className="col-span-12 md:col-span-6" id="field-container-target">
                                     <LanguageSelect label="Nach *" value={target} onChange={setTarget} error={validationErrors.has('target')} />
                                 </div>
 
                                 {/* Row 3: Customer and Translator */}
-                                <div className="col-span-12 md:col-span-6">
+                                <div className="col-span-12 md:col-span-6" id="field-container-customer">
                                     <div className="flex items-end">
                                         <div className="flex-1">
                                             <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
                                         </div>
-                                        <button onClick={() => setShowCustomerModal(true)} className="h-10 px-4 bg-emerald-600 text-white rounded-r border-l-0 hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm" title="Neuer Kunde">
-                                            <FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span>
-                                        </button>
+                                        <button onClick={() => setShowCustomerModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
                                     </div>
                                 </div>
-                                <div className="col-span-12 md:col-span-6">
+                                <div className="col-span-12 md:col-span-6" id="field-container-translator">
                                     <div className="flex items-end">
                                         <div className="flex-1">
-                                            <SearchableSelect label="Übersetzer" options={partnerOptions} value={translator} onChange={setTranslator} />
+                                            <SearchableSelect label="Übersetzer *" options={partnerOptions} value={translator} onChange={setTranslator} error={validationErrors.has('translator')} />
                                         </div>
-                                        <button onClick={() => setShowPartnerModal(true)} className="h-10 px-4 bg-emerald-600 text-white rounded-r border-l-0 hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm" title="Neuer Übersetzer">
-                                            <FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span>
-                                        </button>
+                                        <button onClick={() => setShowPartnerModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
                                     </div>
                                 </div>
 
-                                {/* Row 4: Status and Deadline */}
-                                <div className="col-span-12 md:col-span-6">
-                                    <Input isSelect label="Status" value={status} onChange={e => setStatus(e.target.value)}>
-                                        <option value="offer">Angebot</option>
-                                        <option value="in_progress">In Bearbeitung</option>
-                                        <option value="ready_for_pickup">Dokument(e) Abholbereit</option>
-                                        <option value="completed">Abgeschlossen</option>
-                                        <option value="cancelled">Storniert</option>
-                                    </Input>
-                                </div>
-                                <div className="col-span-12 md:col-span-6">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Lieferdatum *</label>
-                                    <div className={clsx("relative h-10 border rounded transition-all bg-white flex items-center", validationErrors.has('deadline') ? "border-red-500" : "border-slate-300")}>
-                                        <FaCalendarAlt className="absolute left-3 text-slate-400 text-xs z-10" />
+                                {/* Row 4: Deadline */}
+                                <div className="col-span-12 md:col-span-6" id="field-container-deadline">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Lieferdatum</label>
+                                    <div className="relative h-10 bg-white border border-slate-300 rounded overflow-hidden flex items-center">
+                                        <div className="absolute left-3 text-slate-400 pointer-events-none">
+                                            <FaCalendarAlt className="text-sm" />
+                                        </div>
                                         <DatePicker
                                             selected={deadline ? new Date(deadline) : null}
                                             onChange={(date: Date | null) => {
                                                 if (date) {
-                                                    // Set time to 12:00 if not already set
                                                     const newDate = new Date(date);
                                                     if (newDate.getHours() === 0 && newDate.getMinutes() === 0) {
                                                         newDate.setHours(12, 0, 0, 0);
@@ -594,9 +625,28 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         />
                                     </div>
                                 </div>
+
+                                {/* Row 5: Document Type */}
+                                <div className="col-span-12">
+                                    <div className="flex items-end">
+                                        <div className="flex-1">
+                                            <SearchableSelect
+                                                label="Dokumentenart"
+                                                value={docType[0] || ''}
+                                                onChange={(val) => setDocType([val])}
+                                                options={docTypes.map((dt: any) => ({
+                                                    value: dt.id.toString(),
+                                                    label: dt.name,
+                                                    group: dt.category
+                                                }))}
+                                            />
+                                        </div>
+                                        <button onClick={() => setShowDocTypeModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Suggested Partners - Only show if useful */}
+                            {/* Suggested Partners */}
                             {suggestedPartners.length > 0 && !translator && (
                                 <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg overflow-hidden mt-2">
                                     <div className="px-3 py-1.5 bg-emerald-100/50 text-emerald-800 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
@@ -637,27 +687,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <Input label="Beglaubigung" isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="Express" isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="Apostille" isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="FS-Klass." isSelect value={classification} onChange={(e) => setClassification(e.target.value)}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                            </div>
-                            <div className="grid grid-cols-1">
-                                <div className="flex items-end">
-                                    <div className="flex-1">
-                                        <SearchableSelect
-                                            label="Dokumentenart"
-                                            value={docType[0] || ''}
-                                            onChange={(val) => setDocType([val])}
-                                            options={docTypes.map((dt: any) => ({
-                                                value: dt.id.toString(),
-                                                label: dt.name,
-                                                group: dt.category
-                                            }))}
-                                        />
-                                    </div>
-                                    <button onClick={() => setShowDocTypeModal(true)} className="h-10 px-4 bg-emerald-600 text-white rounded-r border-l-0 hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
-                                </div>
+                                <Input label="Beglaubigung (5€)" isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="Express (15€)" isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="Apostille (15€)" isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="FS-Klass. (15€)" isSelect value={classification} onChange={(e) => setClassification(e.target.value)}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
                             </div>
                             <NewDocTypeModal
                                 isOpen={showDocTypeModal}
@@ -667,7 +700,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                             />
                         </div>
 
-                        {/* Positions */}
+                        {/* Kalkulation */}
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">03</div>
@@ -682,55 +715,59 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             <input type="text" placeholder="Bezeichnung..." className="flex-1 bg-transparent border-none text-sm font-bold text-slate-800 focus:ring-0" value={pos.description} onChange={e => { const n = [...positions]; n[index].description = e.target.value; setPositions(n); }} />
                                             {positions.length > 1 && <button onClick={() => setPositions(positions.filter(p => p.id !== pos.id))} className="text-slate-300 hover:text-red-500 transition p-1"><FaTrash /></button>}
                                         </div>
-                                        <div className="p-3 grid grid-cols-12 gap-x-4 gap-y-4 items-start">
-                                            <div className="col-span-12 md:col-span-6 lg:col-span-4 space-y-2">
-                                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menge & Einheit</label>
-                                                <div className="flex border border-slate-300 rounded overflow-hidden h-9">
-                                                    <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 outline-none" value={pos.amount} onChange={e => { const n = [...positions]; n[index].amount = e.target.value; setPositions(n); }} />
-                                                    <select className="w-24 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.unit} onChange={e => { const n = [...positions]; n[index].unit = e.target.value; setPositions(n); }}>
-                                                        <option>Wörter</option><option>Normzeile</option><option>Seiten</option><option>Stunden</option><option>Pauschal</option>
-                                                    </select>
+                                        <div className="p-3 space-y-4">
+                                            <div className="grid grid-cols-12 gap-x-4 items-start">
+                                                <div className="col-span-12 md:col-span-6 space-y-2">
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menge & Einheit</label>
+                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-9">
+                                                        <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 outline-none" value={pos.amount} onChange={e => { const n = [...positions]; n[index].amount = e.target.value; setPositions(n); }} />
+                                                        <select className="w-32 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.unit} onChange={e => { const n = [...positions]; n[index].unit = e.target.value; setPositions(n); }}>
+                                                            <option>Wörter</option><option>Normzeile</option><option>Seiten</option><option>Stunden</option><option>Pauschal</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-12 md:col-span-6 space-y-2">
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">EK (Partner)</label>
+                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-9">
+                                                        <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.partnerRate} onChange={e => { const n = [...positions]; n[index].partnerRate = e.target.value; setPositions(n); }} />
+                                                        <select className="w-28 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.partnerMode} onChange={e => { const n = [...positions]; n[index].partnerMode = e.target.value; setPositions(n); }}>
+                                                            <option value="unit">Rate</option><option value="flat">Pauschal</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="text-[10px] text-right text-slate-400 italic">EK-Gesamt: {pos.partnerTotal} €</div>
                                                 </div>
                                             </div>
-                                            <div className="col-span-12 md:col-span-6 lg:col-span-4 space-y-2">
-                                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">EK (Partner)</label>
-                                                <div className="flex border border-slate-300 rounded overflow-hidden h-9">
-                                                    <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.partnerRate} onChange={e => { const n = [...positions]; n[index].partnerRate = e.target.value; setPositions(n); }} />
-                                                    <select className="w-24 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.partnerMode} onChange={e => { const n = [...positions]; n[index].partnerMode = e.target.value; setPositions(n); }}>
-                                                        <option value="unit">Rate</option><option value="flat">Pauschal</option>
-                                                    </select>
+                                            <div className="grid grid-cols-12 gap-x-4 items-start pt-2 border-t border-slate-100">
+                                                <div className="col-span-12 space-y-2">
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">VK (Kunde)</label>
+                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-9">
+                                                        {pos.customerMode === 'flat' ? (
+                                                            <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.customerRate} onChange={e => { const n = [...positions]; n[index].customerRate = e.target.value; setPositions(n); }} />
+                                                        ) : (
+                                                            <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.marginPercent} onChange={e => { const n = [...positions]; n[index].marginPercent = e.target.value; setPositions(n); }} />
+                                                        )}
+                                                        <div className="bg-white px-2 flex items-center text-[10px] font-bold text-slate-400 border-l border-r border-slate-100">{pos.customerMode === 'flat' ? '€' : '%'}</div>
+                                                        <select className="w-32 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.customerMode === 'flat' ? 'flat' : pos.marginType} onChange={e => {
+                                                            const n = [...positions];
+                                                            const v = e.target.value;
+                                                            if (v === 'flat') { n[index].customerMode = 'flat'; n[index].marginType = 'markup'; }
+                                                            else { n[index].customerMode = 'unit'; n[index].marginType = v; }
+                                                            setPositions(n);
+                                                        }}>
+                                                            <option value="markup">Aufschlag</option><option value="discount">Rabatt</option><option value="flat">Pauschal</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="text-[10px] text-right text-slate-800 font-bold">VK-Gesamt: {pos.customerTotal} €</div>
                                                 </div>
-                                                <div className="text-[10px] text-right text-slate-400 italic">EK-Gesamt: {pos.partnerTotal} €</div>
-                                            </div>
-                                            <div className="col-span-12 lg:col-span-4 space-y-2 lg:pl-4 lg:border-l border-slate-100">
-                                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">VK (Kunde)</label>
-                                                <div className="flex border border-slate-300 rounded overflow-hidden h-9">
-                                                    {pos.customerMode === 'flat' ? (
-                                                        <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.customerRate} onChange={e => { const n = [...positions]; n[index].customerRate = e.target.value; setPositions(n); }} />
-                                                    ) : (
-                                                        <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.marginPercent} onChange={e => { const n = [...positions]; n[index].marginPercent = e.target.value; setPositions(n); }} />
-                                                    )}
-                                                    <div className="bg-white px-2 flex items-center text-[10px] font-bold text-slate-400 border-l border-r border-slate-100">{pos.customerMode === 'flat' ? '€' : '%'}</div>
-                                                    <select className="flex-1 w-24  bg-slate-50 text-[11px] font-bold text-slate-600 outline-none min-w-[90px]" value={pos.customerMode === 'flat' ? 'flat' : pos.marginType} onChange={e => {
-                                                        const n = [...positions];
-                                                        const v = e.target.value;
-                                                        if (v === 'flat') { n[index].customerMode = 'flat'; n[index].marginType = 'markup'; }
-                                                        else { n[index].customerMode = 'unit'; n[index].marginType = v; }
-                                                        setPositions(n);
-                                                    }}>
-                                                        <option value="markup">Aufschlag</option><option value="discount">Rabatt</option><option value="flat">Pauschal</option>
-                                                    </select>
-                                                </div>
-                                                <div className="text-[10px] text-right text-slate-800 font-bold">VK-Gesamt: {pos.customerTotal} €</div>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
-                                <button onClick={() => setPositions([...positions, { id: Date.now().toString(), description: 'Zusatzleistung', amount: '1', unit: 'Normzeile', quantity: '1', partnerRate: '0.00', partnerMode: 'unit', customerRate: '0.00', customerMode: 'unit', marginType: 'markup', marginPercent: '0' }])} className="mx-auto flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-100 transition-all active:scale-95"><FaPlus /> Position hinzufügen</button>
+                                <button onClick={() => setPositions([...positions, { id: Date.now().toString(), description: 'Zusatzleistung', amount: '1', unit: 'Normzeile', quantity: '1', partnerRate: '0.00', partnerMode: 'unit', partnerTotal: '0.00', customerRate: '0.00', customerMode: 'unit', customerTotal: '0.00', marginType: 'markup', marginPercent: '0' }])} className="mx-auto flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-100 transition-all active:scale-95"><FaPlus /> Position hinzufügen</button>
                             </div>
                         </div>
 
-                        {/* Multiple Payments */}
+                        {/* Teilzahlungen */}
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                 <div className="flex items-center gap-3">
@@ -760,7 +797,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                            {payments.map((p, i) => (
+                                            {payments.map((p) => (
                                                 <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
                                                     <td className="px-4 py-2 text-[11px] font-bold text-slate-700">
                                                         <div className="flex items-center gap-2">
@@ -778,12 +815,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                         {p.note || '-'}
                                                     </td>
                                                     <td className="px-4 py-2 text-center flex justify-center gap-2">
-                                                        {/* Edit Button is implicitly handled by clicking row? No, explicit button better */}
                                                         <button
                                                             onClick={() => handleEditPayment(p)}
                                                             className="text-slate-300 hover:text-brand-600 transition p-1 hover:bg-brand-50 rounded"
                                                         >
-                                                            <FaInfoCircle className="text-[10px]" /> {/* Using Info/Edit icon */}
+                                                            <FaInfoCircle className="text-[10px]" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeletePayment(p.id)}
@@ -809,7 +845,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         </div>
                     </div>
 
-                    {/* Sidebar / Preview */}
+                    {/* Sidebar */}
                     <div className="w-full lg:w-80 bg-slate-50 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 h-auto lg:h-full lg:overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200"><FaInfoCircle className="text-slate-400 text-xs" /><h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Meta Info</h4></div>
@@ -823,18 +859,34 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rechnungsvorschau</h4>
                             <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm space-y-3 relative overflow-hidden">
                                 <div className="flex justify-between text-xs text-slate-500"><span>Positionen Netto</span><span>{baseNet.toFixed(2)} €</span></div>
-                                <div className="flex justify-between text-xs text-slate-500"><span>Zusatzleistungen</span><span>{extraCosts.toFixed(2)} €</span></div>
+                                {isCertified && (
+                                    <div className="flex justify-between text-[11px] text-slate-400 pl-2"><span>+ Beglaubigung</span><span>5,00 €</span></div>
+                                )}
+                                {hasApostille && (
+                                    <div className="flex justify-between text-[11px] text-slate-400 pl-2"><span>+ Apostille</span><span>15,00 €</span></div>
+                                )}
+                                {isExpress && (
+                                    <div className="flex justify-between text-[11px] text-slate-400 pl-2"><span>+ Express-Zuschlag</span><span>15,00 €</span></div>
+                                )}
+                                {classification === 'ja' && (
+                                    <div className="flex justify-between text-[11px] text-slate-400 pl-2"><span>+ FS-Klassifizierung</span><span>15,00 €</span></div>
+                                )}
+                                {copies > 0 && (
+                                    <div className="flex justify-between text-[11px] text-slate-400 pl-2">
+                                        <span>+ Zusatzkopien ({copies}x)</span>
+                                        <span>{(copies * Number(copyPrice)).toFixed(2)} €</span>
+                                    </div>
+                                )}
+                                {extraCosts > 0 && <div className="border-t border-slate-50 my-1"></div>}
                                 <div className="pt-2 border-t border-slate-100 flex justify-between font-bold text-slate-800"><span>Gesamt Netto</span><span>{calcNet.toFixed(2)} €</span></div>
                                 <div className="flex justify-between text-[10px] text-slate-400"><span>MwSt. 19%</span><span>{calcTax.toFixed(2)} €</span></div>
                                 <div className="pt-2 border-t-2 border-brand-100 flex justify-between text-xl font-black text-slate-900 transition-all"><span>Gesamt</span><span>{calcGross.toFixed(2)} €</span></div>
-
                                 {totalPaid > 0 && (
                                     <div className="pt-2 flex justify-between text-xs text-emerald-600 font-bold border-t border-slate-50">
                                         <span>Geleistete Zahlungen</span>
                                         <span>-{totalPaid.toFixed(2)} €</span>
                                     </div>
                                 )}
-
                                 <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center bg-slate-50 -mx-4 -mb-4 p-4 rounded-b">
                                     <span className="text-[10px] font-black uppercase text-slate-600 tracking-wider">Restbetrag</span>
                                     <span className={clsx("text-lg font-black", remainingBalance <= 0.01 ? "text-emerald-600" : "text-brand-700")}>
@@ -843,8 +895,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 </div>
                             </div>
 
-                            {/* Profit Margin */}
-                            <div className="bg-slate-100 p-4 rounded-lg border border-slate-200 hover:bg-slate-200/50 transition-colors">
+                            <div className="bg-slate-100 p-4 rounded-lg border border-slate-200">
                                 <div className="flex justify-between items-center mb-1.5">
                                     <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tighter">Voraussichtl. Gewinn</span>
                                     <span className={clsx("text-xs font-black", profit >= 0 ? "text-slate-800" : "text-red-600")}>{profit.toFixed(2)} €</span>

@@ -1,17 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { FaTimes, FaPlus, FaTrash, FaUser, FaMapMarkerAlt, FaEnvelope, FaPhone, FaInfoCircle } from 'react-icons/fa';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 import Input from '../common/Input';
 import CountrySelect from '../common/CountrySelect';
+import PhoneInput from '../common/PhoneInput';
+import { fetchCityByZip } from '../../utils/autoFill';
+
+interface CustomerFormData {
+    id?: number;
+    type: 'private' | 'company' | 'authority';
+    salutation: string;
+    first_name: string;
+    last_name: string;
+    company_name: string;
+    address_street: string;
+    address_house_no: string;
+    address_zip: string;
+    address_city: string;
+    address_country: string;
+    email: string;
+    phone: string;
+    notes: string;
+    additional_emails: string[];
+    additional_phones: string[];
+}
 
 interface NewCustomerModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: any) => void;
-    initialData?: any;
+    onSubmit: (data: CustomerFormData) => void;
+    initialData?: Partial<CustomerFormData>;
 }
 
 const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<CustomerFormData>({
         type: 'private',
         salutation: 'Herr',
         first_name: '',
@@ -21,13 +42,60 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         address_house_no: '',
         address_zip: '',
         address_city: '',
-        address_country: 'DE',
+        address_country: 'Deutschland',
         email: '',
         phone: '',
         notes: '',
-        additional_emails: [] as string[],
-        additional_phones: [] as string[],
+        additional_emails: [],
+        additional_phones: [],
     });
+
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+    const validate = useCallback((data: typeof formData) => {
+        const newErrors: Record<string, string> = {};
+
+        // Name Validation
+        if (!data.last_name) newErrors.last_name = 'Nachname ist ein Pflichtfeld';
+        else if (data.last_name.length < 2) newErrors.last_name = 'Nachname muss mindestens 2 Zeichen lang sein';
+
+        if (data.first_name && data.first_name.length < 2) newErrors.first_name = 'Vorname muss mindestens 2 Zeichen lang sein';
+
+        // Company Validation
+        if ((data.type === 'company' || data.type === 'authority') && !data.company_name) {
+            newErrors.company_name = data.type === 'authority' ? 'Name der Behörde ist erforderlich' : 'Firmenname ist erforderlich';
+        }
+
+        // Email Validation
+        if (!data.email) newErrors.email = 'E-Mail ist erforderlich';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) newErrors.email = 'Ungültiges E-Mail-Format';
+
+        // Address Validation
+        if (data.address_zip && data.address_country === 'Deutschland' && !/^\d{5}$/.test(data.address_zip)) {
+            newErrors.address_zip = 'PLZ muss exakt 5 Ziffern enthalten';
+        }
+
+        // Phone Validation (basic check if provided)
+        if (data.phone && data.phone.length < 5) newErrors.phone = 'Telefonnummer ist zu kurz';
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    }, []);
+
+    // ZIP to City Auto-Fill enrichment
+    useEffect(() => {
+        const fillCity = async () => {
+            // Only auto-fill if ZIP looks complete (e.g. 5 digits for DE)
+            if (formData.address_zip.length === 5 && !formData.address_city) {
+                const city = await fetchCityByZip(formData.address_zip, formData.address_country);
+                if (city) {
+                    setFormData(prev => ({ ...prev, address_city: city }));
+                }
+            }
+        };
+        fillCity();
+    }, [formData.address_zip, formData.address_country]);
 
     useEffect(() => {
         if (initialData) {
@@ -50,21 +118,33 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                 address_house_no: '',
                 address_zip: '',
                 address_city: '',
-                address_country: 'DE',
+                address_country: 'Deutschland',
                 email: '',
                 phone: '',
                 notes: '',
                 additional_emails: [],
                 additional_phones: [],
             });
+            setTouched({});
+            setErrors({});
         }
     }, [initialData, isOpen]);
+
+    useEffect(() => {
+        validate(formData);
+    }, [formData, validate]);
 
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        setTouched(prev => ({ ...prev, [name]: true }));
+    };
+
+    const handlePhoneChange = (value: string) => {
+        setFormData(prev => ({ ...prev, phone: value }));
+        setTouched(prev => ({ ...prev, phone: true }));
     };
 
     const handleArrayChange = (index: number, value: string, field: 'additional_emails' | 'additional_phones') => {
@@ -83,238 +163,279 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+
+        // Mark all as touched to show errors
+        const allTouched: Record<string, boolean> = {};
+        Object.keys(formData).forEach(key => allTouched[key] = true);
+        setTouched(allTouched);
+
+        if (validate(formData)) {
+            onSubmit(formData);
+        }
     };
+
+    const getError = (field: string) => touched[field] ? errors[field] : '';
 
     return (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden animate-fade-in-up transform transition-all">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden animate-fade-in-up transform transition-all">
                 <form onSubmit={handleSave} className="flex flex-col h-full overflow-hidden">
                     {/* Header */}
-                    <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
-                        <h3 className="font-semibold text-lg text-slate-800 flex items-center gap-3">
-                            {initialData ? 'Kunde bearbeiten' : 'Neuen Kunden anlegen'}
-                            <span className="text-xs font-normal text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full uppercase">
-                                Stammdaten & Kontakt
-                            </span>
-                        </h3>
-                        <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
-                            <FaTimes className="text-lg" />
+                    <div className="bg-white px-8 py-5 border-b border-slate-200 flex justify-between items-center shrink-0">
+                        <div>
+                            <h3 className="font-black text-lg text-slate-800 uppercase tracking-tight flex items-center gap-3">
+                                {initialData ? 'Kunde bearbeiten' : 'Neuen Kunden anlegen'}
+                                <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded border border-brand-100 uppercase tracking-widest">
+                                    CRM Stammdaten
+                                </span>
+                            </h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Zentrale Verwaltung der Kundenprofile</p>
+                        </div>
+                        <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                            <FaTimes className="text-xl" />
                         </button>
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-10 bg-white">
+                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-12 bg-white">
                         {/* Section 1: Classification */}
-                        <div className="space-y-4">
-                            <label className="block text-xs font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
-                                <FaUser className="text-brand-600" /> Kunden-Typ
-                            </label>
-
-                            <div className="flex bg-slate-100 p-1 rounded border border-slate-200 w-fit">
-                                <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'private' }))} className={`px-4 py-1.5 rounded text-[10px] font-bold uppercase transition ${formData.type === 'private' ? 'bg-white shadow-sm text-brand-700' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
-                                <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'company' }))} className={`px-4 py-1.5 rounded text-[10px] font-bold uppercase transition ${formData.type === 'company' ? 'bg-white shadow-sm text-brand-700' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
-                                <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'authority' }))} className={`px-4 py-1.5 rounded text-[10px] font-bold uppercase transition ${formData.type === 'authority' ? 'bg-white shadow-sm text-brand-700' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">01</div>
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Klassifizierung & Name</h4>
                             </div>
 
-                            <div className="grid grid-cols-6 gap-4 mt-6">
+                            <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+                                <div className="col-span-12">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">Kunden-Typ</label>
+                                    <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 w-fit">
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'private' }))} className={`px-5 py-2 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'private' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'company' }))} className={`px-5 py-2 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'authority' }))} className={`px-5 py-2 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'authority' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
+                                    </div>
+                                    <p className="mt-1.5 text-[10px] text-slate-400 font-medium ml-1">Wählen Sie die Rechtsform des Kunden für korrekte Rechnungsstellung</p>
+                                </div>
+
                                 {(formData.type === 'company' || formData.type === 'authority') && (
-                                    <div className="col-span-6 animate-fadeIn">
+                                    <div className="col-span-12 animate-fadeIn">
                                         <Input
                                             label={formData.type === 'authority' ? 'Behörde / Institution' : 'Firmenname'}
                                             name="company_name"
                                             value={formData.company_name}
                                             onChange={handleChange}
+                                            placeholder={formData.type === 'authority' ? 'z.B. Standesamt Kassel' : 'z.B. Muster GmbH'}
+                                            helperText={getError('company_name') || (formData.type === 'authority' ? 'Vollständiger Name der Behörde' : 'Vollständiger Firmenname inkl. Rechtsform')}
+                                            error={!!getError('company_name')}
                                         />
                                     </div>
                                 )}
-                                <div className="col-span-1">
+
+                                <div className="col-span-12 md:col-span-2">
                                     <Input
                                         isSelect
                                         label="Anrede"
                                         name="salutation"
                                         value={formData.salutation}
                                         onChange={handleChange}
+                                        helperText="Formelle Anrede"
                                     >
                                         <option value="Herr">Herr</option>
                                         <option value="Frau">Frau</option>
+                                        <option value="Divers">Divers</option>
                                     </Input>
                                 </div>
-                                <div className="col-span-2">
+                                <div className="col-span-12 md:col-span-4">
                                     <Input
                                         label="Vorname"
                                         name="first_name"
                                         value={formData.first_name}
                                         onChange={handleChange}
+                                        placeholder="Max"
+                                        helperText={getError('first_name') || 'Vorname des Ansprechpartners'}
+                                        error={!!getError('first_name')}
                                     />
                                 </div>
-                                <div className="col-span-3">
+                                <div className="col-span-12 md:col-span-6">
                                     <Input
                                         label="Nachname *"
                                         name="last_name"
                                         value={formData.last_name}
                                         onChange={handleChange}
                                         required
+                                        placeholder="Mustermann"
+                                        helperText={getError('last_name') || 'Pflichtfeld: Nachname der Person'}
+                                        error={!!getError('last_name')}
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="border-t border-slate-100"></div>
-
                         {/* Section 2: Address */}
-                        <div className="space-y-4">
-                            <label className="block text-xs font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
-                                <FaMapMarkerAlt className="text-brand-600" /> Adresse
-                            </label>
-                            <div className="grid grid-cols-6 gap-4">
-                                <div className="col-span-5">
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">02</div>
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Standort & Adresse</h4>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+                                <div className="col-span-12 md:col-span-9">
                                     <Input
                                         label="Straße"
                                         name="address_street"
                                         value={formData.address_street}
                                         onChange={handleChange}
+                                        placeholder="Königsplatz"
+                                        helperText="Straßenname ohne Hausnummer"
                                     />
                                 </div>
-                                <div className="col-span-1">
+                                <div className="col-span-12 md:col-span-3">
                                     <Input
                                         label="Nr."
                                         name="address_house_no"
                                         value={formData.address_house_no}
                                         onChange={handleChange}
+                                        placeholder="10"
+                                        className="text-center"
+                                        helperText="Nr. / Zusatz"
                                     />
                                 </div>
-                                <div className="col-span-2">
+                                <div className="col-span-12 md:col-span-4">
                                     <Input
                                         label="PLZ"
                                         name="address_zip"
                                         value={formData.address_zip}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setFormData(prev => ({ ...prev, address_zip: val }));
-                                            // Simple simulated autofill for demo
-                                            if (formData.address_country === 'DE' && val.length === 5) {
-                                                // TODO: Real lookup
-                                                // setFormData(prev => ({ ...prev, address_city: 'Musterstadt' }));
-                                            }
-                                        }}
+                                        placeholder="34117"
+                                        maxLength={10}
+                                        onChange={handleChange}
+                                        helperText={getError('address_zip') || '5-stellige Postleitzahl'}
+                                        error={!!getError('address_zip')}
                                     />
                                 </div>
-                                <div className="col-span-4">
+                                <div className="col-span-12 md:col-span-8">
                                     <Input
                                         label="Stadt"
                                         name="address_city"
                                         value={formData.address_city}
                                         onChange={handleChange}
+                                        placeholder="Kassel"
+                                        className="font-bold"
+                                        helperText="Vollständiger Name der Stadt"
                                     />
                                 </div>
-                                <div className="col-span-6">
+                                <div className="col-span-12">
                                     <CountrySelect
                                         label="Land"
-                                        value={formData.address_country || 'DE'}
+                                        value={formData.address_country || 'Deutschland'}
                                         onChange={(val) => setFormData(prev => ({ ...prev, address_country: val }))}
+                                        helperText="Land für steuerliche Zuordnung"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="border-t border-slate-100"></div>
-
                         {/* Section 3: Contact */}
-                        <div className="grid grid-cols-2 gap-12">
-                            <div className="space-y-4">
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
-                                    <FaEnvelope className="text-brand-600" /> Kontakt E-Mail
-                                </label>
-                                <div className="space-y-4">
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">03</div>
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kommunikation</h4>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-x-12 gap-y-8">
+                                <div className="col-span-12 md:col-span-6 space-y-6">
                                     <Input
+                                        label="E-Mail (Primär) *"
                                         name="email"
                                         value={formData.email}
                                         onChange={handleChange}
                                         type="email"
-                                        placeholder="Haupt-Email"
+                                        placeholder="max.mustermann@beispiel.de"
+                                        helperText={getError('email') || 'Hauptadresse für E-Mails und Dokumente'}
+                                        error={!!getError('email')}
                                     />
-                                    <div className="space-y-2">
+
+                                    <div className="space-y-3">
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Zusätzliche E-Mails</label>
                                         {formData.additional_emails.map((email, i) => (
-                                            <div key={i} className="flex gap-2">
+                                            <div key={i} className="flex gap-2 group animate-fadeIn">
                                                 <Input
                                                     value={email}
                                                     onChange={(e) => handleArrayChange(i, e.target.value, 'additional_emails')}
                                                     type="email"
-                                                    placeholder="Weitere Email"
+                                                    placeholder="alternative.email@beispiel.de"
+                                                    helperText="Sekundäre Adresse (optional)"
                                                 />
-                                                <button type="button" onClick={() => removeField('additional_emails', i)} className="text-slate-300 hover:text-red-500 transition"><FaTrash /></button>
+                                                <button type="button" onClick={() => removeField('additional_emails', i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5"><FaTrash size={12} /></button>
                                             </div>
                                         ))}
-                                        <button type="button" onClick={() => addField('additional_emails')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1 hover:underline uppercase">
-                                            <FaPlus className="text-[8px]" /> Weitere E-Mail
+                                        <button type="button" onClick={() => addField('additional_emails')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-2 ml-1">
+                                            <FaPlus size={8} /> Weitere E-Mail hinzufügen
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="space-y-4">
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
-                                    <FaPhone className="text-brand-600" /> Telefonnummer
-                                </label>
-                                <div className="space-y-4">
-                                    <Input
-                                        name="phone"
+
+                                <div className="col-span-12 md:col-span-6 space-y-6">
+                                    <PhoneInput
+                                        label="Telefon / Mobil"
                                         value={formData.phone}
-                                        onChange={handleChange}
-                                        type="tel"
-                                        placeholder="Haupt-Telefon"
+                                        onChange={handlePhoneChange}
+                                        helperText={getError('phone') || 'Format: +49 123 456789'}
+                                        error={!!getError('phone')}
                                     />
-                                    <div className="space-y-2">
+
+                                    <div className="space-y-3">
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Zusätzliche Rufnummern</label>
                                         {formData.additional_phones.map((phone, i) => (
-                                            <div key={i} className="flex gap-2">
+                                            <div key={i} className="flex gap-2 group animate-fadeIn">
                                                 <Input
                                                     value={phone}
                                                     onChange={(e) => handleArrayChange(i, e.target.value, 'additional_phones')}
                                                     type="tel"
-                                                    placeholder="Weitere Nummer"
+                                                    placeholder="+49 123 4567890"
+                                                    helperText="Format: +49..."
                                                 />
-                                                <button type="button" onClick={() => removeField('additional_phones', i)} className="text-slate-300 hover:text-red-500 transition"><FaTrash /></button>
+                                                <button type="button" onClick={() => removeField('additional_phones', i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5"><FaTrash size={12} /></button>
                                             </div>
                                         ))}
-                                        <button type="button" onClick={() => addField('additional_phones')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1 hover:underline uppercase">
-                                            <FaPlus className="text-[8px]" /> Weitere Nummer
+                                        <button type="button" onClick={() => addField('additional_phones')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-2 ml-1">
+                                            <FaPlus size={8} /> Weitere Nummer hinzufügen
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="border-t border-slate-100"></div>
-
                         {/* Section 4: Notes */}
-                        <div className="space-y-4 pb-8">
-                            <label className="block text-xs font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
-                                <FaInfoCircle className="text-brand-600" /> Notizen
-                            </label>
+                        <div className="space-y-6 pb-10">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">04</div>
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Interne Akte</h4>
+                            </div>
                             <Input
                                 isTextArea
+                                label="Interne Notizen"
                                 name="notes"
                                 value={formData.notes}
                                 onChange={handleChange}
-                                placeholder="Interne Notizen..."
+                                placeholder="Interne Bemerkungen, Besonderheiten des Kunden, Historie..."
+                                helperText="Informationen sind nur für Mitarbeiter sichtbar"
                             />
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+                    <div className="bg-slate-50 px-8 py-5 border-t border-slate-200 flex justify-end gap-3 shrink-0">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-2.5 rounded border border-slate-300 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-white transition"
+                            className="px-6 py-2.5 rounded border border-slate-300 text-slate-600 text-[11px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-sm"
                         >
                             Abbrechen
                         </button>
                         <button
                             type="submit"
-                            className="px-8 py-2.5 bg-brand-700 text-white rounded text-xs font-bold uppercase tracking-widest shadow-lg hover:bg-brand-800 transition transform hover:scale-105 active:scale-95"
+                            className="px-10 py-2.5 bg-brand-700 text-white rounded text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95"
                         >
-                            Kunde speichern
+                            {initialData ? 'Änderungen speichern' : 'Kunde anlegen'}
                         </button>
                     </div>
                 </form>

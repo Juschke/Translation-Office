@@ -7,19 +7,22 @@ use App\Models\Project;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
-    private function getDateRange(Request $request) {
+    private function getDateRange(Request $request)
+    {
         $startDateStr = $request->query('startDate');
         $endDateStr = $request->query('endDate');
 
-        $start = ($startDateStr && $startDateStr !== 'undefined' && $startDateStr !== 'null') 
-            ? Carbon::parse($startDateStr)->startOfDay() 
+        $start = ($startDateStr && $startDateStr !== 'undefined' && $startDateStr !== 'null')
+            ? Carbon::parse($startDateStr)->startOfDay()
             : Carbon::now()->subMonths(5)->startOfMonth();
 
-        $end = ($endDateStr && $endDateStr !== 'undefined' && $endDateStr !== 'null') 
-            ? Carbon::parse($endDateStr)->endOfDay() 
+        $end = ($endDateStr && $endDateStr !== 'undefined' && $endDateStr !== 'null')
+            ? Carbon::parse($endDateStr)->endOfDay()
             : Carbon::now()->endOfMonth();
 
         return [$start, $end];
@@ -29,7 +32,7 @@ class ReportController extends Controller
     {
         Carbon::setLocale('de');
         [$startDate, $endDate] = $this->getDateRange($request);
-        
+
         $data = Project::select(
             DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
             DB::raw('DATE_FORMAT(created_at, "%Y-%m-%d") as date_val'),
@@ -48,12 +51,12 @@ class ReportController extends Controller
         while ($current <= $endDate) {
             $m = $current->format('Y-m');
             $labels[] = $current->translatedFormat('M Y');
-            
-            $match = $data->first(function($item) use ($m) {
+
+            $match = $data->first(function ($item) use ($m) {
                 return str_starts_with($item->month, $m);
             });
             $values[] = $match ? (float) $match->total : 0;
-            
+
             $current->addMonth();
         }
 
@@ -85,10 +88,10 @@ class ReportController extends Controller
             $m = $current->format('Y-m');
             $labels[] = $current->translatedFormat('M Y');
 
-            $match = $data->first(function($item) use ($m) {
+            $match = $data->first(function ($item) use ($m) {
                 return str_starts_with($item->month, $m);
             });
-            
+
             if ($match && $match->revenue > 0) {
                 $profit = $match->revenue - $match->cost;
                 $margin = ($profit / $match->revenue) * 100;
@@ -112,7 +115,7 @@ class ReportController extends Controller
 
         $data = Project::join('languages', 'projects.target_lang_id', '=', 'languages.id')
             ->select(
-                'languages.name_internal', 
+                'languages.name_internal',
                 DB::raw('count(*) as count'),
                 DB::raw('SUM(projects.price_total) as revenue')
             )
@@ -141,7 +144,7 @@ class ReportController extends Controller
         [$startDate, $endDate] = $this->getDateRange($request);
 
         $query = Project::whereBetween('created_at', [$startDate, $endDate]);
-        
+
         $totalRevenue = (float) $query->sum('price_total');
         $totalCost = (float) $query->sum('partner_cost_net');
         $totalJobs = $query->count();
@@ -157,7 +160,7 @@ class ReportController extends Controller
         $prevEndDate = $endDate->copy()->subDays($diffInDays);
 
         $prevRevenue = Project::whereBetween('created_at', [$prevStartDate, $prevEndDate])->sum('price_total');
-        
+
         $growth = 0;
         if ($prevRevenue > 0) {
             $growth = round((($totalRevenue - $prevRevenue) / $prevRevenue) * 100, 1);
@@ -176,14 +179,14 @@ class ReportController extends Controller
     public function customers(Request $request)
     {
         [$startDate, $endDate] = $this->getDateRange($request);
-        
+
         $data = Project::join('customers', 'projects.customer_id', '=', 'customers.id')
             ->select(
-                'customers.name', // Assuming customer has 'name'
+                DB::raw('COALESCE(customers.company_name, CONCAT(customers.first_name, " ", customers.last_name)) as name'),
                 DB::raw('SUM(projects.price_total) as revenue')
             )
             ->whereBetween('projects.created_at', [$startDate, $endDate])
-            ->groupBy('customers.name')
+            ->groupBy('name')
             ->orderByDesc('revenue')
             ->limit(10)
             ->get();
@@ -196,39 +199,46 @@ class ReportController extends Controller
 
     public function summary(Request $request)
     {
-        return response()->json([
-            'kpis' => $this->kpis($request)->original,
-            'revenue' => $this->revenue($request)->original,
-            'profit' => $this->profitMargin($request)->original,
-            'languages' => $this->languageDistribution($request)->original,
-            'customers' => $this->customers($request)->original,
-            'status' => $this->projectStatus($request)->original,
-        ]);
+        $tenantId = Auth::user()->tenant_id;
+        $params = json_encode($request->all());
+        $cacheKey = "report_summary_{$tenantId}_" . md5($params);
+
+        return Cache::remember($cacheKey, 1800, function () use ($request) {
+            return [
+                'kpis' => $this->kpis($request)->original,
+                'revenue' => $this->revenue($request)->original,
+                'profit' => $this->profitMargin($request)->original,
+                'languages' => $this->languageDistribution($request)->original,
+                'customers' => $this->customers($request)->original,
+                'status' => $this->projectStatus($request)->original,
+            ];
+        });
     }
 
     public function projectStatus(Request $request)
     {
         [$startDate, $endDate] = $this->getDateRange($request);
-        
+
         $data = Project::select('status', DB::raw('count(*) as count'))
             ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('status')
             ->get();
-            
+
         return response()->json([
-            'labels' => $data->pluck('status')->map(function($s) {
-                // simple mapping, ideally use a helper or enum
+            'labels' => $data->pluck('status')->map(function ($s) {
                 $map = [
-                    'request' => 'Anfrage',
-                    'calculation' => 'Kalkulation',
+                    'draft' => 'Entwurf',
                     'offer' => 'Angebot',
-                    'ordered' => 'Beauftragt',
-                    'in_progress' => 'In Bearbeitung',
-                    'review' => 'Lektorat',
+                    'pending' => 'In Wartestellung',
+                    'in_progress' => 'Bearbeitung',
+                    'review' => 'Lektorat/Review',
+                    'ready_for_pickup' => 'Abholbereit',
                     'delivered' => 'Geliefert',
                     'invoiced' => 'Abgerechnet',
-                    'paid' => 'Bezahlt',
-                    'archived' => 'Archiviert'
+                    'completed' => 'Abgeschlossen',
+                    'cancelled' => 'Storniert',
+                    'archived' => 'Archiviert',
+                    'deleted' => 'Gelöscht'
                 ];
                 return $map[$s] ?? ucfirst($s);
             })->toArray(),
