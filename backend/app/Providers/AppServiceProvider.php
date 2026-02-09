@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Erzwingt HTTPS-Links nur in der Produktionsumgebung
+        if (config('app.env') === 'production') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
         \App\Models\User::observe(\App\Observers\UserObserver::class);
         \App\Models\Project::observe(\App\Observers\ProjectObserver::class);
 
