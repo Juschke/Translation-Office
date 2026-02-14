@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FaTimes, FaFileInvoiceDollar, FaEuroSign, FaCheck, FaProjectDiagram } from 'react-icons/fa';
+import { FaTimes, FaFileInvoiceDollar, FaEuroSign, FaCheck } from 'react-icons/fa';
 import Input from '../common/Input';
 import { Button } from '../common/Button';
 import SearchableSelect from '../common/SearchableSelect';
@@ -16,6 +16,12 @@ interface NewInvoiceModalProps {
 
 const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewInvoiceModalProps) => {
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+
+    useEffect(() => {
+        if (isOpen && project?.id) {
+            setSelectedProjectId(project.id.toString());
+        }
+    }, [isOpen, project]);
     const [formData, setFormData] = useState({
         invoice_number: '',
         date: new Date().toISOString().split('T')[0],
@@ -34,7 +40,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
     const { data: projects = [] } = useQuery({
         queryKey: ['projects', 'active'],
         queryFn: () => projectService.getAll(),
-        enabled: isOpen && !project
+        enabled: isOpen
     });
 
     const projectOptions = useMemo(() => {
@@ -45,7 +51,8 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
     }, [projects]);
 
     const activeProject = useMemo(() => {
-        if (project) return project;
+        // Prefer passed project if it matches selection (often has more details)
+        if (project && (!selectedProjectId || project.id.toString() === selectedProjectId)) return project;
         return projects.find((p: any) => p.id.toString() === selectedProjectId);
     }, [project, selectedProjectId, projects]);
 
@@ -94,37 +101,34 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
 
             <div className="relative bg-white w-full max-w-2xl shadow-2xl animate-zoomIn overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div className="px-6 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg">
                             <FaFileInvoiceDollar />
                         </div>
                         <div>
-                            <h2 className="text-lg font-black text-slate-800 tracking-tight">Rechnung erstellen</h2>
-                            <p className="text-xs text-slate-500 font-medium">
+                            <h2 className="text-base font-black text-slate-800 tracking-tight">Rechnung erstellen</h2>
+                            <p className="text-[10px] text-slate-500 font-medium">
                                 {activeProject ? `Projekt: ${activeProject.project_name || activeProject.name}` : 'Projekt auswählen'}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors leading-none">
+                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors leading-none">
                         <FaTimes className="text-lg" />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                    <div className="grid grid-cols-12 gap-6">
-                        {!project && (
-                            <div className="col-span-12">
-                                <SearchableSelect
-                                    label="Projekt auswählen"
-                                    options={projectOptions}
-                                    value={selectedProjectId}
-                                    onChange={setSelectedProjectId}
-                                    placeholder="Projekt suchen..."
-                                    startIcon={<FaProjectDiagram className="text-slate-400" />}
-                                />
-                            </div>
-                        )}
+                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+                    <div className="grid grid-cols-12 gap-4">
+                        <div className="col-span-12">
+                            <SearchableSelect
+                                label="Projekt auswählen"
+                                options={projectOptions}
+                                value={selectedProjectId}
+                                onChange={setSelectedProjectId}
+                                placeholder="Projekt suchen..."
+                            />
+                        </div>
 
                         {/* Basic Info */}
                         <div className="col-span-12 md:col-span-6">
@@ -156,8 +160,8 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                             />
                         </div>
                         <div className="col-span-12 md:col-span-6">
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Kunde</label>
-                            <div className="w-full h-11 px-3 flex items-center bg-slate-50 border border-slate-200 text-sm font-bold text-slate-500 rounded">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 ml-1">Kunde</label>
+                            <div className="w-full h-9 px-3 flex items-center bg-slate-50 border border-slate-200 text-sm font-bold text-slate-500 rounded">
                                 {activeProject?.customer?.company_name || activeProject?.customer?.first_name || 'Wähle ein Projekt...'}
                             </div>
                         </div>
@@ -218,10 +222,10 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
                     <button
                         onClick={onClose}
-                        className="text-sm font-bold text-slate-500 hover:text-slate-700 transition uppercase tracking-widest"
+                        className="text-[10px] font-bold text-slate-500 hover:text-slate-700 transition uppercase tracking-widest"
                     >
                         Abbrechen
                     </button>
@@ -229,7 +233,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                         onClick={() => onSubmit(formData)}
                         isLoading={isLoading}
                         disabled={!activeProject || !formData.invoice_number}
-                        className="shadow-lg shadow-emerald-200/50"
+                        className="shadow-lg shadow-emerald-200/50 py-2 text-[10px] uppercase font-black"
                         variant="primary"
                     >
                         <FaCheck className="mr-2" /> Rechnung finalisieren

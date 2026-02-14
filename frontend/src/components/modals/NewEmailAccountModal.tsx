@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaEnvelope, FaServer, FaKey, FaUser, FaInfoCircle } from 'react-icons/fa';
+import { FaTimes, FaServer, FaKey, FaUser, FaInfoCircle } from 'react-icons/fa';
 import Input from '../common/Input';
 
 interface NewEmailAccountModalProps {

@@ -79,6 +79,10 @@ export const projectService = {
         });
         return response.data;
     },
+    updateFile: async (projectId: string, fileId: string, data: any) => {
+        const response = await api.put(`/projects/${projectId}/files/${fileId}`, data);
+        return response.data;
+    },
     deleteFile: async (projectId: string, fileId: string) => {
         const response = await api.delete(`/projects/${projectId}/files/${fileId}`);
         return response.data;
@@ -95,6 +99,18 @@ export const projectService = {
     },
     generateDocument: async (projectId: string, type: 'confirmation' | 'pickup' | 'reminder') => {
         const response = await api.post(`/projects/${projectId}/generate-document`, { type });
+        return response.data;
+    },
+    getActivities: async (projectId: string) => {
+        const response = await api.get(`/projects/${projectId}/activities`);
+        return response.data;
+    },
+    generateToken: async (projectId: string) => {
+        const response = await api.post(`/projects/${projectId}/generate-token`);
+        return response.data;
+    },
+    postMessage: async (projectId: string, content: string) => {
+        const response = await api.post(`/projects/${projectId}/message`, { content });
         return response.data;
     }
 };
@@ -232,6 +248,10 @@ export const settingsService = {
     },
     updateCompany: async (data: any) => {
         const response = await api.put('/settings/company', data);
+        return response.data;
+    },
+    testMailConnection: async (data: any) => {
+        const response = await api.post('/settings/mail/test', data);
         return response.data;
     },
     getLanguages: async () => {
@@ -505,6 +525,27 @@ export const notificationService = {
     },
     delete: async (id: string) => {
         const response = await api.delete(`/notifications/${id}`);
+        return response.data;
+    }
+};
+
+export const guestService = {
+    getProject: async (token: string) => {
+        const response = await api.get(`/guest/project/${token}`);
+        return response.data;
+    },
+    postMessage: async (token: string, content: string, senderName?: string) => {
+        const response = await api.post(`/guest/project/${token}/message`, { content, sender_name: senderName });
+        return response.data;
+    },
+    uploadFile: async (token: string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/guest/project/${token}/files`, formData);
+        return response.data;
+    },
+    updateProject: async (token: string, data: any) => {
+        const response = await api.put(`/guest/project/${token}`, data);
         return response.data;
     }
 };

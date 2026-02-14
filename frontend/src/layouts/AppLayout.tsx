@@ -73,7 +73,7 @@ const AppLayout = () => {
 
             {/* Main Content */}
             <main className="flex-1 overflow-hidden relative">
-                <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-6">
+                <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-6 md:px-16 py-8">
                     <Outlet />
                 </div>
             </main>

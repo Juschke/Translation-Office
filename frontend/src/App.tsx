@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppLayout from './layouts/AppLayout';
 import AuthLayout from './layouts/AuthLayout';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +10,7 @@ import CustomerDetail from './pages/CustomerDetail';
 import Partners from './pages/Partners';
 import PartnerDetail from './pages/PartnerDetail';
 import Invoices from './pages/Invoices';
+import GuestProjectView from './pages/GuestProjectView';
 
 import Inbox from './pages/Inbox';
 import Reports from './pages/Reports';
@@ -29,53 +29,52 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute, PublicRoute } from './components/auth/AuthGuard';
 import { Toaster } from 'react-hot-toast';
 
-const queryClient = new QueryClient();
+
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Toaster position="top-right" />
-        <Router>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-            </Route>
+    <AuthProvider>
+      <Toaster position="top-right" toastOptions={{ style: { fontSize: '13px' } }} />
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/guest/project/:token" element={<GuestProjectView />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
 
-            {/* Onboarding (Authenticated but no Tenant) */}
-            <Route path="/onboarding" element={
-              <ProtectedRoute>
-                <Onboarding />
-              </ProtectedRoute>
-            } />
+          {/* Onboarding (Authenticated but no Tenant) */}
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <Onboarding />
+            </ProtectedRoute>
+          } />
 
-            {/* Protected Routes (Authenticated & Tenant) */}
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/projects/:id" element={<ProjectDetail />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/customers/:id" element={<CustomerDetail />} />
-              <Route path="/partners" element={<Partners />} />
-              <Route path="/partners/:id" element={<PartnerDetail />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/inbox" element={<Inbox />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/settings/*" element={<Settings />} />
-              <Route path="/billing" element={<Billing />} />
-            </Route>
+          {/* Protected Routes (Authenticated & Tenant) */}
+          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/customers/:id" element={<CustomerDetail />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/partners/:id" element={<PartnerDetail />} />
+            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/inbox" element={<Inbox />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings/*" element={<Settings />} />
+            <Route path="/billing" element={<Billing />} />
+          </Route>
 
-            {/* Catch all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes >
-        </Router >
-      </AuthProvider >
-    </QueryClientProvider >
+          {/* Catch all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   )
 }
 

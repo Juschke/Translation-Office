@@ -10,7 +10,7 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        return response()->json(Invoice::with(['project', 'customer'])->get());
+        return response()->json(Invoice::with(['project.positions', 'customer'])->get());
     }
 
     public function store(Request $request)
@@ -38,9 +38,20 @@ class InvoiceController extends Controller
             $project = \App\Models\Project::with('positions')->find($validated['project_id']);
 
             $buyer = new \LaravelDaily\Invoices\Classes\Buyer([
-                'name' => $customer->company_name,
+                'name' => $customer->company_name ?? ($customer->first_name . ' ' . $customer->last_name),
                 'custom_fields' => [
                     'email' => $customer->email,
+                    'customer_id' => $customer->customer_id ?? $customer->id,
+                    'address' => trim(
+                        ($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '') . "\n" .
+                        ($customer->address_zip ?? '') . ' ' . ($customer->address_city ?? '') . "\n" .
+                        ($customer->address_country ?? '')
+                    ),
+                    'street' => $customer->address_street,
+                    'house_no' => $customer->address_house_no,
+                    'zip' => $customer->address_zip,
+                    'city' => $customer->address_city,
+                    'country' => $customer->address_country,
                 ],
             ]);
 
@@ -48,7 +59,7 @@ class InvoiceController extends Controller
             foreach ($project->positions as $pos) {
                 $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
                     ->title($pos->description)
-                    ->pricePerUnit($pos->customer_rate)
+                    ->pricePerUnit((float) $pos->customer_rate)
                     ->quantity($pos->amount); // Using amount as quantity based on project structure
             }
 
@@ -65,6 +76,8 @@ class InvoiceController extends Controller
                 ->discountByPercent(0)
                 ->taxRate($validated['tax_rate'] ?? 19)
                 ->shipping(0)
+                ->notes($validated['notes'] ?? '')
+                ->template('din5008')
                 ->addItem($items[0]); // addItem takes a single item, use addItems for array
 
             if (count($items) > 1) {
@@ -74,7 +87,7 @@ class InvoiceController extends Controller
             }
 
             $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
-            
+
             // Correct rendering for LaravelDaily Invoices
             $dailyInvoice->render();
             $pdfContent = $dailyInvoice->output;
@@ -92,7 +105,7 @@ class InvoiceController extends Controller
 
     public function show($id)
     {
-        return response()->json(Invoice::with(['project', 'customer'])->findOrFail($id));
+        return response()->json(Invoice::with(['project.positions', 'customer'])->findOrFail($id));
     }
 
     public function update(Request $request, $id)
@@ -138,68 +151,92 @@ class InvoiceController extends Controller
         return response()->json(['message' => 'Invoices deleted successfully']);
     }
 
+    protected function buildDailyInvoice(Invoice $invoice)
+    {
+        $invoice->load(['project.positions', 'customer']);
+        $customer = $invoice->customer;
+        $project = $invoice->project;
+
+        $buyer = new \LaravelDaily\Invoices\Classes\Buyer([
+            'name' => $customer->company_name ?? ($customer->first_name . ' ' . $customer->last_name),
+            'custom_fields' => [
+                'email' => $customer->email,
+                'customer_id' => $customer->customer_id ?? $customer->id,
+                'address' => trim(
+                    ($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '') . "\n" .
+                    ($customer->address_zip ?? '') . ' ' . ($customer->address_city ?? '') . "\n" .
+                    ($customer->address_country ?? '')
+                ),
+                'street' => $customer->address_street,
+                'house_no' => $customer->address_house_no,
+                'zip' => $customer->address_zip,
+                'city' => $customer->address_city,
+                'country' => $customer->address_country,
+            ],
+        ]);
+
+        $items = [];
+        if ($project && $project->positions) {
+            foreach ($project->positions as $pos) {
+                $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
+                    ->title($pos->description)
+                    ->pricePerUnit((float) $pos->customer_rate)
+                    ->quantity($pos->amount);
+            }
+        }
+
+        if (empty($items)) {
+            $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
+                ->title($project ? $project->project_name : 'Rechnung ' . $invoice->invoice_number)
+                ->pricePerUnit((float) $invoice->amount_net)
+                ->quantity(1);
+        }
+
+        $dailyInvoice = \LaravelDaily\Invoices\Invoice::make($invoice->invoice_number)
+            ->buyer($buyer)
+            ->discountByPercent(0)
+            ->taxRate((float) ($invoice->tax_rate ?? 19))
+            ->shipping(0)
+            ->notes($invoice->notes ?? '')
+            ->template('din5008');
+
+        foreach ($items as $item) {
+            $dailyInvoice->addItem($item);
+        }
+
+        return $dailyInvoice;
+    }
+
     public function generatePdf($id)
     {
-        $invoice = Invoice::with(['project.positions', 'customer'])->findOrFail($id);
+        $invoice = Invoice::findOrFail($id);
 
         try {
-            $customer = $invoice->customer;
-            $project = $invoice->project;
-
-            $buyer = new \LaravelDaily\Invoices\Classes\Buyer([
-                'name' => $customer->company_name ?? ($customer->first_name . ' ' . $customer->last_name),
-                'custom_fields' => [
-                    'email' => $customer->email,
-                ],
-            ]);
-
-            $items = [];
-            if ($project && $project->positions) {
-                foreach ($project->positions as $pos) {
-                    $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
-                        ->title($pos->description)
-                        ->pricePerUnit($pos->customer_rate)
-                        ->quantity($pos->amount);
-                }
-            }
-
-            if (empty($items)) {
-                $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
-                    ->title($project ? $project->project_name : 'Rechnung ' . $invoice->invoice_number)
-                    ->pricePerUnit($invoice->amount_net)
-                    ->quantity(1);
-            }
-
-            $dailyInvoice = \LaravelDaily\Invoices\Invoice::make()
-                ->buyer($buyer)
-                ->discountByPercent(0)
-                ->taxRate($invoice->tax_rate ?? 19)
-                ->shipping(0)
-                ->addItem($items[0]);
-
-            if (count($items) > 1) {
-                for ($i = 1; $i < count($items); $i++) {
-                    $dailyInvoice->addItem($items[$i]);
-                }
-            }
-
+            $dailyInvoice = $this->buildDailyInvoice($invoice);
             $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
-            
-            // Correct rendering for LaravelDaily Invoices
+
             $dailyInvoice->render();
             $pdfContent = $dailyInvoice->output;
             \Storage::disk('public')->put('invoices/' . $filename, $pdfContent);
 
             $invoice->update(['pdf_path' => 'storage/invoices/' . $filename]);
-            
-            \Log::info("PDF generated and saved to public disk: invoices/{$filename}");
 
             return $invoice->fresh();
-
         } catch (\Exception $e) {
             \Log::error('Invoice PDF generation failed: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    public function preview($id)
+    {
+        $invoice = Invoice::findOrFail($id);
+        $dailyInvoice = $this->buildDailyInvoice($invoice);
+
+        // Return the rendered HTML view for preview
+        return view('vendor.invoices.templates.din5008', [
+            'invoice' => $dailyInvoice,
+        ])->render();
     }
 
     public function download(Invoice $invoice)

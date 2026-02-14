@@ -1,4 +1,3 @@
-import React from 'react';
 import { FaTimes, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
 
 interface FilePreviewModalProps {
@@ -17,6 +16,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload }: FilePreviewModa
 
     const isImage = file.name.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i);
     const isPDF = file.name.match(/\.pdf$/i);
+    const isWord = file.name.match(/\.(doc|docx)$/i);
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-fadeIn">
@@ -61,6 +61,22 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload }: FilePreviewModa
                         />
                     )}
 
+                    {isWord && (
+                        <div className="text-center p-10 bg-white rounded-xl shadow-sm border border-slate-200 max-w-md">
+                            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500 text-3xl border border-blue-100">
+                                <span className="font-extrabold">W</span>
+                            </div>
+                            <h3 className="font-bold text-slate-700 mb-2">Word-Dokument</h3>
+                            <p className="text-sm text-slate-500 mb-6">Vorschau nicht verfügbar.</p>
+                            <button
+                                onClick={onDownload}
+                                className="px-6 py-2.5 bg-brand-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-brand-200 hover:bg-brand-700 hover:shadow-xl transition transform active:scale-95"
+                            >
+                                Datei herunterladen
+                            </button>
+                        </div>
+                    )}
+
                     {isPDF && (
                         <iframe
                             src={`${file.url}#toolbar=0`}
@@ -69,7 +85,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload }: FilePreviewModa
                         />
                     )}
 
-                    {!isImage && !isPDF && (
+                    {!isImage && !isPDF && !isWord && (
                         <div className="text-center p-10 bg-white rounded-xl shadow-sm border border-slate-200 max-w-md">
                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 text-3xl">
                                 <span className="font-extrabold">{file.name.split('.').pop()?.toUpperCase() || '?'}</span>

@@ -23,7 +23,7 @@ const OpenQuotesTable: React.FC<OpenQuotesTableProps> = ({ quotes }) => {
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col h-full">
             <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
                 <h2 className="text-sm font-bold text-slate-700 uppercase tracking-widest">
-                    Offene Angebote
+                    Neu
                 </h2>
                 <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">
                     {quotes.length}
@@ -33,7 +33,7 @@ const OpenQuotesTable: React.FC<OpenQuotesTableProps> = ({ quotes }) => {
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-wider sticky top-0">
                         <tr>
-                            <th className="px-5 py-3 border-b border-slate-100">Angebot</th>
+                            <th className="px-5 py-3 border-b border-slate-100">Neu</th>
                             <th className="px-5 py-3 border-b border-slate-100 text-right">Datum</th>
                         </tr>
                     </thead>
@@ -69,7 +69,7 @@ const OpenQuotesTable: React.FC<OpenQuotesTableProps> = ({ quotes }) => {
                         {quotes.length === 0 && (
                             <tr>
                                 <td colSpan={2} className="px-5 py-8 text-center text-slate-400 italic text-xs">
-                                    Keine offenen Angebote.
+                                    Keine neuen Projekte.
                                 </td>
                             </tr>
                         )}

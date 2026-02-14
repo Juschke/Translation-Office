@@ -346,7 +346,7 @@ const Customers = () => {
                 <FaDownload /> Export
             </button>
             {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-xl border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-xl border border-slate-100 z-[100] overflow-hidden animate-slideUp">
                     <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
                         <FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)
                     </button>

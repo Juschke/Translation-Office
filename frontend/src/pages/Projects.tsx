@@ -171,9 +171,9 @@ const Projects = () => {
 
     const getStatusBadge = (status: string) => {
         const labels: { [key: string]: string } = {
-            'draft': 'Angebot',
-            'offer': 'Angebot',
-            'pending': 'Angebot',
+            'draft': 'Neu',
+            'offer': 'Neu',
+            'pending': 'Neu',
             'in_progress': 'Bearbeitung',
             'review': 'Bearbeitung',
             'ready_for_pickup': 'Abholbereit',
@@ -498,11 +498,11 @@ const Projects = () => {
     const tabs = (
         <div className="flex items-center gap-6">
             <button onClick={() => setFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Übersicht</button>
-            <button onClick={() => setFilter('offer')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'offer' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Angebot</button>
+            <button onClick={() => setFilter('offer')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'offer' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Neu</button>
             <button onClick={() => setFilter('in_progress')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'in_progress' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Bearbeitung</button>
-            <button onClick={() => setFilter('ready_for_pickup')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'ready_for_pickup' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abholbereit</button>
-            <button onClick={() => setFilter('invoiced')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'invoiced' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Rechnung</button>
             <button onClick={() => setFilter('delivered')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'delivered' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Geliefert</button>
+            <button onClick={() => setFilter('invoiced')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'invoiced' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Rechnung</button>
+            <button onClick={() => setFilter('ready_for_pickup')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'ready_for_pickup' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abholbereit</button>
             <button onClick={() => setFilter('completed')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'completed' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abgeschlossen</button>
 
             {(showTrash || filter === 'trash') && (
@@ -521,7 +521,7 @@ const Projects = () => {
                     <FaDownload /> Export
                 </button>
                 {isExportOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-xl border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-xl border border-slate-100 z-[100] overflow-hidden animate-slideUp">
                         <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
                         <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
                         <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>

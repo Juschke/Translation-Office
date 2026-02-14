@@ -48,20 +48,20 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
         <div className="fixed inset-0 bg-slate-900/50 z-[100] flex items-center justify-center backdrop-blur-sm p-4">
             <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden animate-fadeInUp">
                 {/* Header */}
-                <div className="bg-slate-50 px-8 py-5 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                     <div>
-                        <h3 className="font-black text-lg text-slate-800 uppercase tracking-tight">
+                        <h3 className="font-black text-base text-slate-800 uppercase tracking-tight">
                             {initialData ? 'Partner bearbeiten' : 'Neuen Partner erfassen'}
                         </h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Zentrale Stammdaten & Preiskonditionen</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Zentrale Stammdaten & Preiskonditionen</p>
                     </div>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
-                        <FaTimes className="text-xl" />
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                        <FaTimes className="text-lg" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto bg-white p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto bg-white p-6 custom-scrollbar">
                     <PartnerForm
                         initialData={initialData}
                         onChange={setFormData}
@@ -70,10 +70,10 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 {/* Footer */}
-                <div className="bg-slate-50 px-8 py-5 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+                <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2.5 rounded border border-slate-300 text-slate-600 text-[11px] font-black uppercase tracking-widest hover:bg-white transition-all"
+                        className="px-5 py-2 rounded border border-slate-300 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all"
                     >
                         Abbrechen
                     </button>
@@ -81,7 +81,7 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
                         onClick={handleSubmit}
                         disabled={isLoading}
                         className={clsx(
-                            "px-10 py-2.5 bg-brand-700 text-white rounded text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95",
+                            "px-8 py-2 bg-brand-700 text-white rounded text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95",
                             isLoading && "opacity-50 cursor-not-allowed"
                         )}
                     >

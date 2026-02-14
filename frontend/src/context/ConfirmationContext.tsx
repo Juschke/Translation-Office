@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import ConfirmationModal, { ConfirmationVariant } from '../components/modals/ConfirmationModal';
+import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import ConfirmationModal from '../components/modals/ConfirmationModal';
+import type { ConfirmationVariant } from '../components/modals/ConfirmationModal';
 
 interface ConfirmOptions {
     title?: string;
@@ -32,7 +33,7 @@ export const ConfirmationProvider: React.FC<{ children: ReactNode }> = ({ childr
     const [config, setConfig] = useState<ConfirmOptions | null>(null);
 
     // Differentiate between generic confirmation (which has cancel) and alert (which might not)
-    const [isAlert, setIsAlert] = useState(false);
+    const [_isAlert, setIsAlert] = useState(false);
 
     const confirm = useCallback((options: ConfirmOptions) => {
         setConfig(options);

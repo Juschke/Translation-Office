@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\BelongsToTenant;
+use App\Traits\LogsAllActivity;
 
 class Project extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory, BelongsToTenant, LogsAllActivity;
 
     protected $fillable = [
         'tenant_id',
@@ -21,6 +22,7 @@ class Project extends Model
         'additional_doc_types',
         'project_name',
         'status',
+        'access_token',
         'priority',
         'word_count',
         'line_count',
@@ -87,5 +89,10 @@ class Project extends Model
     public function payments()
     {
         return $this->hasMany(ProjectPayment::class);
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
     }
 }

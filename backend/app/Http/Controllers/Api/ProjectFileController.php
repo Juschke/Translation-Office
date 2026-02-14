@@ -18,26 +18,12 @@ class ProjectFileController extends Controller
             $extension = $file->getClientOriginalExtension();
             $mimeType = $file->getMimeType();
             $fileSize = $file->getSize(); // in bytes
-            
-            // Security: Validate file extension matches mime type
-            $allowedMimes = [
-                'pdf' => ['application/pdf'],
-                'doc' => ['application/msword'],
-                'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-                'txt' => ['text/plain'],
-                'jpg' => ['image/jpeg'],
-                'jpeg' => ['image/jpeg'],
-                'png' => ['image/png'],
-                'gif' => ['image/gif'],
-                'svg' => ['image/svg+xml'],
-                'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-                'xls' => ['application/vnd.ms-excel'],
-                'zip' => ['application/zip', 'application/x-zip-compressed'],
-            ];
 
-            if (isset($allowedMimes[$extension]) && !in_array($mimeType, $allowedMimes[$extension])) {
+            // Manual Extension Whitelist (replacing strict MIME check to allow empty/new files)
+            $allowedExtensions = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'jpg', 'jpeg', 'png', 'gif', 'svg', 'xlsx', 'xls', 'pptx', 'ppt', 'zip', 'rar', '7z', 'idml', 'indd', 'ai', 'psd'];
+            if (!in_array(strtolower($extension), $allowedExtensions)) {
                 return response()->json([
-                    'message' => 'Dateityp stimmt nicht mit der Erweiterung überein. Möglicher Sicherheitsverstoß.'
+                    'message' => 'Dieser Dateityp ist aus Sicherheitsgründen nicht erlaubt.'
                 ], 422);
             }
 
@@ -46,7 +32,7 @@ class ProjectFileController extends Controller
             // if (!$this->scanForViruses($file)) {
             //     return response()->json(['message' => 'Datei enthält Malware'], 422);
             // }
-            
+
             // Generate a safe, unique filename
             $safeBasename = pathinfo($originalName, PATHINFO_FILENAME);
             $safeBasename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $safeBasename);
@@ -58,7 +44,7 @@ class ProjectFileController extends Controller
             // Estimate word count (simplified, real implementation would use a service)
             $wordCount = 0;
             $charCount = 0;
-            
+
             // For text-based files, try to count words/chars
             if (in_array($mimeType, ['text/plain', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])) {
                 try {
@@ -112,7 +98,7 @@ class ProjectFileController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'message' => 'Datei-Upload fehlgeschlagen. Bitte versuchen Sie es erneut.'
             ], 500);
@@ -147,7 +133,7 @@ class ProjectFileController extends Controller
                 'project_id' => $project->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'message' => 'Datei konnte nicht gelöscht werden.'
             ], 500);
@@ -174,7 +160,7 @@ class ProjectFileController extends Controller
             // Security: Prevent path traversal attacks
             $realPath = Storage::disk('public')->path($file->path);
             $basePath = Storage::disk('public')->path('project_files');
-            
+
             if (strpos(realpath($realPath), realpath($basePath)) !== 0) {
                 abort(403, 'Invalid file path');
             }
@@ -186,9 +172,39 @@ class ProjectFileController extends Controller
                 'project_id' => $project->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'message' => 'Datei konnte nicht heruntergeladen werden.'
+            ], 500);
+        }
+    }
+    public function update(Request $request, Project $project, ProjectFile $file)
+    {
+        // Ensure file belongs to project
+        if ($file->project_id !== $project->id) {
+            abort(403, 'File does not belong to this project');
+        }
+
+        // Validate request
+        $validated = $request->validate([
+            'type' => 'required|in:source,target,reference,delivery',
+        ]);
+
+        try {
+            $file->update([
+                'type' => $validated['type']
+            ]);
+
+            return response()->json($file);
+        } catch (\Exception $e) {
+            \Log::error('File update failed', [
+                'file_id' => $file->id,
+                'project_id' => $project->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'message' => 'Datei konnte nicht aktualisiert werden.'
             ], 500);
         }
     }

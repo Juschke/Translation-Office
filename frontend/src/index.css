@@ -1,11 +1,16 @@
 @import "tailwindcss";
 @import "react-datepicker/dist/react-datepicker.css";
+@plugin "tailwindcss-animate";
 
 @theme {
   --font-sans: 'Outfit', sans-serif;
 
+  /* Brand colors — consistent teal palette */
   --color-brand-50: #f0fdfa;
   --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-400: #2dd4bf;
   --color-brand-500: #14b8a6;
   --color-brand-600: #0d9488;
   --color-brand-700: #008B8B;
@@ -13,25 +18,45 @@
   --color-brand-900: #134e4a;
 }
 
+/* ============================================
+   DESIGN TOKENS — Single Source of Truth
+   border-radius: 6px (rounded-md) everywhere
+   spacing scale: 4px base
+   ============================================ */
+
 @layer base {
   body {
     @apply antialiased bg-[#F3F4F6] text-slate-700 font-sans h-screen flex flex-col overflow-hidden;
     min-width: 320px;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Focus styles — consistent across all interactive elements */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    @apply outline-none ring-2 ring-brand-500/20 border-brand-500;
+  }
+
+  button:focus-visible {
+    @apply outline-none ring-2 ring-brand-500/30 ring-offset-1;
+  }
+
+  /* Consistent selection color */
+  ::selection {
+    @apply bg-brand-200/50;
   }
 
   button,
-  [type='button'],
-  [type='submit'],
-  .btn {
-    @apply cursor-pointer transition-all duration-200 outline-none rounded-none;
-    border-radius: 0 !important;
-  }
-
-  /* Global default for corners, can be overridden by utility classes */
-  * {
-    border-radius: 0;
+  [role="button"],
+  select,
+  summary,
+  .cursor-pointer-all {
+    cursor: pointer !important;
   }
 }
+
+/* ====== ANIMATIONS ====== */
 
 .fade-in {
   animation: fadeIn 0.2s ease-in-out;
@@ -72,26 +97,38 @@
   transition: all 0.1s ease-in;
 }
 
-/* Custom Scrollbar */
+/* ====== SCROLLBAR ====== */
+
 .custom-scrollbar::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+  height: 6px;
+  width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 0px;
+  border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-/* Datepicker Customization */
+/* Hide scrollbar but keep scroll behavior */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ====== DATEPICKER ====== */
+
 .react-datepicker-wrapper {
   width: 100%;
 }
@@ -101,7 +138,29 @@
   outline: none;
 }
 
-/* Email Content Rendering Styles */
+.react-datepicker {
+  font-family: 'Outfit', sans-serif !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05) !important;
+}
+
+.react-datepicker__header {
+  background: #f8fafc !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-range {
+  background-color: #0d9488 !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: #f0fdfa !important;
+  color: #0d9488 !important;
+}
+
+/* ====== EMAIL CONTENT ====== */
+
 .email-content-container img {
   max-width: 100%;
   height: auto;
@@ -124,7 +183,8 @@
   margin-bottom: 1rem;
 }
 
-/* Quill Editor Customization */
+/* ====== QUILL EDITOR ====== */
+
 .quill-container {
   display: flex;
   flex-direction: column;
@@ -148,20 +208,12 @@
   border-top-right-radius: 0;
 }
 
-.no-rounded {
-  border-radius: 0 !important;
-}
-
-.no-rounded * {
-  border-radius: 0 !important;
-}
-
 /* Modern Quill for Communication Hub */
 .quill-modern {
   display: flex;
   flex-direction: column;
   background: #f8fafc;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
 }
@@ -185,6 +237,8 @@
   min-height: 300px;
   padding: 20px !important;
 }
+
+/* ====== SLIDE ANIMATIONS ====== */
 
 @keyframes fadeInRight {
   from {
@@ -216,4 +270,38 @@
 
 .animate-fadeInLeft {
   animation: fadeInLeft 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.25s ease-out;
+}
+
+/* ====== PRINT STYLES ====== */
+
+@media print {
+
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  main {
+    overflow: visible !important;
+  }
 }

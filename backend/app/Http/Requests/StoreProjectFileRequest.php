@@ -26,7 +26,7 @@ class StoreProjectFileRequest extends FormRequest
                 'required',
                 'file',
                 'max:51200', // 50MB max
-                'mimes:pdf,doc,docx,txt,rtf,odt,jpg,jpeg,png,gif,svg,xlsx,xls,pptx,ppt,zip,rar,7z,idml,indd,ai,psd',
+                // 'mimes:pdf,doc,docx,txt,...' - Disabled to allow empty/new Office files that fail MIME detection
             ],
             'type' => 'required|in:source,target,reference',
         ];

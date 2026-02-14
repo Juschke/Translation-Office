@@ -47,9 +47,9 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
             'completed': 'bg-emerald-600 text-white border-emerald-700'
         };
         const labels: { [key: string]: string } = {
-            'draft': 'Angebot',
-            'offer': 'Angebot',
-            'pending': 'Angebot',
+            'draft': 'Neu',
+            'offer': 'Neu',
+            'pending': 'Neu',
             'in_progress': 'Bearbeitung',
             'review': 'Bearbeitung',
             'ready_for_pickup': 'Abholbereit',

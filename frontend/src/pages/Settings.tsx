@@ -102,6 +102,39 @@ const Settings: React.FC = () => {
         }
     });
 
+    const testMailMutation = useMutation({
+        mutationFn: settingsService.testMailConnection,
+        onSuccess: (data: any) => {
+            if (data.smtp.success && data.imap.success) {
+                toast.success('Alle Verbindungen erfolgreich!\nSMTP: ' + data.smtp.message + '\nIMAP: ' + data.imap.message);
+            } else {
+                if (!data.smtp.success) toast.error('SMTP Fehler: ' + data.smtp.message);
+                if (!data.imap.success) toast.error('IMAP Fehler: ' + data.imap.message);
+                if (data.smtp.success) toast.success('SMTP erfolgreich: ' + data.smtp.message);
+                if (data.imap.success) toast.success('IMAP erfolgreich: ' + data.imap.message);
+            }
+        },
+        onError: (error: any) => {
+            toast.error('Verbindungstest fehlgeschlagen: ' + (error.response?.data?.message || error.message));
+        }
+    });
+
+    const handleTestConnection = () => {
+        if (!companyData.mail_host || !companyData.mail_username || !companyData.mail_password) {
+            toast.error('Bitte füllen Sie Host, Benutzername und Passwort aus.');
+            return;
+        }
+        const encryption = companyData.mail_encryption || 'ssl';
+        const port = companyData.mail_port || (encryption === 'ssl' ? '465' : '587');
+        testMailMutation.mutate({
+            mail_host: companyData.mail_host,
+            mail_port: port,
+            mail_username: companyData.mail_username,
+            mail_password: companyData.mail_password,
+            mail_encryption: encryption
+        });
+    };
+
     // Master Data Mutations
     const createLanguageMutation = useMutation({ mutationFn: settingsService.createLanguage, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['languages'] }); setIsModalOpen(false); } });
     const updateLanguageMutation = useMutation({ mutationFn: ({ id, data }: any) => settingsService.updateLanguage(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['languages'] }); setIsModalOpen(false); } });
@@ -558,31 +591,55 @@ const Settings: React.FC = () => {
 
                 {/* Section: Email / SMTP */}
                 <div className="mb-8">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">SMTP Server (Email)</h4>
-                    <SettingRow label="Verbindung" description="Host und Port Ihres Email-Providers.">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">E-Mail Server (SMTP / IMAP)</h4>
+                    <SettingRow label="Verbindung" description="Host und SMTP-Port Ihres E-Mail-Providers. Der IMAP-Port wird automatisch ermittelt.">
                         <div className="grid grid-cols-3 gap-4">
                             <div className="col-span-2">
-                                <Input label="Mail Host" placeholder="smtp.example.com" value={companyData.mail_host || ''} onChange={(e) => handleInputMetaChange('mail_host', e.target.value)} />
+                                <Input label="Mail Host" placeholder="mail.provider.de" value={companyData.mail_host || ''} onChange={(e) => handleInputMetaChange('mail_host', e.target.value)} helperText="z.B. mail.manitu.de, smtp.strato.de" />
                             </div>
-                            <Input label="Port" placeholder="587" value={companyData.mail_port || ''} onChange={(e) => handleInputMetaChange('mail_port', e.target.value)} />
+                            <Input
+                                label="SMTP Port"
+                                placeholder={(companyData.mail_encryption || 'ssl') === 'ssl' ? '465' : '587'}
+                                type="number"
+                                min={1}
+                                max={65535}
+                                value={companyData.mail_port || ''}
+                                onChange={(e) => handleInputMetaChange('mail_port', e.target.value)}
+                                helperText={`SSL→465, TLS→587`}
+                            />
                         </div>
                     </SettingRow>
-                    <SettingRow label="Authentifizierung" description="Zugangsdaten für den SMTP Server.">
+                    <SettingRow label="Authentifizierung" description="Zugangsdaten für Ihren E-Mail-Account.">
                         <div className="grid grid-cols-2 gap-4">
-                            <Input label="Benutzername" placeholder="user@example.com" value={companyData.mail_username || ''} onChange={(e) => handleInputMetaChange('mail_username', e.target.value)} />
+                            <Input label="Benutzername / E-Mail" placeholder="noreply@ihrbuero.de" value={companyData.mail_username || ''} onChange={(e) => handleInputMetaChange('mail_username', e.target.value)} helperText="Meistens Ihre E-Mail-Adresse" />
                             <Input type="password" label="Passwort" placeholder="••••••••" value={companyData.mail_password || ''} onChange={(e) => handleInputMetaChange('mail_password', e.target.value)} />
                         </div>
                     </SettingRow>
-                    <SettingRow label="Verschlüsselung">
-                        <select
-                            value={companyData.mail_encryption || 'tls'}
-                            onChange={(e) => handleInputMetaChange('mail_encryption', e.target.value)}
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-sm outline-none h-10 shadow-sm cursor-pointer font-medium"
-                        >
-                            <option value="tls">TLS (Empfohlen)</option>
-                            <option value="ssl">SSL</option>
-                            <option value="none">Keine</option>
-                        </select>
+                    <SettingRow label="Verschlüsselung" description="SSL/TLS ist Standard bei den meisten Anbietern (Manitu, Strato, IONOS, etc.).">
+                        <div className="flex gap-4">
+                            <select
+                                value={companyData.mail_encryption || 'ssl'}
+                                onChange={(e) => {
+                                    const enc = e.target.value;
+                                    handleInputMetaChange('mail_encryption', enc);
+                                    // Auto-update port based on encryption type
+                                    const autoPort = enc === 'ssl' ? '465' : enc === 'tls' ? '587' : '25';
+                                    handleInputMetaChange('mail_port', autoPort);
+                                }}
+                                className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded text-sm outline-none h-10 shadow-sm cursor-pointer font-medium"
+                            >
+                                <option value="ssl">SSL/TLS – Port 465 (Empfohlen)</option>
+                                <option value="tls">STARTTLS – Port 587</option>
+                                <option value="none">Keine Verschlüsselung – Port 25</option>
+                            </select>
+                            <button
+                                onClick={handleTestConnection}
+                                disabled={testMailMutation.isPending}
+                                className="px-6 py-2 bg-slate-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-black transition active:scale-95 disabled:opacity-50 shrink-0 rounded"
+                            >
+                                {testMailMutation.isPending ? 'Testet...' : 'Verbindung testen'}
+                            </button>
+                        </div>
                     </SettingRow>
                 </div>
             </div>

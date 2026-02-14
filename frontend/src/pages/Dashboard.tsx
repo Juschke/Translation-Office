@@ -1,42 +1,36 @@
 import { useNavigate } from 'react-router-dom';
-import { FaLayerGroup, FaClock, FaEuroSign, FaEnvelope, FaPlus, FaTasks, FaCalendarAlt } from 'react-icons/fa';
+import {
+    FaLayerGroup, FaClock, FaEuroSign, FaEnvelope,
+    FaPlus, FaTasks, FaUserPlus, FaFileInvoiceDollar, FaPaperPlane
+} from 'react-icons/fa';
 import NewProjectModal from '../components/modals/NewProjectModal';
+import NewCustomerModal from '../components/modals/NewCustomerModal';
+import NewPartnerModal from '../components/modals/NewPartnerModal';
+import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { dashboardService, projectService, invoiceService } from '../api/services';
+import { dashboardService, projectService, invoiceService, customerService, partnerService } from '../api/services';
 import ActiveTasksTable from '../components/dashboard/ActiveTasksTable';
 import OverdueInvoicesTable from '../components/dashboard/OverdueInvoicesTable';
 import OpenQuotesTable from '../components/dashboard/OpenQuotesTable';
 import ReadyToDeliverTable from '../components/dashboard/ReadyToDeliverTable';
 import DashboardSkeleton from '../components/common/DashboardSkeleton';
 import KPICard from '../components/common/KPICard';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
-import { de } from 'date-fns/locale';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
-
-registerLocale('de', de);
 
 const Dashboard = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+
+    // Modal States
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
-
-    const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-        startOfMonth(new Date()),
-        endOfMonth(new Date())
-    ]);
-    const [startDate, endDate] = dateRange;
-
-    const queryParams = {
-        startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
-        endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined
-    };
+    const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
+    const [isNewPartnerModalOpen, setIsNewPartnerModalOpen] = useState(false);
+    const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
 
     const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
-        queryKey: ['dashboard', 'stats', queryParams],
-        queryFn: () => dashboardService.getStats(queryParams)
+        queryKey: ['dashboard', 'stats'],
+        queryFn: () => dashboardService.getStats()
     });
 
     const { data: projectsData, isLoading: isProjectsLoading } = useQuery({
@@ -49,7 +43,8 @@ const Dashboard = () => {
         queryFn: invoiceService.getAll
     });
 
-    const createMutation = useMutation({
+    // Mutations
+    const createProjectMutation = useMutation({
         mutationFn: projectService.create,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -59,6 +54,42 @@ const Dashboard = () => {
         },
         onError: () => {
             toast.error('Fehler beim Anlegen des Projekts');
+        }
+    });
+
+    const createCustomerMutation = useMutation({
+        mutationFn: (data: any) => customerService.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
+            setIsNewCustomerModalOpen(false);
+            toast.success('Kunde wurde angelegt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Anlegen des Kunden');
+        }
+    });
+
+    const createPartnerMutation = useMutation({
+        mutationFn: (data: any) => partnerService.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['partners'] });
+            setIsNewPartnerModalOpen(false);
+            toast.success('Partner wurde angelegt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Anlegen des Partners');
+        }
+    });
+
+    const createInvoiceMutation = useMutation({
+        mutationFn: (data: any) => invoiceService.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            setIsNewInvoiceModalOpen(false);
+            toast.success('Rechnung wurde erstellt');
+        },
+        onError: () => {
+            toast.error('Fehler beim Erstellen der Rechnung');
         }
     });
 
@@ -86,32 +117,52 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="flex flex-col h-full gap-4 fade-in overflow-hidden p-4">
-            <div className="flex justify-between items-center shrink-0">
+        <div className="flex flex-col h-full gap-4 fade-in overflow-hidden">
+            <div className="flex justify-between items-start shrink-0">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Dashboard Übersicht</h1>
                     <p className="text-slate-500 text-sm">Willkommen zurück!</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="relative z-20">
-                        <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
-                        <DatePicker
-                            selectsRange={true}
-                            startDate={startDate}
-                            endDate={endDate}
-                            onChange={(update) => setDateRange(update)}
-                            isClearable={false}
-                            locale="de"
-                            dateFormat="dd.MM.yyyy"
-                            className="pl-8 pr-3 py-1.5 border border-slate-300 rounded text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 w-[210px] cursor-pointer bg-white"
-                        />
+
+                <div className="flex flex-col items-end gap-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">Schnellaktionen</span>
+                    <div className="flex flex-wrap justify-end gap-2">
+                        <button
+                            onClick={() => setIsNewProjectModalOpen(true)}
+                            className="bg-brand-700 hover:bg-brand-800 text-white px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-brand-800/50"
+                            title="Neues Projekt erstellen"
+                        >
+                            <FaPlus className="text-[10px]" /> Projekt
+                        </button>
+                        <button
+                            onClick={() => setIsNewCustomerModalOpen(true)}
+                            className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200"
+                            title="Neuen Kunden anlegen"
+                        >
+                            <FaUserPlus className="text-[10px] text-indigo-500" /> Kunde
+                        </button>
+                        <button
+                            onClick={() => setIsNewPartnerModalOpen(true)}
+                            className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200"
+                            title="Neuen Partner anlegen"
+                        >
+                            <FaPlus className="text-[10px] text-emerald-500" /> Partner
+                        </button>
+                        <button
+                            onClick={() => setIsNewInvoiceModalOpen(true)}
+                            className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200"
+                            title="Neue Rechnung erstellen"
+                        >
+                            <FaFileInvoiceDollar className="text-[10px] text-purple-500" /> Rechnung
+                        </button>
+                        <button
+                            onClick={() => navigate('/inbox', { state: { compose: true } })}
+                            className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200"
+                            title="E-Mail schreiben"
+                        >
+                            <FaPaperPlane className="text-[10px] text-blue-500" /> E-Mail
+                        </button>
                     </div>
-                    <button
-                        onClick={() => setIsNewProjectModalOpen(true)}
-                        className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95"
-                    >
-                        <FaPlus className="text-xs" /> Neues Projekt
-                    </button>
                 </div>
             </div>
 
@@ -183,13 +234,28 @@ const Dashboard = () => {
                 <OverdueInvoicesTable invoices={overdueInvoices} />
             </div>
 
+            {/* Modals */}
             <NewProjectModal
                 isOpen={isNewProjectModalOpen}
                 onClose={() => setIsNewProjectModalOpen(false)}
-                onSubmit={(data) => {
-                    createMutation.mutate(data);
-                }}
-                isLoading={createMutation.isPending}
+                onSubmit={(data) => createProjectMutation.mutate(data)}
+                isLoading={createProjectMutation.isPending}
+            />
+            <NewCustomerModal
+                isOpen={isNewCustomerModalOpen}
+                onClose={() => setIsNewCustomerModalOpen(false)}
+                onSubmit={(data: any) => createCustomerMutation.mutate(data)}
+            />
+            <NewPartnerModal
+                isOpen={isNewPartnerModalOpen}
+                onClose={() => setIsNewPartnerModalOpen(false)}
+                onSubmit={(data: any) => createPartnerMutation.mutate(data)}
+            />
+            <NewInvoiceModal
+                isOpen={isNewInvoiceModalOpen}
+                onClose={() => setIsNewInvoiceModalOpen(false)}
+                onSubmit={(data: any) => createInvoiceMutation.mutate(data)}
+                isLoading={createInvoiceMutation.isPending}
             />
         </div>
     );

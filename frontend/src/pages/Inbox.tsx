@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
 import {
-    FaPaperPlane, FaTrash, FaTimes, FaPaperclip, FaPlus, FaEdit,
+    FaPaperPlane, FaTimes, FaPaperclip, FaPlus, FaEdit,
     FaFileAlt, FaUserCircle, FaKey, FaChevronRight, FaEye, FaTrashAlt,
-    FaFolderOpen, FaDownload
+    FaFolderOpen
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,7 +16,7 @@ const CommunicationHub = () => {
     const location = useLocation();
     const queryClient = useQueryClient();
 
-    const [activeTab, setActiveTab] = useState('sent');
+    const [activeTab, setActiveTab] = useState('inbox');
     const [isComposeOpen, setIsComposeOpen] = useState(false);
 
     const [selectedAccount, setSelectedAccount] = useState<any>(null);
@@ -26,6 +26,11 @@ const CommunicationHub = () => {
     const [composeAttachments, setComposeAttachments] = useState<File[]>([]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const { data: inboxMessages = [], isLoading: isLoadingInbox } = useQuery({
+        queryKey: ['mails', 'inbox'],
+        queryFn: () => mailService.getAll('inbox')
+    });
 
     const { data: sentMessages = [], isLoading: isLoadingSent } = useQuery({
         queryKey: ['mails', 'sent'],
@@ -117,7 +122,21 @@ const CommunicationHub = () => {
         ],
     };
 
-    if (isLoadingSent) return <div className="p-10 text-center font-bold text-slate-400">Lädt...</div>;
+    const syncMutation = useMutation({
+        mutationFn: mailService.sync,
+        onSuccess: (data: any) => {
+            queryClient.invalidateQueries({ queryKey: ['mails'] });
+            toast.success(data.message || 'Postfach synchronisiert');
+        },
+        onError: (error: any) => {
+            toast.error('Synchronisierung fehlgeschlagen: ' + (error.response?.data?.message || 'Unbekannter Fehler'));
+        }
+    });
+
+    if (isLoadingInbox || isLoadingSent) return <div className="p-10 text-center font-bold text-slate-400 flex items-center justify-center gap-3">
+        <div className="w-5 h-5 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+        <span>Lade E-Mails...</span>
+    </div>;
 
     return (
         <div className="flex flex-col h-full gap-0 fade-in bg-white border border-slate-200 shadow-2xl">
@@ -126,17 +145,32 @@ const CommunicationHub = () => {
                     <h1 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Email Management</h1>
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Zentrale Verwaltung</p>
                 </div>
-                <button
-                    onClick={() => setIsComposeOpen(true)}
-                    className="bg-brand-700 hover:bg-brand-800 text-white px-6 py-2.5 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition"
-                >
-                    <FaPlus /> Neue Email
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => syncMutation.mutate()}
+                        disabled={syncMutation.isPending}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2.5 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition disabled:opacity-50"
+                    >
+                        {syncMutation.isPending ? 'Synchronisiert...' : 'Postfach abrufen'}
+                    </button>
+                    <button
+                        onClick={() => setIsComposeOpen(true)}
+                        className="bg-brand-700 hover:bg-brand-800 text-white px-6 py-2.5 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition"
+                    >
+                        <FaPlus /> Neue Email
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 flex overflow-hidden">
                 <div className="w-16 md:w-56 bg-white border-r border-slate-200 flex flex-col shrink-0">
                     <nav className="flex-1 p-2 space-y-1">
+                        <TabButton
+                            active={activeTab === 'inbox'}
+                            onClick={() => setActiveTab('inbox')}
+                            icon={<FaFolderOpen />}
+                            label="Posteingang"
+                        />
                         <TabButton
                             active={activeTab === 'sent'}
                             onClick={() => setActiveTab('sent')}
@@ -159,9 +193,15 @@ const CommunicationHub = () => {
                 </div>
 
                 <div className="flex-1 overflow-hidden flex flex-col bg-slate-50">
+                    {activeTab === 'inbox' && (
+                        <div className="flex-1 flex flex-col min-h-0 bg-white">
+                            <EmailTable mails={inboxMessages} folder="inbox" />
+                        </div>
+                    )}
+
                     {activeTab === 'sent' && (
                         <div className="flex-1 flex flex-col min-h-0 bg-white">
-                            <EmailTable mails={sentMessages} />
+                            <EmailTable mails={sentMessages} folder="sent" />
                         </div>
                     )}
 
@@ -422,36 +462,33 @@ const TabButton = ({ active, onClick, icon, label }: any) => (
     </button>
 );
 
-const EmailTable = ({ mails }: any) => (
+const EmailTable = ({ mails, folder }: { mails: any[], folder: string }) => (
     <div className="flex-1 overflow-auto">
         <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-white z-10">
                 <tr className="border-b border-slate-200">
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Empfänger</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        {folder === 'inbox' ? 'Absender' : 'Empfänger'}
+                    </th>
                     <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Betreff</th>
                     <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Datum</th>
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Anhänge</th>
                     <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Aktionen</th>
                 </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
                 {mails.length === 0 ? (
                     <tr>
-                        <td colSpan={5} className="px-6 py-10 text-center text-xs text-slate-400 font-bold uppercase">Keine gesendeten E-Mails</td>
+                        <td colSpan={4} className="px-6 py-10 text-center text-xs text-slate-400 font-bold uppercase">Keine E-Mails vorhanden</td>
                     </tr>
                 ) : (
                     mails.map((mail: any) => (
-                        <tr key={mail.id} className="hover:bg-slate-50 transition group">
-                            <td className="px-6 py-4 text-xs font-bold text-slate-700">{mail.to_emails?.join(', ')}</td>
+                        <tr key={mail.id} className={clsx("hover:bg-slate-50 transition group", !mail.read && folder === 'inbox' ? "bg-brand-50/30" : "")}>
+                            <td className="px-6 py-4 text-xs font-bold text-slate-700">
+                                {folder === 'inbox' ? mail.from : mail.to_emails?.join(', ')}
+                                {!mail.read && folder === 'inbox' && <span className="ml-2 w-2 h-2 rounded-full bg-brand-600 inline-block"></span>}
+                            </td>
                             <td className="px-6 py-4 text-xs text-slate-500 font-black">{mail.subject}</td>
                             <td className="px-6 py-4 text-[10px] text-slate-400 font-mono">{mail.full_time}</td>
-                            <td className="px-6 py-4">
-                                {mail.attachments?.length > 0 && (
-                                    <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                                        <FaPaperclip /> {mail.attachments.length}
-                                    </span>
-                                )}
-                            </td>
                             <td className="px-6 py-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
                                     <button className="p-2 text-slate-300 hover:text-brand-600 transition" title="Ansehen"><FaEye /></button>
@@ -466,7 +503,7 @@ const EmailTable = ({ mails }: any) => (
     </div>
 );
 
-const ResourceTable = ({ title, items, headers, renderRow, type }: any) => (
+const ResourceTable = ({ title, items, headers, renderRow }: any) => (
     <div className="bg-white border border-slate-200">
         <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white/50">
             <h2 className="text-xs font-black text-slate-800 uppercase tracking-widest">{title}</h2>

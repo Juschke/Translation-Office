@@ -10,7 +10,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { de } from 'date-fns/locale';
 import { useState } from 'react';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
-import clsx from 'clsx';
+
 
 registerLocale('de', de);
 

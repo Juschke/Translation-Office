@@ -17,6 +17,7 @@ import { invoiceService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { BulkActions } from '../components/common/BulkActions';
+import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 
 
 const Invoices = () => {
@@ -110,19 +111,31 @@ const Invoices = () => {
 
     const filteredInvoices = useMemo(() => {
         if (!Array.isArray(invoices)) return [];
-        return invoices.filter((inv: any) => {
-            const status = inv.status?.toLowerCase();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
+        return invoices.filter((inv: any) => {
+            const status = inv.status?.toLowerCase() || 'pending';
+            const dueDate = new Date(inv.due_date);
+            const isOverdue = dueDate < today && status !== 'paid' && status !== 'cancelled' && status !== 'deleted' && status !== 'archived';
+
+            // Trash and Archive are explicit states
             if (statusFilter === 'trash') return status === 'deleted' || status === 'gelöscht';
             if (statusFilter === 'archive') return status === 'archived' || status === 'archiviert';
-            if (statusFilter === 'cancelled') return status === 'cancelled' || status === 'storniert';
-            if (statusFilter === 'paid') return status === 'paid' || status === 'bezahlt';
 
-            // For all other tabs, exclude deleted, archived and cancelled
-            if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert' || status === 'cancelled' || status === 'storniert') {
-                if (statusFilter === 'all') return false; // In "All", we don't show trash/archive/cancelled usually
-                if (statusFilter === status) return true; // Unless explicitly filtered
-                return false;
+            // Exclude Trash/Archive from main tabs
+            if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
+
+            if (statusFilter === 'paid') return status === 'paid' || status === 'bezahlt';
+            if (statusFilter === 'cancelled') return status === 'cancelled' || status === 'storniert';
+
+            if (statusFilter === 'overdue') return isOverdue;
+
+            if (statusFilter === 'pending') {
+                // Pending means: Not paid, not cancelled, AND not overdue (unless we want overdue in pending?)
+                // Usually "Open" includes overdue, but since we have a separate tab, let's keep them separate or include?
+                // Providing a distinct "Offen" (active, not overdue) vs "Überfällig" is useful.
+                return (status === 'pending' || status === 'sent' || status === 'draft') && !isOverdue;
             }
 
             if (statusFilter === 'all') return true;
@@ -152,7 +165,7 @@ const Invoices = () => {
             inv.customer?.company_name || `${inv.customer?.first_name} ${inv.customer?.last_name}`,
             inv.project?.project_name || '',
             new Date(inv.due_date).toLocaleDateString('de-DE'),
-            inv.amount_gross || '0',
+            parseFloat(inv.amount_gross || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\./g, ''),
             inv.status || ''
         ]);
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
@@ -234,30 +247,6 @@ const Invoices = () => {
         }
     };
 
-    const getStatusBadge = (status: string) => {
-        const styles: { [key: string]: string } = {
-            'paid': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-            'overdue': 'bg-red-50 text-red-700 border-red-200',
-            'pending': 'bg-amber-50 text-amber-700 border-amber-200',
-            'sent': 'bg-blue-50 text-blue-700 border-blue-200',
-            'cancelled': 'bg-slate-100 text-slate-600 border-slate-300',
-            'storniert': 'bg-slate-100 text-slate-600 border-slate-300',
-            'deleted': 'bg-slate-50 text-slate-500 border-slate-200',
-            'archived': 'bg-slate-800 text-white border-slate-700'
-        };
-        const labels: { [key: string]: string } = {
-            'paid': 'Bezahlt',
-            'overdue': 'Überfällig',
-            'pending': 'Offen',
-            'sent': 'Gesendet',
-            'cancelled': 'Storniert',
-            'storniert': 'Storniert',
-            'deleted': 'Gelöscht',
-            'archived': 'Archiviert'
-        };
-        return <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase border tracking-tight ${styles[status] || styles['pending']}`}>{labels[status] || status}</span>;
-    }
-
     const columns = [
         {
             id: 'selection',
@@ -321,7 +310,14 @@ const Invoices = () => {
         {
             id: 'status',
             header: 'Status',
-            accessor: (inv: any) => getStatusBadge(inv.status),
+            accessor: (inv: any) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const dueDate = new Date(inv.due_date);
+                const isOverdue = dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'deleted' && inv.status !== 'archived';
+                const displayStatus = isOverdue ? 'overdue' : inv.status;
+                return <InvoiceStatusBadge status={displayStatus} />;
+            },
             sortable: true,
             sortKey: 'status',
             align: 'center' as const
@@ -424,7 +420,13 @@ const Invoices = () => {
         .filter((i: any) => i.status === 'paid')
         .reduce((acc: number, curr: any) => acc + parseFloat(curr.amount_gross || 0), 0);
 
-    const overdueCount = activeInvoices.filter((i: any) => i.status === 'overdue').length;
+    const overdueCount = activeInvoices.filter((inv: any) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dueDate = new Date(inv.due_date);
+        return dueDate < today && inv.status !== 'paid';
+    }).length;
+
     const paidCount = activeInvoices.filter((i: any) => i.status === 'paid').length;
 
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;

@@ -106,7 +106,38 @@ class ProjectController extends Controller
 
     public function show($id)
     {
-        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'files.uploader', 'positions', 'payments'])->findOrFail($id));
+        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'files.uploader', 'positions', 'payments', 'messages.user'])->findOrFail($id));
+    }
+
+    public function getActivities($id)
+    {
+        $project = \App\Models\Project::findOrFail($id);
+
+        // Get all activities related to this project
+        $activities = \Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Project::class)
+            ->where('subject_id', $id)
+            ->with('causer')
+            ->latest()
+            ->limit(200)
+            ->get()
+            ->map(function ($activity) {
+                return [
+                    'id' => $activity->id,
+                    'description' => $activity->description,
+                    'event' => $activity->event ?? $activity->description,
+                    'subject_type' => class_basename($activity->subject_type ?? ''),
+                    'subject_id' => $activity->subject_id,
+                    'causer' => $activity->causer ? [
+                        'id' => $activity->causer->id,
+                        'name' => $activity->causer->name ?? $activity->causer->email ?? 'System',
+                        'email' => $activity->causer->email ?? '',
+                    ] : ['id' => null, 'name' => 'System', 'email' => ''],
+                    'properties' => $activity->properties,
+                    'created_at' => $activity->created_at,
+                ];
+            });
+
+        return response()->json($activities);
     }
 
     public function update(Request $request, $id)
@@ -167,7 +198,7 @@ class ProjectController extends Controller
     public function inviteParticipant(Request $request, $id)
     {
         $project = \App\Models\Project::findOrFail($id);
-        
+
         $validated = $request->validate([
             'email' => 'required|email',
             'role' => 'required|string|in:translator,reviewer,client,observer',
@@ -176,7 +207,7 @@ class ProjectController extends Controller
 
         // Logic to send invitation email would go here
         // For now, we simulate success
-        
+
         \Log::info("Invitation sent for Project #{$id} to {$validated['email']} as {$validated['role']}");
 
         return response()->json([
@@ -188,14 +219,14 @@ class ProjectController extends Controller
     public function generateDocument(Request $request, $id)
     {
         $project = \App\Models\Project::with(['customer', 'positions'])->findOrFail($id);
-        
+
         $validated = $request->validate([
             'type' => 'required|string|in:confirmation,pickup,reminder,delivery_note',
         ]);
 
         try {
             $customer = $project->customer;
-            $typeTitle = match($validated['type']) {
+            $typeTitle = match ($validated['type']) {
                 'confirmation' => 'Auftragsbestätigung',
                 'pickup' => 'Abholbestätigung',
                 'reminder' => 'Mahnung / Erinnerung',
@@ -242,15 +273,15 @@ class ProjectController extends Controller
 
             // Filename based on type
             $filename = "{$validated['type']}_{$project->project_number}_{$project->id}.pdf";
-            
+
             // Render
             $invoice->render();
             $pdfContent = $invoice->output;
-            
+
             // Save to storage
             $path = "documents/{$project->id}/{$filename}";
             \Storage::disk('public')->put($path, $pdfContent);
-            
+
             $url = \Storage::url($path);
 
             return response()->json([
@@ -263,5 +294,26 @@ class ProjectController extends Controller
             \Log::error("Document generation failed: " . $e->getMessage());
             return response()->json(['error' => 'Dokument konnte nicht erstellt werden: ' . $e->getMessage()], 500);
         }
+    }
+    public function generateToken(\App\Models\Project $project)
+    {
+        $project->access_token = \Illuminate\Support\Str::random(32);
+        $project->save();
+        return response()->json(['access_token' => $project->access_token]);
+    }
+
+    public function postMessage(Request $request, $id)
+    {
+        $project = \App\Models\Project::findOrFail($id);
+        $request->validate(['content' => 'required|string']);
+
+        $message = $project->messages()->create([
+            'content' => $request->content,
+            'user_id' => $request->user()->id,
+            'sender_name' => $request->user()->name,
+            'is_read' => true,
+        ]);
+
+        return response()->json($message, 201);
     }
 }

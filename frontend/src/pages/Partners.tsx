@@ -200,7 +200,7 @@ const Partners = () => {
             header: 'Partner / Dienstleister',
             accessor: (p: any) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded shrink-0 bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100">
+                    <div className="w-8 h-8 rounded-md shrink-0 bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100">
                         {p.first_name?.[0] || ''}{p.last_name?.[0] || 'P'}
                     </div>
                     <div className="flex flex-col min-w-0">
@@ -337,9 +337,9 @@ const Partners = () => {
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition" title="Details"><FaEye /></button>
-                    <button onClick={() => { setEditingPartner(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition" title="Bearbeiten"><FaEdit /></button>
-                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded transition" title="Löschen"><FaTrash /></button>
+                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Details"><FaEye /></button>
+                    <button onClick={() => { setEditingPartner(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Bearbeiten"><FaEdit /></button>
+                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Löschen"><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -348,12 +348,12 @@ const Partners = () => {
 
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
-            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white flex items-center gap-2 shadow-sm transition">
+            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white flex items-center gap-2 shadow-sm transition">
                 <FaDownload /> Export
             </button>
             {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left HouseNo text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-xl border border-slate-100 z-[100] overflow-hidden animate-slideUp">
+                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
                     <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
                     <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>
                 </div>
@@ -424,7 +424,7 @@ const Partners = () => {
                     <h1 className="text-2xl font-bold text-slate-800">Partnernetzwerk</h1>
                     <p className="text-slate-500 text-sm">Verwaltung externer Übersetzer, Dolmetscher und Agenturen.</p>
                 </div>
-                <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95">
+                <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95">
                     <FaPlus className="text-xs" /> Neuer Partner
                 </button>
             </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { FaCheckCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa';

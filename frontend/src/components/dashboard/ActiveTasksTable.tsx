@@ -33,7 +33,7 @@ const ActiveTasksTable: React.FC<ActiveTasksTableProps> = ({ tasks }) => {
             case 'pending':
             case 'offer':
             case 'draft':
-                return { label: 'Angebot', icon: FaClock, color: 'text-slate-500', bg: 'bg-slate-50' };
+                return { label: 'Neu', icon: FaClock, color: 'text-slate-500', bg: 'bg-slate-50' };
             case 'invoiced':
                 return { label: 'Rechnung', icon: FaClock, color: 'text-purple-600', bg: 'bg-purple-50' };
             case 'delivered':

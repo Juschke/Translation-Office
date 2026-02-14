@@ -51,7 +51,7 @@ const DataTable = <T extends { id: string | number }>({
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
     const settingsRef = useRef<HTMLDivElement>(null);
-    const tableContainerRef = useRef<HTMLDivElement>(null);
+
 
 
     // Filter by Visibility
@@ -169,7 +169,7 @@ const DataTable = <T extends { id: string | number }>({
     }, []);
 
     return (
-        <div className="flex flex-col h-full bg-white border border-slate-200 shadow-sm fade-in">
+        <div className="flex flex-col h-full bg-white border border-slate-200 rounded-md shadow-sm fade-in overflow-hidden">
             {/* Table Controls */}
             <div className="px-4 py-3 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-center justify-between bg-white relative z-30">
                 <div className="flex gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto custom-scrollbar">
@@ -188,7 +188,7 @@ const DataTable = <T extends { id: string | number }>({
                             value={searchTerm}
                             onChange={handleSearch}
                             placeholder={searchPlaceholder}
-                            className="w-full pl-8 pr-4 py-1.5 border border-slate-300 text-xs focus:outline-none focus:border-brand-500 bg-white"
+                            className="w-full pl-8 pr-4 py-1.5 border border-slate-300 rounded-md text-xs focus:outline-none focus:border-brand-500 bg-white"
                         />
                     </div>
 
@@ -207,7 +207,7 @@ const DataTable = <T extends { id: string | number }>({
                                 <FaColumns className="text-sm" />
                             </button>
                             {isSettingsOpen && (
-                                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl border border-slate-100 z-[100] p-4 fade-in max-h-[400px] overflow-y-auto custom-scrollbar">
+                                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl border border-slate-100 rounded-md z-[100] p-4 fade-in max-h-[400px] overflow-y-auto custom-scrollbar">
                                     <h4 className="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Spalten anzeigen</h4>
                                     <div className="space-y-2">
                                         {columns.map((col) => (
@@ -242,7 +242,7 @@ const DataTable = <T extends { id: string | number }>({
                                     <th
                                         key={idx}
                                         className={clsx(
-                                            "px-2 sm:px-4 py-2 sm:py-3 group transition-colors",
+                                            "px-2 sm:px-4 py-3 group transition-colors",
                                             col.sortable && sortKey && "cursor-pointer hover:bg-slate-200",
                                             col.className
                                         )}
@@ -290,7 +290,7 @@ const DataTable = <T extends { id: string | number }>({
                                         <td
                                             key={colIdx}
                                             className={clsx(
-                                                "px-2 sm:px-4 py-1.5 sm:py-3",
+                                                "px-2 sm:px-4 py-3",
                                                 col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left',
                                                 col.className
                                             )}

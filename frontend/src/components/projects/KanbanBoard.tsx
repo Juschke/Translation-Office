@@ -42,11 +42,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
     const [dropTargetStatus, setDropTargetStatus] = useState<string | null>(null);
 
     const columns = [
-        { id: 'offer', title: 'Angebot', icon: <FaFileInvoice className="text-slate-500" />, bg: 'bg-slate-50/50' },
+        { id: 'offer', title: 'Neu', icon: <FaFileInvoice className="text-slate-500" />, bg: 'bg-slate-50/50' },
         { id: 'in_progress', title: 'Bearbeitung', icon: <FaTools className="text-slate-500" />, bg: 'bg-slate-50/50' },
-        { id: 'ready_for_pickup', title: 'Abholbereit', icon: <FaBoxOpen className="text-slate-500" />, bg: 'bg-slate-50/50' },
-        { id: 'invoiced', title: 'Rechnung', icon: <FaFileInvoice className="text-slate-500" />, bg: 'bg-slate-50/50' },
         { id: 'delivered', title: 'Geliefert', icon: <FaFlagCheckered className="text-slate-500" />, bg: 'bg-slate-50/50' },
+        { id: 'invoiced', title: 'Rechnung', icon: <FaFileInvoice className="text-slate-500" />, bg: 'bg-slate-50/50' },
+        { id: 'ready_for_pickup', title: 'Abholbereit', icon: <FaBoxOpen className="text-slate-500" />, bg: 'bg-slate-50/50' },
         { id: 'completed', title: 'Abgeschlossen', icon: <FaFlagCheckered className="text-slate-500" />, bg: 'bg-slate-50/50' },
     ];
 
@@ -98,19 +98,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                 onDragEnd={() => setDraggedProjectId(null)}
                 onClick={() => onProjectClick(project)}
                 className={clsx(
-                    "bg-white p-2 border shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing group select-none rounded-none",
+                    "bg-white p-2.5 border shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing group select-none rounded-lg",
                     draggedProjectId === project.id
-                        ? "opacity-20 scale-95 border-brand-200 shadow-none"
-                        : "border-slate-200 hover:border-brand-300 hover:shadow-md hover:-translate-y-0.5"
+                        ? "opacity-20 scale-95 border-emerald-200 shadow-none"
+                        : "border-slate-200 hover:border-emerald-300 hover:shadow-md hover:-translate-y-0.5"
                 )}
             >
                 {/* Header: Project Number & Price & Edit Icon */}
                 <div className="flex justify-between items-start mb-1.5">
                     <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-brand-600 uppercase tracking-widest bg-brand-50 px-1 py-0.5 rounded-none w-fit">
+                        <span className="text-[8px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-50 px-1.5 py-0.5 rounded-md w-fit border border-emerald-100/50">
                             {project.project_number || `P-${project.id}`}
                         </span>
-                        <span className="text-[9px] font-bold text-slate-700">
+                        <span className="text-[9px] font-bold text-slate-700 mt-0.5">
                             {parseFloat(project.price_total as any || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                         </span>
                     </div>
@@ -120,7 +120,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                                 e.stopPropagation();
                                 onEdit(project);
                             }}
-                            className="p-1 text-slate-300 hover:text-brand-600 hover:bg-brand-50 rounded-none transition-colors"
+                            className="p-1 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
                             title="Bearbeiten"
                         >
                             <FaEdit className="text-[10px]" />
@@ -129,12 +129,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                 </div>
 
                 {/* Project Name */}
-                <h4 className="font-bold text-slate-800 text-[11px] mb-2 group-hover:text-brand-700 transition line-clamp-2 leading-tight">
+                <h4 className="font-bold text-slate-800 text-[11px] mb-2 group-hover:text-emerald-700 transition line-clamp-2 leading-tight">
                     {project.project_name}
                 </h4>
 
                 {/* Languages */}
-                <div className="flex items-center gap-1.5 mb-2 bg-slate-50 p-1 border border-slate-100 rounded-none">
+                <div className="flex items-center gap-1.5 mb-2 bg-slate-50 p-1 border border-slate-100 rounded-lg">
                     <div className="flex items-center gap-1">
                         <img src={getFlagUrl(sourceCode)} className="w-3 h-2 object-cover border border-slate-200" alt="" />
                         <span className="text-[8px] font-bold text-slate-500 uppercase">{sourceCode.split('-')[0]}</span>
@@ -151,9 +151,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                     <Link
                         to={`/customers/${project.customer?.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 text-[9px] text-slate-600 font-medium hover:text-brand-600 transition truncate group/link"
+                        className="flex items-center gap-1.5 text-[9px] text-slate-600 font-medium hover:text-emerald-600 transition truncate group/link"
                     >
-                        <div className="w-3.5 h-3.5 bg-brand-50 flex items-center justify-center text-[7px] text-brand-500 group-hover/link:bg-brand-600 group-hover/link:text-white transition-colors">
+                        <div className="w-3.5 h-3.5 bg-emerald-50 rounded flex items-center justify-center text-[7px] text-emerald-500 group-hover/link:bg-emerald-600 group-hover/link:text-white transition-colors">
                             <FaUser />
                         </div>
                         <span className="truncate flex-1">{customerName}</span>
@@ -163,9 +163,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                         <Link
                             to={`/partners/${project.partner?.id}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1.5 text-[9px] text-slate-600 font-medium hover:text-purple-600 transition truncate group/link"
+                            className="flex items-center gap-1.5 text-[9px] text-slate-600 font-medium hover:text-emerald-600 transition truncate group/link"
                         >
-                            <div className="w-3.5 h-3.5 bg-purple-50 flex items-center justify-center text-[7px] text-purple-500 group-hover/link:bg-purple-600 group-hover/link:text-white transition-colors">
+                            <div className="w-3.5 h-3.5 bg-slate-50 rounded flex items-center justify-center text-[7px] text-slate-400 group-hover/link:bg-emerald-600 group-hover/link:text-white transition-colors">
                                 <FaGlobe />
                             </div>
                             <span className="truncate flex-1">{partnerName}</span>
@@ -196,20 +196,20 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                     onDragLeave={() => setDropTargetStatus(null)}
                     onDrop={(e) => handleDrop(e, col.id)}
                     className={clsx(
-                        "flex-1 min-w-[280px] flex flex-col border transition-all duration-300 overflow-hidden h-[calc(100vh-450px)] min-h-[400px] rounded-none",
+                        "flex-1 min-w-[280px] flex flex-col border transition-all duration-300 overflow-hidden h-[calc(100vh-450px)] min-h-[400px] rounded-lg",
                         dropTargetStatus === col.id
-                            ? "bg-brand-50/50 border-brand-300 ring-2 ring-brand-100 scale-[1.005] shadow-lg"
+                            ? "bg-emerald-50/50 border-emerald-300 ring-4 ring-emerald-50 scale-[1.005] shadow-lg"
                             : "bg-white border-slate-200 shadow-sm"
                     )}
                 >
-                    <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                    <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400 text-base">
+                            <div className="w-8 h-8 bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400 text-base rounded-lg">
                                 {col.icon}
                             </div>
                             <h3 className="font-bold text-slate-800 text-[10px] uppercase tracking-widest">{col.title}</h3>
                         </div>
-                        <div className="w-6 h-6 bg-slate-800 text-white flex items-center justify-center text-[9px] font-black">
+                        <div className="min-w-[24px] px-1.5 h-6 bg-brand-700 text-white flex items-center justify-center text-[10px] font-black rounded-md">
                             {getColumnProjects(col.id).length}
                         </div>
                     </div>

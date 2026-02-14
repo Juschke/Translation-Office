@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { FaCloudUploadAlt, FaTimes, FaTrash } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
 interface FileUploadModalProps {
@@ -84,7 +85,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
             } catch (error) {
                 console.error("Upload failed in modal:", error);
                 setUploading(false);
-                // Optionally show error in UI
+                toast.error('Hochladen fehlgeschlagen. Bitte überprüfen Sie die Dateien.');
             }
         }
     };

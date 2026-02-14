@@ -1,7 +1,7 @@
 
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { customerService, settingsService, projectService } from '../api/services';
+import { customerService, projectService } from '../api/services';
 import {
     FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaBriefcase,
     FaMapMarkerAlt, FaFileContract, FaChartLine
@@ -328,7 +328,7 @@ const RecentProjectsList = ({ customerId }: { customerId: string }) => {
                                             p.status === 'ready_for_pickup' ? 'Abholbereit' :
                                                 p.status === 'invoiced' ? 'Rechnung' :
                                                     p.status === 'delivered' ? 'Geliefert' :
-                                                        ['offer', 'pending', 'draft'].includes(p.status) ? 'Angebot' :
+                                                        ['offer', 'pending', 'draft'].includes(p.status) ? 'Neu' :
                                                             p.status}
                                 </span>
                             </td>

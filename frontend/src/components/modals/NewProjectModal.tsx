@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { toast } from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    FaTimes, FaPlus, FaTrash,
+    FaTimes, FaPlus, FaMinus, FaTrash,
     FaInfoCircle,
-    FaCalendarAlt, FaFlag, FaClock, FaBolt, FaMagic
+    FaCalendarAlt, FaFlag, FaClock, FaBolt,
+    FaSearch, FaCheck
 } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
 import LanguageSelect from '../common/LanguageSelect';
@@ -15,9 +17,10 @@ import ConfirmDialog from '../common/ConfirmDialog';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { de } from 'date-fns/locale/de';
 import clsx from 'clsx';
-import { customerService, partnerService, settingsService } from '../../api/services';
+import { customerService, partnerService, settingsService, projectService } from '../../api/services';
 import PaymentModal from './PaymentModal';
 import NewDocTypeModal from './NewDocTypeModal';
+import NewMasterDataModal from './NewMasterDataModal';
 
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -47,6 +50,15 @@ interface NewProjectModalProps {
     isLoading?: boolean;
 }
 
+const statusOptions = [
+    { value: 'offer', label: 'Neu' },
+    { value: 'in_progress', label: 'Bearbeitung' },
+    { value: 'delivered', label: 'Geliefert' },
+    { value: 'invoiced', label: 'Rechnung' },
+    { value: 'ready_for_pickup', label: 'Abholbereit' },
+    { value: 'completed', label: 'Abgeschlossen' }
+];
+
 const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
     const queryClient = useQueryClient();
 
@@ -54,10 +66,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [name, setName] = useState('');
     const [customer, setCustomer] = useState('');
     const [deadline, setDeadline] = useState('');
-    const [source, setSource] = useState('de');
-    const [target, setTarget] = useState('en');
+    const [source, setSource] = useState('de-DE');
+    const [target, setTarget] = useState('de-DE');
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
-    const [status, setStatus] = useState('draft');
+    const [status, setStatus] = useState('offer');
+    const [withTax, setWithTax] = useState(true);
 
     // Project Options & Extra Costs
     const [isCertified, setIsCertified] = useState(true);
@@ -65,22 +78,22 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [isExpress, setIsExpress] = useState(false);
     const [classification, setClassification] = useState('nein');
     const [copies, setCopies] = useState(0);
-    const [copyPrice, setCopyPrice] = useState('5');
+    const [copyPrice, setCopyPrice] = useState('5.00');
 
     // Unified Position State
     const [positions, setPositions] = useState<ProjectPosition[]>([
         {
             id: Date.now().toString(),
             description: 'Übersetzung',
-            amount: '1',
+            amount: '1.00',
             unit: 'Normzeile',
             quantity: '1',
             partnerRate: '0.00',
-            partnerMode: 'unit',
+            partnerMode: 'flat',
             partnerTotal: '0.00',
             customerRate: '0.00',
             customerTotal: '0.00',
-            customerMode: 'unit',
+            customerMode: 'flat',
             marginType: 'markup',
             marginPercent: '0'
         }
@@ -99,6 +112,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [showDocTypeModal, setShowDocTypeModal] = useState(false);
     const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+    const [langTrigger, setLangTrigger] = useState<'source' | 'target' | null>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);
 
     // API Data
@@ -126,6 +141,12 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         enabled: isOpen
     });
 
+    const { data: projectsData = [] } = useQuery({
+        queryKey: ['projects'],
+        queryFn: projectService.getAll,
+        enabled: isOpen && !initialData
+    });
+
     const custOptions = useMemo(() => {
         return Array.isArray(customersData) ? customersData.map((c: any) => ({
             value: c.id.toString(),
@@ -140,13 +161,56 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         })) : [];
     }, [partnersData]);
 
-    const suggestedPartners = useMemo(() => {
-        if (!source || !target) return [];
-        return Array.isArray(partnersData) ? partnersData.filter((p: any) => {
-            const langs = p.languages || [];
-            return langs.includes(source) && langs.includes(target);
-        }) : [];
-    }, [partnersData, source, target]);
+    const [partnerSearch, setPartnerSearch] = useState('');
+    const datePickerRef = useRef<any>(null);
+
+    const { matchingPartners, otherPartners } = useMemo(() => {
+        if (!Array.isArray(partnersData)) return { matchingPartners: [], otherPartners: [] };
+
+        const src = source?.toLowerCase().split('-')[0];
+        const trg = target?.toLowerCase().split('-')[0];
+
+        const filtered = partnersData.filter((p: any) => {
+            const searchStr = partnerSearch.toLowerCase();
+            return (p.first_name || '').toLowerCase().includes(searchStr) ||
+                (p.last_name || '').toLowerCase().includes(searchStr) ||
+                (p.company_name || '').toLowerCase().includes(searchStr);
+        });
+
+        const matches: any[] = [];
+        const others: any[] = [];
+
+        filtered.forEach(p => {
+            const rawLangs = p.languages || [];
+            const langs = Array.isArray(rawLangs) ? rawLangs :
+                (typeof rawLangs === 'string' ? rawLangs.split(',').map((l: string) => l.trim().toLowerCase()) : []);
+
+            const matchSrc = src && langs.some((l: string) => l.toLowerCase().includes(src));
+            const matchTrg = trg && langs.some((l: string) => l.toLowerCase().includes(trg));
+
+            // It's a match if either language is supported
+            const isMatch = matchSrc || matchTrg;
+            const isPerfectMatch = matchSrc && matchTrg;
+
+            if (isMatch) matches.push({ ...p, isMatch: true, isPerfectMatch, languages: Array.isArray(rawLangs) ? rawLangs : langs });
+            else others.push({ ...p, isMatch: false, languages: Array.isArray(rawLangs) ? rawLangs : langs });
+        });
+
+        const sortFn = (a: any, b: any) => {
+            // Within a group, perfect matches go first
+            if (a.isPerfectMatch && !b.isPerfectMatch) return -1;
+            if (!a.isPerfectMatch && b.isPerfectMatch) return 1;
+
+            const nameA = (a.company_name || `${a.first_name} ${a.last_name}`).toLowerCase();
+            const nameB = (b.company_name || `${b.first_name} ${b.last_name}`).toLowerCase();
+            return nameA.localeCompare(nameB);
+        };
+
+        return {
+            matchingPartners: matches.sort(sortFn),
+            otherPartners: others.sort(sortFn)
+        };
+    }, [partnersData, source, target, partnerSearch]);
 
     const [confirmConfig, setConfirmConfig] = useState<{
         isOpen: boolean;
@@ -168,32 +232,32 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setName('');
         setCustomer('');
         setDeadline('');
-        setSource('de');
-        setTarget('en');
+        setSource('');
+        setTarget('de-DE');
         setPriority('low');
-        setStatus('draft');
+        setStatus('offer');
         setIsCertified(true);
         setHasApostille(false);
         setIsExpress(false);
         setClassification('nein');
         setCopies(0);
-        setCopyPrice('5');
+        setCopyPrice('5.00');
         setDocType([]);
         setTranslator('');
         setPositions([{
             id: Date.now().toString(),
             description: 'Übersetzung',
-            amount: '1',
+            amount: '1.00',
             unit: 'Normzeile',
-            quantity: '1',
+            quantity: '1.00',
             partnerRate: '0.00',
-            partnerMode: 'unit',
+            partnerMode: 'flat',
             partnerTotal: '0.00',
             customerRate: '0.00',
-            customerMode: 'unit',
+            customerMode: 'flat',
             customerTotal: '0.00',
             marginType: 'markup',
-            marginPercent: '0'
+            marginPercent: '0.00'
         }]);
         setTotalPrice('');
         setPartnerPrice('');
@@ -229,6 +293,18 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         }
     });
 
+    const createLanguageMutation = useMutation({
+        mutationFn: settingsService.createLanguage,
+        onSuccess: (newLang) => {
+            queryClient.invalidateQueries({ queryKey: ['settings', 'languages'] });
+            const code = newLang.iso_code?.split('-')[0] || newLang.iso_code;
+            if (langTrigger === 'source') setSource(code);
+            else if (langTrigger === 'target') setTarget(code);
+            setIsLanguageModalOpen(false);
+            setLangTrigger(null);
+        }
+    });
+
     const creationDate = initialData?.createdAt || new Date().toLocaleDateString('de-DE');
     const projectManager = initialData?.pm || 'Admin';
 
@@ -256,7 +332,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                 ...pos,
                 partnerTotal: pTotal.toFixed(2),
                 customerTotal: cTotal.toFixed(2),
-                customerRate: pos.customerMode === 'unit' ? cRate.toFixed(4) : pos.customerRate
+                customerRate: pos.customerMode === 'unit' ? cRate.toFixed(2) : pos.customerRate
             };
         });
 
@@ -271,15 +347,34 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setTotalPrice(totalC.toFixed(2));
     }, [positions]);
 
-    // Auto-generate project name when customer, source, or target changes
+    // Auto-generate project name when source/target language changes
     useEffect(() => {
-        if (!initialData && customer && source && target) {
-            const customerName = customersData.find((c: any) => c.id.toString() === customer)?.company_name || customersData.find((c: any) => c.id.toString() === customer)?.last_name || 'Projekt';
-            const dateStr = new Date().toLocaleDateString('de-DE').replace(/\./g, '');
-            const generatedName = `${customerName}_${source.toUpperCase()}-${target.toUpperCase()}_${dateStr}`;
+        if (!initialData && source && target && Array.isArray(projectsData)) {
+            // Clean codes (remove flags/dashes if any)
+            const cleanSource = source.split('-')[0].toLowerCase();
+            const cleanTarget = target.split('-')[0].toLowerCase();
+
+            const now = new Date();
+            const yy = String(now.getFullYear()).slice(-2); // Last 2 digits of year
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const datePart = yy + mm + dd;
+
+            // Format: source-target-YYMMDD
+            const basePrefix = `${cleanSource}-${cleanTarget}-${datePart}`.toUpperCase();
+
+            const list = Array.isArray(projectsData) ? projectsData : ((projectsData as any).data || []);
+            const todayProjectsCount = list.filter((p: any) => {
+                const pName = (p.project_name || p.name || '').toUpperCase();
+                return pName.startsWith(basePrefix);
+            }).length;
+
+            const sequence = String(todayProjectsCount + 1).padStart(2, '0');
+            const generatedName = `${basePrefix}-${sequence}`;
+
             setName(generatedName);
         }
-    }, [customer, source, target, customersData, initialData]);
+    }, [source, target, projectsData, initialData]);
 
     useEffect(() => {
         if (isOpen && initialData) {
@@ -396,6 +491,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             errors.push("Zielsprache ist erforderlich");
             newErrorSet.add('target');
         }
+        if (!docType || docType.length === 0) {
+            errors.push("Dokumentenart ist ein Pflichtfeld");
+            newErrorSet.add('docType');
+        }
         if (!translator) {
             errors.push("Übersetzer ist ein Pflichtfeld");
             newErrorSet.add('translator');
@@ -404,28 +503,32 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setValidationErrors(newErrorSet);
 
         if (errors.length > 0) {
-            setConfirmConfig({
-                isOpen: true,
-                title: "Validierungsfehler",
-                message: "Bitte korrigieren Sie folgende Fehler, um fortzufahren:\n\n" + errors.join("\n"),
-                type: 'warning',
-                confirmLabel: 'OK',
-                onConfirm: () => {
-                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                    const firstErrorField = Array.from(newErrorSet)[0];
-                    const element = document.getElementById(`field-container-${firstErrorField}`);
-                    if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }
-            });
+            toast.error(
+                <div className="flex flex-col gap-1">
+                    <span className="font-bold">Bitte korrigieren Sie folgende Fehler:</span>
+                    <ul className="list-disc list-inside text-xs">
+                        {errors.map((err, i) => <li key={i}>{err}</li>)}
+                    </ul>
+                </div>,
+                { duration: 4000 }
+            );
+
+            const firstErrorField = Array.from(newErrorSet)[0];
+            const element = document.getElementById(`field-container-${firstErrorField}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
             return;
         }
 
         let finalName = name;
         if (!finalName) {
             const customerName = customersData.find((c: any) => c.id.toString() === customer)?.company_name || 'Project';
-            finalName = `${customerName}_${source.toUpperCase()}-${target.toUpperCase()}_${new Date().toLocaleDateString('de-DE').replace(/\./g, '')}`;
+            const now = new Date();
+            const yyyy = String(now.getFullYear());
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            finalName = `${customerName}_${source.toUpperCase()}-${target.toUpperCase()}_${yyyy}${mm}${dd}`;
         }
 
         const sourceLangId = languages.find((l: any) => l.iso_code.startsWith(source))?.id || 1;
@@ -492,7 +595,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const extraCosts = (isCertified ? 5 : 0) + (hasApostille ? 15 : 0) + (isExpress ? 15 : 0) + (classification === 'ja' ? 15 : 0) + (copies * Number(copyPrice) || 0);
     const baseNet = parseFloat(totalPrice) || 0;
     const calcNet = baseNet + extraCosts;
-    const calcTax = calcNet * 0.19;
+    const calcTax = withTax ? calcNet * 0.19 : 0;
     const calcGross = calcNet + calcTax;
     const totalPaid = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
     const remainingBalance = calcGross - totalPaid;
@@ -527,7 +630,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto">
             <div className="bg-white rounded-lg shadow-2xl w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] animate-fadeInUp">
                 {/* Header */}
-                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
                         <h3 className="font-bold text-slate-800 text-lg uppercase tracking-tight">{initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}</h3>
                     </div>
@@ -542,67 +645,82 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 </button>
                             ))}
                         </div>
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
+                        <button onClick={onClose} className="w-8 h-9 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
                     </div>
                 </div>
 
                 <div className="flex-1 lg:overflow-hidden overflow-y-auto flex flex-col lg:flex-row">
                     {/* Left Column */}
-                    <div className="lg:flex-1 lg:overflow-y-auto p-3 sm:p-6 space-y-8 custom-scrollbar border-b lg:border-b-0 lg:border-r border-slate-200 bg-white">
-                        {/* Stammdaten */}
-                        <div className="space-y-6">
+                    <div className="lg:flex-1 lg:overflow-y-auto p-3 sm:p-5 space-y-6 custom-scrollbar border-b lg:border-b-0 lg:border-r border-slate-200 bg-white">
+                        {/* 01: Basis-Daten */}
+                        <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">01</div>
-                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Stammdaten</h4>
+                                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Basis-Daten</h4>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-4">
-                                {/* Row 1: Project Name */}
+                            <div className="grid grid-cols-12 gap-x-4 gap-y-3">
                                 <div className="col-span-12">
                                     <Input
-                                        label="Projektname (automatisch generiert)"
-                                        placeholder="Wird automatisch generiert..."
+                                        label="Projektname"
+                                        placeholder="Projektname eingeben..."
                                         value={name}
                                         onChange={e => setName(e.target.value)}
-                                        readOnly
-                                        className="bg-slate-50 cursor-not-allowed"
+                                        className="bg-white"
                                     />
                                 </div>
 
-                                {/* Row 2: Languages */}
-                                <div className="col-span-12 md:col-span-6" id="field-container-source">
-                                    <LanguageSelect label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} />
-                                </div>
-                                <div className="col-span-12 md:col-span-6" id="field-container-target">
-                                    <LanguageSelect label="Nach *" value={target} onChange={setTarget} error={validationErrors.has('target')} />
-                                </div>
-
-                                {/* Row 3: Customer and Translator */}
-                                <div className="col-span-12 md:col-span-6" id="field-container-customer">
+                                <div className="col-span-12" id="field-container-docType">
                                     <div className="flex items-end">
                                         <div className="flex-1">
-                                            <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
+                                            <SearchableSelect
+                                                id="docType"
+                                                label="Dokumentenart *"
+                                                isMulti={true}
+                                                value={docType}
+                                                onChange={setDocType}
+                                                error={validationErrors.has('docType')}
+                                                options={docTypes
+                                                    .sort((a: any, b: any) => {
+                                                        const catA = a.category?.toLowerCase() || '';
+                                                        const catB = b.category?.toLowerCase() || '';
+                                                        const isTopA = catA.includes('personal') || catA.includes('identität');
+                                                        const isTopB = catB.includes('personal') || catB.includes('identität');
+                                                        if (isTopA && !isTopB) return -1;
+                                                        if (!isTopA && isTopB) return 1;
+                                                        return catA.localeCompare(catB);
+                                                    })
+                                                    .map((dt: any) => ({
+                                                        value: dt.id.toString(),
+                                                        label: dt.name,
+                                                        group: dt.category
+                                                    }))}
+                                            />
                                         </div>
-                                        <button onClick={() => setShowCustomerModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
-                                    </div>
-                                </div>
-                                <div className="col-span-12 md:col-span-6" id="field-container-translator">
-                                    <div className="flex items-end">
-                                        <div className="flex-1">
-                                            <SearchableSelect label="Übersetzer *" options={partnerOptions} value={translator} onChange={setTranslator} error={validationErrors.has('translator')} />
-                                        </div>
-                                        <button onClick={() => setShowPartnerModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
+                                        <button onClick={() => setShowDocTypeModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
                                     </div>
                                 </div>
 
-                                {/* Row 4: Deadline */}
+                                <div className="col-span-12 md:col-span-6">
+                                    <SearchableSelect
+                                        label="Status"
+                                        options={statusOptions}
+                                        value={status}
+                                        onChange={setStatus}
+                                    />
+                                </div>
+
                                 <div className="col-span-12 md:col-span-6" id="field-container-deadline">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Lieferdatum</label>
-                                    <div className="relative h-10 bg-white border border-slate-300 rounded overflow-hidden flex items-center">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 ml-1 cursor-pointer" onClick={() => datePickerRef.current?.setFocus()}>Lieferdatum</label>
+                                    <div
+                                        className="relative h-9 bg-white border border-slate-200 rounded overflow-hidden flex items-center cursor-pointer hover:border-slate-400 transition-colors"
+                                        onClick={() => datePickerRef.current?.setFocus()}
+                                    >
                                         <div className="absolute left-3 text-slate-400 pointer-events-none">
                                             <FaCalendarAlt className="text-sm" />
                                         </div>
                                         <DatePicker
+                                            ref={datePickerRef}
                                             selected={deadline ? new Date(deadline) : null}
                                             onChange={(date: Date | null) => {
                                                 if (date) {
@@ -620,51 +738,198 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             timeIntervals={15}
                                             dateFormat="dd.MM.yyyy HH:mm"
                                             locale="de"
-                                            className="w-full h-full bg-transparent border-none pl-9 pr-3 py-2 text-sm font-bold text-slate-700 outline-none cursor-pointer rounded"
+                                            className="w-full h-full bg-transparent border-none pl-9 pr-3 py-1.5 text-sm font-bold text-slate-700 outline-none cursor-pointer rounded"
                                             placeholderText="Datum wählen"
                                         />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                {/* Row 5: Document Type */}
-                                <div className="col-span-12">
+                        {/* 02: Sprachen & Kunde */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">02</div>
+                                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Sprachen & Kunde</h4>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+                                <div className="col-span-12" id="field-container-customer">
                                     <div className="flex items-end">
                                         <div className="flex-1">
-                                            <SearchableSelect
-                                                label="Dokumentenart"
-                                                value={docType[0] || ''}
-                                                onChange={(val) => setDocType([val])}
-                                                options={docTypes.map((dt: any) => ({
-                                                    value: dt.id.toString(),
-                                                    label: dt.name,
-                                                    group: dt.category
-                                                }))}
-                                            />
+                                            <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
                                         </div>
-                                        <button onClick={() => setShowDocTypeModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
+                                        <button onClick={() => setShowCustomerModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-12 md:col-span-6" id="field-container-source">
+                                    <LanguageSelect id="source" label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
+                                </div>
+                                <div className="col-span-12 md:col-span-6" id="field-container-target">
+                                    <LanguageSelect id="target" label="Nach *" value={target} onChange={setTarget} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 03: Partner Auswahl */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">03</div>
+                                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Partner & Beteiligte</h4>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+                                <div className="col-span-12" id="field-container-translator">
+                                    <div className="flex items-end">
+                                        <div className="flex-1">
+                                            <SearchableSelect label="Übersetzer *" options={partnerOptions} value={translator} onChange={setTranslator} error={validationErrors.has('translator')} />
+                                        </div>
+                                        <button onClick={() => setShowPartnerModal(true)} className="h-10 px-4 bg-brand-700 text-white rounded-r border-l-0 hover:bg-brand-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-[10px]" /> <span className="text-xs font-bold">NEU</span></button>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Suggested Partners */}
-                            {suggestedPartners.length > 0 && !translator && (
-                                <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg overflow-hidden mt-2">
-                                    <div className="px-3 py-1.5 bg-emerald-100/50 text-emerald-800 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                        <FaMagic /> Empfohlene Übersetzer
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 p-2">
-                                        {suggestedPartners.map((p: any) => (
-                                            <div
-                                                key={p.id}
-                                                className="px-2 py-1 bg-white border border-emerald-200 rounded text-[10px] font-bold text-emerald-700 cursor-pointer hover:bg-emerald-50 transition shadow-sm"
-                                                onClick={() => setTranslator(p.id.toString())}
-                                            >
-                                                {p.first_name} {p.last_name}
-                                            </div>
-                                        ))}
+                            {/* Partner Selection Table */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Partner Auswahl</h4>
+                                    <div className="relative w-40">
+                                        <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[9px]" />
+                                        <input
+                                            type="text"
+                                            placeholder="Suchen..."
+                                            value={partnerSearch}
+                                            onChange={(e) => setPartnerSearch(e.target.value)}
+                                            className="w-full pl-7 pr-2 py-1 bg-white border border-slate-200 rounded text-[10px] focus:outline-none focus:border-brand-300 transition-all"
+                                        />
                                     </div>
                                 </div>
-                            )}
+
+                                <div className="border border-slate-200 rounded bg-white overflow-hidden">
+                                    <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse table-fixed">
+                                            <thead className="sticky top-0 bg-white z-10 border-b border-slate-100">
+                                                <tr>
+                                                    <th className="w-2/5 px-2 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Partner / Email</th>
+                                                    <th className="w-2/5 px-2 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Sprachpaar</th>
+                                                    <th className="w-1/5 px-2 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Aktion</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50">
+                                                {/* Matching Partners Header */}
+                                                <tr className="bg-slate-50/30">
+                                                    <td colSpan={3} className="px-2 py-1.5">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Passende Übersetzer</span>
+                                                            <span className="bg-emerald-100 text-emerald-700 text-[8px] font-black px-1.5 py-0.5 rounded-full">{matchingPartners.length}</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {matchingPartners.map((p: any) => (
+                                                    <tr
+                                                        key={p.id}
+                                                        className={clsx(
+                                                            "group transition-colors cursor-pointer hover:bg-emerald-50/30",
+                                                            translator === p.id.toString() ? "bg-brand-50/30" : ""
+                                                        )}
+                                                        onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
+                                                    >
+                                                        <td className="px-2 py-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-6 h-6 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center text-[9px] font-black shrink-0">
+                                                                    {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
+                                                                </div>
+                                                                <div className="flex flex-col min-w-0">
+                                                                    <span className="text-[10px] font-bold text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
+                                                                    <span className="text-[9px] text-slate-400 truncate tracking-tight">{p.email}</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-2 py-2">
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {(p.languages || []).slice(0, 3).map((l: string) => {
+                                                                    const isSourceMatch = source && l.toLowerCase().includes(source.toLowerCase().split('-')[0]);
+                                                                    const isTargetMatch = target && l.toLowerCase().includes(target.toLowerCase().split('-')[0]);
+                                                                    return (
+                                                                        <span key={l} className={clsx(
+                                                                            "px-1 py-0 rounded text-[7px] font-black uppercase tracking-tighter border",
+                                                                            isSourceMatch || isTargetMatch ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-white text-slate-400 border-slate-100"
+                                                                        )}>{l}</span>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-2 py-2 text-right">
+                                                            <div className={clsx(
+                                                                "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
+                                                                translator === p.id.toString() ? "bg-brand-600 border-brand-600 text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
+                                                            )}>
+                                                                <FaCheck className="text-[10px]" />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+
+                                                {/* Other Partners Header */}
+                                                <tr className="bg-slate-50/10">
+                                                    <td colSpan={3} className="px-2 py-1.5">
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sonstige</span>
+                                                            <span className="bg-slate-100 text-slate-500 text-[8px] font-black px-1.5 py-0.5 rounded-full">{otherPartners.length}</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {otherPartners.map((p: any) => (
+                                                    <tr
+                                                        key={p.id}
+                                                        className={clsx(
+                                                            "group transition-colors cursor-pointer hover:bg-slate-50/50",
+                                                            translator === p.id.toString() ? "bg-brand-50/30" : ""
+                                                        )}
+                                                        onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
+                                                    >
+                                                        <td className="px-2 py-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-400 border border-slate-100 flex items-center justify-center text-[9px] font-black shrink-0">
+                                                                    {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
+                                                                </div>
+                                                                <div className="flex flex-col min-w-0">
+                                                                    <span className="text-[10px] font-bold text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
+                                                                    <span className="text-[9px] text-slate-400 truncate tracking-tight">{p.email}</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-2 py-2">
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {(p.languages || []).slice(0, 3).map((l: string) => (
+                                                                    <span key={l} className="px-1 py-0 rounded text-[7px] font-black uppercase tracking-tighter border bg-white text-slate-400 border-slate-100">{l}</span>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-2 py-2 text-right">
+                                                            <div className={clsx(
+                                                                "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
+                                                                translator === p.id.toString() ? "bg-brand-600 border-brand-600 text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
+                                                            )}>
+                                                                <FaCheck className="text-[10px]" />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+
+                                                {matchingPartners.length === 0 && otherPartners.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={3} className="px-4 py-8 text-center text-slate-400 italic text-[10px]">
+                                                            Keine Partner gefunden...
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
 
                             <NewPartnerModal
                                 isOpen={showPartnerModal}
@@ -682,15 +947,81 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* Leistungen */}
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">02</div>
-                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Leistungen & Optionen</h4>
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">04</div>
+                                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Leistungen & Optionen</h4>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <Input label="Beglaubigung (5€)" isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="Express (15€)" isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="Apostille (15€)" isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="FS-Klass. (15€)" isSelect value={classification} onChange={(e) => setClassification(e.target.value)}><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                                <Input label="Beglaubigung (5€)" isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')} containerClassName="h-9"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="Express (15€)" isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')} containerClassName="h-9"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="Apostille (15€)" isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')} containerClassName="h-9"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                <Input label="FS-Klass. (15€)" isSelect value={classification} onChange={(e) => setClassification(e.target.value)} containerClassName="h-9"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+
+                                <div className="flex flex-col gap-1 justify-center">
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">MwSt. (19%)</label>
+                                    <div
+                                        className="h-9 flex items-center gap-2 cursor-pointer transition-all"
+                                        onClick={() => setWithTax(!withTax)}
+                                    >
+                                        <div className={clsx(
+                                            "w-7 h-3.5 rounded-full relative transition-colors",
+                                            withTax ? "bg-emerald-500" : "bg-slate-300"
+                                        )}>
+                                            <div className={clsx(
+                                                "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
+                                                withTax ? "left-4" : "left-0.5"
+                                            )} />
+                                        </div>
+                                        <span className={clsx("text-[10px] font-bold uppercase tracking-wider", withTax ? "text-slate-700" : "text-slate-400")}>
+                                            {withTax ? "AKTIVIERT" : "DEAKTIVIERT"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-4 pt-2 border-t border-slate-50">
+                                <div className="col-span-12 md:col-span-6 lg:col-span-4">
+                                    <div className="space-y-1.5">
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Anzahl Kopien</label>
+                                        <div className="flex items-center h-9 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm transition-all focus-within:border-brand-500/50 focus-within:ring-2 focus-within:ring-brand-500/5">
+                                            <button
+                                                onClick={() => setCopies(Math.max(0, copies - 1))}
+                                                className="h-full px-3 text-slate-400 hover:text-brand-600 hover:bg-slate-50 transition-colors border-r border-slate-100"
+                                            >
+                                                <FaMinus className="text-[10px]" />
+                                            </button>
+                                            <input
+                                                type="number"
+                                                value={copies}
+                                                onChange={(e) => setCopies(Math.max(0, parseInt(e.target.value) || 0))}
+                                                className="flex-1 h-full text-center text-sm font-bold text-slate-700 outline-none"
+                                            />
+                                            <button
+                                                onClick={() => setCopies(copies + 1)}
+                                                className="h-full px-3 text-slate-400 hover:text-brand-600 hover:bg-slate-50 transition-colors border-l border-slate-100"
+                                            >
+                                                <FaPlus className="text-[10px]" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-span-12 md:col-span-6 lg:col-span-4">
+                                    <Input
+                                        label="Preis pro Kopie (€)"
+                                        type="number"
+                                        step="0.01"
+                                        value={copyPrice}
+                                        onChange={(e) => setCopyPrice(e.target.value)}
+                                        onBlur={() => setCopyPrice(parseFloat(copyPrice).toFixed(2))}
+                                        containerClassName="h-9"
+                                    />
+                                </div>
+                                <div className="col-span-12 lg:col-span-4 flex items-end pb-1.5 px-1">
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 italic">
+                                        <span>Summe Kopien:</span>
+                                        <span className="text-slate-800">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span>
+                                    </div>
+                                </div>
                             </div>
                             <NewDocTypeModal
                                 isOpen={showDocTypeModal}
@@ -703,33 +1034,59 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* Kalkulation */}
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">03</div>
-                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Kalkulation Positionen</h4>
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">05</div>
+                                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Kalkulation Positionen</h4>
                             </div>
 
                             <div className="space-y-4">
                                 {positions.map((pos, index) => (
                                     <div key={pos.id} className="border border-slate-200 rounded-lg overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
                                         <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex items-center gap-3">
-                                            <span className="text-xs font-black text-slate-400">{String(index + 1).padStart(2, '0')}.</span>
+                                            <span className="text-xs font-bold text-slate-400">{String(index + 1).padStart(2, '0')}.</span>
                                             <input type="text" placeholder="Bezeichnung..." className="flex-1 bg-transparent border-none text-sm font-bold text-slate-800 focus:ring-0" value={pos.description} onChange={e => { const n = [...positions]; n[index].description = e.target.value; setPositions(n); }} />
                                             {positions.length > 1 && <button onClick={() => setPositions(positions.filter(p => p.id !== pos.id))} className="text-slate-300 hover:text-red-500 transition p-1"><FaTrash /></button>}
                                         </div>
                                         <div className="p-3 space-y-4">
                                             <div className="grid grid-cols-12 gap-x-4 items-start">
                                                 <div className="col-span-12 md:col-span-6 space-y-2">
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menge & Einheit</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-9">
-                                                        <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 outline-none" value={pos.amount} onChange={e => { const n = [...positions]; n[index].amount = e.target.value; setPositions(n); }} />
+                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Menge & Einheit</label>
+                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-11">
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            min="0"
+                                                            className="flex-1 px-3 text-sm font-bold text-slate-700 outline-none"
+                                                            value={pos.amount}
+                                                            onChange={e => { const n = [...positions]; n[index].amount = e.target.value; setPositions(n); }}
+                                                            onBlur={e => {
+                                                                const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                                const n = [...positions];
+                                                                n[index].amount = val.toFixed(2);
+                                                                setPositions(n);
+                                                            }}
+                                                        />
                                                         <select className="w-32 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.unit} onChange={e => { const n = [...positions]; n[index].unit = e.target.value; setPositions(n); }}>
                                                             <option>Wörter</option><option>Normzeile</option><option>Seiten</option><option>Stunden</option><option>Pauschal</option>
                                                         </select>
                                                     </div>
                                                 </div>
                                                 <div className="col-span-12 md:col-span-6 space-y-2">
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">EK (Partner)</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-9">
-                                                        <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.partnerRate} onChange={e => { const n = [...positions]; n[index].partnerRate = e.target.value; setPositions(n); }} />
+                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">EK (Partner)</label>
+                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-11">
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            min="0"
+                                                            className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none"
+                                                            value={pos.partnerRate}
+                                                            onChange={e => { const n = [...positions]; n[index].partnerRate = e.target.value; setPositions(n); }}
+                                                            onBlur={e => {
+                                                                const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                                const n = [...positions];
+                                                                n[index].partnerRate = val.toFixed(2);
+                                                                setPositions(n);
+                                                            }}
+                                                        />
                                                         <select className="w-28 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.partnerMode} onChange={e => { const n = [...positions]; n[index].partnerMode = e.target.value; setPositions(n); }}>
                                                             <option value="unit">Rate</option><option value="flat">Pauschal</option>
                                                         </select>
@@ -739,12 +1096,37 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             </div>
                                             <div className="grid grid-cols-12 gap-x-4 items-start pt-2 border-t border-slate-100">
                                                 <div className="col-span-12 space-y-2">
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">VK (Kunde)</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-9">
+                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">VK (Kunde)</label>
+                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-11">
                                                         {pos.customerMode === 'flat' ? (
-                                                            <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.customerRate} onChange={e => { const n = [...positions]; n[index].customerRate = e.target.value; setPositions(n); }} />
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none"
+                                                                value={pos.customerRate}
+                                                                onChange={e => { const n = [...positions]; n[index].customerRate = e.target.value; setPositions(n); }}
+                                                                onBlur={e => {
+                                                                    const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                                    const n = [...positions];
+                                                                    n[index].customerRate = val.toFixed(2);
+                                                                    setPositions(n);
+                                                                }}
+                                                            />
                                                         ) : (
-                                                            <input type="number" className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none" value={pos.marginPercent} onChange={e => { const n = [...positions]; n[index].marginPercent = e.target.value; setPositions(n); }} />
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none"
+                                                                value={pos.marginPercent}
+                                                                onChange={e => { const n = [...positions]; n[index].marginPercent = e.target.value; setPositions(n); }}
+                                                                onBlur={e => {
+                                                                    const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                                    const n = [...positions];
+                                                                    n[index].marginPercent = val.toFixed(2);
+                                                                    setPositions(n);
+                                                                }}
+                                                            />
                                                         )}
                                                         <div className="bg-white px-2 flex items-center text-[10px] font-bold text-slate-400 border-l border-r border-slate-100">{pos.customerMode === 'flat' ? '€' : '%'}</div>
                                                         <select className="w-32 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.customerMode === 'flat' ? 'flat' : pos.marginType} onChange={e => {
@@ -763,7 +1145,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
                                     </div>
                                 ))}
-                                <button onClick={() => setPositions([...positions, { id: Date.now().toString(), description: 'Zusatzleistung', amount: '1', unit: 'Normzeile', quantity: '1', partnerRate: '0.00', partnerMode: 'unit', partnerTotal: '0.00', customerRate: '0.00', customerMode: 'unit', customerTotal: '0.00', marginType: 'markup', marginPercent: '0' }])} className="mx-auto flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-100 transition-all active:scale-95"><FaPlus /> Position hinzufügen</button>
+                                <button onClick={() => setPositions([...positions, { id: Date.now().toString(), description: 'Zusatzleistung', amount: '1.00', unit: 'Normzeile', quantity: '1.00', partnerRate: '0.00', partnerMode: 'flat', partnerTotal: '0.00', customerRate: '0.00', customerMode: 'flat', customerTotal: '0.00', marginType: 'markup', marginPercent: '0.00' }])} className="mx-auto flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-100 transition-all active:scale-95"><FaPlus /> Position hinzufügen</button>
                             </div>
                         </div>
 
@@ -771,7 +1153,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded bg-emerald-50 text-emerald-700 flex items-center justify-center text-[10px] font-bold">04</div>
+                                    <div className="w-6 h-6 rounded bg-emerald-50 text-emerald-700 flex items-center justify-center text-[10px] font-bold">06</div>
                                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Teilzahlungen / Anzahlungen</h4>
                                 </div>
                                 <button
@@ -823,7 +1205,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeletePayment(p.id)}
-                                                            className="text-slate-300 hover:text-red-500 transition p-1 hover:bg-red-50 rounded"
+                                                            className="text-slate-300 hover:text-red-700 transition p-1 hover:bg-red-50 rounded"
                                                         >
                                                             <FaTrash className="text-[10px]" />
                                                         </button>
@@ -838,15 +1220,15 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">05</div>
-                                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Anmerkungen</h4>
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-bold">07</div>
+                                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Anmerkungen</h4>
                             </div>
                             <Input isTextArea label="Interne Anmerkungen" placeholder="Wichtige Hinweise zum Projekt..." value={notes} onChange={e => setNotes(e.target.value)} />
                         </div>
                     </div>
 
                     {/* Sidebar */}
-                    <div className="w-full lg:w-80 bg-slate-50 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 h-auto lg:h-full lg:overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar">
+                    <div className="w-full lg:w-80 bg-slate-50 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 h-auto lg:h-full lg:overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200"><FaInfoCircle className="text-slate-400 text-xs" /><h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Meta Info</h4></div>
                             <div className="space-y-2 text-xs">
@@ -880,7 +1262,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 {extraCosts > 0 && <div className="border-t border-slate-50 my-1"></div>}
                                 <div className="pt-2 border-t border-slate-100 flex justify-between font-bold text-slate-800"><span>Gesamt Netto</span><span>{calcNet.toFixed(2)} €</span></div>
                                 <div className="flex justify-between text-[10px] text-slate-400"><span>MwSt. 19%</span><span>{calcTax.toFixed(2)} €</span></div>
-                                <div className="pt-2 border-t-2 border-brand-100 flex justify-between text-xl font-black text-slate-900 transition-all"><span>Gesamt</span><span>{calcGross.toFixed(2)} €</span></div>
+                                <div className="pt-2 border-t-2 border-slate-100 flex justify-between text-xl font-bold text-slate-900 transition-all"><span>Gesamt</span><span>{calcGross.toFixed(2)} €</span></div>
                                 {totalPaid > 0 && (
                                     <div className="pt-2 flex justify-between text-xs text-emerald-600 font-bold border-t border-slate-50">
                                         <span>Geleistete Zahlungen</span>
@@ -888,8 +1270,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                     </div>
                                 )}
                                 <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center bg-slate-50 -mx-4 -mb-4 p-4 rounded-b">
-                                    <span className="text-[10px] font-black uppercase text-slate-600 tracking-wider">Restbetrag</span>
-                                    <span className={clsx("text-lg font-black", remainingBalance <= 0.01 ? "text-emerald-600" : "text-brand-700")}>
+                                    <span className="text-[11px] font-bold uppercase text-slate-600 tracking-wider">Restbetrag</span>
+                                    <span className={clsx("text-lg font-bold", remainingBalance <= 0.01 ? "text-emerald-600" : "text-brand-700")}>
                                         {remainingBalance <= 0.01 ? 'BEZAHLT' : `${remainingBalance.toFixed(2)} €`}
                                     </span>
                                 </div>
@@ -898,27 +1280,27 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                             <div className="bg-slate-100 p-4 rounded-lg border border-slate-200">
                                 <div className="flex justify-between items-center mb-1.5">
                                     <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tighter">Voraussichtl. Gewinn</span>
-                                    <span className={clsx("text-xs font-black", profit >= 0 ? "text-slate-800" : "text-red-600")}>{profit.toFixed(2)} €</span>
+                                    <span className={clsx("text-xs font-bold", profit >= 0 ? "text-slate-800" : "text-red-600")}>{profit.toFixed(2)} €</span>
                                 </div>
                                 <div className="w-full bg-slate-300 rounded-full h-2 overflow-hidden shadow-inner">
                                     <div className={clsx("h-full transition-all duration-500", profitMargin > 40 ? "bg-emerald-500" : profitMargin > 20 ? "bg-brand-500" : "bg-amber-500")} style={{ width: `${Math.min(100, Math.max(0, profitMargin))}%` }}></div>
                                 </div>
-                                <div className="text-right mt-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest">{profitMargin.toFixed(1)}% Marge</div>
+                                <div className="text-right mt-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-widest">{profitMargin.toFixed(1)}% Marge</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-between items-center shrink-0">
+                <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-between items-center shrink-0">
                     <div>
                         {initialData && (
                             <button onClick={handleDelete} className="text-red-500 text-xs font-bold uppercase flex items-center gap-2 hover:bg-red-50 px-3 py-2 rounded transition-colors active:scale-95"><FaTrash /> Projekt Löschen</button>
                         )}
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={onClose} className="px-6 py-2 bg-white border border-slate-300 rounded text-xs font-bold uppercase hover:bg-slate-50 transition active:scale-95">Abbrechen</button>
-                        <button onClick={handleSubmit} disabled={isLoading || createCustomerMutation.isPending} className="px-8 py-2 bg-brand-700 text-white rounded text-xs font-bold uppercase shadow-lg shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95 transform">
+                        <button onClick={onClose} className="px-5 py-2 bg-white border border-slate-300 rounded text-[10px] font-bold uppercase hover:bg-slate-50 transition active:scale-95">Abbrechen</button>
+                        <button onClick={handleSubmit} disabled={isLoading || createCustomerMutation.isPending} className="px-6 py-2 bg-brand-700 text-white rounded text-[10px] font-bold uppercase shadow-lg shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95 transform">
                             {isLoading ? 'Speichere...' : initialData ? 'Projekt Aktualisieren' : 'Projekt Anlegen'}
                         </button>
                     </div>
@@ -927,6 +1309,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
             <PartnerSelectionModal isOpen={isPartnerModalOpen} onClose={() => setIsPartnerModalOpen(false)} onSelect={handlePartnerSelect} />
             <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={handleSavePayment} initialData={editingPayment} totalAmount={calcGross} />
+            <NewMasterDataModal isOpen={isLanguageModalOpen} onClose={() => setIsLanguageModalOpen(false)} onSubmit={(data) => createLanguageMutation.mutate(data)} type="languages" />
             <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
         </div>
     );

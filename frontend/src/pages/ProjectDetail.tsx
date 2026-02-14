@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus } from 'react-icons/fa';
+import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -98,11 +98,248 @@ interface ProjectData {
     pm: string;
     createdAt: string;
     positions: ProjectPosition[];
+    access_token?: string | null;
+    messages?: Array<{
+        id: string;
+        content: string;
+        created_at: string;
+        sender_name?: string;
+        user?: { name: string; id: string };
+        user_id?: string;
+        is_read: boolean;
+    }>;
     payments: any[];
     notes: string;
     files: ProjectFile[];
     [key: string]: any;
 }
+
+// ==== ATTRIBUTE LABEL MAP ====
+const ATTRIBUTE_LABELS: Record<string, string> = {
+    project_name: 'Projektname',
+    project_number: 'Projektnummer',
+    customer_id: 'Kunde',
+    partner_id: 'Partner',
+    source_lang_id: 'Quellsprache',
+    target_lang_id: 'Zielsprache',
+    document_type_id: 'Dokumentenart',
+    additional_doc_types: 'Weitere Dokumentenarten',
+    status: 'Status',
+    priority: 'Priorität',
+    word_count: 'Wortanzahl',
+    line_count: 'Zeilenanzahl',
+    price_total: 'Gesamtpreis',
+    partner_cost_net: 'Partner-Kosten (Netto)',
+    down_payment: 'Anzahlung',
+    down_payment_date: 'Anzahlungsdatum',
+    down_payment_note: 'Anzahlungsnotiz',
+    currency: 'Währung',
+    deadline: 'Liefertermin',
+    is_certified: 'Beglaubigung',
+    has_apostille: 'Apostille',
+    is_express: 'Express',
+    classification: 'Klassifizierung',
+    copies_count: 'Kopien-Anzahl',
+    copy_price: 'Kopie-Preis',
+    notes: 'Notizen',
+    created_at: 'Erstellt am',
+    updated_at: 'Aktualisiert am',
+    tenant_id: 'Mandant',
+};
+
+const EVENT_LABELS: Record<string, { label: string; color: string; bgColor: string; borderColor: string }> = {
+    created: { label: 'Erstellt', color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
+    updated: { label: 'Aktualisiert', color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+    deleted: { label: 'Gelöscht', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200' },
+};
+
+const formatFieldValue = (key: string, value: any): string => {
+    if (value === null || value === undefined || value === '') return '–';
+    if (typeof value === 'boolean') return value ? 'Ja' : 'Nein';
+    if (key === 'is_certified' || key === 'has_apostille' || key === 'is_express' || key === 'classification') {
+        return value === true || value === 1 || value === '1' ? 'Ja' : 'Nein';
+    }
+    if (key === 'deadline' || key === 'down_payment_date' || key === 'created_at' || key === 'updated_at') {
+        const d = new Date(value);
+        if (!isNaN(d.getTime())) return d.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+    }
+    if (key === 'price_total' || key === 'partner_cost_net' || key === 'down_payment' || key === 'copy_price') {
+        return parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    }
+    if (key === 'status') {
+        const statusMap: Record<string, string> = { offer: 'Angebot', in_progress: 'Bearbeitung', delivered: 'Geliefert', invoiced: 'Rechnung', ready_pickup: 'Abholbereit', completed: 'Abgeschlossen' };
+        return statusMap[value] || value;
+    }
+    if (key === 'priority') {
+        const pMap: Record<string, string> = { low: 'Normal', medium: 'Normal', high: 'Dringend', express: 'Express' };
+        return pMap[value] || value;
+    }
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+};
+
+const HistoryTab = ({ projectId, historySearch, setHistorySearch }: {
+    projectId: string;
+    historySearch: string;
+    setHistorySearch: (s: string) => void;
+    historySortKey: string;
+    setHistorySortKey: (s: any) => void;
+    historySortDir: string;
+    setHistorySortDir: (s: any) => void;
+}) => {
+    const { data: activities = [], isLoading } = useQuery({
+        queryKey: ['project-activities', projectId],
+        queryFn: () => projectService.getActivities(projectId),
+        enabled: !!projectId,
+    });
+
+    const filteredActivities = useMemo(() => {
+        if (!historySearch.trim()) return activities;
+        const search = historySearch.toLowerCase();
+        return activities.filter((a: any) =>
+            (a.causer?.name || '').toLowerCase().includes(search) ||
+            (a.event || '').toLowerCase().includes(search) ||
+            (a.subject_type || '').toLowerCase().includes(search) ||
+            JSON.stringify(a.properties).toLowerCase().includes(search)
+        );
+    }, [activities, historySearch]);
+
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-10 p-12 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-8 h-8 border-2 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-sm text-slate-500">Historie wird geladen...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-10">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="flex items-center gap-3">
+                    <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                        <FaClock className="text-brand-500" /> Projekt-Historie
+                    </h3>
+                    <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">{filteredActivities.length}</span>
+                </div>
+                <div className="relative w-full sm:w-64">
+                    <input
+                        type="text"
+                        value={historySearch}
+                        onChange={(e) => setHistorySearch(e.target.value)}
+                        placeholder="Suche in Historie..."
+                        className="w-full pl-3 pr-8 py-1.5 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                    />
+                    <FaEye className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]" />
+                </div>
+            </div>
+
+            {filteredActivities.length === 0 ? (
+                <div className="p-12 flex flex-col items-center justify-center text-slate-400">
+                    <FaClock className="text-4xl mb-3 opacity-20" />
+                    <p className="text-sm font-medium">Keine Einträge in der Historie.</p>
+                    <p className="text-xs opacity-60 mt-1">Änderungen am Projekt werden hier automatisch protokolliert.</p>
+                </div>
+            ) : (
+                <div className="divide-y divide-slate-100">
+                    {filteredActivities.map((activity: any, index: number) => {
+                        const eventInfo = EVENT_LABELS[activity.event] || EVENT_LABELS['updated'];
+                        const oldAttributes = activity.properties?.old || {};
+                        const newAttributes = activity.properties?.attributes || {};
+                        const changedKeys = Object.keys(newAttributes).filter(k => k !== 'updated_at' && k !== 'created_at');
+                        const dateObj = new Date(activity.created_at);
+                        const isValidDate = !isNaN(dateObj.getTime());
+
+                        return (
+                            <div key={activity.id || index} className="px-6 py-4 hover:bg-slate-50/50 transition-colors group">
+                                <div className="flex items-start gap-4">
+                                    {/* Timeline dot */}
+                                    <div className="flex flex-col items-center mt-1 shrink-0">
+                                        <div className={clsx("w-3 h-3 rounded-full border-2 shadow-sm", eventInfo.borderColor, eventInfo.bgColor)} />
+                                        {index < filteredActivities.length - 1 && (
+                                            <div className="w-0.5 flex-1 bg-slate-100 mt-1 min-h-[16px]" />
+                                        )}
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                            {/* Event badge */}
+                                            <span className={clsx("px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border", eventInfo.color, eventInfo.bgColor, eventInfo.borderColor)}>
+                                                {eventInfo.label}
+                                            </span>
+
+                                            {/* Subject type */}
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                                                {activity.subject_type === 'Project' ? 'Projekt' :
+                                                    activity.subject_type === 'ProjectFile' ? 'Datei' :
+                                                        activity.subject_type === 'ProjectPosition' ? 'Position' :
+                                                            activity.subject_type === 'ProjectPayment' ? 'Zahlung' :
+                                                                activity.subject_type || 'Projekt'}
+                                            </span>
+
+                                            <span className="text-slate-300">·</span>
+
+                                            {/* User */}
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-[8px] font-black uppercase">
+                                                    {(activity.causer?.name || 'S').charAt(0)}
+                                                </div>
+                                                <span className="text-xs font-bold text-slate-700">{activity.causer?.name || 'System'}</span>
+                                            </div>
+
+                                            <span className="text-slate-300">·</span>
+
+                                            {/* Date */}
+                                            <span className="text-[10px] text-slate-400 font-medium">
+                                                {isValidDate ? dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
+                                                {isValidDate && <span className="ml-1.5 text-slate-300">{dateObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>}
+                                            </span>
+                                        </div>
+
+                                        {/* Changed fields detail */}
+                                        {activity.event === 'updated' && changedKeys.length > 0 && (
+                                            <div className="mt-2 space-y-1">
+                                                {changedKeys.slice(0, 8).map((key) => {
+                                                    const label = ATTRIBUTE_LABELS[key] || key;
+                                                    const oldVal = formatFieldValue(key, oldAttributes[key]);
+                                                    const newVal = formatFieldValue(key, newAttributes[key]);
+                                                    return (
+                                                        <div key={key} className="flex items-center gap-2 text-xs">
+                                                            <span className="text-slate-500 font-medium w-36 shrink-0 truncate" title={label}>{label}</span>
+                                                            <span className="text-red-400 line-through text-[11px] max-w-[150px] truncate" title={oldVal}>{oldVal}</span>
+                                                            <FaArrowLeft className="rotate-180 text-[8px] text-slate-300 shrink-0" />
+                                                            <span className="text-emerald-700 font-semibold text-[11px] max-w-[150px] truncate" title={newVal}>{newVal}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {changedKeys.length > 8 && (
+                                                    <span className="text-[10px] text-slate-400 italic">+ {changedKeys.length - 8} weitere Felder geändert</span>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {activity.event === 'created' && changedKeys.length > 0 && (
+                                            <div className="mt-2">
+                                                <span className="text-[10px] text-slate-400 italic">
+                                                    {activity.subject_type === 'Project' ? 'Projekt angelegt mit ' : ''}
+                                                    {changedKeys.length} {changedKeys.length === 1 ? 'Feld' : 'Feldern'}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const ProjectDetail = () => {
     const { id } = useParams();
@@ -116,7 +353,7 @@ const ProjectDetail = () => {
 
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type?: string } | null>(null);
+    const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type?: string; id?: string } | null>(null);
     const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
     const [historySearch, setHistorySearch] = useState('');
     const [historySortKey, setHistorySortKey] = useState<'date' | 'user' | 'action'>('date');
@@ -231,6 +468,8 @@ const ProjectDetail = () => {
                     note: projectResponse.down_payment_note
                 }] : []),
                 notes: projectResponse.notes || '',
+                messages: projectResponse.messages || [],
+                access_token: projectResponse.access_token,
                 files: (projectResponse.files || []).map((f: any) => ({
                     id: f.id.toString(),
                     name: f.file_name || f.original_name,
@@ -259,45 +498,7 @@ const ProjectDetail = () => {
         }
     }, [projectResponse]);
 
-    // Derived Calculations
-    const financials = useMemo(() => {
-        if (!projectData) return {
-            partnerTotal: 0,
-            positionsTotal: 0,
-            extraTotal: 0,
-            netTotal: 0,
-            tax: 0,
-            grossTotal: 0,
-            profit: 0,
-            margin: 0
-        };
 
-        const posP = projectData.positions.reduce((sum: number, p: any) => sum + (parseFloat(p.partnerTotal) || 0), 0);
-        const posC = projectData.positions.reduce((sum: number, p: any) => sum + (parseFloat(p.customerTotal) || 0), 0);
-
-        const extra = (projectData.isCertified ? 5 : 0) +
-            (projectData.hasApostille ? 15 : 0) +
-            (projectData.isExpress ? 15 : 0) +
-            (projectData.classification === 'ja' ? 15 : 0) +
-            ((projectData.copies || 0) * (projectData.copyPrice || 0));
-
-        const netC = posC + extra;
-        const tax = netC * 0.19;
-        const gross = netC + tax;
-        const profit = netC - posP;
-        const margin = netC > 0 ? (profit / netC) * 100 : 0;
-
-        return {
-            partnerTotal: posP,
-            positionsTotal: posC,
-            extraTotal: extra,
-            netTotal: netC,
-            tax: tax,
-            grossTotal: gross,
-            profit: profit,
-            margin: margin
-        };
-    }, [projectData]);
 
     const getDeadlineStatus = () => {
         if (!projectData?.due) return { label: '-', color: 'bg-slate-100 text-slate-400', icon: <FaClock /> };
@@ -315,16 +516,17 @@ const ProjectDetail = () => {
         }
     };
 
-    const addWorkingDays = (days: number) => {
-        if (!projectData) return;
-        let date = new Date();
-        let added = 0;
-        while (added < days) {
-            date.setDate(date.getDate() + 1);
-            if (date.getDay() !== 0 && date.getDay() !== 6) added++;
-        }
-        updateProjectMutation.mutate({ deadline: date.toISOString().split('T')[0] });
-    };
+    // addWorkingDays kept for future use
+    // const addWorkingDays = (days: number) => {
+    //     if (!projectData) return;
+    //     let date = new Date();
+    //     let added = 0;
+    //     while (added < days) {
+    //         date.setDate(date.getDate() + 1);
+    //         if (date.getDay() !== 0 && date.getDay() !== 6) added++;
+    //     }
+    //     updateProjectMutation.mutate({ deadline: date.toISOString().split('T')[0] });
+    // };
 
     const getLanguageInfo = (code: string) => {
         if (!code) return { flagUrl: '', name: '-' };
@@ -618,6 +820,58 @@ const ProjectDetail = () => {
         }
     };
 
+    const handlePreviewFile = async (file: any) => {
+        try {
+            const toastId = toast.loading('Lade Vorschau...');
+            const response = await projectService.downloadFile(id!, file.id);
+
+            // Guess mime type from header or fallback
+            const mimeType = response.headers['content-type'];
+
+            const blob = new Blob([response.data], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+
+            let fileName = file.name || file.fileName || 'file';
+
+            // Ensure extension exists for modal detection logic
+            if (!fileName.includes('.')) {
+                if (mimeType === 'application/pdf') fileName += '.pdf';
+                else if (mimeType?.startsWith('image/jpeg')) fileName += '.jpg';
+                else if (mimeType?.startsWith('image/png')) fileName += '.png';
+                else if (mimeType?.startsWith('image/gif')) fileName += '.gif';
+                else if (mimeType?.startsWith('image/webp')) fileName += '.webp';
+                else if (mimeType?.startsWith('image/svg')) fileName += '.svg';
+                else if (mimeType === 'application/msword') fileName += '.doc';
+                else if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') fileName += '.docx';
+            }
+
+            toast.dismiss(toastId);
+            setPreviewFile({
+                name: fileName,
+                url: url,
+                type: file.type,
+                id: file.id
+            });
+        } catch (error) {
+            toast.dismiss();
+            console.error('Preview error:', error);
+            toast.error('Vorschau konnte nicht geladen werden.');
+        }
+    };
+
+    const toggleFileType = async (file: any) => {
+        try {
+            const newType = file.type === 'source' ? 'target' : 'source';
+            await projectService.updateFile(id!, file.id, { type: newType });
+
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            toast.success(`Dateityp zu "${newType === 'source' ? 'Quelle' : 'Ziel'}" geändert`);
+        } catch (error) {
+            console.error('File update failed:', error);
+            toast.error('Dateityp konnte nicht geändert werden');
+        }
+    };
+
     const deleteFileMutation = useMutation({
         mutationFn: async (fileId: string) => {
             await projectService.deleteFile(id!, fileId);
@@ -647,6 +901,64 @@ const ProjectDetail = () => {
             toast.error('Fehler beim Erstellen der Rechnung');
         }
     });
+
+
+    const financials = useMemo(() => {
+        if (!projectData) return {
+            netTotal: 0,
+            taxTotal: 0,
+            grossTotal: 0,
+            partnerTotal: 0,
+            margin: 0,
+            marginPercent: 0,
+            paid: 0,
+            open: 0,
+            extraTotal: 0
+        };
+
+        const positions = projectData.positions || [];
+        const payments = projectData.payments || [];
+
+        // Extras Calculation
+        const extraNet = (projectData.isCertified ? 5 : 0) +
+            (projectData.hasApostille ? 15 : 0) +
+            (projectData.isExpress ? 15 : 0) +
+            (projectData.classification === 'ja' ? 15 : 0) +
+            ((projectData.copies || 0) * (Number(projectData.copyPrice) || 5));
+
+        // Positions Sum (Assuming Net from NewProjectModal logic)
+        const positionsNet = positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.customerTotal) || 0), 0);
+
+        const netTotal = positionsNet + extraNet;
+        const taxTotal = netTotal * 0.19;
+        const grossTotal = netTotal + taxTotal;
+
+        // Calculate Partner Costs
+        const partnerTotal = positions.reduce((sum: number, pos: any) => {
+            const amount = parseFloat(pos.amount) || 0;
+            const rate = parseFloat(pos.partnerRate) || 0;
+            // If unit is Pauschal, amount is usually 1, so rate * amount works.
+            return sum + (amount * rate);
+        }, 0);
+
+        const margin = netTotal - partnerTotal;
+        const marginPercent = netTotal > 0 ? (margin / netTotal) * 100 : 0;
+
+        const paid = payments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
+        const open = grossTotal - paid;
+
+        return {
+            netTotal,
+            taxTotal,
+            grossTotal,
+            partnerTotal,
+            margin,
+            marginPercent,
+            paid,
+            open,
+            extraTotal: extraNet
+        };
+    }, [projectData]);
 
     if (isLoading) return <TableSkeleton rows={10} columns={5} />;
     if (error || !projectData) return <div className="p-10 text-center text-red-500">Fehler beim Laden des Projekts.</div>;
@@ -678,7 +990,7 @@ const ProjectDetail = () => {
                                 </span>
                             )}
                         </div>
-                        <p className="text-sm text-slate-500 flex items-center gap-2 font-medium">
+                        <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
                             <span className="text-slate-800">{projectData.client}</span>
                             <span className="text-slate-300">•</span>
                             <span>ID: {projectData.id}</span>
@@ -690,7 +1002,7 @@ const ProjectDetail = () => {
                                 <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
                                 <span className="text-slate-600">{targetLang.name}</span>
                             </div>
-                        </p>
+                        </div>
                     </div>
                     <div className="flex gap-2">
                         <button
@@ -714,8 +1026,7 @@ const ProjectDetail = () => {
                         let badgeCount = 0;
                         if (tab === 'files') badgeCount = projectData?.files?.length || 0;
                         if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                        if (tab === 'messages') badgeCount = projectMessages.length;
-                        if (tab === 'history') badgeCount = (projectData?.history?.length || 0);
+                        if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
 
                         return (
                             <button
@@ -733,7 +1044,7 @@ const ProjectDetail = () => {
                                         tab === 'finances' ? 'Kalkulation & Marge' :
                                             tab === 'history' ? 'Historie' : 'Kommunikation'}
 
-                                {tab !== 'overview' && (
+                                {tab !== 'overview' && tab !== 'history' && (
                                     <span className={clsx(
                                         "px-1.5 py-0.5 rounded-full text-[9px] font-bold",
                                         activeTab === tab ? "bg-brand-100 text-brand-700" : "bg-slate-100 text-slate-500"
@@ -1065,7 +1376,7 @@ const ProjectDetail = () => {
                                             .filter((f: any) => fileFilterTab === 'all' || f.type === fileFilterTab)
                                             .map((file: any) => {
                                                 const fileName = file.name || file.fileName || file.file_name || file.original_name || 'Unbenannte Datei';
-                                                const fileType = file.type || file.mime_type || (fileName.includes('.') ? fileName.split('.').pop() : 'FILE');
+                                                // fileType declaration removed as it was unused
 
                                                 // Robust size calculation
                                                 let displaySize = file.size || file.file_size || '0 B';
@@ -1082,7 +1393,10 @@ const ProjectDetail = () => {
 
                                                 return (
                                                     <tr key={file.id} className="hover:bg-slate-50 transition-colors group">
-                                                        <td className="px-6 py-4 font-bold text-slate-700 flex items-center gap-3">
+                                                        <td
+                                                            className="px-6 py-4 font-bold text-slate-700 flex items-center gap-3 cursor-pointer hover:text-brand-600 transition"
+                                                            onClick={() => handlePreviewFile(file)}
+                                                        >
                                                             {fileName.endsWith('.pdf') ? <FaFilePdf className="text-red-500 text-lg" /> :
                                                                 fileName.endsWith('.doc') || fileName.endsWith('.docx') ? <FaFileWord className="text-blue-500 text-lg" /> :
                                                                     fileName.endsWith('.xls') || fileName.endsWith('.xlsx') ? <FaFileExcel className="text-emerald-500 text-lg" /> :
@@ -1095,14 +1409,20 @@ const ProjectDetail = () => {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <span className={clsx(
-                                                                "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tight border",
-                                                                file.type === 'source' ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
-                                                                    file.type === 'target' ? "bg-blue-50 text-blue-700 border-blue-100" :
-                                                                        "bg-slate-50 text-slate-600 border-slate-100"
-                                                            )}>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    toggleFileType(file);
+                                                                }}
+                                                                title="Klicken zum Wechseln des Typs"
+                                                                className={clsx(
+                                                                    "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tight border hover:opacity-80 transition cursor-pointer",
+                                                                    file.type === 'source' ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
+                                                                        file.type === 'target' ? "bg-blue-50 text-blue-700 border-blue-100" :
+                                                                            "bg-slate-50 text-slate-600 border-slate-100"
+                                                                )}>
                                                                 {file.type === 'source' ? 'Quelle' : file.type === 'target' ? 'Ziel' : file.type}
-                                                            </span>
+                                                            </button>
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold">V{file.version || '1.0'}</span>
@@ -1123,11 +1443,11 @@ const ProjectDetail = () => {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
-                                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <div className="flex justify-end gap-2 transition-opacity">
                                                                 <button
                                                                     className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition"
                                                                     title="Ansehen"
-                                                                    onClick={() => setPreviewFile({ name: fileName, url: file.url, type: fileType })}
+                                                                    onClick={() => handlePreviewFile(file)}
                                                                 >
                                                                     <FaEye className="text-[12px]" />
                                                                 </button>
@@ -1159,74 +1479,360 @@ const ProjectDetail = () => {
 
                 {
                     activeTab === 'finances' && (
-                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10">
-                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-                                <div className="flex items-center gap-4">
-                                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Detaillierte Kalkulation</h3>
-                                    <button
-                                        onClick={handleSavePositions}
-                                        disabled={updateProjectMutation.isPending}
-                                        className="px-4 py-2 bg-emerald-600 text-white rounded text-[10px] font-black uppercase hover:bg-emerald-700 transition shadow-sm disabled:opacity-50 flex items-center gap-2"
-                                    >
-                                        <FaCheckCircle className="text-[10px]" /> {updateProjectMutation.isPending ? 'Wird gespeichert...' : 'Preise speichern'}
-                                    </button>
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 mb-10 animate-fadeIn">
+                            {/* Left Column: Calculation Table */}
+                            <div className="xl:col-span-8 space-y-6">
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                    <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
+                                                <FaFileInvoiceDollar />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kalkulation</h3>
+                                                <p className="text-[10px] text-slate-400 font-bold">Positionen & Preise</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={addPosition}
+                                                className="px-3 py-1.5 bg-slate-50 text-slate-600 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-100 hover:text-slate-800 transition shadow-sm flex items-center gap-1.5"
+                                            >
+                                                <FaPlus className="mb-0.5" /> Neu
+                                            </button>
+                                            <button
+                                                onClick={handleSavePositions}
+                                                disabled={updateProjectMutation.isPending}
+                                                className="px-3 py-1.5 bg-brand-600 text-white rounded text-[10px] font-black uppercase hover:bg-brand-700 transition shadow-sm shadow-brand-500/20 disabled:opacity-50 flex items-center gap-1.5"
+                                            >
+                                                <FaCheckCircle /> Speichern
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse min-w-[600px]">
+                                            <thead className="bg-slate-50/80 text-slate-500 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
+                                                <tr>
+                                                    <th className="px-4 py-3 w-10 text-center">#</th>
+                                                    <th className="px-4 py-3">Beschreibung</th>
+                                                    <th className="px-4 py-3 w-28 text-right">Menge</th>
+                                                    <th className="px-4 py-3 w-24 text-right">Einh.</th>
+                                                    <th className="px-4 py-3 w-28 text-right bg-red-50/30 text-red-400 border-l border-slate-100">EK (Stk)</th>
+                                                    <th className="px-4 py-3 w-28 text-right bg-emerald-50/30 text-emerald-600 border-l border-slate-100">VK (Stk)</th>
+                                                    <th className="px-4 py-3 w-28 text-right font-black text-slate-700 bg-emerald-50/30 border-l border-slate-100">Gesamt</th>
+                                                    <th className="px-2 py-3 w-10 text-center"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 text-xs">
+                                                {projectData.positions.map((pos: any, idx: number) => (
+                                                    <tr key={pos.id} className="group hover:bg-slate-50 transition-colors">
+                                                        <td className="px-4 py-3 text-center text-slate-400 font-medium">{idx + 1}</td>
+                                                        <td className="px-4 py-3">
+                                                            {renderEditableCell(pos.id, 'description', pos.description, 'text', 'font-bold text-slate-700 w-full bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-brand-100 rounded px-1 -mx-1')}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            {renderEditableCell(pos.id, 'amount', pos.amount, 'number', 'text-right font-mono text-slate-600 bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-brand-100 rounded px-1 -mx-1')}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <select
+                                                                value={pos.unit}
+                                                                onChange={(e) => handleCellUpdate(pos.id, 'unit', e.target.value)}
+                                                                className="text-right text-[10px] font-bold uppercase text-slate-400 bg-transparent outline-none cursor-pointer hover:text-brand-600 transition-colors w-full appearance-none"
+                                                            >
+                                                                <option value="Wörter">Wörter</option>
+                                                                <option value="Zeilen">Zeilen</option>
+                                                                <option value="Seiten">Seiten</option>
+                                                                <option value="Stunden">Stunden</option>
+                                                                <option value="Pauschal">Pauschal</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right text-red-400 font-medium border-l border-slate-100 bg-red-50/5 group-hover:bg-red-50/20 transition-colors">
+                                                            {renderEditableCell(pos.id, 'partnerRate', pos.partnerRate, 'number', 'text-right font-mono bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-red-100 rounded px-1 -mx-1')}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right text-emerald-600 font-medium border-l border-slate-100 bg-emerald-50/5 group-hover:bg-emerald-50/20 transition-colors">
+                                                            {renderEditableCell(pos.id, 'customerRate', pos.customerRate, 'number', 'text-right font-mono bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded px-1 -mx-1')}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 group-hover:bg-emerald-50/30 transition-colors">
+                                                            {parseFloat(pos.customerTotal).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                                        </td>
+                                                        <td className="px-2 py-3 text-center">
+                                                            <button
+                                                                onClick={() => deletePosition(pos.id)}
+                                                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                                title="Position löschen"
+                                                            >
+                                                                <FaTrashAlt className="text-[10px]" />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {projectData.positions.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={8} className="px-6 py-12 text-center text-slate-400 italic bg-slate-50/30">
+                                                            Keine Positionen vorhanden. Starten Sie mit "Neu".
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="bg-slate-50 p-3 border-t border-slate-200 text-center">
+                                        <p className="text-[10px] text-slate-400 italic">Alle Preise in Euro inkl. gesetzlicher MwSt. falls nicht anders angegeben.</p>
+                                    </div>
                                 </div>
-                                <button onClick={addPosition} className="px-4 py-2 bg-brand-50 text-brand-700 border border-brand-200 rounded text-[10px] font-black uppercase hover:bg-brand-100 transition shadow-sm">
-                                    <FaPlus className="inline mr-1 mb-0.5" /> Position hinzufügen
-                                </button>
+
+                                {/* Payments Section Implementation */}
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                    <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm">
+                                                <FaFileInvoiceDollar />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Zahlungen</h3>
+                                                <p className="text-[10px] text-slate-400 font-bold">Eingänge & Gutschriften</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setIsPaymentModalOpen(true)}
+                                            className="px-3 py-1.5 bg-white text-slate-600 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-50 hover:text-brand-600 transition shadow-sm flex items-center gap-1.5"
+                                        >
+                                            <FaPlus className="mb-0.5" /> Zahlung erfassen
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-slate-50/80 text-slate-500 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
+                                                <tr>
+                                                    <th className="px-6 py-3 w-32">Datum</th>
+                                                    <th className="px-6 py-3">Beschreibung / Methode</th>
+                                                    <th className="px-6 py-3 text-right">Betrag</th>
+                                                    <th className="px-4 py-3 w-10"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 text-xs">
+                                                {(projectData.payments || []).length > 0 ? (
+                                                    projectData.payments.map((payment: any, idx: number) => (
+                                                        <tr key={idx} className="hover:bg-slate-50 transition-colors group">
+                                                            <td className="px-6 py-3 font-mono text-slate-600">
+                                                                {new Date(payment.created_at || payment.date || new Date()).toLocaleDateString('de-DE')}
+                                                            </td>
+                                                            <td className="px-6 py-3 font-medium text-slate-700">
+                                                                {payment.note || 'Zahlungseingang'}
+                                                                {payment.method && <span className="ml-2 px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] uppercase tracking-wide">{payment.method}</span>}
+                                                            </td>
+                                                            <td className="px-6 py-3 text-right font-bold text-emerald-600">
+                                                                + {parseFloat(payment.amount).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center">
+                                                                <button className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                                                                    <FaTrashAlt className="text-[10px]" />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={4} className="px-6 py-8 text-center text-slate-400 italic bg-slate-50/30">
+                                                            Noch keine Zahlungen verbucht.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[900px]">
-                                    <thead className="bg-slate-50/80 text-slate-400 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
-                                        <tr>
-                                            <th className="px-4 py-3 w-10 text-center">#</th>
-                                            <th className="px-4 py-3">Beschreibung</th>
-                                            <th className="px-4 py-3 w-32">Menge / Einh.</th>
-                                            <th className="px-4 py-3 w-32 text-right bg-red-50/30 text-red-500 border-l border-slate-100">EK Rate/Gesamt</th>
-                                            <th className="px-4 py-3 w-32 text-right bg-emerald-50/30 text-emerald-700 border-l border-slate-100">VK Rate/Gesamt</th>
-                                            <th className="px-4 py-3 w-10"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-xs">
-                                        {projectData.positions.map((pos: any, idx: number) => (
-                                            <tr key={pos.id} className="group hover:bg-slate-50 transition-colors">
-                                                <td className="px-4 py-4 text-center text-slate-400">{idx + 1}</td>
-                                                <td className="px-4 py-4">{renderEditableCell(pos.id, 'description', pos.description, 'text', 'font-bold text-slate-800')}</td>
-                                                <td className="px-4 py-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        {renderEditableCell(pos.id, 'amount', pos.amount, 'number', 'w-16')}
-                                                        <select value={pos.unit} onChange={(e) => handleCellUpdate(pos.id, 'unit', e.target.value)} className="text-[9px] font-bold uppercase text-slate-400 bg-transparent outline-none cursor-pointer">
-                                                            <option value="Wörter">Wörter</option> <option value="Stunden">Stunden</option> <option value="Seiten">Seiten</option> <option value="Zeilen">Zeilen</option> <option value="Pauschal">Pauschal</option>
-                                                        </select>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4 text-right bg-red-50/10 border-l border-slate-100">
-                                                    <div className="font-bold text-slate-500">{renderEditableCell(pos.id, 'partnerRate', pos.partnerRate, 'number', 'text-right')}</div>
-                                                    <div className="text-[10px] text-red-400 font-black">{parseFloat(pos.partnerTotal).toFixed(2)} €</div>
-                                                </td>
-                                                <td className="px-4 py-4 text-right bg-emerald-50/10 border-l border-slate-100">
-                                                    <div className="font-bold text-slate-500">{renderEditableCell(pos.id, 'customerRate', pos.customerRate, 'number', 'text-right')}</div>
-                                                    <div className="text-[10px] text-emerald-600 font-black">{parseFloat(pos.customerTotal).toFixed(2)} €</div>
-                                                </td>
-                                                <td className="px-2 py-4 text-center">
-                                                    <button onClick={() => deletePosition(pos.id)} className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"><FaTrashAlt className="text-[10px]" /></button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        <tr className="bg-slate-100 border-t-2 border-slate-200">
-                                            <td colSpan={3} className="px-4 py-3 text-right font-black text-slate-600 uppercase tracking-widest text-[10px]">Netto Ergebnis</td>
-                                            <td className="px-4 py-3 text-right font-bold text-red-400">{financials.partnerTotal.toFixed(2)} € (EK)</td>
-                                            <td className="px-4 py-3 text-right font-black text-lg text-slate-800">{financials.netTotal.toFixed(2)} € (VK)</td>
-                                            <td></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+
+                            {/* Right Column: Financial Summary Sidebar */}
+                            <div className="xl:col-span-4 space-y-6">
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-24">
+                                    <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+                                        <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                                            <FaClock className="text-brand-500" /> Finanz-Status
+                                        </h3>
+                                    </div>
+
+                                    <div className="p-6 space-y-6">
+                                        {/* Main Total Display */}
+                                        <div className="text-center pb-6 border-b border-slate-100 border-dashed">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Gesamtbetrag (Brutto)</p>
+                                            <div className="text-4xl font-black text-slate-800 tracking-tight">
+                                                {financials.grossTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xl text-slate-400 font-bold">€</span>
+                                            </div>
+                                            <div className="mt-2 flex justify-center gap-2">
+                                                <span className={clsx(
+                                                    "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border",
+                                                    financials.open <= 0 ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"
+                                                )}>
+                                                    {financials.open <= 0 ? 'Bezahlt' : 'Offen'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Breakdown */}
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-slate-500 font-medium">Netto Umsatz</span>
+                                                <span className="font-bold text-slate-700">{financials.netTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                                                    MwSt. (19%)
+                                                    <FaInfoCircle className="text-slate-300 text-[10px]" title="Standardsteuersatz Deutschland" />
+                                                </span>
+                                                <span className="font-bold text-slate-700">{financials.taxTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-sm mb-2">
+                                                <span className="font-bold text-slate-800">Gesamtbetrag (Brutto)</span>
+                                                <span className="font-bold text-slate-800">{financials.grossTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                            </div>
+                                            {/* Spacer */}
+                                            <div className="h-px bg-slate-100 my-2"></div>
+
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-slate-500 font-medium">Kosten (Partner)</span>
+                                                <span className="font-bold text-red-400">- {financials.partnerTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                            </div>
+
+                                            <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100 mt-4">
+                                                <div className="flex justify-between items-end mb-1">
+                                                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Marge / Gewinn</span>
+                                                    <span className="text-lg font-black text-emerald-700">{financials.margin.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                                </div>
+
+                                                {/* Progress Bar for Margin */}
+                                                <div className="w-full bg-emerald-200/50 rounded-full h-1.5 mb-1">
+                                                    <div
+                                                        className={clsx("h-1.5 rounded-full transition-all duration-500",
+                                                            financials.marginPercent > 30 ? "bg-emerald-500" :
+                                                                financials.marginPercent > 10 ? "bg-amber-500" : "bg-red-500"
+                                                        )}
+                                                        style={{ width: `${Math.min(100, Math.max(0, financials.marginPercent))}%` }}
+                                                    ></div>
+                                                </div>
+                                                <div className="flex justify-between text-[9px] font-bold text-emerald-600/70">
+                                                    <span>{financials.marginPercent.toFixed(1)}% Marge</span>
+                                                    <span>Ziel: {'>'}30%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-3">
+                                            <button
+                                                onClick={() => setIsInvoiceModalOpen(true)}
+                                                className="col-span-2 py-2.5 bg-brand-600 text-white rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
+                                            >
+                                                <FaFileInvoiceDollar /> Rechnung erstellen
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )
                 }
 
 
+
+                {activeTab === 'messages' && (
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10 h-full flex flex-col min-h-[500px]">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white gap-4">
+                            <div>
+                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Projekt-Kommunikation</h3>
+                                <p className="text-[10px] text-slate-400 font-bold">Nachrichten & Gast-Zugang</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {!projectData.access_token ? (
+                                    <button
+                                        onClick={() => {
+                                            projectService.generateToken(id!).then(() => {
+                                                queryClient.invalidateQueries({ queryKey: ['projects', id] });
+                                                toast.success('Gast-Link generiert');
+                                            });
+                                        }}
+                                        className="px-3 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase rounded hover:bg-brand-700 transition"
+                                    >
+                                        Gast-Zugang aktivieren
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded px-2 py-1">
+                                        <span className="text-[10px] text-slate-500 font-mono select-all truncate max-w-[200px]">
+                                            {window.location.origin}/guest/project/{projectData.access_token}
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(`${window.location.origin}/guest/project/${projectData.access_token}`);
+                                                toast.success('Link kopiert');
+                                            }}
+                                            className="text-slate-400 hover:text-brand-600 p-1"
+                                            title="Kopieren"
+                                        >
+                                            <FaCopy />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-slate-50/30 flex flex-col-reverse">
+                            {(!projectData.messages || projectData.messages.length === 0) && (
+                                <div className="text-center text-slate-400 italic py-10 self-center">Keine Nachrichten vorhanden.</div>
+                            )}
+                            {[...(projectData.messages || [])].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((msg: any) => (
+                                <div key={msg.id} className={clsx("flex flex-col max-w-[80%]", msg.user_id ? "self-end items-end" : "self-start items-start")}>
+                                    <div className={clsx("px-4 py-2 rounded-lg text-sm shadow-sm", msg.user_id ? "bg-brand-50 text-brand-900 rounded-tr-none" : "bg-white border border-slate-200 text-slate-700 rounded-tl-none")}>
+                                        {msg.content}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 mt-1 flex gap-2">
+                                        <span className="font-bold">{msg.user ? msg.user.name : (msg.sender_name || 'Gast')}</span>
+                                        <span>•</span>
+                                        <span>{new Date(msg.created_at).toLocaleString('de-DE')}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="p-4 border-t border-slate-100 bg-white">
+                            <div className="flex gap-2">
+                                <textarea
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    placeholder="Nachricht schreiben..."
+                                    className="flex-1 border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none h-20 bg-slate-50"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            if (newMessage.trim()) {
+                                                projectService.postMessage(id!, newMessage).then(() => {
+                                                    setNewMessage('');
+                                                    queryClient.invalidateQueries({ queryKey: ['projects', id] });
+                                                });
+                                            }
+                                        }
+                                    }}
+                                />
+                                <button
+                                    onClick={() => {
+                                        if (newMessage.trim()) {
+                                            projectService.postMessage(id!, newMessage).then(() => {
+                                                setNewMessage('');
+                                                queryClient.invalidateQueries({ queryKey: ['projects', id] });
+                                            });
+                                        }
+                                    }}
+                                    disabled={!newMessage.trim()}
+                                    className="px-4 bg-brand-600 text-white rounded-lg font-bold hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase text-[10px] tracking-widest"
+                                >
+                                    Senden
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {
                     activeTab === 'history' && (
@@ -1250,9 +1856,9 @@ const ProjectDetail = () => {
                                 <table className="w-full text-left border-collapse relative">
                                     <thead className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                                         <tr>
-                                            <th className="px-4 py-3 w-10 text-center bg-slate-50">#</th>
+                                            <th className="px-4 py-4 w-10 text-center bg-slate-50">#</th>
                                             <th
-                                                className="px-6 py-3 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
+                                                className="px-6 py-4 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
                                                 onClick={() => {
                                                     if (historySortKey === 'date') {
                                                         setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
@@ -1270,7 +1876,7 @@ const ProjectDetail = () => {
                                                 </span>
                                             </th>
                                             <th
-                                                className="px-6 py-3 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
+                                                className="px-6 py-4 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
                                                 onClick={() => {
                                                     if (historySortKey === 'user') {
                                                         setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
@@ -1288,7 +1894,7 @@ const ProjectDetail = () => {
                                                 </span>
                                             </th>
                                             <th
-                                                className="px-6 py-3 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
+                                                className="px-6 py-4 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
                                                 onClick={() => {
                                                     if (historySortKey === 'action') {
                                                         setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
@@ -1305,8 +1911,8 @@ const ProjectDetail = () => {
                                                     )}
                                                 </span>
                                             </th>
-                                            <th className="px-6 py-3 bg-slate-50">Von Wert</th>
-                                            <th className="px-6 py-3 bg-slate-50">Zu Wert</th>
+                                            <th className="px-6 py-4 bg-slate-50">Von Wert</th>
+                                            <th className="px-6 py-4 bg-slate-50">Zu Wert</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-xs">
@@ -1637,6 +2243,10 @@ const ProjectDetail = () => {
                         </div>
                     )
                 }
+
+                {activeTab === 'history' && (
+                    <HistoryTab projectId={id!} historySearch={historySearch} setHistorySearch={setHistorySearch} historySortKey={historySortKey} setHistorySortKey={setHistorySortKey} historySortDir={historySortDir} setHistorySortDir={setHistorySortDir} />
+                )}
             </div >
 
             <CustomerSelectionModal
@@ -1703,9 +2313,12 @@ const ProjectDetail = () => {
             />
             <FilePreviewModal
                 isOpen={!!previewFile}
-                onClose={() => setPreviewFile(null)}
+                onClose={() => {
+                    if (previewFile?.url) window.URL.revokeObjectURL(previewFile.url);
+                    setPreviewFile(null);
+                }}
                 file={previewFile}
-                onDownload={() => previewFile && handleDownloadFile({ name: previewFile.name, id: projectData.files.find((f: any) => f.url === previewFile.url)?.id })}
+                onDownload={() => previewFile?.id && handleDownloadFile({ name: previewFile.name, id: previewFile.id })}
             />
             <ConfirmModal
                 isOpen={deleteFileConfirm.isOpen}

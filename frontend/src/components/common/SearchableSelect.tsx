@@ -5,12 +5,13 @@ import clsx from 'clsx';
 
 interface SearchableSelectProps {
     options: { value: string; label: string; icon?: string; group?: string }[];
-    value: string;
-    onChange: (value: string) => void;
+    value: string | string[];
+    onChange: (value: any) => void;
     placeholder?: string;
     label?: string;
     error?: boolean;
     className?: string;
+    isMulti?: boolean;
     onAddNew?: () => void;
     addNewLabel?: string;
     id?: string;
@@ -18,13 +19,14 @@ interface SearchableSelectProps {
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
-    onAddNew, addNewLabel = "Neu hinzufügen", id
+    isMulti = false, onAddNew, addNewLabel = "Neu hinzufügen", id
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [activeIndex, setActiveIndex] = useState(-1);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const updateCoords = useCallback(() => {
         if (wrapperRef.current) {
@@ -75,7 +77,20 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         return list;
     }, [groupedOptions]);
 
-    const selectedOption = options.find(opt => opt.value === value);
+    const values = useMemo(() => Array.isArray(value) ? value : [value].filter(Boolean), [value]);
+
+    const handleSelect = (val: string) => {
+        if (isMulti) {
+            const newValues = values.includes(val)
+                ? values.filter(v => v !== val)
+                : [...values, val];
+            onChange(newValues);
+        } else {
+            onChange(val);
+            setIsOpen(false);
+            setSearch('');
+        }
+    };
 
     useEffect(() => {
         setActiveIndex(flatOptions.length > 0 ? 0 : -1);
@@ -84,10 +99,16 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     useLayoutEffect(() => {
         if (isOpen) {
             updateCoords();
-            window.addEventListener('scroll', updateCoords, true);
+            const closeOnScroll = (e: Event) => {
+                if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
+                    return;
+                }
+                setIsOpen(false);
+            };
+            window.addEventListener('scroll', closeOnScroll, true);
             window.addEventListener('resize', updateCoords);
             return () => {
-                window.removeEventListener('scroll', updateCoords, true);
+                window.removeEventListener('scroll', closeOnScroll, true);
                 window.removeEventListener('resize', updateCoords);
             };
         }
@@ -111,9 +132,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         } else if (e.key === 'Enter') {
             e.preventDefault();
             if (activeIndex >= 0 && activeIndex < flatOptions.length) {
-                onChange(flatOptions[activeIndex].value);
-                setIsOpen(false);
-                setSearch('');
+                handleSelect(flatOptions[activeIndex].value);
             }
         } else if (e.key === 'Escape') {
             setIsOpen(false);
@@ -136,6 +155,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
     const dropdownContent = (
         <div
+            ref={dropdownRef}
             className="fixed z-[9999] bg-white border border-slate-200 shadow-xl overflow-hidden animate-fadeIn searchable-select-dropdown flex flex-col"
             style={{
                 top: coords.top,
@@ -161,30 +181,35 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     <>
                         {groupedOptions.sortedGroups.map(group => (
                             <div key={group.name}>
-                                <div className="px-4 py-1.5 bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-y border-slate-100/50">
+                                <div className="px-4 py-1.5 bg-slate-50 text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] border-y border-slate-100/50">
                                     {group.name}
                                 </div>
                                 {group.items.map((opt) => {
                                     const index = flatOptions.indexOf(opt);
+                                    const isSelected = values.includes(opt.value);
                                     return (
                                         <div
                                             key={opt.value}
                                             className={clsx(
-                                                "px-6 py-2.5 text-sm cursor-pointer transition flex justify-between items-center",
+                                                "px-4 py-2 text-sm cursor-pointer transition flex justify-between items-center",
                                                 activeIndex === index ? 'bg-brand-50/50 text-brand-700' : 'text-slate-700 hover:bg-slate-50',
-                                                opt.value === value ? 'font-bold bg-brand-50/30' : ''
+                                                isSelected ? 'font-bold bg-brand-50/30' : ''
                                             )}
-                                            onClick={() => {
-                                                onChange(opt.value);
-                                                setIsOpen(false);
-                                                setSearch('');
-                                            }}
+                                            onClick={() => handleSelect(opt.value)}
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2">
+                                                {isMulti && (
+                                                    <div className={clsx(
+                                                        "w-3.5 h-3.5 rounded border transition-colors flex items-center justify-center mr-1",
+                                                        isSelected ? "bg-brand-600 border-brand-600" : "bg-white border-slate-300"
+                                                    )}>
+                                                        {isSelected && <FaCheck className="text-white text-[7px]" />}
+                                                    </div>
+                                                )}
                                                 {opt.icon && <img src={opt.icon} className="w-5 h-3.5 object-cover shrink-0 shadow-sm" alt="" />}
                                                 <span className="truncate">{opt.label}</span>
                                             </div>
-                                            {opt.value === value && <FaCheck className="text-[10px] shrink-0 text-brand-600" />}
+                                            {!isMulti && isSelected && <FaCheck className="text-[10px] shrink-0 text-brand-600" />}
                                         </div>
                                     );
                                 })}
@@ -193,31 +218,36 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         {groupedOptions.noGroup.length > 0 && (
                             <div>
                                 {groupedOptions.sortedGroups.length > 0 && (
-                                    <div className="px-4 py-1.5 bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] border-y border-slate-100/50">
+                                    <div className="px-4 py-1.5 bg-slate-50 text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] border-y border-slate-100/50">
                                         Sonstiges
                                     </div>
                                 )}
                                 {groupedOptions.noGroup.map((opt) => {
                                     const index = flatOptions.indexOf(opt);
+                                    const isSelected = values.includes(opt.value);
                                     return (
                                         <div
                                             key={opt.value}
                                             className={clsx(
-                                                "px-4 py-2.5 text-sm cursor-pointer transition flex justify-between items-center",
+                                                "px-4 py-2 text-sm cursor-pointer transition flex justify-between items-center",
                                                 activeIndex === index ? 'bg-brand-50/50 text-brand-700' : 'text-slate-700 hover:bg-slate-50',
-                                                opt.value === value ? 'font-bold bg-brand-50/30' : ''
+                                                isSelected ? 'font-bold bg-brand-50/30' : ''
                                             )}
-                                            onClick={() => {
-                                                onChange(opt.value);
-                                                setIsOpen(false);
-                                                setSearch('');
-                                            }}
+                                            onClick={() => handleSelect(opt.value)}
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2">
+                                                {isMulti && (
+                                                    <div className={clsx(
+                                                        "w-3.5 h-3.5 rounded border transition-colors flex items-center justify-center mr-1",
+                                                        isSelected ? "bg-brand-600 border-brand-600" : "bg-white border-slate-300"
+                                                    )}>
+                                                        {isSelected && <FaCheck className="text-white text-[7px]" />}
+                                                    </div>
+                                                )}
                                                 {opt.icon && <img src={opt.icon} className="w-5 h-3.5 object-cover shrink-0 shadow-sm" alt="" />}
                                                 <span className="truncate">{opt.label}</span>
                                             </div>
-                                            {opt.value === value && <FaCheck className="text-[10px] shrink-0 text-brand-600" />}
+                                            {!isMulti && isSelected && <FaCheck className="text-[10px] shrink-0 text-brand-600" />}
                                         </div>
                                     );
                                 })}
@@ -249,34 +279,51 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
     return (
         <div className="relative w-full" ref={wrapperRef} data-error={error}>
-            {label && <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5">{label}</label>}
+            {label && <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{label}</label>}
             <div
                 id={id}
                 className={clsx(
-                    "w-full border px-3 py-2 text-sm bg-white flex justify-between items-center cursor-pointer transition h-10",
-                    error ? "border-red-500 ring-2 ring-red-500/10" : "border-slate-300 hover:border-slate-400",
-                    isOpen ? "border-brand-500 ring-2 ring-brand-500/10 shadow-sm" : "shadow-sm",
+                    "w-full border px-3 py-1 text-sm bg-white flex justify-between items-center cursor-pointer transition min-h-[40px]",
+                    error ? "border-red-700 ring-2 ring-red-700/10" : "border-slate-300 hover:border-slate-400",
+                    isOpen ? "border-brand-500 ring-2 ring-brand-500/20 shadow-sm" : "shadow-sm",
                     className
                 )}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
                 tabIndex={0}
             >
-                <div className="flex items-center gap-2 overflow-hidden">
-                    {selectedOption?.icon && (
-                        <img src={selectedOption.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />
+                <div className="flex flex-wrap items-center gap-1.5 overflow-hidden py-1">
+                    {values.length > 0 ? (
+                        values.map(v => {
+                            const opt = options.find(o => o.value === v);
+                            if (!opt) return null;
+                            return (
+                                <div key={v} className={clsx(
+                                    "flex items-center gap-1",
+                                    isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded text-[11px] font-bold text-slate-700" : "font-bold text-slate-800"
+                                )}>
+                                    {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
+                                    <span className="truncate max-w-[150px]">{opt.label}</span>
+                                    {isMulti && (
+                                        <FaTimes
+                                            className="ml-1 text-slate-400 hover:text-red-500 transition-colors"
+                                            onClick={(e) => { e.stopPropagation(); handleSelect(v); }}
+                                        />
+                                    )}
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <span className="text-slate-400">{placeholder}</span>
                     )}
-                    <span className={clsx("truncate", selectedOption ? 'text-slate-800 font-bold' : 'text-slate-400')}>
-                        {selectedOption?.label || placeholder}
-                    </span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    {value && (
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                    {!isMulti && value && (
                         <FaTimes
                             className="text-slate-300 hover:text-red-500 cursor-pointer text-[10px] transition-colors"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onChange('');
+                                handleSelect('');
                             }}
                         />
                     )}

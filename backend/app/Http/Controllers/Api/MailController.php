@@ -16,7 +16,7 @@ class MailController extends Controller
         $mails = Mail::where('folder', $folder)
             ->latest()
             ->get()
-            ->map(function($mail) {
+            ->map(function ($mail) {
                 return [
                     'id' => $mail->id,
                     'from' => $mail->from_email,
@@ -44,8 +44,18 @@ class MailController extends Controller
         ]);
 
         $account = \App\Models\MailAccount::findOrFail($validated['mail_account_id']);
-        
+
         $attachments = [];
+        $email = (new \Symfony\Component\Mime\Email())
+            ->from($account->email)
+            ->to(...array_map('trim', explode(',', $validated['to'])))
+            ->subject($validated['subject'] ?? '(Kein Betreff)')
+            ->html($validated['body']);
+
+        if ($validated['cc']) {
+            $email->cc(...array_map('trim', explode(',', $validated['cc'])));
+        }
+
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
                 $path = $file->store('mail_attachments');
@@ -55,7 +65,27 @@ class MailController extends Controller
                     'size' => $file->getSize(),
                     'mime' => $file->getMimeType()
                 ];
+                $email->attachFromPath(storage_path('app/' . $path), $file->getClientOriginalName());
             }
+        }
+
+        // Send the email
+        try {
+            // Use smtps:// for SSL (port 465), smtp:// for TLS/STARTTLS (port 587)
+            $scheme = ((int) $account->port === 465 || ($account->encryption ?? 'ssl') === 'ssl') ? 'smtps' : 'smtp';
+            $transport = \Symfony\Component\Mailer\Transport::fromDsn(sprintf(
+                '%s://%s:%s@%s:%s',
+                $scheme,
+                urlencode($account->username),
+                urlencode($account->password),
+                $account->host,
+                $account->port
+            ));
+
+            $mailer = new \Symfony\Component\Mailer\Mailer($transport);
+            $mailer->send($email);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Fehler beim Senden: ' . $e->getMessage()], 500);
         }
 
         $mail = Mail::create([
@@ -84,7 +114,7 @@ class MailController extends Controller
     public function destroy($id)
     {
         $mail = Mail::findOrFail($id);
-        
+
         if ($mail->folder === 'trash') {
             $mail->forceDelete();
         } else {
@@ -97,7 +127,7 @@ class MailController extends Controller
     public function sync(Request $request)
     {
         $tenantId = $request->user()->tenant_id ?? 1;
-        
+
         // Fetch Mail Settings
         $settings = \App\Models\TenantSetting::where('tenant_id', $tenantId)
             ->whereIn('key', ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption'])
@@ -107,19 +137,20 @@ class MailController extends Controller
             return response()->json(['message' => 'Bitte konfigurieren Sie zuerst Ihre Mail-Einstellungen (Host, Benutzer, Passwort).'], 400);
         }
 
-        // Use 993 for IMAP SSL regardless of what's in 'mail_port' (which might be for SMTP)
-        $port = ($settings['mail_host'] === 'mail.manitu.de' || $settings['mail_encryption'] === 'ssl') ? 993 : ($settings['mail_port'] ?? 993);
+        // IMAP port is derived from encryption: SSL uses 993, TLS/none uses 143
+        $encryption = $settings['mail_encryption'] ?? 'ssl';
+        $port = ($encryption === 'ssl') ? 993 : 143;
 
         try {
             // Configure IMAP Client on the fly
             $client = \Webklex\IMAP\Facades\Client::make([
-                'host'          => $settings['mail_host'],
-                'port'          => $port,
-                'encryption'    => $settings['mail_encryption'] ?? 'ssl',
+                'host' => $settings['mail_host'],
+                'port' => $port,
+                'encryption' => $settings['mail_encryption'] ?? 'ssl',
                 'validate_cert' => false,
-                'username'      => $settings['mail_username'],
-                'password'      => $settings['mail_password'],
-                'protocol'      => 'imap'
+                'username' => $settings['mail_username'],
+                'password' => $settings['mail_password'],
+                'protocol' => 'imap'
             ]);
 
             // Connect to the server
@@ -127,7 +158,7 @@ class MailController extends Controller
 
             // Get INBOX folder
             $folder = $client->getFolder('INBOX');
-            
+
             // Fetch the latest 50 messages
             $messages = $folder->query()->all()->limit(50)->get();
 
@@ -171,7 +202,7 @@ class MailController extends Controller
 
         } catch (\Exception $e) {
             \Log::error("IMAP Sync Failed: " . $e->getMessage());
-            
+
             return response()->json([
                 'message' => 'Verbindung zum Mail-Server fehlgeschlagen: ' . $e->getMessage() . '. Bitte prüfen Sie Host, Port (993) und Passwort.'
             ], 500);

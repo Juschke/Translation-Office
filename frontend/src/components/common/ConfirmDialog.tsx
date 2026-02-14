@@ -1,5 +1,17 @@
+// DEPRECATED: Use @/components/ui/alert-dialog instead
+// This file exists for backward compatibility only
 import React from 'react';
-import { FaExclamationTriangle, FaInfoCircle, FaCheckCircle } from 'react-icons/fa';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogFooter,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogAction,
+    AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 interface ConfirmDialogProps {
     isOpen: boolean;
@@ -22,57 +34,31 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     onConfirm,
     onCancel
 }) => {
-    if (!isOpen) return null;
-
-    const getIcon = () => {
-        switch (type) {
-            case 'warning': return <FaExclamationTriangle className="text-slate-400" size={24} />;
-            case 'danger': return <FaExclamationTriangle className="text-slate-400" size={24} />;
-            case 'success': return <FaCheckCircle className="text-slate-400" size={24} />;
-            default: return <FaInfoCircle className="text-slate-400" size={24} />;
-        }
-    };
-
-    const getButtonStyles = () => {
-        switch (type) {
-            case 'danger': return 'bg-red-600 hover:bg-red-700 shadow-red-100';
-            case 'warning': return 'bg-amber-600 hover:bg-amber-700 shadow-amber-100';
-            default: return 'bg-teal-600 hover:bg-teal-700 shadow-teal-100';
-        }
+    const actionStyles = {
+        danger: 'bg-red-600 hover:bg-red-700 text-white',
+        warning: 'bg-amber-600 hover:bg-amber-700 text-white',
+        success: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+        info: 'bg-brand-600 hover:bg-brand-700 text-white',
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeInShort">
-            <div className="bg-white rounded shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
-                <div className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="shrink-0 pt-1">
-                            {getIcon()}
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-800 leading-tight">{title}</h3>
-                            <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-                                {message}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-slate-50 px-6 py-4 flex justify-end gap-3 border-t border-slate-100">
-                    <button
-                        onClick={onCancel}
-                        className="px-4 py-2 text-slate-500 text-xs font-black uppercase tracking-widest hover:text-slate-800"
-                    >
-                        {cancelLabel}
-                    </button>
-                    <button
+        <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    <AlertDialogDescription>{message}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={onCancel}>{cancelLabel}</AlertDialogCancel>
+                    <AlertDialogAction
                         onClick={onConfirm}
-                        className={`px-6 py-2 text-white text-xs font-black uppercase tracking-widest rounded shadow-lg ${getButtonStyles()}`}
+                        className={cn(actionStyles[type])}
                     >
                         {confirmLabel}
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 };
 

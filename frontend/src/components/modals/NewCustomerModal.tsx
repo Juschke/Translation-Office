@@ -93,7 +93,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
     useEffect(() => {
         const fillCity = async () => {
             // Only auto-fill if ZIP looks complete (e.g. 5 digits for DE)
-            if (formData.address_zip.length === 5 && !formData.address_city) {
+            if (formData.address_zip && formData.address_zip.length === 5 && !formData.address_city) {
                 const city = await fetchCityByZip(formData.address_zip, formData.address_country);
                 if (city) {
                     setFormData(prev => ({ ...prev, address_city: city }));
@@ -187,23 +187,23 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
             <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden animate-fade-in-up transform transition-all">
                 <form onSubmit={handleSave} className="flex flex-col h-full overflow-hidden">
                     {/* Header */}
-                    <div className="bg-white px-8 py-5 border-b border-slate-200 flex justify-between items-center shrink-0">
+                    <div className="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                         <div>
-                            <h3 className="font-black text-lg text-slate-800 uppercase tracking-tight flex items-center gap-3">
+                            <h3 className="font-black text-base text-slate-800 uppercase tracking-tight flex items-center gap-3">
                                 {initialData ? 'Kunde bearbeiten' : 'Neuen Kunden anlegen'}
-                                <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded border border-brand-100 uppercase tracking-widest">
+                                <span className="text-[9px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100 uppercase tracking-widest">
                                     CRM Stammdaten
                                 </span>
                             </h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Zentrale Verwaltung der Kundenprofile</p>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Zentrale Verwaltung der Kundenprofile</p>
                         </div>
-                        <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
-                            <FaTimes className="text-xl" />
+                        <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                            <FaTimes className="text-lg" />
                         </button>
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-12 bg-white">
+                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-8 bg-white">
                         {/* Section 1: Classification */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
@@ -211,15 +211,15 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Klassifizierung & Name</h4>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+                            <div className="grid grid-cols-12 gap-x-6 gap-y-4">
                                 <div className="col-span-12">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">Kunden-Typ</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Kunden-Typ</label>
                                     <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 w-fit">
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'private' }))} className={`px-5 py-2 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'private' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'company' }))} className={`px-5 py-2 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'authority' }))} className={`px-5 py-2 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'authority' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'private' }))} className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'private' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'company' }))} className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'authority' }))} className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'authority' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
                                     </div>
-                                    <p className="mt-1.5 text-[10px] text-slate-400 font-medium ml-1">Wählen Sie die Rechtsform des Kunden für korrekte Rechnungsstellung</p>
+                                    <p className="mt-1 text-[10px] text-slate-400 font-medium ml-1">Wählen Sie die Rechtsform des Kunden für korrekte Rechnungsstellung</p>
                                 </div>
 
                                 {(formData.type === 'company' || formData.type === 'authority') && (
@@ -284,8 +284,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kontaktdaten</h4>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-x-12 gap-y-8">
-                                <div className="col-span-12 md:col-span-6 space-y-6">
+                            <div className="grid grid-cols-12 gap-4">
+                                <div className="col-span-12 md:col-span-6 space-y-4">
                                     <Input
                                         label="E-Mail (Primär)"
                                         name="email"
@@ -356,7 +356,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Standort & Adresse</h4>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+                            <div className="grid grid-cols-12 gap-x-6 gap-y-4">
                                 <div className="col-span-12 md:col-span-9">
                                     <Input
                                         label="Straße *"
@@ -437,17 +437,17 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                     </div>
 
                     {/* Footer */}
-                    <div className="bg-slate-50 px-8 py-5 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-2.5 rounded border border-slate-300 text-slate-600 text-[11px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-sm"
+                            className="px-5 py-2 rounded border border-slate-300 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-sm"
                         >
                             Abbrechen
                         </button>
                         <button
                             type="submit"
-                            className="px-10 py-2.5 bg-brand-700 text-white rounded text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95"
+                            className="px-8 py-2 bg-brand-700 text-white rounded text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95"
                         >
                             {initialData ? 'Änderungen speichern' : 'Kunde anlegen'}
                         </button>

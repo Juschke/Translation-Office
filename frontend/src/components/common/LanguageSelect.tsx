@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { FaChevronDown, FaTimes, FaSearch, FaCheck } from 'react-icons/fa';
+import { createPortal } from 'react-dom';
+import { FaChevronDown, FaTimes, FaSearch, FaCheck, FaPlus } from 'react-icons/fa';
 import { getFlagUrl } from '../../utils/flags';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
@@ -21,6 +22,9 @@ interface LanguageSelectProps {
     placeholder?: string;
     error?: boolean;
     className?: string;
+    onAddNew?: () => void;
+    addNewLabel?: string;
+    id?: string;
 }
 
 const LanguageSelect: React.FC<LanguageSelectProps> = ({
@@ -30,13 +34,47 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     isMulti = false,
     placeholder = 'Sprache wählen...',
     error,
-    className = ""
+    className = "",
+    onAddNew,
+    addNewLabel = "Sprache hinzufügen",
+    id
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [activeIndex, setActiveIndex] = useState(-1);
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const updateCoords = () => {
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setCoords({
+                top: rect.bottom,
+                left: rect.left,
+                width: rect.width
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            updateCoords();
+            const handleScroll = (e: Event) => {
+                if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
+                    return;
+                }
+                setIsOpen(false);
+            };
+            window.addEventListener('scroll', handleScroll, true);
+            window.addEventListener('resize', updateCoords);
+            return () => {
+                window.removeEventListener('scroll', handleScroll, true);
+                window.removeEventListener('resize', updateCoords);
+            };
+        }
+    }, [isOpen]);
 
     const { data: serverLanguages = [] } = useQuery({
         queryKey: ['settings', 'languages'],
@@ -91,6 +129,10 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                // If the target is inside the portal, don't close
+                const portal = document.querySelector('.language-select-portal');
+                if (portal && portal.contains(event.target as Node)) return;
+
                 setIsOpen(false);
                 setSearch('');
             }
@@ -113,18 +155,22 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     };
 
     const getLangLabel = (code: string) => {
-        const lang = languages.find((l: LanguageOption) => l.code === code);
+        let lang = languages.find((l: LanguageOption) => l.code === code);
+        if (!lang && code.includes('-')) {
+            const baseCode = code.split('-')[0];
+            lang = languages.find((l: LanguageOption) => l.code === baseCode);
+        }
         return lang ? lang.name : code;
     };
 
     return (
-        <div className={clsx("relative w-full", className)} ref={containerRef} data-error={error}>
-            {label && <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{label}</label>}
+        <div id={id} className={clsx("relative w-full", className)} ref={containerRef} data-error={error}>
+            {label && <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{label}</label>}
 
             <div
                 className={clsx(
-                    "w-full px-3 bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm h-11 border",
-                    error ? "border-red-500 ring-2 ring-red-500/10" : (isOpen ? "ring-2 ring-brand-500/20 border-brand-500" : "border-slate-200 hover:border-slate-400")
+                    "w-full px-3 bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm h-10 border",
+                    error ? "border-red-700 ring-2 ring-red-700/10" : (isOpen ? "ring-2 ring-brand-500/20 border-brand-500 shadow-sm" : "border-slate-300 hover:border-slate-400 shadow-sm")
                 )}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
@@ -149,7 +195,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 </div>
                             ))}
                             {isMulti && values.length >= 4 && (
-                                <div className="bg-brand-50 border border-brand-100 px-2 py-0.5 text-[10px] font-black uppercase text-brand-700">
+                                <div className="bg-brand-50 border border-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase text-brand-700">
                                     + {values.length - 3} weitere
                                 </div>
                             )}
@@ -159,18 +205,26 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                     )}
                 </div>
                 <div className="flex items-center gap-2 ml-2 shrink-0">
-                    <FaChevronDown className={clsx("text-slate-300 text-[10px] transition-transform", isOpen ? "rotate-180" : "")} />
+                    <FaChevronDown className={clsx("text-slate-400 text-[10px] transition-transform", isOpen ? "rotate-180" : "")} />
                 </div>
             </div>
 
-            {isOpen && (
-                <div className="absolute z-[100] w-full bg-white border border-slate-200 shadow-2xl mt-1 overflow-hidden animate-fadeInUp flex flex-col max-h-[400px]">
-                    <div className="sticky top-0 bg-white border-b border-slate-100 p-2 z-10">
+            {isOpen && createPortal(
+                <div
+                    ref={dropdownRef}
+                    className="fixed z-[9999] bg-white border border-slate-200 shadow-xl overflow-hidden animate-fadeIn fadeInUp flex flex-col max-h-[400px] language-select-portal"
+                    style={{
+                        top: coords.top + 4,
+                        left: coords.left,
+                        width: coords.width
+                    }}
+                >
+                    <div className="sticky top-0 bg-white border-b border-slate-100 p-0 z-10">
                         <div className="relative">
-                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs" />
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                             <input
                                 type="text"
-                                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-brand-300 focus:bg-white transition-all"
+                                className="w-full pl-9 pr-3 py-2.5 bg-white border-none text-sm focus:outline-none transition-all"
                                 placeholder="Sprache suchen..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
@@ -187,15 +241,15 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                     key={opt.code}
                                     className={clsx(
                                         "px-4 py-2.5 text-sm cursor-pointer transition flex items-center justify-between",
-                                        activeIndex === index ? "bg-slate-50 text-brand-700" : "",
-                                        values.includes(opt.code) ? "bg-brand-50/50 text-brand-700 font-bold" : "text-slate-600 hover:bg-slate-50"
+                                        activeIndex === index ? "bg-brand-50/50 text-brand-700" : "",
+                                        values.includes(opt.code) ? "bg-brand-50/30 text-brand-700 font-bold" : "text-slate-700 hover:bg-slate-50"
                                     )}
                                     onClick={(e) => { e.stopPropagation(); handleSelect(opt.code); }}
                                 >
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 flex-1 overflow-hidden">
                                         {isMulti && (
                                             <div className={clsx(
-                                                "w-4 h-4 border rounded flex items-center justify-center transition-all",
+                                                "w-4 h-4 border rounded flex items-center justify-center transition-all shrink-0",
                                                 values.includes(opt.code) ? "bg-brand-600 border-brand-600" : "border-slate-300 bg-white"
                                             )}>
                                                 {values.includes(opt.code) && <FaCheck className="text-white text-[8px]" />}
@@ -204,10 +258,10 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                         <div className="w-8 py-0.5 flex items-center justify-center shrink-0">
                                             <img src={getFlagUrl(opt.flagCode || opt.code)} className="w-7 h-5 object-cover shadow-sm" alt="" />
                                         </div>
-                                        <span>{opt.name}</span>
-                                        <span className="text-[10px] uppercase text-slate-300  tracking-tighter">{opt.code}</span>
+                                        <span className="truncate flex-1">{opt.name}</span>
+                                        <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-1 rounded shrink-0">{opt.code}</span>
                                     </div>
-                                    {!isMulti && values.includes(opt.code) && <FaCheck className="text-brand-500 text-xs" />}
+                                    {!isMulti && values.includes(opt.code) && <FaCheck className="text-brand-600 text-[10px] shrink-0 ml-2" />}
                                 </div>
                             ))
                         ) : (
@@ -216,7 +270,23 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                             </div>
                         )}
                     </div>
-                </div>
+
+                    {onAddNew && (
+                        <div className="p-2 border-t border-slate-100 bg-slate-50 shrink-0">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAddNew();
+                                    setIsOpen(false);
+                                }}
+                                className="w-full py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded text-[10px] font-bold text-brand-700 uppercase tracking-widest flex items-center justify-center gap-2 transition shadow-sm"
+                            >
+                                <FaPlus className="text-[10px]" /> {addNewLabel}
+                            </button>
+                        </div>
+                    )}
+                </div>,
+                document.body
             )}
         </div>
     );
