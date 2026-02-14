@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaPlus, FaArrowRight, FaFileCsv,
     FaFilePdf, FaFileExcel, FaLayerGroup, FaChartLine, FaGlobe,
@@ -28,6 +28,7 @@ import { BulkActions } from '../components/common/BulkActions';
 const Projects = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filter, setFilter] = useState('all');
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
@@ -53,6 +54,14 @@ const Projects = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (location.state?.openNewModal) {
+            setIsModalOpen(true);
+            // Clear location state to prevent modal from reopening on refresh or navigation
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
     // deleted/archived states removed in favor of filter
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -143,8 +152,12 @@ const Projects = () => {
 
     const totalProjectsCount = activeProjectsData.length;
     const activeProjectsCount = activeProjectsData.filter((p: any) => ['in_progress', 'review', 'ready_for_pickup'].includes(p.status)).length;
-    const totalVolume = activeProjectsData.reduce((acc: number, curr: any) => acc + (curr.word_count || 0), 0);
     const totalRevenue = activeProjectsData.reduce((acc: number, curr: any) => acc + parseFloat(curr.price_total || 0), 0);
+    const totalMargin = activeProjectsData.reduce((acc: number, curr: any) => {
+        const rev = parseFloat(curr.price_total || 0);
+        const cost = parseFloat(curr.partner_cost_net || 0);
+        return acc + (rev - cost);
+    }, 0);
 
     const filteredProjects = useMemo(() => {
         if (!Array.isArray(projects)) return [];
@@ -496,20 +509,20 @@ const Projects = () => {
     ];
 
     const tabs = (
-        <div className="flex items-center gap-6">
-            <button onClick={() => setFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Übersicht</button>
-            <button onClick={() => setFilter('offer')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'offer' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Neu</button>
-            <button onClick={() => setFilter('in_progress')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'in_progress' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Bearbeitung</button>
-            <button onClick={() => setFilter('delivered')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'delivered' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Geliefert</button>
-            <button onClick={() => setFilter('invoiced')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'invoiced' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Rechnung</button>
-            <button onClick={() => setFilter('ready_for_pickup')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'ready_for_pickup' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abholbereit</button>
-            <button onClick={() => setFilter('completed')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'completed' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Abgeschlossen</button>
+        <div className="flex items-center gap-2 whitespace-nowrap px-1">
+            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'all' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Übersicht</button>
+            <button onClick={() => setFilter('offer')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'offer' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Neu</button>
+            <button onClick={() => setFilter('in_progress')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'in_progress' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bearbeitung</button>
+            <button onClick={() => setFilter('delivered')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'delivered' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Geliefert</button>
+            <button onClick={() => setFilter('invoiced')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'invoiced' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Rechnung</button>
+            <button onClick={() => setFilter('ready_for_pickup')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'ready_for_pickup' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abholbereit</button>
+            <button onClick={() => setFilter('completed')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'completed' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abgeschlossen</button>
 
             {(showTrash || filter === 'trash') && (
-                <button onClick={() => setFilter('trash')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Papierkorb</button>
+                <button onClick={() => setFilter('trash')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'trash' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
             )}
             {(showArchive || filter === 'archive') && (
-                <button onClick={() => setFilter('archive')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${filter === 'archive' ? 'border-slate-600 text-slate-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Archiv</button>
+                <button onClick={() => setFilter('archive')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${filter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
             )}
         </div>
     );
@@ -560,23 +573,23 @@ const Projects = () => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-6 h-full fade-in" onClick={() => { setIsExportOpen(false); }}>
-            <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
+            <div className="flex justify-between items-center sm:gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Projektübersicht</h1>
-                    <p className="text-slate-500 text-sm">Verwalten und überwachen Sie alle Übersetzungsaufträge.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Projektübersicht</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">Verwalten und überwachen Sie alle Übersetzungsaufträge.</p>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={() => { setEditingProject(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95">
-                        <FaPlus className="text-xs" /> Neues Projekt
+                <div className="flex gap-2 shrink-0">
+                    <button onClick={() => { setEditingProject(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95">
+                        <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neues Projekt</span><span className="inline sm:hidden">Projekt</span>
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Gesamtprojekte" value={totalProjectsCount} icon={<FaLayerGroup />} />
                 <KPICard label="Aktive Projekte" value={activeProjectsCount} icon={<FaChartLine />} iconColor="text-blue-600" iconBg="bg-blue-50" />
-                <KPICard label="Gesamtvolumen" value={totalVolume.toLocaleString('de-DE')} subValue="Wörter" icon={<FaGlobe />} />
+                <KPICard label="Marge gesamt" value={totalMargin.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaGlobe />} iconColor="text-indigo-600" iconBg="bg-indigo-50" />
                 <KPICard label="Umsatz YTD" value={totalRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaChartLine />} iconColor="text-green-600" iconBg="bg-green-50" />
             </div>
 
@@ -609,7 +622,7 @@ const Projects = () => {
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0 relative z-0">
+            <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <BulkActions
                     selectedCount={selectedProjects.length}
                     onClearSelection={() => setSelectedProjects([])}

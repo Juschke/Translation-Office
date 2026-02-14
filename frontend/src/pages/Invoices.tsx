@@ -1,9 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaPlus, FaCheckCircle, FaHistory,
     FaFileExcel, FaFileCsv, FaTrash,
-    FaCheck, FaPaperPlane, FaDownload, FaPrint, FaFilePdf, FaFileInvoiceDollar, FaEye, FaTrashRestore, FaFilter
+    FaCheck, FaPaperPlane, FaDownload, FaPrint, FaFilePdf, FaFileInvoiceDollar, FaEye, FaTrashRestore, FaFilter,
+    FaStamp, FaBan
 } from 'react-icons/fa';
 
 import Checkbox from '../components/common/Checkbox';
@@ -21,7 +23,9 @@ import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 
 
 const Invoices = () => {
-    const [statusFilter, setStatusFilter] = useState('all');
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'all');
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
@@ -45,6 +49,14 @@ const Invoices = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (location.state?.openNewModal) {
+            setIsNewInvoiceOpen(true);
+            // Clear location state to prevent modal from reopening on refresh or navigation
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [invoiceToDelete, setInvoiceToDelete] = useState<number | number[] | null>(null);
@@ -76,10 +88,34 @@ const Invoices = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
-            toast.success('Rechnung erfolgreich gelöscht');
+            toast.success('Rechnungsentwurf gelöscht');
         },
-        onError: () => {
-            toast.error('Fehler beim Löschen der Rechnung');
+        onError: (error: any) => {
+            toast.error(error?.response?.data?.error || 'Nur Entwürfe können gelöscht werden.');
+        }
+    });
+
+    const issueMutation = useMutation({
+        mutationFn: (id: number) => invoiceService.issue(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+            toast.success('Rechnung ausgestellt und gesperrt (GoBD-konform)');
+        },
+        onError: (error: any) => {
+            toast.error(error?.response?.data?.error || 'Fehler beim Ausstellen');
+        }
+    });
+
+    const cancelMutation = useMutation({
+        mutationFn: (args: { id: number; reason?: string }) => invoiceService.cancel(args.id, args.reason),
+        onSuccess: (data: any) => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+            toast.success(data?.message || 'Rechnung storniert, Gutschrift erstellt');
+        },
+        onError: (error: any) => {
+            toast.error(error?.response?.data?.error || 'Fehler beim Stornieren');
         }
     });
 
@@ -93,19 +129,6 @@ const Invoices = () => {
         },
         onError: () => {
             toast.error('Rechnungen konnten nicht aktualisiert werden');
-        }
-    });
-
-    const bulkDeleteMutation = useMutation({
-        mutationFn: invoiceService.bulkDelete,
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            setSelectedInvoices([]);
-            toast.success(`${variables.length} Rechnungen endgültig gelöscht`);
-        },
-        onError: () => {
-            toast.error('Fehler beim endgültigen Löschen');
         }
     });
 
@@ -131,11 +154,10 @@ const Invoices = () => {
 
             if (statusFilter === 'overdue') return isOverdue;
 
+            if (statusFilter === 'reminders') return (inv.reminder_level > 0 || isOverdue) && status !== 'paid' && status !== 'cancelled';
+
             if (statusFilter === 'pending') {
-                // Pending means: Not paid, not cancelled, AND not overdue (unless we want overdue in pending?)
-                // Usually "Open" includes overdue, but since we have a separate tab, let's keep them separate or include?
-                // Providing a distinct "Offen" (active, not overdue) vs "Überfällig" is useful.
-                return (status === 'pending' || status === 'sent' || status === 'draft') && !isOverdue;
+                return (status === 'pending' || status === 'sent' || status === 'draft' || status === 'issued') && !isOverdue;
             }
 
             if (statusFilter === 'all') return true;
@@ -156,16 +178,42 @@ const Invoices = () => {
         }
     };
 
-    const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
-        if (filteredInvoices.length === 0) return;
+    const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
+        const ids = selectedInvoices.length > 0
+            ? selectedInvoices
+            : filteredInvoices.map((inv: any) => inv.id);
+
+        if (ids.length === 0) return;
+
+        if (format === 'csv') {
+            try {
+                const response = await invoiceService.datevExport(ids);
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `DATEV_Export_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+                setIsExportOpen(false);
+                toast.success('DATEV Export erfolgreich erstellt.');
+            } catch (error) {
+                console.error('DATEV Export failure:', error);
+                toast.error('Fehler beim DATEV Export.');
+            }
+            return;
+        }
+
+        // Keep other formats as is or placeholder
         const headers = ['Nr', 'Datum', 'Kunde', 'Projekt', 'Fällig', 'Betrag', 'Status'];
-        const rows = filteredInvoices.map((inv: any) => [
+        const rows = filteredInvoices.filter((inv: any) => ids.includes(inv.id)).map((inv: any) => [
             inv.invoice_number,
             new Date(inv.date).toLocaleDateString('de-DE'),
-            inv.customer?.company_name || `${inv.customer?.first_name} ${inv.customer?.last_name}`,
-            inv.project?.project_name || '',
+            inv.snapshot_customer_name || inv.customer?.company_name || '',
+            inv.snapshot_project_name || inv.project?.project_name || '',
             new Date(inv.due_date).toLocaleDateString('de-DE'),
-            parseFloat(inv.amount_gross || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\./g, ''),
+            (inv.amount_gross_eur ?? (inv.amount_gross / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             inv.status || ''
         ]);
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
@@ -173,7 +221,7 @@ const Invoices = () => {
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `Rechnungen_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
+        link.setAttribute("download", `Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -275,14 +323,24 @@ const Invoices = () => {
         {
             id: 'customer',
             header: 'Empfänger',
-            accessor: (inv: any) => inv.customer?.company_name || `${inv.customer?.first_name} ${inv.customer?.last_name}`,
+            accessor: (inv: any) => {
+                const name = inv.snapshot_customer_name || inv.customer?.company_name || `${inv.customer?.first_name || ''} ${inv.customer?.last_name || ''}`;
+                return (
+                    <div className="flex flex-col">
+                        <span className="font-medium text-slate-700">{name}</span>
+                        {inv.type === 'credit_note' && (
+                            <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider">Gutschrift</span>
+                        )}
+                    </div>
+                );
+            },
             sortable: true
         },
         {
             id: 'project',
             header: 'Projekt',
             accessor: (inv: any) => (
-                <span className="text-xs font-medium text-slate-500">{inv.project?.project_name || inv.project?.project_number}</span>
+                <span className="text-xs font-medium text-slate-500">{inv.snapshot_project_name || inv.project?.project_name || inv.snapshot_project_number || ''}</span>
             ),
             sortable: true
         },
@@ -300,9 +358,15 @@ const Invoices = () => {
         {
             id: 'amount',
             header: 'Betrag (Brutto)',
-            accessor: (inv: any) => (
-                <span className="font-semibold text-slate-800">{parseFloat(inv.amount_gross || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
-            ),
+            accessor: (inv: any) => {
+                const eur = inv.amount_gross_eur ?? (inv.amount_gross / 100);
+                const isNeg = eur < 0;
+                return (
+                    <span className={`font-semibold ${isNeg ? 'text-red-600' : 'text-slate-800'}`}>
+                        {eur.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
+                    </span>
+                );
+            },
             sortable: true,
             sortKey: 'amount_gross',
             align: 'right' as const
@@ -314,9 +378,9 @@ const Invoices = () => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const dueDate = new Date(inv.due_date);
-                const isOverdue = dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'deleted' && inv.status !== 'archived';
+                const isOverdue = dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'deleted' && inv.status !== 'archived' && inv.status !== 'draft';
                 const displayStatus = isOverdue ? 'overdue' : inv.status;
-                return <InvoiceStatusBadge status={displayStatus} />;
+                return <InvoiceStatusBadge status={displayStatus} reminderLevel={inv.reminder_level} type={inv.type} />;
             },
             sortable: true,
             sortKey: 'status',
@@ -330,14 +394,46 @@ const Invoices = () => {
                     <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Ansehen">
                         <FaEye />
                     </button>
+                    {/* Draft: show Issue button */}
+                    {inv.status === 'draft' && (
+                        <button
+                            onClick={() => {
+                                if (window.confirm('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform, keine Änderung mehr möglich)')) {
+                                    issueMutation.mutate(inv.id);
+                                }
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition"
+                            title="Ausstellen (GoBD)"
+                        >
+                            <FaStamp />
+                        </button>
+                    )}
+                    {/* Issued/Sent/Paid: show Cancel (Storno) button */}
+                    {['issued', 'sent', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note && (
+                        <button
+                            onClick={() => {
+                                const reason = window.prompt('Storno-Grund (optional):');
+                                if (reason !== null) {
+                                    cancelMutation.mutate({ id: inv.id, reason: reason || undefined });
+                                }
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition"
+                            title="Stornieren (Gutschrift erstellen)"
+                        >
+                            <FaBan />
+                        </button>
+                    )}
                     <button onClick={() => handlePrint(inv)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition" title="Drucken"><FaPrint /></button>
                     <button onClick={() => handleDownload(inv)} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition" title="Download"><FaDownload /></button>
-                    <button onClick={() => {
-                        setInvoiceToDelete(inv.id);
-                        setConfirmTitle('Rechnung löschen');
-                        setConfirmMessage('Sind Sie sicher, dass Sie diese Rechnung in den Papierkorb verschieben möchten?');
-                        setIsConfirmOpen(true);
-                    }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Löschen"><FaTrash /></button>
+                    {/* Only drafts can be deleted */}
+                    {inv.status === 'draft' && (
+                        <button onClick={() => {
+                            setInvoiceToDelete(inv.id);
+                            setConfirmTitle('Entwurf löschen');
+                            setConfirmMessage('Sind Sie sicher, dass Sie diesen Rechnungsentwurf löschen möchten?');
+                            setIsConfirmOpen(true);
+                        }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Entwurf löschen"><FaTrash /></button>
+                    )}
                 </div>
             ),
             align: 'right' as const
@@ -345,18 +441,19 @@ const Invoices = () => {
     ];
 
     const tabs = (
-        <div className="flex items-center gap-6">
-            <button onClick={() => setStatusFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Alle</button>
-            <button onClick={() => setStatusFilter('pending')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'pending' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Offen</button>
-            <button onClick={() => setStatusFilter('paid')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'paid' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Bezahlt</button>
-            <button onClick={() => setStatusFilter('overdue')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'overdue' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Überfällig</button>
-            <button onClick={() => setStatusFilter('cancelled')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'cancelled' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Storniert</button>
+        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
+            <button onClick={() => setStatusFilter('all')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'all' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Alle</button>
+            <button onClick={() => setStatusFilter('pending')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'pending' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Offen</button>
+            <button onClick={() => setStatusFilter('paid')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'paid' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bezahlt</button>
+            <button onClick={() => setStatusFilter('overdue')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'overdue' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Überfällig</button>
+            <button onClick={() => setStatusFilter('reminders')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Mahnungen</button>
+            <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
 
             {(showTrash || statusFilter === 'trash') && (
-                <button onClick={() => setStatusFilter('trash')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Papierkorb</button>
+                <button onClick={() => setStatusFilter('trash')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'trash' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
             )}
             {(showArchive || statusFilter === 'archive') && (
-                <button onClick={() => setStatusFilter('archive')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${statusFilter === 'archive' ? 'border-slate-600 text-slate-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Archiv</button>
+                <button onClick={() => setStatusFilter('archive')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
             )}
         </div>
     );
@@ -413,18 +510,22 @@ const Invoices = () => {
     }, [invoices]);
 
     const totalOpenAmount = activeInvoices
-        .filter((i: any) => i.status !== 'paid')
-        .reduce((acc: number, curr: any) => acc + parseFloat(curr.amount_gross || 0), 0);
+        .filter((i: any) => i.status !== 'paid' && i.status !== 'cancelled' && i.type !== 'credit_note')
+        .reduce((acc: number, curr: any) => acc + (curr.amount_gross_eur ?? (curr.amount_gross / 100)), 0);
 
     const totalPaidMonth = activeInvoices
         .filter((i: any) => i.status === 'paid')
-        .reduce((acc: number, curr: any) => acc + parseFloat(curr.amount_gross || 0), 0);
+        .reduce((acc: number, curr: any) => acc + (curr.amount_gross_eur ?? (curr.amount_gross / 100)), 0);
 
     const overdueCount = activeInvoices.filter((inv: any) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const dueDate = new Date(inv.due_date);
-        return dueDate < today && inv.status !== 'paid';
+        return dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled';
+    }).length;
+
+    const reminderCount = activeInvoices.filter((inv: any) => {
+        return (inv.reminder_level > 0 || (new Date(inv.due_date) < new Date() && inv.status !== 'paid' && inv.status !== 'cancelled'));
     }).length;
 
     const paidCount = activeInvoices.filter((i: any) => i.status === 'paid').length;
@@ -432,27 +533,30 @@ const Invoices = () => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col h-full gap-6 fade-in" onClick={() => setIsExportOpen(false)}>
-            <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
+            <div className="flex justify-between items-center sm:gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Finanzen</h1>
-                    <p className="text-slate-500 text-sm">Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Rechnungen</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.</p>
                 </div>
-                <button
-                    onClick={() => setIsNewInvoiceOpen(true)}
-                    className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95"
-                >
-                    <FaPlus className="text-xs" /> Neue Rechnung
-                </button>
+                <div className="flex gap-2 shrink-0">
+                    <button
+                        onClick={() => setIsNewInvoiceOpen(true)}
+                        className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95"
+                    >
+                        <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neue Rechnung</span><span className="inline sm:hidden">Rechnung</span>
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Offener Betrag" value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={`${overdueCount} überfällig`} />
                 <KPICard label="Bezahlt (Gesamt)" value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle />} iconColor="text-green-600" iconBg="bg-green-50" subValue={`${paidCount} Transaktionen`} />
+                <KPICard label="Mahnungen" value={`${reminderCount}`} icon={<FaPaperPlane />} iconColor="text-amber-600" iconBg="bg-amber-50" subValue="Fällig / Aktiv" />
                 <KPICard label="Fremdkosten" value="0,00 €" icon={<FaHistory />} subValue="Diesen Monat" />
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0 relative z-0">
+            <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <BulkActions
                     selectedCount={selectedInvoices.length}
                     onClearSelection={() => setSelectedInvoices([])}
@@ -465,6 +569,32 @@ const Invoices = () => {
                             show: statusFilter !== 'trash' && statusFilter !== 'cancelled' && statusFilter !== 'paid'
                         },
                         {
+                            label: 'Mahnung senden',
+                            icon: <FaPaperPlane className="text-xs text-amber-500" />,
+                            onClick: () => {
+                                const confirmReminder = window.confirm(`${selectedInvoices.length} Mahnungen senden/hochstufen?`);
+                                if (confirmReminder) {
+                                    // Logic to increment reminder_level would go here, 
+                                    // for now we use a generic bulk update or we might need a specific endpoint
+                                    // Let's assume the backend handles increment if we pass a special flag or we do it here
+                                    toast.loading('Mahnungen werden verarbeitet...');
+                                    selectedInvoices.forEach(id => {
+                                        const inv = invoices.find((i: any) => i.id === id);
+                                        const nextLevel = (inv?.reminder_level || 0) + 1;
+                                        bulkUpdateMutation.mutate({
+                                            ids: [id],
+                                            data: {
+                                                reminder_level: nextLevel,
+                                                last_reminder_date: new Date().toISOString().split('T')[0]
+                                            }
+                                        });
+                                    });
+                                }
+                            },
+                            variant: 'primary',
+                            show: statusFilter === 'reminders' || statusFilter === 'overdue'
+                        },
+                        {
                             label: 'Senden',
                             icon: <FaPaperPlane className="text-xs" />,
                             onClick: () => {
@@ -475,44 +605,18 @@ const Invoices = () => {
                             show: statusFilter !== 'trash' && statusFilter !== 'cancelled'
                         },
                         {
-                            label: 'Offen setzen',
-                            icon: <FaHistory className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'pending' } }),
-                            variant: 'primary',
-                            show: statusFilter === 'paid' || statusFilter === 'cancelled'
-                        },
-                        {
-                            label: 'Stornieren',
-                            icon: <FaTrash className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'cancelled' } }),
-                            variant: 'warning',
-                            show: statusFilter !== 'trash' && statusFilter !== 'cancelled'
-                        },
-                        {
                             label: 'Wiederherstellen',
                             icon: <FaTrashRestore className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'pending' } }),
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'draft' } }),
                             variant: 'success',
-                            show: statusFilter === 'trash' || statusFilter === 'cancelled'
-                        },
-                        {
-                            label: 'Papierkorb',
-                            icon: <FaTrash className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'deleted' } }),
-                            variant: 'danger',
-                            show: statusFilter !== 'trash'
-                        },
-                        {
-                            label: 'Endgültig löschen',
-                            icon: <FaTrash className="text-xs" />,
-                            onClick: () => {
-                                setInvoiceToDelete(selectedInvoices);
-                                setConfirmTitle('Rechnungen endgültig löschen');
-                                setConfirmMessage(`Sind Sie sicher, dass Sie ${selectedInvoices.length} Rechnungen endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.`);
-                                setIsConfirmOpen(true);
-                            },
-                            variant: 'dangerSolid',
                             show: statusFilter === 'trash'
+                        },
+                        {
+                            label: 'Archivieren',
+                            icon: <FaHistory className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'archived' } }),
+                            variant: 'primary',
+                            show: statusFilter === 'paid'
                         }
                     ]}
                 />
@@ -546,27 +650,18 @@ const Invoices = () => {
                     setInvoiceToDelete(null);
                 }}
                 onConfirm={() => {
-                    if (invoiceToDelete) {
-                        if (Array.isArray(invoiceToDelete)) {
-                            bulkDeleteMutation.mutate(invoiceToDelete, {
-                                onSuccess: () => {
-                                    setIsConfirmOpen(false);
-                                    setInvoiceToDelete(null);
-                                }
-                            });
-                        } else {
-                            deleteMutation.mutate(invoiceToDelete as number, {
-                                onSuccess: () => {
-                                    setIsConfirmOpen(false);
-                                    setInvoiceToDelete(null);
-                                }
-                            });
-                        }
+                    if (invoiceToDelete && !Array.isArray(invoiceToDelete)) {
+                        deleteMutation.mutate(invoiceToDelete as number, {
+                            onSuccess: () => {
+                                setIsConfirmOpen(false);
+                                setInvoiceToDelete(null);
+                            }
+                        });
                     }
                 }}
                 title={confirmTitle}
                 message={confirmMessage}
-                isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
+                isLoading={deleteMutation.isPending}
             />
         </div>
     );

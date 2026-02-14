@@ -4,48 +4,259 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Invoice — GoBD-Compliant Invoice Model
+ *
+ * KEY DESIGN DECISIONS:
+ * 1. All monetary amounts stored as INTEGER CENTS (e.g. 15050 = 150,50 €)
+ * 2. Customer/seller/project data is SNAPSHOTTED (frozen) at issue time
+ * 3. Once issued (is_locked = true), the record is IMMUTABLE
+ * 4. Old FK relations kept for internal reference only, NOT for display
+ * 5. Uses Storno-Rechnung (credit note) instead of delete for corrections
+ */
 class Invoice extends Model
 {
     use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity;
 
+    // ─── Invoice types ───────────────────────────────────────────────
+    public const TYPE_INVOICE    = 'invoice';
+    public const TYPE_CREDIT_NOTE = 'credit_note';
+
+    // ─── Status workflow ─────────────────────────────────────────────
+    public const STATUS_DRAFT     = 'draft';
+    public const STATUS_ISSUED    = 'issued';
+    public const STATUS_SENT      = 'sent';
+    public const STATUS_PAID      = 'paid';
+    public const STATUS_OVERDUE   = 'overdue';
+    public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_ARCHIVED  = 'archived';
+
+    // ─── Tax exemption types ─────────────────────────────────────────
+    public const TAX_NONE           = 'none';
+    public const TAX_SMALL_BUSINESS = '§19_ustg';       // Kleinunternehmerregelung
+    public const TAX_REVERSE_CHARGE = 'reverse_charge'; // Reverse Charge (EU B2B)
+
     protected $fillable = [
+        'type',
         'invoice_number',
-        'project_id',
-        'customer_id',
+        'invoice_number_sequence',
+        'project_id',        // Reference only — NOT used for display
+        'customer_id',       // Reference only — NOT used for display
+        'cancelled_invoice_id',
         'date',
         'due_date',
+        'delivery_date',
+        'service_period_start',
+        'service_period_end',
+        'service_period',
+
+        // --- Amounts in CENTS (integer) ---
         'amount_net',
         'tax_rate',
         'amount_tax',
         'amount_gross',
+
         'currency',
         'payment_method',
-        'delivery_date',
-        'service_period_start',
-        'service_period_end',
         'status',
+        'is_locked',
+        'issued_at',
         'pdf_path',
+        'notes',
+        'tax_exemption',
+        'reminder_level',
+        'last_reminder_date',
+
+        // --- Customer Snapshot ---
+        'snapshot_customer_name',
+        'snapshot_customer_address',
+        'snapshot_customer_zip',
+        'snapshot_customer_city',
+        'snapshot_customer_country',
+        'snapshot_customer_vat_id',
+        'snapshot_customer_leitweg_id',
+
+        // --- Seller Snapshot ---
+        'snapshot_seller_name',
+        'snapshot_seller_address',
+        'snapshot_seller_zip',
+        'snapshot_seller_city',
+        'snapshot_seller_country',
+        'snapshot_seller_tax_number',
+        'snapshot_seller_vat_id',
+        'snapshot_seller_bank_name',
+        'snapshot_seller_bank_iban',
+        'snapshot_seller_bank_bic',
+
+        // --- Project Snapshot ---
+        'snapshot_project_name',
+        'snapshot_project_number',
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'due_date' => 'date',
-        'delivery_date' => 'date',
+        'date'                 => 'date',
+        'due_date'             => 'date',
+        'delivery_date'        => 'date',
         'service_period_start' => 'date',
-        'service_period_end' => 'date',
-        'amount_net' => 'decimal:2',
-        'tax_rate' => 'decimal:2',
-        'amount_tax' => 'decimal:2',
-        'amount_gross' => 'decimal:2',
+        'service_period_end'   => 'date',
+        'issued_at'            => 'datetime',
+        'last_reminder_date'   => 'date',
+        'amount_net'           => 'integer',
+        'amount_tax'           => 'integer',
+        'amount_gross'         => 'integer',
+        'tax_rate'             => 'decimal:2',
+        'is_locked'            => 'boolean',
+        'reminder_level'       => 'integer',
     ];
 
+    // ─── IMMUTABILITY GUARD (GoBD) ───────────────────────────────────
+    //
+    // Once an invoice is issued (is_locked = true), only the following
+    // fields may be changed: status, reminder_level, last_reminder_date,
+    // pdf_path. All other modifications are blocked.
+    //
+    // Steuerrechtlicher Hintergrund:
+    // Die GoBD (Grundsätze ordnungsmäßiger Buchführung) verlangen, dass
+    // einmal gebuchte Belege nicht mehr verändert werden dürfen.
+    // Korrekturen erfolgen ausschließlich über Storno-Rechnungen.
+
+    protected static function booted(): void
+    {
+        static::updating(function (Invoice $invoice) {
+            if ($invoice->getOriginal('is_locked') && $invoice->is_locked) {
+                $allowedFields = ['status', 'reminder_level', 'last_reminder_date', 'pdf_path'];
+                $dirty = array_keys($invoice->getDirty());
+                $forbidden = array_diff($dirty, $allowedFields);
+
+                if (!empty($forbidden)) {
+                    throw new \RuntimeException(
+                        'GoBD-Verstoß: Ausgestellte Rechnungen dürfen nicht geändert werden. ' .
+                        'Gesperrte Felder: ' . implode(', ', $forbidden) . '. ' .
+                        'Verwenden Sie den Storno-Workflow für Korrekturen.'
+                    );
+                }
+            }
+        });
+
+        // Prevent hard deletion of any invoice (GoBD: Aufbewahrungspflicht)
+        static::deleting(function (Invoice $invoice) {
+            if ($invoice->is_locked) {
+                throw new \RuntimeException(
+                    'GoBD-Verstoß: Ausgestellte Rechnungen dürfen nicht gelöscht werden.'
+                );
+            }
+        });
+    }
+
+    // ─── Cents → EUR Accessors ───────────────────────────────────────
+
+    public function getAmountNetEurAttribute(): float
+    {
+        return $this->amount_net / 100;
+    }
+
+    public function getAmountTaxEurAttribute(): float
+    {
+        return $this->amount_tax / 100;
+    }
+
+    public function getAmountGrossEurAttribute(): float
+    {
+        return $this->amount_gross / 100;
+    }
+
+    // ─── Relationships ───────────────────────────────────────────────
+
+    /**
+     * Frozen line items (NOT linked to project_positions).
+     */
+    public function items()
+    {
+        return $this->hasMany(InvoiceItem::class)->orderBy('position');
+    }
+
+    /**
+     * Audit trail for this invoice.
+     */
+    public function auditLogs()
+    {
+        return $this->hasMany(InvoiceAuditLog::class)->orderBy('created_at');
+    }
+
+    /**
+     * If this is a credit note, the original invoice it cancels.
+     */
+    public function cancelledInvoice()
+    {
+        return $this->belongsTo(Invoice::class, 'cancelled_invoice_id');
+    }
+
+    /**
+     * If this invoice was cancelled, the credit note that cancels it.
+     */
+    public function creditNote()
+    {
+        return $this->hasOne(Invoice::class, 'cancelled_invoice_id');
+    }
+
+    /**
+     * Project reference (for internal use only — NOT for display on invoices).
+     * Always use snapshot_project_name / snapshot_project_number for display.
+     */
     public function project()
     {
         return $this->belongsTo(Project::class);
     }
 
+    /**
+     * Customer reference (for internal use only — NOT for display on invoices).
+     * Always use snapshot_customer_* fields for display.
+     */
     public function customer()
     {
         return $this->belongsTo(Customer::class);
     }
+
+    // ─── Helper Methods ──────────────────────────────────────────────
+
+    /**
+     * Check if this invoice is a Storno/Gutschrift (credit note).
+     */
+    public function isCreditNote(): bool
+    {
+        return $this->type === self::TYPE_CREDIT_NOTE;
+    }
+
+    /**
+     * Check if this invoice can still be edited.
+     */
+    public function isEditable(): bool
+    {
+        return !$this->is_locked && $this->status === self::STATUS_DRAFT;
+    }
+
+    /**
+     * Check if this invoice can be issued.
+     */
+    public function canBeIssued(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
+    /**
+     * Check if this invoice can be cancelled (Storno).
+     */
+    public function canBeCancelled(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_ISSUED,
+            self::STATUS_SENT,
+            self::STATUS_PAID,
+            self::STATUS_OVERDUE,
+        ]);
+    }
+
+    // ─── Serialization ───────────────────────────────────────────────
+
+    protected $appends = ['amount_net_eur', 'amount_tax_eur', 'amount_gross_eur'];
 }

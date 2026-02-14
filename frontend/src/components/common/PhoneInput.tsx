@@ -35,7 +35,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
                     value={value}
                     onChange={(val) => onChange(val || '')}
                     className={clsx(
-                        "flex w-full px-3 transition-all outline-none border shadow-sm bg-white h-11 text-sm font-medium items-center",
+                        "flex w-full px-3 transition-all outline-none border shadow-sm bg-white h-9 text-sm font-medium items-center",
                         "focus-within:ring-2 focus-within:ring-brand-500/10",
                         error ? "border-red-500 bg-red-50/10 focus-within:border-red-500" : "border-slate-200 focus-within:border-brand-500 hover:border-slate-300",
                         "rounded-none"

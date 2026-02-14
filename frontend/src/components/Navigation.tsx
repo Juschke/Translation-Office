@@ -117,7 +117,7 @@ const Navigation = () => {
                         {/* Mobile Menu Button */}
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 md:hidden text-slate-300 hover:text-white"
+                            className="p-2 xl:hidden text-slate-300 hover:text-white"
                         >
                             <div className="w-5 h-4 flex flex-col justify-between">
                                 <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "rotate-45 translate-y-1.5" : "")}></span>
@@ -132,7 +132,7 @@ const Navigation = () => {
                         </Link>
 
                         {/* Main Menu */}
-                        <div className="hidden md:flex space-x-1 h-full">
+                        <div className="hidden xl:flex space-x-1 h-full">
                             <Link to="/" className={navLinkClass("/")}>
                                 Dashboard
                                 <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
@@ -154,7 +154,7 @@ const Navigation = () => {
                             </Link>
 
                             <Link to="/invoices" className={navLinkClass("/invoices")}>
-                                Finanzen
+                                Rechnungen
                                 <NavBadge
                                     count={dashboardData?.stats?.unpaid_invoices}
                                     label="Offene Rechnungen"
@@ -282,7 +282,7 @@ const Navigation = () => {
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
-                <div className="md:hidden bg-brand-900 border-t border-brand-800">
+                <div className="xl:hidden bg-brand-900 border-t border-brand-800">
                     <div className="px-4 py-3 space-y-1">
                         <Link to="/" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
                             Dashboard
@@ -301,7 +301,7 @@ const Navigation = () => {
                             <NavBadge count={dashboardData?.stats?.active_partners} label="Aktive Partner" activeColor="bg-brand-400" />
                         </Link>
                         <Link to="/invoices" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                            Finanzen
+                            Rechnungen
                             <NavBadge
                                 count={dashboardData?.stats?.unpaid_invoices}
                                 label="Offene Rechnungen"

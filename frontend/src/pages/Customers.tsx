@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
     FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter
@@ -21,6 +21,7 @@ import { BulkActions } from '../components/common/BulkActions';
 
 const Customers = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [typeFilter, setTypeFilter] = useState('all');
     const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
@@ -45,6 +46,15 @@ const Customers = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (location.state?.openNewModal) {
+            setIsModalOpen(true);
+            setEditingCustomer(null);
+            // Clear location state to prevent modal from reopening on refresh or navigation
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
     // deleted/archived states removed in favor of typeFilter
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -362,28 +372,28 @@ const Customers = () => {
     );
 
     const tabs = (
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
             <button
                 onClick={() => setTypeFilter('all')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'all' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Alle Kunden
+                Alle
             </button>
             <button
                 onClick={() => setTypeFilter('Firma')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Firma' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Firma' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Firmen
             </button>
             <button
                 onClick={() => setTypeFilter('Privat')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Privat' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Privat' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Privat
             </button>
             <button
                 onClick={() => setTypeFilter('Behörde')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Behörde' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Behörde' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Behörden
             </button>
@@ -391,7 +401,7 @@ const Customers = () => {
             {(showTrash || typeFilter === 'trash') && (
                 <button
                     onClick={() => setTypeFilter('trash')}
-                    className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
                 >
                     Papierkorb
                 </button>
@@ -400,7 +410,7 @@ const Customers = () => {
             {(showArchive || typeFilter === 'archive') && (
                 <button
                     onClick={() => setTypeFilter('archive')}
-                    className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'archive' ? 'border-slate-600 text-slate-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
                 >
                     Archiv
                 </button>
@@ -438,21 +448,23 @@ const Customers = () => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-6 h-full fade-in" onClick={() => { setIsExportOpen(false); }}>
-            <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
+            <div className="flex justify-between items-center sm:gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Kundenstamm</h1>
-                    <p className="text-slate-500 text-sm">Zentralverwaltung aller Auftraggeber und Rechnungsadressen.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Kundenstamm</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Auftraggeber und Rechnungsadressen.</p>
                 </div>
-                <button
-                    onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
-                    className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95"
-                >
-                    <FaPlus className="text-xs" /> Neuer Kunde
-                </button>
+                <div className="flex gap-2 shrink-0">
+                    <button
+                        onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
+                        className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95"
+                    >
+                        <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neuer Kunde</span><span className="inline sm:hidden">Kunde</span>
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <KPICard label="Gesamtkunden" value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
                 <KPICard label="Top Auftraggeber" value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" iconBg="bg-blue-50" subValue="Höchster Umsatz YTD" />
                 <KPICard
@@ -469,7 +481,7 @@ const Customers = () => {
                 />
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0 relative z-0">
+            <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <BulkActions
                     selectedCount={selectedCustomers.length}
                     onClearSelection={() => setSelectedCustomers([])}

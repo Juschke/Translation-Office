@@ -31,7 +31,7 @@ class ProjectController extends Controller
 
     public function index()
     {
-        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'positions', 'files.uploader', 'payments'])->get());
+        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'positions', 'files.uploader', 'payments'])->get());
     }
 
     public function store(Request $request)
@@ -71,7 +71,7 @@ class ProjectController extends Controller
             'positions.*.partner_mode' => 'nullable|in:unit,flat',
             'positions.*.partner_total' => 'nullable|numeric',
             'positions.*.customer_rate' => 'nullable|numeric',
-            'positions.*.customer_mode' => 'nullable|in:unit,flat',
+            'positions.*.customer_mode' => 'nullable|in:unit,flat,rate',
             'positions.*.customer_total' => 'nullable|numeric',
             'positions.*.margin_type' => 'nullable|in:markup,discount',
             'positions.*.margin_percent' => 'nullable|numeric',
@@ -106,7 +106,7 @@ class ProjectController extends Controller
 
     public function show($id)
     {
-        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'files.uploader', 'positions', 'payments', 'messages.user'])->findOrFail($id));
+        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'files.uploader', 'positions', 'payments', 'messages.user'])->findOrFail($id));
     }
 
     public function getActivities($id)

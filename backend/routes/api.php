@@ -99,8 +99,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/reports/project-status', [\App\Http\Controllers\Api\ReportController::class, 'projectStatus']);
 
     Route::post('invoices/bulk-update', [\App\Http\Controllers\Api\InvoiceController::class, 'bulkUpdate']);
-    Route::post('invoices/bulk-delete', [\App\Http\Controllers\Api\InvoiceController::class, 'bulkDelete']);
+    Route::post('invoices/datev-export', [\App\Http\Controllers\Api\InvoiceController::class, 'datevExport']);
     Route::post('invoices/{invoice}/generate-pdf', [\App\Http\Controllers\Api\InvoiceController::class, 'generatePdf']);
+    Route::post('invoices/{invoice}/issue', [\App\Http\Controllers\Api\InvoiceController::class, 'issue']);
+    Route::post('invoices/{invoice}/cancel', [\App\Http\Controllers\Api\InvoiceController::class, 'cancel']);
     Route::get('invoices/{invoice}/preview', [\App\Http\Controllers\Api\InvoiceController::class, 'preview']);
     Route::get('invoices/{invoice}/download', [\App\Http\Controllers\Api\InvoiceController::class, 'download']);
     Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Api\InvoiceController::class, 'print']);

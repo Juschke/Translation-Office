@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaPlus, FaTrash, FaStar } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaStar, FaEnvelope } from 'react-icons/fa';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
 import CountrySelect from '../common/CountrySelect';
@@ -323,26 +323,33 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     <div className="col-span-12 md:col-span-6 space-y-6">
                         <div className="space-y-4">
                             {formData.emails.map((email, i) => (
-                                <div key={i} className="flex gap-2 group animate-fadeIn">
+                                <div key={i} className="flex gap-2 group animate-fadeIn items-end">
                                     <Input
-                                        label={i === 0 ? "E-Mail (Primär) *" : "Zusätzliche E-Mails"}
+                                        containerClassName="flex-1"
+                                        label={i === 0 ? "E-Mail (Primär) *" : undefined}
                                         type="email"
+                                        startIcon={<FaEnvelope />}
                                         placeholder={i === 0 ? "haupt.partner@beispiel.de" : "zusatz.partner@beispiel.de"}
                                         value={email}
                                         error={i === 0 && !!getError('email')}
                                         onChange={e => updateEmail(i, e.target.value)}
-                                        helperText={i === 0 ? (getError('email') || "Hauptkontakt für alle Projektanfragen") : "Weitere Adresse für Kopien"}
+                                        helperText={i === 0 ? (getError('email') || "Hauptkontakt für alle Projektanfragen") : undefined}
                                     />
-                                    {formData.emails.length > 1 && (
-                                        <button type="button" onClick={() => removeEmail(i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5">
-                                            <FaTrash size={12} />
-                                        </button>
-                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeEmail(i)}
+                                        className={clsx(
+                                            "h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-md transition flex-shrink-0",
+                                            i === 0 && formData.emails.length === 1 ? "hidden" : ""
+                                        )}
+                                    >
+                                        <FaTrash size={12} />
+                                    </button>
                                 </div>
                             ))}
                             {!isCompact && (
-                                <button type="button" onClick={addEmail} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-1 ml-1">
-                                    <FaPlus size={8} /> Weitere E-Mail hinzufügen
+                                <button type="button" onClick={addEmail} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-1 ml-1">
+                                    <FaPlus className="text-[8px]" /> Weitere E-Mail hinzufügen
                                 </button>
                             )}
                         </div>
@@ -351,27 +358,34 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     <div className="col-span-12 md:col-span-6 space-y-6">
                         <div className="space-y-4">
                             {formData.phones.map((phone, i) => (
-                                <div key={i} className="flex gap-2 group animate-fadeIn">
-                                    <PhoneInput
-                                        label={i === 0 ? "Telefon (Primär) *" : "Zusätzliche Nummern"}
-                                        value={phone}
-                                        onChange={val => {
-                                            const newPhones = [...formData.phones];
-                                            newPhones[i] = val;
-                                            updateFormData({ phones: newPhones });
-                                        }}
-                                        helperText={i === 0 ? "Direkte Erreichbarkeit" : "Weitere Rufnummer"}
-                                    />
-                                    {formData.phones.length > 1 && (
-                                        <button type="button" onClick={() => removePhone(i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5">
-                                            <FaTrash size={12} />
-                                        </button>
-                                    )}
+                                <div key={i} className="flex gap-2 group animate-fadeIn items-end">
+                                    <div className="flex-1">
+                                        <PhoneInput
+                                            label={i === 0 ? "Telefon (Primär) *" : undefined}
+                                            value={phone}
+                                            onChange={val => {
+                                                const newPhones = [...formData.phones];
+                                                newPhones[i] = val;
+                                                updateFormData({ phones: newPhones });
+                                            }}
+                                            helperText={i === 0 ? "Direkte Erreichbarkeit" : undefined}
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removePhone(i)}
+                                        className={clsx(
+                                            "h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-md transition flex-shrink-0",
+                                            i === 0 && formData.phones.length === 1 ? "hidden" : ""
+                                        )}
+                                    >
+                                        <FaTrash size={12} />
+                                    </button>
                                 </div>
                             ))}
                             {!isCompact && (
-                                <button type="button" onClick={addPhone} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-1 ml-1">
-                                    <FaPlus size={8} /> Weitere Nummer hinzufügen
+                                <button type="button" onClick={addPhone} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-1 ml-1">
+                                    <FaPlus className="text-[8px]" /> Weitere Nummer hinzufügen
                                 </button>
                             )}
                         </div>

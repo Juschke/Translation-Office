@@ -10,6 +10,7 @@ interface Invoice {
     amount: number;
     due_date?: string;
     status: string;
+    reminder_level?: number;
 }
 
 interface OverdueInvoicesTableProps {
@@ -28,7 +29,7 @@ const OverdueInvoicesTable: React.FC<OverdueInvoicesTableProps> = ({ invoices })
                         Überfällige Rechnungen
                     </h2>
                 </div>
-                <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">
+                <span className="bg-red-100 text-red-600 text-[10px] font-black px-2 py-0.5 rounded-full">
                     {invoices.length}
                 </span>
             </div>
@@ -47,11 +48,12 @@ const OverdueInvoicesTable: React.FC<OverdueInvoicesTableProps> = ({ invoices })
                             const today = new Date();
                             const daysOverdue = dueDate ? Math.ceil((today.getTime() - dueDate.getTime()) / (1000 * 3600 * 24)) : 0;
                             const customerName = invoice.customer_name || invoice.customerName || 'Unbekannt';
+                            const reminderLevel = (invoice as any).reminder_level || 0;
 
                             return (
                                 <tr
                                     key={invoice.id}
-                                    onClick={() => navigate(`/invoices/${invoice.id}`)}
+                                    onClick={() => navigate(`/invoices`, { state: { filter: 'overdue' } })}
                                     className="hover:bg-slate-50 transition cursor-pointer group"
                                 >
                                     <td className="px-5 py-3 align-top">
@@ -59,9 +61,16 @@ const OverdueInvoicesTable: React.FC<OverdueInvoicesTableProps> = ({ invoices })
                                             <span className="text-xs font-bold text-slate-800 group-hover:text-slate-900 transition">
                                                 {invoice.number}
                                             </span>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
-                                                {daysOverdue} Tage überfällig
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight whitespace-nowrap">
+                                                    {daysOverdue} Tage überfällig
+                                                </span>
+                                                {reminderLevel > 0 && (
+                                                    <span className="bg-orange-100 text-orange-700 text-[8px] font-black px-1.5 py-0.5 rounded border border-orange-200 uppercase tracking-tighter">
+                                                        M{reminderLevel}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-5 py-3 align-top">

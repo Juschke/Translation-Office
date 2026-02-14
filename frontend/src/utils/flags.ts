@@ -88,3 +88,27 @@ export const getFlagUrl = (code: string) => {
     // 3. Last fallback
     return `https://flagcdn.com/w80/${c}.png`;
 };
+
+export const getLanguageName = (code: string): string => {
+    if (!code) return code;
+    const c = code.toLowerCase().trim();
+    const names: Record<string, string> = {
+        'af': 'Afrikaans', 'sq': 'Albanisch', 'am': 'Amharisch', 'ar': 'Arabisch',
+        'hy': 'Armenisch', 'az': 'Aserbaidschanisch', 'be': 'Weißrussisch', 'bn': 'Bengalisch',
+        'bs': 'Bosnisch', 'bg': 'Bulgarisch', 'my': 'Birmanisch', 'zh': 'Chinesisch',
+        'hr': 'Kroatisch', 'cs': 'Tschechisch', 'da': 'Dänisch', 'nl': 'Niederländisch',
+        'en': 'Englisch', 'et': 'Estnisch', 'fi': 'Finnisch', 'fr': 'Französisch',
+        'ka': 'Georgisch', 'de': 'Deutsch', 'el': 'Griechisch', 'he': 'Hebräisch',
+        'hi': 'Hindi', 'hu': 'Ungarisch', 'is': 'Isländisch', 'id': 'Indonesisch',
+        'ga': 'Irisch', 'it': 'Italienisch', 'ja': 'Japanisch', 'ko': 'Koreanisch',
+        'lv': 'Lettisch', 'lt': 'Litauisch', 'ms': 'Malaiisch', 'mt': 'Maltesisch',
+        'mn': 'Mongolisch', 'ne': 'Nepalesisch', 'no': 'Norwegisch', 'fa': 'Persisch (Farsi)',
+        'pl': 'Polnisch', 'pt': 'Portugiesisch', 'ro': 'Rumänisch', 'ru': 'Russisch',
+        'sr': 'Serbisch', 'sk': 'Slowakisch', 'sl': 'Slowenisch', 'es': 'Spanisch',
+        'sv': 'Schwedisch', 'th': 'Thailändisch', 'tr': 'Türkisch', 'uk': 'Ukrainisch',
+        'ur': 'Urdu', 'uz': 'Usbekisch', 'vi': 'Vietnamesisch', 'prs': 'Dari',
+        'ps': 'Paschtu', 'ca': 'Katalanisch', 'eu': 'Baskisch', 'gl': 'Galizisch',
+        'cy': 'Walisisch', 'so': 'Somali', 'sw': 'Swahili', 'ti': 'Tigrinya',
+    };
+    return names[c] || code.toUpperCase();
+};

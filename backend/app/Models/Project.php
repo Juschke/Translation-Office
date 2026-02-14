@@ -56,6 +56,11 @@ class Project extends Model
         'down_payment_date' => 'datetime',
     ];
 
+    public function documentType()
+    {
+        return $this->belongsTo(DocumentType::class, 'document_type_id');
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

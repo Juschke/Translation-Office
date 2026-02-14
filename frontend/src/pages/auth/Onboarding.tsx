@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     FaCheckCircle, FaRocket, FaBuilding, FaCreditCard,
-    FaUserPlus, FaChevronRight, FaChevronLeft, FaPlus, FaTrash, FaGlobe, FaCertificate, FaShieldAlt
+    FaUserPlus, FaChevronRight, FaChevronLeft, FaPlus, FaTrash, FaGlobe, FaCertificate, FaShieldAlt,
+    FaInfoCircle, FaAsterisk
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import clsx from 'clsx';
@@ -14,14 +15,42 @@ const steps = [
     { title: 'Team', icon: <FaUserPlus /> }
 ];
 
+// Reusable labeled input with required indicator and help text
+const Field = ({
+    label, name, value, onChange, placeholder, required, helpText, type = 'text', className = '',
+    disabled = false
+}: {
+    label: string; name: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder?: string; required?: boolean; helpText?: string; type?: string; className?: string;
+    disabled?: boolean;
+}) => (
+    <div className={className}>
+        <label className="flex items-center gap-1 text-xs font-bold text-slate-700 uppercase mb-1">
+            {label}
+            {required && <FaAsterisk className="text-red-400 text-[6px]" />}
+        </label>
+        <input
+            name={name} type={type} value={value} onChange={onChange} disabled={disabled}
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+            placeholder={placeholder}
+        />
+        {helpText && (
+            <p className="mt-1 text-[10px] text-slate-400 flex items-start gap-1">
+                <FaInfoCircle className="shrink-0 mt-0.5" />
+                <span>{helpText}</span>
+            </p>
+        )}
+    </div>
+);
+
 const OnboardingPage = () => {
     const { onboard } = useAuth();
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [stepErrors, setStepErrors] = useState<string[]>([]);
 
-    // Form States
     const [formData, setFormData] = useState({
         company_name: '',
         legal_form: '',
@@ -44,6 +73,7 @@ const OnboardingPage = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        setStepErrors([]);
     };
 
     const addInvite = () => {
@@ -57,8 +87,35 @@ const OnboardingPage = () => {
         setFormData(prev => ({ ...prev, invitations: prev.invitations.filter((_, i) => i !== index) }));
     };
 
-    const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
-    const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 0));
+    // Validate current step before advancing
+    const validateStep = (): string[] => {
+        const errors: string[] = [];
+        if (currentStep === 0) {
+            if (!formData.company_name.trim()) errors.push('Firmenname ist erforderlich');
+            if (!formData.address_street.trim()) errors.push('Straße ist erforderlich');
+            if (!formData.address_zip.trim()) errors.push('PLZ ist erforderlich');
+            if (!formData.address_city.trim()) errors.push('Stadt ist erforderlich');
+        }
+        if (currentStep === 1) {
+            // Finance fields are recommended but not strictly blocking
+        }
+        return errors;
+    };
+
+    const handleNext = () => {
+        const errors = validateStep();
+        if (errors.length > 0) {
+            setStepErrors(errors);
+            return;
+        }
+        setStepErrors([]);
+        setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+    };
+
+    const handleBack = () => {
+        setStepErrors([]);
+        setCurrentStep(prev => Math.max(prev - 1, 0));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -80,27 +137,59 @@ const OnboardingPage = () => {
                 return (
                     <div className="space-y-4 animate-fadeIn">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-2">
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Name des Übersetzungsbüros</label>
-                                <input name="company_name" value={formData.company_name} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="z.B. WordFlow Translations" />
-                            </div>
+                            <Field
+                                label="Name des Übersetzungsbüros" name="company_name"
+                                value={formData.company_name} onChange={handleChange}
+                                placeholder="z.B. WordFlow Translations GmbH" required
+                                helpText="Der offizielle Firmenname, wie er auf Rechnungen erscheint."
+                                className="col-span-2"
+                            />
+                            <Field
+                                label="Rechtsform" name="legal_form"
+                                value={formData.legal_form} onChange={handleChange}
+                                placeholder="z.B. GmbH, e.K., Einzelunternehmen"
+                                helpText="Ihre Gesellschaftsform für den Rechtsverkehr."
+                            />
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Rechtsform</label>
-                                <input name="legal_form" value={formData.legal_form} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="z.B. GmbH, e.K." />
+                                <label className="flex items-center gap-1 text-xs font-bold text-slate-700 uppercase mb-1">
+                                    Land
+                                </label>
+                                <select
+                                    name="address_country" value={formData.address_country} onChange={handleChange}
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500"
+                                >
+                                    <option value="DE">Deutschland</option>
+                                    <option value="AT">Österreich</option>
+                                    <option value="CH">Schweiz</option>
+                                    <option value="LU">Luxemburg</option>
+                                    <option value="LI">Liechtenstein</option>
+                                </select>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Straße</label>
-                                <input name="address_street" value={formData.address_street} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="Musterstraße" />
+                            <div className="col-span-2 grid grid-cols-4 gap-3">
+                                <Field
+                                    label="Straße" name="address_street"
+                                    value={formData.address_street} onChange={handleChange}
+                                    placeholder="Musterstraße" required
+                                    className="col-span-3"
+                                />
+                                <Field
+                                    label="Hausnr." name="address_house_no"
+                                    value={formData.address_house_no} onChange={handleChange}
+                                    placeholder="12a"
+                                />
                             </div>
-                            <div className="grid grid-cols-3 gap-2 col-span-2">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">PLZ</label>
-                                    <input name="address_zip" value={formData.address_zip} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="12345" />
-                                </div>
-                                <div className="col-span-2">
-                                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Stadt</label>
-                                    <input name="address_city" value={formData.address_city} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="Berlin" />
-                                </div>
+                            <div className="col-span-2 grid grid-cols-3 gap-3">
+                                <Field
+                                    label="PLZ" name="address_zip"
+                                    value={formData.address_zip} onChange={handleChange}
+                                    placeholder="12345" required
+                                />
+                                <Field
+                                    label="Stadt" name="address_city"
+                                    value={formData.address_city} onChange={handleChange}
+                                    placeholder="Berlin" required
+                                    className="col-span-2"
+                                />
                             </div>
                         </div>
                     </div>
@@ -108,23 +197,49 @@ const OnboardingPage = () => {
             case 1:
                 return (
                     <div className="space-y-4 animate-fadeIn">
+                        <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-700 flex items-start gap-2">
+                            <FaInfoCircle className="shrink-0 mt-0.5" />
+                            <span>Diese Angaben werden auf Ihren Rechnungen und für den DATEV-Export verwendet. Sie können sie später in den Einstellungen ändern.</span>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-2">
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Bankname</label>
-                                <input name="bank_name" value={formData.bank_name} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="Sparkasse Berlin" />
-                            </div>
-                            <div className="col-span-2">
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">IBAN</label>
-                                <input name="bank_iban" value={formData.bank_iban} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="DE12 3456 ..." />
-                            </div>
+                            <Field
+                                label="Bankname" name="bank_name"
+                                value={formData.bank_name} onChange={handleChange}
+                                placeholder="z.B. Sparkasse Berlin"
+                                helpText="Name Ihrer Geschäftsbank."
+                                className="col-span-2"
+                            />
+                            <Field
+                                label="IBAN" name="bank_iban"
+                                value={formData.bank_iban} onChange={handleChange}
+                                placeholder="DE89 3704 0044 0532 0130 00"
+                                helpText="Internationale Bankkontonummer (22 Stellen für DE)."
+                                className="col-span-2"
+                            />
+                            <Field
+                                label="BIC / SWIFT" name="bank_bic"
+                                value={formData.bank_bic} onChange={handleChange}
+                                placeholder="COBADEFFXXX"
+                                helpText="Bank Identifier Code Ihrer Bank."
+                            />
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">BIC</label>
-                                <input name="bank_bic" value={formData.bank_bic} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="WELADED..." />
+                                <div className="h-4"></div> {/* spacer for alignment */}
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">USt-ID / Steuernummer</label>
-                                <input name="vat_id" value={formData.vat_id} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="DE 999 999 999" />
-                            </div>
+
+                            <div className="col-span-2 h-px bg-slate-100 my-1"></div>
+
+                            <Field
+                                label="Steuernummer" name="tax_number"
+                                value={formData.tax_number} onChange={handleChange}
+                                placeholder="12/345/67890"
+                                helpText="Vom Finanzamt zugewiesen (für Inland)."
+                            />
+                            <Field
+                                label="USt-IdNr." name="vat_id"
+                                value={formData.vat_id} onChange={handleChange}
+                                placeholder="DE123456789"
+                                helpText="EU-Umsatzsteuer-ID (für EU-Geschäfte & Reverse Charge)."
+                            />
                         </div>
                     </div>
                 );
@@ -133,21 +248,28 @@ const OnboardingPage = () => {
                     <div className="space-y-6 animate-fadeIn">
                         <div className="grid grid-cols-3 gap-4">
                             {[
-                                { id: 'basic', name: 'Standard', price: '49€' },
-                                { id: 'pro', name: 'Professional', price: '99€' },
-                                { id: 'premium', name: 'Premium', price: '199€' }
+                                { id: 'basic', name: 'Standard', price: '49€', features: ['5 Projekte/Monat', '1 Benutzer', 'E-Mail-Support'] },
+                                { id: 'pro', name: 'Professional', price: '99€', features: ['Unbegrenzt Projekte', '5 Benutzer', 'DATEV-Export', 'Prioritäts-Support'] },
+                                { id: 'premium', name: 'Premium', price: '199€', features: ['Alles in Pro', 'Unbegrenzt Benutzer', 'API-Zugang', 'Persönlicher Berater'] }
                             ].map((p) => (
                                 <div
                                     key={p.id}
                                     onClick={() => setFormData(prev => ({ ...prev, subscription_plan: p.id }))}
                                     className={clsx(
                                         "p-4 border-2 rounded-xl cursor-pointer transition text-center",
-                                        formData.subscription_plan === p.id ? "border-brand-600 bg-brand-50" : "border-slate-100 hover:bg-slate-50"
+                                        formData.subscription_plan === p.id ? "border-brand-600 bg-brand-50 shadow-md" : "border-slate-100 hover:bg-slate-50"
                                     )}
                                 >
                                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{p.name}</div>
                                     <div className="text-xl font-black text-slate-800">{p.price}</div>
-                                    <div className="text-[9px] text-slate-500 mt-2">pro Monat / User</div>
+                                    <div className="text-[9px] text-slate-500 mt-1 mb-3">pro Monat / User</div>
+                                    <div className="text-left space-y-1">
+                                        {p.features.map((f, i) => (
+                                            <div key={i} className="flex items-center gap-1 text-[10px] text-slate-500">
+                                                <FaCheckCircle className="text-emerald-400 text-[8px] shrink-0" /> {f}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -155,7 +277,12 @@ const OnboardingPage = () => {
                             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
                             <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Oder Lizenzschlüssel</span></div>
                         </div>
-                        <input name="license_key" value={formData.license_key} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="VBA-1234-XXXX-XXXX" />
+                        <Field
+                            label="Lizenzschlüssel" name="license_key"
+                            value={formData.license_key} onChange={handleChange}
+                            placeholder="VBA-1234-XXXX-XXXX"
+                            helpText="Falls Sie einen Lizenzschlüssel erhalten haben, geben Sie ihn hier ein."
+                        />
                     </div>
                 );
             case 3:
@@ -165,24 +292,28 @@ const OnboardingPage = () => {
                             <input
                                 value={inviteEmail}
                                 onChange={(e) => setInviteEmail(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addInvite(); } }}
                                 className="flex-1 px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500"
-                                placeholder="kollege@büro.de"
+                                placeholder="kollege@unternehmen.de"
+                                type="email"
                             />
                             <button type="button" onClick={addInvite} className="bg-brand-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-brand-800 transition">
-                                <FaPlus /> Hinzufügen
+                                <FaPlus /> Einladen
                             </button>
                         </div>
-                        <div className="space-y-2">
-                            {formData.invitations.map((email, i) => (
-                                <div key={i} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-lg">
-                                    <span className="text-sm font-medium text-slate-700">{email}</span>
-                                    <button type="button" onClick={() => removeInvite(i)} className="text-slate-300 hover:text-red-500 transition"><FaTrash /></button>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex gap-3 text-xs text-blue-800 leading-relaxed italic">
+                        {formData.invitations.length > 0 && (
+                            <div className="space-y-2">
+                                {formData.invitations.map((email, i) => (
+                                    <div key={i} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                                        <span className="text-sm font-medium text-slate-700">{email}</span>
+                                        <button type="button" onClick={() => removeInvite(i)} className="text-slate-300 hover:text-red-500 transition"><FaTrash /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex gap-3 text-xs text-blue-800 leading-relaxed">
                             <FaGlobe className="shrink-0 mt-0.5" />
-                            <span>Sie können jederzeit weitere Teammitglieder in den Einstellungen hinzufügen.</span>
+                            <span>Dieser Schritt ist optional. Sie können jederzeit weitere Teammitglieder in den Einstellungen hinzufügen. Eingeladene erhalten eine E-Mail mit Zugangsdaten.</span>
                         </div>
                     </div>
                 );
@@ -210,11 +341,12 @@ const OnboardingPage = () => {
                             {steps.map((step, i) => (
                                 <div key={i} className={clsx(
                                     "flex items-center gap-4 transition-all duration-500",
-                                    currentStep === i ? "opacity-100 scale-105" : "opacity-40"
+                                    currentStep === i ? "opacity-100 scale-105" : currentStep > i ? "opacity-70" : "opacity-40"
                                 )}>
                                     <div className={clsx(
                                         "w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-black transition-colors duration-500",
-                                        currentStep >= i ? "bg-white text-brand-900 border-white" : "border-white/30 text-white/50"
+                                        currentStep > i ? "bg-emerald-400 text-white border-emerald-400" :
+                                            currentStep >= i ? "bg-white text-brand-900 border-white" : "border-white/30 text-white/50"
                                     )}>
                                         {currentStep > i ? <FaCheckCircle /> : step.icon}
                                     </div>
@@ -229,14 +361,15 @@ const OnboardingPage = () => {
 
                     <div className="relative z-10 mt-12 p-5 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
                         <p className="text-xs text-brand-100 leading-relaxed font-medium">
-                            "Wir unterstützen Sie dabei, Ihr Übersetzungsbüro effizient und digital zu führen."
+                            <FaInfoCircle className="inline mr-1" />
+                            Alle Angaben können später in den Einstellungen jederzeit geändert werden.
                         </p>
                     </div>
                 </div>
 
                 {/* Right Side - Form */}
                 <div className="col-span-12 lg:col-span-8 bg-white rounded-3xl p-8 lg:p-12 shadow-xl border border-slate-100 flex flex-col relative overflow-hidden">
-                    <div className="mb-10">
+                    <div className="mb-8">
                         <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">
                             {currentStep === 0 && "Herzlich Willkommen!"}
                             {currentStep === 1 && "Finanzielle Details"}
@@ -244,25 +377,42 @@ const OnboardingPage = () => {
                             {currentStep === 3 && "Laden Sie Ihr Team ein"}
                         </h1>
                         <p className="text-slate-500 text-sm font-medium">
-                            {currentStep === 0 && "Starten wir mit den Grunddaten Ihres Unternehmens."}
-                            {currentStep === 1 && "Diese Informationen benötigen wir für Ihre Rechnungen."}
+                            {currentStep === 0 && "Starten wir mit den Grunddaten Ihres Unternehmens. Pflichtfelder sind mit ✱ markiert."}
+                            {currentStep === 1 && "Diese Informationen benötigen wir für Ihre Rechnungen und den DATEV-Export."}
                             {currentStep === 2 && "Passen Sie die Plattform an Ihre Bedürfnisse an."}
-                            {currentStep === 3 && "Zusammen arbeitet es sich besser. Fügen Sie Kollegen hinzu."}
+                            {currentStep === 3 && "Zusammen arbeitet es sich besser. Fügen Sie Kollegen hinzu (optional)."}
                         </p>
                     </div>
 
                     {error && (
-                        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-xs font-bold border border-red-100 mb-8 animate-shake">
+                        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-xs font-bold border border-red-100 mb-6 animate-shake">
                             {error}
                         </div>
                     )}
 
+                    {stepErrors.length > 0 && (
+                        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-xs font-medium border border-red-100 mb-6 animate-shake">
+                            <div className="font-bold mb-1">Bitte korrigieren Sie folgende Angaben:</div>
+                            <ul className="list-disc list-inside space-y-0.5">
+                                {stepErrors.map((err, i) => <li key={i}>{err}</li>)}
+                            </ul>
+                        </div>
+                    )}
+
                     <form onSubmit={currentStep === steps.length - 1 ? handleSubmit : (e) => e.preventDefault()} className="flex-1 flex flex-col justify-between">
-                        <div className="mb-12">
+                        <div className="mb-10">
                             {renderStep()}
                         </div>
 
-                        <div className="flex justify-between items-center pt-8 border-t border-slate-100">
+                        {/* Progress bar */}
+                        <div className="w-full bg-slate-100 rounded-full h-1 mb-6">
+                            <div
+                                className="bg-brand-600 h-1 rounded-full transition-all duration-500"
+                                style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+                            ></div>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-6 border-t border-slate-100">
                             <button
                                 type="button"
                                 onClick={handleBack}

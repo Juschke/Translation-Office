@@ -3,192 +3,977 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\InvoiceAuditLog;
+use horstoeko\zugferdlaravel\Facades\ZugferdLaravel;
+use horstoeko\zugferd\codelists\ZugferdInvoiceType;
+use horstoeko\zugferd\codelists\ZugferdTaxCategoryCodes;
+use horstoeko\zugferd\codelists\ZugferdPaymentMeans;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
+/**
+ * InvoiceController — GoBD-Compliant
+ *
+ * KEY RULES:
+ * 1. All amounts stored as INTEGER CENTS (15050 = 150,50 €)
+ * 2. Frontend sends EUR (150.50), backend converts to cents (* 100)
+ * 3. Invoices are immutable once issued (is_locked = true)
+ * 4. No hard deletes — use Storno (credit note) workflow
+ * 5. Sequential, gap-free invoice numbering per tenant per year
+ * 6. Customer/seller/project data is snapshotted at issue time
+ */
 class InvoiceController extends Controller
 {
+    // ─────────────────────────────────────────────────────────────────
+    // CRUD
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * List all invoices with their items and audit logs.
+     */
     public function index()
     {
-        return response()->json(Invoice::with(['project.positions', 'customer'])->get());
+        return response()->json(
+            Invoice::with(['items', 'auditLogs.user', 'creditNote', 'cancelledInvoice'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+        );
     }
 
+    /**
+     * Show a single invoice.
+     */
+    public function show($id)
+    {
+        return response()->json(
+            Invoice::with(['items', 'auditLogs.user', 'creditNote', 'cancelledInvoice'])
+                ->findOrFail($id)
+        );
+    }
+
+    /**
+     * Create a new invoice (always as draft).
+     *
+     * Accepts EUR amounts from the frontend, converts to cents.
+     * Snapshots customer + seller + project data immediately.
+     * Creates frozen InvoiceItem records from project positions.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'invoice_number' => 'required|string|unique:invoices',
-            'project_id' => 'required|exists:projects,id',
-            'customer_id' => 'required|exists:customers,id',
-            'date' => 'required|date',
-            'due_date' => 'required|date',
-            'amount_net' => 'required|numeric',
-            'tax_rate' => 'nullable|numeric',
-            'amount_tax' => 'required|numeric',
-            'amount_gross' => 'required|numeric',
-            'currency' => 'string|max:3',
-            'notes' => 'nullable|string',
-            'status' => 'in:pending,sent,paid,overdue,cancelled,archived,deleted',
+            'project_id'      => 'required|exists:projects,id',
+            'customer_id'     => 'required|exists:customers,id',
+            'date'            => 'required|date',
+            'due_date'        => 'required|date',
+            'delivery_date'   => 'nullable|date',
+            'amount_net'      => 'required|numeric',  // EUR from frontend
+            'tax_rate'        => 'nullable|numeric',
+            'amount_tax'      => 'required|numeric',  // EUR from frontend
+            'amount_gross'    => 'required|numeric',  // EUR from frontend
+            'currency'        => 'string|max:3',
+            'notes'           => 'nullable|string',
+            'service_period'  => 'nullable|string',
+            'tax_exemption'   => 'nullable|string|in:none,§19_ustg,reverse_charge',
         ]);
 
-        $invoice = Invoice::create($validated);
+        return DB::transaction(function () use ($validated, $request) {
+            // 1. Generate sequential, gap-free invoice number
+            $year = date('Y');
+            $tenantId = $request->user()->tenant_id;
 
-        // Generate PDF
-        try {
-            $customer = \App\Models\Customer::find($validated['customer_id']);
-            $project = \App\Models\Project::with('positions')->find($validated['project_id']);
+            $lastSeq = Invoice::where('tenant_id', $tenantId)
+                ->whereYear('date', $year)
+                ->max('invoice_number_sequence') ?? 0;
 
-            $buyer = new \LaravelDaily\Invoices\Classes\Buyer([
-                'name' => $customer->company_name ?? ($customer->first_name . ' ' . $customer->last_name),
-                'custom_fields' => [
-                    'email' => $customer->email,
-                    'customer_id' => $customer->customer_id ?? $customer->id,
-                    'address' => trim(
-                        ($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '') . "\n" .
-                        ($customer->address_zip ?? '') . ' ' . ($customer->address_city ?? '') . "\n" .
-                        ($customer->address_country ?? '')
-                    ),
-                    'street' => $customer->address_street,
-                    'house_no' => $customer->address_house_no,
-                    'zip' => $customer->address_zip,
-                    'city' => $customer->address_city,
-                    'country' => $customer->address_country,
-                ],
+            $newSeq = $lastSeq + 1;
+            $invoiceNumber = sprintf('RE-%s-%05d', $year, $newSeq);
+
+            // 2. Load related data for snapshot
+            $customer = \App\Models\Customer::findOrFail($validated['customer_id']);
+            $project  = \App\Models\Project::with('positions')->findOrFail($validated['project_id']);
+            $tenant   = \App\Models\Tenant::findOrFail($tenantId);
+
+            // 3. Create invoice with cent-based amounts + snapshots
+            $invoice = Invoice::create([
+                'type'                     => Invoice::TYPE_INVOICE,
+                'invoice_number'           => $invoiceNumber,
+                'invoice_number_sequence'  => $newSeq,
+                'project_id'               => $validated['project_id'],
+                'customer_id'              => $validated['customer_id'],
+                'date'                     => $validated['date'],
+                'due_date'                 => $validated['due_date'],
+                'delivery_date'            => $validated['delivery_date'] ?? null,
+                'service_period'           => $validated['service_period'] ?? null,
+                'tax_exemption'            => $validated['tax_exemption'] ?? 'none',
+
+                // EUR → Cents conversion (round to avoid floating-point issues)
+                'amount_net'   => (int) round(($validated['amount_net']) * 100),
+                'tax_rate'     => $validated['tax_rate'] ?? 19.00,
+                'amount_tax'   => (int) round(($validated['amount_tax']) * 100),
+                'amount_gross' => (int) round(($validated['amount_gross']) * 100),
+
+                'currency'       => $validated['currency'] ?? 'EUR',
+                'notes'          => $validated['notes'] ?? null,
+                'status'         => Invoice::STATUS_DRAFT,
+                'is_locked'      => false,
+
+                // --- Customer snapshot (§ 14 UStG Pflichtangaben) ---
+                'snapshot_customer_name'       => $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name),
+                'snapshot_customer_address'     => trim(($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '')),
+                'snapshot_customer_zip'         => $customer->address_zip,
+                'snapshot_customer_city'        => $customer->address_city,
+                'snapshot_customer_country'     => $customer->address_country ?? 'DE',
+                'snapshot_customer_vat_id'      => $customer->vat_id ?? null,
+                'snapshot_customer_leitweg_id'  => $customer->leitweg_id ?? null,
+
+                // --- Seller snapshot (§ 14 UStG: eigener Name, Anschrift, StNr) ---
+                'snapshot_seller_name'        => $tenant->company_name ?: $tenant->name,
+                'snapshot_seller_address'      => trim(($tenant->address_street ?? '') . ' ' . ($tenant->address_house_no ?? '')),
+                'snapshot_seller_zip'          => $tenant->address_zip,
+                'snapshot_seller_city'         => $tenant->address_city,
+                'snapshot_seller_country'      => $tenant->address_country ?? 'DE',
+                'snapshot_seller_tax_number'   => $tenant->tax_number,
+                'snapshot_seller_vat_id'       => $tenant->vat_id,
+                'snapshot_seller_bank_name'    => $tenant->bank_name,
+                'snapshot_seller_bank_iban'    => $tenant->bank_iban,
+                'snapshot_seller_bank_bic'     => $tenant->bank_bic,
+
+                // --- Project snapshot ---
+                'snapshot_project_name'   => $project->project_name,
+                'snapshot_project_number' => $project->project_number,
             ]);
 
-            $items = [];
-            foreach ($project->positions as $pos) {
-                $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
-                    ->title($pos->description)
-                    ->pricePerUnit((float) $pos->customer_rate)
-                    ->quantity($pos->amount); // Using amount as quantity based on project structure
-            }
+            // 4. Create frozen line items from project positions
+            $this->createInvoiceItems($invoice, $project, $validated['tax_rate'] ?? 19);
 
-            // If no items (mock or just project total)
-            if (empty($items)) {
-                $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
-                    ->title($project->project_name)
-                    ->pricePerUnit($validated['amount_net'])
-                    ->quantity(1);
-            }
+            // 5. Audit log
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_DRAFT);
 
-            $dailyInvoice = \LaravelDaily\Invoices\Invoice::make()
-                ->buyer($buyer)
-                ->discountByPercent(0)
-                ->taxRate($validated['tax_rate'] ?? 19)
-                ->shipping(0)
-                ->notes($validated['notes'] ?? '')
-                ->template('din5008')
-                ->addItem($items[0]); // addItem takes a single item, use addItems for array
-
-            if (count($items) > 1) {
-                for ($i = 1; $i < count($items); $i++) {
-                    $dailyInvoice->addItem($items[$i]);
-                }
-            }
-
-            $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
-
-            // Correct rendering for LaravelDaily Invoices
-            $dailyInvoice->render();
-            $pdfContent = $dailyInvoice->output;
-            \Storage::disk('public')->put('invoices/' . $filename, $pdfContent);
-
-            $invoice->update(['pdf_path' => 'storage/invoices/' . $filename]);
-
-        } catch (\Exception $e) {
-            // Log error but continue
-            \Log::error('Invoice PDF generation failed: ' . $e->getMessage());
-        }
-
-        return response()->json($invoice, 201);
+            return response()->json($invoice->load('items'), 201);
+        });
     }
 
-    public function show($id)
-    {
-        return response()->json(Invoice::with(['project.positions', 'customer'])->findOrFail($id));
-    }
-
+    /**
+     * Update an invoice (only while in draft).
+     *
+     * GoBD: Once is_locked = true, only status/reminder fields may change.
+     * The model's boot() guard enforces this at the ORM level.
+     */
     public function update(Request $request, $id)
     {
         $invoice = Invoice::findOrFail($id);
+
+        // Explicitly reject changes on locked invoices (clearer error for frontend)
+        if ($invoice->is_locked) {
+            $allowed = $request->only(['status', 'reminder_level', 'last_reminder_date']);
+            if (empty($allowed)) {
+                return response()->json([
+                    'error' => 'GoBD-Verstoß: Ausgestellte Rechnungen sind unveränderbar. Verwenden Sie den Storno-Workflow.'
+                ], 403);
+            }
+
+            $oldStatus = $invoice->status;
+            $invoice->update($allowed);
+
+            if (isset($allowed['status']) && $allowed['status'] !== $oldStatus) {
+                $this->logAuditEvent($invoice, $request, 'status_change', $oldStatus, $allowed['status']);
+            }
+
+            return response()->json($invoice);
+        }
+
+        // Draft invoices: allow broader updates
         $validated = $request->validate([
-            'status' => 'string|in:pending,sent,paid,overdue,cancelled,archived,deleted',
-            'due_date' => 'date',
+            'date'           => 'date',
+            'due_date'       => 'date',
+            'delivery_date'  => 'nullable|date',
+            'amount_net'     => 'numeric',
+            'tax_rate'       => 'numeric',
+            'amount_tax'     => 'numeric',
+            'amount_gross'   => 'numeric',
+            'notes'          => 'nullable|string',
+            'service_period' => 'nullable|string',
+            'tax_exemption'  => 'nullable|string|in:none,§19_ustg,reverse_charge',
+            'status'         => 'string|in:draft',
         ]);
+
+        // Convert EUR → cents if amounts provided
+        foreach (['amount_net', 'amount_tax', 'amount_gross'] as $field) {
+            if (isset($validated[$field])) {
+                $validated[$field] = (int) round($validated[$field] * 100);
+            }
+        }
 
         $invoice->update($validated);
         return response()->json($invoice);
     }
 
+    /**
+     * Delete a draft invoice.
+     *
+     * GoBD: Only draft invoices may be deleted.
+     * Issued invoices must use the Storno workflow.
+     */
     public function destroy($id)
     {
-        Invoice::findOrFail($id)->delete();
-        return response()->json(['message' => 'Invoice deleted']);
+        $invoice = Invoice::findOrFail($id);
+
+        if ($invoice->is_locked || $invoice->status !== Invoice::STATUS_DRAFT) {
+            return response()->json([
+                'error' => 'Nur Entwürfe können gelöscht werden. Verwenden Sie "Stornieren" für ausgestellte Rechnungen.'
+            ], 403);
+        }
+
+        $invoice->delete();
+        return response()->json(['message' => 'Rechnungsentwurf gelöscht']);
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    // WORKFLOW ACTIONS
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Issue a draft invoice (draft → issued).
+     *
+     * This is the critical GoBD transition:
+     * 1. Re-snapshots all data (customer might have changed since draft creation)
+     * 2. Locks the invoice (is_locked = true)
+     * 3. Generates PDF + ZUGFeRD XML
+     * 4. Sets issued_at timestamp
+     *
+     * After this point, the invoice is IMMUTABLE.
+     */
+    public function issue(Request $request, $id)
+    {
+        $invoice = Invoice::findOrFail($id);
+
+        if (!$invoice->canBeIssued()) {
+            return response()->json([
+                'error' => 'Nur Entwürfe können ausgestellt werden. Aktueller Status: ' . $invoice->status
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($invoice, $request) {
+            // 1. Re-snapshot (customer/tenant data might have changed since draft)
+            $customer = \App\Models\Customer::find($invoice->customer_id);
+            $tenant   = \App\Models\Tenant::find($invoice->tenant_id);
+            $project  = \App\Models\Project::find($invoice->project_id);
+
+            if ($customer) {
+                $invoice->snapshot_customer_name    = $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name);
+                $invoice->snapshot_customer_address  = trim(($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? ''));
+                $invoice->snapshot_customer_zip      = $customer->address_zip;
+                $invoice->snapshot_customer_city     = $customer->address_city;
+                $invoice->snapshot_customer_country  = $customer->address_country ?? 'DE';
+                $invoice->snapshot_customer_vat_id   = $customer->vat_id ?? null;
+                $invoice->snapshot_customer_leitweg_id = $customer->leitweg_id ?? null;
+            }
+
+            if ($tenant) {
+                $invoice->snapshot_seller_name       = $tenant->company_name ?: $tenant->name;
+                $invoice->snapshot_seller_address     = trim(($tenant->address_street ?? '') . ' ' . ($tenant->address_house_no ?? ''));
+                $invoice->snapshot_seller_zip         = $tenant->address_zip;
+                $invoice->snapshot_seller_city        = $tenant->address_city;
+                $invoice->snapshot_seller_country     = $tenant->address_country ?? 'DE';
+                $invoice->snapshot_seller_tax_number  = $tenant->tax_number;
+                $invoice->snapshot_seller_vat_id      = $tenant->vat_id;
+                $invoice->snapshot_seller_bank_name   = $tenant->bank_name;
+                $invoice->snapshot_seller_bank_iban   = $tenant->bank_iban;
+                $invoice->snapshot_seller_bank_bic    = $tenant->bank_bic;
+            }
+
+            if ($project) {
+                $invoice->snapshot_project_name   = $project->project_name;
+                $invoice->snapshot_project_number = $project->project_number;
+            }
+
+            // 2. Lock and set status
+            $oldStatus         = $invoice->status;
+            $invoice->status    = Invoice::STATUS_ISSUED;
+            $invoice->issued_at = now();
+            $invoice->is_locked = true;
+            $invoice->save();
+
+            // 3. Generate PDF + ZUGFeRD
+            try {
+                $this->generatePdfInternal($invoice);
+            } catch (\Exception $e) {
+                Log::error('PDF generation failed during issue: ' . $e->getMessage());
+                // Don't rollback — the invoice is still issued even if PDF fails
+            }
+
+            // 4. Audit log
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_ISSUED, $oldStatus, Invoice::STATUS_ISSUED);
+
+            return response()->json($invoice->load('items'));
+        });
+    }
+
+    /**
+     * Cancel an issued invoice (Storno-Workflow).
+     *
+     * GoBD: Issued invoices may NOT be deleted or modified.
+     * Instead, a Storno-Rechnung (Gutschrift / credit note) with negated
+     * amounts is created and linked to the original invoice.
+     *
+     * Steuerrechtlicher Hintergrund:
+     * Nach § 14 Abs. 2 UStG können Rechnungen nur durch Ausstellung einer
+     * berichtigenden Rechnung (Gutschrift/Storno) korrigiert werden.
+     * Das Original bleibt im System erhalten (Aufbewahrungspflicht 10 Jahre).
+     */
+    public function cancel(Request $request, $id)
+    {
+        $invoice = Invoice::with('items')->findOrFail($id);
+
+        if (!$invoice->canBeCancelled()) {
+            return response()->json([
+                'error' => 'Diese Rechnung kann nicht storniert werden. Status: ' . $invoice->status
+            ], 422);
+        }
+
+        // Check if already cancelled
+        if ($invoice->creditNote) {
+            return response()->json([
+                'error' => 'Diese Rechnung wurde bereits storniert. Storno-Nr.: ' . $invoice->creditNote->invoice_number
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($invoice, $request) {
+            $year     = date('Y');
+            $tenantId = $request->user()->tenant_id;
+
+            // Sequential number for the credit note (same number series!)
+            $lastSeq = Invoice::where('tenant_id', $tenantId)
+                ->whereYear('date', $year)
+                ->max('invoice_number_sequence') ?? 0;
+
+            $newSeq = $lastSeq + 1;
+            $creditNoteNumber = sprintf('RE-%s-%05d', $year, $newSeq);
+
+            // 1. Create credit note with negated amounts
+            $creditNote = Invoice::create([
+                'type'                     => Invoice::TYPE_CREDIT_NOTE,
+                'invoice_number'           => $creditNoteNumber,
+                'invoice_number_sequence'  => $newSeq,
+                'cancelled_invoice_id'     => $invoice->id,
+                'project_id'               => $invoice->project_id,
+                'customer_id'              => $invoice->customer_id,
+                'date'                     => now()->toDateString(),
+                'due_date'                 => now()->addDays(14)->toDateString(),
+                'delivery_date'            => $invoice->delivery_date,
+                'service_period'           => $invoice->service_period,
+                'tax_exemption'            => $invoice->tax_exemption,
+
+                // Negated amounts (Gutschrift)
+                'amount_net'   => -$invoice->amount_net,
+                'tax_rate'     => $invoice->tax_rate,
+                'amount_tax'   => -$invoice->amount_tax,
+                'amount_gross' => -$invoice->amount_gross,
+
+                'currency' => $invoice->currency,
+                'notes'    => 'Storno zu Rechnung ' . $invoice->invoice_number .
+                              ($request->input('reason') ? '. Grund: ' . $request->input('reason') : ''),
+                'status'    => Invoice::STATUS_ISSUED,
+                'is_locked' => true,
+                'issued_at' => now(),
+
+                // Copy all snapshots from original (GoBD: same data as original)
+                'snapshot_customer_name'       => $invoice->snapshot_customer_name,
+                'snapshot_customer_address'     => $invoice->snapshot_customer_address,
+                'snapshot_customer_zip'         => $invoice->snapshot_customer_zip,
+                'snapshot_customer_city'        => $invoice->snapshot_customer_city,
+                'snapshot_customer_country'     => $invoice->snapshot_customer_country,
+                'snapshot_customer_vat_id'      => $invoice->snapshot_customer_vat_id,
+                'snapshot_customer_leitweg_id'  => $invoice->snapshot_customer_leitweg_id,
+                'snapshot_seller_name'          => $invoice->snapshot_seller_name,
+                'snapshot_seller_address'       => $invoice->snapshot_seller_address,
+                'snapshot_seller_zip'           => $invoice->snapshot_seller_zip,
+                'snapshot_seller_city'          => $invoice->snapshot_seller_city,
+                'snapshot_seller_country'       => $invoice->snapshot_seller_country,
+                'snapshot_seller_tax_number'    => $invoice->snapshot_seller_tax_number,
+                'snapshot_seller_vat_id'        => $invoice->snapshot_seller_vat_id,
+                'snapshot_seller_bank_name'     => $invoice->snapshot_seller_bank_name,
+                'snapshot_seller_bank_iban'     => $invoice->snapshot_seller_bank_iban,
+                'snapshot_seller_bank_bic'      => $invoice->snapshot_seller_bank_bic,
+                'snapshot_project_name'         => $invoice->snapshot_project_name,
+                'snapshot_project_number'       => $invoice->snapshot_project_number,
+            ]);
+
+            // 2. Create negated line items
+            foreach ($invoice->items as $item) {
+                InvoiceItem::create([
+                    'invoice_id'      => $creditNote->id,
+                    'position'        => $item->position,
+                    'description'     => $item->description,
+                    'quantity'        => $item->quantity,
+                    'unit'            => $item->unit,
+                    'unit_price_cents' => -$item->unit_price_cents,
+                    'total_cents'     => -$item->total_cents,
+                    'tax_rate'        => $item->tax_rate,
+                ]);
+            }
+
+            // 3. Mark original as cancelled
+            $oldStatus = $invoice->status;
+            $invoice->status = Invoice::STATUS_CANCELLED;
+            $invoice->save();
+
+            // 4. Generate PDF for credit note
+            try {
+                $this->generatePdfInternal($creditNote);
+            } catch (\Exception $e) {
+                Log::error('Storno PDF generation failed: ' . $e->getMessage());
+            }
+
+            // 5. Audit logs
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CANCELLED, $oldStatus, Invoice::STATUS_CANCELLED, [
+                'credit_note_id'     => $creditNote->id,
+                'credit_note_number' => $creditNoteNumber,
+                'reason'             => $request->input('reason'),
+            ]);
+
+            $this->logAuditEvent($creditNote, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_ISSUED, [
+                'original_invoice_id' => $invoice->id,
+                'type'                => 'credit_note',
+            ]);
+
+            // 6. Release project for new invoicing (remove invoiced status if applicable)
+            if ($invoice->project_id) {
+                $project = \App\Models\Project::find($invoice->project_id);
+                if ($project && $project->status === 'invoiced') {
+                    $project->update(['status' => 'completed']);
+                }
+            }
+
+            return response()->json([
+                'original'    => $invoice->fresh()->load('items'),
+                'credit_note' => $creditNote->load('items'),
+                'message'     => 'Rechnung storniert. Gutschrift ' . $creditNoteNumber . ' erstellt.',
+            ]);
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // BULK OPERATIONS
+    // ─────────────────────────────────────────────────────────────────
 
     public function bulkUpdate(Request $request)
     {
         $validated = $request->validate([
-            'ids' => 'required|array',
+            'ids'   => 'required|array',
             'ids.*' => 'exists:invoices,id',
-            'data' => 'required|array',
+            'data'  => 'required|array',
         ]);
 
-        Invoice::whereIn('id', $validated['ids'])->update($validated['data']);
+        // Only allow safe status transitions in bulk
+        $allowedFields = ['status', 'reminder_level', 'last_reminder_date'];
+        $updateData = array_intersect_key($validated['data'], array_flip($allowedFields));
 
-        return response()->json(['message' => 'Invoices updated successfully']);
+        if (empty($updateData)) {
+            return response()->json(['error' => 'Keine erlaubten Felder für Massenaktualisierung.'], 422);
+        }
+
+        Invoice::whereIn('id', $validated['ids'])->update($updateData);
+
+        return response()->json(['message' => 'Rechnungen aktualisiert']);
     }
 
-    public function bulkDelete(Request $request)
+    // ─────────────────────────────────────────────────────────────────
+    // PDF & ZUGFERD GENERATION
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Generate PDF for an invoice (public endpoint).
+     */
+    public function generatePdf($id)
     {
-        $validated = $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:invoices,id',
-        ]);
-
-        Invoice::whereIn('id', $validated['ids'])->delete();
-
-        return response()->json(['message' => 'Invoices deleted successfully']);
+        $invoice = Invoice::with('items')->findOrFail($id);
+        $this->generatePdfInternal($invoice);
+        return response()->json($invoice->fresh());
     }
 
-    protected function buildDailyInvoice(Invoice $invoice)
+    /**
+     * Internal PDF generation using snapshot data only.
+     */
+    private function generatePdfInternal(Invoice $invoice): void
     {
-        $invoice->load(['project.positions', 'customer']);
-        $customer = $invoice->customer;
-        $project = $invoice->project;
+        $invoice->load('items');
 
         $buyer = new \LaravelDaily\Invoices\Classes\Buyer([
-            'name' => $customer->company_name ?? ($customer->first_name . ' ' . $customer->last_name),
+            'name' => $invoice->snapshot_customer_name,
             'custom_fields' => [
-                'email' => $customer->email,
-                'customer_id' => $customer->customer_id ?? $customer->id,
-                'address' => trim(
-                    ($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '') . "\n" .
-                    ($customer->address_zip ?? '') . ' ' . ($customer->address_city ?? '') . "\n" .
-                    ($customer->address_country ?? '')
-                ),
-                'street' => $customer->address_street,
-                'house_no' => $customer->address_house_no,
-                'zip' => $customer->address_zip,
-                'city' => $customer->address_city,
-                'country' => $customer->address_country,
+                'address' => trim($invoice->snapshot_customer_address . "\n" .
+                    $invoice->snapshot_customer_zip . ' ' . $invoice->snapshot_customer_city . "\n" .
+                    $invoice->snapshot_customer_country),
+                'street'  => $invoice->snapshot_customer_address,
+                'zip'     => $invoice->snapshot_customer_zip,
+                'city'    => $invoice->snapshot_customer_city,
+                'country' => $invoice->snapshot_customer_country,
+            ],
+        ]);
+
+        // Build line items from frozen InvoiceItem records
+        $dailyItems = [];
+        foreach ($invoice->items as $item) {
+            $dailyItems[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
+                ->title($item->description)
+                ->pricePerUnit($item->unit_price_eur) // Uses cent → EUR accessor
+                ->quantity((float) $item->quantity);
+        }
+
+        // Fallback: if no items exist, use the invoice total
+        if (empty($dailyItems)) {
+            $dailyItems[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
+                ->title($invoice->snapshot_project_name ?: 'Dienstleistung')
+                ->pricePerUnit($invoice->amount_net_eur)
+                ->quantity(1);
+        }
+
+        $dailyInvoice = \LaravelDaily\Invoices\Invoice::make($invoice->invoice_number)
+            ->buyer($buyer)
+            ->discountByPercent(0)
+            ->taxRate((float) $invoice->tax_rate)
+            ->shipping(0)
+            ->notes($this->buildInvoiceNotes($invoice))
+            ->template('din5008');
+
+        // Service period
+        if ($invoice->service_period) {
+            $dailyInvoice->addCustomField('Leistungszeitraum', $invoice->service_period);
+        }
+
+        // Credit note label
+        if ($invoice->isCreditNote()) {
+            $dailyInvoice->addCustomField('Belegart', 'Stornorechnung / Gutschrift');
+            $dailyInvoice->addCustomField('Storno zu', $invoice->cancelledInvoice?->invoice_number ?? '-');
+        }
+
+        foreach ($dailyItems as $item) {
+            $dailyInvoice->addItem($item);
+        }
+
+        $dailyInvoice->render();
+        $pdfContent = $dailyInvoice->output;
+
+        // Enhance with ZUGFeRD XML
+        $pdfContent = $this->enhanceWithZugferd($invoice, $pdfContent);
+
+        $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
+        Storage::disk('public')->put('invoices/' . $filename, $pdfContent);
+        $invoice->pdf_path = 'storage/invoices/' . $filename;
+        $invoice->save();
+    }
+
+    /**
+     * Build invoice notes with mandatory tax hints.
+     *
+     * § 14 UStG requires specific text for tax-exempt invoices.
+     */
+    private function buildInvoiceNotes(Invoice $invoice): string
+    {
+        $notes = '';
+
+        if ($invoice->tax_exemption === Invoice::TAX_SMALL_BUSINESS) {
+            // Kleinunternehmerregelung (§ 19 UStG)
+            // Pflichthinweis: "Kein Ausweis von Umsatzsteuer aufgrund
+            // der Anwendung der Kleinunternehmerregelung gem. § 19 UStG."
+            $notes .= "Kein Ausweis von Umsatzsteuer aufgrund der Anwendung der Kleinunternehmerregelung gemäß § 19 UStG.\n";
+        } elseif ($invoice->tax_exemption === Invoice::TAX_REVERSE_CHARGE) {
+            // Reverse-Charge-Verfahren (§ 13b UStG)
+            // Pflichthinweis: Der Leistungsempfänger schuldet die Steuer.
+            $notes .= "Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge gem. § 13b UStG).\n";
+        }
+
+        if ($invoice->isCreditNote()) {
+            $notes .= "Diese Gutschrift storniert die Rechnung Nr. " . ($invoice->cancelledInvoice?->invoice_number ?? '-') . ".\n";
+        }
+
+        if ($invoice->notes) {
+            $notes .= $invoice->notes;
+        }
+
+        return trim($notes);
+    }
+
+    /**
+     * Enhances a PDF with ZUGFeRD XML metadata.
+     *
+     * Uses SNAPSHOT data only — never reads from FK relations.
+     * Supports both regular invoices and credit notes (Storno).
+     */
+    private function enhanceWithZugferd(Invoice $invoice, string $pdfContent): string
+    {
+        try {
+            $invoice->load('items');
+
+            $documentBuilder = ZugferdLaravel::createDocumentInEN16931Profile();
+
+            // Document type: Invoice or Credit Note
+            $docType = $invoice->isCreditNote()
+                ? ZugferdInvoiceType::CREDITNOTE
+                : ZugferdInvoiceType::INVOICE;
+
+            $documentBuilder->setDocumentInformation(
+                $invoice->invoice_number,
+                $docType,
+                $invoice->date,
+                $invoice->currency ?: 'EUR'
+            );
+
+            // Seller (from snapshot)
+            $documentBuilder->setDocumentSeller(
+                $invoice->snapshot_seller_name,
+                $invoice->tenant_id
+            );
+            $documentBuilder->setDocumentSellerAddress(
+                $invoice->snapshot_seller_address,
+                null, null,
+                $invoice->snapshot_seller_zip,
+                $invoice->snapshot_seller_city,
+                $invoice->snapshot_seller_country ?: 'DE'
+            );
+
+            if ($invoice->snapshot_seller_vat_id) {
+                $documentBuilder->addDocumentSellerVATRegistrationNumber($invoice->snapshot_seller_vat_id);
+            }
+            if ($invoice->snapshot_seller_tax_number) {
+                $documentBuilder->addDocumentSellerTaxNumber($invoice->snapshot_seller_tax_number);
+            }
+
+            // Buyer (from snapshot)
+            $documentBuilder->setDocumentBuyer(
+                $invoice->snapshot_customer_name,
+                $invoice->customer_id
+            );
+            $documentBuilder->setDocumentBuyerAddress(
+                $invoice->snapshot_customer_address,
+                null, null,
+                $invoice->snapshot_customer_zip,
+                $invoice->snapshot_customer_city,
+                $invoice->snapshot_customer_country ?: 'DE'
+            );
+
+            if ($invoice->snapshot_customer_leitweg_id) {
+                $documentBuilder->setDocumentBuyerReference($invoice->snapshot_customer_leitweg_id);
+            }
+
+            // Payment Terms
+            if ($invoice->due_date) {
+                $documentBuilder->addDocumentPaymentTerm(
+                    'Zahlbar bis ' . $invoice->due_date->format('d.m.Y'),
+                    $invoice->due_date
+                );
+            }
+
+            // Payment Means (Bank Transfer)
+            if ($invoice->snapshot_seller_bank_iban) {
+                $documentBuilder->setDocumentPaymentMeans(
+                    ZugferdPaymentMeans::BANK_TRANSFER,
+                    'Banküberweisung'
+                );
+                $documentBuilder->addDocumentSellerPayeeFinancialAccount(
+                    $invoice->snapshot_seller_bank_iban,
+                    null,
+                    $invoice->snapshot_seller_bank_bic
+                );
+            }
+
+            // Delivery date (§ 14 UStG: Lieferdatum/Leistungsdatum)
+            if ($invoice->delivery_date) {
+                $documentBuilder->setDocumentSupplyChainEvent($invoice->delivery_date);
+            }
+
+            // Credit note reference
+            if ($invoice->isCreditNote() && $invoice->cancelledInvoice) {
+                $documentBuilder->addDocumentInvoiceReferencedDocument(
+                    $invoice->cancelledInvoice->invoice_number,
+                    $invoice->cancelledInvoice->date
+                );
+            }
+
+            // Determine tax category based on exemption type
+            $taxCategory = ZugferdTaxCategoryCodes::STANDARD;
+            if ($invoice->tax_exemption === Invoice::TAX_REVERSE_CHARGE) {
+                $taxCategory = ZugferdTaxCategoryCodes::REVERSE_CHARGE;
+            } elseif ($invoice->tax_exemption === Invoice::TAX_SMALL_BUSINESS) {
+                $taxCategory = ZugferdTaxCategoryCodes::EXEMPT_FROM_TAX;
+            }
+
+            // Line Items (from frozen InvoiceItem records)
+            if ($invoice->items->isNotEmpty()) {
+                foreach ($invoice->items as $item) {
+                    $unitCode = $this->mapUnitToUNECE($item->unit);
+
+                    $documentBuilder->addNewPosition((string) $item->position)
+                        ->setDocumentPositionProductDetails($item->description)
+                        ->setDocumentPositionGrossPrice(abs($item->unit_price_eur))
+                        ->setDocumentPositionNetPrice(abs($item->unit_price_eur))
+                        ->setDocumentPositionQuantity(abs((float) $item->quantity), $unitCode);
+
+                    $documentBuilder->setDocumentPositionTax(
+                        (float) $item->tax_rate,
+                        'VAT',
+                        $taxCategory
+                    );
+                }
+            } else {
+                // Fallback
+                $documentBuilder->addNewPosition("1")
+                    ->setDocumentPositionProductDetails($invoice->snapshot_project_name ?: 'Dienstleistung')
+                    ->setDocumentPositionGrossPrice(abs($invoice->amount_net_eur))
+                    ->setDocumentPositionNetPrice(abs($invoice->amount_net_eur))
+                    ->setDocumentPositionQuantity(1, 'C62');
+
+                $documentBuilder->setDocumentPositionTax(
+                    (float) ($invoice->tax_rate ?? 19),
+                    'VAT',
+                    $taxCategory
+                );
+            }
+
+            // Totals (cents → EUR, abs for credit notes display)
+            $netEur   = $invoice->amount_net_eur;
+            $taxEur   = $invoice->amount_tax_eur;
+            $grossEur = $invoice->amount_gross_eur;
+
+            $documentBuilder->setDocumentSummation(
+                $grossEur,       // grandTotalAmount
+                $grossEur,       // duePayableAmount
+                abs($netEur),    // lineTotalAmount
+                0,               // chargeTotalAmount
+                0,               // allowanceTotalAmount
+                abs($netEur),    // taxBasisTotalAmount
+                $taxEur          // taxTotalAmount
+            );
+
+            // Add tax breakdown
+            $documentBuilder->addDocumentTax($taxCategory, 'VAT', abs($netEur), $taxEur, (float) $invoice->tax_rate);
+
+            // Merge ZUGFeRD XML into PDF
+            $tempDir = storage_path('app/temp');
+            if (!file_exists($tempDir)) mkdir($tempDir, 0755, true);
+
+            $tempPdf = $tempDir . '/zugferd_' . uniqid() . '.pdf';
+            ZugferdLaravel::buildMergedPdfByDocumentBuilder($documentBuilder, $pdfContent, $tempPdf);
+
+            $enhancedPdfContent = file_get_contents($tempPdf);
+            unlink($tempPdf);
+
+            return $enhancedPdfContent;
+
+        } catch (\Exception $e) {
+            Log::error('ZUGFeRD enhancement failed: ' . $e->getMessage());
+            return $pdfContent; // Fallback to non-ZUGFeRD PDF
+        }
+    }
+
+    /**
+     * Map translation-industry unit types to UN/ECE Recommendation 20 codes.
+     * Required for ZUGFeRD/XRechnung compliance.
+     */
+    private function mapUnitToUNECE(string $unit): string
+    {
+        return match ($unit) {
+            'words'  => 'C62',  // "one" — no specific word unit in UN/ECE
+            'lines'  => 'C62',  // "one" — Normzeile
+            'pages'  => 'C62',  // "one" — Normseite
+            'hours'  => 'HUR',  // hour
+            'flat'   => 'C62',  // lump sum / Pauschal
+            default  => 'C62',
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // DOWNLOAD, PRINT, PREVIEW
+    // ─────────────────────────────────────────────────────────────────
+
+    public function preview($id)
+    {
+        $invoice = Invoice::with('items')->findOrFail($id);
+        $dailyInvoice = $this->buildDailyInvoiceFromSnapshot($invoice);
+
+        return view('vendor.invoices.templates.din5008', [
+            'invoice' => $dailyInvoice,
+        ])->render();
+    }
+
+    public function download(Request $request, Invoice $invoice)
+    {
+        try {
+            $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
+            $exists = Storage::disk('public')->exists('invoices/' . $filename);
+
+            if (!$invoice->pdf_path || !$exists) {
+                $this->generatePdfInternal($invoice);
+                $invoice->refresh();
+            }
+
+            $pdfPath = storage_path('app/public/invoices/' . $filename);
+            if (!file_exists($pdfPath)) {
+                return response()->json(['error' => 'PDF konnte nicht generiert werden'], 404);
+            }
+
+            // Audit log
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_DOWNLOADED);
+
+            $label = $invoice->isCreditNote() ? 'Gutschrift_' : 'Rechnung_';
+            return response()->download($pdfPath, $label . $invoice->invoice_number . '.pdf');
+        } catch (\Exception $e) {
+            Log::error("Download error: " . $e->getMessage());
+            return response()->json(['error' => 'Download fehlgeschlagen: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function print(Request $request, Invoice $invoice)
+    {
+        try {
+            $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
+            $exists = Storage::disk('public')->exists('invoices/' . $filename);
+
+            if (!$invoice->pdf_path || !$exists) {
+                $this->generatePdfInternal($invoice);
+                $invoice->refresh();
+            }
+
+            $pdfPath = storage_path('app/public/invoices/' . $filename);
+            if (!file_exists($pdfPath)) {
+                return response()->json(['error' => 'PDF konnte nicht generiert werden'], 404);
+            }
+
+            return response()->file($pdfPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="Rechnung_' . $invoice->invoice_number . '.pdf"'
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Print error: " . $e->getMessage());
+            return response()->json(['error' => 'Drucken fehlgeschlagen: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // DATEV EXPORT
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * DATEV export using snapshot data and cent-based amounts.
+     */
+    public function datevExport(Request $request)
+    {
+        $validated = $request->validate([
+            'ids'   => 'required|array',
+            'ids.*' => 'exists:invoices,id',
+        ]);
+
+        $invoices = Invoice::whereIn('id', $validated['ids'])->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="datev_export_' . date('Ymd_His') . '.csv"',
+        ];
+
+        $callback = function () use ($invoices) {
+            $file = fopen('php://output', 'w');
+
+            // DATEV header
+            fputcsv($file, ['DTVF', '700', '21', 'Buchungsstapel', '1', '', '', '', '', '', 'EXTF', '', '', '', '', ''], ';');
+
+            fputcsv($file, [
+                'Umsatz (ohne Komma)', 'Soll/Haben-Kennzeichen', 'WKZ', 'Kurs',
+                'Basis-Umsatz', 'WKZ Basis-Umsatz', 'Konto', 'Gegenkonto',
+                'BU-Schlüssel', 'Belegdatum', 'Belegfeld 1', 'Buchungstext'
+            ], ';');
+
+            foreach ($invoices as $inv) {
+                $date = $inv->date->format('dm');
+                // Cents → EUR formatted for DATEV
+                $amount = number_format($inv->amount_gross_eur, 2, ',', '');
+                $customerName = substr($inv->snapshot_customer_name ?? 'Unbekannt', 0, 30);
+
+                $konto = ($inv->tax_exemption === Invoice::TAX_REVERSE_CHARGE) ? '8336' : '8400';
+                $gegenkonto = '10000';
+
+                // Credit notes: swap S/H
+                $sollHaben = $inv->isCreditNote() ? 'H' : 'S';
+
+                fputcsv($file, [
+                    $amount, $sollHaben, 'EUR', '', '', '',
+                    $gegenkonto, $konto, '', $date,
+                    $inv->invoice_number, $customerName
+                ], ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // HELPER METHODS
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Create frozen InvoiceItem records from project positions.
+     */
+    private function createInvoiceItems(Invoice $invoice, $project, float $defaultTaxRate = 19): void
+    {
+        if ($project->positions && $project->positions->isNotEmpty()) {
+            foreach ($project->positions as $index => $pos) {
+                InvoiceItem::create([
+                    'invoice_id'      => $invoice->id,
+                    'position'        => $index + 1,
+                    'description'     => $pos->description ?: ($project->project_name . ' - Position ' . ($index + 1)),
+                    'quantity'        => (float) ($pos->amount ?: $pos->quantity ?: 1),
+                    'unit'            => $pos->unit ?: 'words',
+                    'unit_price_cents' => (int) round(($pos->customer_rate ?? 0) * 100),
+                    'total_cents'     => (int) round(($pos->customer_total ?? 0) * 100),
+                    'tax_rate'        => $pos->tax_rate ?? $defaultTaxRate,
+                ]);
+            }
+        } else {
+            // Fallback: single line item from invoice total
+            InvoiceItem::create([
+                'invoice_id'      => $invoice->id,
+                'position'        => 1,
+                'description'     => $project->project_name ?: 'Übersetzungsleistung',
+                'quantity'        => 1,
+                'unit'            => 'flat',
+                'unit_price_cents' => $invoice->amount_net,
+                'total_cents'     => $invoice->amount_net,
+                'tax_rate'        => $defaultTaxRate,
+            ]);
+        }
+    }
+
+    /**
+     * Build a LaravelDaily Invoice from snapshot data (for preview).
+     */
+    private function buildDailyInvoiceFromSnapshot(Invoice $invoice)
+    {
+        $buyer = new \LaravelDaily\Invoices\Classes\Buyer([
+            'name' => $invoice->snapshot_customer_name,
+            'custom_fields' => [
+                'address' => trim($invoice->snapshot_customer_address . "\n" .
+                    $invoice->snapshot_customer_zip . ' ' . $invoice->snapshot_customer_city),
             ],
         ]);
 
         $items = [];
-        if ($project && $project->positions) {
-            foreach ($project->positions as $pos) {
-                $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
-                    ->title($pos->description)
-                    ->pricePerUnit((float) $pos->customer_rate)
-                    ->quantity($pos->amount);
-            }
+        foreach ($invoice->items as $item) {
+            $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
+                ->title($item->description)
+                ->pricePerUnit($item->unit_price_eur)
+                ->quantity((float) $item->quantity);
         }
 
         if (empty($items)) {
             $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
-                ->title($project ? $project->project_name : 'Rechnung ' . $invoice->invoice_number)
-                ->pricePerUnit((float) $invoice->amount_net)
+                ->title($invoice->snapshot_project_name ?: 'Dienstleistung')
+                ->pricePerUnit($invoice->amount_net_eur)
                 ->quantity(1);
         }
 
@@ -197,7 +982,7 @@ class InvoiceController extends Controller
             ->discountByPercent(0)
             ->taxRate((float) ($invoice->tax_rate ?? 19))
             ->shipping(0)
-            ->notes($invoice->notes ?? '')
+            ->notes($this->buildInvoiceNotes($invoice))
             ->template('din5008');
 
         foreach ($items as $item) {
@@ -207,96 +992,25 @@ class InvoiceController extends Controller
         return $dailyInvoice;
     }
 
-    public function generatePdf($id)
-    {
-        $invoice = Invoice::findOrFail($id);
-
-        try {
-            $dailyInvoice = $this->buildDailyInvoice($invoice);
-            $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
-
-            $dailyInvoice->render();
-            $pdfContent = $dailyInvoice->output;
-            \Storage::disk('public')->put('invoices/' . $filename, $pdfContent);
-
-            $invoice->update(['pdf_path' => 'storage/invoices/' . $filename]);
-
-            return $invoice->fresh();
-        } catch (\Exception $e) {
-            \Log::error('Invoice PDF generation failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    public function preview($id)
-    {
-        $invoice = Invoice::findOrFail($id);
-        $dailyInvoice = $this->buildDailyInvoice($invoice);
-
-        // Return the rendered HTML view for preview
-        return view('vendor.invoices.templates.din5008', [
-            'invoice' => $dailyInvoice,
-        ])->render();
-    }
-
-    public function download(Invoice $invoice)
-    {
-        try {
-            $id = $invoice->id;
-            \Log::info("Download request for invoice ID: {$id}, invoice_number: {$invoice->invoice_number}");
-
-            $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
-            $exists = \Storage::disk('public')->exists('invoices/' . $filename);
-
-            if (!$invoice->pdf_path || !$exists) {
-                \Log::info("PDF not found, generating...");
-                $this->generatePdf($id);
-                $invoice->refresh();
-            }
-
-            $pdfPath = storage_path('app/public/invoices/' . $filename);
-
-            if (!file_exists($pdfPath)) {
-                \Log::error("PDF file still not found at: {$pdfPath}");
-                return response()->json(['error' => 'PDF file could not be generated or found'], 404);
-            }
-
-            return response()->download($pdfPath, 'Rechnung_' . $invoice->invoice_number . '.pdf');
-        } catch (\Exception $e) {
-            \Log::error("Download error: " . $e->getMessage());
-            return response()->json(['error' => 'Download failed: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function print(Invoice $invoice)
-    {
-        try {
-            $id = $invoice->id;
-            \Log::info("Print request for invoice ID: {$id}, invoice_number: {$invoice->invoice_number}");
-
-            $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
-            $exists = \Storage::disk('public')->exists('invoices/' . $filename);
-
-            if (!$invoice->pdf_path || !$exists) {
-                \Log::info("PDF not found, generating...");
-                $this->generatePdf($id);
-                $invoice->refresh();
-            }
-
-            $pdfPath = storage_path('app/public/invoices/' . $filename);
-
-            if (!file_exists($pdfPath)) {
-                \Log::error("PDF file still not found at: {$pdfPath}");
-                return response()->json(['error' => 'PDF file could not be generated or found'], 404);
-            }
-
-            return response()->file($pdfPath, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="Rechnung_' . $invoice->invoice_number . '.pdf"'
-            ]);
-        } catch (\Exception $e) {
-            \Log::error("Print error: " . $e->getMessage());
-            return response()->json(['error' => 'Print failed: ' . $e->getMessage()], 500);
-        }
+    /**
+     * Log an audit event for a given invoice.
+     */
+    private function logAuditEvent(
+        Invoice $invoice,
+        Request $request,
+        string $action,
+        ?string $oldStatus = null,
+        ?string $newStatus = null,
+        ?array $metadata = null
+    ): void {
+        InvoiceAuditLog::create([
+            'invoice_id' => $invoice->id,
+            'user_id'    => $request->user()?->id,
+            'action'     => $action,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'metadata'   => $metadata,
+            'ip_address' => $request->ip(),
+        ]);
     }
 }

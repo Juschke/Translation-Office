@@ -324,6 +324,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                 const margin = (parseFloat(pos.marginPercent) || 0) / 100;
                 cTotal = pTotal * (pos.marginType === 'markup' ? (1 + margin) : (1 - margin));
                 if (totalUnits > 0) cRate = cTotal / totalUnits;
+            } else if (pos.customerMode === 'rate') {
+                cRate = parseFloat(pos.customerRate) || 0;
+                cTotal = totalUnits * cRate;
+            } else if (pos.customerMode === 'flat') {
+                cTotal = parseFloat(pos.customerRate) || 0;
             } else {
                 cTotal = parseFloat(pos.customerRate) || 0;
             }
@@ -651,7 +656,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                 <div className="flex-1 lg:overflow-hidden overflow-y-auto flex flex-col lg:flex-row">
                     {/* Left Column */}
-                    <div className="lg:flex-1 lg:overflow-y-auto p-3 sm:p-5 space-y-6 custom-scrollbar border-b lg:border-b-0 lg:border-r border-slate-200 bg-white">
+                    <div className="lg:flex-1 p-3 sm:p-5 space-y-6 custom-scrollbar border-b lg:border-b-0 lg:border-r border-slate-200 bg-white">
                         {/* 01: Basis-Daten */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
@@ -711,13 +716,16 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 </div>
 
                                 <div className="col-span-12 md:col-span-6" id="field-container-deadline">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 ml-1 cursor-pointer" onClick={() => datePickerRef.current?.setFocus()}>Lieferdatum</label>
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1 cursor-pointer" onClick={() => datePickerRef.current?.setFocus()}>Lieferdatum</label>
                                     <div
-                                        className="relative h-9 bg-white border border-slate-200 rounded overflow-hidden flex items-center cursor-pointer hover:border-slate-400 transition-colors"
-                                        onClick={() => datePickerRef.current?.setFocus()}
+                                        className="relative h-10 bg-white border border-slate-300 rounded shadow-sm overflow-hidden flex items-center cursor-pointer hover:border-slate-400 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all"
+                                        onClick={() => {
+                                            datePickerRef.current?.setFocus();
+                                            (datePickerRef.current as any)?.setOpen?.(true);
+                                        }}
                                     >
-                                        <div className="absolute left-3 text-slate-400 pointer-events-none">
-                                            <FaCalendarAlt className="text-sm" />
+                                        <div className="absolute left-3 text-slate-400 pointer-events-none group-focus-within:text-brand-500 transition-colors">
+                                            <FaCalendarAlt className="text-xs" />
                                         </div>
                                         <DatePicker
                                             ref={datePickerRef}
@@ -1097,8 +1105,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             <div className="grid grid-cols-12 gap-x-4 items-start pt-2 border-t border-slate-100">
                                                 <div className="col-span-12 space-y-2">
                                                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">VK (Kunde)</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-11">
-                                                        {pos.customerMode === 'flat' ? (
+                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-11 transition-all focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/5">
+                                                        {pos.customerMode === 'flat' || pos.customerMode === 'rate' ? (
                                                             <input
                                                                 type="number"
                                                                 step="0.01"
@@ -1128,15 +1136,16 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                 }}
                                                             />
                                                         )}
-                                                        <div className="bg-white px-2 flex items-center text-[10px] font-bold text-slate-400 border-l border-r border-slate-100">{pos.customerMode === 'flat' ? '€' : '%'}</div>
-                                                        <select className="w-32 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.customerMode === 'flat' ? 'flat' : pos.marginType} onChange={e => {
+                                                        <div className="bg-white px-2 flex items-center text-[10px] font-bold text-slate-400 border-l border-r border-slate-100">{pos.customerMode === 'unit' ? '%' : '€'}</div>
+                                                        <select className="w-32 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.customerMode === 'flat' ? 'flat' : (pos.customerMode === 'rate' ? 'rate' : pos.marginType)} onChange={e => {
                                                             const n = [...positions];
                                                             const v = e.target.value;
                                                             if (v === 'flat') { n[index].customerMode = 'flat'; n[index].marginType = 'markup'; }
+                                                            else if (v === 'rate') { n[index].customerMode = 'rate'; n[index].marginType = 'markup'; }
                                                             else { n[index].customerMode = 'unit'; n[index].marginType = v; }
                                                             setPositions(n);
                                                         }}>
-                                                            <option value="markup">Aufschlag</option><option value="discount">Rabatt</option><option value="flat">Pauschal</option>
+                                                            <option value="rate">Rate</option><option value="markup">Aufschlag</option><option value="discount">Rabatt</option><option value="flat">Pauschal</option>
                                                         </select>
                                                     </div>
                                                     <div className="text-[10px] text-right text-slate-800 font-bold">VK-Gesamt: {pos.customerTotal} €</div>
@@ -1228,7 +1237,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                     </div>
 
                     {/* Sidebar */}
-                    <div className="w-full lg:w-80 bg-slate-50 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 h-auto lg:h-full lg:overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
+                    <div className="w-full lg:w-80 bg-slate-50 shrink-0 h-auto lg:h-full lg:overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200"><FaInfoCircle className="text-slate-400 text-xs" /><h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Meta Info</h4></div>
                             <div className="space-y-2 text-xs">

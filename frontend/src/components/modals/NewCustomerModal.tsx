@@ -298,22 +298,28 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         error={!!getError('email')}
                                     />
 
-                                    <div className="space-y-3">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Zusätzliche E-Mails</label>
+                                    <div className="space-y-2">
                                         {formData.additional_emails.map((email, i) => (
-                                            <div key={i} className="flex gap-2 group animate-fadeIn">
+                                            <div key={i} className="flex gap-2 group animate-fadeIn items-start">
                                                 <Input
+                                                    containerClassName="flex-1"
                                                     value={email}
                                                     onChange={(e) => handleArrayChange(i, e.target.value, 'additional_emails')}
                                                     type="email"
+                                                    startIcon={<FaEnvelope />}
                                                     placeholder="alternative.email@beispiel.de"
-                                                    helperText="Sekundäre Adresse (optional)"
                                                 />
-                                                <button type="button" onClick={() => removeField('additional_emails', i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5"><FaTrash size={12} /></button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeField('additional_emails', i)}
+                                                    className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-md transition flex-shrink-0"
+                                                >
+                                                    <FaTrash size={12} />
+                                                </button>
                                             </div>
                                         ))}
-                                        <button type="button" onClick={() => addField('additional_emails')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-2 ml-1">
-                                            <FaPlus size={8} /> Weitere E-Mail hinzufügen
+                                        <button type="button" onClick={() => addField('additional_emails')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-2 ml-1">
+                                            <FaPlus className="text-[8px]" /> Weitere E-Mail hinzufügen
                                         </button>
                                     </div>
                                 </div>
@@ -327,22 +333,26 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         error={!!getError('phone')}
                                     />
 
-                                    <div className="space-y-3">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Zusätzliche Rufnummern</label>
+                                    <div className="space-y-2">
                                         {formData.additional_phones.map((phone, i) => (
-                                            <div key={i} className="flex gap-2 group animate-fadeIn">
-                                                <Input
-                                                    value={phone}
-                                                    onChange={(e) => handleArrayChange(i, e.target.value, 'additional_phones')}
-                                                    type="tel"
-                                                    placeholder="+49 123 4567890"
-                                                    helperText="Format: +49..."
-                                                />
-                                                <button type="button" onClick={() => removeField('additional_phones', i)} className="h-11 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50 border border-slate-200 transition flex-shrink-0 mt-0.5"><FaTrash size={12} /></button>
+                                            <div key={i} className="flex gap-2 group animate-fadeIn items-start">
+                                                <div className="flex-1">
+                                                    <PhoneInput
+                                                        value={phone}
+                                                        onChange={(val) => handleArrayChange(i, val, 'additional_phones')}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeField('additional_phones', i)}
+                                                    className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-md transition flex-shrink-0"
+                                                >
+                                                    <FaTrash size={12} />
+                                                </button>
                                             </div>
                                         ))}
-                                        <button type="button" onClick={() => addField('additional_phones')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:underline uppercase py-2 ml-1">
-                                            <FaPlus size={8} /> Weitere Nummer hinzufügen
+                                        <button type="button" onClick={() => addField('additional_phones')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-2 ml-1">
+                                            <FaPlus className="text-[8px]" /> Weitere Nummer hinzufügen
                                         </button>
                                     </div>
                                 </div>

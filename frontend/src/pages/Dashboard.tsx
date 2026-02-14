@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import {
     FaLayerGroup, FaClock, FaEuroSign, FaEnvelope,
-    FaPlus, FaTasks, FaUserPlus, FaFileInvoiceDollar, FaPaperPlane
+    FaPlus, FaTasks, FaUserPlus
 } from 'react-icons/fa';
 import NewProjectModal from '../components/modals/NewProjectModal';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
@@ -117,56 +117,39 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="flex flex-col h-full gap-4 fade-in overflow-hidden">
-            <div className="flex justify-between items-start shrink-0">
+        <div className="flex flex-col gap-4 fade-in pb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0 px-1">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Dashboard Übersicht</h1>
-                    <p className="text-slate-500 text-sm">Willkommen zurück!</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Dashboard</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">Willkommen zurück!</p>
                 </div>
 
-                <div className="flex flex-col items-end gap-3">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">Schnellaktionen</span>
-                    <div className="flex flex-wrap justify-end gap-2">
-                        <button
-                            onClick={() => setIsNewProjectModalOpen(true)}
-                            className="bg-brand-700 hover:bg-brand-800 text-white px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-brand-800/50"
-                            title="Neues Projekt erstellen"
-                        >
-                            <FaPlus className="text-[10px]" /> Projekt
-                        </button>
-                        <button
-                            onClick={() => setIsNewCustomerModalOpen(true)}
-                            className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200"
-                            title="Neuen Kunden anlegen"
-                        >
-                            <FaUserPlus className="text-[10px] text-indigo-500" /> Kunde
-                        </button>
-                        <button
-                            onClick={() => setIsNewPartnerModalOpen(true)}
-                            className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200"
-                            title="Neuen Partner anlegen"
-                        >
-                            <FaPlus className="text-[10px] text-emerald-500" /> Partner
-                        </button>
-                        <button
-                            onClick={() => setIsNewInvoiceModalOpen(true)}
-                            className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200"
-                            title="Neue Rechnung erstellen"
-                        >
-                            <FaFileInvoiceDollar className="text-[10px] text-purple-500" /> Rechnung
-                        </button>
-                        <button
-                            onClick={() => navigate('/inbox', { state: { compose: true } })}
-                            className="bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-md text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200"
-                            title="E-Mail schreiben"
-                        >
-                            <FaPaperPlane className="text-[10px] text-blue-500" /> E-Mail
-                        </button>
-                    </div>
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar pb-1">
+                    <button
+                        onClick={() => navigate('/projects', { state: { openNewModal: true } })}
+                        className="flex-1 sm:flex-none justify-center bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center gap-2 transition active:scale-95 whitespace-nowrap"
+                        title="Neues Projekt erstellen"
+                    >
+                        <FaPlus className="text-[10px]" /> Projekt
+                    </button>
+                    <button
+                        onClick={() => navigate('/customers', { state: { openNewModal: true } })}
+                        className="flex-1 sm:flex-none justify-center bg-white hover:bg-slate-50 text-slate-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200 whitespace-nowrap"
+                        title="Neuen Kunden anlegen"
+                    >
+                        <FaUserPlus className="text-[10px] text-indigo-500" /> Kunde
+                    </button>
+                    <button
+                        onClick={() => navigate('/partners', { state: { openNewModal: true } })}
+                        className="flex-1 sm:flex-none justify-center bg-white hover:bg-slate-50 text-slate-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center gap-2 transition active:scale-95 border border-slate-200 whitespace-nowrap"
+                        title="Neuen Partner anlegen"
+                    >
+                        <FaPlus className="text-[10px] text-emerald-500" /> Partner
+                    </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard
                     label="Offene Projekte"
                     value={stats.open_projects}
@@ -227,11 +210,19 @@ const Dashboard = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-1 pb-4 min-h-[400px]">
-                <ActiveTasksTable tasks={activeTasks} />
-                <OpenQuotesTable quotes={openQuotes} />
-                <ReadyToDeliverTable projects={readyToDeliver} />
-                <OverdueInvoicesTable invoices={overdueInvoices} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 pb-4">
+                <div className="h-[350px] md:h-auto">
+                    <ActiveTasksTable tasks={activeTasks} />
+                </div>
+                <div className="h-[350px] md:h-auto">
+                    <OpenQuotesTable quotes={openQuotes} />
+                </div>
+                <div className="h-[350px] md:h-auto">
+                    <ReadyToDeliverTable projects={readyToDeliver} />
+                </div>
+                <div className="h-[350px] md:h-auto">
+                    <OverdueInvoicesTable invoices={overdueInvoices} />
+                </div>
             </div>
 
             {/* Modals */}

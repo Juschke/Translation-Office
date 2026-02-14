@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUserTie, FaPlus, FaEye, FaEdit, FaTrash, FaGlobe, FaStar, FaHandshake,
     FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter
@@ -22,6 +22,7 @@ import { BulkActions } from '../components/common/BulkActions';
 
 const Partners = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [typeFilter, setTypeFilter] = useState('all');
     const [selectedPartners, setSelectedPartners] = useState<number[]>([]);
@@ -46,6 +47,15 @@ const Partners = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (location.state?.openNewModal) {
+            setIsModalOpen(true);
+            setEditingPartner(null);
+            // Clear location state to prevent modal from reopening on refresh or navigation
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [partnerToDelete, setPartnerToDelete] = useState<number | null>(null);
@@ -362,16 +372,36 @@ const Partners = () => {
     );
 
     const tabs = (
-        <div className="flex items-center gap-6">
-            <button onClick={() => setTypeFilter('all')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'all' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Alle Partner</button>
-            <button onClick={() => setTypeFilter('Übersetzer')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Übersetzer' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Übersetzer</button>
-            <button onClick={() => setTypeFilter('Dolmetscher')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Dolmetscher' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Dolmetscher</button>
-            <button onClick={() => setTypeFilter('Agentur')} className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'Agentur' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Agenturen</button>
+        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
+            <button
+                onClick={() => setTypeFilter('all')}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'all' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Alle
+            </button>
+            <button
+                onClick={() => setTypeFilter('Übersetzer')}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Übersetzer' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Übersetzer
+            </button>
+            <button
+                onClick={() => setTypeFilter('Dolmetscher')}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Dolmetscher' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Dolmetscher
+            </button>
+            <button
+                onClick={() => setTypeFilter('Agentur')}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Agentur' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Agenturen
+            </button>
 
             {(showTrash || typeFilter === 'trash') && (
                 <button
                     onClick={() => setTypeFilter('trash')}
-                    className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'trash' ? 'border-red-600 text-red-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
                 >
                     Papierkorb
                 </button>
@@ -380,7 +410,7 @@ const Partners = () => {
             {(showArchive || typeFilter === 'archive') && (
                 <button
                     onClick={() => setTypeFilter('archive')}
-                    className={`py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 transition relative ${typeFilter === 'archive' ? 'border-slate-600 text-slate-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
                 >
                     Archiv
                 </button>
@@ -418,24 +448,26 @@ const Partners = () => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-6 h-full fade-in" onClick={() => setIsExportOpen(false)}>
-            <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
+            <div className="flex justify-between items-center sm:gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Partnernetzwerk</h1>
-                    <p className="text-slate-500 text-sm">Verwaltung externer Übersetzer, Dolmetscher und Agenturen.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Partnernetzwerk</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">Verwaltung externer Übersetzer, Dolmetscher und Agenturen.</p>
                 </div>
-                <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition active:scale-95">
-                    <FaPlus className="text-xs" /> Neuer Partner
-                </button>
+                <div className="flex gap-2 shrink-0">
+                    <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95">
+                        <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neuer Partner</span><span className="inline sm:hidden">Partner</span>
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <KPICard label="Aktive Partner" value={activePartnersCount} icon={<FaUserTie />} />
                 <KPICard label="Sprachabdeckung" value={languagePairsCount} icon={<FaGlobe />} iconColor="text-blue-600" iconBg="bg-blue-50" subValue="Verfügbare Sprachpaare" />
                 <KPICard label="Zusammenarbeit" value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" iconBg="bg-green-50" subValue="Projekte diesen Monat" />
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0 relative z-0">
+            <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <BulkActions
                     selectedCount={selectedPartners.length}
                     onClearSelection={() => setSelectedPartners([])}

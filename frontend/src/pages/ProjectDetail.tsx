@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy } from 'react-icons/fa';
+import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy, FaArchive, FaBolt, FaCheck } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -154,14 +154,23 @@ const EVENT_LABELS: Record<string, { label: string; color: string; bgColor: stri
 };
 
 const formatFieldValue = (key: string, value: any): string => {
-    if (value === null || value === undefined || value === '') return '–';
+    if (value === null || value === undefined || value === '') {
+        if (key === 'phone' || key?.includes('phone')) return 'keine Telefonnummer';
+        return 'keine Angabe';
+    }
     if (typeof value === 'boolean') return value ? 'Ja' : 'Nein';
     if (key === 'is_certified' || key === 'has_apostille' || key === 'is_express' || key === 'classification') {
         return value === true || value === 1 || value === '1' ? 'Ja' : 'Nein';
     }
     if (key === 'deadline' || key === 'down_payment_date' || key === 'created_at' || key === 'updated_at') {
         const d = new Date(value);
-        if (!isNaN(d.getTime())) return d.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+        if (!isNaN(d.getTime())) {
+            const days = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
+            const dayName = days[d.getDay()];
+            const dateStr = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const timeStr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            return `${dayName}, ${dateStr} ${timeStr}`;
+        }
     }
     if (key === 'price_total' || key === 'partner_cost_net' || key === 'down_payment' || key === 'copy_price') {
         return parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
@@ -430,7 +439,9 @@ const ProjectDetail = () => {
                 classification: projectResponse.classification ? 'ja' : 'nein',
                 copies: projectResponse.copies_count || 0,
                 copyPrice: parseFloat(projectResponse.copy_price) || 5,
-                docType: projectResponse.document_type ? [projectResponse.document_type.name] : [],
+                docType: projectResponse.document_type ? [projectResponse.document_type.name] : (projectResponse.document_type_id ? [projectResponse.document_type_id.toString()] : []),
+                document_type_id: projectResponse.document_type_id,
+                additional_doc_types: projectResponse.additional_doc_types,
                 translator: projectResponse.partner ? {
                     id: projectResponse.partner.id.toString(),
                     name: projectResponse.partner.company || `${projectResponse.partner.first_name} ${projectResponse.partner.last_name}`,
@@ -687,21 +698,41 @@ const ProjectDetail = () => {
             'archived': 'Archiviert',
             'deleted': 'Gelöscht'
         };
-        const styles: { [key: string]: string } = {
-            'draft': 'bg-slate-50 text-slate-600 border-slate-200',
-            'offer': 'bg-orange-50 text-orange-700 border-orange-200',
-            'pending': 'bg-orange-50 text-orange-700 border-orange-200',
-            'in_progress': 'bg-blue-50 text-blue-700 border-blue-200',
-            'review': 'bg-blue-50 text-blue-700 border-blue-200',
-            'ready_for_pickup': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-            'delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-            'invoiced': 'bg-purple-50 text-purple-700 border-purple-200',
-            'completed': 'bg-emerald-600 text-white border-emerald-700',
-            'cancelled': 'bg-gray-100 text-gray-500 border-gray-300',
-            'archived': 'bg-slate-100 text-slate-500 border-slate-300',
-            'deleted': 'bg-red-50 text-red-700 border-red-200'
+        const icons: { [key: string]: React.ReactNode } = {
+            'draft': <FaEdit className="text-slate-400" />,
+            'offer': <FaClock className="text-orange-500" />,
+            'pending': <FaClock className="text-orange-500" />,
+            'in_progress': <FaClock className="text-blue-500" />,
+            'review': <FaClock className="text-blue-500" />,
+            'ready_for_pickup': <FaPaperPlane className="text-indigo-500" />,
+            'delivered': <FaCheckCircle className="text-emerald-500" />,
+            'invoiced': <FaFileInvoiceDollar className="text-purple-500" />,
+            'completed': <FaCheckCircle className="text-emerald-600" />,
+            'cancelled': <FaExclamationTriangle className="text-slate-400" />,
+            'archived': <FaArchive className="text-slate-400" />,
+            'deleted': <FaTrashAlt className="text-red-400" />
         };
-        return <span className={clsx("px-2.5 py-0.5 rounded text-[10px] font-bold uppercase border tracking-tight shadow-sm", styles[status] || styles['draft'])}>{labels[status] || status}</span>;
+        const colors: { [key: string]: string } = {
+            'draft': 'text-slate-600',
+            'offer': 'text-orange-600',
+            'pending': 'text-orange-600',
+            'in_progress': 'text-blue-600',
+            'review': 'text-blue-600',
+            'ready_for_pickup': 'text-indigo-600',
+            'delivered': 'text-emerald-600',
+            'invoiced': 'text-purple-600',
+            'completed': 'text-emerald-700',
+            'cancelled': 'text-slate-500',
+            'archived': 'text-slate-500',
+            'deleted': 'text-red-600'
+        };
+
+        return (
+            <div className={clsx("flex items-center gap-2 text-xs font-bold uppercase tracking-tight", colors[status] || 'text-slate-600')}>
+                {icons[status] || <FaClock />}
+                <span>{labels[status] || status}</span>
+            </div>
+        );
     }
 
     const renderEditableCell = (id: string, field: string, value: string, type: 'text' | 'number' = 'text', className: string = '') => {
@@ -983,11 +1014,12 @@ const ProjectDetail = () => {
                             <h1 className="text-xl font-black text-slate-800 tracking-tight">{projectData.name}</h1>
                             {getStatusBadge(projectData.status)}
                             {projectData.priority !== 'low' && (
-                                <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase border tracking-tight flex items-center gap-1",
-                                    projectData.priority === 'express' ? "bg-red-50 text-red-700 border-red-200" : "bg-orange-50 text-orange-700 border-orange-200"
+                                <div className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-tight",
+                                    projectData.priority === 'express' ? "text-red-600" : "text-orange-600"
                                 )}>
-                                    <FaFlag className="text-[9px]" /> {projectData.priority === 'express' ? 'Express' : 'Dringend'}
-                                </span>
+                                    <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
+                                    {projectData.priority === 'express' ? <FaBolt className="text-[10px]" /> : <FaFlag className="text-[10px]" />}
+                                </div>
                             )}
                         </div>
                         <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
@@ -1094,7 +1126,15 @@ const ProjectDetail = () => {
 
                                         <span className="text-slate-500 font-medium">Lieferdatum</span>
                                         <div className="flex items-center gap-3">
-                                            <span className="font-semibold text-slate-800">{projectData.due ? new Date(projectData.due).toLocaleDateString('de-DE') : '-'}</span>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-slate-800">
+                                                    {projectData.due ? (() => {
+                                                        const d = new Date(projectData.due);
+                                                        const days = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
+                                                        return `${days[d.getDay()]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+                                                    })() : 'keine Angabe'}
+                                                </span>
+                                            </div>
                                             <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight border shadow-sm", deadlineStatus.color)}>
                                                 {deadlineStatus.label}
                                             </div>
@@ -1102,13 +1142,15 @@ const ProjectDetail = () => {
 
                                         <span className="text-slate-500 font-medium">Priorität</span>
                                         <div className="flex items-center gap-2">
-                                            {projectData.priority === 'low' && <span className="text-slate-600">Normal</span>}
-                                            {projectData.priority !== 'low' && (
-                                                <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase border tracking-tight flex items-center gap-1 w-fit",
-                                                    projectData.priority === 'express' ? "bg-red-50 text-red-700 border-red-200" : "bg-orange-50 text-orange-700 border-orange-200"
+                                            {projectData.priority === 'low' ? (
+                                                <span className="text-slate-600 font-bold text-xs uppercase">Normal</span>
+                                            ) : (
+                                                <div className={clsx("flex items-center gap-1.5 text-xs font-bold uppercase tracking-tight",
+                                                    projectData.priority === 'express' ? "text-red-600" : "text-orange-600"
                                                 )}>
-                                                    <FaFlag className="text-[9px]" /> {projectData.priority === 'express' ? 'Express' : 'Dringend'}
-                                                </span>
+                                                    <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
+                                                    {projectData.priority === 'express' ? <FaBolt className="text-[10px]" /> : <FaFlag className="text-[10px]" />}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -1169,10 +1211,10 @@ const ProjectDetail = () => {
                                             </div>
 
                                             <span className="text-slate-500 font-medium">Email</span>
-                                            <a href={`mailto:${projectData.customer.email}`} className="text-brand-600 hover:underline truncate block">{projectData.customer.email || '-'}</a>
+                                            <a href={`mailto:${projectData.customer.email}`} className="text-brand-600 hover:underline truncate block">{projectData.customer.email || 'keine Angabe'}</a>
 
                                             <span className="text-slate-500 font-medium">Telefon</span>
-                                            <span className="text-slate-800">{projectData.customer.phone || '-'}</span>
+                                            <span className="text-slate-800 font-semibold">{projectData.customer.phone || 'keine Telefonnummer'}</span>
                                         </div>
 
                                         <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-slate-200">
@@ -1224,19 +1266,33 @@ const ProjectDetail = () => {
                                         <span className="text-slate-500 font-medium mt-1">Dokumentenart</span>
                                         <div className="flex flex-wrap gap-1.5">
                                             {projectData.docType.length > 0 ? projectData.docType.map((d: string) => (
-                                                <span key={d} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase border border-slate-200 tracking-wide">{d}</span>
-                                            )) : <span className="text-slate-400 text-xs italic">-</span>}
+                                                <span key={d} className="px-2 py-0.5 bg-brand-50 text-brand-700 rounded text-[10px] font-bold uppercase border border-brand-100 tracking-wide">{d}</span>
+                                            )) : <span className="text-slate-400 text-xs italic">keine Angabe</span>}
                                         </div>
 
                                         <span className="text-slate-500 font-medium mt-1">Besonderheiten</span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {projectData.isCertified && (
-                                                <span title="Beglaubigung" className="w-6 h-6 rounded flex items-center justify-center bg-blue-50 text-blue-600 border border-blue-200"><FaCheckCircle className="text-xs" /></span>
+                                        <div className="flex flex-col gap-2">
+                                            {[
+                                                { label: 'Beglaubigung', value: projectData.isCertified },
+                                                { label: 'Apostille', value: projectData.hasApostille },
+                                                { label: 'Express', value: projectData.isExpress },
+                                                { label: 'Klassifizierung', value: projectData.classification === 'ja' },
+                                            ].map((item) => (
+                                                <div key={item.label} className="flex items-center gap-2">
+                                                    <div className={clsx("w-4 h-4 rounded border flex items-center justify-center transition-colors", item.value ? "bg-emerald-500 border-emerald-600 text-white" : "bg-slate-50 border-slate-200 text-slate-200")}>
+                                                        {item.value && <FaCheck className="text-[10px]" />}
+                                                    </div>
+                                                    <span className={clsx("text-xs font-bold", item.value ? "text-slate-700" : "text-slate-400 opacity-60")}>{item.label}</span>
+                                                </div>
+                                            ))}
+                                            {(projectData.copies > 0) && (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-4 h-4 rounded border bg-emerald-500 border-emerald-600 text-white flex items-center justify-center">
+                                                        <FaCheck className="text-[10px]" />
+                                                    </div>
+                                                    <span className="text-xs font-bold text-slate-700">{projectData.copies}x Zusätzliche Kopien</span>
+                                                </div>
                                             )}
-                                            {projectData.hasApostille && (
-                                                <span title="Apostille" className="w-6 h-6 rounded flex items-center justify-center bg-purple-50 text-purple-600 border border-purple-200"><span className="text-[10px] font-black">A</span></span>
-                                            )}
-                                            {!projectData.isCertified && !projectData.hasApostille && <span className="text-slate-400 text-xs italic">-</span>}
                                         </div>
                                     </div>
                                 </div>
@@ -1269,10 +1325,13 @@ const ProjectDetail = () => {
                                     <div className="rounded-lg border border-slate-200 p-4 flex-1 flex flex-col justify-between">
                                         <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
                                             <span className="text-slate-500 font-medium">Name</span>
-                                            <span className="text-slate-800 font-bold">{projectData.translator?.name || '-'}</span>
+                                            <span className="text-slate-800 font-bold">{projectData.translator?.name || 'keine Angabe'}</span>
 
                                             <span className="text-slate-500 font-medium">Email</span>
-                                            <a href={`mailto:${projectData.translator?.email}`} className="text-brand-600 hover:underline truncate block">{projectData.translator?.email || '-'}</a>
+                                            <a href={`mailto:${projectData.translator?.email}`} className="text-brand-600 hover:underline truncate block">{projectData.translator?.email || 'keine Angabe'}</a>
+
+                                            <span className="text-slate-500 font-medium">Telefon</span>
+                                            <span className="text-slate-800 font-semibold">{projectData.translator?.phone || 'keine Telefonnummer'}</span>
 
                                             <span className="text-slate-500 font-medium">Status</span>
                                             <div className="flex items-center gap-2">
