@@ -80,6 +80,13 @@ class CustomerController extends Controller
             'price_matrix_id' => 'nullable|exists:price_matrices,id',
             'notes' => 'nullable|string',
             'status' => 'nullable|string',
+            'payment_terms_days' => 'nullable|integer|min:0',
+            'iban' => 'nullable|string',
+            'bic' => 'nullable|string',
+            'bank_name' => 'nullable|string',
+            'tax_id' => 'nullable|string',
+            'legal_form' => 'nullable|string',
+            'vat_id' => 'nullable|string',
         ]);
 
         $customer = \App\Models\Customer::create($validated);
@@ -88,7 +95,7 @@ class CustomerController extends Controller
 
     public function show($id)
     {
-        return response()->json(\App\Models\Customer::with('priceMatrix')->findOrFail($id));
+        return response()->json(\App\Models\Customer::with(['priceMatrix', 'creator', 'editor'])->findOrFail($id));
     }
 
     public function update(Request $request, $id)
@@ -114,6 +121,13 @@ class CustomerController extends Controller
             'price_matrix_id' => 'nullable|exists:price_matrices,id',
             'notes' => 'nullable|string',
             'status' => 'nullable|string',
+            'payment_terms_days' => 'nullable|integer|min:0',
+            'iban' => 'nullable|string',
+            'bic' => 'nullable|string',
+            'bank_name' => 'nullable|string',
+            'tax_id' => 'nullable|string',
+            'legal_form' => 'nullable|string',
+            'vat_id' => 'nullable|string',
         ]);
 
         $customer->update($validated);

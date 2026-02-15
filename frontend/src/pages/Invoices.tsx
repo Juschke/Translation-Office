@@ -25,7 +25,7 @@ import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 const Invoices = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'all');
+    const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'pending');
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
@@ -284,7 +284,7 @@ const Invoices = () => {
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Rechnung_${inv.invoice_number}.pdf`);
+            link.setAttribute('download', `${inv.invoice_number}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -349,7 +349,7 @@ const Invoices = () => {
             header: 'Fälligkeit',
             accessor: (inv: any) => (
                 <div className="flex flex-col">
-                    <span className="text-slate-600 font-medium">{new Date(inv.due_date).toLocaleDateString('de-DE')}</span>
+                    <span className="text-slate-600 font-medium">{new Date(inv.due_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                 </div>
             ),
             sortable: true,

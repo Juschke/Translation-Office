@@ -8,7 +8,7 @@ use App\Models\InvoiceItem;
 use App\Models\InvoiceAuditLog;
 use horstoeko\zugferdlaravel\Facades\ZugferdLaravel;
 use horstoeko\zugferd\codelists\ZugferdInvoiceType;
-use horstoeko\zugferd\codelists\ZugferdTaxCategoryCodes;
+use horstoeko\zugferd\codelists\ZugferdVatCategoryCodes;
 use horstoeko\zugferd\codelists\ZugferdPaymentMeans;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +65,7 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'type'            => 'nullable|string|in:invoice,credit_note',
             'project_id'      => 'required|exists:projects,id',
             'customer_id'     => 'required|exists:customers,id',
             'date'            => 'required|date',
@@ -74,10 +75,19 @@ class InvoiceController extends Controller
             'tax_rate'        => 'nullable|numeric',
             'amount_tax'      => 'required|numeric',  // EUR from frontend
             'amount_gross'    => 'required|numeric',  // EUR from frontend
+            'shipping'        => 'nullable|numeric',
+            'discount'        => 'nullable|numeric',
+            'paid_amount'     => 'nullable|numeric',
             'currency'        => 'string|max:3',
             'notes'           => 'nullable|string',
             'service_period'  => 'nullable|string',
             'tax_exemption'   => 'nullable|string|in:none,§19_ustg,reverse_charge',
+            'items'           => 'nullable|array',
+            'items.*.description' => 'required|string',
+            'items.*.quantity'    => 'required|numeric',
+            'items.*.unit'        => 'nullable|string',
+            'items.*.price'       => 'required|numeric',
+            'items.*.total'       => 'required|numeric',
         ]);
 
         return DB::transaction(function () use ($validated, $request) {
@@ -99,7 +109,7 @@ class InvoiceController extends Controller
 
             // 3. Create invoice with cent-based amounts + snapshots
             $invoice = Invoice::create([
-                'type'                     => Invoice::TYPE_INVOICE,
+                'type'                     => $validated['type'] ?? Invoice::TYPE_INVOICE,
                 'invoice_number'           => $invoiceNumber,
                 'invoice_number_sequence'  => $newSeq,
                 'project_id'               => $validated['project_id'],
@@ -115,7 +125,9 @@ class InvoiceController extends Controller
                 'tax_rate'     => $validated['tax_rate'] ?? 19.00,
                 'amount_tax'   => (int) round(($validated['amount_tax']) * 100),
                 'amount_gross' => (int) round(($validated['amount_gross']) * 100),
-
+                'shipping_cents' => (int) round(($validated['shipping'] ?? 0) * 100),
+                'discount_cents' => (int) round(($validated['discount'] ?? 0) * 100),
+                'paid_amount_cents' => (int) round(($validated['paid_amount'] ?? 0) * 100),
                 'currency'       => $validated['currency'] ?? 'EUR',
                 'notes'          => $validated['notes'] ?? null,
                 'status'         => Invoice::STATUS_DRAFT,
@@ -147,8 +159,23 @@ class InvoiceController extends Controller
                 'snapshot_project_number' => $project->project_number,
             ]);
 
-            // 4. Create frozen line items from project positions
-            $this->createInvoiceItems($invoice, $project, $validated['tax_rate'] ?? 19);
+            // 4. Create frozen line items (either from request or from project positions)
+            if (isset($validated['items']) && !empty($validated['items'])) {
+                foreach ($validated['items'] as $index => $itemData) {
+                    InvoiceItem::create([
+                        'invoice_id'       => $invoice->id,
+                        'position'         => $index + 1,
+                        'description'      => $itemData['description'],
+                        'quantity'         => (float) $itemData['quantity'],
+                        'unit'             => $itemData['unit'] ?? 'Words',
+                        'unit_price_cents' => (int) round($itemData['price'] * 100),
+                        'total_cents'      => (int) round($itemData['total'] * 100),
+                        'tax_rate'         => $validated['tax_rate'] ?? 19,
+                    ]);
+                }
+            } else {
+                $this->createInvoiceItems($invoice, $project, $validated['tax_rate'] ?? 19);
+            }
 
             // 5. Audit log
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_DRAFT);
@@ -195,10 +222,19 @@ class InvoiceController extends Controller
             'tax_rate'       => 'numeric',
             'amount_tax'     => 'numeric',
             'amount_gross'   => 'numeric',
+            'shipping'       => 'nullable|numeric',
+            'discount'       => 'nullable|numeric',
+            'paid_amount'    => 'nullable|numeric',
             'notes'          => 'nullable|string',
             'service_period' => 'nullable|string',
             'tax_exemption'  => 'nullable|string|in:none,§19_ustg,reverse_charge',
             'status'         => 'string|in:draft',
+            'items'           => 'nullable|array',
+            'items.*.description' => 'required|string',
+            'items.*.quantity'    => 'required|numeric',
+            'items.*.unit'        => 'nullable|string',
+            'items.*.price'       => 'required|numeric',
+            'items.*.total'       => 'required|numeric',
         ]);
 
         // Convert EUR → cents if amounts provided
@@ -208,8 +244,35 @@ class InvoiceController extends Controller
             }
         }
 
-        $invoice->update($validated);
-        return response()->json($invoice);
+        if (isset($validated['shipping'])) $validated['shipping_cents'] = (int) round($validated['shipping'] * 100);
+        if (isset($validated['discount'])) $validated['discount_cents'] = (int) round($validated['discount'] * 100);
+        if (isset($validated['paid_amount'])) $validated['paid_amount_cents'] = (int) round($validated['paid_amount'] * 100);
+
+        return DB::transaction(function () use ($invoice, $validated) {
+            $invoice->update($validated);
+
+            // Update items if provided
+            if (isset($validated['items'])) {
+                // Delete old items
+                $invoice->items()->delete();
+                
+                // Create new ones
+                foreach ($validated['items'] as $index => $itemData) {
+                    InvoiceItem::create([
+                        'invoice_id'       => $invoice->id,
+                        'position'         => $index + 1,
+                        'description'      => $itemData['description'],
+                        'quantity'         => (float) $itemData['quantity'],
+                        'unit'             => $itemData['unit'] ?? 'Words',
+                        'unit_price_cents' => (int) round($itemData['price'] * 100),
+                        'total_cents'      => (int) round($itemData['total'] * 100),
+                        'tax_rate'         => $validated['tax_rate'] ?? $invoice->tax_rate ?? 19,
+                    ]);
+                }
+            }
+
+            return response()->json($invoice->fresh('items'));
+        });
     }
 
     /**
@@ -301,8 +364,8 @@ class InvoiceController extends Controller
             // 3. Generate PDF + ZUGFeRD
             try {
                 $this->generatePdfInternal($invoice);
-            } catch (\Exception $e) {
-                Log::error('PDF generation failed during issue: ' . $e->getMessage());
+            } catch (\Throwable $e) {
+                Log::error('PDF generation failed during issue: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
                 // Don't rollback — the invoice is still issued even if PDF fails
             }
 
@@ -377,9 +440,9 @@ class InvoiceController extends Controller
                 'currency' => $invoice->currency,
                 'notes'    => 'Storno zu Rechnung ' . $invoice->invoice_number .
                               ($request->input('reason') ? '. Grund: ' . $request->input('reason') : ''),
-                'status'    => Invoice::STATUS_ISSUED,
-                'is_locked' => true,
-                'issued_at' => now(),
+                'status'    => Invoice::STATUS_DRAFT,
+                'is_locked' => false,
+                'issued_at' => null,
 
                 // Copy all snapshots from original (GoBD: same data as original)
                 'snapshot_customer_name'       => $invoice->snapshot_customer_name,
@@ -422,12 +485,7 @@ class InvoiceController extends Controller
             $invoice->status = Invoice::STATUS_CANCELLED;
             $invoice->save();
 
-            // 4. Generate PDF for credit note
-            try {
-                $this->generatePdfInternal($creditNote);
-            } catch (\Exception $e) {
-                Log::error('Storno PDF generation failed: ' . $e->getMessage());
-            }
+            // 4. PDF generation skipped for draft (will be generated on issue)
 
             // 5. Audit logs
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CANCELLED, $oldStatus, Invoice::STATUS_CANCELLED, [
@@ -436,7 +494,7 @@ class InvoiceController extends Controller
                 'reason'             => $request->input('reason'),
             ]);
 
-            $this->logAuditEvent($creditNote, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_ISSUED, [
+            $this->logAuditEvent($creditNote, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_DRAFT, [
                 'original_invoice_id' => $invoice->id,
                 'type'                => 'credit_note',
             ]);
@@ -452,7 +510,7 @@ class InvoiceController extends Controller
             return response()->json([
                 'original'    => $invoice->fresh()->load('items'),
                 'credit_note' => $creditNote->load('items'),
-                'message'     => 'Rechnung storniert. Gutschrift ' . $creditNoteNumber . ' erstellt.',
+                'message'     => 'Rechnung storniert. Gutschrift-Entwurf ' . $creditNoteNumber . ' erstellt.',
             ]);
         });
     }
@@ -503,27 +561,27 @@ class InvoiceController extends Controller
     {
         $invoice->load('items');
 
-        $buyer = new \LaravelDaily\Invoices\Classes\Buyer([
-            'name' => $invoice->snapshot_customer_name,
-            'custom_fields' => [
-                'address' => trim($invoice->snapshot_customer_address . "\n" .
-                    $invoice->snapshot_customer_zip . ' ' . $invoice->snapshot_customer_city . "\n" .
-                    $invoice->snapshot_customer_country),
-                'street'  => $invoice->snapshot_customer_address,
-                'zip'     => $invoice->snapshot_customer_zip,
-                'city'    => $invoice->snapshot_customer_city,
-                'country' => $invoice->snapshot_customer_country,
-            ],
-        ]);
-
         // Build line items from frozen InvoiceItem records
         $dailyItems = [];
         foreach ($invoice->items as $item) {
             $dailyItems[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
                 ->title($item->description)
                 ->pricePerUnit($item->unit_price_eur) // Uses cent → EUR accessor
-                ->quantity((float) $item->quantity);
+                ->quantity((float) $item->quantity)
+                ->units($item->unit);
         }
+
+        $buyer = new \LaravelDaily\Invoices\Classes\Buyer([
+            'name' => $invoice->snapshot_customer_name,
+            'custom_fields' => [
+                'address' => trim($invoice->snapshot_customer_address . "\n" .
+                    $invoice->snapshot_customer_zip . ' ' . $invoice->snapshot_customer_city . "\n" .
+                    $invoice->snapshot_customer_country),
+                'due_date' => $invoice->due_date ? $invoice->due_date->format('d.m.Y') : null,
+                'customer_id' => $invoice->customer_id,
+                'paid_amount' => $invoice->paid_amount_eur,
+            ],
+        ]);
 
         // Fallback: if no items exist, use the invoice total
         if (empty($dailyItems)) {
@@ -535,22 +593,18 @@ class InvoiceController extends Controller
 
         $dailyInvoice = \LaravelDaily\Invoices\Invoice::make($invoice->invoice_number)
             ->buyer($buyer)
-            ->discountByPercent(0)
+            ->date($invoice->date)
+            ->currencySymbol('€')
+            ->currencyCode('EUR')
+            ->currencyDecimals(2)
             ->taxRate((float) $invoice->tax_rate)
-            ->shipping(0)
+            ->shipping($invoice->shipping_eur)
+            ->totalDiscount($invoice->discount_eur)
             ->notes($this->buildInvoiceNotes($invoice))
             ->template('din5008');
 
-        // Service period
-        if ($invoice->service_period) {
-            $dailyInvoice->addCustomField('Leistungszeitraum', $invoice->service_period);
-        }
-
-        // Credit note label
-        if ($invoice->isCreditNote()) {
-            $dailyInvoice->addCustomField('Belegart', 'Stornorechnung / Gutschrift');
-            $dailyInvoice->addCustomField('Storno zu', $invoice->cancelledInvoice?->invoice_number ?? '-');
-        }
+        $dailyInvoice->tenant_id = $invoice->tenant_id;
+        $dailyInvoice->invoice_type = $invoice->type;
 
         foreach ($dailyItems as $item) {
             $dailyInvoice->addItem($item);
@@ -586,6 +640,10 @@ class InvoiceController extends Controller
             // Reverse-Charge-Verfahren (§ 13b UStG)
             // Pflichthinweis: Der Leistungsempfänger schuldet die Steuer.
             $notes .= "Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge gem. § 13b UStG).\n";
+        }
+
+        if ($invoice->service_period) {
+            $notes .= "Leistungszeitraum: " . $invoice->service_period . "\n";
         }
 
         if ($invoice->isCreditNote()) {
@@ -672,7 +730,7 @@ class InvoiceController extends Controller
             // Payment Means (Bank Transfer)
             if ($invoice->snapshot_seller_bank_iban) {
                 $documentBuilder->setDocumentPaymentMeans(
-                    ZugferdPaymentMeans::BANK_TRANSFER,
+                    ZugferdPaymentMeans::UNTDID_4461_30,
                     'Banküberweisung'
                 );
                 $documentBuilder->addDocumentSellerPayeeFinancialAccount(
@@ -696,11 +754,11 @@ class InvoiceController extends Controller
             }
 
             // Determine tax category based on exemption type
-            $taxCategory = ZugferdTaxCategoryCodes::STANDARD;
+            $taxCategory = ZugferdVatCategoryCodes::STAN_RATE;
             if ($invoice->tax_exemption === Invoice::TAX_REVERSE_CHARGE) {
-                $taxCategory = ZugferdTaxCategoryCodes::REVERSE_CHARGE;
+                $taxCategory = ZugferdVatCategoryCodes::VAT_REVE_CHAR;
             } elseif ($invoice->tax_exemption === Invoice::TAX_SMALL_BUSINESS) {
-                $taxCategory = ZugferdTaxCategoryCodes::EXEMPT_FROM_TAX;
+                $taxCategory = ZugferdVatCategoryCodes::EXEM_FROM_TAX;
             }
 
             // Line Items (from frozen InvoiceItem records)
@@ -714,10 +772,10 @@ class InvoiceController extends Controller
                         ->setDocumentPositionNetPrice(abs($item->unit_price_eur))
                         ->setDocumentPositionQuantity(abs((float) $item->quantity), $unitCode);
 
-                    $documentBuilder->setDocumentPositionTax(
-                        (float) $item->tax_rate,
+                    $documentBuilder->addDocumentPositionTax(
+                        $taxCategory,
                         'VAT',
-                        $taxCategory
+                        (float) $item->tax_rate
                     );
                 }
             } else {
@@ -728,10 +786,10 @@ class InvoiceController extends Controller
                     ->setDocumentPositionNetPrice(abs($invoice->amount_net_eur))
                     ->setDocumentPositionQuantity(1, 'C62');
 
-                $documentBuilder->setDocumentPositionTax(
-                    (float) ($invoice->tax_rate ?? 19),
+                $documentBuilder->addDocumentPositionTax(
+                    $taxCategory,
                     'VAT',
-                    $taxCategory
+                    (float) ($invoice->tax_rate ?? 19)
                 );
             }
 
@@ -741,17 +799,17 @@ class InvoiceController extends Controller
             $grossEur = $invoice->amount_gross_eur;
 
             $documentBuilder->setDocumentSummation(
-                $grossEur,       // grandTotalAmount
-                $grossEur,       // duePayableAmount
+                abs($grossEur),  // grandTotalAmount
+                abs($grossEur),  // duePayableAmount
                 abs($netEur),    // lineTotalAmount
                 0,               // chargeTotalAmount
                 0,               // allowanceTotalAmount
                 abs($netEur),    // taxBasisTotalAmount
-                $taxEur          // taxTotalAmount
+                abs($taxEur)     // taxTotalAmount
             );
 
             // Add tax breakdown
-            $documentBuilder->addDocumentTax($taxCategory, 'VAT', abs($netEur), $taxEur, (float) $invoice->tax_rate);
+            $documentBuilder->addDocumentTax($taxCategory, 'VAT', abs($netEur), abs($taxEur), (float) $invoice->tax_rate);
 
             // Merge ZUGFeRD XML into PDF
             $tempDir = storage_path('app/temp');
@@ -777,13 +835,14 @@ class InvoiceController extends Controller
      */
     private function mapUnitToUNECE(string $unit): string
     {
-        return match ($unit) {
-            'words'  => 'C62',  // "one" — no specific word unit in UN/ECE
-            'lines'  => 'C62',  // "one" — Normzeile
-            'pages'  => 'C62',  // "one" — Normseite
-            'hours'  => 'HUR',  // hour
-            'flat'   => 'C62',  // lump sum / Pauschal
-            default  => 'C62',
+        $u = strtolower($unit);
+        return match ($u) {
+            'words', 'wörter', 'wort'  => 'ZZ',   // Mutually defined or C62
+            'lines', 'zeilen', 'zeile' => 'C62',  // Unit
+            'pages', 'seiten', 'seite' => 'C62',  // Unit
+            'hours', 'stunden', 'std'  => 'HUR',  // Hour
+            'flat', 'pauschale', 'stk' => 'C62',  // One (unit)
+            default => 'C62',
         };
     }
 
@@ -793,12 +852,26 @@ class InvoiceController extends Controller
 
     public function preview($id)
     {
-        $invoice = Invoice::with('items')->findOrFail($id);
-        $dailyInvoice = $this->buildDailyInvoiceFromSnapshot($invoice);
+        try {
+            $invoice = Invoice::with('items')->findOrFail($id);
+            $dailyInvoice = $this->buildDailyInvoiceFromSnapshot($invoice);
 
-        return view('vendor.invoices.templates.din5008', [
-            'invoice' => $dailyInvoice,
-        ])->render();
+            // Crucial: Calculate totals before rendering the view
+            // manually, because we are rendering the view ourselves
+            $dailyInvoice->calculate();
+
+            $html = view('vendor.invoices.templates.din5008', [
+                'invoice' => $dailyInvoice,
+            ])->render();
+
+            // Inject a small fix for iframe background
+            $html = str_replace('</head>', '<style>body { background: white !important; }</style></head>', $html);
+
+            return $html;
+        } catch (\Throwable $e) {
+            Log::error('Preview failed: ' . $e->getMessage());
+            return '<html><body><pre style="color:red">Vorschau-Fehler: ' . e($e->getMessage()) . '</pre></body></html>';
+        }
     }
 
     public function download(Request $request, Invoice $invoice)
@@ -820,8 +893,7 @@ class InvoiceController extends Controller
             // Audit log
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_DOWNLOADED);
 
-            $label = $invoice->isCreditNote() ? 'Gutschrift_' : 'Rechnung_';
-            return response()->download($pdfPath, $label . $invoice->invoice_number . '.pdf');
+            return response()->download($pdfPath, $invoice->invoice_number . '.pdf');
         } catch (\Exception $e) {
             Log::error("Download error: " . $e->getMessage());
             return response()->json(['error' => 'Download fehlgeschlagen: ' . $e->getMessage()], 500);
@@ -846,7 +918,7 @@ class InvoiceController extends Controller
 
             return response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="Rechnung_' . $invoice->invoice_number . '.pdf"'
+                'Content-Disposition' => 'inline; filename="' . $invoice->invoice_number . '.pdf"'
             ]);
         } catch (\Exception $e) {
             Log::error("Print error: " . $e->getMessage());
@@ -959,6 +1031,7 @@ class InvoiceController extends Controller
             'custom_fields' => [
                 'address' => trim($invoice->snapshot_customer_address . "\n" .
                     $invoice->snapshot_customer_zip . ' ' . $invoice->snapshot_customer_city),
+                'due_date' => $invoice->due_date ? $invoice->due_date->format('d.m.Y') : '-',
             ],
         ]);
 
@@ -966,24 +1039,32 @@ class InvoiceController extends Controller
         foreach ($invoice->items as $item) {
             $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
                 ->title($item->description)
-                ->pricePerUnit($item->unit_price_eur)
-                ->quantity((float) $item->quantity);
+                ->pricePerUnit(abs($item->unit_price_eur))
+                ->quantity(abs((float) $item->quantity))
+                ->units($item->unit);
         }
 
         if (empty($items)) {
             $items[] = (new \LaravelDaily\Invoices\Classes\InvoiceItem())
                 ->title($invoice->snapshot_project_name ?: 'Dienstleistung')
-                ->pricePerUnit($invoice->amount_net_eur)
+                ->pricePerUnit(abs($invoice->amount_net_eur))
                 ->quantity(1);
         }
 
         $dailyInvoice = \LaravelDaily\Invoices\Invoice::make($invoice->invoice_number)
             ->buyer($buyer)
-            ->discountByPercent(0)
+            ->date($invoice->date)
+            ->currencySymbol('€')
+            ->currencyCode('EUR')
+            ->currencyDecimals(2)
             ->taxRate((float) ($invoice->tax_rate ?? 19))
-            ->shipping(0)
+            ->shipping($invoice->shipping_eur)
+            ->totalDiscount($invoice->discount_eur)
             ->notes($this->buildInvoiceNotes($invoice))
             ->template('din5008');
+
+        $dailyInvoice->tenant_id = $invoice->tenant_id;
+        $dailyInvoice->invoice_type = $invoice->type; // Pass to template
 
         foreach ($items as $item) {
             $dailyInvoice->addItem($item);

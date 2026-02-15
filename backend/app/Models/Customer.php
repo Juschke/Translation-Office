@@ -29,11 +29,20 @@ class Customer extends Model
         'status',
         'leitweg_id',
         'legal_form',
+        'payment_terms_days',
+        'iban',
+        'bic',
+        'bank_name',
+        'tax_id',
+        'vat_id',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
         'additional_emails' => 'array',
         'additional_phones' => 'array',
+        'payment_terms_days' => 'integer',
     ];
 
     public function priceMatrix()
@@ -49,5 +58,33 @@ class Customer extends Model
     public function invoices()
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function editor()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($customer) {
+            if (auth()->check()) {
+                $customer->created_by = auth()->id();
+                $customer->updated_by = auth()->id();
+            }
+        });
+
+        static::updating(function ($customer) {
+            if (auth()->check()) {
+                $customer->updated_by = auth()->id();
+            }
+        });
     }
 }

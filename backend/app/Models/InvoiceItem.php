@@ -18,6 +18,7 @@ class InvoiceItem extends Model
     use \App\Traits\BelongsToTenant;
 
     protected $fillable = [
+        'tenant_id',
         'invoice_id',
         'position',
         'description',

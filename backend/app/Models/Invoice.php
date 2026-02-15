@@ -63,6 +63,9 @@ class Invoice extends Model
         'issued_at',
         'pdf_path',
         'notes',
+        'shipping_cents',
+        'discount_cents',
+        'paid_amount_cents',
         'tax_exemption',
         'reminder_level',
         'last_reminder_date',
@@ -104,6 +107,9 @@ class Invoice extends Model
         'amount_net'           => 'integer',
         'amount_tax'           => 'integer',
         'amount_gross'         => 'integer',
+        'shipping_cents'       => 'integer',
+        'discount_cents'       => 'integer',
+        'paid_amount_cents'    => 'integer',
         'tax_rate'             => 'decimal:2',
         'is_locked'            => 'boolean',
         'reminder_level'       => 'integer',
@@ -163,6 +169,29 @@ class Invoice extends Model
     public function getAmountGrossEurAttribute(): float
     {
         return $this->amount_gross / 100;
+    }
+
+    public function getShippingEurAttribute(): float
+    {
+        return $this->shipping_cents / 100;
+    }
+
+    public function getDiscountEurAttribute(): float
+    {
+        return $this->discount_cents / 100;
+    }
+
+    public function getPaidAmountEurAttribute(): float
+    {
+        return $this->paid_amount_cents / 100;
+    }
+
+    /**
+     * Calculated value: Gross - Paid
+     */
+    public function getAmountDueEurAttribute(): float
+    {
+        return ($this->amount_gross - $this->paid_amount_cents) / 100;
     }
 
     // ─── Relationships ───────────────────────────────────────────────
@@ -258,5 +287,5 @@ class Invoice extends Model
 
     // ─── Serialization ───────────────────────────────────────────────
 
-    protected $appends = ['amount_net_eur', 'amount_tax_eur', 'amount_gross_eur'];
+    protected $appends = ['amount_net_eur', 'amount_tax_eur', 'amount_gross_eur', 'shipping_eur', 'discount_eur', 'paid_amount_eur', 'amount_due_eur'];
 }

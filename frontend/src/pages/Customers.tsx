@@ -23,7 +23,7 @@ const Customers = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [typeFilter, setTypeFilter] = useState('all');
+    const [typeFilter, setTypeFilter] = useState('Privat');
     const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<any>(null);
@@ -380,16 +380,16 @@ const Customers = () => {
                 Alle
             </button>
             <button
-                onClick={() => setTypeFilter('Firma')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Firma' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Firmen
-            </button>
-            <button
                 onClick={() => setTypeFilter('Privat')}
                 className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Privat' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Privat
+            </button>
+            <button
+                onClick={() => setTypeFilter('Firma')}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Firma' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Firmen
             </button>
             <button
                 onClick={() => setTypeFilter('Behörde')}

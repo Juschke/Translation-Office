@@ -15,7 +15,7 @@ import DataTable from '../components/common/DataTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { partnerService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
-import { getFlagUrl } from '../utils/flags';
+import { getFlagUrl, getLanguageName } from '../utils/flags';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { BulkActions } from '../components/common/BulkActions';
 
@@ -24,7 +24,7 @@ const Partners = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [typeFilter, setTypeFilter] = useState('all');
+    const [typeFilter, setTypeFilter] = useState('service_providers');
     const [selectedPartners, setSelectedPartners] = useState<number[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingPartner, setEditingPartner] = useState<any>(null);
@@ -158,6 +158,11 @@ const Partners = () => {
 
             if (typeFilter === 'all') return true;
 
+            if (typeFilter === 'service_providers') {
+                return p.type === 'translator' || p.type === 'interpreter';
+            }
+
+            // Map German filter names to English type values
             const mappedType = p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type;
             return mappedType === typeFilter;
         });
@@ -216,68 +221,17 @@ const Partners = () => {
                     <div className="flex flex-col min-w-0">
                         <span className="font-bold text-slate-800 truncate">{p.company || `${p.first_name} ${p.last_name}`}</span>
                         <div className="flex gap-2">
-                            <span className="text-[10px] text-slate-400 font-medium">ID: {p.id.toString().padStart(4, '0')}</span>
+                            <span className="text-[10px] text-slate-400 font-medium">{p.id.toString().padStart(4, '0')}</span>
                             <span className="text-[10px] text-slate-300">•</span>
-                            <span className="text-[10px] text-slate-500 font-medium">{p.type}</span>
+                            <span className="text-[10px] text-slate-500 font-medium">
+                                {p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type}
+                            </span>
                         </div>
                     </div>
                 </div>
             ),
             sortable: true,
             sortKey: 'last_name'
-        },
-        {
-            id: 'email',
-            header: 'E-Mail',
-            accessor: (p: any) => <span className="text-slate-600 truncate max-w-[150px] inline-block">{p.email || '-'}</span>,
-            sortable: true,
-            sortKey: 'email'
-        },
-        {
-            id: 'phone',
-            header: 'Telefon',
-            accessor: (p: any) => <span className="text-slate-600 whitespace-nowrap">{p.phone || '-'}</span>,
-            sortable: true,
-            sortKey: 'phone'
-        },
-        {
-            id: 'domains',
-            header: 'Fachgebiete',
-            accessor: (p: any) => (
-                <div className="max-w-[120px]">
-                    <p className="text-[10px] text-slate-500 truncate" title={Array.isArray(p.domains) ? p.domains.join(', ') : (p.domains || '-')}>
-                        {Array.isArray(p.domains) ? p.domains.join(', ') : (p.domains || '-')}
-                    </p>
-                </div>
-            )
-        },
-        {
-            id: 'languages',
-            header: 'Sprachen',
-            accessor: (p: any) => (
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex flex-wrap gap-1.5">
-                        {(Array.isArray(p.languages) ? p.languages : (p.languages ? [p.languages] : [])).map((lang: string, i: number) => (
-                            <span key={i} className="inline-flex items-center gap-2 px-2 py-1 bg-slate-50 text-slate-700 rounded border border-slate-200 text-[10px] font-bold uppercase shadow-sm">
-                                <img src={getFlagUrl(lang)} className="w-5 h-3.5 object-cover rounded-[1px] shadow-sm" alt={lang} />
-                                {lang}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            id: 'location',
-            header: 'Standort',
-            accessor: (p: any) => (
-                <div className="flex flex-col">
-                    <span className="text-slate-700 text-xs font-medium">{p.address_city || '-'}</span>
-                    <span className="text-[10px] text-slate-400 capitalize">{p.address_country || ''}</span>
-                </div>
-            ),
-            sortable: true,
-            sortKey: 'address_city'
         },
         {
             id: 'projects_count',
@@ -289,26 +243,6 @@ const Partners = () => {
             ),
             sortable: true,
             sortKey: 'projects_count',
-            align: 'center' as const
-        },
-        {
-            id: 'rating',
-            header: 'Bewertung',
-            accessor: (p: any) => (
-                <div className="flex items-center gap-0.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                        <FaStar
-                            key={star}
-                            className={clsx(
-                                "text-[10px]",
-                                star <= (p.rating || 0) ? "text-amber-400" : "text-slate-200"
-                            )}
-                        />
-                    ))}
-                </div>
-            ),
-            sortable: true,
-            sortKey: 'rating',
             align: 'center' as const
         },
         {
@@ -340,6 +274,76 @@ const Partners = () => {
             },
             sortable: true,
             sortKey: 'status',
+            align: 'center' as const
+        },
+        {
+            id: 'languages',
+            header: 'Sprachen',
+            accessor: (p: any) => (
+                <div className="flex flex-col gap-1.5 max-w-[200px]">
+                    <div className="flex flex-wrap gap-1">
+                        {(Array.isArray(p.languages) ? p.languages : (p.languages ? [p.languages] : [])).map((lang: string, i: number) => (
+                            <span key={i} className="inline-flex items-center gap-1.5 px-1.5 py-0.5 bg-slate-50 text-slate-600 rounded border border-slate-200 text-[10px] font-medium shadow-sm whitespace-nowrap">
+                                <img src={getFlagUrl(lang)} className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm" alt={lang} />
+                                {getLanguageName(lang)}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            id: 'location',
+            header: 'Standort',
+            accessor: (p: any) => (
+                <div className="flex flex-col max-w-[180px]">
+                    <span className="text-slate-700 text-xs font-medium truncate" title={[p.address_street, p.address_house_no].filter(Boolean).join(' ')}>
+                        {[p.address_street, p.address_house_no].filter(Boolean).join(' ') || '-'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 truncate" title={[p.address_zip, p.address_city].filter(Boolean).join(' ')}>
+                        {[p.address_zip, p.address_city].filter(Boolean).join(' ')}
+                    </span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">{p.address_country || ''}</span>
+                </div>
+            ),
+            sortable: true,
+            sortKey: 'address_city'
+        },
+        {
+            id: 'email',
+            header: 'E-Mail',
+            accessor: (p: any) => <span className="text-slate-600 truncate max-w-[150px] inline-block">{p.email || '-'}</span>,
+            sortable: true,
+            sortKey: 'email'
+        },
+        {
+            id: 'phone',
+            header: 'Telefon',
+            accessor: (p: any) => <span className="text-slate-600 whitespace-nowrap">{p.phone || '-'}</span>,
+            sortable: true,
+            sortKey: 'phone'
+        },
+        {
+            id: 'rating',
+            header: 'Bewertung',
+            accessor: (p: any) => (
+                <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-600">{p.rating || 0}</span>
+                    <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <FaStar
+                                key={star}
+                                className={clsx(
+                                    "text-[10px]",
+                                    star <= (p.rating || 0) ? "text-amber-400" : "text-slate-200"
+                                )}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ),
+            sortable: true,
+            sortKey: 'rating',
             align: 'center' as const
         },
         {
@@ -378,6 +382,12 @@ const Partners = () => {
                 className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'all' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Alle
+            </button>
+            <button
+                onClick={() => setTypeFilter('service_providers')}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'service_providers' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Übersetzer & Dolmetscher
             </button>
             <button
                 onClick={() => setTypeFilter('Übersetzer')}

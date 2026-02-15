@@ -3,7 +3,25 @@ import { FaTimes, FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
 import Input from '../common/Input';
 import CountrySelect from '../common/CountrySelect';
 import PhoneInput from '../common/PhoneInput';
+import SearchableSelect from '../common/SearchableSelect';
 import { fetchCityByZip } from '../../utils/autoFill';
+
+const legalFormOptions = [
+    { value: 'Einzelunternehmen', label: 'Einzelunternehmen' },
+    { value: 'GbR', label: 'GbR (Gesellschaft bürgerlichen Rechts)' },
+    { value: 'GmbH', label: 'GmbH (Gesellschaft mit beschränkter Haftung)' },
+    { value: 'GmbH & Co. KG', label: 'GmbH & Co. KG' },
+    { value: 'UG (haftungsbeschränkt)', label: 'UG (haftungsbeschränkt)' },
+    { value: 'AG', label: 'AG (Aktiengesellschaft)' },
+    { value: 'KG', label: 'KG (Kommanditgesellschaft)' },
+    { value: 'OHG', label: 'OHG (Offene Handelsgesellschaft)' },
+    { value: 'e.K.', label: 'e.K. (eingetragener Kaufmann / -frau)' },
+    { value: 'PartG', label: 'PartG (Partnerschaftsgesellschaft)' },
+    { value: 'eG', label: 'eG (eingetragene Genossenschaft)' },
+    { value: 'e.V.', label: 'e.V. (eingetragener Verein)' },
+    { value: 'Stiftung', label: 'Stiftung' },
+    { value: 'Körperschaft d.ö.R.', label: 'Körperschaft d.ö.R.' }
+];
 
 interface CustomerFormData {
     id?: number;
@@ -12,6 +30,7 @@ interface CustomerFormData {
     first_name: string;
     last_name: string;
     company_name: string;
+    legal_form: string;
     address_street: string;
     address_house_no: string;
     address_zip: string;
@@ -22,6 +41,12 @@ interface CustomerFormData {
     notes: string;
     additional_emails: string[];
     additional_phones: string[];
+    payment_terms_days: number | '';
+    iban: string;
+    bic: string;
+    bank_name: string;
+    tax_id: string;
+    vat_id: string;
 }
 
 interface NewCustomerModalProps {
@@ -38,6 +63,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         first_name: '',
         last_name: '',
         company_name: '',
+        legal_form: '',
         address_street: '',
         address_house_no: '',
         address_zip: '',
@@ -48,6 +74,12 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         notes: '',
         additional_emails: [],
         additional_phones: [],
+        payment_terms_days: 14, // Default payment terms
+        iban: '',
+        bic: '',
+        bank_name: '',
+        tax_id: '',
+        vat_id: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -120,6 +152,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                 first_name: '',
                 last_name: '',
                 company_name: '',
+                legal_form: '',
                 address_street: '',
                 address_house_no: '',
                 address_zip: '',
@@ -130,6 +163,12 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                 notes: '',
                 additional_emails: [],
                 additional_phones: [],
+                payment_terms_days: 14,
+                iban: '',
+                bic: '',
+                bank_name: '',
+                tax_id: '',
+                vat_id: '',
             });
             setTouched({});
             setErrors({});
@@ -160,7 +199,11 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
     };
 
     const addField = (field: 'additional_emails' | 'additional_phones') => {
-        setFormData(prev => ({ ...prev, [field]: [...prev[field], ''] }));
+        if (formData[field].length < 3) {
+            setFormData(prev => ({ ...prev, [field]: [...prev[field], ''] }));
+        } else {
+            // Optional: Toast notification or shaking effect could be added here
+        }
     };
 
     const removeField = (field: 'additional_emails' | 'additional_phones', index: number) => {
@@ -223,16 +266,25 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 </div>
 
                                 {(formData.type === 'company' || formData.type === 'authority') && (
-                                    <div className="col-span-12 animate-fadeIn">
+                                    <div className="col-span-12 animate-fadeIn grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                         <Input
                                             label={formData.type === 'authority' ? 'Behörde / Institution' : 'Firmenname'}
                                             name="company_name"
                                             value={formData.company_name}
                                             onChange={handleChange}
                                             placeholder={formData.type === 'authority' ? 'z.B. Standesamt Kassel' : 'z.B. Muster GmbH'}
-                                            helperText={getError('company_name') || (formData.type === 'authority' ? 'Vollständiger Name der Behörde' : 'Vollständiger Firmenname inkl. Rechtsform')}
+                                            helperText={getError('company_name') || (formData.type === 'authority' ? 'Name der Behörde' : 'Firmenname')}
                                             error={!!getError('company_name')}
                                         />
+                                        <div className="md:mt-0">
+                                            <SearchableSelect
+                                                label="Rechtsform"
+                                                options={legalFormOptions}
+                                                value={formData.legal_form}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, legal_form: val }))}
+                                                placeholder="Rechtsform wählen..."
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
@@ -318,9 +370,11 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 </button>
                                             </div>
                                         ))}
-                                        <button type="button" onClick={() => addField('additional_emails')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-2 ml-1">
-                                            <FaPlus className="text-[8px]" /> Weitere E-Mail hinzufügen
-                                        </button>
+                                        {formData.additional_emails.length < 3 && (
+                                            <button type="button" onClick={() => addField('additional_emails')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-2 ml-1">
+                                                <FaPlus className="text-[8px]" /> Weitere E-Mail hinzufügen
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
@@ -351,9 +405,11 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 </button>
                                             </div>
                                         ))}
-                                        <button type="button" onClick={() => addField('additional_phones')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-2 ml-1">
-                                            <FaPlus className="text-[8px]" /> Weitere Nummer hinzufügen
-                                        </button>
+                                        {formData.additional_phones.length < 3 && (
+                                            <button type="button" onClick={() => addField('additional_phones')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-2 ml-1">
+                                                <FaPlus className="text-[8px]" /> Weitere Nummer hinzufügen
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -428,10 +484,80 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             </div>
                         </div>
 
+                        {/* Section 4: Bookkeeping */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">04</div>
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Buchhaltung & Zahlungsdaten</h4>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-x-6 gap-y-4">
+                                <div className="col-span-12 md:col-span-4">
+                                    <Input
+                                        label="Zahlungsziel (Tage)"
+                                        name="payment_terms_days"
+                                        type="number"
+                                        value={formData.payment_terms_days}
+                                        onChange={handleChange}
+                                        placeholder="14"
+                                        helperText="Standard-Zahlungsfrist für Rechnungen"
+                                    />
+                                </div>
+                                {formData.type !== 'private' && (
+                                    <div className="col-span-12 md:col-span-4">
+                                        <Input
+                                            label="USt-IdNr."
+                                            name="vat_id"
+                                            value={formData.vat_id}
+                                            onChange={handleChange}
+                                            placeholder="DE123456789"
+                                        />
+                                    </div>
+                                )}
+                                {formData.type !== 'private' && (
+                                    <div className="col-span-12 md:col-span-4">
+                                        <Input
+                                            label="Steuernummer"
+                                            name="tax_id"
+                                            value={formData.tax_id}
+                                            onChange={handleChange}
+                                            placeholder="026 333 44444"
+                                        />
+                                    </div>
+                                )}
+                                <div className="col-span-12">
+                                    <Input
+                                        label="IBAN"
+                                        name="iban"
+                                        value={formData.iban}
+                                        onChange={handleChange}
+                                        placeholder="DE00 0000 0000 0000 0000 00"
+                                    />
+                                </div>
+                                <div className="col-span-12 md:col-span-4">
+                                    <Input
+                                        label="BIC"
+                                        name="bic"
+                                        value={formData.bic}
+                                        onChange={handleChange}
+                                        placeholder="ABCDEFGH"
+                                    />
+                                </div>
+                                <div className="col-span-12 md:col-span-8">
+                                    <Input
+                                        label="Bankname"
+                                        name="bank_name"
+                                        value={formData.bank_name}
+                                        onChange={handleChange}
+                                        placeholder="Sparkasse XY"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         {/* Section 4: Notes */}
                         <div className="space-y-6 pb-10">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">04</div>
+                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">05</div>
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Interne Akte</h4>
                             </div>
                             <Input
@@ -462,9 +588,9 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             {initialData ? 'Änderungen speichern' : 'Kunde anlegen'}
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
+                </form >
+            </div >
+        </div >
     );
 };
 

@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy, FaArchive, FaBolt, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy, FaArchive, FaBolt, FaCheck, FaCamera, FaFile, FaStar } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -12,7 +12,6 @@ import FileUploadModal from '../components/modals/FileUploadModal';
 import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
-import Input from '../components/common/Input';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, invoiceService, customerService, partnerService } from '../api/services';
@@ -22,6 +21,13 @@ import { getCountryName } from '../utils/countries';
 
 import TableSkeleton from '../components/common/TableSkeleton';
 import FilePreviewModal from '../components/modals/FilePreviewModal';
+
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('de-DE', {
+        style: 'currency',
+        currency: 'EUR'
+    }).format(value);
+};
 
 interface ProjectPosition {
     id: string;
@@ -93,10 +99,21 @@ interface ProjectData {
         email: string;
         initials: string;
         phone: string;
+        // Extended info
+        address_street?: string;
+        address_city?: string;
+        address_country?: string;
+        rating?: number;
+        languages?: string[];
+        price_per_word?: number;
+        price_per_line?: number;
     };
     documentsSent: boolean;
     pm: string;
     createdAt: string;
+    updatedAt: string;
+    creator?: { name: string };
+    editor?: { name: string };
     positions: ProjectPosition[];
     access_token?: string | null;
     messages?: Array<{
@@ -111,7 +128,6 @@ interface ProjectData {
     payments: any[];
     notes: string;
     files: ProjectFile[];
-    [key: string]: any;
 }
 
 // ==== ATTRIBUTE LABEL MAP ====
@@ -169,7 +185,7 @@ const formatFieldValue = (key: string, value: any): string => {
             const dayName = days[d.getDay()];
             const dateStr = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const timeStr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-            return `${dayName}, ${dateStr} ${timeStr}`;
+            return `${dayName}, ${dateStr} ${timeStr} `;
         }
     }
     if (key === 'price_total' || key === 'partner_cost_net' || key === 'down_payment' || key === 'copy_price') {
@@ -187,7 +203,7 @@ const formatFieldValue = (key: string, value: any): string => {
     return String(value);
 };
 
-const HistoryTab = ({ projectId, historySearch, setHistorySearch }: {
+const HistoryTab = ({ projectId, historySearch, setHistorySearch, historySortKey, setHistorySortKey, historySortDir, setHistorySortDir }: {
     projectId: string;
     historySearch: string;
     setHistorySearch: (s: string) => void;
@@ -203,149 +219,299 @@ const HistoryTab = ({ projectId, historySearch, setHistorySearch }: {
     });
 
     const filteredActivities = useMemo(() => {
-        if (!historySearch.trim()) return activities;
-        const search = historySearch.toLowerCase();
-        return activities.filter((a: any) =>
-            (a.causer?.name || '').toLowerCase().includes(search) ||
-            (a.event || '').toLowerCase().includes(search) ||
-            (a.subject_type || '').toLowerCase().includes(search) ||
-            JSON.stringify(a.properties).toLowerCase().includes(search)
-        );
-    }, [activities, historySearch]);
+        let filtered = activities;
+        if (historySearch.trim()) {
+            const search = historySearch.toLowerCase();
+            filtered = activities.filter((a: any) =>
+                (a.causer?.name || '').toLowerCase().includes(search) ||
+                (a.event || '').toLowerCase().includes(search) ||
+                (a.description || '').toLowerCase().includes(search) ||
+                (a.subject_type || '').toLowerCase().includes(search) ||
+                JSON.stringify(a.properties).toLowerCase().includes(search)
+            );
+        }
+
+        return [...filtered].sort((a: any, b: any) => {
+            let res = 0;
+            if (historySortKey === 'date') {
+                res = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            } else if (historySortKey === 'user') {
+                res = (a.causer?.name || '').localeCompare(b.causer?.name || '');
+            } else if (historySortKey === 'action') {
+                res = (a.event || '').localeCompare(b.event || '');
+            }
+            return historySortDir === 'asc' ? res : -res;
+        });
+    }, [activities, historySearch, historySortKey, historySortDir]);
 
     if (isLoading) {
-        return (
-            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-10 p-12 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-8 h-8 border-2 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                    <p className="text-sm text-slate-500">Historie wird geladen...</p>
-                </div>
-            </div>
-        );
+        return <TableSkeleton rows={5} columns={4} />;
     }
 
+    const renderChanges = (activity: any) => {
+        const oldAttributes = activity.properties?.old || {};
+        const newAttributes = activity.properties?.attributes || {};
+        const changedKeys = Object.keys(newAttributes).filter(k => k !== 'updated_at' && k !== 'created_at');
+
+        if (activity.event === 'created') return <span className="text-emerald-600 font-medium">Erstellt</span>;
+        if (activity.event === 'deleted') return <span className="text-red-600 font-medium">Gelöscht</span>;
+
+        if (changedKeys.length === 0) return <span className="text-slate-400 italic">-</span>;
+
+        return (
+            <div className="flex flex-col gap-1">
+                {changedKeys.map(key => {
+                    const label = ATTRIBUTE_LABELS[key] || key;
+                    const oldVal = formatFieldValue(key, oldAttributes[key]);
+                    const newVal = formatFieldValue(key, newAttributes[key]);
+                    return (
+                        <div key={key} className="flex items-center gap-1.5 text-xs">
+                            <span className="font-semibold text-slate-600">{label}:</span>
+                            <span className="text-red-400 line-through text-[10px] decoration-slate-300 max-w-[100px] truncate">{oldVal}</span>
+                            <FaArrowLeft className="rotate-180 text-[8px] text-slate-300" />
+                            <span className="text-emerald-600 font-medium max-w-[150px] truncate">{newVal}</span>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-10">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-10 h-full flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
                 <div className="flex items-center gap-3">
                     <h3 className="font-bold text-slate-700 flex items-center gap-2">
                         <FaClock className="text-brand-500" /> Projekt-Historie
                     </h3>
-                    <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">{filteredActivities.length}</span>
+                    <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold border border-slate-200">{filteredActivities.length}</span>
                 </div>
                 <div className="relative w-full sm:w-64">
                     <input
                         type="text"
                         value={historySearch}
                         onChange={(e) => setHistorySearch(e.target.value)}
-                        placeholder="Suche in Historie..."
-                        className="w-full pl-3 pr-8 py-1.5 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                        placeholder="Suche..."
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded text-xs focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition shadow-sm"
                     />
-                    <FaEye className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]" />
+                    <FaEye className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 </div>
             </div>
 
-            {filteredActivities.length === 0 ? (
-                <div className="p-12 flex flex-col items-center justify-center text-slate-400">
-                    <FaClock className="text-4xl mb-3 opacity-20" />
-                    <p className="text-sm font-medium">Keine Einträge in der Historie.</p>
-                    <p className="text-xs opacity-60 mt-1">Änderungen am Projekt werden hier automatisch protokolliert.</p>
-                </div>
-            ) : (
-                <div className="divide-y divide-slate-100">
-                    {filteredActivities.map((activity: any, index: number) => {
-                        const eventInfo = EVENT_LABELS[activity.event] || EVENT_LABELS['updated'];
-                        const oldAttributes = activity.properties?.old || {};
-                        const newAttributes = activity.properties?.attributes || {};
-                        const changedKeys = Object.keys(newAttributes).filter(k => k !== 'updated_at' && k !== 'created_at');
-                        const dateObj = new Date(activity.created_at);
-                        const isValidDate = !isNaN(dateObj.getTime());
-
-                        return (
-                            <div key={activity.id || index} className="px-6 py-4 hover:bg-slate-50/50 transition-colors group">
-                                <div className="flex items-start gap-4">
-                                    {/* Timeline dot */}
-                                    <div className="flex flex-col items-center mt-1 shrink-0">
-                                        <div className={clsx("w-3 h-3 rounded-full border-2 shadow-sm", eventInfo.borderColor, eventInfo.bgColor)} />
-                                        {index < filteredActivities.length - 1 && (
-                                            <div className="w-0.5 flex-1 bg-slate-100 mt-1 min-h-[16px]" />
-                                        )}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                                            {/* Event badge */}
-                                            <span className={clsx("px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border", eventInfo.color, eventInfo.bgColor, eventInfo.borderColor)}>
-                                                {eventInfo.label}
-                                            </span>
-
-                                            {/* Subject type */}
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                                                {activity.subject_type === 'Project' ? 'Projekt' :
-                                                    activity.subject_type === 'ProjectFile' ? 'Datei' :
-                                                        activity.subject_type === 'ProjectPosition' ? 'Position' :
-                                                            activity.subject_type === 'ProjectPayment' ? 'Zahlung' :
-                                                                activity.subject_type || 'Projekt'}
-                                            </span>
-
-                                            <span className="text-slate-300">·</span>
-
-                                            {/* User */}
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-[8px] font-black uppercase">
-                                                    {(activity.causer?.name || 'S').charAt(0)}
+            <div className="overflow-y-auto flex-1 custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th className="px-6 py-3 cursor-pointer hover:bg-slate-100 transition" onClick={() => { setHistorySortKey('date'); setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc'); }}>
+                                <div className="flex items-center gap-1">Datum {historySortKey === 'date' && (historySortDir === 'asc' ? '↑' : '↓')}</div>
+                            </th>
+                            <th className="px-6 py-3 cursor-pointer hover:bg-slate-100 transition" onClick={() => { setHistorySortKey('user'); setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc'); }}>
+                                <div className="flex items-center gap-1">Benutzer {historySortKey === 'user' && (historySortDir === 'asc' ? '↑' : '↓')}</div>
+                            </th>
+                            <th className="px-6 py-3 cursor-pointer hover:bg-slate-100 transition" onClick={() => { setHistorySortKey('action'); setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc'); }}>
+                                <div className="flex items-center gap-1">Aktion {historySortKey === 'action' && (historySortDir === 'asc' ? '↑' : '↓')}</div>
+                            </th>
+                            <th className="px-6 py-3 w-1/2">Details / Änderungen</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs bg-white">
+                        {filteredActivities.length === 0 ? (
+                            <tr>
+                                <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
+                                    Keine Einträge gefunden.
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredActivities.map((activity: any) => {
+                                const validDate = !isNaN(new Date(activity.created_at).getTime());
+                                return (
+                                    <tr key={activity.id} className="hover:bg-slate-50 transition-colors group">
+                                        <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-mono">
+                                            {validDate ? new Date(activity.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
+                                            <span className="text-slate-400 ml-2">{validDate ? new Date(activity.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-[10px] font-bold border border-brand-100">
+                                                    {(activity.causer?.name || '?')[0]}
                                                 </div>
-                                                <span className="text-xs font-bold text-slate-700">{activity.causer?.name || 'System'}</span>
+                                                <span className="font-medium text-slate-700">{activity.causer?.name || 'System'}</span>
                                             </div>
-
-                                            <span className="text-slate-300">·</span>
-
-                                            {/* Date */}
-                                            <span className="text-[10px] text-slate-400 font-medium">
-                                                {isValidDate ? dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
-                                                {isValidDate && <span className="ml-1.5 text-slate-300">{dateObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border",
+                                                EVENT_LABELS[activity.event]?.color || 'text-slate-600',
+                                                EVENT_LABELS[activity.event]?.bgColor || 'bg-slate-50',
+                                                EVENT_LABELS[activity.event]?.borderColor || 'border-slate-200'
+                                            )}>
+                                                {EVENT_LABELS[activity.event]?.label || activity.event}
                                             </span>
-                                        </div>
+                                            <div className="text-[10px] text-slate-400 mt-1">{activity.subject_type?.split('\\').pop() || 'Item'}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {renderChanges(activity)}
+                                        </td>
+                                    </tr>
+                                )
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
 
-                                        {/* Changed fields detail */}
-                                        {activity.event === 'updated' && changedKeys.length > 0 && (
-                                            <div className="mt-2 space-y-1">
-                                                {changedKeys.slice(0, 8).map((key) => {
-                                                    const label = ATTRIBUTE_LABELS[key] || key;
-                                                    const oldVal = formatFieldValue(key, oldAttributes[key]);
-                                                    const newVal = formatFieldValue(key, newAttributes[key]);
-                                                    return (
-                                                        <div key={key} className="flex items-center gap-2 text-xs">
-                                                            <span className="text-slate-500 font-medium w-36 shrink-0 truncate" title={label}>{label}</span>
-                                                            <span className="text-red-400 line-through text-[11px] max-w-[150px] truncate" title={oldVal}>{oldVal}</span>
-                                                            <FaArrowLeft className="rotate-180 text-[8px] text-slate-300 shrink-0" />
-                                                            <span className="text-emerald-700 font-semibold text-[11px] max-w-[150px] truncate" title={newVal}>{newVal}</span>
-                                                        </div>
-                                                    );
-                                                })}
-                                                {changedKeys.length > 8 && (
-                                                    <span className="text-[10px] text-slate-400 italic">+ {changedKeys.length - 8} weitere Felder geändert</span>
-                                                )}
-                                            </div>
-                                        )}
+const MessagesTab = ({ projectData, projectId }: { projectData: any, projectId: string }) => {
+    const queryClient = useQueryClient();
+    const [newMessage, setNewMessage] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-                                        {activity.event === 'created' && changedKeys.length > 0 && (
-                                            <div className="mt-2">
-                                                <span className="text-[10px] text-slate-400 italic">
-                                                    {activity.subject_type === 'Project' ? 'Projekt angelegt mit ' : ''}
-                                                    {changedKeys.length} {changedKeys.length === 1 ? 'Feld' : 'Feldern'}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [projectData.messages]);
+
+    const handleSendMessage = () => {
+        if (!newMessage.trim()) return;
+        projectService.postMessage(projectId, newMessage).then(() => {
+            setNewMessage('');
+            queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+        });
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const formData = new FormData();
+            formData.append('file', e.target.files[0]);
+            const toastId = toast.loading('Lade Datei hoch...');
+            projectService.uploadFile(projectId, formData).then(() => {
+                toast.dismiss(toastId);
+                toast.success('Datei gesendet');
+                const content = `[Datei hochgeladen: ${e.target.files![0].name}]`;
+                projectService.postMessage(projectId, content).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+                });
+            }).catch(() => {
+                toast.dismiss(toastId);
+                toast.error('Upload Fehler');
+            });
+        }
+    };
+
+    const messages = [...(projectData.messages || [])].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    return (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px] mb-10 animate-fadeIn">
+            {/* Header */}
+            <div className="bg-white p-4 border-b border-slate-100 flex justify-between items-center shadow-sm z-10">
+                <div>
+                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <FaComments /> Kommunikation
+                    </h3>
+                </div>
+                <div className="flex items-center gap-3">
+                    {!projectData.access_token ? (
+                        <button
+                            onClick={() => {
+                                projectService.generateToken(projectId).then(() => {
+                                    queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+                                    toast.success('Gast-Link generiert');
+                                });
+                            }}
+                            className="px-3 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase rounded-lg hover:bg-brand-700 transition shadow-sm"
+                        >
+                            Gast-Zugang aktivieren
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+                            <span className="text-[10px] text-slate-500 font-mono select-all truncate max-w-[150px]">
+                                {window.location.origin}/guest/project/{projectData.access_token}
+                            </span>
+                            <div className="h-3 w-px bg-slate-200 mx-1"></div>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin} /guest/project / ${projectData.access_token} `);
+                                    toast.success('Link kopiert');
+                                }}
+                                className="text-slate-400 hover:text-brand-600 transition p-1"
+                                title="Link kopieren"
+                            >
+                                <FaCopy />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Chat Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-slate-50/50">
+                {messages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-300">
+                        <p className="text-sm italic">Haben Sie Fragen? Schreiben Sie uns!</p>
+                    </div>
+                ) : (
+                    messages.map((msg: any) => {
+                        const isMe = !!msg.user_id;
+                        return (
+                            <div key={msg.id} className={clsx("flex flex-col max-w-[85%]", isMe ? "self-end items-end" : "self-start items-start")}>
+                                <div className={clsx("px-3 py-2 rounded-2xl text-xs shadow-sm", isMe ? "bg-brand-600 text-white rounded-br-none" : "bg-white border border-slate-200 text-slate-700 rounded-bl-none")}>
+                                    {msg.content}
+                                </div>
+                                <div className="text-[9px] text-slate-300 mt-0.5 flex gap-2 uppercase tracking-wide font-bold px-1">
+                                    <span>{msg.user ? msg.user.name : (msg.sender_name || 'Gast')}</span>
+                                    <span>{new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                             </div>
                         );
-                    })}
+                    })
+                )}
+                <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="p-3 border-t border-slate-100 bg-white">
+                <div className="flex gap-2 items-center">
+                    <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
+
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-400 hover:text-brand-600 transition shadow-sm"
+                    >
+                        <FaPaperclip />
+                    </button>
+                    <button
+                        className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-400 hover:text-brand-600 transition shadow-sm"
+                        onClick={() => toast.success('Kamera-Funktion (Demo)')}
+                    >
+                        <FaCamera />
+                    </button>
+
+                    <div className="flex-1 relative">
+                        <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Nachricht..."
+                            className="w-full h-9 pl-4 pr-10 rounded-full border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none shadow-sm text-xs transition-all"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSendMessage();
+                            }}
+                        />
+                        <button
+                            onClick={handleSendMessage}
+                            disabled={!newMessage.trim()}
+                            className="absolute right-1 top-1 w-7 h-7 bg-brand-600 text-white rounded-full flex items-center justify-center hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                        >
+                            <FaPaperPlane className="text-[10px]" />
+                        </button>
+                    </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };
@@ -408,12 +574,12 @@ const ProjectDetail = () => {
             const mapped: ProjectData = {
                 id: projectResponse.id.toString(),
                 name: projectResponse.project_name || '',
-                client: projectResponse.customer?.company_name || `${projectResponse.customer?.first_name} ${projectResponse.customer?.last_name}` || 'Unbekannter Kunde',
+                client: projectResponse.customer?.company_name || `${projectResponse.customer?.first_name} ${projectResponse.customer?.last_name} ` || 'Unbekannter Kunde',
                 customer_id: projectResponse.customer_id,
                 customer: projectResponse.customer ? {
                     id: projectResponse.customer.id.toString(),
-                    name: projectResponse.customer.company_name || `${projectResponse.customer.first_name} ${projectResponse.customer.last_name}`,
-                    contact: projectResponse.customer.company_name ? `${projectResponse.customer.first_name} ${projectResponse.customer.last_name}` : 'Privatkunde',
+                    name: projectResponse.customer.company_name || `${projectResponse.customer.first_name} ${projectResponse.customer.last_name} `,
+                    contact: projectResponse.customer.company_name ? `${projectResponse.customer.first_name} ${projectResponse.customer.last_name} ` : 'Privatkunde',
                     email: projectResponse.customer.email || '',
                     phone: projectResponse.customer.phone || '',
                     initials: ((projectResponse.customer.first_name?.[0] || '') + (projectResponse.customer.last_name?.[0] || 'K')).toUpperCase(),
@@ -444,10 +610,17 @@ const ProjectDetail = () => {
                 additional_doc_types: projectResponse.additional_doc_types,
                 translator: projectResponse.partner ? {
                     id: projectResponse.partner.id.toString(),
-                    name: projectResponse.partner.company || `${projectResponse.partner.first_name} ${projectResponse.partner.last_name}`,
+                    name: projectResponse.partner.company || `${projectResponse.partner.first_name} ${projectResponse.partner.last_name} `,
                     email: projectResponse.partner.email,
                     initials: ((projectResponse.partner.first_name?.[0] || '') + (projectResponse.partner.last_name?.[0] || 'P')).toUpperCase(),
-                    phone: projectResponse.partner.phone || ''
+                    phone: projectResponse.partner.phone || '',
+                    address_street: projectResponse.partner.address_street,
+                    address_city: projectResponse.partner.address_city,
+                    address_country: projectResponse.partner.address_country,
+                    rating: projectResponse.partner.rating,
+                    languages: projectResponse.partner.languages,
+                    price_per_word: projectResponse.partner.price_per_word,
+                    price_per_line: projectResponse.partner.price_per_line
                 } : {
                     name: '-',
                     email: '',
@@ -457,6 +630,9 @@ const ProjectDetail = () => {
                 documentsSent: !!projectResponse.documents_sent,
                 pm: projectResponse.pm?.name || 'Admin',
                 createdAt: new Date(projectResponse.created_at).toLocaleDateString('de-DE'),
+                updatedAt: new Date(projectResponse.updated_at).toLocaleDateString('de-DE'),
+                creator: projectResponse.creator,
+                editor: projectResponse.editor,
                 positions: (projectResponse.positions || []).map((p: any) => ({
                     id: p.id.toString(),
                     description: p.description,
@@ -512,7 +688,7 @@ const ProjectDetail = () => {
 
 
     const getDeadlineStatus = () => {
-        if (!projectData?.due) return { label: '-', color: 'bg-slate-100 text-slate-400', icon: <FaClock /> };
+        if (!projectData?.due) return { label: 'Kein Datum', color: 'bg-slate-50 text-slate-400 border-slate-100', icon: <FaClock /> };
         const today = new Date();
         const due = new Date(projectData.due);
         const diffTime = due.getTime() - today.getTime();
@@ -771,17 +947,6 @@ const ProjectDetail = () => {
         );
     };
 
-    const handleSendMessage = () => {
-        if (!newMessage.trim()) return;
-        const msg = {
-            id: Date.now().toString(),
-            from: 'Admin',
-            message: newMessage,
-            timestamp: new Date().toLocaleString('de-DE')
-        };
-        setProjectMessages([...projectMessages, msg]);
-        setNewMessage('');
-    };
 
     const uploadFileMutation = useMutation({
         mutationFn: async ({ files, onProgress }: { files: any[], onProgress: (id: string, p: number) => void }) => {
@@ -821,7 +986,7 @@ const ProjectDetail = () => {
             const fileExt = file.extension || fileName.split('.').pop();
 
             if (!fileName.includes('.') && fileExt) {
-                fileName = `${fileName}.${fileExt}`;
+                fileName = `${fileName}.${fileExt} `;
             }
 
             // Assuming downloadFile returns a response with blob data
@@ -999,58 +1164,62 @@ const ProjectDetail = () => {
     const deadlineStatus = getDeadlineStatus();
 
     return (
-        <div className="flex flex-col h-full fade-in pb-10">
-            {/* Project Header */}
-            <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden mb-6 flex-shrink-0">
-                <div className="px-6 py-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <div
-                            className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 cursor-pointer hover:text-brand-600 transition group"
+        <div className="flex flex-col fade-in pb-10">
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 md:p-6 mb-6">
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-3 md:gap-4">
+                        <button
                             onClick={() => navigate('/projects')}
+                            className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
                         >
-                            <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" /> Projekte
+                            <FaArrowLeft />
+                        </button>
+                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg md:text-xl font-bold border border-emerald-100 shadow-sm shrink-0">
+                            {projectData.name.substring(0, 2).toUpperCase()}
                         </div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <h1 className="text-xl font-black text-slate-800 tracking-tight">{projectData.name}</h1>
-                            {getStatusBadge(projectData.status)}
-                            {projectData.priority !== 'low' && (
-                                <div className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-tight",
-                                    projectData.priority === 'express' ? "text-red-600" : "text-orange-600"
-                                )}>
-                                    <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
-                                    {projectData.priority === 'express' ? <FaBolt className="text-[10px]" /> : <FaFlag className="text-[10px]" />}
-                                </div>
-                            )}
-                        </div>
-                        <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
-                            <span className="text-slate-800">{projectData.client}</span>
-                            <span className="text-slate-300">•</span>
-                            <span>ID: {projectData.id}</span>
-                            <span className="text-slate-300">•</span>
-                            <div className="flex items-center gap-2 text-xs font-bold bg-slate-50 rounded-md px-2 py-1 border border-slate-200">
-                                <img src={sourceLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
-                                <span className="text-slate-600">{sourceLang.name}</span>
-                                <span className="text-slate-300 mx-1">→</span>
-                                <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
-                                <span className="text-slate-600">{targetLang.name}</span>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <h1 className="text-lg md:text-2xl font-bold text-slate-800 truncate">{projectData.name}</h1>
+                                {projectData.priority !== 'low' && (
+                                    <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight border",
+                                        projectData.priority === 'express' ? "bg-red-50 text-red-700 border-red-200" : "bg-orange-50 text-orange-700 border-orange-200"
+                                    )}>
+                                        <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
+                                        {projectData.priority === 'express' ? <FaBolt className="text-[10px]" /> : <FaFlag className="text-[10px]" />}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-slate-500 flex-wrap mt-2">
+                                {getStatusBadge(projectData.status)}
                             </div>
                         </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setIsEditModalOpen(true)}
-                            className="px-4 py-2 border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2 transition shadow-sm uppercase tracking-wide"
-                        >
-                            <FaEdit className="text-[10px]" /> Bearbeiten
-                        </button>
-                        <button
-                            onClick={() => setIsInvoiceModalOpen(true)}
-                            className="px-4 py-2 bg-emerald-600 text-white rounded text-xs font-bold hover:bg-emerald-700 transition shadow-sm active:scale-95 uppercase tracking-wide flex items-center gap-2"
-                        >
-                            <FaFileInvoiceDollar /> Rechnung erstellen
-                        </button>
+
+                        <div className="flex items-center gap-2 flex-wrap ml-0 md:ml-auto self-start mt-1">
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-3 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                            >
+                                <FaEdit /> Bearbeiten
+                            </button>
+                            <button
+                                onClick={() => setIsInvoiceModalOpen(true)}
+                                className="bg-brand-600 border border-brand-600 text-white hover:bg-brand-700 px-3 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                            >
+                                <FaFileInvoiceDollar /> Rechnung
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                {/* Meta Information Row */}
+                <div className="px-6 pb-4 flex items-center gap-6 flex-wrap text-[11px] text-slate-400">
+                    <span>Projekt-ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
+                    <span className="hidden sm:inline text-slate-300">|</span>
+                    <span>Erstellt: <span className="text-slate-600">{projectData.createdAt} {projectData.creator ? `von ${projectData.creator.name}` : ''}</span></span>
+                    <span className="hidden sm:inline text-slate-300">|</span>
+                    <span>Geändert: <span className="text-slate-600">{projectData.updatedAt} {projectData.editor ? `von ${projectData.editor.name}` : ''}</span></span>
+                </div>
+
 
                 {/* Tab Navigation */}
                 <div className="px-6 border-t border-slate-100 flex gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
@@ -1071,7 +1240,7 @@ const ProjectDetail = () => {
                                         : 'border-transparent text-slate-400 hover:text-slate-600'
                                 )}
                             >
-                                {tab === 'overview' ? 'Projekt-Cockpit' :
+                                {tab === 'overview' ? 'Stammdaten' :
                                     tab === 'files' ? 'Dateien' :
                                         tab === 'finances' ? 'Kalkulation & Marge' :
                                             tab === 'history' ? 'Historie' : 'Kommunikation'}
@@ -1098,14 +1267,7 @@ const ProjectDetail = () => {
                             <h3 className="font-bold text-slate-700 flex items-center gap-2">
                                 <FaFileInvoiceDollar className="text-brand-500" /> Projekt-Stammdaten
                             </h3>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setIsEditModalOpen(true)}
-                                    className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline"
-                                >
-                                    Bearbeiten
-                                </button>
-                            </div>
+
                         </div>
 
                         <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-y-10 gap-x-12">
@@ -1116,10 +1278,23 @@ const ProjectDetail = () => {
                                     <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Basisdaten</h4>
                                     <div className="grid grid-cols-[110px_1fr] gap-y-3 gap-x-4 text-sm">
                                         <span className="text-slate-500 font-medium">Bezeichnung</span>
-                                        <span className="text-slate-800 font-semibold">{projectData.name}</span>
+                                        <span className="text-slate-800">{projectData.name}</span>
+
+                                        <span className="text-slate-500 font-medium">Sprachpaar</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-700 shadow-sm">
+                                                <img src={sourceLang.flagUrl} alt="" className="w-3.5 h-2.5 rounded-[1px] object-cover" />
+                                                <span className="font-medium">{sourceLang.name}</span>
+                                            </div>
+                                            <FaArrowLeft className="rotate-180 text-slate-300 text-xs" />
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-700 shadow-sm">
+                                                <img src={targetLang.flagUrl} alt="" className="w-3.5 h-2.5 rounded-[1px] object-cover" />
+                                                <span className="font-medium">{targetLang.name}</span>
+                                            </div>
+                                        </div>
 
                                         <span className="text-slate-500 font-medium">Projekt-ID</span>
-                                        <span className="text-slate-600 font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded w-fit">{projectData.id}</span>
+                                        <span className="text-slate-600 font-mono text-xs px-1.5 py-0.5 rounded w-fit">{projectData.id}</span>
 
                                         <span className="text-slate-500 font-medium">Status</span>
                                         <div>{getStatusBadge(projectData.status)}</div>
@@ -1127,11 +1302,11 @@ const ProjectDetail = () => {
                                         <span className="text-slate-500 font-medium">Lieferdatum</span>
                                         <div className="flex items-center gap-3">
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-800">
+                                                <span className="text-slate-800">
                                                     {projectData.due ? (() => {
                                                         const d = new Date(projectData.due);
                                                         const days = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
-                                                        return `${days[d.getDay()]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+                                                        return `${days[d.getDay()]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} `;
                                                     })() : 'keine Angabe'}
                                                 </span>
                                             </div>
@@ -1181,40 +1356,39 @@ const ProjectDetail = () => {
                                         </div>
                                     </div>
 
-                                    <div className="rounded-lg border border-slate-200 p-4 flex-1 flex flex-col justify-between">
+                                    <div className="flex-1 flex flex-col justify-between">
                                         <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
                                             <span className="text-slate-500 font-medium">Firma/Name</span>
-                                            <span className="text-slate-800 font-bold">{projectData.customer.name}</span>
+                                            <span className="text-slate-800">{projectData.customer.name}</span>
 
                                             <span className="text-slate-500 font-medium">Ansprechpartner</span>
-                                            <span className="text-slate-800">{projectData.customer.contact}</span>
+                                            <span className="text-slate-800 font-bold">{projectData.customer.contact}</span>
 
-                                            <span className="text-slate-500 font-medium">Adresse</span>
-                                            <div className="text-slate-800">
-                                                {projectData.customer.address_street ? (
-                                                    <>
-                                                        <span className="block">
-                                                            {projectData.customer.address_street} {projectData.customer.address_house_no || ''}
-                                                        </span>
-                                                        <span className="block">
-                                                            {projectData.customer.address_zip} {projectData.customer.address_city}
-                                                        </span>
-                                                        {projectData.customer.address_country && (
-                                                            <span className="block text-slate-500 text-xs">
-                                                                {getCountryName(projectData.customer.address_country)}
-                                                            </span>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <span className="text-slate-400 italic">Keine Adresse hinterlegt</span>
-                                                )}
-                                            </div>
+                                            <span className="text-slate-500 font-medium">Straße</span>
+                                            <span className="text-slate-800">{projectData.customer.address_street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">Hausnummer</span>
+                                            <span className="text-slate-800">{projectData.customer.address_house_no || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">PLZ</span>
+                                            <span className="text-slate-800">{projectData.customer.address_zip || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">Stadt</span>
+                                            <span className="text-slate-800">{projectData.customer.address_city || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">Land</span>
+                                            <span className="text-slate-800">
+                                                {projectData.customer.address_country === 'DE' ? 'Deutschland' :
+                                                    projectData.customer.address_country === 'AT' ? 'Österreich' :
+                                                        projectData.customer.address_country === 'CH' ? 'Schweiz' :
+                                                            projectData.customer.address_country || <span className="text-slate-400 italic">Keine Angabe</span>}
+                                            </span>
 
                                             <span className="text-slate-500 font-medium">Email</span>
-                                            <a href={`mailto:${projectData.customer.email}`} className="text-brand-600 hover:underline truncate block">{projectData.customer.email || 'keine Angabe'}</a>
+                                            <a href={`mailto:${projectData.customer.email} `} className="text-brand-600 hover:underline truncate block">{projectData.customer.email || 'keine Angabe'}</a>
 
                                             <span className="text-slate-500 font-medium">Telefon</span>
-                                            <span className="text-slate-800 font-semibold">{projectData.customer.phone || 'keine Telefonnummer'}</span>
+                                            <span className="text-slate-800">{projectData.customer.phone || 'keine Telefonnummer'}</span>
                                         </div>
 
                                         <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-slate-200">
@@ -1250,50 +1424,52 @@ const ProjectDetail = () => {
                                 <div>
                                     <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Auftragsdetails</h4>
                                     <div className="grid grid-cols-[110px_1fr] gap-y-3 gap-x-4 text-sm">
-                                        <span className="text-slate-500 font-medium">Sprachpaar</span>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-1.5 text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded shadow-sm text-slate-700">
-                                                <img src={sourceLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
-                                                <span>{sourceLang.name}</span>
-                                            </div>
-                                            <FaArrowLeft className="rotate-180 text-slate-300 text-xs" />
-                                            <div className="flex items-center gap-1.5 text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded shadow-sm text-slate-700">
-                                                <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-sm object-cover" />
-                                                <span>{targetLang.name}</span>
-                                            </div>
-                                        </div>
-
                                         <span className="text-slate-500 font-medium mt-1">Dokumentenart</span>
                                         <div className="flex flex-wrap gap-1.5">
                                             {projectData.docType.length > 0 ? projectData.docType.map((d: string) => (
-                                                <span key={d} className="px-2 py-0.5 bg-brand-50 text-brand-700 rounded text-[10px] font-bold uppercase border border-brand-100 tracking-wide">{d}</span>
+                                                <span key={d} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase border border-slate-200 tracking-wide">{d}</span>
                                             )) : <span className="text-slate-400 text-xs italic">keine Angabe</span>}
                                         </div>
 
                                         <span className="text-slate-500 font-medium mt-1">Besonderheiten</span>
-                                        <div className="flex flex-col gap-2">
-                                            {[
-                                                { label: 'Beglaubigung', value: projectData.isCertified },
-                                                { label: 'Apostille', value: projectData.hasApostille },
-                                                { label: 'Express', value: projectData.isExpress },
-                                                { label: 'Klassifizierung', value: projectData.classification === 'ja' },
-                                            ].map((item) => (
-                                                <div key={item.label} className="flex items-center gap-2">
-                                                    <div className={clsx("w-4 h-4 rounded border flex items-center justify-center transition-colors", item.value ? "bg-emerald-500 border-emerald-600 text-white" : "bg-slate-50 border-slate-200 text-slate-200")}>
-                                                        {item.value && <FaCheck className="text-[10px]" />}
-                                                    </div>
-                                                    <span className={clsx("text-xs font-bold", item.value ? "text-slate-700" : "text-slate-400 opacity-60")}>{item.label}</span>
-                                                </div>
-                                            ))}
-                                            {(projectData.copies > 0) && (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 rounded border bg-emerald-500 border-emerald-600 text-white flex items-center justify-center">
-                                                        <FaCheck className="text-[10px]" />
-                                                    </div>
-                                                    <span className="text-xs font-bold text-slate-700">{projectData.copies}x Zusätzliche Kopien</span>
-                                                </div>
+                                        <ul className="flex flex-col gap-1 text-sm text-slate-700">
+                                            {!projectData.isCertified && !projectData.hasApostille && !projectData.isExpress && projectData.classification !== 'ja' && projectData.copies <= 0 && (
+                                                <li className="text-slate-400 italic">Keine Besonderheiten</li>
                                             )}
-                                        </div>
+                                            {projectData.isCertified && (
+                                                <li className="flex items-center gap-2">
+                                                    <FaCheck className="text-emerald-500 text-[10px]" /> Beglaubigung
+                                                </li>
+                                            )}
+                                            {projectData.hasApostille && (
+                                                <li className="flex items-center gap-2">
+                                                    <FaCheck className="text-emerald-500 text-[10px]" /> Apostille
+                                                </li>
+                                            )}
+                                            {projectData.isExpress && (
+                                                <li className="flex items-center gap-2">
+                                                    <FaBolt className="text-orange-500 text-[10px]" /> Express-Service
+                                                </li>
+                                            )}
+                                            {projectData.classification === 'ja' && (
+                                                <li className="flex items-center gap-2">
+                                                    <FaCheck className="text-emerald-500 text-[10px]" /> Klassifizierung
+                                                </li>
+                                            )}
+                                            {projectData.copies > 0 && (
+                                                <li className="flex items-center gap-2">
+                                                    <FaCopy className="text-slate-400 text-[10px]" />
+                                                    <span>
+                                                        {projectData.copies}x Kopie(n)
+                                                        {projectData.copyPrice > 0 && (
+                                                            <span className="text-slate-500 text-xs ml-1">
+                                                                (+ {formatCurrency(projectData.copies * projectData.copyPrice)})
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </li>
+                                            )}
+                                        </ul>
                                     </div>
                                 </div>
 
@@ -1322,16 +1498,55 @@ const ProjectDetail = () => {
                                         </div>
                                     </div>
 
-                                    <div className="rounded-lg border border-slate-200 p-4 flex-1 flex flex-col justify-between">
+                                    <div className="flex-1 flex flex-col justify-between">
                                         <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
-                                            <span className="text-slate-500 font-medium">Name</span>
-                                            <span className="text-slate-800 font-bold">{projectData.translator?.name || 'keine Angabe'}</span>
+                                            {projectData.translator?.id ? (
+                                                <>
+                                                    <span className="text-slate-500 font-medium">Partner</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-slate-800 font-bold">{projectData.translator.name}</span>
+                                                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                                            <span className="font-semibold">ID:</span> {projectData.translator.id}
+                                                        </span>
+                                                    </div>
 
-                                            <span className="text-slate-500 font-medium">Email</span>
-                                            <a href={`mailto:${projectData.translator?.email}`} className="text-brand-600 hover:underline truncate block">{projectData.translator?.email || 'keine Angabe'}</a>
+                                                    <span className="text-slate-500 font-medium">Bewertung</span>
+                                                    <div className="flex items-center gap-1 text-amber-400 text-xs">
+                                                        {[1, 2, 3, 4, 5].map(star => (
+                                                            <FaStar key={star} className={star <= (projectData.translator.rating || 0) ? "" : "text-slate-200"} />
+                                                        ))}
+                                                        <span className="text-slate-500 font-bold ml-1">({projectData.translator.rating || 0})</span>
+                                                    </div>
 
-                                            <span className="text-slate-500 font-medium">Telefon</span>
-                                            <span className="text-slate-800 font-semibold">{projectData.translator?.phone || 'keine Telefonnummer'}</span>
+                                                    <span className="text-slate-500 font-medium">Sprachen</span>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {(Array.isArray(projectData.translator.languages) ? projectData.translator.languages : []).map((langCode: string, i: number) => (
+                                                            <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-700 shadow-sm">
+                                                                <img src={getFlagUrl(langCode)} alt={langCode} className="w-3.5 h-2.5 rounded-[1px] object-cover" />
+                                                                <span className="font-medium">{getLanguageLabel(langCode)}</span>
+                                                            </div>
+                                                        ))}
+                                                        {(!projectData.translator.languages || projectData.translator.languages.length === 0) && <span className="text-slate-400 italic">Keine</span>}
+                                                    </div>
+
+                                                    <span className="text-slate-500 font-medium">Adresse</span>
+                                                    <div className="text-slate-800 text-sm">
+                                                        {projectData.translator.address_city ? (
+                                                            <span>
+                                                                {projectData.translator.address_city}, {projectData.translator.address_country || 'DE'}
+                                                            </span>
+                                                        ) : <span className="text-slate-400 italic">Keine Adresse</span>}
+                                                    </div>
+
+                                                    <span className="text-slate-500 font-medium">Wortpreis</span>
+                                                    <span className="text-slate-800 font-mono text-xs">{projectData.translator.price_per_word ? `${projectData.translator.price_per_word} €` : '-'}</span>
+
+                                                    <span className="text-slate-500 font-medium">Zeilenpreis</span>
+                                                    <span className="text-slate-800 font-mono text-xs">{projectData.translator.price_per_line ? `${projectData.translator.price_per_line} €` : '-'}</span>
+                                                </>
+                                            ) : (
+                                                <span className="col-span-2 text-slate-400 italic py-4 text-center">Kein Partner zugewiesen</span>
+                                            )}
 
                                             <span className="text-slate-500 font-medium">Status</span>
                                             <div className="flex items-center gap-2">
@@ -1342,18 +1557,20 @@ const ProjectDetail = () => {
                                             </div>
                                         </div>
 
-                                        {!projectData.documentsSent ? (
-                                            <button
-                                                className="w-full py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded hover:bg-brand-700 transition shadow-sm flex items-center justify-center gap-2"
-                                                onClick={() => updateProjectMutation.mutate({ documents_sent: true })}
-                                            >
-                                                <FaPaperPlane /> Dokumente senden
-                                            </button>
-                                        ) : (
-                                            <div className="w-full py-1.5 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded flex items-center justify-center gap-2 border border-brand-100">
-                                                <FaCheckCircle /> Versand bestätigt
-                                            </div>
-                                        )}
+                                        <div className="mt-4">
+                                            {!projectData.documentsSent ? (
+                                                <button
+                                                    className="px-4 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded hover:bg-brand-700 transition shadow-sm flex items-center gap-2"
+                                                    onClick={() => updateProjectMutation.mutate({ documents_sent: true })}
+                                                >
+                                                    <FaPaperPlane /> Dokumente senden
+                                                </button>
+                                            ) : (
+                                                <div className="px-4 py-1.5 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded flex items-center gap-2 border border-brand-100 w-fit">
+                                                    <FaCheckCircle /> Versand bestätigt
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1769,7 +1986,7 @@ const ProjectDetail = () => {
                                                             financials.marginPercent > 30 ? "bg-emerald-500" :
                                                                 financials.marginPercent > 10 ? "bg-amber-500" : "bg-red-500"
                                                         )}
-                                                        style={{ width: `${Math.min(100, Math.max(0, financials.marginPercent))}%` }}
+                                                        style={{ width: `${Math.min(100, Math.max(0, financials.marginPercent))}% ` }}
                                                     ></div>
                                                 </div>
                                                 <div className="flex justify-between text-[9px] font-bold text-emerald-600/70">
@@ -1797,515 +2014,29 @@ const ProjectDetail = () => {
 
 
 
-                {activeTab === 'messages' && (
-                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10 h-full flex flex-col min-h-[500px]">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white gap-4">
-                            <div>
-                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Projekt-Kommunikation</h3>
-                                <p className="text-[10px] text-slate-400 font-bold">Nachrichten & Gast-Zugang</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {!projectData.access_token ? (
-                                    <button
-                                        onClick={() => {
-                                            projectService.generateToken(id!).then(() => {
-                                                queryClient.invalidateQueries({ queryKey: ['projects', id] });
-                                                toast.success('Gast-Link generiert');
-                                            });
-                                        }}
-                                        className="px-3 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase rounded hover:bg-brand-700 transition"
-                                    >
-                                        Gast-Zugang aktivieren
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded px-2 py-1">
-                                        <span className="text-[10px] text-slate-500 font-mono select-all truncate max-w-[200px]">
-                                            {window.location.origin}/guest/project/{projectData.access_token}
-                                        </span>
-                                        <button
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(`${window.location.origin}/guest/project/${projectData.access_token}`);
-                                                toast.success('Link kopiert');
-                                            }}
-                                            className="text-slate-400 hover:text-brand-600 p-1"
-                                            title="Kopieren"
-                                        >
-                                            <FaCopy />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                {
+                    activeTab === 'messages' && (
+                        <div className="mb-10 animate-fadeIn">
+                            <MessagesTab projectData={projectData} projectId={id!} />
                         </div>
-
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-slate-50/30 flex flex-col-reverse">
-                            {(!projectData.messages || projectData.messages.length === 0) && (
-                                <div className="text-center text-slate-400 italic py-10 self-center">Keine Nachrichten vorhanden.</div>
-                            )}
-                            {[...(projectData.messages || [])].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((msg: any) => (
-                                <div key={msg.id} className={clsx("flex flex-col max-w-[80%]", msg.user_id ? "self-end items-end" : "self-start items-start")}>
-                                    <div className={clsx("px-4 py-2 rounded-lg text-sm shadow-sm", msg.user_id ? "bg-brand-50 text-brand-900 rounded-tr-none" : "bg-white border border-slate-200 text-slate-700 rounded-tl-none")}>
-                                        {msg.content}
-                                    </div>
-                                    <div className="text-[10px] text-slate-400 mt-1 flex gap-2">
-                                        <span className="font-bold">{msg.user ? msg.user.name : (msg.sender_name || 'Gast')}</span>
-                                        <span>•</span>
-                                        <span>{new Date(msg.created_at).toLocaleString('de-DE')}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="p-4 border-t border-slate-100 bg-white">
-                            <div className="flex gap-2">
-                                <textarea
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Nachricht schreiben..."
-                                    className="flex-1 border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none h-20 bg-slate-50"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            if (newMessage.trim()) {
-                                                projectService.postMessage(id!, newMessage).then(() => {
-                                                    setNewMessage('');
-                                                    queryClient.invalidateQueries({ queryKey: ['projects', id] });
-                                                });
-                                            }
-                                        }
-                                    }}
-                                />
-                                <button
-                                    onClick={() => {
-                                        if (newMessage.trim()) {
-                                            projectService.postMessage(id!, newMessage).then(() => {
-                                                setNewMessage('');
-                                                queryClient.invalidateQueries({ queryKey: ['projects', id] });
-                                            });
-                                        }
-                                    }}
-                                    disabled={!newMessage.trim()}
-                                    className="px-4 bg-brand-600 text-white rounded-lg font-bold hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase text-[10px] tracking-widest"
-                                >
-                                    Senden
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {
                     activeTab === 'history' && (
-                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10 h-full">
-                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white gap-4">
-                                <div>
-                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Projekt-Historie</h3>
-                                    <p className="text-[10px] text-slate-400 font-bold">Vollständiges Änderungsprotokoll</p>
-                                </div>
-                                <div className="flex items-center gap-2 max-w-xs w-full">
-                                    <Input
-                                        value={historySearch}
-                                        onChange={(e: any) => setHistorySearch(e.target.value)}
-                                        placeholder="Suchen..."
-                                        className="h-9 text-xs"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="overflow-y-auto max-h-[600px] custom-scrollbar border border-slate-200 rounded-lg">
-                                <table className="w-full text-left border-collapse relative">
-                                    <thead className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-                                        <tr>
-                                            <th className="px-4 py-4 w-10 text-center bg-slate-50">#</th>
-                                            <th
-                                                className="px-6 py-4 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
-                                                onClick={() => {
-                                                    if (historySortKey === 'date') {
-                                                        setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
-                                                    } else {
-                                                        setHistorySortKey('date');
-                                                        setHistorySortDir('desc');
-                                                    }
-                                                }}
-                                            >
-                                                <span className="flex items-center gap-1">
-                                                    Wann
-                                                    {historySortKey === 'date' && (
-                                                        <span className="text-brand-500">{historySortDir === 'asc' ? '↑' : '↓'}</span>
-                                                    )}
-                                                </span>
-                                            </th>
-                                            <th
-                                                className="px-6 py-4 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
-                                                onClick={() => {
-                                                    if (historySortKey === 'user') {
-                                                        setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
-                                                    } else {
-                                                        setHistorySortKey('user');
-                                                        setHistorySortDir('asc');
-                                                    }
-                                                }}
-                                            >
-                                                <span className="flex items-center gap-1">
-                                                    Wer
-                                                    {historySortKey === 'user' && (
-                                                        <span className="text-brand-500">{historySortDir === 'asc' ? '↑' : '↓'}</span>
-                                                    )}
-                                                </span>
-                                            </th>
-                                            <th
-                                                className="px-6 py-4 cursor-pointer hover:text-slate-700 transition select-none bg-slate-50"
-                                                onClick={() => {
-                                                    if (historySortKey === 'action') {
-                                                        setHistorySortDir(historySortDir === 'asc' ? 'desc' : 'asc');
-                                                    } else {
-                                                        setHistorySortKey('action');
-                                                        setHistorySortDir('asc');
-                                                    }
-                                                }}
-                                            >
-                                                <span className="flex items-center gap-1">
-                                                    Feld / Aktion
-                                                    {historySortKey === 'action' && (
-                                                        <span className="text-brand-500">{historySortDir === 'asc' ? '↑' : '↓'}</span>
-                                                    )}
-                                                </span>
-                                            </th>
-                                            <th className="px-6 py-4 bg-slate-50">Von Wert</th>
-                                            <th className="px-6 py-4 bg-slate-50">Zu Wert</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-xs">
-                                        {(() => {
-                                            // Helper for date formatting
-                                            const formatDate = (date: Date) => {
-                                                if (!date) return '-';
-                                                return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
-                                                    ' ' +
-                                                    date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-                                            };
-
-                                            // Build real history from project data
-                                            const historyItems: { date: Date; dateStr: string; user: string; action: string; from: string; to: string }[] = [];
-
-                                            // Project creation
-                                            if (projectData?.createdAt || projectData?.created_at) {
-                                                const createdDate = new Date(projectData.createdAt || projectData.created_at);
-                                                historyItems.push({
-                                                    date: createdDate,
-                                                    dateStr: formatDate(createdDate),
-                                                    user: projectData.pm || 'System',
-                                                    action: 'Projekt erstellt',
-                                                    from: '-',
-                                                    to: projectData.name
-                                                });
-                                            }
-
-                                            // Status changes
-                                            if (projectData?.status) {
-                                                const statusDate = projectData.updated_at ? new Date(projectData.updated_at) : new Date();
-                                                historyItems.push({
-                                                    date: statusDate,
-                                                    dateStr: formatDate(statusDate),
-                                                    user: projectData.pm || 'System',
-                                                    action: 'Status',
-                                                    from: 'Neu',
-                                                    to: projectData.status === 'new' ? 'Neu' :
-                                                        projectData.status === 'in_progress' ? 'In Bearbeitung' :
-                                                            projectData.status === 'completed' ? 'Abgeschlossen' :
-                                                                projectData.status === 'cancelled' ? 'Storniert' : projectData.status
-                                                });
-                                            }
-
-                                            // Customer assigned
-                                            if (projectData?.customer?.name) {
-                                                const customerDate = projectData.createdAt ? new Date(new Date(projectData.createdAt).getTime() + 60000) : new Date();
-                                                historyItems.push({
-                                                    date: customerDate,
-                                                    dateStr: formatDate(customerDate),
-                                                    user: projectData.pm || 'System',
-                                                    action: 'Kunde zugewiesen',
-                                                    from: '-',
-                                                    to: projectData.customer.name
-                                                });
-                                            }
-
-                                            // Translator assigned
-                                            if (projectData?.translator?.name) {
-                                                const translatorDate = projectData.createdAt ? new Date(new Date(projectData.createdAt).getTime() + 120000) : new Date();
-                                                historyItems.push({
-                                                    date: translatorDate,
-                                                    dateStr: formatDate(translatorDate),
-                                                    user: projectData.pm || 'System',
-                                                    action: 'Übersetzer zugewiesen',
-                                                    from: '-',
-                                                    to: projectData.translator.name
-                                                });
-                                            }
-
-                                            // Documents sent
-                                            if (projectData?.documentsSent) {
-                                                const sentDate = projectData.updated_at ? new Date(projectData.updated_at) : new Date();
-                                                historyItems.push({
-                                                    date: sentDate,
-                                                    dateStr: formatDate(sentDate),
-                                                    user: projectData.pm || 'System',
-                                                    action: 'Dokumente versendet',
-                                                    from: 'Ausstehend',
-                                                    to: 'Versendet'
-                                                });
-                                            }
-
-                                            // Delivery date set
-                                            if (projectData?.due) {
-                                                const dueSetDate = projectData.createdAt ? new Date(new Date(projectData.createdAt).getTime() + 180000) : new Date();
-                                                historyItems.push({
-                                                    date: dueSetDate,
-                                                    dateStr: formatDate(dueSetDate),
-                                                    user: projectData.pm || 'System',
-                                                    action: 'Lieferdatum gesetzt',
-                                                    from: '-',
-                                                    to: new Date(projectData.due).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                                                });
-                                            }
-
-                                            // Files uploaded
-                                            if (projectData?.files && projectData.files.length > 0) {
-                                                projectData.files.forEach((file: any) => {
-                                                    const fileDate = file.created_at ? new Date(file.created_at) : new Date();
-                                                    historyItems.push({
-                                                        date: fileDate,
-                                                        dateStr: formatDate(fileDate),
-                                                        user: file.uploaded_by || file.uploader?.name || 'System',
-                                                        action: 'Datei hochgeladen',
-                                                        from: '-',
-                                                        to: file.name || file.original_name || 'Datei'
-                                                    });
-                                                });
-                                            }
-
-                                            // Use backend history if available
-                                            if (projectData?.history && Array.isArray(projectData.history) && projectData.history.length > 0) {
-                                                projectData.history.forEach((item: any) => {
-                                                    const itemDate = item.created_at ? new Date(item.created_at) : new Date(item.date || Date.now());
-                                                    historyItems.push({
-                                                        date: itemDate,
-                                                        dateStr: formatDate(itemDate),
-                                                        user: item.user || item.changed_by || 'System',
-                                                        action: item.action || item.field || 'Änderung',
-                                                        from: item.from || item.old_value || '-',
-                                                        to: item.to || item.new_value || '-'
-                                                    });
-                                                });
-                                            }
-
-                                            // Filter
-                                            const filtered = historyItems.filter(item =>
-                                                item.action.toLowerCase().includes(historySearch.toLowerCase()) ||
-                                                item.user.toLowerCase().includes(historySearch.toLowerCase()) ||
-                                                item.to.toLowerCase().includes(historySearch.toLowerCase())
-                                            );
-
-                                            // Sort
-                                            const sorted = [...filtered].sort((a, b) => {
-                                                let cmp = 0;
-                                                if (historySortKey === 'date') {
-                                                    cmp = a.date.getTime() - b.date.getTime();
-                                                } else if (historySortKey === 'user') {
-                                                    cmp = a.user.localeCompare(b.user);
-                                                } else if (historySortKey === 'action') {
-                                                    cmp = a.action.localeCompare(b.action);
-                                                }
-                                                return historySortDir === 'asc' ? cmp : -cmp;
-                                            });
-
-                                            if (sorted.length === 0) {
-                                                return (
-                                                    <tr>
-                                                        <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
-                                                            Keine Historie-Einträge gefunden.
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            }
-
-                                            return sorted.map((item, i) => (
-                                                <tr key={i} className="hover:bg-slate-50 transition-colors border-b border-slate-50">
-                                                    <td className="px-4 py-3 text-center text-[10px] text-slate-400 font-mono">
-                                                        {i + 1}
-                                                    </td>
-                                                    <td className="px-6 py-3 font-bold text-slate-700 whitespace-nowrap text-xs">{item.dateStr}</td>
-                                                    <td className="px-6 py-3 text-slate-600 text-xs">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-500">
-                                                                {item.user?.[0] || '?'}
-                                                            </div>
-                                                            {item.user}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-3 font-bold text-slate-800 text-xs">{item.action}</td>
-                                                    <td className="px-6 py-3 text-slate-400 italic font-medium max-w-[150px] truncate text-xs" title={item.from}>{item.from}</td>
-                                                    <td className="px-6 py-3 text-emerald-600 font-bold max-w-[150px] truncate text-xs" title={item.to}>{item.to}</td>
-                                                </tr>
-                                            ));
-                                        })()}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <HistoryTab
+                            projectId={id!}
+                            historySearch={historySearch}
+                            setHistorySearch={setHistorySearch}
+                            historySortKey={historySortKey}
+                            setHistorySortKey={setHistorySortKey}
+                            historySortDir={historySortDir}
+                            setHistorySortDir={setHistorySortDir}
+                        />
                     )
                 }
 
-                {
-                    activeTab === 'messages' && (
-                        <div className="bg-white rounded-none md:rounded-lg border-y md:border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-200px)] md:h-[600px] px-0 md:px-0 mx-0 md:mx-6 mb-0 md:mb-10">
 
-                            {/* Main Chat Area */}
-                            <div className="flex-1 flex flex-col h-full relative">
-                                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <FaComments className="text-brand-600" />
-                                        <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Projekt-Chat</h3>
-                                    </div>
-                                    <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> Online
-                                    </span>
-                                </div>
-
-                                <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/30 custom-scrollbar">
-                                    {projectMessages.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                                            <FaComments className="text-4xl mb-3 opacity-20" />
-                                            <p className="text-sm font-medium">Keine Nachrichten vorhanden.</p>
-                                            <p className="text-xs opacity-60">Beginnen Sie eine Konversation mit dem Team.</p>
-                                            <button
-                                                onClick={() => navigate('/inbox', {
-                                                    state: {
-                                                        compose: true,
-                                                        to: projectData.customer.email,
-                                                        subject: `Projekt: ${projectData.name} (Ref: ${projectData.id})`,
-                                                        body: `<p>Sehr geehrter Kunde,</p><p>bezüglich des Projekts ${projectData.name}...</p>`
-                                                    }
-                                                })}
-                                                className="mt-6 px-6 py-2.5 bg-brand-600 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center gap-2"
-                                            >
-                                                <FaPaperPlane className="text-[10px]" /> Email an Kunden senden
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        projectMessages.map((msg) => (
-                                            <div key={msg.id} className={clsx("flex w-full group", msg.from === 'Admin' ? "justify-end" : "justify-start")}>
-                                                <div className={clsx("flex flex-col max-w-[85%] md:max-w-[70%]", msg.from === 'Admin' ? "items-end" : "items-start")}>
-                                                    <div className="flex items-center gap-2 mb-1 px-1">
-                                                        <span className="font-bold text-[10px] text-slate-700">{msg.from}</span>
-                                                        <span className="text-[9px] text-slate-400">{msg.timestamp}</span>
-                                                    </div>
-                                                    <div className={clsx("p-3.5 shadow-sm border rounded-2xl relative",
-                                                        msg.from === 'Admin'
-                                                            ? "bg-brand-600 text-white border-brand-700 rounded-tr-none"
-                                                            : "bg-white text-slate-700 border-slate-200 rounded-tl-none")}>
-                                                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.message}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-
-                                <div className="p-3 md:p-4 border-t border-slate-200 bg-white">
-                                    <div className="flex gap-2 items-end">
-                                        <div className="flex-1 relative">
-                                            <textarea
-                                                value={newMessage}
-                                                onChange={(e) => setNewMessage(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                                        e.preventDefault();
-                                                        handleSendMessage();
-                                                    }
-                                                }}
-                                                placeholder="Schreiben Sie eine Nachricht..."
-                                                className="w-full min-h-[44px] max-h-[120px] py-2.5 pl-4 pr-12 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 resize-none"
-                                                rows={1}
-                                            />
-                                            <div className="absolute right-2 bottom-2 flex gap-1">
-                                                <button className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded transition" title="Datei anhängen">
-                                                    <FaPaperclip className="text-xs" />
-                                                </button>
-                                                <button className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded transition" title="Erwähnen (@)">
-                                                    <FaAt className="text-xs" />
-                                                </button>
-                                                <button className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded transition" title="Referenz (#)">
-                                                    <FaHashtag className="text-xs" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <button onClick={handleSendMessage} className="h-[44px] px-4 bg-brand-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-700 transition shrink-0 shadow-sm flex items-center gap-2">
-                                            <FaPaperPlane />
-                                            <span className="hidden md:inline">Senden</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Team Sidebar */}
-                            <div className="w-full lg:w-64 border-l border-slate-200 bg-white flex flex-col h-full">
-                                <div className="p-4 border-b border-slate-100">
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Projekt-Teilnehmer</h4>
-                                    <div className="space-y-3">
-
-                                        {/* Current User */}
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold border border-brand-200 shadow-sm relative">
-                                                AD
-                                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></div>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs font-bold text-slate-800 truncate">Admin User</div>
-                                                <div className="text-[9px] text-slate-400 truncate">Projektmanager</div>
-                                            </div>
-                                        </div>
-
-                                        {/* Translator */}
-                                        {projectData.translator && (
-                                            <div className="flex items-center gap-3 opacity-90">
-                                                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold border border-slate-200 shadow-sm">
-                                                    {projectData.translator.initials}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-xs font-bold text-slate-800 truncate">{projectData.translator.name}</div>
-                                                    <div className="text-[9px] text-slate-400 truncate">Übersetzer</div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Customer */}
-                                        <div className="flex items-center gap-3 opacity-90">
-                                            <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xs font-bold border border-purple-100 shadow-sm">
-                                                K
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs font-bold text-slate-800 truncate">{projectData.customer.name}</div>
-                                                <div className="text-[9px] text-slate-400 truncate">Kunde (Read-Only)</div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </div>
-                                <div className="p-4 mt-auto border-t border-slate-100 bg-slate-50">
-                                    <button
-                                        onClick={() => setIsInviteModalOpen(true)}
-                                        className="w-full flex items-center justify-center gap-2 py-2 border border-dashed border-slate-300 rounded text-slate-500 text-[10px] font-bold uppercase hover:bg-white hover:border-brand-300 hover:text-brand-600 transition">
-                                        <FaUserPlus /> Teilnehmer einladen
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                }
-
-                {activeTab === 'history' && (
-                    <HistoryTab projectId={id!} historySearch={historySearch} setHistorySearch={setHistorySearch} historySortKey={historySortKey} setHistorySortKey={setHistorySortKey} historySortDir={historySortDir} setHistorySortDir={setHistorySortDir} />
-                )}
             </div >
 
             <CustomerSelectionModal
@@ -2389,7 +2120,7 @@ const ProjectDetail = () => {
                     }
                 }}
                 title="Datei löschen"
-                message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen ? Diese Aktion kann nicht rückgängig gemacht werden.`}
                 confirmText="Löschen"
                 cancelText="Abbrechen"
                 type="danger"
@@ -2400,6 +2131,9 @@ const ProjectDetail = () => {
                 onClose={() => setIsInviteModalOpen(false)}
                 projectId={id!}
             />
+
+            {/* Spacer for bottom padding */}
+            <div className="h-32" />
         </div >
     );
 };

@@ -98,8 +98,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            const prefix = isCreditNote ? 'Gutschrift' : 'Rechnung';
-            link.setAttribute('download', `${prefix}_${invoiceNumber}.pdf`);
+            link.setAttribute('download', `${invoiceNumber}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -192,7 +191,6 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                 title="Invoice Preview"
                                 srcDoc={previewHtml}
                                 className="w-full h-full min-h-[297mm] border-none block"
-                                sandbox="allow-same-origin"
                             />
                         </div>
                     )}

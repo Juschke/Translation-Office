@@ -53,7 +53,7 @@ const CustomerDetail = () => {
 
 
     return (
-        <div className="flex flex-col gap-6 h-full fade-in pb-10">
+        <div className="flex flex-col gap-6 fade-in pb-10">
             {/* Header */}
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 md:p-6">
                 <div className="flex flex-col gap-4">
@@ -110,9 +110,9 @@ const CustomerDetail = () => {
                     <div className="flex items-center gap-4 flex-wrap text-[11px] text-slate-400 border-t border-slate-100 pt-3 mt-1">
                         <span>Kunden-ID: <span className="text-slate-600 font-medium">{customer.id}</span></span>
                         <span className="hidden sm:inline">·</span>
-                        <span>Erstellt: <span className="text-slate-600">{new Date(customer.created_at).toLocaleDateString('de-DE')}</span></span>
+                        <span>Erstellt: <span className="text-slate-600">{new Date(customer.created_at).toLocaleDateString('de-DE')} {customer.creator ? `von ${customer.creator.name}` : ''}</span></span>
                         <span className="hidden sm:inline">·</span>
-                        <span>Geändert: <span className="text-slate-600">{new Date(customer.updated_at).toLocaleDateString('de-DE')}</span></span>
+                        <span>Geändert: <span className="text-slate-600">{new Date(customer.updated_at).toLocaleDateString('de-DE')} {customer.editor ? `von ${customer.editor.name}` : ''}</span></span>
                     </div>
                 </div>
             </div>
@@ -138,7 +138,7 @@ const CustomerDetail = () => {
                                     {customer.type !== 'private' && (
                                         <>
                                             <span className="text-slate-500 font-medium">{customer.type === 'authority' ? 'Behörde' : 'Firma'}</span>
-                                            <span className="text-slate-800 font-semibold">{customer.company_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
+                                            <span className="text-slate-800">{customer.company_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
                                         </>
                                     )}
 
@@ -150,13 +150,6 @@ const CustomerDetail = () => {
 
                                     <span className="text-slate-500 font-medium">Nachname</span>
                                     <span className="text-slate-800 font-bold">{customer.last_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-
-                                    {customer.type !== 'private' && (
-                                        <>
-                                            <span className="text-slate-500 font-medium">Kontaktperson</span>
-                                            <span className="text-slate-800">{customer.contact_person || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-                                        </>
-                                    )}
 
                                     <span className="text-slate-500 font-medium mt-2">Email</span>
                                     <span className="text-brand-600 mt-2 hover:underline cursor-pointer">{customer.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
@@ -234,7 +227,16 @@ const CustomerDetail = () => {
                                         )}
 
                                         <span className="text-slate-500 font-medium">Zahlungsziel</span>
-                                        <span className="text-slate-800">{customer.payment_terms ? `${customer.payment_terms} Tage` : <span className="text-slate-400 italic">14 Tage (Standard)</span>}</span>
+                                        <span className="text-slate-800">{customer.payment_terms_days ? `${customer.payment_terms_days} Tage` : <span className="text-slate-400 italic">14 Tage (Standard)</span>}</span>
+
+                                        <span className="text-slate-500 font-medium">IBAN</span>
+                                        <span className={clsx("text-slate-800", !customer.iban && "italic text-slate-400")}>{customer.iban || 'Keine Angabe'}</span>
+
+                                        <span className="text-slate-500 font-medium">BIC</span>
+                                        <span className={clsx("text-slate-800", !customer.bic && "italic text-slate-400")}>{customer.bic || 'Keine Angabe'}</span>
+
+                                        <span className="text-slate-500 font-medium">Bank</span>
+                                        <span className="text-slate-800">{customer.bank_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
                                     </div>
                                 </div>
                             </div>
@@ -304,6 +306,9 @@ const CustomerDetail = () => {
                 message={`Möchten Sie den Kunden "${name}" wirklich löschen?`}
                 isLoading={deleteMutation.isPending}
             />
+
+            {/* Spacer for bottom padding */}
+            <div className="h-32" />
         </div>
     );
 };

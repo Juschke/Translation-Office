@@ -106,7 +106,27 @@ class ProjectController extends Controller
 
     public function show($id)
     {
-        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'files.uploader', 'positions', 'payments', 'messages.user'])->findOrFail($id));
+        $project = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'files.uploader', 'positions', 'payments', 'messages.user'])->findOrFail($id);
+
+        // Fetch creator and editor from activities
+        $creationActivity = \Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Project::class)
+            ->where('subject_id', $id)
+            ->where('event', 'created')
+            ->orderBy('id', 'asc')
+            ->with('causer')
+            ->first();
+
+        $updateActivity = \Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Project::class)
+            ->where('subject_id', $id)
+            ->where('event', 'updated')
+            ->orderBy('id', 'desc')
+            ->with('causer')
+            ->first();
+
+        $project->creator = $creationActivity ? $creationActivity->causer : null;
+        $project->editor = $updateActivity ? $updateActivity->causer : null;
+
+        return response()->json($project);
     }
 
     public function getActivities($id)

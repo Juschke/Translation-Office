@@ -207,7 +207,8 @@
 
 <body>
     @php
-        $settings = \App\Models\TenantSetting::where('tenant_id', 1)->pluck('value', 'key');
+        $tId = $invoice->tenant_id ?? 1;
+        $settings = \App\Models\TenantSetting::where('tenant_id', $tId)->pluck('value', 'key');
 
         $companyName = $settings['company_name'] ?? 'Translation Office';
         $companyAddress = ($settings['address_street'] ?? '') . ' ' . ($settings['address_house_no'] ?? '');
@@ -250,8 +251,8 @@
         <!-- Info Block -->
         <div class="info-block">
             <div class="info-row">
-                <span class="info-label">Rechnungs-Nr.</span>
-                <span class="info-value">{{ $invoice->serial_number }}</span>
+                <span class="info-label">{{ ($invoice->invoice_type ?? 'invoice') === 'credit_note' ? 'Gutschrifts' : 'Rechnungs' }}-Nr.</span>
+                <span class="info-value">{{ $invoice->name }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Datum</span>
@@ -264,20 +265,24 @@
                     <span class="info-value">{{ $invoice->buyer->custom_fields['customer_id'] }}</span>
                 </div>
             @endif
-            @if($invoice->due_date)
+            @if(isset($invoice->buyer->custom_fields['due_date']))
                 <div class="info-row">
                     <span class="info-label">Fällig am</span>
-                    <span class="info-value">{{ $invoice->due_date->format('d.m.Y') }}</span>
+                    <span class="info-value">{{ $invoice->buyer->custom_fields['due_date'] }}</span>
                 </div>
             @endif
         </div>
 
         <div class="content">
-            <div class="title">Rechnung Nr. {{ $invoice->serial_number }}</div>
+            <div class="title">{{ ($invoice->invoice_type ?? 'invoice') === 'credit_note' ? 'Gutschrift' : 'Rechnung' }} Nr. {{ $invoice->name }}</div>
 
             <div class="intro-text">
                 Sehr geehrte Damen und Herren,<br><br>
-                wir stellen Ihnen hiermit folgende Leistungen in Rechnung:
+                @if(($invoice->invoice_type ?? 'invoice') === 'credit_note')
+                    wir erstellen Ihnen hiermit folgende Gutschrift:
+                @else
+                    wir stellen Ihnen hiermit folgende Leistungen in Rechnung:
+                @endif
             </div>
 
             <!-- Items Table -->
@@ -299,7 +304,7 @@
                                     <br><span style="font-size: 8pt; color: #666;">{{ $item->description }}</span>
                                 @endif
                             </td>
-                            <td class="text-right">{{ $item->quantity }}</td>
+                            <td class="text-right">{{ $item->quantity }} {{ $item->units }}</td>
                             <td class="text-right">{{ $invoice->formatCurrency($item->price_per_unit) }}</td>
                             <td class="text-right">{{ $invoice->formatCurrency($item->sub_total_price) }}</td>
                         </tr>
@@ -312,25 +317,47 @@
                 <table class="totals-table">
                     <tr>
                         <td class="text-right">Nettosumme:</td>
-                        <td class="text-right">{{ $invoice->formatCurrency($invoice->sub_total_amount) }}</td>
+                        <td class="text-right">{{ $invoice->formatCurrency($invoice->taxable_amount) }}</td>
                     </tr>
                     @if($invoice->tax_rate > 0)
                         <tr>
                             <td class="text-right">Umsatzsteuer {{ $invoice->tax_rate }}%:</td>
-                            <td class="text-right">{{ $invoice->formatCurrency($invoice->tax_amount) }}</td>
+                            <td class="text-right">{{ $invoice->formatCurrency($invoice->total_taxes) }}</td>
+                        </tr>
+                    @endif
+                    @if($invoice->shipping_amount > 0)
+                        <tr>
+                            <td class="text-right">Versandkosten:</td>
+                            <td class="text-right">{{ $invoice->formatCurrency($invoice->shipping_amount) }}</td>
+                        </tr>
+                    @endif
+                    @if($invoice->total_discount > 0)
+                        <tr>
+                            <td class="text-right">Rabatt:</td>
+                            <td class="text-right">- {{ $invoice->formatCurrency($invoice->total_discount) }}</td>
                         </tr>
                     @endif
                     <tr class="total-row">
                         <td class="text-right">Gesamtbetrag:</td>
                         <td class="text-right">{{ $invoice->formatCurrency($invoice->total_amount) }}</td>
                     </tr>
+                    @if(isset($invoice->buyer->custom_fields['paid_amount']) && (float)$invoice->buyer->custom_fields['paid_amount'] > 0)
+                        <tr>
+                            <td class="text-right">Abzüglich Anzahlung:</td>
+                            <td class="text-right">- {{ $invoice->formatCurrency($invoice->buyer->custom_fields['paid_amount']) }}</td>
+                        </tr>
+                        <tr class="total-row" style="color: #d32f2f;">
+                            <td class="text-right">Noch zu zahlender Betrag:</td>
+                            <td class="text-right">{{ $invoice->formatCurrency((float)$invoice->total_amount - (float)$invoice->buyer->custom_fields['paid_amount']) }}</td>
+                        </tr>
+                    @endif
                 </table>
             </div>
 
             <!-- Notes -->
-            @if($invoice->getNotes())
+            @if($invoice->notes)
                 <div style="margin-top: 5mm; font-size: 9pt; color: #555;">
-                    {!! nl2br(e($invoice->getNotes())) !!}
+                    {!! nl2br(e($invoice->notes)) !!}
                 </div>
             @endif
 
@@ -339,8 +366,8 @@
                 <p>
                     Bitte überweisen Sie den Betrag von
                     <strong>{{ $invoice->formatCurrency($invoice->total_amount) }}</strong> bis zum
-                    <strong>{{ $invoice->due_date ? $invoice->due_date->format('d.m.Y') : 'sofort' }}</strong>.<br>
-                    Verwendungszweck: <strong>{{ $invoice->serial_number }}</strong>
+                    <strong>{{ $invoice->buyer->custom_fields['due_date'] ?? 'sofort' }}</strong>.<br>
+                    Verwendungszweck: <strong>{{ $invoice->name }}</strong>
                 </p>
                 @if(isset($settings['bank_iban']))
                     <p>

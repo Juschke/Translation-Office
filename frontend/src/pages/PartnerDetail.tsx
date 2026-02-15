@@ -50,7 +50,7 @@ const PartnerDetail = () => {
     const initials = (partner.first_name?.[0] || '') + (partner.last_name?.[0] || 'P');
 
     return (
-        <div className="flex flex-col gap-6 h-full fade-in pb-10">
+        <div className="flex flex-col gap-6 fade-in pb-10">
             {/* Header */}
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 md:p-6">
                 <div className="flex flex-col gap-4">
@@ -307,6 +307,9 @@ const PartnerDetail = () => {
                 message={`Möchten Sie den Partner "${name}" wirklich löschen?`}
                 isLoading={deleteMutation.isPending}
             />
+
+            {/* Spacer for bottom padding */}
+            <div className="h-32" />
         </div>
     );
 };

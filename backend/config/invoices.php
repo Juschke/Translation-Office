@@ -65,6 +65,7 @@ return [
         'code' => 'EUR',
         'symbol' => '€',
         'precision' => 2,
+        'decimals' => 2,
         'format' => '{VALUE} {SYMBOL}',
         'decimal_point' => ',',
         'thousand_separator' => '.',

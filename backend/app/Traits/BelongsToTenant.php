@@ -12,7 +12,7 @@ trait BelongsToTenant
     /**
      * The "booted" method of the model.
      */
-    protected static function booted(): void
+    public static function bootBelongsToTenant(): void
     {
         static::addGlobalScope(new TenantScope);
 
