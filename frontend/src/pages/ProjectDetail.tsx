@@ -1212,7 +1212,7 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Meta Information Row */}
-                <div className="px-6 pb-4 flex items-center gap-6 flex-wrap text-[11px] text-slate-400">
+                <div className="px-6 py-2 mt-4 flex border-t border-slate-100 items-center gap-6 flex-wrap text-[11px] text-slate-400">
                     <span>Projekt-ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
                     <span className="hidden sm:inline text-slate-300">|</span>
                     <span>Erstellt: <span className="text-slate-600">{projectData.createdAt} {projectData.creator ? `von ${projectData.creator.name}` : ''}</span></span>

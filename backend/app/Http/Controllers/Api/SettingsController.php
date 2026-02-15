@@ -9,14 +9,27 @@ class SettingsController extends Controller
 {
     public function show(Request $request)
     {
-        $tenantId = $request->user()->tenant_id ?? 1;
-        $settings = \App\Models\TenantSetting::where('tenant_id', $tenantId)->pluck('value', 'key');
-        return response()->json($settings);
+        $user = $request->user();
+        $tenantId = $user->tenant_id ?? 1;
+        $tenant = \App\Models\Tenant::find($tenantId);
+        
+        // Get all key-value settings
+        $settings = \App\Models\TenantSetting::where('tenant_id', $tenantId)->pluck('value', 'key')->toArray();
+        
+        // Basic fields from tenant model that should be available if not in settings
+        $tenantData = $tenant ? $tenant->toArray() : [];
+        
+        // Merge: Settings overwrite tenant model defaults
+        $response = array_merge($tenantData, $settings);
+        
+        return response()->json($response);
     }
 
     public function update(Request $request)
     {
-        $tenantId = $request->user()->tenant_id ?? 1;
+        $user = $request->user();
+        $tenantId = $user->tenant_id ?? 1;
+        $tenant = \App\Models\Tenant::find($tenantId);
 
         $validated = $request->validate([
             'company_name' => 'nullable|string',
@@ -55,11 +68,31 @@ class SettingsController extends Controller
             'credit_card_provider' => 'nullable|string',
         ]);
 
+        // Fields that exist in the Tenant model and should be synced
+        $tenantFields = [
+            'company_name', 'legal_form', 'address_street', 'address_house_no', 
+            'address_zip', 'address_city', 'address_country', 'tax_number', 
+            'vat_id', 'bank_name', 'bank_iban', 'bank_bic', 'domain'
+        ];
+
+        $tenantUpdateData = [];
+
         foreach ($validated as $key => $value) {
+            // Update settings table (primary EAV storage)
             \App\Models\TenantSetting::updateOrCreate(
                 ['tenant_id' => $tenantId, 'key' => $key],
                 ['value' => $value]
             );
+
+            // If it's a field in the tenant model, prepare for sync
+            if (in_array($key, $tenantFields)) {
+                $tenantUpdateData[$key] = $value;
+            }
+        }
+
+        // Sync back to tenant model for GoBD snapshots (InvoiceController reads from Tenant model)
+        if ($tenant && !empty($tenantUpdateData)) {
+            $tenant->update($tenantUpdateData);
         }
 
         return response()->json(['message' => 'Settings updated successfully']);

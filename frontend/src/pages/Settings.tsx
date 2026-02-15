@@ -154,7 +154,10 @@ const Settings: React.FC = () => {
 
     useEffect(() => {
         if (serverCompanyData) {
-            setCompanyData(serverCompanyData);
+            setCompanyData({
+                ...serverCompanyData,
+                address_country: serverCompanyData.address_country || 'Deutschland'
+            });
         }
     }, [serverCompanyData]);
 
@@ -430,14 +433,7 @@ const Settings: React.FC = () => {
                             />
                         </div>
                     </SettingRow>
-                    <SettingRow label="Nummernkreise (IDs)" description="Definieren Sie die Präfixe für Ihre Dokumente (z.B. R-2024-001).">
-                        <div className="grid grid-cols-4 gap-4">
-                            <Input label="Kunden (K-)" placeholder="K-" value={companyData.customer_id_prefix || ''} onChange={(e) => handleInputMetaChange('customer_id_prefix', e.target.value)} />
-                            <Input label="Partner (D-)" placeholder="D-" value={companyData.partner_id_prefix || ''} onChange={(e) => handleInputMetaChange('partner_id_prefix', e.target.value)} />
-                            <Input label="Projekte (PO-)" placeholder="PO-" value={companyData.project_id_prefix || ''} onChange={(e) => handleInputMetaChange('project_id_prefix', e.target.value)} />
-                            <Input label="Rechnungen (RE-)" placeholder="RE-" value={companyData.invoice_id_prefix || ''} onChange={(e) => handleInputMetaChange('invoice_id_prefix', e.target.value)} />
-                        </div>
-                    </SettingRow>
+
                 </div>
 
                 {/* Section: Adresse */}
@@ -499,94 +495,39 @@ const Settings: React.FC = () => {
 
                 {/* Section: Bankverbindung */}
                 <div className="mb-8">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Finanzen & Zahlung</h4>
-                    <SettingRow label="Zahlungsart (Ausgang)" description="Bevorzugte Zahlungsmethode für Ihre Kunden.">
-                        <div className="flex bg-slate-100 p-1 gap-1 rounded w-fit">
-                            {(['bank', 'card', 'paypal', 'stripe'] as const).map(type => (
-                                <button
-                                    key={type}
-                                    onClick={() => handleInputMetaChange('payment_method_type', type)}
-                                    className={clsx(
-                                        "flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm rounded",
-                                        (companyData.payment_method_type || 'bank') === type
-                                            ? "bg-white text-brand-900 scale-105 shadow-md"
-                                            : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                                    )}
-                                >
-                                    {type === 'bank' && <FaUniversity className="text-xs" />}
-                                    {type === 'card' && <FaCcVisa className="text-xs" />}
-                                    {type === 'paypal' && <FaCcPaypal className="text-xs" />}
-                                    {type === 'stripe' && <FaCcStripe className="text-xs" />}
-                                    {type === 'bank' ? 'Überweisung' : type === 'card' ? 'Kreditkarte' : type.charAt(0).toUpperCase() + type.slice(1)}
-                                </button>
-                            ))}
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Bankverbindung</h4>
+                    <SettingRow label="Bankdaten" description="Ihre IBAN und BIC für Überweisungen (erscheint auf Rechnungen).">
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    label="Bankname"
+                                    placeholder="Musterbank AG"
+                                    value={companyData.bank_name || ''}
+                                    onChange={(e) => handleInputMetaChange('bank_name', e.target.value)}
+                                />
+                                <Input
+                                    label="BIC"
+                                    placeholder="ABCDEFGH"
+                                    value={companyData.bank_bic || ''}
+                                    onChange={(e) => handleInputMetaChange('bank_bic', e.target.value)}
+                                    onBlur={handleBicBlur}
+                                />
+                            </div>
+                            <div className="relative">
+                                <Input
+                                    label="IBAN"
+                                    placeholder="DE00 0000 0000 0000 0000 00"
+                                    value={companyData.bank_iban || ''}
+                                    onChange={(e) => handleInputMetaChange('bank_iban', e.target.value)}
+                                    onBlur={handleIbanBlur}
+                                    error={!!errors.bank_iban}
+                                    className="font-mono tracking-wide"
+                                    endIcon={isValidatingIban ? <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div> : null}
+                                />
+                                {errors.bank_iban && <span className="text-[10px] text-red-500 font-bold block mt-1">{errors.bank_iban}</span>}
+                            </div>
                         </div>
                     </SettingRow>
-
-                    {(!companyData.payment_method_type || companyData.payment_method_type === 'bank') && (
-                        <SettingRow label="Bankverbindung" description="Ihre IBAN und BIC für Überweisungen.">
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input
-                                        label="Bankname"
-                                        placeholder="Musterbank AG"
-                                        value={companyData.bank_name || ''}
-                                        onChange={(e) => handleInputMetaChange('bank_name', e.target.value)}
-                                    />
-                                    <Input
-                                        label="BIC"
-                                        placeholder="ABCDEFGH"
-                                        value={companyData.bank_bic || ''}
-                                        onChange={(e) => handleInputMetaChange('bank_bic', e.target.value)}
-                                        onBlur={handleBicBlur}
-                                    />
-                                </div>
-                                <div className="relative">
-                                    <Input
-                                        label="IBAN"
-                                        placeholder="DE00 0000 0000 0000 0000 00"
-                                        value={companyData.bank_iban || ''}
-                                        onChange={(e) => handleInputMetaChange('bank_iban', e.target.value)}
-                                        onBlur={handleIbanBlur}
-                                        error={!!errors.bank_iban}
-                                        className="font-mono tracking-wide"
-                                        endIcon={isValidatingIban ? <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div> : null}
-                                    />
-                                    {errors.bank_iban && <span className="text-[10px] text-red-500 font-bold block mt-1">{errors.bank_iban}</span>}
-                                </div>
-                            </div>
-                        </SettingRow>
-                    )}
-
-                    {companyData.payment_method_type === 'paypal' && (
-                        <SettingRow label="PayPal" description="Konfiguration für PayPal Zahlungen.">
-                            <Input
-                                label="PayPal Email"
-                                type="email"
-                                placeholder="ihre-email@paypal.com"
-                                value={companyData.paypal_email || ''}
-                                onChange={(e) => handleInputMetaChange('paypal_email', e.target.value)}
-                            />
-                        </SettingRow>
-                    )}
-
-                    {companyData.payment_method_type === 'stripe' && (
-                        <SettingRow label="Stripe API" description="API Schlüssel für Stripe Integration.">
-                            <div className="space-y-4">
-                                <Input
-                                    label="Publishable Key"
-                                    value={companyData.stripe_api_key || ''}
-                                    onChange={(e) => handleInputMetaChange('stripe_api_key', e.target.value)}
-                                />
-                                <Input
-                                    type="password"
-                                    label="Secret Key"
-                                    value={companyData.stripe_secret || ''}
-                                    onChange={(e) => handleInputMetaChange('stripe_secret', e.target.value)}
-                                />
-                            </div>
-                        </SettingRow>
-                    )}
                 </div>
 
                 {/* Section: Email / SMTP */}

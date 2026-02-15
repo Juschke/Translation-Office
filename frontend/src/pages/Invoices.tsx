@@ -26,6 +26,9 @@ const Invoices = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'pending');
+    useEffect(() => {
+        setSelectedInvoices([]);
+    }, [statusFilter]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
@@ -149,17 +152,18 @@ const Invoices = () => {
             // Exclude Trash/Archive from main tabs
             if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
 
+            if (statusFilter === 'credit_notes') return inv.type === 'credit_note';
+
+            // Main tabs (exclude credit notes by default to avoid confusion)
+            if (statusFilter !== 'all' && inv.type === 'credit_note') return false;
+
             if (statusFilter === 'paid') return status === 'paid' || status === 'bezahlt';
             if (statusFilter === 'cancelled') return status === 'cancelled' || status === 'storniert';
-
             if (statusFilter === 'overdue') return isOverdue;
-
             if (statusFilter === 'reminders') return (inv.reminder_level > 0 || isOverdue) && status !== 'paid' && status !== 'cancelled';
-
             if (statusFilter === 'pending') {
                 return (status === 'pending' || status === 'sent' || status === 'draft' || status === 'issued') && !isOverdue;
             }
-
             if (statusFilter === 'all') return true;
 
             return status === statusFilter;
@@ -363,7 +367,7 @@ const Invoices = () => {
                 const isNeg = eur < 0;
                 return (
                     <span className={`font-semibold ${isNeg ? 'text-red-600' : 'text-slate-800'}`}>
-                        {eur.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
+                        {eur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                     </span>
                 );
             },
@@ -448,6 +452,7 @@ const Invoices = () => {
             <button onClick={() => setStatusFilter('overdue')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'overdue' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Überfällig</button>
             <button onClick={() => setStatusFilter('reminders')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Mahnungen</button>
             <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
+            <button onClick={() => setStatusFilter('credit_notes')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Gutschriften</button>
 
             {(showTrash || statusFilter === 'trash') && (
                 <button onClick={() => setStatusFilter('trash')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'trash' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>

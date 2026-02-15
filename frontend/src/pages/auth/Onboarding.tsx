@@ -58,7 +58,7 @@ const OnboardingPage = () => {
         address_house_no: '',
         address_zip: '',
         address_city: '',
-        address_country: 'DE',
+        address_country: 'Deutschland',
         bank_name: '',
         bank_iban: '',
         bank_bic: '',
@@ -158,11 +158,11 @@ const OnboardingPage = () => {
                                     name="address_country" value={formData.address_country} onChange={handleChange}
                                     className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500"
                                 >
-                                    <option value="DE">Deutschland</option>
-                                    <option value="AT">Österreich</option>
-                                    <option value="CH">Schweiz</option>
-                                    <option value="LU">Luxemburg</option>
-                                    <option value="LI">Liechtenstein</option>
+                                    <option value="Deutschland">Deutschland</option>
+                                    <option value="Österreich">Österreich</option>
+                                    <option value="Schweiz">Schweiz</option>
+                                    <option value="Luxemburg">Luxemburg</option>
+                                    <option value="Liechtenstein">Liechtenstein</option>
                                 </select>
                             </div>
                             <div className="col-span-2 grid grid-cols-4 gap-3">
