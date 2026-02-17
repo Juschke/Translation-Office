@@ -219,7 +219,7 @@
 <body>
 
     @php
-        $tId = $invoice->tenant_id ?? 1;
+        $tId = $invoice->buyer->custom_fields['tenant_id'] ?? 1;
         $settings = \App\Models\TenantSetting::where('tenant_id', $tId)->pluck('value', 'key');
         $companyName = $settings['company_name'] ?? 'Amplicore GmbH';
         $fullAddressLine = ($settings['address_street'] ?? 'Sandkamp 1') . ' · ' . ($settings['address_zip'] ?? '22111') . ' ' . ($settings['address_city'] ?? 'Hamburg');
@@ -335,7 +335,7 @@
     {{-- Rechnungsinhalt --}}
     <div class="content-body">
         @php
-            $docTitle = ($invoice->invoice_type ?? 'invoice') === 'credit_note'
+            $docTitle = ($invoice->buyer->custom_fields['invoice_type'] ?? 'invoice') === 'credit_note'
                 ? 'Gutschrift Nr. ' . $invoice->name
                 : 'Rechnung Nr. ' . $invoice->name;
         @endphp
@@ -343,7 +343,7 @@
 
         <div class="intro-text">
             Sehr geehrte Damen und Herren,<br>
-            @if(($invoice->invoice_type ?? 'invoice') === 'credit_note')
+            @if(($invoice->buyer->custom_fields['invoice_type'] ?? 'invoice') === 'credit_note')
                 hiermit erhalten Sie die folgende Gutschrift:
             @else
                 vielen Dank für Ihren Auftrag! Hiermit stellen wir Ihnen die folgenden Leistungen in Rechnung:

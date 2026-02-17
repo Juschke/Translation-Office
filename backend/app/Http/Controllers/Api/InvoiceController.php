@@ -589,6 +589,8 @@ class InvoiceController extends Controller
                 'customer_id' => $invoice->customer_id,
                 'paid_amount' => $invoice->paid_amount_eur,
                 'service_period' => $invoice->service_period,
+                'tenant_id' => $invoice->tenant_id,
+                'invoice_type' => $invoice->type,
             ],
         ]);
 
@@ -611,9 +613,6 @@ class InvoiceController extends Controller
             ->totalDiscount($invoice->discount_eur)
             ->notes($this->buildInvoiceNotes($invoice))
             ->template('din5008');
-
-        $dailyInvoice->tenant_id = $invoice->tenant_id;
-        $dailyInvoice->invoice_type = $invoice->type;
 
         foreach ($dailyItems as $item) {
             $dailyInvoice->addItem($item);
