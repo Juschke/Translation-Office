@@ -405,7 +405,7 @@
                     <br>Der Rechnungsbetrag ist bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong> fällig.
                 @endif
             </p>
-            <p>Bitte überweisen Sie den Betrag auf das unten angegebene Konto unter Angabe der Rechnungsnummer.</p>
+            <p>Bitte überweisen Sie den Betrag auf das unten angegebene Konto unter Angabe der Rechnungsnummer <strong>{{ $invoice->name }}</strong>.</p>
             <p>Mit freundlichen Grüßen,<br>{{ $settings['ceo_name'] ?? $companyName }}</p>
         </div>
     </div>
