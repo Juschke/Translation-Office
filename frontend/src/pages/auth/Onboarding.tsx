@@ -117,7 +117,7 @@ const OnboardingPage = () => {
         setCurrentStep(prev => Math.max(prev - 1, 0));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.SyntheticEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
@@ -163,6 +163,23 @@ const OnboardingPage = () => {
                                     <option value="Schweiz">Schweiz</option>
                                     <option value="Luxemburg">Luxemburg</option>
                                     <option value="Liechtenstein">Liechtenstein</option>
+                                    <option value="Frankreich">Frankreich</option>
+                                    <option value="Italien">Italien</option>
+                                    <option value="Spanien">Spanien</option>
+                                    <option value="Niederlande">Niederlande</option>
+                                    <option value="Belgien">Belgien</option>
+                                    <option value="Polen">Polen</option>
+                                    <option value="Tschechien">Tschechien</option>
+                                    <option value="Dänemark">Dänemark</option>
+                                    <option value="Schweden">Schweden</option>
+                                    <option value="Norwegen">Norwegen</option>
+                                    <option value="Finnland">Finnland</option>
+                                    <option value="Vereinigtes Königreich">Vereinigtes Königreich</option>
+                                    <option value="Irland">Irland</option>
+                                    <option value="USA">USA</option>
+                                    <option value="Kanada">Kanada</option>
+                                    <option value="Australien">Australien</option>
+                                    <option value="Andere">Andere</option>
                                 </select>
                             </div>
                             <div className="col-span-2 grid grid-cols-4 gap-3">
@@ -399,7 +416,7 @@ const OnboardingPage = () => {
                         </div>
                     )}
 
-                    <form onSubmit={currentStep === steps.length - 1 ? handleSubmit : (e) => e.preventDefault()} className="flex-1 flex flex-col justify-between">
+                    <form className="flex-1 flex flex-col justify-between" onSubmit={(e) => e.preventDefault()}>
                         <div className="mb-10">
                             {renderStep()}
                         </div>
@@ -435,7 +452,29 @@ const OnboardingPage = () => {
                                 </button>
                             ) : (
                                 <button
-                                    type="submit"
+                                    type="button"
+                                    onClick={async (e) => {
+                                        // Final validation or adding pending invite
+                                        if (inviteEmail && !formData.invitations.includes(inviteEmail)) {
+                                            // We cannot easily update state and submit in the same event loop due to closure
+                                            // So we construct a new object to submit
+                                            const finalData = {
+                                                ...formData,
+                                                invitations: [...formData.invitations, inviteEmail]
+                                            };
+                                            setIsLoading(true);
+                                            setError(null);
+                                            try {
+                                                await onboard(finalData);
+                                                navigate('/');
+                                            } catch (err: any) {
+                                                setError(err.response?.data?.message || 'Onboarding fehlgeschlagen. Bitte prüfen Sie Ihre Eingaben.');
+                                                setIsLoading(false);
+                                            }
+                                        } else {
+                                            handleSubmit(e);
+                                        }
+                                    }}
                                     disabled={isLoading}
                                     className="px-10 py-4 bg-emerald-600 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition transform hover:scale-110 active:scale-95 flex items-center gap-3"
                                 >

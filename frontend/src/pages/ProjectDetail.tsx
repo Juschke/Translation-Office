@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy, FaArchive, FaBolt, FaCheck, FaCamera, FaFile, FaStar } from 'react-icons/fa';
+import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy, FaArchive, FaBolt, FaCheck, FaCamera, FaFile, FaStar, FaCircle } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -93,6 +93,8 @@ interface ProjectData {
     copies: number;
     copyPrice: number;
     docType: string[];
+    document_type_id?: number;
+    additional_doc_types?: any[];
     translator: {
         id?: string;
         name: string;
@@ -101,12 +103,16 @@ interface ProjectData {
         phone: string;
         // Extended info
         address_street?: string;
+        address_house_no?: string;
+        address_zip?: string;
         address_city?: string;
         address_country?: string;
         rating?: number;
         languages?: string[];
         price_per_word?: number;
         price_per_line?: number;
+        unit_rates?: any[];
+        flat_rates?: any[];
     };
     documentsSent: boolean;
     pm: string;
@@ -366,10 +372,12 @@ const MessagesTab = ({ projectData, projectId }: { projectData: any, projectId: 
     const queryClient = useQueryClient();
     const [newMessage, setNewMessage] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
     };
 
     useEffect(() => {
@@ -449,7 +457,7 @@ const MessagesTab = ({ projectData, projectId }: { projectData: any, projectId: 
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-slate-50/50">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-slate-50/50">
                 {messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-300">
                         <p className="text-sm italic">Haben Sie Fragen? Schreiben Sie uns!</p>
@@ -470,7 +478,7 @@ const MessagesTab = ({ projectData, projectId }: { projectData: any, projectId: 
                         );
                     })
                 )}
-                <div ref={messagesEndRef} />
+
             </div>
 
             {/* Input Area */}
@@ -615,12 +623,14 @@ const ProjectDetail = () => {
                     initials: ((projectResponse.partner.first_name?.[0] || '') + (projectResponse.partner.last_name?.[0] || 'P')).toUpperCase(),
                     phone: projectResponse.partner.phone || '',
                     address_street: projectResponse.partner.address_street,
+                    address_house_no: projectResponse.partner.address_house_no,
+                    address_zip: projectResponse.partner.address_zip,
                     address_city: projectResponse.partner.address_city,
                     address_country: projectResponse.partner.address_country,
                     rating: projectResponse.partner.rating,
                     languages: projectResponse.partner.languages,
-                    price_per_word: projectResponse.partner.price_per_word,
-                    price_per_line: projectResponse.partner.price_per_line
+                    unit_rates: Array.isArray(projectResponse.partner.unit_rates) ? projectResponse.partner.unit_rates : (typeof projectResponse.partner.unit_rates === 'string' ? JSON.parse(projectResponse.partner.unit_rates) : []),
+                    flat_rates: Array.isArray(projectResponse.partner.flat_rates) ? projectResponse.partner.flat_rates : (typeof projectResponse.partner.flat_rates === 'string' ? JSON.parse(projectResponse.partner.flat_rates) : [])
                 } : {
                     name: '-',
                     email: '',
@@ -1221,42 +1231,7 @@ const ProjectDetail = () => {
                 </div>
 
 
-                {/* Tab Navigation */}
-                <div className="px-6 border-t border-slate-100 flex gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
-                        let badgeCount = 0;
-                        if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                        if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                        if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
 
-                        return (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={clsx(
-                                    "py-3 text-[11px] font-black uppercase tracking-widest border-b-2 transition relative shrink-0 flex items-center gap-2",
-                                    activeTab === tab
-                                        ? 'border-brand-500 text-brand-700'
-                                        : 'border-transparent text-slate-400 hover:text-slate-600'
-                                )}
-                            >
-                                {tab === 'overview' ? 'Stammdaten' :
-                                    tab === 'files' ? 'Dateien' :
-                                        tab === 'finances' ? 'Kalkulation & Marge' :
-                                            tab === 'history' ? 'Historie' : 'Kommunikation'}
-
-                                {tab !== 'overview' && tab !== 'history' && (
-                                    <span className={clsx(
-                                        "px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                                        activeTab === tab ? "bg-brand-100 text-brand-700" : "bg-slate-100 text-slate-500"
-                                    )}>
-                                        {badgeCount}
-                                    </span>
-                                )}
-                            </button>
-                        )
-                    })}
-                </div>
             </div>
 
             {/* Tab Contents */}
@@ -1277,6 +1252,9 @@ const ProjectDetail = () => {
                                 <div>
                                     <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Basisdaten</h4>
                                     <div className="grid grid-cols-[110px_1fr] gap-y-3 gap-x-4 text-sm">
+                                        <span className="text-slate-500 font-medium font-bold">Projekt-Nr</span>
+                                        <span className="text-slate-800 font-bold">{projectData.id}</span>
+
                                         <span className="text-slate-500 font-medium">Bezeichnung</span>
                                         <span className="text-slate-800">{projectData.name}</span>
 
@@ -1293,9 +1271,6 @@ const ProjectDetail = () => {
                                             </div>
                                         </div>
 
-                                        <span className="text-slate-500 font-medium">Projekt-ID</span>
-                                        <span className="text-slate-600 font-mono text-xs px-1.5 py-0.5 rounded w-fit">{projectData.id}</span>
-
                                         <span className="text-slate-500 font-medium">Status</span>
                                         <div>{getStatusBadge(projectData.status)}</div>
 
@@ -1307,24 +1282,34 @@ const ProjectDetail = () => {
                                                         const d = new Date(projectData.due);
                                                         const days = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
                                                         return `${days[d.getDay()]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} `;
-                                                    })() : 'keine Angabe'}
+                                                    })() : <span className="text-slate-400 italic">Keine Angabe</span>}
                                                 </span>
                                             </div>
-                                            <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight border shadow-sm", deadlineStatus.color)}>
-                                                {deadlineStatus.label}
-                                            </div>
+                                            {projectData.due && (
+                                                <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight border shadow-sm", deadlineStatus.color)}>
+                                                    {deadlineStatus.label}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <span className="text-slate-500 font-medium">Priorität</span>
                                         <div className="flex items-center gap-2">
                                             {projectData.priority === 'low' ? (
-                                                <span className="text-slate-600 font-bold text-xs uppercase">Normal</span>
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">
+                                                    <FaClock className="text-[10px]" />
+                                                    <span>Standard</span>
+                                                </div>
+                                            ) : projectData.priority === 'medium' ? (
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight bg-blue-50 text-blue-700 border border-blue-200">
+                                                    <FaFlag className="text-[10px]" />
+                                                    <span>Normal</span>
+                                                </div>
                                             ) : (
-                                                <div className={clsx("flex items-center gap-1.5 text-xs font-bold uppercase tracking-tight",
-                                                    projectData.priority === 'express' ? "text-red-600" : "text-orange-600"
+                                                <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight border",
+                                                    projectData.priority === 'express' || projectData.priority === 'high' ? "bg-red-50 text-red-700 border-red-200" : "bg-orange-50 text-orange-700 border-orange-200"
                                                 )}>
-                                                    <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
-                                                    {projectData.priority === 'express' ? <FaBolt className="text-[10px]" /> : <FaFlag className="text-[10px]" />}
+                                                    {projectData.priority === 'express' || projectData.priority === 'high' ? <FaBolt className="text-[10px]" /> : <FaFlag className="text-[10px]" />}
+                                                    <span>{projectData.priority === 'express' || projectData.priority === 'high' ? 'Express' : 'Dringend'}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -1358,11 +1343,14 @@ const ProjectDetail = () => {
 
                                     <div className="flex-1 flex flex-col justify-between">
                                         <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
+                                            <span className="text-slate-500 font-medium">Kunden-Nr</span>
+                                            <span className="text-slate-800">{projectData.customer.id}</span>
+
                                             <span className="text-slate-500 font-medium">Firma/Name</span>
                                             <span className="text-slate-800">{projectData.customer.name}</span>
 
                                             <span className="text-slate-500 font-medium">Ansprechpartner</span>
-                                            <span className="text-slate-800 font-bold">{projectData.customer.contact}</span>
+                                            <span className="text-slate-800">{projectData.customer.contact}</span>
 
                                             <span className="text-slate-500 font-medium">Straße</span>
                                             <span className="text-slate-800">{projectData.customer.address_street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
@@ -1385,10 +1373,14 @@ const ProjectDetail = () => {
                                             </span>
 
                                             <span className="text-slate-500 font-medium">Email</span>
-                                            <a href={`mailto:${projectData.customer.email} `} className="text-brand-600 hover:underline truncate block">{projectData.customer.email || 'keine Angabe'}</a>
+                                            {projectData.customer.email ? (
+                                                <a href={`mailto:${projectData.customer.email} `} className="text-brand-600 hover:underline truncate block">{projectData.customer.email}</a>
+                                            ) : (
+                                                <span className="text-slate-400 italic">Keine Angabe</span>
+                                            )}
 
                                             <span className="text-slate-500 font-medium">Telefon</span>
-                                            <span className="text-slate-800">{projectData.customer.phone || 'keine Telefonnummer'}</span>
+                                            <span className="text-slate-800">{projectData.customer.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
                                         </div>
 
                                         <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-slate-200">
@@ -1396,21 +1388,21 @@ const ProjectDetail = () => {
                                                 onClick={() => generateDocumentMutation.mutate('reminder')}
                                                 disabled={generateDocumentMutation.isPending}
                                                 title="Zahlungserinnerung / Mahnung erstellen"
-                                                className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm disabled:opacity-50">
+                                                className="px-3 py-1.5 bg-white text-slate-600 text-[10px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-2 shadow-sm disabled:opacity-50">
                                                 <FaClock className="text-slate-400" /> Mahnung
                                             </button>
                                             <button
                                                 onClick={() => generateDocumentMutation.mutate('pickup')}
                                                 disabled={generateDocumentMutation.isPending}
                                                 title="Abholbestätigung erstellen"
-                                                className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm disabled:opacity-50">
+                                                className="px-3 py-1.5 bg-white text-slate-600 text-[10px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-2 shadow-sm disabled:opacity-50">
                                                 <FaPaperPlane className="text-slate-400" /> Abhol-Best.
                                             </button>
                                             <button
                                                 onClick={() => generateDocumentMutation.mutate('confirmation')}
                                                 disabled={generateDocumentMutation.isPending}
                                                 title="Auftragsbestätigung erstellen"
-                                                className="px-2 py-1 bg-white text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-1.5 shadow-sm disabled:opacity-50">
+                                                className="px-3 py-1.5 bg-white text-slate-600 text-[10px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-2 shadow-sm disabled:opacity-50">
                                                 <FaCheckCircle className="text-slate-400" /> Auftrags-Best.
                                             </button>
                                         </div>
@@ -1428,7 +1420,7 @@ const ProjectDetail = () => {
                                         <div className="flex flex-wrap gap-1.5">
                                             {projectData.docType.length > 0 ? projectData.docType.map((d: string) => (
                                                 <span key={d} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase border border-slate-200 tracking-wide">{d}</span>
-                                            )) : <span className="text-slate-400 text-xs italic">keine Angabe</span>}
+                                            )) : <span className="text-slate-400 italic">Keine Angabe</span>}
                                         </div>
 
                                         <span className="text-slate-500 font-medium mt-1">Besonderheiten</span>
@@ -1499,74 +1491,167 @@ const ProjectDetail = () => {
                                     </div>
 
                                     <div className="flex-1 flex flex-col justify-between">
-                                        <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
-                                            {projectData.translator?.id ? (
-                                                <>
-                                                    <span className="text-slate-500 font-medium">Partner</span>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-slate-800 font-bold">{projectData.translator.name}</span>
-                                                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                                            <span className="font-semibold">ID:</span> {projectData.translator.id}
+                                        {projectData.translator?.id ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-0 text-sm mb-4">
+                                                {/* Left Column: Basic Info & Contact */}
+                                                <div className="space-y-2 mt-2">
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium font-bold">Partner-Nr</span>
+                                                        <span className="text-slate-800 font-bold">{projectData.translator.id}</span>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Partner</span>
+                                                        <span className="text-slate-800">{projectData.translator.name}</span>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium text-xs">Bewertung</span>
+                                                        <div className="flex items-center gap-1 text-amber-400 text-[10px]">
+                                                            {[1, 2, 3, 4, 5].map(star => (
+                                                                <FaStar key={star} className={star <= (projectData.translator.rating || 0) ? "" : "text-slate-200"} />
+                                                            ))}
+                                                            <span className="text-slate-500 font-bold ml-1 text-[10px]">({projectData.translator.rating || 0})</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Email</span>
+                                                        <div className="text-slate-800 text-sm">
+                                                            {projectData.translator.email ? (
+                                                                <a href={`mailto:${projectData.translator.email}`} className="text-brand-600 hover:underline transition-colors">{projectData.translator.email}</a>
+                                                            ) : <span className="text-slate-400 italic">Keine Angabe</span>}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Telefon</span>
+                                                        <div className="text-slate-800 text-sm">
+                                                            {projectData.translator.phone ? (
+                                                                <a href={`tel:${projectData.translator.phone}`} className="text-slate-800 hover:text-brand-600 transition-colors">{projectData.translator.phone}</a>
+                                                            ) : <span className="text-slate-400 italic">Keine Angabe</span>}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Sprachen</span>
+                                                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                                            {(Array.isArray(projectData.translator.languages) ? projectData.translator.languages : []).map((langCode: string, i: number) => (
+                                                                <div key={i} className="flex items-center gap-1.5 px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-700 shadow-sm">
+                                                                    <img src={getFlagUrl(langCode)} alt={langCode} className="w-3.5 h-2.5 rounded-[1px] object-cover" />
+                                                                    <span className="font-medium">{getLanguageLabel(langCode)}</span>
+                                                                </div>
+                                                            ))}
+                                                            {(!projectData.translator.languages || projectData.translator.languages.length === 0) && <span className="text-slate-400 italic text-[10px]">Keine Angabe</span>}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4 pt-1">
+                                                        <span className="text-slate-500 font-medium">Status</span>
+                                                        <div className="flex items-center gap-2 pt-0.5">
+                                                            <div className={clsx("w-2 h-2 rounded-full", projectData.documentsSent ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-slate-300")}></div>
+                                                            <span className={clsx("text-xs font-semibold", projectData.documentsSent ? "text-emerald-700" : "text-slate-500")}>
+                                                                {projectData.documentsSent ? 'Dokumente versendet' : 'Bereit für Versand'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Right Column: Address & Rates */}
+                                                <div className="space-y-2 mt-2">
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Straße</span>
+                                                        <span className="text-slate-800">{projectData.translator.address_street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Hausnummer</span>
+                                                        <span className="text-slate-800">{projectData.translator.address_house_no || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">PLZ / Stadt</span>
+                                                        <span className="text-slate-800">
+                                                            {projectData.translator.address_zip || ''} {projectData.translator.address_city || ''}
+                                                            {!projectData.translator.address_zip && !projectData.translator.address_city && <span className="text-slate-400 italic">Keine Angabe</span>}
                                                         </span>
                                                     </div>
 
-                                                    <span className="text-slate-500 font-medium">Bewertung</span>
-                                                    <div className="flex items-center gap-1 text-amber-400 text-xs">
-                                                        {[1, 2, 3, 4, 5].map(star => (
-                                                            <FaStar key={star} className={star <= (projectData.translator.rating || 0) ? "" : "text-slate-200"} />
-                                                        ))}
-                                                        <span className="text-slate-500 font-bold ml-1">({projectData.translator.rating || 0})</span>
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Land</span>
+                                                        <span className="text-slate-800">
+                                                            {projectData.translator.address_country === 'DE' ? 'Deutschland' :
+                                                                projectData.translator.address_country === 'AT' ? 'Österreich' :
+                                                                    projectData.translator.address_country === 'CH' ? 'Schweiz' :
+                                                                        getCountryName(projectData.translator.address_country) || projectData.translator.address_country || <span className="text-slate-400 italic">Keine Angabe</span>}
+                                                        </span>
                                                     </div>
 
-                                                    <span className="text-slate-500 font-medium">Sprachen</span>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {(Array.isArray(projectData.translator.languages) ? projectData.translator.languages : []).map((langCode: string, i: number) => (
-                                                            <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-700 shadow-sm">
-                                                                <img src={getFlagUrl(langCode)} alt={langCode} className="w-3.5 h-2.5 rounded-[1px] object-cover" />
-                                                                <span className="font-medium">{getLanguageLabel(langCode)}</span>
-                                                            </div>
-                                                        ))}
-                                                        {(!projectData.translator.languages || projectData.translator.languages.length === 0) && <span className="text-slate-400 italic">Keine</span>}
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4 pt-1">
+                                                        <span className="text-slate-500 font-medium border-t border-slate-50 pt-1">Wortpreis</span>
+                                                        <span className="text-slate-800 text-xs border-t border-slate-50 pt-1">
+                                                            {(() => {
+                                                                const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
+                                                                const rate = rates.find((r: any) => r.type === 'word' || r.type === 'Word')?.price;
+                                                                return rate ? <span className="font-mono">{parseFloat(rate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span> : <span className="text-slate-400 italic">0,0000 €</span>;
+                                                            })()}
+                                                        </span>
                                                     </div>
 
-                                                    <span className="text-slate-500 font-medium">Adresse</span>
-                                                    <div className="text-slate-800 text-sm">
-                                                        {projectData.translator.address_city ? (
-                                                            <span>
-                                                                {projectData.translator.address_city}, {projectData.translator.address_country || 'DE'}
-                                                            </span>
-                                                        ) : <span className="text-slate-400 italic">Keine Adresse</span>}
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Zeilenpreis</span>
+                                                        <span className="text-slate-800 text-xs">
+                                                            {(() => {
+                                                                const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
+                                                                const rate = rates.find((r: any) => r.type === 'line' || r.type === 'Line')?.price;
+                                                                return rate ? <span className="font-mono">{parseFloat(rate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span> : <span className="text-slate-400 italic">0,0000 €</span>;
+                                                            })()}
+                                                        </span>
                                                     </div>
 
-                                                    <span className="text-slate-500 font-medium">Wortpreis</span>
-                                                    <span className="text-slate-800 font-mono text-xs">{projectData.translator.price_per_word ? `${projectData.translator.price_per_word} €` : '-'}</span>
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Stundensatz</span>
+                                                        <span className="text-slate-800 text-xs">
+                                                            {(() => {
+                                                                const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
+                                                                const rate = rates.find((r: any) => r.type === 'hourly' || r.type === 'Hourly')?.price;
+                                                                return rate ? <span className="font-mono">{parseFloat(rate).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span> : <span className="text-slate-400 italic">0,00 €</span>;
+                                                            })()}
+                                                        </span>
+                                                    </div>
 
-                                                    <span className="text-slate-500 font-medium">Zeilenpreis</span>
-                                                    <span className="text-slate-800 font-mono text-xs">{projectData.translator.price_per_line ? `${projectData.translator.price_per_line} €` : '-'}</span>
-                                                </>
-                                            ) : (
-                                                <span className="col-span-2 text-slate-400 italic py-4 text-center">Kein Partner zugewiesen</span>
-                                            )}
-
-                                            <span className="text-slate-500 font-medium">Status</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className={clsx("w-2 h-2 rounded-full", projectData.documentsSent ? "bg-emerald-500" : "bg-slate-300")}></div>
-                                                <span className={clsx("text-xs font-medium", projectData.documentsSent ? "text-emerald-700" : "text-slate-500")}>
-                                                    {projectData.documentsSent ? 'Dokumente versendet' : 'Wartet auf Versand'}
-                                                </span>
+                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
+                                                        <span className="text-slate-500 font-medium">Mindestpauschale</span>
+                                                        <span className="text-slate-800 text-xs">
+                                                            {(() => {
+                                                                const rates = Array.isArray(projectData.translator.flat_rates) ? projectData.translator.flat_rates : [];
+                                                                const rate = rates.find((r: any) => r.type === 'minimum' || r.type === 'Minimum')?.price;
+                                                                return rate ? <span className="font-mono">{parseFloat(rate).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span> : <span className="text-slate-400 italic">0,00 €</span>;
+                                                            })()}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        ) : (
+                                            <div className="py-8 flex flex-col items-center justify-center bg-slate-50/50 rounded-lg border border-dashed border-slate-200 mb-4">
+                                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 mb-2">
+                                                    <FaUserPlus className="text-xl" />
+                                                </div>
+                                                <p className="text-slate-400 italic text-sm">Kein Partner zugewiesen</p>
+                                                <button onClick={() => setIsPartnerModalOpen(true)} className="mt-3 text-[10px] font-bold uppercase text-brand-600 hover:underline">Partner jetzt auswählen</button>
+                                            </div>
+                                        )}
 
-                                        <div className="mt-4">
+                                        <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-slate-200">
                                             {!projectData.documentsSent ? (
                                                 <button
-                                                    className="px-4 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded hover:bg-brand-700 transition shadow-sm flex items-center gap-2"
+                                                    className="px-3 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded hover:bg-brand-700 transition shadow-sm flex items-center gap-2"
                                                     onClick={() => updateProjectMutation.mutate({ documents_sent: true })}
                                                 >
                                                     <FaPaperPlane /> Dokumente senden
                                                 </button>
                                             ) : (
-                                                <div className="px-4 py-1.5 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded flex items-center gap-2 border border-brand-100 w-fit">
+                                                <div className="px-3 py-1.5 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded flex items-center gap-2 border border-brand-100 w-fit">
                                                     <FaCheckCircle /> Versand bestätigt
                                                 </div>
                                             )}
@@ -1851,6 +1936,82 @@ const ProjectDetail = () => {
                                                     </tr>
                                                 )}
                                             </tbody>
+                                            {/* Extra Costs Section */}
+                                            {(projectData.isCertified || projectData.hasApostille || projectData.isExpress || projectData.classification === 'ja' || projectData.copies > 0) && (
+                                                <tbody className="divide-y divide-slate-100 text-xs border-t-2 border-slate-100">
+                                                    {projectData.isCertified && (
+                                                        <tr className="bg-slate-50/50">
+                                                            <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
+                                                            <td className="px-4 py-3 font-medium text-slate-600">Beglaubigung</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">1</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">Pauschal</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10">
+                                                                5,00 €
+                                                            </td>
+                                                            <td className="px-2 py-3"></td>
+                                                        </tr>
+                                                    )}
+                                                    {projectData.hasApostille && (
+                                                        <tr className="bg-slate-50/50">
+                                                            <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
+                                                            <td className="px-4 py-3 font-medium text-slate-600">Apostille</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">1</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">Pauschal</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10">
+                                                                15,00 €
+                                                            </td>
+                                                            <td className="px-2 py-3"></td>
+                                                        </tr>
+                                                    )}
+                                                    {projectData.isExpress && (
+                                                        <tr className="bg-slate-50/50">
+                                                            <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
+                                                            <td className="px-4 py-3 font-medium text-slate-600">Express-Zuschlag</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">1</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">Pauschal</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10">
+                                                                15,00 €
+                                                            </td>
+                                                            <td className="px-2 py-3"></td>
+                                                        </tr>
+                                                    )}
+                                                    {projectData.classification === 'ja' && (
+                                                        <tr className="bg-slate-50/50">
+                                                            <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
+                                                            <td className="px-4 py-3 font-medium text-slate-600">Klassifizierung</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">1</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">Pauschal</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10">
+                                                                15,00 €
+                                                            </td>
+                                                            <td className="px-2 py-3"></td>
+                                                        </tr>
+                                                    )}
+                                                    {projectData.copies > 0 && (
+                                                        <tr className="bg-slate-50/50">
+                                                            <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
+                                                            <td className="px-4 py-3 font-medium text-slate-600">Kopien</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">{projectData.copies}</td>
+                                                            <td className="px-4 py-3 text-right text-slate-500">Stk</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
+                                                            <td className="px-4 py-3 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10">
+                                                                {(projectData.copies * (projectData.copyPrice || 5)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                                            </td>
+                                                            <td className="px-2 py-3"></td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            )}
+
                                         </table>
                                     </div>
                                     <div className="bg-slate-50 p-3 border-t border-slate-200 text-center">
@@ -2037,7 +2198,44 @@ const ProjectDetail = () => {
                 }
 
 
-            </div >
+            </div>
+
+            {/* Tab Navigation (Bottom) */}
+            <div className="px-6 py-1 bg-white border-t border-slate-200 flex gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0 z-20">
+                {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
+                    let badgeCount = 0;
+                    if (tab === 'files') badgeCount = projectData?.files?.length || 0;
+                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                    if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
+
+                    return (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={clsx(
+                                "py-3 text-[11px] font-black uppercase tracking-widest border-t-2 transition relative shrink-0 flex items-center gap-2 -mt-[1px]",
+                                activeTab === tab
+                                    ? 'border-brand-500 text-brand-700'
+                                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                            )}
+                        >
+                            {tab === 'overview' ? 'Stammdaten' :
+                                tab === 'files' ? 'Dateien' :
+                                    tab === 'finances' ? 'Kalkulation & Marge' :
+                                        tab === 'history' ? 'Historie' : 'Kommunikation'}
+
+                            {tab !== 'overview' && tab !== 'history' && (
+                                <span className={clsx(
+                                    "px-1.5 py-0.5 rounded-full text-[9px] font-bold",
+                                    activeTab === tab ? "bg-brand-100 text-brand-700" : "bg-slate-100 text-slate-500"
+                                )}>
+                                    {badgeCount}
+                                </span>
+                            )}
+                        </button>
+                    )
+                })}
+            </div>
 
             <CustomerSelectionModal
                 isOpen={isCustomerSearchOpen}

@@ -5,7 +5,7 @@ import {
     FaPlus, FaCheckCircle, FaHistory,
     FaFileExcel, FaFileCsv, FaTrash,
     FaCheck, FaPaperPlane, FaDownload, FaPrint, FaFilePdf, FaFileInvoiceDollar, FaEye, FaTrashRestore, FaFilter,
-    FaStamp, FaBan
+    FaStamp, FaBan, FaPen, FaFileCode
 } from 'react-icons/fa';
 
 import Checkbox from '../components/common/Checkbox';
@@ -33,6 +33,7 @@ const Invoices = () => {
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
     const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
+    const [downloadDropdownOpen, setDownloadDropdownOpen] = useState<number | null>(null);
     const [showTrash, setShowTrash] = useState(false);
     const [showArchive, setShowArchive] = useState(false);
     const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
@@ -47,6 +48,9 @@ const Invoices = () => {
             }
             if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
                 setIsViewSettingsOpen(false);
+            }
+            if (!(event.target as Element).closest('.invoice-download-dropdown')) {
+                setDownloadDropdownOpen(null);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -63,6 +67,7 @@ const Invoices = () => {
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [invoiceToDelete, setInvoiceToDelete] = useState<number | number[] | null>(null);
+    const [invoiceToEdit, setInvoiceToEdit] = useState<any>(null);
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
 
@@ -78,10 +83,24 @@ const Invoices = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             setIsNewInvoiceOpen(false);
+            setInvoiceToEdit(null);
             toast.success('Rechnung erfolgreich erstellt');
         },
         onError: () => {
             toast.error('Fehler beim Erstellen der Rechnung');
+        }
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (args: { id: number, data: any }) => invoiceService.update(args.id, args.data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            setIsNewInvoiceOpen(false);
+            setInvoiceToEdit(null);
+            toast.success('Rechnung erfolgreich aktualisiert');
+        },
+        onError: () => {
+            toast.error('Fehler beim Aktualisieren der Rechnung');
         }
     });
 
@@ -143,7 +162,7 @@ const Invoices = () => {
         return invoices.filter((inv: any) => {
             const status = inv.status?.toLowerCase() || 'pending';
             const dueDate = new Date(inv.due_date);
-            const isOverdue = dueDate < today && status !== 'paid' && status !== 'cancelled' && status !== 'deleted' && status !== 'archived';
+            const isOverdue = dueDate < today && status !== 'paid' && status !== 'cancelled' && status !== 'deleted' && status !== 'archived' && status !== 'draft';
 
             // Trash and Archive are explicit states
             if (statusFilter === 'trash') return status === 'deleted' || status === 'gelöscht';
@@ -299,6 +318,24 @@ const Invoices = () => {
         }
     };
 
+    const handleDownloadXml = async (inv: any) => {
+        try {
+            const response = await invoiceService.downloadXml(inv.id);
+            const blob = response.data;
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${inv.invoice_number}.xml`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('XML Download error:', error);
+            toast.error('Fehler beim Herunterladen der XML-Datei.');
+        }
+    };
+
     const columns = [
         {
             id: 'selection',
@@ -412,6 +449,19 @@ const Invoices = () => {
                             <FaStamp />
                         </button>
                     )}
+                    {/* Draft: show Edit button */}
+                    {inv.status === 'draft' && (
+                        <button
+                            onClick={() => {
+                                setInvoiceToEdit(inv);
+                                setIsNewInvoiceOpen(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+                            title="Entwurf bearbeiten"
+                        >
+                            <FaPen />
+                        </button>
+                    )}
                     {/* Issued/Sent/Paid: show Cancel (Storno) button */}
                     {['issued', 'sent', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note && (
                         <button
@@ -428,7 +478,43 @@ const Invoices = () => {
                         </button>
                     )}
                     <button onClick={() => handlePrint(inv)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition" title="Drucken"><FaPrint /></button>
-                    <button onClick={() => handleDownload(inv)} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition" title="Download"><FaDownload /></button>
+
+                    <div className="relative invoice-download-dropdown">
+                        <button
+                            onClick={() => setDownloadDropdownOpen(downloadDropdownOpen === inv.id ? null : inv.id)}
+                            className={`p-1.5 rounded-md transition ${downloadDropdownOpen === inv.id ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                            title="Download"
+                        >
+                            <FaDownload />
+                        </button>
+                        {downloadDropdownOpen === inv.id && (
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-white shadow-2xl border border-slate-200 z-[100] rounded-lg overflow-hidden text-left origin-top-right ring-1 ring-black ring-opacity-5">
+                                <div className="py-1">
+                                    <div className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50 border-b border-slate-100 mb-1">
+                                        Download Optionen
+                                    </div>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDownload(inv); setDownloadDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-blue-50 flex items-center gap-3 text-slate-700 transition-colors group">
+                                        <div className="p-1.5 bg-red-50 rounded group-hover:bg-red-100 transition-colors">
+                                            <FaFilePdf className="text-red-500 text-sm" />
+                                        </div>
+                                        <div>
+                                            <div className="font-semibold">PDF (Druckansicht)</div>
+                                            <div className="text-[10px] text-slate-400">Standard Dokument</div>
+                                        </div>
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDownloadXml(inv); setDownloadDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-emerald-50 flex items-center gap-3 text-slate-700 transition-colors group">
+                                        <div className="p-1.5 bg-emerald-50 rounded group-hover:bg-emerald-100 transition-colors">
+                                            <FaFileCode className="text-emerald-500 text-sm" />
+                                        </div>
+                                        <div>
+                                            <div className="font-semibold">E-Rechnung (XML)</div>
+                                            <div className="text-[10px] text-slate-400">XRechnung 3.0 / ZUGFeRD</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     {/* Only drafts can be deleted */}
                     {inv.status === 'draft' && (
                         <button onClick={() => {
@@ -526,11 +612,11 @@ const Invoices = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const dueDate = new Date(inv.due_date);
-        return dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled';
+        return dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft';
     }).length;
 
     const reminderCount = activeInvoices.filter((inv: any) => {
-        return (inv.reminder_level > 0 || (new Date(inv.due_date) < new Date() && inv.status !== 'paid' && inv.status !== 'cancelled'));
+        return (inv.reminder_level > 0 || (new Date(inv.due_date) < new Date() && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft'));
     }).length;
 
     const paidCount = activeInvoices.filter((i: any) => i.status === 'paid').length;
@@ -643,9 +729,19 @@ const Invoices = () => {
 
             <NewInvoiceModal
                 isOpen={isNewInvoiceOpen}
-                onClose={() => setIsNewInvoiceOpen(false)}
-                onSubmit={(data: any) => createMutation.mutate(data)}
-                isLoading={createMutation.isPending}
+                onClose={() => {
+                    setIsNewInvoiceOpen(false);
+                    setInvoiceToEdit(null);
+                }}
+                onSubmit={(data: any) => {
+                    if (invoiceToEdit) {
+                        updateMutation.mutate({ id: invoiceToEdit.id, data });
+                    } else {
+                        createMutation.mutate(data);
+                    }
+                }}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+                invoice={invoiceToEdit}
             />
 
             <ConfirmModal

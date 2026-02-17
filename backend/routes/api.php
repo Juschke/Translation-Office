@@ -106,6 +106,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('invoices/{invoice}/preview', [\App\Http\Controllers\Api\InvoiceController::class, 'preview']);
     Route::get('invoices/{invoice}/download', [\App\Http\Controllers\Api\InvoiceController::class, 'download']);
     Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Api\InvoiceController::class, 'print']);
+    Route::get('invoices/{invoice}/download-xml', [\App\Http\Controllers\Api\InvoiceController::class, 'downloadXml']);
     Route::apiResource('invoices', \App\Http\Controllers\Api\InvoiceController::class);
 
     // Mails

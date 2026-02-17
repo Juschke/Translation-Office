@@ -656,7 +656,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                 <div className="flex-1 lg:overflow-hidden overflow-y-auto flex flex-col lg:flex-row">
                     {/* Left Column */}
-                    <div className="lg:flex-1 p-3 sm:p-5 space-y-6 custom-scrollbar border-b lg:border-b-0 lg:border-r border-slate-200 bg-white">
+                    <div className="lg:flex-1 p-3 sm:p-5 space-y-6 custom-scrollbar border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:overflow-y-auto">
                         {/* 01: Basis-Daten */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
@@ -1046,48 +1046,87 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Kalkulation Positionen</h4>
                             </div>
 
-                            <div className="space-y-4">
-                                {positions.map((pos, index) => (
-                                    <div key={pos.id} className="border border-slate-200 rounded-lg overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
-                                        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex items-center gap-3">
-                                            <span className="text-xs font-bold text-slate-400">{String(index + 1).padStart(2, '0')}.</span>
-                                            <input type="text" placeholder="Bezeichnung..." className="flex-1 bg-transparent border-none text-sm font-bold text-slate-800 focus:ring-0" value={pos.description} onChange={e => { const n = [...positions]; n[index].description = e.target.value; setPositions(n); }} />
-                                            {positions.length > 1 && <button onClick={() => setPositions(positions.filter(p => p.id !== pos.id))} className="text-slate-300 hover:text-red-500 transition p-1"><FaTrash /></button>}
-                                        </div>
-                                        <div className="p-3 space-y-4">
-                                            <div className="grid grid-cols-12 gap-x-4 items-start">
-                                                <div className="col-span-12 md:col-span-6 space-y-2">
-                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Menge & Einheit</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-11">
+                            <div className="overflow-x-auto border border-slate-200 rounded-lg shadow-sm bg-white">
+                                <table className="w-full text-left border-collapse min-w-[600px]">
+                                    <thead className="bg-slate-50/80 text-slate-500 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
+                                        <tr>
+                                            <th className="px-4 py-3 w-10 text-center">#</th>
+                                            <th className="px-4 py-3">Beschreibung</th>
+                                            <th className="px-4 py-3 w-32 text-right">Menge</th>
+                                            <th className="px-4 py-3 w-24 text-right">Einh.</th>
+                                            <th className="px-4 py-3 w-32 text-right bg-red-50/30 text-red-400 border-l border-slate-100">EK (Stk)</th>
+                                            <th className="px-4 py-3 w-32 text-right bg-emerald-50/30 text-emerald-600 border-l border-slate-100">VK (Stk)</th>
+                                            <th className="px-4 py-3 w-28 text-right font-black text-slate-700 bg-emerald-50/30 border-l border-slate-100">Gesamt</th>
+                                            <th className="px-2 py-3 w-10 text-center"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 text-xs text-slate-600">
+                                        {positions.map((pos, index) => (
+                                            <tr key={pos.id} className="group hover:bg-slate-50 transition-colors">
+                                                <td className="px-4 py-3 text-center text-slate-400 font-medium">{index + 1}</td>
+                                                <td className="px-4 py-3">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Bezeichnung..."
+                                                        className="w-full bg-transparent outline-none font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded px-1 -mx-1"
+                                                        value={pos.description}
+                                                        onChange={e => {
+                                                            const n = [...positions];
+                                                            n[index].description = e.target.value;
+                                                            setPositions(n);
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        className="w-full text-right bg-transparent outline-none font-mono focus:bg-white focus:ring-2 focus:ring-brand-100 rounded px-1 -mx-1"
+                                                        value={pos.amount}
+                                                        onChange={e => {
+                                                            const n = [...positions];
+                                                            n[index].amount = e.target.value;
+                                                            setPositions(n);
+                                                        }}
+                                                        onBlur={e => {
+                                                            const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                            const n = [...positions];
+                                                            n[index].amount = val.toFixed(2);
+                                                            setPositions(n);
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <select
+                                                        className="w-full bg-transparent text-right outline-none text-[10px] font-bold uppercase text-slate-500 cursor-pointer hover:text-brand-600"
+                                                        value={pos.unit}
+                                                        onChange={e => {
+                                                            const n = [...positions];
+                                                            n[index].unit = e.target.value;
+                                                            setPositions(n);
+                                                        }}
+                                                    >
+                                                        <option value="Wörter">Wörter</option>
+                                                        <option value="Normzeile">Normzeile</option>
+                                                        <option value="Seiten">Seiten</option>
+                                                        <option value="Stunden">Stunden</option>
+                                                        <option value="Pauschal">Pauschal</option>
+                                                    </select>
+                                                </td>
+                                                <td className="px-4 py-3 text-right border-l border-slate-100 bg-red-50/5 group-hover:bg-red-50/20 transition-colors">
+                                                    <div className="flex items-center justify-end gap-1">
                                                         <input
                                                             type="number"
                                                             step="0.01"
                                                             min="0"
-                                                            className="flex-1 px-3 text-sm font-bold text-slate-700 outline-none"
-                                                            value={pos.amount}
-                                                            onChange={e => { const n = [...positions]; n[index].amount = e.target.value; setPositions(n); }}
-                                                            onBlur={e => {
-                                                                const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                            className="w-20 text-right bg-transparent outline-none font-mono text-red-400 focus:bg-white focus:ring-2 focus:ring-red-100 rounded px-1"
+                                                            value={pos.partnerRate}
+                                                            onChange={e => {
                                                                 const n = [...positions];
-                                                                n[index].amount = val.toFixed(2);
+                                                                n[index].partnerRate = e.target.value;
                                                                 setPositions(n);
                                                             }}
-                                                        />
-                                                        <select className="w-32 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.unit} onChange={e => { const n = [...positions]; n[index].unit = e.target.value; setPositions(n); }}>
-                                                            <option>Wörter</option><option>Normzeile</option><option>Seiten</option><option>Stunden</option><option>Pauschal</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div className="col-span-12 md:col-span-6 space-y-2">
-                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">EK (Partner)</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-11">
-                                                        <input
-                                                            type="number"
-                                                            step="0.01"
-                                                            min="0"
-                                                            className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none"
-                                                            value={pos.partnerRate}
-                                                            onChange={e => { const n = [...positions]; n[index].partnerRate = e.target.value; setPositions(n); }}
                                                             onBlur={e => {
                                                                 const val = Math.max(0, parseFloat(e.target.value) || 0);
                                                                 const n = [...positions];
@@ -1095,25 +1134,35 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                 setPositions(n);
                                                             }}
                                                         />
-                                                        <select className="w-28 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.partnerMode} onChange={e => { const n = [...positions]; n[index].partnerMode = e.target.value; setPositions(n); }}>
-                                                            <option value="unit">Rate</option><option value="flat">Pauschal</option>
+                                                        <select
+                                                            className="w-4 bg-transparent text-[8px] text-slate-400 outline-none"
+                                                            value={pos.partnerMode}
+                                                            onChange={e => {
+                                                                const n = [...positions];
+                                                                n[index].partnerMode = e.target.value;
+                                                                setPositions(n);
+                                                            }}
+                                                            title="Berechnung: Rate oder Pauschal"
+                                                        >
+                                                            <option value="unit">€/Eh.</option>
+                                                            <option value="flat">Fix</option>
                                                         </select>
                                                     </div>
-                                                    <div className="text-[10px] text-right text-slate-400 italic">EK-Gesamt: {pos.partnerTotal} €</div>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-12 gap-x-4 items-start pt-2 border-t border-slate-100">
-                                                <div className="col-span-12 space-y-2">
-                                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">VK (Kunde)</label>
-                                                    <div className="flex border border-slate-300 rounded overflow-hidden h-11 transition-all focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/5">
+                                                </td>
+                                                <td className="px-4 py-3 text-right border-l border-slate-100 bg-emerald-50/5 group-hover:bg-emerald-50/20 transition-colors">
+                                                    <div className="flex items-center justify-end gap-1">
                                                         {pos.customerMode === 'flat' || pos.customerMode === 'rate' ? (
                                                             <input
                                                                 type="number"
                                                                 step="0.01"
                                                                 min="0"
-                                                                className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none"
+                                                                className="w-20 text-right bg-transparent outline-none font-mono text-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded px-1"
                                                                 value={pos.customerRate}
-                                                                onChange={e => { const n = [...positions]; n[index].customerRate = e.target.value; setPositions(n); }}
+                                                                onChange={e => {
+                                                                    const n = [...positions];
+                                                                    n[index].customerRate = e.target.value;
+                                                                    setPositions(n);
+                                                                }}
                                                                 onBlur={e => {
                                                                     const val = Math.max(0, parseFloat(e.target.value) || 0);
                                                                     const n = [...positions];
@@ -1125,9 +1174,13 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                             <input
                                                                 type="number"
                                                                 min="0"
-                                                                className="flex-1 px-3 text-sm font-bold text-slate-700 text-right outline-none"
+                                                                className="w-20 text-right bg-transparent outline-none font-mono text-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded px-1"
                                                                 value={pos.marginPercent}
-                                                                onChange={e => { const n = [...positions]; n[index].marginPercent = e.target.value; setPositions(n); }}
+                                                                onChange={e => {
+                                                                    const n = [...positions];
+                                                                    n[index].marginPercent = e.target.value;
+                                                                    setPositions(n);
+                                                                }}
                                                                 onBlur={e => {
                                                                     const val = Math.max(0, parseFloat(e.target.value) || 0);
                                                                     const n = [...positions];
@@ -1136,25 +1189,56 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                 }}
                                                             />
                                                         )}
-                                                        <div className="bg-white px-2 flex items-center text-[10px] font-bold text-slate-400 border-l border-r border-slate-100">{pos.customerMode === 'unit' ? '%' : '€'}</div>
-                                                        <select className="w-32 bg-slate-50 text-[11px] font-bold text-slate-600 outline-none border-l border-slate-200" value={pos.customerMode === 'flat' ? 'flat' : (pos.customerMode === 'rate' ? 'rate' : pos.marginType)} onChange={e => {
-                                                            const n = [...positions];
-                                                            const v = e.target.value;
-                                                            if (v === 'flat') { n[index].customerMode = 'flat'; n[index].marginType = 'markup'; }
-                                                            else if (v === 'rate') { n[index].customerMode = 'rate'; n[index].marginType = 'markup'; }
-                                                            else { n[index].customerMode = 'unit'; n[index].marginType = v; }
-                                                            setPositions(n);
-                                                        }}>
-                                                            <option value="rate">Rate</option><option value="markup">Aufschlag</option><option value="discount">Rabatt</option><option value="flat">Pauschal</option>
+                                                        <select
+                                                            className="w-4 bg-transparent text-[8px] text-slate-400 outline-none"
+                                                            value={pos.customerMode === 'flat' ? 'flat' : (pos.customerMode === 'rate' ? 'rate' : pos.marginType)}
+                                                            onChange={e => {
+                                                                const n = [...positions];
+                                                                const v = e.target.value;
+                                                                if (v === 'flat') { n[index].customerMode = 'flat'; n[index].marginType = 'markup'; }
+                                                                else if (v === 'rate') { n[index].customerMode = 'rate'; n[index].marginType = 'markup'; }
+                                                                else { n[index].customerMode = 'unit'; n[index].marginType = v; }
+                                                                setPositions(n);
+                                                            }}
+                                                            title="Berechnung: Rate, Aufschlag, etc."
+                                                        >
+                                                            <option value="rate">Rate</option>
+                                                            <option value="markup">Aufschl. %</option>
+                                                            <option value="flat">Fix</option>
                                                         </select>
                                                     </div>
-                                                    <div className="text-[10px] text-right text-slate-800 font-bold">VK-Gesamt: {pos.customerTotal} €</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                <button onClick={() => setPositions([...positions, { id: Date.now().toString(), description: 'Zusatzleistung', amount: '1.00', unit: 'Normzeile', quantity: '1.00', partnerRate: '0.00', partnerMode: 'flat', partnerTotal: '0.00', customerRate: '0.00', customerMode: 'flat', customerTotal: '0.00', marginType: 'markup', marginPercent: '0.00' }])} className="mx-auto flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-100 transition-all active:scale-95"><FaPlus /> Position hinzufügen</button>
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 group-hover:bg-emerald-50/30 transition-colors">
+                                                    {pos.customerTotal} €
+                                                </td>
+                                                <td className="px-2 py-3 text-center">
+                                                    {positions.length > 1 && (
+                                                        <button
+                                                            onClick={() => setPositions(positions.filter(p => p.id !== pos.id))}
+                                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                            title="Löschen"
+                                                        >
+                                                            <FaTrash className="text-[10px]" />
+                                                        </button>
+                                                    )}
+                                                    {positions.length === 1 && (
+                                                        <button disabled className="p-1.5 text-slate-200 cursor-not-allowed">
+                                                            <FaTrash className="text-[10px]" />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                <div className="p-2 border-t border-slate-100 bg-slate-50 flex justify-center">
+                                    <button
+                                        onClick={() => setPositions([...positions, { id: Date.now().toString(), description: 'Zusatzleistung', amount: '1.00', unit: 'Normzeile', quantity: '1.00', partnerRate: '0.00', partnerMode: 'unit', partnerTotal: '0.00', customerRate: '0.00', customerMode: 'unit', customerTotal: '0.00', marginType: 'markup', marginPercent: '0.00' }])}
+                                        className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-50 hover:text-brand-600 transition-all active:scale-95 shadow-sm"
+                                    >
+                                        <FaPlus /> Position hinzufügen
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

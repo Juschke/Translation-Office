@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-    FaTimes, FaFileInvoiceDollar, FaCheck, FaPlus, FaTrash, FaBoxOpen
+    FaTimes, FaFileInvoiceDollar, FaPlus, FaTrash
 } from 'react-icons/fa';
 import Input from '../common/Input';
 import { Button } from '../common/Button';
@@ -13,18 +13,17 @@ interface NewInvoiceModalProps {
     onClose: () => void;
     onSubmit: (data: any) => void;
     project?: any;
+    invoice?: any;
     isLoading?: boolean;
 }
 
 const UNITS = ['Wörter', 'Zeilen', 'Stunden', 'Seiten', 'Pauschale', 'Stk', 'Minuten', 'Tag'];
 
-const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewInvoiceModalProps) => {
+const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoading }: NewInvoiceModalProps) => {
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
     useEffect(() => {
-        if (isOpen && project?.id) {
-            setSelectedProjectId(project.id.toString());
-        }
+        // Handled in main useEffect now
     }, [isOpen, project]);
 
     const [formData, setFormData] = useState({
@@ -72,10 +71,25 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
     });
 
     const projectOptions = useMemo(() => {
-        return (Array.isArray(projects) ? projects : []).map((p: any) => ({
-            value: p.id.toString(),
-            label: `${p.project_number} - ${p.project_name} (${p.customer?.company_name || p.customer?.first_name || 'Unbekannt'})`
-        }));
+        return (Array.isArray(projects) ? projects : []).map((p: any) => {
+            // Handle project number (avoid 'null')
+            const pNumber = p.project_number ? p.project_number : 'Entwurf';
+
+            // Handle customer name
+            let cName = 'Unbekannt';
+            if (p.customer) {
+                if (p.customer.company_name) {
+                    cName = p.customer.company_name;
+                } else if (p.customer.first_name || p.customer.last_name) {
+                    cName = `${p.customer.first_name || ''} ${p.customer.last_name || ''}`.trim();
+                }
+            }
+
+            return {
+                value: p.id.toString(),
+                label: `${pNumber} - ${p.project_name} (${cName})`
+            };
+        });
     }, [projects]);
 
     const serviceOptions = useMemo(() => {
@@ -86,6 +100,12 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
     }, [services]);
 
     const activeProject = useMemo(() => {
+        // If the selected project matches the passed 'project' prop, use the prop
+        // because it likely contains more detailed data (e.g. payments, computed fields)
+        if (project && project.id.toString() === selectedProjectId) {
+            return project;
+        }
+
         if (selectedProjectId) {
             const found = (Array.isArray(projects) ? projects : []).find(
                 (p: any) => p.id.toString() === selectedProjectId
@@ -97,25 +117,128 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
 
     useEffect(() => {
         if (isOpen) {
-            const prefix = formData.type === 'credit_note' ? 'GS' : 'RE';
-            const year = new Date().getFullYear();
-            const seq = String(Math.floor(1 + Math.random() * 9999)).padStart(5, '0');
-            setFormData(prev => ({ ...prev, invoice_number: `${prefix}-${year}-${seq}` }));
+            if (invoice) {
+                // Edit mode: Populate from invoice
+                setSelectedProjectId(invoice.project_id?.toString() || '');
+                setFormData({
+                    type: invoice.type || 'invoice',
+                    invoice_number: invoice.invoice_number,
+                    date: invoice.date ? invoice.date.split('T')[0] : new Date().toISOString().split('T')[0],
+                    due_date: invoice.due_date ? invoice.due_date.split('T')[0] : '',
+                    delivery_date: invoice.delivery_date ? invoice.delivery_date.split('T')[0] : '',
+                    amount_net: (invoice.amount_net_cents ? invoice.amount_net_cents / 100 : invoice.amount_net).toFixed(2),
+                    tax_rate: invoice.tax_rate?.toString() || '19.00',
+                    amount_tax: (invoice.amount_tax_cents ? invoice.amount_tax_cents / 100 : invoice.amount_tax).toFixed(2),
+                    amount_gross: (invoice.amount_gross_cents ? invoice.amount_gross_cents / 100 : invoice.amount_gross).toFixed(2),
+                    shipping: (invoice.shipping_cents ? invoice.shipping_cents / 100 : invoice.shipping || 0).toFixed(2),
+                    discount: (invoice.discount_cents ? invoice.discount_cents / 100 : invoice.discount || 0).toFixed(2),
+                    paid_amount: (invoice.paid_amount_cents ? invoice.paid_amount_cents / 100 : invoice.paid_amount || 0).toFixed(2),
+                    amount_due: '0.00', // recalculated
+                    currency: invoice.currency || 'EUR',
+                    status: invoice.status,
+                    notes: invoice.notes || '',
+                    project_id: invoice.project_id?.toString() || '',
+                    customer_id: invoice.customer_id?.toString() || '',
+                    service_period: invoice.service_period || '',
+                    tax_exemption: invoice.tax_exemption || 'none',
+                });
+
+                if (invoice.items) {
+                    setItems(invoice.items.map((i: any) => ({
+                        id: i.id || Math.random().toString(36).substr(2, 9),
+                        description: i.description,
+                        quantity: i.quantity,
+                        unit: i.unit,
+                        price: i.unit_price_cents ? i.unit_price_cents / 100 : i.price,
+                        total: i.total_cents ? i.total_cents / 100 : i.total
+                    })));
+                }
+            } else {
+                // Create mode
+                // The backend handles the sequential numbering based on the last invoice.
+                // We just set a placeholder here or leave it empty.
+                setFormData(prev => ({ ...prev, invoice_number: 'Wird automatisch generiert' }));
+
+                if (project?.id) {
+                    setSelectedProjectId(project.id.toString());
+                }
+            }
         }
-    }, [isOpen, formData.type]);
+    }, [isOpen, invoice, project]);
 
     useEffect(() => {
-        if (activeProject) {
+        if (activeProject && !invoice) {
             const financials = activeProject.financials || activeProject;
             if (activeProject.positions && activeProject.positions.length > 0) {
-                setItems(activeProject.positions.map((p: any) => ({
+                const standardItems = activeProject.positions.map((p: any) => ({
                     id: p.id || Math.random().toString(36).substr(2, 9),
                     description: p.description || p.name || 'Position',
-                    quantity: parseFloat(p.quantity || p.amount) || 1,
+                    quantity: parseFloat(p.amount) || parseFloat(p.quantity) || 1,
                     unit: p.unit || 'Wörter',
                     price: parseFloat(p.customerRate || p.customer_rate || p.price) || 0,
                     total: parseFloat(p.customerTotal || p.customer_total || p.total) || 0
-                })));
+                }));
+
+                const extraItems = [];
+
+                if (activeProject.isCertified || activeProject.is_certified) {
+                    extraItems.push({
+                        id: Math.random().toString(36).substr(2, 9),
+                        description: 'Beglaubigung',
+                        quantity: 1,
+                        unit: 'Pauschale',
+                        price: 5.00,
+                        total: 5.00
+                    });
+                }
+
+                if (activeProject.hasApostille || activeProject.has_apostille) {
+                    extraItems.push({
+                        id: Math.random().toString(36).substr(2, 9),
+                        description: 'Apostille',
+                        quantity: 1,
+                        unit: 'Pauschale',
+                        price: 15.00,
+                        total: 15.00
+                    });
+                }
+
+                if (activeProject.isExpress || activeProject.is_express) {
+                    extraItems.push({
+                        id: Math.random().toString(36).substr(2, 9),
+                        description: 'Express-Zuschlag',
+                        quantity: 1,
+                        unit: 'Pauschale',
+                        price: 15.00,
+                        total: 15.00
+                    });
+                }
+
+                if (activeProject.classification === 'ja' || activeProject.classification === true) {
+                    extraItems.push({
+                        id: Math.random().toString(36).substr(2, 9),
+                        description: 'Klassifizierung',
+                        quantity: 1,
+                        unit: 'Pauschale',
+                        price: 15.00,
+                        total: 15.00
+                    });
+                }
+
+                const copies = parseInt(activeProject.copies || activeProject.copies_count || '0');
+                if (copies > 0) {
+                    const copyPrice = parseFloat(activeProject.copyPrice || activeProject.copy_price || '5');
+                    extraItems.push({
+                        id: Math.random().toString(36).substr(2, 9),
+                        description: 'Kopien',
+                        quantity: copies,
+                        unit: 'Stk',
+                        price: copyPrice,
+                        total: copies * copyPrice
+                    });
+                }
+
+                setItems([...standardItems, ...extraItems]);
             } else {
                 const net = parseFloat(financials.netTotal || financials.price_total || 0);
                 setItems([{
@@ -138,7 +261,8 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                 project_id: activeProject.id,
                 customer_id: activeProject.customer_id || activeProject.customer?.id,
                 service_period: servicePeriod || prev.service_period,
-                delivery_date: activeProject.delivery_date ? activeProject.delivery_date.split('T')[0] : prev.delivery_date
+                delivery_date: activeProject.delivery_date ? activeProject.delivery_date.split('T')[0] : prev.delivery_date,
+                paid_amount: (activeProject.payments || []).reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0).toFixed(2)
             }));
         }
     }, [activeProject]);
@@ -234,49 +358,52 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                 <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
                     {/* PREVIEW: DIN 5008 MATCH */}
                     <div className="flex-1 bg-slate-100 overflow-auto custom-scrollbar flex justify-start md:justify-center py-5 md:py-10 px-4 md:px-6 min-w-0">
-                        <div className="bg-white shadow-xl w-[210mm] min-w-[210mm] md:min-w-0 min-h-[297mm] h-fit relative text-black shrink-0 overflow-hidden" style={{ fontFamily: "'Arial', sans-serif", padding: '0' }}>
-                            {/* Company Name / Logo */}
-                            <div className="absolute top-[20mm] right-[20mm] text-right">
-                                <h2 className="text-[14pt] font-bold text-slate-800 m-0">{companyName}</h2>
-                            </div>
-
-                            {/* Small Sender Line */}
-                            <div className="absolute top-[45mm] left-[20mm] w-[85mm] text-[7pt] text-slate-500 underline whitespace-nowrap overflow-hidden">
-                                {companyName} • {companyStreet} • {companyCity} • {companyCountry}
-                            </div>
-
-                            {/* Recipient Address */}
-                            <div className="absolute top-[50mm] left-[20mm] w-[85mm] text-[11pt] leading-snug">
-                                <strong>{customerName}</strong><br />
-                                {customerStreet && <>{customerStreet}<br /></>}
-                                {customerCity && <>{customerCity}<br /></>}
-                                {customerCountry}
-                            </div>
-
-                            {/* Info Block */}
-                            <div className="absolute top-[50mm] left-[125mm] w-[65mm] text-[9pt] space-y-1">
-                                <div className="flex justify-between">
-                                    <span className="font-bold text-slate-500">{formData.type === 'credit_note' ? 'Gutschrifts' : 'Rechnungs'}-Nr.</span>
-                                    <span>{formData.invoice_number || 'ENTWURF'}</span>
+                        <div className="bg-white shadow-xl w-[210mm] min-w-[210mm] md:min-w-0 min-h-[297mm] h-fit relative text-black shrink-0 overflow-hidden flex flex-col" style={{ fontFamily: "'Arial', sans-serif", padding: '0' }}>
+                            {/* HEADER SECTION (Fixed Height) */}
+                            <div className="relative h-[105mm] w-full shrink-0">
+                                {/* Company Name / Logo */}
+                                <div className="absolute top-[20mm] right-[20mm] text-right">
+                                    <h2 className="text-[14pt] font-bold text-slate-800 m-0">{companyName}</h2>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="font-bold text-slate-500">Datum</span>
-                                    <span>{fmtDate(formData.date)}</span>
+
+                                {/* Small Sender Line */}
+                                <div className="absolute top-[45mm] left-[20mm] w-[85mm] text-[7pt] text-slate-500 underline whitespace-nowrap overflow-hidden">
+                                    {companyName} • {companyStreet} • {companyCity} • {companyCountry}
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="font-bold text-slate-500">Fällig am</span>
-                                    <span>{fmtDate(formData.due_date)}</span>
+
+                                {/* Recipient Address */}
+                                <div className="absolute top-[50mm] left-[20mm] w-[85mm] text-[11pt] leading-snug">
+                                    <strong>{customerName}</strong><br />
+                                    {customerStreet && <>{customerStreet}<br /></>}
+                                    {customerCity && <>{customerCity}<br /></>}
+                                    {customerCountry}
                                 </div>
-                                {activeProject?.project_number && (
+
+                                {/* Info Block */}
+                                <div className="absolute top-[50mm] left-[125mm] w-[65mm] text-[9pt] space-y-1">
                                     <div className="flex justify-between">
-                                        <span className="font-bold text-slate-500">Projekt-Nr.</span>
-                                        <span>{activeProject.project_number}</span>
+                                        <span className="font-bold text-slate-500">{formData.type === 'credit_note' ? 'Gutschrifts' : 'Rechnungs'}-Nr.</span>
+                                        <span>{formData.invoice_number || 'ENTWURF'}</span>
                                     </div>
-                                )}
+                                    <div className="flex justify-between">
+                                        <span className="font-bold text-slate-500">Datum</span>
+                                        <span>{fmtDate(formData.date)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="font-bold text-slate-500">Fällig am</span>
+                                        <span>{fmtDate(formData.due_date)}</span>
+                                    </div>
+                                    {activeProject?.project_number && (
+                                        <div className="flex justify-between">
+                                            <span className="font-bold text-slate-500">Projekt-Nr.</span>
+                                            <span>{activeProject.project_number}</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Content Start */}
-                            <div className="absolute top-[105mm] left-[20mm] right-[20mm] w-[170mm]">
+                            {/* CONTENT SECTION (Flexible Height) */}
+                            <div className="flex-1 px-[20mm]">
                                 <h1 className="text-[14pt] font-bold mb-4">{formData.type === 'credit_note' ? 'Gutschrift' : 'Rechnung'} Nr. {formData.invoice_number || 'ENTWURF'}</h1>
                                 <p className="text-[10pt] mb-6 leading-relaxed">
                                     Sehr geehrte Damen und Herren,<br /><br />
@@ -286,17 +413,21 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                                 <table className="w-full text-left text-[10pt] mb-4 border-collapse">
                                     <thead className="border-b-[1pt] border-black">
                                         <tr className="text-[9pt] font-black uppercase text-slate-500">
+                                            <th className="py-2 w-10 text-center">Pos.</th>
                                             <th className="py-2">Leistung</th>
                                             <th className="py-2 text-right">Menge</th>
+                                            <th className="py-2 text-right">Einheit</th>
                                             <th className="py-2 text-right">Einzel</th>
                                             <th className="py-2 text-right">Gesamt</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {items.map((item) => (
+                                        {items.map((item, idx) => (
                                             <tr key={item.id} className="text-[10pt]">
+                                                <td className="py-3 text-center text-slate-400">{idx + 1}</td>
                                                 <td className="py-3 pr-2"><strong>{item.description || 'Leistung'}</strong></td>
-                                                <td className="py-3 text-right">{item.quantity} {item.unit}</td>
+                                                <td className="py-3 text-right">{item.quantity}</td>
+                                                <td className="py-3 text-right">{item.unit}</td>
                                                 <td className="py-3 text-right">{fmtEur(item.price)}</td>
                                                 <td className="py-3 text-right">{fmtEur(item.total)}</td>
                                             </tr>
@@ -333,12 +464,26 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                                         <span>Gesamtbetrag:</span>
                                         <span>{fmtEur(formData.amount_gross)}</span>
                                     </div>
+
+                                    {/* Display Down Payment / Paid Amount */}
                                     {parseFloat(formData.paid_amount) > 0 && (
-                                        <div className="flex justify-between text-red-600 font-bold border-t border-red-100 pt-1">
-                                            <span>Noch zu zahlen:</span>
-                                            <span>{fmtEur(formData.amount_due)}</span>
+                                        <div className="flex justify-between text-[10pt] text-slate-600">
+                                            <span>Bereits bezahlt:</span>
+                                            <span>- {fmtEur(formData.paid_amount)}</span>
                                         </div>
                                     )}
+
+                                    <div className="flex justify-between text-[11pt] font-bold border-t border-slate-200 pt-1 mt-1">
+                                        {parseFloat(formData.amount_due) <= 0 ? (
+                                            <span className="text-emerald-600">Betrag beglichen</span>
+                                        ) : (
+                                            <>
+                                                <span className="text-red-600">Noch zu zahlen:</span>
+                                                <span className="text-red-600">{fmtEur(formData.amount_due)}</span>
+                                            </>
+                                        )}
+                                        {parseFloat(formData.amount_due) <= 0 && <span className="text-emerald-600">0,00 €</span>}
+                                    </div>
                                 </div>
 
                                 {formData.notes && (
@@ -348,26 +493,28 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                                 )}
 
                                 {/* Payment Info Area */}
-                                <div className="mt-10 pt-4 border-t border-slate-100 text-[9pt] text-slate-600">
+                                <div className="mt-10 pt-4 border-t border-slate-100 text-[9pt] text-slate-600 mb-8">
                                     Bitte überweisen Sie den Betrag von <strong>{fmtEur(formData.amount_due)}</strong> bis zum <strong>{fmtDate(formData.due_date)}</strong>.<br />
                                     Verwendungszweck: <strong>{formData.invoice_number}</strong><br /><br />
                                     <strong>Bankverbindung:</strong> {companyBank} | IBAN: {companyIBAN} | BIC: {companyBIC}
                                 </div>
                             </div>
 
-                            {/* Footer Area */}
-                            <div className="absolute bottom-[15mm] left-[20mm] right-[20mm] border-t border-slate-200 pt-2 grid grid-cols-3 gap-4 text-[7pt] text-slate-400 leading-tight">
-                                <div>
-                                    <strong className="text-slate-500 uppercase block mb-1">Anschrift</strong>
-                                    {companyName}<br />{companyStreet}<br />{companyCity}<br />{companyCountry}
-                                </div>
-                                <div className="text-center">
-                                    <strong className="text-slate-500 uppercase block mb-1">Kontakt</strong>
-                                    Email: {companyEmail}<br />Telefon: {companyPhone}
-                                </div>
-                                <div className="text-right">
-                                    <strong className="text-slate-500 uppercase block mb-1">Steuer & Bank</strong>
-                                    St.-Nr: {companyTaxNr}<br />USt-ID: {companyVatId}<br />IBAN: {companyIBAN}
+                            {/* FOOTER SECTION (Pushed to bottom, No Overlap) */}
+                            <div className="px-[20mm] pb-[15mm] shrink-0">
+                                <div className="border-t border-slate-200 pt-2 grid grid-cols-3 gap-4 text-[7pt] text-slate-400 leading-tight">
+                                    <div>
+                                        <strong className="text-slate-500 uppercase block mb-1">Anschrift</strong>
+                                        {companyName}<br />{companyStreet}<br />{companyCity}<br />{companyCountry}
+                                    </div>
+                                    <div className="text-center">
+                                        <strong className="text-slate-500 uppercase block mb-1">Kontakt</strong>
+                                        Email: {companyEmail}<br />Telefon: {companyPhone}
+                                    </div>
+                                    <div className="text-right">
+                                        <strong className="text-slate-500 uppercase block mb-1">Steuer & Bank</strong>
+                                        St.-Nr: {companyTaxNr}<br />USt-ID: {companyVatId}<br />IBAN: {companyIBAN}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -436,7 +583,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, isLoading }: NewI
                                 </div>
 
                                 <div className="space-y-4">
-                                    {items.map((item, idx) => (
+                                    {items.map((item) => (
                                         <div key={item.id} className="p-4 border border-slate-100 bg-slate-50/30 space-y-4 group relative">
                                             <button onClick={() => removeItem(item.id)} className="absolute top-2 right-2 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><FaTrash className="text-[10px]" /></button>
                                             <input className="w-full bg-transparent border-b border-slate-100 focus:border-slate-800 outline-none text-sm font-black text-slate-800 placeholder:text-slate-200 pb-1 pr-6"

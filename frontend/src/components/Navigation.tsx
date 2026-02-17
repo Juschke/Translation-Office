@@ -61,9 +61,14 @@ const Navigation = () => {
         }
     });
 
-    const handleNotificationClick = (id: string, read_at: any) => {
-        if (!read_at) {
-            markAsReadMutation.mutate(id);
+    const handleNotificationClick = (notification: any) => {
+        if (!notification.read_at) {
+            markAsReadMutation.mutate(notification.id);
+        }
+
+        if (notification.data?.project_id) {
+            navigate(`/projects/${notification.data.project_id}`);
+            setIsNotifOpen(false);
         }
     };
 
@@ -206,7 +211,7 @@ const Navigation = () => {
                                             notifications.map((n: any) => (
                                                 <div
                                                     key={n.id}
-                                                    onClick={() => handleNotificationClick(n.id, n.read_at)}
+                                                    onClick={() => handleNotificationClick(n)}
                                                     className={clsx("block p-3 hover:bg-slate-50 border-b border-slate-50 cursor-pointer text-left", !n.read_at ? "bg-brand-50/50" : "")}
                                                 >
                                                     <div className="flex justify-between items-center mb-1">

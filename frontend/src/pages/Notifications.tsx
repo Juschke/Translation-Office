@@ -1,4 +1,5 @@
 import { FaBell, FaCheck, FaCheckDouble, FaTrash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationService } from '../api/services';
@@ -21,6 +22,16 @@ interface Notification {
 
 const Notifications = () => {
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
+
+    const handleNotificationClick = (notification: Notification) => {
+        if (!notification.read_at) {
+            markAsReadMutation.mutate(notification.id);
+        }
+        if (notification.data && (notification.data as any).project_id) {
+            navigate(`/projects/${(notification.data as any).project_id}`);
+        }
+    };
 
     const { data: notifications = [], isLoading } = useQuery({
         queryKey: ['notifications'],
@@ -84,8 +95,9 @@ const Notifications = () => {
                         {notifications.map((notification: Notification) => (
                             <div
                                 key={notification.id}
+                                onClick={() => handleNotificationClick(notification)}
                                 className={clsx(
-                                    "p-4 hover:bg-slate-50 transition-colors flex gap-4 items-start group",
+                                    "p-4 hover:bg-slate-50 transition-colors flex gap-4 items-start group cursor-pointer",
                                     !notification.read_at ? "bg-brand-50/30" : ""
                                 )}
                             >
@@ -109,7 +121,7 @@ const Notifications = () => {
                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {!notification.read_at && (
                                         <button
-                                            onClick={() => markAsReadMutation.mutate(notification.id)}
+                                            onClick={(e) => { e.stopPropagation(); markAsReadMutation.mutate(notification.id); }}
                                             className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-full"
                                             title="Als gelesen markieren"
                                         >
@@ -117,7 +129,7 @@ const Notifications = () => {
                                         </button>
                                     )}
                                     <button
-                                        onClick={() => deleteMutation.mutate(notification.id)}
+                                        onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(notification.id); }}
                                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full"
                                         title="Löschen"
                                     >

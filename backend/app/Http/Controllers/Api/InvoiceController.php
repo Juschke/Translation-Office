@@ -10,6 +10,7 @@ use horstoeko\zugferdlaravel\Facades\ZugferdLaravel;
 use horstoeko\zugferd\codelists\ZugferdInvoiceType;
 use horstoeko\zugferd\codelists\ZugferdVatCategoryCodes;
 use horstoeko\zugferd\codelists\ZugferdPaymentMeans;
+use horstoeko\zugferd\ZugferdProfiles;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -65,29 +66,29 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'type'            => 'nullable|string|in:invoice,credit_note',
-            'project_id'      => 'required|exists:projects,id',
-            'customer_id'     => 'required|exists:customers,id',
-            'date'            => 'required|date',
-            'due_date'        => 'required|date',
-            'delivery_date'   => 'nullable|date',
-            'amount_net'      => 'required|numeric',  // EUR from frontend
-            'tax_rate'        => 'nullable|numeric',
-            'amount_tax'      => 'required|numeric',  // EUR from frontend
-            'amount_gross'    => 'required|numeric',  // EUR from frontend
-            'shipping'        => 'nullable|numeric',
-            'discount'        => 'nullable|numeric',
-            'paid_amount'     => 'nullable|numeric',
-            'currency'        => 'string|max:3',
-            'notes'           => 'nullable|string',
-            'service_period'  => 'nullable|string',
-            'tax_exemption'   => 'nullable|string|in:none,§19_ustg,reverse_charge',
-            'items'           => 'nullable|array',
+            'type' => 'nullable|string|in:invoice,credit_note',
+            'project_id' => 'required|exists:projects,id',
+            'customer_id' => 'required|exists:customers,id',
+            'date' => 'required|date',
+            'due_date' => 'required|date',
+            'delivery_date' => 'nullable|date',
+            'amount_net' => 'required|numeric',  // EUR from frontend
+            'tax_rate' => 'nullable|numeric',
+            'amount_tax' => 'required|numeric',  // EUR from frontend
+            'amount_gross' => 'required|numeric',  // EUR from frontend
+            'shipping' => 'nullable|numeric',
+            'discount' => 'nullable|numeric',
+            'paid_amount' => 'nullable|numeric',
+            'currency' => 'string|max:3',
+            'notes' => 'nullable|string',
+            'service_period' => 'nullable|string',
+            'tax_exemption' => 'nullable|string|in:none,§19_ustg,reverse_charge',
+            'items' => 'nullable|array',
             'items.*.description' => 'required|string',
-            'items.*.quantity'    => 'required|numeric',
-            'items.*.unit'        => 'nullable|string',
-            'items.*.price'       => 'required|numeric',
-            'items.*.total'       => 'required|numeric',
+            'items.*.quantity' => 'required|numeric',
+            'items.*.unit' => 'nullable|string',
+            'items.*.price' => 'required|numeric',
+            'items.*.total' => 'required|numeric',
         ]);
 
         return DB::transaction(function () use ($validated, $request) {
@@ -104,58 +105,60 @@ class InvoiceController extends Controller
 
             // 2. Load related data for snapshot
             $customer = \App\Models\Customer::findOrFail($validated['customer_id']);
-            $project  = \App\Models\Project::with('positions')->findOrFail($validated['project_id']);
-            $tenant   = \App\Models\Tenant::findOrFail($tenantId);
+            $project = \App\Models\Project::with('positions')->findOrFail($validated['project_id']);
+            $tenant = \App\Models\Tenant::findOrFail($tenantId);
 
             // 3. Create invoice with cent-based amounts + snapshots
             $invoice = Invoice::create([
-                'type'                     => $validated['type'] ?? Invoice::TYPE_INVOICE,
-                'invoice_number'           => $invoiceNumber,
-                'invoice_number_sequence'  => $newSeq,
-                'project_id'               => $validated['project_id'],
-                'customer_id'              => $validated['customer_id'],
-                'date'                     => $validated['date'],
-                'due_date'                 => $validated['due_date'],
-                'delivery_date'            => $validated['delivery_date'] ?? null,
-                'service_period'           => $validated['service_period'] ?? null,
-                'tax_exemption'            => $validated['tax_exemption'] ?? 'none',
+                'type' => $validated['type'] ?? Invoice::TYPE_INVOICE,
+                'invoice_number' => $invoiceNumber,
+                'invoice_number_sequence' => $newSeq,
+                'project_id' => $validated['project_id'],
+                'customer_id' => $validated['customer_id'],
+                'date' => $validated['date'],
+                'due_date' => $validated['due_date'],
+                'delivery_date' => $validated['delivery_date'] ?? null,
+                'service_period' => $validated['service_period'] ?? null,
+                'tax_exemption' => $validated['tax_exemption'] ?? 'none',
 
                 // EUR → Cents conversion (round to avoid floating-point issues)
-                'amount_net'   => (int) round(($validated['amount_net']) * 100),
-                'tax_rate'     => $validated['tax_rate'] ?? 19.00,
-                'amount_tax'   => (int) round(($validated['amount_tax']) * 100),
+                'amount_net' => (int) round(($validated['amount_net']) * 100),
+                'tax_rate' => $validated['tax_rate'] ?? 19.00,
+                'amount_tax' => (int) round(($validated['amount_tax']) * 100),
                 'amount_gross' => (int) round(($validated['amount_gross']) * 100),
                 'shipping_cents' => (int) round(($validated['shipping'] ?? 0) * 100),
                 'discount_cents' => (int) round(($validated['discount'] ?? 0) * 100),
-                'paid_amount_cents' => (int) round(($validated['paid_amount'] ?? 0) * 100),
-                'currency'       => $validated['currency'] ?? 'EUR',
-                'notes'          => $validated['notes'] ?? null,
-                'status'         => Invoice::STATUS_DRAFT,
-                'is_locked'      => false,
+                'paid_amount_cents' => (int) round(
+                    ($validated['paid_amount'] ?? $project->payments()->sum('amount') ?? 0) * 100
+                ),
+                'currency' => $validated['currency'] ?? 'EUR',
+                'notes' => $validated['notes'] ?? null,
+                'status' => Invoice::STATUS_DRAFT,
+                'is_locked' => false,
 
                 // --- Customer snapshot (§ 14 UStG Pflichtangaben) ---
-                'snapshot_customer_name'       => $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name),
-                'snapshot_customer_address'     => trim(($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '')),
-                'snapshot_customer_zip'         => $customer->address_zip,
-                'snapshot_customer_city'        => $customer->address_city,
-                'snapshot_customer_country'     => $customer->address_country ?? 'DE',
-                'snapshot_customer_vat_id'      => $customer->vat_id ?? null,
-                'snapshot_customer_leitweg_id'  => $customer->leitweg_id ?? null,
+                'snapshot_customer_name' => $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name),
+                'snapshot_customer_address' => trim(($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '')),
+                'snapshot_customer_zip' => $customer->address_zip,
+                'snapshot_customer_city' => $customer->address_city,
+                'snapshot_customer_country' => $customer->address_country ?? 'DE',
+                'snapshot_customer_vat_id' => $customer->vat_id ?? null,
+                'snapshot_customer_leitweg_id' => $customer->leitweg_id ?? null,
 
                 // --- Seller snapshot (§ 14 UStG: eigener Name, Anschrift, StNr) ---
-                'snapshot_seller_name'        => $tenant->company_name ?: $tenant->name,
-                'snapshot_seller_address'      => trim(($tenant->address_street ?? '') . ' ' . ($tenant->address_house_no ?? '')),
-                'snapshot_seller_zip'          => $tenant->address_zip,
-                'snapshot_seller_city'         => $tenant->address_city,
-                'snapshot_seller_country'      => $tenant->address_country ?? 'DE',
-                'snapshot_seller_tax_number'   => $tenant->tax_number,
-                'snapshot_seller_vat_id'       => $tenant->vat_id,
-                'snapshot_seller_bank_name'    => $tenant->bank_name,
-                'snapshot_seller_bank_iban'    => $tenant->bank_iban,
-                'snapshot_seller_bank_bic'     => $tenant->bank_bic,
+                'snapshot_seller_name' => $tenant->company_name ?: $tenant->name,
+                'snapshot_seller_address' => trim(($tenant->address_street ?? '') . ' ' . ($tenant->address_house_no ?? '')),
+                'snapshot_seller_zip' => $tenant->address_zip,
+                'snapshot_seller_city' => $tenant->address_city,
+                'snapshot_seller_country' => $tenant->address_country ?? 'DE',
+                'snapshot_seller_tax_number' => $tenant->tax_number,
+                'snapshot_seller_vat_id' => $tenant->vat_id,
+                'snapshot_seller_bank_name' => $tenant->bank_name,
+                'snapshot_seller_bank_iban' => $tenant->bank_iban,
+                'snapshot_seller_bank_bic' => $tenant->bank_bic,
 
                 // --- Project snapshot ---
-                'snapshot_project_name'   => $project->project_name,
+                'snapshot_project_name' => $project->project_name,
                 'snapshot_project_number' => $project->project_number,
             ]);
 
@@ -163,14 +166,14 @@ class InvoiceController extends Controller
             if (isset($validated['items']) && !empty($validated['items'])) {
                 foreach ($validated['items'] as $index => $itemData) {
                     InvoiceItem::create([
-                        'invoice_id'       => $invoice->id,
-                        'position'         => $index + 1,
-                        'description'      => $itemData['description'],
-                        'quantity'         => (float) $itemData['quantity'],
-                        'unit'             => $itemData['unit'] ?? 'Words',
+                        'invoice_id' => $invoice->id,
+                        'position' => $index + 1,
+                        'description' => $itemData['description'],
+                        'quantity' => (float) $itemData['quantity'],
+                        'unit' => $itemData['unit'] ?? 'Words',
                         'unit_price_cents' => (int) round($itemData['price'] * 100),
-                        'total_cents'      => (int) round($itemData['total'] * 100),
-                        'tax_rate'         => $validated['tax_rate'] ?? 19,
+                        'total_cents' => (int) round($itemData['total'] * 100),
+                        'tax_rate' => $validated['tax_rate'] ?? 19,
                     ]);
                 }
             } else {
@@ -215,26 +218,26 @@ class InvoiceController extends Controller
 
         // Draft invoices: allow broader updates
         $validated = $request->validate([
-            'date'           => 'date',
-            'due_date'       => 'date',
-            'delivery_date'  => 'nullable|date',
-            'amount_net'     => 'numeric',
-            'tax_rate'       => 'numeric',
-            'amount_tax'     => 'numeric',
-            'amount_gross'   => 'numeric',
-            'shipping'       => 'nullable|numeric',
-            'discount'       => 'nullable|numeric',
-            'paid_amount'    => 'nullable|numeric',
-            'notes'          => 'nullable|string',
+            'date' => 'date',
+            'due_date' => 'date',
+            'delivery_date' => 'nullable|date',
+            'amount_net' => 'numeric',
+            'tax_rate' => 'numeric',
+            'amount_tax' => 'numeric',
+            'amount_gross' => 'numeric',
+            'shipping' => 'nullable|numeric',
+            'discount' => 'nullable|numeric',
+            'paid_amount' => 'nullable|numeric',
+            'notes' => 'nullable|string',
             'service_period' => 'nullable|string',
-            'tax_exemption'  => 'nullable|string|in:none,§19_ustg,reverse_charge',
-            'status'         => 'string|in:draft',
-            'items'           => 'nullable|array',
+            'tax_exemption' => 'nullable|string|in:none,§19_ustg,reverse_charge',
+            'status' => 'string|in:draft',
+            'items' => 'nullable|array',
             'items.*.description' => 'required|string',
-            'items.*.quantity'    => 'required|numeric',
-            'items.*.unit'        => 'nullable|string',
-            'items.*.price'       => 'required|numeric',
-            'items.*.total'       => 'required|numeric',
+            'items.*.quantity' => 'required|numeric',
+            'items.*.unit' => 'nullable|string',
+            'items.*.price' => 'required|numeric',
+            'items.*.total' => 'required|numeric',
         ]);
 
         // Convert EUR → cents if amounts provided
@@ -244,29 +247,34 @@ class InvoiceController extends Controller
             }
         }
 
-        if (isset($validated['shipping'])) $validated['shipping_cents'] = (int) round($validated['shipping'] * 100);
-        if (isset($validated['discount'])) $validated['discount_cents'] = (int) round($validated['discount'] * 100);
-        if (isset($validated['paid_amount'])) $validated['paid_amount_cents'] = (int) round($validated['paid_amount'] * 100);
+        if (isset($validated['shipping']))
+            $validated['shipping_cents'] = (int) round($validated['shipping'] * 100);
+        if (isset($validated['discount']))
+            $validated['discount_cents'] = (int) round($validated['discount'] * 100);
+        if (isset($validated['paid_amount']))
+            $validated['paid_amount_cents'] = (int) round($validated['paid_amount'] * 100);
 
         return DB::transaction(function () use ($invoice, $validated) {
+            // Invalidate PDF cache on update
+            $invoice->pdf_path = null;
             $invoice->update($validated);
 
             // Update items if provided
             if (isset($validated['items'])) {
                 // Delete old items
                 $invoice->items()->delete();
-                
+
                 // Create new ones
                 foreach ($validated['items'] as $index => $itemData) {
                     InvoiceItem::create([
-                        'invoice_id'       => $invoice->id,
-                        'position'         => $index + 1,
-                        'description'      => $itemData['description'],
-                        'quantity'         => (float) $itemData['quantity'],
-                        'unit'             => $itemData['unit'] ?? 'Words',
+                        'invoice_id' => $invoice->id,
+                        'position' => $index + 1,
+                        'description' => $itemData['description'],
+                        'quantity' => (float) $itemData['quantity'],
+                        'unit' => $itemData['unit'] ?? 'Words',
                         'unit_price_cents' => (int) round($itemData['price'] * 100),
-                        'total_cents'      => (int) round($itemData['total'] * 100),
-                        'tax_rate'         => $validated['tax_rate'] ?? $invoice->tax_rate ?? 19,
+                        'total_cents' => (int) round($itemData['total'] * 100),
+                        'tax_rate' => $validated['tax_rate'] ?? $invoice->tax_rate ?? 19,
                     ]);
                 }
             }
@@ -323,40 +331,40 @@ class InvoiceController extends Controller
         return DB::transaction(function () use ($invoice, $request) {
             // 1. Re-snapshot (customer/tenant data might have changed since draft)
             $customer = \App\Models\Customer::find($invoice->customer_id);
-            $tenant   = \App\Models\Tenant::find($invoice->tenant_id);
-            $project  = \App\Models\Project::find($invoice->project_id);
+            $tenant = \App\Models\Tenant::find($invoice->tenant_id);
+            $project = \App\Models\Project::find($invoice->project_id);
 
             if ($customer) {
-                $invoice->snapshot_customer_name    = $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name);
-                $invoice->snapshot_customer_address  = trim(($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? ''));
-                $invoice->snapshot_customer_zip      = $customer->address_zip;
-                $invoice->snapshot_customer_city     = $customer->address_city;
-                $invoice->snapshot_customer_country  = $customer->address_country ?? 'DE';
-                $invoice->snapshot_customer_vat_id   = $customer->vat_id ?? null;
+                $invoice->snapshot_customer_name = $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name);
+                $invoice->snapshot_customer_address = trim(($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? ''));
+                $invoice->snapshot_customer_zip = $customer->address_zip;
+                $invoice->snapshot_customer_city = $customer->address_city;
+                $invoice->snapshot_customer_country = $customer->address_country ?? 'DE';
+                $invoice->snapshot_customer_vat_id = $customer->vat_id ?? null;
                 $invoice->snapshot_customer_leitweg_id = $customer->leitweg_id ?? null;
             }
 
             if ($tenant) {
-                $invoice->snapshot_seller_name       = $tenant->company_name ?: $tenant->name;
-                $invoice->snapshot_seller_address     = trim(($tenant->address_street ?? '') . ' ' . ($tenant->address_house_no ?? ''));
-                $invoice->snapshot_seller_zip         = $tenant->address_zip;
-                $invoice->snapshot_seller_city        = $tenant->address_city;
-                $invoice->snapshot_seller_country     = $tenant->address_country ?? 'DE';
-                $invoice->snapshot_seller_tax_number  = $tenant->tax_number;
-                $invoice->snapshot_seller_vat_id      = $tenant->vat_id;
-                $invoice->snapshot_seller_bank_name   = $tenant->bank_name;
-                $invoice->snapshot_seller_bank_iban   = $tenant->bank_iban;
-                $invoice->snapshot_seller_bank_bic    = $tenant->bank_bic;
+                $invoice->snapshot_seller_name = $tenant->company_name ?: $tenant->name;
+                $invoice->snapshot_seller_address = trim(($tenant->address_street ?? '') . ' ' . ($tenant->address_house_no ?? ''));
+                $invoice->snapshot_seller_zip = $tenant->address_zip;
+                $invoice->snapshot_seller_city = $tenant->address_city;
+                $invoice->snapshot_seller_country = $tenant->address_country ?? 'DE';
+                $invoice->snapshot_seller_tax_number = $tenant->tax_number;
+                $invoice->snapshot_seller_vat_id = $tenant->vat_id;
+                $invoice->snapshot_seller_bank_name = $tenant->bank_name;
+                $invoice->snapshot_seller_bank_iban = $tenant->bank_iban;
+                $invoice->snapshot_seller_bank_bic = $tenant->bank_bic;
             }
 
             if ($project) {
-                $invoice->snapshot_project_name   = $project->project_name;
+                $invoice->snapshot_project_name = $project->project_name;
                 $invoice->snapshot_project_number = $project->project_number;
             }
 
             // 2. Lock and set status
-            $oldStatus         = $invoice->status;
-            $invoice->status    = Invoice::STATUS_ISSUED;
+            $oldStatus = $invoice->status;
+            $invoice->status = Invoice::STATUS_ISSUED;
             $invoice->issued_at = now();
             $invoice->is_locked = true;
             $invoice->save();
@@ -406,7 +414,7 @@ class InvoiceController extends Controller
         }
 
         return DB::transaction(function () use ($invoice, $request) {
-            $year     = date('Y');
+            $year = date('Y');
             $tenantId = $request->user()->tenant_id;
 
             // Sequential number for the credit note (same number series!)
@@ -419,64 +427,64 @@ class InvoiceController extends Controller
 
             // 1. Create credit note with negated amounts
             $creditNote = Invoice::create([
-                'type'                     => Invoice::TYPE_CREDIT_NOTE,
-                'invoice_number'           => $creditNoteNumber,
-                'invoice_number_sequence'  => $newSeq,
-                'cancelled_invoice_id'     => $invoice->id,
-                'project_id'               => $invoice->project_id,
-                'customer_id'              => $invoice->customer_id,
-                'date'                     => now()->toDateString(),
-                'due_date'                 => now()->addDays(14)->toDateString(),
-                'delivery_date'            => $invoice->delivery_date,
-                'service_period'           => $invoice->service_period,
-                'tax_exemption'            => $invoice->tax_exemption,
+                'type' => Invoice::TYPE_CREDIT_NOTE,
+                'invoice_number' => $creditNoteNumber,
+                'invoice_number_sequence' => $newSeq,
+                'cancelled_invoice_id' => $invoice->id,
+                'project_id' => $invoice->project_id,
+                'customer_id' => $invoice->customer_id,
+                'date' => now()->toDateString(),
+                'due_date' => now()->addDays(14)->toDateString(),
+                'delivery_date' => $invoice->delivery_date,
+                'service_period' => $invoice->service_period,
+                'tax_exemption' => $invoice->tax_exemption,
 
                 // Negated amounts (Gutschrift)
-                'amount_net'   => -$invoice->amount_net,
-                'tax_rate'     => $invoice->tax_rate,
-                'amount_tax'   => -$invoice->amount_tax,
+                'amount_net' => -$invoice->amount_net,
+                'tax_rate' => $invoice->tax_rate,
+                'amount_tax' => -$invoice->amount_tax,
                 'amount_gross' => -$invoice->amount_gross,
 
                 'currency' => $invoice->currency,
-                'notes'    => 'Storno zu Rechnung ' . $invoice->invoice_number .
-                              ($request->input('reason') ? '. Grund: ' . $request->input('reason') : ''),
-                'status'    => Invoice::STATUS_DRAFT,
+                'notes' => 'Storno zu Rechnung ' . $invoice->invoice_number .
+                    ($request->input('reason') ? '. Grund: ' . $request->input('reason') : ''),
+                'status' => Invoice::STATUS_DRAFT,
                 'is_locked' => false,
                 'issued_at' => null,
 
                 // Copy all snapshots from original (GoBD: same data as original)
-                'snapshot_customer_name'       => $invoice->snapshot_customer_name,
-                'snapshot_customer_address'     => $invoice->snapshot_customer_address,
-                'snapshot_customer_zip'         => $invoice->snapshot_customer_zip,
-                'snapshot_customer_city'        => $invoice->snapshot_customer_city,
-                'snapshot_customer_country'     => $invoice->snapshot_customer_country,
-                'snapshot_customer_vat_id'      => $invoice->snapshot_customer_vat_id,
-                'snapshot_customer_leitweg_id'  => $invoice->snapshot_customer_leitweg_id,
-                'snapshot_seller_name'          => $invoice->snapshot_seller_name,
-                'snapshot_seller_address'       => $invoice->snapshot_seller_address,
-                'snapshot_seller_zip'           => $invoice->snapshot_seller_zip,
-                'snapshot_seller_city'          => $invoice->snapshot_seller_city,
-                'snapshot_seller_country'       => $invoice->snapshot_seller_country,
-                'snapshot_seller_tax_number'    => $invoice->snapshot_seller_tax_number,
-                'snapshot_seller_vat_id'        => $invoice->snapshot_seller_vat_id,
-                'snapshot_seller_bank_name'     => $invoice->snapshot_seller_bank_name,
-                'snapshot_seller_bank_iban'     => $invoice->snapshot_seller_bank_iban,
-                'snapshot_seller_bank_bic'      => $invoice->snapshot_seller_bank_bic,
-                'snapshot_project_name'         => $invoice->snapshot_project_name,
-                'snapshot_project_number'       => $invoice->snapshot_project_number,
+                'snapshot_customer_name' => $invoice->snapshot_customer_name,
+                'snapshot_customer_address' => $invoice->snapshot_customer_address,
+                'snapshot_customer_zip' => $invoice->snapshot_customer_zip,
+                'snapshot_customer_city' => $invoice->snapshot_customer_city,
+                'snapshot_customer_country' => $invoice->snapshot_customer_country,
+                'snapshot_customer_vat_id' => $invoice->snapshot_customer_vat_id,
+                'snapshot_customer_leitweg_id' => $invoice->snapshot_customer_leitweg_id,
+                'snapshot_seller_name' => $invoice->snapshot_seller_name,
+                'snapshot_seller_address' => $invoice->snapshot_seller_address,
+                'snapshot_seller_zip' => $invoice->snapshot_seller_zip,
+                'snapshot_seller_city' => $invoice->snapshot_seller_city,
+                'snapshot_seller_country' => $invoice->snapshot_seller_country,
+                'snapshot_seller_tax_number' => $invoice->snapshot_seller_tax_number,
+                'snapshot_seller_vat_id' => $invoice->snapshot_seller_vat_id,
+                'snapshot_seller_bank_name' => $invoice->snapshot_seller_bank_name,
+                'snapshot_seller_bank_iban' => $invoice->snapshot_seller_bank_iban,
+                'snapshot_seller_bank_bic' => $invoice->snapshot_seller_bank_bic,
+                'snapshot_project_name' => $invoice->snapshot_project_name,
+                'snapshot_project_number' => $invoice->snapshot_project_number,
             ]);
 
             // 2. Create negated line items
             foreach ($invoice->items as $item) {
                 InvoiceItem::create([
-                    'invoice_id'      => $creditNote->id,
-                    'position'        => $item->position,
-                    'description'     => $item->description,
-                    'quantity'        => $item->quantity,
-                    'unit'            => $item->unit,
+                    'invoice_id' => $creditNote->id,
+                    'position' => $item->position,
+                    'description' => $item->description,
+                    'quantity' => $item->quantity,
+                    'unit' => $item->unit,
                     'unit_price_cents' => -$item->unit_price_cents,
-                    'total_cents'     => -$item->total_cents,
-                    'tax_rate'        => $item->tax_rate,
+                    'total_cents' => -$item->total_cents,
+                    'tax_rate' => $item->tax_rate,
                 ]);
             }
 
@@ -489,14 +497,14 @@ class InvoiceController extends Controller
 
             // 5. Audit logs
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CANCELLED, $oldStatus, Invoice::STATUS_CANCELLED, [
-                'credit_note_id'     => $creditNote->id,
+                'credit_note_id' => $creditNote->id,
                 'credit_note_number' => $creditNoteNumber,
-                'reason'             => $request->input('reason'),
+                'reason' => $request->input('reason'),
             ]);
 
             $this->logAuditEvent($creditNote, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_DRAFT, [
                 'original_invoice_id' => $invoice->id,
-                'type'                => 'credit_note',
+                'type' => 'credit_note',
             ]);
 
             // 6. Release project for new invoicing (remove invoiced status if applicable)
@@ -508,9 +516,9 @@ class InvoiceController extends Controller
             }
 
             return response()->json([
-                'original'    => $invoice->fresh()->load('items'),
+                'original' => $invoice->fresh()->load('items'),
                 'credit_note' => $creditNote->load('items'),
-                'message'     => 'Rechnung storniert. Gutschrift-Entwurf ' . $creditNoteNumber . ' erstellt.',
+                'message' => 'Rechnung storniert. Gutschrift-Entwurf ' . $creditNoteNumber . ' erstellt.',
             ]);
         });
     }
@@ -522,9 +530,9 @@ class InvoiceController extends Controller
     public function bulkUpdate(Request $request)
     {
         $validated = $request->validate([
-            'ids'   => 'required|array',
+            'ids' => 'required|array',
             'ids.*' => 'exists:invoices,id',
-            'data'  => 'required|array',
+            'data' => 'required|array',
         ]);
 
         // Only allow safe status transitions in bulk
@@ -666,154 +674,12 @@ class InvoiceController extends Controller
     private function enhanceWithZugferd(Invoice $invoice, string $pdfContent): string
     {
         try {
-            $invoice->load('items');
-
-            $documentBuilder = ZugferdLaravel::createDocumentInEN16931Profile();
-
-            // Document type: Invoice or Credit Note
-            $docType = $invoice->isCreditNote()
-                ? ZugferdInvoiceType::CREDITNOTE
-                : ZugferdInvoiceType::INVOICE;
-
-            $documentBuilder->setDocumentInformation(
-                $invoice->invoice_number,
-                $docType,
-                $invoice->date,
-                $invoice->currency ?: 'EUR'
-            );
-
-            // Seller (from snapshot)
-            $documentBuilder->setDocumentSeller(
-                $invoice->snapshot_seller_name,
-                $invoice->tenant_id
-            );
-            $documentBuilder->setDocumentSellerAddress(
-                $invoice->snapshot_seller_address,
-                null, null,
-                $invoice->snapshot_seller_zip,
-                $invoice->snapshot_seller_city,
-                $invoice->snapshot_seller_country ?: 'DE'
-            );
-
-            if ($invoice->snapshot_seller_vat_id) {
-                $documentBuilder->addDocumentSellerVATRegistrationNumber($invoice->snapshot_seller_vat_id);
-            }
-            if ($invoice->snapshot_seller_tax_number) {
-                $documentBuilder->addDocumentSellerTaxNumber($invoice->snapshot_seller_tax_number);
-            }
-
-            // Buyer (from snapshot)
-            $documentBuilder->setDocumentBuyer(
-                $invoice->snapshot_customer_name,
-                $invoice->customer_id
-            );
-            $documentBuilder->setDocumentBuyerAddress(
-                $invoice->snapshot_customer_address,
-                null, null,
-                $invoice->snapshot_customer_zip,
-                $invoice->snapshot_customer_city,
-                $invoice->snapshot_customer_country ?: 'DE'
-            );
-
-            if ($invoice->snapshot_customer_leitweg_id) {
-                $documentBuilder->setDocumentBuyerReference($invoice->snapshot_customer_leitweg_id);
-            }
-
-            // Payment Terms
-            if ($invoice->due_date) {
-                $documentBuilder->addDocumentPaymentTerm(
-                    'Zahlbar bis ' . $invoice->due_date->format('d.m.Y'),
-                    $invoice->due_date
-                );
-            }
-
-            // Payment Means (Bank Transfer)
-            if ($invoice->snapshot_seller_bank_iban) {
-                $documentBuilder->setDocumentPaymentMeans(
-                    ZugferdPaymentMeans::UNTDID_4461_30,
-                    'Banküberweisung'
-                );
-                $documentBuilder->addDocumentSellerPayeeFinancialAccount(
-                    $invoice->snapshot_seller_bank_iban,
-                    null,
-                    $invoice->snapshot_seller_bank_bic
-                );
-            }
-
-            // Delivery date (§ 14 UStG: Lieferdatum/Leistungsdatum)
-            if ($invoice->delivery_date) {
-                $documentBuilder->setDocumentSupplyChainEvent($invoice->delivery_date);
-            }
-
-            // Credit note reference
-            if ($invoice->isCreditNote() && $invoice->cancelledInvoice) {
-                $documentBuilder->addDocumentInvoiceReferencedDocument(
-                    $invoice->cancelledInvoice->invoice_number,
-                    $invoice->cancelledInvoice->date
-                );
-            }
-
-            // Determine tax category based on exemption type
-            $taxCategory = ZugferdVatCategoryCodes::STAN_RATE;
-            if ($invoice->tax_exemption === Invoice::TAX_REVERSE_CHARGE) {
-                $taxCategory = ZugferdVatCategoryCodes::VAT_REVE_CHAR;
-            } elseif ($invoice->tax_exemption === Invoice::TAX_SMALL_BUSINESS) {
-                $taxCategory = ZugferdVatCategoryCodes::EXEM_FROM_TAX;
-            }
-
-            // Line Items (from frozen InvoiceItem records)
-            if ($invoice->items->isNotEmpty()) {
-                foreach ($invoice->items as $item) {
-                    $unitCode = $this->mapUnitToUNECE($item->unit);
-
-                    $documentBuilder->addNewPosition((string) $item->position)
-                        ->setDocumentPositionProductDetails($item->description)
-                        ->setDocumentPositionGrossPrice(abs($item->unit_price_eur))
-                        ->setDocumentPositionNetPrice(abs($item->unit_price_eur))
-                        ->setDocumentPositionQuantity(abs((float) $item->quantity), $unitCode);
-
-                    $documentBuilder->addDocumentPositionTax(
-                        $taxCategory,
-                        'VAT',
-                        (float) $item->tax_rate
-                    );
-                }
-            } else {
-                // Fallback
-                $documentBuilder->addNewPosition("1")
-                    ->setDocumentPositionProductDetails($invoice->snapshot_project_name ?: 'Dienstleistung')
-                    ->setDocumentPositionGrossPrice(abs($invoice->amount_net_eur))
-                    ->setDocumentPositionNetPrice(abs($invoice->amount_net_eur))
-                    ->setDocumentPositionQuantity(1, 'C62');
-
-                $documentBuilder->addDocumentPositionTax(
-                    $taxCategory,
-                    'VAT',
-                    (float) ($invoice->tax_rate ?? 19)
-                );
-            }
-
-            // Totals (cents → EUR, abs for credit notes display)
-            $netEur   = $invoice->amount_net_eur;
-            $taxEur   = $invoice->amount_tax_eur;
-            $grossEur = $invoice->amount_gross_eur;
-
-            $documentBuilder->setDocumentSummation(
-                abs($grossEur),  // grandTotalAmount
-                abs($grossEur),  // duePayableAmount
-                abs($netEur),    // lineTotalAmount
-                0,               // chargeTotalAmount
-                0,               // allowanceTotalAmount
-                abs($netEur),    // taxBasisTotalAmount
-                abs($taxEur)     // taxTotalAmount
-            );
-
-            // Add tax breakdown
-            $documentBuilder->addDocumentTax($taxCategory, 'VAT', abs($netEur), abs($taxEur), (float) $invoice->tax_rate);
+            $documentBuilder = $this->createZugferdBuilder($invoice);
 
             // Merge ZUGFeRD XML into PDF
             $tempDir = storage_path('app/temp');
-            if (!file_exists($tempDir)) mkdir($tempDir, 0755, true);
+            if (!file_exists($tempDir))
+                mkdir($tempDir, 0755, true);
 
             $tempPdf = $tempDir . '/zugferd_' . uniqid() . '.pdf';
             ZugferdLaravel::buildMergedPdfByDocumentBuilder($documentBuilder, $pdfContent, $tempPdf);
@@ -830,6 +696,219 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Create the ZUGFeRD Document Builder with all data populated.
+     */
+    private function createZugferdBuilder(Invoice $invoice)
+    {
+        $invoice->load('items');
+
+        $sellerCountry = $this->getCountryCode($invoice->snapshot_seller_country);
+        $buyerCountry = $this->getCountryCode($invoice->snapshot_customer_country);
+
+        // Fetch seller contact details from settings
+        $sellerEmail = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'company_email')->value('value');
+        $sellerPhone = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'phone')->value('value');
+
+        // Use XRechnung 3.0 Profile explicitly for E-Rechnung compliance
+        $documentBuilder = ZugferdLaravel::createDocumentInXRechnung30Profile();
+
+        // Document type: Invoice or Credit Note
+        $docType = $invoice->isCreditNote()
+            ? ZugferdInvoiceType::CREDITNOTE
+            : ZugferdInvoiceType::INVOICE;
+
+        $documentBuilder->setDocumentInformation(
+            $invoice->invoice_number,
+            $docType,
+            $invoice->date,
+            $invoice->currency ?: 'EUR'
+        );
+
+        // Seller (from snapshot)
+        $documentBuilder->setDocumentSeller(
+            $invoice->snapshot_seller_name,
+            $invoice->tenant_id
+        );
+        $documentBuilder->setDocumentSellerAddress(
+            $invoice->snapshot_seller_address,
+            null,
+            null,
+            $invoice->snapshot_seller_zip,
+            $invoice->snapshot_seller_city,
+            $sellerCountry
+        );
+
+        // Mandatory Contact for EN16931
+        if ($sellerEmail || $sellerPhone) {
+            $documentBuilder->setDocumentSellerContact(
+                null, // Contact Person Name
+                null, // Contact Department
+                $sellerPhone,
+                null, // Fax
+                $sellerEmail
+            );
+        }
+
+        if ($invoice->snapshot_seller_vat_id) {
+            $documentBuilder->addDocumentSellerVATRegistrationNumber($invoice->snapshot_seller_vat_id);
+        }
+        if ($invoice->snapshot_seller_tax_number) {
+            $documentBuilder->addDocumentSellerTaxNumber($invoice->snapshot_seller_tax_number);
+        }
+
+        // Buyer (from snapshot)
+        $documentBuilder->setDocumentBuyer(
+            $invoice->snapshot_customer_name,
+            $invoice->customer_id
+        );
+        $documentBuilder->setDocumentBuyerAddress(
+            $invoice->snapshot_customer_address,
+            null,
+            null,
+            $invoice->snapshot_customer_city,
+            $buyerCountry
+        );
+
+        if ($invoice->snapshot_customer_vat_id) {
+            $documentBuilder->addDocumentBuyerVATRegistrationNumber($invoice->snapshot_customer_vat_id);
+        }
+
+        // Mandatory Buyer Reference - Fallback to Customer ID if no Leitweg-ID
+        $buyerRef = $invoice->snapshot_customer_leitweg_id ?: (string) $invoice->customer_id;
+        $documentBuilder->setDocumentBuyerReference($buyerRef);
+
+        // Payment Terms
+        if ($invoice->due_date) {
+            $documentBuilder->addDocumentPaymentTerm(
+                'Zahlbar bis ' . $invoice->due_date->format('d.m.Y'),
+                $invoice->due_date
+            );
+        }
+
+        // Payment Means (Bank Transfer - SEPA Credit Transfer is code 58)
+        if ($invoice->snapshot_seller_bank_iban) {
+            $documentBuilder->addDocumentPaymentMean(
+                '58', // SEPA Credit Transfer
+                'Banküberweisung',
+                null,
+                null,
+                null,
+                null,
+                $invoice->snapshot_seller_bank_iban,
+                null,
+                null,
+                $invoice->snapshot_seller_bank_bic
+            );
+        }
+
+        // Delivery date (Mandatory SupplyChainEvent)
+        // Fallback to Service Period End or Invoice Date if no explicit delivery date
+        $deliveryDate = $invoice->delivery_date ?: ($invoice->service_period_end ?: $invoice->date);
+        $documentBuilder->setDocumentSupplyChainEvent($deliveryDate);
+
+        // Credit note reference
+        if ($invoice->isCreditNote() && $invoice->cancelledInvoice) {
+            $documentBuilder->addDocumentInvoiceReferencedDocument(
+                $invoice->cancelledInvoice->invoice_number,
+                $invoice->cancelledInvoice->date
+            );
+        }
+
+        // Determine tax category based on exemption type
+        $taxCategory = ZugferdVatCategoryCodes::STAN_RATE;
+        if ($invoice->tax_exemption === Invoice::TAX_REVERSE_CHARGE) {
+            $taxCategory = ZugferdVatCategoryCodes::VAT_REVE_CHAR;
+        } elseif ($invoice->tax_exemption === Invoice::TAX_SMALL_BUSINESS) {
+            $taxCategory = ZugferdVatCategoryCodes::EXEM_FROM_TAX;
+        }
+
+        // Line Items (from frozen InvoiceItem records)
+        if ($invoice->items->isNotEmpty()) {
+            foreach ($invoice->items as $item) {
+                $unitCode = $this->mapUnitToUNECE($item->unit);
+
+                $documentBuilder->addNewPosition((string) $item->position)
+                    ->setDocumentPositionProductDetails($item->description)
+                    ->setDocumentPositionGrossPrice(abs($item->unit_price_eur))
+                    ->setDocumentPositionNetPrice(abs($item->unit_price_eur))
+                    ->setDocumentPositionQuantity(abs((float) $item->quantity), $unitCode);
+
+                $documentBuilder->addDocumentPositionTax(
+                    $taxCategory,
+                    'VAT',
+                    (float) $item->tax_rate
+                );
+            }
+        } else {
+            // Fallback
+            $documentBuilder->addNewPosition("1")
+                ->setDocumentPositionProductDetails($invoice->snapshot_project_name ?: 'Dienstleistung')
+                ->setDocumentPositionGrossPrice(abs($invoice->amount_net_eur))
+                ->setDocumentPositionNetPrice(abs($invoice->amount_net_eur))
+                ->setDocumentPositionQuantity(1, 'C62');
+
+            $documentBuilder->addDocumentPositionTax(
+                $taxCategory,
+                'VAT',
+                (float) ($invoice->tax_rate ?? 19)
+            );
+        }
+
+        // Totals (cents → EUR, abs for credit notes display)
+        $netEur = $invoice->amount_net_eur;
+        $taxEur = $invoice->amount_tax_eur;
+        $grossEur = $invoice->amount_gross_eur;
+
+        $documentBuilder->setDocumentSummation(
+            abs($grossEur),  // grandTotalAmount
+            abs($grossEur),  // duePayableAmount
+            abs($netEur),    // lineTotalAmount
+            0,               // chargeTotalAmount
+            0,               // allowanceTotalAmount
+            abs($netEur),    // taxBasisTotalAmount
+            abs($taxEur)     // taxTotalAmount
+        );
+
+        // Add tax breakdown
+        $exemptionReason = null;
+        if ($taxCategory === ZugferdVatCategoryCodes::VAT_REVE_CHAR) {
+            $exemptionReason = 'Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge gem. § 13b UStG)';
+        } elseif ($taxCategory === ZugferdVatCategoryCodes::EXEM_FROM_TAX) {
+            $exemptionReason = 'Kleinunternehmerregelung gemäß § 19 UStG';
+        }
+
+        $documentBuilder->addDocumentTax(
+            $taxCategory,
+            'VAT',
+            abs($netEur),
+            abs($taxEur),
+            (float) $invoice->tax_rate,
+            $exemptionReason
+        );
+
+        return $documentBuilder;
+    }
+
+    /**
+     * Download the E-Rechnung XML directly.
+     */
+    public function downloadXml(Request $request, Invoice $invoice)
+    {
+        try {
+            $documentBuilder = $this->createZugferdBuilder($invoice);
+            $xmlContent = $documentBuilder->getContent();
+
+            return response($xmlContent, 200, [
+                'Content-Type' => 'application/xml',
+                'Content-Disposition' => 'attachment; filename="' . $invoice->invoice_number . '.xml"',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("XML Download error: " . $e->getMessage());
+            return response()->json(['error' => 'XML Download fehlgeschlagen: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Map translation-industry unit types to UN/ECE Recommendation 20 codes.
      * Required for ZUGFeRD/XRechnung compliance.
      */
@@ -837,13 +916,41 @@ class InvoiceController extends Controller
     {
         $u = strtolower($unit);
         return match ($u) {
-            'words', 'wörter', 'wort'  => 'ZZ',   // Mutually defined or C62
-            'lines', 'zeilen', 'zeile' => 'C62',  // Unit
-            'pages', 'seiten', 'seite' => 'C62',  // Unit
-            'hours', 'stunden', 'std'  => 'HUR',  // Hour
-            'flat', 'pauschale', 'stk' => 'C62',  // One (unit)
+            'hours', 'stunden', 'std' => 'HUR',  // Hour
+            // C62 = One (Unit/Stück) - safest for generic items
+            'words', 'wörter', 'wort' => 'C62',
+            'lines', 'zeilen', 'zeile' => 'C62',
+            'pages', 'seiten', 'seite' => 'C62',
+            'flat', 'pauschale', 'stk' => 'C62',
             default => 'C62',
         };
+    }
+
+    private function getCountryCode(?string $countryName): string
+    {
+        if (!$countryName)
+            return 'DE';
+        if (strlen($countryName) === 2)
+            return strtoupper($countryName);
+
+        $map = [
+            'Deutschland' => 'DE',
+            'Österreich' => 'AT',
+            'Schweiz' => 'CH',
+            'Frankreich' => 'FR',
+            'Spanien' => 'ES',
+            'Italien' => 'IT',
+            'Vereinigtes Königreich' => 'GB',
+            'USA' => 'US',
+            'Belgien' => 'BE',
+            'Niederlande' => 'NL',
+            'Polen' => 'PL',
+            'Dänemark' => 'DK',
+            'Schweden' => 'SE',
+            'Norwegen' => 'NO',
+            'Finnland' => 'FI',
+        ];
+        return $map[$countryName] ?? 'DE';
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -854,23 +961,32 @@ class InvoiceController extends Controller
     {
         try {
             $invoice = Invoice::with('items')->findOrFail($id);
-            $dailyInvoice = $this->buildDailyInvoiceFromSnapshot($invoice);
 
-            // Crucial: Calculate totals before rendering the view
-            // manually, because we are rendering the view ourselves
-            $dailyInvoice->calculate();
+            // Ensure PDF exists
+            $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
+            $exists = Storage::disk('public')->exists('invoices/' . $filename);
 
-            $html = view('vendor.invoices.templates.din5008', [
-                'invoice' => $dailyInvoice,
-            ])->render();
+            if (!$invoice->pdf_path || !$exists) {
+                // If force-regenerate for draft or missing
+                $this->generatePdfInternal($invoice);
+                $invoice->refresh();
+            }
 
-            // Inject a small fix for iframe background
-            $html = str_replace('</head>', '<style>body { background: white !important; }</style></head>', $html);
+            $pdfPath = storage_path('app/public/invoices/' . $filename);
 
-            return $html;
+            if (!file_exists($pdfPath)) {
+                return response()->json(['error' => 'Vorschau konnte nicht generiert werden.'], 500);
+            }
+
+            // Return PDF inline so it can be viewed in iframe
+            return response()->file($pdfPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $invoice->invoice_number . '_preview.pdf"'
+            ]);
+
         } catch (\Throwable $e) {
             Log::error('Preview failed: ' . $e->getMessage());
-            return '<html><body><pre style="color:red">Vorschau-Fehler: ' . e($e->getMessage()) . '</pre></body></html>';
+            return response()->json(['error' => 'Vorschau fehlgeschlagen'], 500);
         }
     }
 
@@ -936,7 +1052,7 @@ class InvoiceController extends Controller
     public function datevExport(Request $request)
     {
         $validated = $request->validate([
-            'ids'   => 'required|array',
+            'ids' => 'required|array',
             'ids.*' => 'exists:invoices,id',
         ]);
 
@@ -954,9 +1070,18 @@ class InvoiceController extends Controller
             fputcsv($file, ['DTVF', '700', '21', 'Buchungsstapel', '1', '', '', '', '', '', 'EXTF', '', '', '', '', ''], ';');
 
             fputcsv($file, [
-                'Umsatz (ohne Komma)', 'Soll/Haben-Kennzeichen', 'WKZ', 'Kurs',
-                'Basis-Umsatz', 'WKZ Basis-Umsatz', 'Konto', 'Gegenkonto',
-                'BU-Schlüssel', 'Belegdatum', 'Belegfeld 1', 'Buchungstext'
+                'Umsatz (ohne Komma)',
+                'Soll/Haben-Kennzeichen',
+                'WKZ',
+                'Kurs',
+                'Basis-Umsatz',
+                'WKZ Basis-Umsatz',
+                'Konto',
+                'Gegenkonto',
+                'BU-Schlüssel',
+                'Belegdatum',
+                'Belegfeld 1',
+                'Buchungstext'
             ], ';');
 
             foreach ($invoices as $inv) {
@@ -972,9 +1097,18 @@ class InvoiceController extends Controller
                 $sollHaben = $inv->isCreditNote() ? 'H' : 'S';
 
                 fputcsv($file, [
-                    $amount, $sollHaben, 'EUR', '', '', '',
-                    $gegenkonto, $konto, '', $date,
-                    $inv->invoice_number, $customerName
+                    $amount,
+                    $sollHaben,
+                    'EUR',
+                    '',
+                    '',
+                    '',
+                    $gegenkonto,
+                    $konto,
+                    '',
+                    $date,
+                    $inv->invoice_number,
+                    $customerName
                 ], ';');
             }
 
@@ -996,27 +1130,27 @@ class InvoiceController extends Controller
         if ($project->positions && $project->positions->isNotEmpty()) {
             foreach ($project->positions as $index => $pos) {
                 InvoiceItem::create([
-                    'invoice_id'      => $invoice->id,
-                    'position'        => $index + 1,
-                    'description'     => $pos->description ?: ($project->project_name . ' - Position ' . ($index + 1)),
-                    'quantity'        => (float) ($pos->amount ?: $pos->quantity ?: 1),
-                    'unit'            => $pos->unit ?: 'words',
+                    'invoice_id' => $invoice->id,
+                    'position' => $index + 1,
+                    'description' => $pos->description ?: ($project->project_name . ' - Position ' . ($index + 1)),
+                    'quantity' => (float) ($pos->amount ?: $pos->quantity ?: 1),
+                    'unit' => $pos->unit ?: 'words',
                     'unit_price_cents' => (int) round(($pos->customer_rate ?? 0) * 100),
-                    'total_cents'     => (int) round(($pos->customer_total ?? 0) * 100),
-                    'tax_rate'        => $pos->tax_rate ?? $defaultTaxRate,
+                    'total_cents' => (int) round(($pos->customer_total ?? 0) * 100),
+                    'tax_rate' => $pos->tax_rate ?? $defaultTaxRate,
                 ]);
             }
         } else {
             // Fallback: single line item from invoice total
             InvoiceItem::create([
-                'invoice_id'      => $invoice->id,
-                'position'        => 1,
-                'description'     => $project->project_name ?: 'Übersetzungsleistung',
-                'quantity'        => 1,
-                'unit'            => 'flat',
+                'invoice_id' => $invoice->id,
+                'position' => 1,
+                'description' => $project->project_name ?: 'Übersetzungsleistung',
+                'quantity' => 1,
+                'unit' => 'flat',
                 'unit_price_cents' => $invoice->amount_net,
-                'total_cents'     => $invoice->amount_net,
-                'tax_rate'        => $defaultTaxRate,
+                'total_cents' => $invoice->amount_net,
+                'tax_rate' => $defaultTaxRate,
             ]);
         }
     }
@@ -1086,11 +1220,11 @@ class InvoiceController extends Controller
     ): void {
         InvoiceAuditLog::create([
             'invoice_id' => $invoice->id,
-            'user_id'    => $request->user()?->id,
-            'action'     => $action,
+            'user_id' => $request->user()?->id,
+            'action' => $action,
             'old_status' => $oldStatus,
             'new_status' => $newStatus,
-            'metadata'   => $metadata,
+            'metadata' => $metadata,
             'ip_address' => $request->ip(),
         ]);
     }

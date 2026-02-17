@@ -107,7 +107,7 @@ const Dashboard = () => {
     const readyToDeliver = projectsData?.data?.filter((p: any) => p.status === 'review').slice(0, 10) || [];
 
     const overdueInvoices = invoicesData?.data?.filter((i: any) => {
-        if (i.status === 'paid' || i.status === 'cancelled') return false;
+        if (i.status === 'paid' || i.status === 'cancelled' || i.status === 'draft') return false;
         if (!i.due_date) return false;
         return new Date(i.due_date) < new Date();
     }).slice(0, 10) || [];
@@ -210,7 +210,7 @@ const Dashboard = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
                 <div className="h-[350px] md:h-auto">
                     <ActiveTasksTable tasks={activeTasks} />
                 </div>

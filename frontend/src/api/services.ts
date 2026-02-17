@@ -235,6 +235,12 @@ export const invoiceService = {
         });
         return response;
     },
+    downloadXml: async (id: number) => {
+        const response = await api.get(`/invoices/${id}/download-xml`, {
+            responseType: 'blob'
+        });
+        return response;
+    },
     print: async (id: number) => {
         const response = await api.get(`/invoices/${id}/print`, {
             responseType: 'blob'

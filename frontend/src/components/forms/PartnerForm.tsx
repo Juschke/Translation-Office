@@ -282,6 +282,15 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                         />
                     </div>
 
+                    {formData.id && (
+                        <div className="col-span-12 md:col-span-12">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Partner-ID</label>
+                            <div className="text-sm font-medium text-slate-700 px-3 py-2 bg-slate-50 border border-slate-200 rounded-md">
+                                {formData.id}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="col-span-12 space-y-2 animate-fadeIn">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Sprachen *</label>
                         <LanguageSelect
@@ -302,7 +311,6 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                                 error={!!getError('company')}
                                 onChange={e => updateFormData({ company: e.target.value })}
                                 onBlur={() => markTouched('company')}
-                                className="font-bold"
                                 helperText={getError('company') || "Vollständiger Name der Agentur laut Handelsregister"}
                             />
                         </div>
