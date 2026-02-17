@@ -588,6 +588,7 @@ class InvoiceController extends Controller
                 'due_date' => $invoice->due_date ? $invoice->due_date->format('d.m.Y') : null,
                 'customer_id' => $invoice->customer_id,
                 'paid_amount' => $invoice->paid_amount_eur,
+                'service_period' => $invoice->service_period,
             ],
         ]);
 
