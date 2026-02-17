@@ -56,9 +56,8 @@
         /* Beginnt bei 45mm vom oberen Blattrand = 25mm vom Content-Start */
         .address-field {
             position: relative;
-            margin-top: 25mm;
+            margin-top: 15mm;
             width: 85mm;
-            height: 45mm;
         }
 
         /* Rücksendeangabe (Zusatz- und Vermerkzone) */
@@ -85,7 +84,7 @@
         /* ── Header-Bereich (Anschrift links, Info rechts) ── */
         .header-container {
             width: 100%;
-            margin-bottom: 15mm;
+            margin-bottom: 8mm;
         }
 
         .header-left {
@@ -96,7 +95,7 @@
         .info-box {
             float: right;
             width: 75mm;
-            margin-top: 25mm;
+            margin-top: 15mm;
         }
 
         .info-table {
@@ -113,17 +112,17 @@
         /* ── Titel & Einleitung ── */
         .content-body {
             clear: both;
-            padding-top: 5mm;
+            padding-top: 2mm;
         }
 
         .title {
-            font-size: 13pt;
+            font-size: 12pt;
             font-weight: bold;
-            margin-bottom: 5mm;
+            margin-bottom: 3mm;
         }
 
         .intro-text {
-            margin-bottom: 6mm;
+            margin-bottom: 4mm;
         }
 
         /* ── Positions-Tabelle ── */
@@ -142,7 +141,7 @@
         }
 
         .items-table td {
-            padding: 2.5mm 1mm;
+            padding: 1.5mm 1mm;
             border-bottom: 0.1mm solid #eee;
             vertical-align: top;
             font-size: 8.5pt;
@@ -174,12 +173,12 @@
         /* ── Zahlungsbedingungen ── */
         .payment-terms {
             clear: both;
-            margin-top: 12mm;
+            margin-top: 8mm;
             font-size: 9pt;
         }
 
         .payment-terms p {
-            margin: 0 0 3mm 0;
+            margin: 0 0 2mm 0;
         }
 
         /* ── Footer (fixiert am Seitenende) ── */
