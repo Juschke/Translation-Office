@@ -43,6 +43,12 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // ── Owner-only routes ──
     Route::middleware(['tenant.role:owner'])->group(function () {
+        // User / Team management
+        Route::get('users', [\App\Http\Controllers\Api\UserController::class, 'index']);
+        Route::post('users', [\App\Http\Controllers\Api\UserController::class, 'store']);
+        Route::put('users/{user}', [\App\Http\Controllers\Api\UserController::class, 'update']);
+        Route::delete('users/{user}', [\App\Http\Controllers\Api\UserController::class, 'destroy']);
+
         // Company Settings
         Route::put('/settings/company', [\App\Http\Controllers\Api\SettingsController::class, 'update']);
         Route::post('/settings/mail/test', [\App\Http\Controllers\Api\SettingsController::class, 'testMailConnection']);
@@ -94,6 +100,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/reports/summary', [\App\Http\Controllers\Api\ReportController::class, 'summary']);
         Route::get('/reports/customers', [\App\Http\Controllers\Api\ReportController::class, 'customers']);
         Route::get('/reports/project-status', [\App\Http\Controllers\Api\ReportController::class, 'projectStatus']);
+        Route::get('/reports/tax', [\App\Http\Controllers\Api\ReportController::class, 'taxReport']);
+        Route::get('/reports/profitability', [\App\Http\Controllers\Api\ReportController::class, 'detailedProfitability']);
+
+
 
         // Mails
         Route::get('mails', [\App\Http\Controllers\Api\MailController::class, 'index']);
@@ -135,6 +145,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('projects/{project}/generate-document', [\App\Http\Controllers\Api\ProjectController::class, 'generateDocument']);
     Route::get('projects/{project}/activities', [\App\Http\Controllers\Api\ProjectController::class, 'getActivities']);
     Route::post('projects/{project}/generate-token', [\App\Http\Controllers\Api\ProjectController::class, 'generateToken']);
+    Route::get('projects/{project}/confirmation/{type}', [\App\Http\Controllers\Api\ProjectController::class, 'downloadConfirmation']);
     Route::post('projects/{project}/message', [\App\Http\Controllers\Api\ProjectController::class, 'postMessage']);
 
     // Notifications

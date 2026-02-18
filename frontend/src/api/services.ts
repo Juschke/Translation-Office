@@ -1,5 +1,24 @@
 import api from './axios';
 
+export const userService = {
+    getAll: async () => {
+        const response = await api.get('/users');
+        return response.data;
+    },
+    create: async (data: any) => {
+        const response = await api.post('/users', data);
+        return response.data;
+    },
+    update: async (id: number, data: any) => {
+        const response = await api.put(`/users/${id}`, data);
+        return response.data;
+    },
+    delete: async (id: number) => {
+        const response = await api.delete(`/users/${id}`);
+        return response.data;
+    },
+};
+
 export const dashboardService = {
     getStats: async (params?: any) => {
         const response = await api.get('/dashboard/stats', { params });
@@ -112,6 +131,12 @@ export const projectService = {
     postMessage: async (projectId: string, content: string) => {
         const response = await api.post(`/projects/${projectId}/message`, { content });
         return response.data;
+    },
+    downloadConfirmation: async (projectId: string, type: 'order_confirmation' | 'pickup_confirmation') => {
+        const response = await api.get(`/projects/${projectId}/confirmation/${type}`, {
+            responseType: 'blob'
+        });
+        return response;
     }
 };
 
@@ -487,7 +512,17 @@ export const reportService = {
     getProjectStatus: async (params?: any) => {
         const response = await api.get('/reports/project-status', { params });
         return response.data;
+    },
+    getTaxReport: async (params?: any) => {
+        const response = await api.get('/reports/tax', { params });
+        return response.data;
+    },
+    getProfitabilityReport: async (params?: any) => {
+        const response = await api.get('/reports/profitability', { params });
+        return response.data;
     }
+
+
 };
 
 export const subscriptionService = {

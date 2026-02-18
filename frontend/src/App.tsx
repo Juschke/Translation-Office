@@ -24,6 +24,7 @@ import Onboarding from './pages/auth/Onboarding';
 import VerifyEmail from './pages/VerifyEmail';
 
 import Notifications from './pages/Notifications';
+import Team from './pages/Team';
 
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute, PublicRoute, RoleGuard } from './components/auth/AuthGuard';
@@ -68,6 +69,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings/*" element={<RoleGuard minRole="manager"><Settings /></RoleGuard>} />
             <Route path="/billing" element={<RoleGuard minRole="owner"><Billing /></RoleGuard>} />
+            <Route path="/team" element={<RoleGuard minRole="owner"><Team /></RoleGuard>} />
           </Route>
 
           {/* Catch all */}

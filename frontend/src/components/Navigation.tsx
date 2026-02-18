@@ -8,6 +8,12 @@ import { dashboardService, notificationService } from '../api/services';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 
+const ROLE_LABELS: Record<string, string> = {
+    owner: 'Inhaber',
+    manager: 'Manager',
+    employee: 'Mitarbeiter',
+};
+
 const Navigation = () => {
     const { user, logout, hasMinRole } = useAuth();
     const location = useLocation();
@@ -88,14 +94,14 @@ const Navigation = () => {
         return (
             <div className="relative group ml-1.5 flex items-center">
                 <span className={clsx(
-                    "text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold shadow-sm transition-all duration-300",
+                    "text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm transition-all duration-300",
                     displayCount === 0 ? "bg-slate-700/50 text-slate-400 group-hover:bg-slate-600" : activeColor,
                     isPriority && displayCount > 0 && "animate-pulse ring-2 ring-rose-500/20"
                 )}>
                     {displayCount}
                 </span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-slate-900/95 text-white text-[11px] rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-slate-700/50 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-slate-900/95 text-white text-[11px] rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm border border-slate-700/50 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0">
                     <div className="font-semibold">{label}</div>
                     <div className="text-[9px] text-slate-400 mt-0.5">{displayCount} insgesamt</div>
                     <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-slate-900/95"></span>
@@ -114,7 +120,7 @@ const Navigation = () => {
     };
 
     return (
-        <nav className="bg-brand-900 text-white shadow-md z-30 flex-none relative">
+        <nav className="bg-brand-900 text-white shadow-sm z-30 flex-none relative">
             <div className="w-full px-4 sm:px-6">
                 <div className="flex items-center justify-between h-14">
                     {/* Left Side: Logo + Main Menu */}
@@ -132,7 +138,7 @@ const Navigation = () => {
                         </button>
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
-                            <div className="bg-brand-500 w-8 h-8 rounded-md flex items-center justify-center font-bold text-white">TO</div>
+                            <div className="bg-brand-500 w-8 h-8 rounded-sm flex items-center justify-center font-semibold text-white">TO</div>
                             <span className="font-semibold text-lg tracking-tight">Translator Office</span>
                         </Link>
 
@@ -199,7 +205,7 @@ const Navigation = () => {
 
                             {/* Notification Dropdown */}
                             {isNotifOpen && (
-                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-xl border border-slate-200 z-50 text-slate-800 origin-top-right animate-slideUp">
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-sm shadow-sm border border-slate-200 z-50 text-slate-800 origin-top-right animate-slideUp">
                                     <div className="p-3 border-b border-slate-100 font-semibold text-sm flex justify-between">
                                         <span>Benachrichtigungen</span>
                                         <button
@@ -251,10 +257,17 @@ const Navigation = () => {
                                 className="flex items-center gap-2 cursor-pointer focus:outline-none"
                                 onClick={(e) => { e.stopPropagation(); setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
                             >
-                                <div className="w-8 h-8 rounded-md bg-brand-700 flex items-center justify-center text-xs border border-brand-500 text-white font-semibold">
+                                <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-xs border border-brand-500 text-white font-semibold">
                                     {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('') : 'U'}
                                 </div>
-                                <span className="text-sm hidden lg:block text-slate-200">{user?.name || 'Benutzer'}</span>
+                                <div className="hidden lg:block text-left">
+                                    <span className="text-sm text-slate-200 block leading-tight">{user?.name || 'Benutzer'}</span>
+                                    {user?.role && (
+                                        <span className="text-[10px] text-slate-400 leading-tight block">
+                                            {ROLE_LABELS[user.role] ?? user.role}
+                                        </span>
+                                    )}
+                                </div>
                                 <FaChevronDown className={clsx("text-xs text-slate-400 transition-transform", isProfileOpen && "rotate-180")} />
                             </div>
 
@@ -264,6 +277,9 @@ const Navigation = () => {
                                     <div className="p-3 border-b border-slate-100 font-normal text-left">
                                         <p className="text-sm font-semibold">{user?.name || 'Benutzer'}</p>
                                         <p className="text-xs text-slate-500">{user?.email || 'admin@translator.office'}</p>
+                                        {user?.role && (
+                                            <p className="text-[11px] text-brand-600 font-medium mt-0.5">{ROLE_LABELS[user.role] ?? user.role}</p>
+                                        )}
                                     </div>
                                     <div className="py-1 font-normal text-left">
                                         <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
@@ -272,6 +288,11 @@ const Navigation = () => {
                                         {hasMinRole('manager') && (
                                             <Link to="/settings" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
                                                 Einstellungen
+                                            </Link>
+                                        )}
+                                        {hasMinRole('owner') && (
+                                            <Link to="/team" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
+                                                Mitarbeiter
                                             </Link>
                                         )}
                                         {hasMinRole('owner') && (
