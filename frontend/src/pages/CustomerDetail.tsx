@@ -273,12 +273,44 @@ const CustomerDetail = () => {
                             <h4 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Umsatzstatistik</h4>
                             <FaChartLine className="text-emerald-500" />
                         </div>
-                        <div className="p-5 flex flex-col gap-4">
+                        <div className="p-5 flex flex-col gap-6">
                             <div>
-                                <span className="text-xs text-slate-400 uppercase tracking-wider block mb-1">Umsatz lfd. Jahr</span>
+                                <span className="text-[10px] text-slate-400 uppercase tracking-widest block mb-1 font-bold">Umsatz lfd. Jahr</span>
                                 <span className="text-2xl font-black text-slate-800">
-                                    {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(customer.sales || 0)}
+                                    {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(customer.sales_current_year || 0)}
                                 </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                                <div>
+                                    <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-0.5 font-bold">Vorjahr</span>
+                                    <span className="text-sm font-bold text-slate-600">
+                                        {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(customer.sales_last_year || 0)}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-0.5 font-bold">Gesamt</span>
+                                    <span className="text-sm font-bold text-slate-600">
+                                        {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(customer.sales_total || 0)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                                <div>
+                                    <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-0.5 font-bold">Projekte Gesamt</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                                        <span className="text-sm font-bold text-slate-700">{customer.projects_count || 0}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] text-slate-400 uppercase tracking-widest block mb-0.5 font-bold">Offen</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
+                                        <span className="text-sm font-bold text-slate-700">{customer.projects_open_count || 0}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -359,7 +391,7 @@ const RecentProjectsList = ({ customerId }: { customerId: string }) => {
                                                             p.status}
                                 </span>
                             </td>
-                            <td className="px-6 py-3 text-right font-medium text-slate-700">{p.total_amount ? Number(p.total_amount).toFixed(2) + ' €' : '-'}</td>
+                            <td className="px-6 py-3 text-right font-medium text-slate-700">{p.price_total ? Number(p.price_total).toFixed(2) + ' €' : '-'}</td>
                             <td className="px-6 py-3 text-right text-slate-500">{new Date(p.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
                         </tr>
                     ))}

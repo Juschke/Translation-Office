@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowRight, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import clsx from 'clsx';
+import { getFlagUrl } from '../../utils/flags';
+import { getLanguageLabel } from '../../utils/languages';
 
 interface RecentProjectsProps {
     projects: any[];
@@ -13,9 +15,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
     const [page, setPage] = useState(1);
     const itemsPerPage = 5;
 
-    const flags: { [key: string]: string } = {
-        'de': '🇩🇪', 'en': '🇺🇸', 'fr': '🇫🇷', 'es': '🇪🇸', 'it': '🇮🇹', 'pl': '🇵🇱', 'ru': '🇷🇺', 'tr': '🇹🇷'
-    };
+
 
     // Filter Logic
     const filteredProjects = allProjects.filter(p => {
@@ -118,21 +118,46 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                             >
                                 <td className="px-6 py-4">
                                     <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-slate-800 group-hover:text-brand-700 transition">{p.name}</span>
-                                        <span className="text-[10px] text-slate-400 font-medium">{p.project_number || p.id}</span>
+                                        <span className="text-xs font-bold text-slate-800 group-hover:text-brand-700 transition">{p.project_name || p.name}</span>
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{p.project_number || p.id}</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 text-xs font-medium text-slate-600">{p.customer?.name || 'Kein Kunde'}</td>
                                 <td className="px-6 py-4">
-                                    <div className="flex gap-2 items-center text-sm">
-                                        <span title={p.source_language?.name || p.sourceLanguage?.name}>{flags[(p.sourceLanguage?.code || p.source_language?.code)?.toLowerCase()] || p.sourceLanguage?.code || p.source_language?.code}</span>
-                                        <FaArrowRight className="text-[10px] text-slate-300" />
-                                        <span title={p.target_language?.name || p.targetLanguage?.name}>{flags[(p.targetLanguage?.code || p.target_language?.code)?.toLowerCase()] || p.targetLanguage?.code || p.target_language?.code}</span>
+                                    <span className="text-xs font-bold text-slate-700">
+                                        {p.customer?.company_name ||
+                                            p.customer?.name ||
+                                            (p.customer?.first_name ? `${p.customer.first_name} ${p.customer.last_name}` : null) ||
+                                            'Unbekannt'}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1">
+                                            <img
+                                                src={getFlagUrl(p.source_language?.iso_code || p.source_language?.code || p.sourceLanguage?.code || 'de')}
+                                                className="w-4 h-3 object-cover shadow-sm border border-slate-200 rounded-[1px]"
+                                                alt="Source"
+                                            />
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                                {getLanguageLabel(p.source_language?.iso_code || p.source_language?.code || p.sourceLanguage?.code)}
+                                            </span>
+                                        </div>
+                                        <FaArrowRight className="text-[8px] text-slate-200" />
+                                        <div className="flex items-center gap-1">
+                                            <img
+                                                src={getFlagUrl(p.target_language?.iso_code || p.target_language?.code || p.targetLanguage?.code || 'en')}
+                                                className="w-4 h-3 object-cover shadow-sm border border-slate-200 rounded-[1px]"
+                                                alt="Target"
+                                            />
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                                {getLanguageLabel(p.target_language?.iso_code || p.target_language?.code || p.targetLanguage?.code)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <span className="text-xs font-medium text-slate-600">
-                                        {p.deadline ? new Date(p.deadline).toLocaleDateString('de-DE') : '-'}
+                                    <span className="text-xs font-black text-slate-800 tabular-nums">
+                                        {p.deadline ? new Date(p.deadline).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-'}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-right">

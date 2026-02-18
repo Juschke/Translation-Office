@@ -144,7 +144,7 @@ const Profile = () => {
             </div>
 
             {message && (
-                <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                <div className={`mb-6 p-4 rounded-sm flex items-center gap-3 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                     {message.type === 'success' ? <FaCheck /> : <FaTimes />}
                     <p className="text-sm font-medium">{message.text}</p>
                 </div>
@@ -153,11 +153,11 @@ const Profile = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Column */}
                 <div className="space-y-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
                         <div className="h-20 bg-brand-900"></div>
                         <div className="px-6 pb-6 text-center">
                             <div className="relative -mt-10 mb-4 inline-block">
-                                <div className="w-20 h-20 rounded-lg bg-white p-1 shadow-md mx-auto">
+                                <div className="w-20 h-20 rounded-sm bg-white p-1 shadow-md mx-auto">
                                     <div className="w-full h-full rounded bg-slate-100 flex items-center justify-center text-2xl font-bold text-brand-700 border border-slate-100 uppercase">
                                         {formData.firstName || formData.lastName ? getInitials(`${formData.firstName} ${formData.lastName}`) : 'JD'}
                                     </div>
@@ -183,9 +183,9 @@ const Profile = () => {
                 {/* Right Column */}
                 <div className="md:col-span-2 space-y-6">
                     {/* Personal Info Form */}
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 p-8">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-100 shadow-sm"><FaUser className="text-sm" /></div>
+                            <div className="w-10 h-10 rounded-sm bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-100 shadow-sm"><FaUser className="text-sm" /></div>
                             <div>
                                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Persönliche Daten</h3>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Ihre Grundinformationen</p>
@@ -237,9 +237,9 @@ const Profile = () => {
                     </div>
 
                     {/* Security */}
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 p-8">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-100 shadow-sm"><FaShieldAlt className="text-sm" /></div>
+                            <div className="w-10 h-10 rounded-sm bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-100 shadow-sm"><FaShieldAlt className="text-sm" /></div>
                             <div>
                                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Sicherheit & Zugang</h3>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Passwort & Authentifizierung</p>
@@ -265,7 +265,7 @@ const Profile = () => {
                             </div>
 
                             {showPasswordForm && (
-                                <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-5 animate-slideDown">
+                                <div className="bg-slate-50 p-6 rounded-sm border border-slate-200 space-y-5 animate-slideDown">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div className="md:col-span-2">
                                             <Input
@@ -335,9 +335,9 @@ const Profile = () => {
 
                             {/* 2FA Setup Inline */}
                             {showTwoFactorInline && twoFactorSetup && (
-                                <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 animate-slideDown">
+                                <div className="bg-slate-50 p-6 rounded-sm border border-slate-200 animate-slideDown">
                                     <div className="flex flex-col md:flex-row gap-8 items-center">
-                                        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                        <div className="bg-white p-3 rounded-sm border border-slate-200 shadow-sm">
                                             <QRCodeSVG value={twoFactorSetup.otpauth_url} size={150} />
                                         </div>
                                         <div className="flex-1 space-y-4">
@@ -372,7 +372,7 @@ const Profile = () => {
 
                             {/* Recovery Codes Inline */}
                             {showRecoveryCodesInline && recoveryCodes && (
-                                <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 animate-slideDown">
+                                <div className="bg-slate-50 p-6 rounded-sm border border-slate-200 animate-slideDown">
                                     <div className="flex items-center gap-3 mb-4">
                                         <FaLock className="text-amber-500" />
                                         <h5 className="text-xs font-bold text-slate-700 uppercase">Wiederherstellungscodes</h5>
@@ -392,7 +392,7 @@ const Profile = () => {
 
                             {/* Disable Confirm Inline */}
                             {showDisableConfirmInline && (
-                                <div className="bg-rose-50 p-6 rounded-lg border border-rose-100 animate-slideDown">
+                                <div className="bg-rose-50 p-6 rounded-sm border border-rose-100 animate-slideDown">
                                     <div className="flex items-center gap-3 mb-4">
                                         <FaShieldAlt className="text-rose-600" />
                                         <h5 className="text-xs font-bold text-rose-700 uppercase">2FA Deaktivieren</h5>

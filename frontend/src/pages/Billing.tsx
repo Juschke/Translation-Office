@@ -135,7 +135,7 @@ const Billing = () => {
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Active Plan */}
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden relative">
+                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden relative">
                         <div className="absolute top-4 right-4">
                             <span className={clsx("px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded border",
                                 user.tenant.status === 'active' ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-red-50 text-red-700 border-red-100"
@@ -178,7 +178,7 @@ const Billing = () => {
                     </div>
 
                     {/* Payment Method */}
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
                         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs shadow-sm">
@@ -213,7 +213,7 @@ const Billing = () => {
                     </div>
 
                     {/* Billing History */}
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
                         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
                             <div className="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs shadow-sm">
                                 <FaHistory />
@@ -267,7 +267,7 @@ const Billing = () => {
 
                 {/* Sidebar Info */}
                 <div className="space-y-6">
-                    <div className="bg-slate-900 rounded-lg p-5 text-white shadow-lg relative overflow-hidden ring-1 ring-white/10">
+                    <div className="bg-slate-900 rounded-sm p-5 text-white shadow-lg relative overflow-hidden ring-1 ring-white/10">
                         <div className="relative z-10">
                             <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-6 flex items-center gap-2">
                                 <FaRegCalendarAlt /> Nächste Abrechnung
@@ -304,7 +304,7 @@ const Billing = () => {
                         <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-purple-500/10 rounded-full blur-[60px]"></div>
                     </div>
 
-                    <div className="bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
+                    <div className="bg-white rounded-sm p-5 border border-slate-200 shadow-sm">
                         <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-3 flex items-center gap-2">
                             Hilfe & Support
                         </h4>
@@ -356,7 +356,7 @@ const Billing = () => {
                                         onClick={() => handleUpdatePlan(key)}
                                         disabled={currentPlanId === key || updatePlanMutation.isPending}
                                         className={clsx(
-                                            "w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all",
+                                            "w-full py-2.5 rounded-sm text-xs font-bold uppercase tracking-widest transition-all",
                                             currentPlanId === key
                                                 ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                                                 : "bg-brand-700 text-white hover:bg-brand-800 shadow-lg shadow-brand-700/20 active:scale-95"
@@ -385,30 +385,30 @@ const Billing = () => {
                         <form onSubmit={handleUpdatePayment} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Karteninhaber</label>
-                                <input name="card_holder" type="text" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-500 transition-colors" placeholder="Max Mustermann" required />
+                                <input name="card_holder" type="text" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm outline-none focus:border-brand-500 transition-colors" placeholder="Max Mustermann" required />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kartennummer</label>
                                 <div className="relative">
-                                    <input name="card_number" type="text" className="w-full px-4 py-2 pl-10 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-500 transition-colors font-brand" placeholder="0000 0000 0000 0000" maxLength={16} required />
+                                    <input name="card_number" type="text" className="w-full px-4 py-2 pl-10 bg-slate-50 border border-slate-200 rounded-sm text-sm outline-none focus:border-brand-500 transition-colors font-brand" placeholder="0000 0000 0000 0000" maxLength={16} required />
                                     <FaCreditCard className="absolute left-3 top-2.5 text-slate-400" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Gültig bis</label>
-                                    <input name="card_expiry" type="text" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-500 transition-colors text-center" placeholder="MM/JJ" required />
+                                    <input name="card_expiry" type="text" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm outline-none focus:border-brand-500 transition-colors text-center" placeholder="MM/JJ" required />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">CVC</label>
-                                    <input name="card_cvc" type="text" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-500 transition-colors text-center" placeholder="123" required />
+                                    <input name="card_cvc" type="text" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm outline-none focus:border-brand-500 transition-colors text-center" placeholder="123" required />
                                 </div>
                             </div>
                             <div className="pt-4">
                                 <button
                                     type="submit"
                                     disabled={updatePaymentMutation.isPending}
-                                    className="w-full py-3 bg-brand-700 text-white rounded-lg text-sm font-bold uppercase tracking-widest shadow-lg shadow-brand-700/20 hover:bg-brand-800 transition-all active:scale-95 flex justify-center items-center gap-2"
+                                    className="w-full py-3 bg-brand-700 text-white rounded-sm text-sm font-bold uppercase tracking-widest shadow-lg shadow-brand-700/20 hover:bg-brand-800 transition-all active:scale-95 flex justify-center items-center gap-2"
                                 >
                                     {updatePaymentMutation.isPending ? <><FaSpinner className="animate-spin" /> Speichern...</> : "Karte speichern"}
                                 </button>

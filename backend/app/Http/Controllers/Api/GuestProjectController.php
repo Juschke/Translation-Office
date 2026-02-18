@@ -72,7 +72,7 @@ class GuestProjectController extends Controller
         ]);
 
         $message = $project->messages()->create([
-            'content' => $request->content,
+            'content' => $request->input('content'),
             'sender_name' => $request->sender_name ?: 'Guest',
             'user_id' => null
         ]);

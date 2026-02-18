@@ -39,17 +39,20 @@
 
         /* Obere Falzmarke: 105mm vom oberen Blattrand */
         .fold-mark-top {
-            top: 85mm; /* 105mm - 20mm page margin */
+            top: 85mm;
+            /* 105mm - 20mm page margin */
         }
 
         /* Lochmarke: 148.5mm vom oberen Blattrand */
         .punch-mark {
-            top: 128.5mm; /* 148.5mm - 20mm page margin */
+            top: 128.5mm;
+            /* 148.5mm - 20mm page margin */
         }
 
         /* Untere Falzmarke: 210mm vom oberen Blattrand */
         .fold-mark-bottom {
-            top: 190mm; /* 210mm - 20mm page margin */
+            top: 190mm;
+            /* 210mm - 20mm page margin */
         }
 
         /* ── Anschriftfeld DIN 5008 Form B ── */
@@ -219,9 +222,13 @@
 
     @php
         $tId = $invoice->buyer->custom_fields['tenant_id'] ?? 1;
+        $tenant = \App\Models\Tenant::find($tId);
         $settings = \App\Models\TenantSetting::where('tenant_id', $tId)->pluck('value', 'key');
-        $companyName = $settings['company_name'] ?? 'Amplicore GmbH';
-        $fullAddressLine = ($settings['address_street'] ?? 'Sandkamp 1') . ' · ' . ($settings['address_zip'] ?? '22111') . ' ' . ($settings['address_city'] ?? 'Hamburg');
+
+        $companyName = $tenant->company_name ?? $tenant->name ?? $settings['company_name'] ?? 'Amplicore GmbH';
+        $fullAddressLine = ($tenant->address_street ?? $settings['address_street'] ?? 'Sandkamp 1') . ' · ' .
+            ($tenant->address_zip ?? $settings['address_zip'] ?? '22111') . ' ' .
+            ($tenant->address_city ?? $settings['address_city'] ?? 'Hamburg');
     @endphp
 
     {{-- DIN 5008 Falzmarken und Lochmarke --}}
@@ -235,39 +242,48 @@
             <tr>
                 <td style="width: 30%;">
                     <strong>{{ $companyName }}</strong><br>
-                    {{ $settings['address_street'] ?? 'Sandkamp 1' }}<br>
-                    {{ $settings['address_zip'] ?? '22111' }} {{ $settings['address_city'] ?? 'Hamburg' }}<br>
-                    @if(!empty($settings['tax_number']))
-                        Steuer-Nr.: {{ $settings['tax_number'] }}<br>
+                    {{ $tenant->address_street ?? $settings['address_street'] ?? 'Sandkamp 1' }}<br>
+                    {{ $tenant->address_zip ?? $settings['address_zip'] ?? '22111' }}
+                    {{ $tenant->address_city ?? $settings['address_city'] ?? 'Hamburg' }}<br>
+
+                    @if(!empty($tenant->tax_number) || !empty($settings['tax_number']))
+                        Steuer-Nr.: {{ $tenant->tax_number ?? $settings['tax_number'] }}<br>
                     @endif
-                    @if(!empty($settings['vat_id']))
-                        USt-IdNr.: {{ $settings['vat_id'] }}
+
+                    @if(!empty($tenant->vat_id) || !empty($settings['vat_id']))
+                        USt-IdNr.: {{ $tenant->vat_id ?? $settings['vat_id'] }}<br>
+                    @endif
+
+                    @if(!empty($tenant->tax_office))
+                        Finanzamt: {{ $tenant->tax_office }}
                     @endif
                 </td>
                 <td style="width: 30%;">
                     <strong>Kontakt</strong><br>
-                    @if(!empty($settings['phone']))
-                        Tel: {{ $settings['phone'] }}<br>
+                    @if(!empty($tenant->phone) || !empty($settings['phone']))
+                        Tel: {{ $tenant->phone ?? $settings['phone'] }}<br>
                     @endif
-                    @if(!empty($settings['email']))
-                        {{ $settings['email'] }}<br>
-                    @elseif(!empty($settings['company_email']))
-                        {{ $settings['company_email'] }}<br>
+
+                    @if(!empty($tenant->email) || !empty($settings['email']) || !empty($settings['company_email']))
+                        {{ $tenant->email ?? $settings['email'] ?? $settings['company_email'] }}<br>
                     @endif
-                    @if(!empty($settings['website']))
-                        {{ $settings['website'] }}
+
+                    @if(!empty($tenant->domain) || !empty($settings['website']))
+                        {{ $tenant->domain ?? $settings['website'] }}
                     @endif
                 </td>
                 <td style="width: 40%;">
                     <strong>Bankverbindung</strong><br>
-                    @if(!empty($settings['bank_name']))
-                        {{ $settings['bank_name'] }}<br>
+                    @if(!empty($tenant->bank_name) || !empty($settings['bank_name']))
+                        {{ $tenant->bank_name ?? $settings['bank_name'] }}<br>
                     @endif
-                    @if(!empty($settings['bank_iban']))
-                        IBAN: {{ $settings['bank_iban'] }}<br>
+
+                    @if(!empty($tenant->bank_iban) || !empty($settings['bank_iban']))
+                        IBAN: {{ $tenant->bank_iban ?? $settings['bank_iban'] }}<br>
                     @endif
-                    @if(!empty($settings['bank_bic']))
-                        BIC: {{ $settings['bank_bic'] }}
+
+                    @if(!empty($tenant->bank_bic) || !empty($settings['bank_bic']))
+                        BIC: {{ $tenant->bank_bic ?? $settings['bank_bic'] }}
                     @endif
                 </td>
             </tr>
@@ -303,7 +319,8 @@
                 </tr>
                 <tr>
                     <td class="font-bold">Rechnungsdatum</td>
-                    <td class="text-right">{{ $invoice->date ? $invoice->date->format('d.m.Y') : now()->format('d.m.Y') }}</td>
+                    <td class="text-right">
+                        {{ $invoice->date ? $invoice->date->format('d.m.Y') : now()->format('d.m.Y') }}</td>
                 </tr>
                 @if(isset($invoice->buyer->custom_fields['reference']))
                     <tr>
@@ -402,10 +419,12 @@
             <p>
                 <strong>Zahlungsbedingungen:</strong> Zahlung innerhalb von 14 Tagen ab Rechnungseingang ohne Abzüge.
                 @if(isset($invoice->buyer->custom_fields['due_date']))
-                    <br>Der Rechnungsbetrag ist bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong> fällig.
+                    <br>Der Rechnungsbetrag ist bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong>
+                    fällig.
                 @endif
             </p>
-            <p>Bitte überweisen Sie den Betrag auf das unten angegebene Konto unter Angabe der Rechnungsnummer <strong>{{ $invoice->name }}</strong>.</p>
+            <p>Bitte überweisen Sie den Betrag auf das unten angegebene Konto unter Angabe der Rechnungsnummer
+                <strong>{{ $invoice->name }}</strong>.</p>
             <p>Mit freundlichen Grüßen,<br>{{ $settings['ceo_name'] ?? $companyName }}</p>
         </div>
     </div>

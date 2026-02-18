@@ -66,7 +66,6 @@ const Invoices = () => {
     }, [location.state, navigate, location.pathname]);
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const [invoiceToDelete, setInvoiceToDelete] = useState<number | number[] | null>(null);
     const [invoiceToEdit, setInvoiceToEdit] = useState<any>(null);
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
@@ -116,6 +115,11 @@ const Invoices = () => {
             toast.error(error?.response?.data?.error || 'Nur Entwürfe können gelöscht werden.');
         }
     });
+
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => { });
+    const [confirmVariant, setConfirmVariant] = useState<'danger' | 'warning' | 'info'>('danger');
+    const [confirmLabel, setConfirmLabel] = useState('Bestätigen');
+    const [cancelReason, setCancelReason] = useState('');
 
     const issueMutation = useMutation({
         mutationFn: (id: number) => invoiceService.issue(id),
@@ -432,18 +436,21 @@ const Invoices = () => {
             header: '',
             accessor: (inv: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Ansehen">
+                    <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-sm transition" title="Ansehen">
                         <FaEye />
                     </button>
                     {/* Draft: show Issue button */}
                     {inv.status === 'draft' && (
                         <button
                             onClick={() => {
-                                if (window.confirm('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform, keine Änderung mehr möglich)')) {
-                                    issueMutation.mutate(inv.id);
-                                }
+                                setConfirmTitle('Rechnung ausstellen');
+                                setConfirmMessage('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform, keine Änderung mehr möglich)');
+                                setConfirmLabel('Jetzt ausstellen');
+                                setConfirmVariant('info');
+                                setConfirmAction(() => () => issueMutation.mutate(inv.id));
+                                setIsConfirmOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition"
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-sm transition"
                             title="Ausstellen (GoBD)"
                         >
                             <FaStamp />
@@ -456,7 +463,7 @@ const Invoices = () => {
                                 setInvoiceToEdit(inv);
                                 setIsNewInvoiceOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-sm transition"
                             title="Entwurf bearbeiten"
                         >
                             <FaPen />
@@ -466,23 +473,26 @@ const Invoices = () => {
                     {['issued', 'sent', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note && (
                         <button
                             onClick={() => {
-                                const reason = window.prompt('Storno-Grund (optional):');
-                                if (reason !== null) {
-                                    cancelMutation.mutate({ id: inv.id, reason: reason || undefined });
-                                }
+                                setConfirmTitle('Rechnung stornieren');
+                                setConfirmMessage('Möchten Sie diese Rechnung wirklich stornieren? Es wird eine automatische Gutschrift erstellt.');
+                                setConfirmLabel('Stornieren');
+                                setConfirmVariant('warning');
+                                setCancelReason('');
+                                setConfirmAction(() => () => cancelMutation.mutate({ id: inv.id, reason: cancelReason || undefined }));
+                                setIsConfirmOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition"
+                            className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-sm transition"
                             title="Stornieren (Gutschrift erstellen)"
                         >
                             <FaBan />
                         </button>
                     )}
-                    <button onClick={() => handlePrint(inv)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition" title="Drucken"><FaPrint /></button>
+                    <button onClick={() => handlePrint(inv)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-sm transition" title="Drucken"><FaPrint /></button>
 
                     <div className="relative invoice-download-dropdown">
                         <button
                             onClick={() => setDownloadDropdownOpen(downloadDropdownOpen === inv.id ? null : inv.id)}
-                            className={`p-1.5 rounded-md transition ${downloadDropdownOpen === inv.id ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                            className={`p-1.5 rounded-sm transition ${downloadDropdownOpen === inv.id ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
                             title="Download"
                         >
                             <FaDownload />
@@ -518,11 +528,13 @@ const Invoices = () => {
                     {/* Only drafts can be deleted */}
                     {inv.status === 'draft' && (
                         <button onClick={() => {
-                            setInvoiceToDelete(inv.id);
                             setConfirmTitle('Entwurf löschen');
                             setConfirmMessage('Sind Sie sicher, dass Sie diesen Rechnungsentwurf löschen möchten?');
+                            setConfirmLabel('Löschen');
+                            setConfirmVariant('danger');
+                            setConfirmAction(() => () => deleteMutation.mutate(inv.id));
                             setIsConfirmOpen(true);
-                        }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Entwurf löschen"><FaTrash /></button>
+                        }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Entwurf löschen"><FaTrash /></button>
                     )}
                 </div>
             ),
@@ -551,7 +563,7 @@ const Invoices = () => {
 
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
-            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white rounded-md flex items-center gap-2 shadow-sm transition">
+            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
                 <FaDownload /> Export
             </button>
             {isExportOpen && (
@@ -633,7 +645,7 @@ const Invoices = () => {
                 <div className="flex gap-2 shrink-0">
                     <button
                         onClick={() => setIsNewInvoiceOpen(true)}
-                        className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95"
+                        className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95"
                     >
                         <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neue Rechnung</span><span className="inline sm:hidden">Rechnung</span>
                     </button>
@@ -642,8 +654,8 @@ const Invoices = () => {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Offener Betrag" value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={`${overdueCount} überfällig`} />
-                <KPICard label="Bezahlt (Gesamt)" value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle />} iconColor="text-green-600" iconBg="bg-green-50" subValue={`${paidCount} Transaktionen`} />
-                <KPICard label="Mahnungen" value={`${reminderCount}`} icon={<FaPaperPlane />} iconColor="text-amber-600" iconBg="bg-amber-50" subValue="Fällig / Aktiv" />
+                <KPICard label="Bezahlt (Gesamt)" value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={`${paidCount} Transaktionen`} />
+                <KPICard label="Mahnungen" value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue="Fällig / Aktiv" />
                 <KPICard label="Fremdkosten" value="0,00 €" icon={<FaHistory />} subValue="Diesen Monat" />
             </div>
 
@@ -663,11 +675,11 @@ const Invoices = () => {
                             label: 'Mahnung senden',
                             icon: <FaPaperPlane className="text-xs text-amber-500" />,
                             onClick: () => {
-                                const confirmReminder = window.confirm(`${selectedInvoices.length} Mahnungen senden/hochstufen?`);
-                                if (confirmReminder) {
-                                    // Logic to increment reminder_level would go here, 
-                                    // for now we use a generic bulk update or we might need a specific endpoint
-                                    // Let's assume the backend handles increment if we pass a special flag or we do it here
+                                setConfirmTitle('Mahnungen versenden');
+                                setConfirmMessage(`${selectedInvoices.length} Mahnungen senden/hochstufen?`);
+                                setConfirmLabel('Mahnungen senden');
+                                setConfirmVariant('warning');
+                                setConfirmAction(() => () => {
                                     toast.loading('Mahnungen werden verarbeitet...');
                                     selectedInvoices.forEach(id => {
                                         const inv = invoices.find((i: any) => i.id === id);
@@ -680,7 +692,8 @@ const Invoices = () => {
                                             }
                                         });
                                     });
-                                }
+                                });
+                                setIsConfirmOpen(true);
                             },
                             variant: 'primary',
                             show: statusFilter === 'reminders' || statusFilter === 'overdue'
@@ -748,22 +761,30 @@ const Invoices = () => {
                 isOpen={isConfirmOpen}
                 onClose={() => {
                     setIsConfirmOpen(false);
-                    setInvoiceToDelete(null);
                 }}
                 onConfirm={() => {
-                    if (invoiceToDelete && !Array.isArray(invoiceToDelete)) {
-                        deleteMutation.mutate(invoiceToDelete as number, {
-                            onSuccess: () => {
-                                setIsConfirmOpen(false);
-                                setInvoiceToDelete(null);
-                            }
-                        });
-                    }
+                    confirmAction();
+                    setIsConfirmOpen(false);
                 }}
                 title={confirmTitle}
                 message={confirmMessage}
-                isLoading={deleteMutation.isPending}
-            />
+                confirmLabel={confirmLabel}
+                variant={confirmVariant}
+                isLoading={deleteMutation.isPending || issueMutation.isPending || cancelMutation.isPending || bulkUpdateMutation.isPending}
+            >
+                {confirmTitle === 'Rechnung stornieren' && (
+                    <div className="mt-4">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Storno-Grund (optional)</label>
+                        <textarea
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            className="w-full border border-slate-200 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            placeholder="z.B. Fehlerhafte Angaben, Kundenwunsch..."
+                            rows={3}
+                        />
+                    </div>
+                )}
+            </ConfirmModal>
         </div>
     );
 };

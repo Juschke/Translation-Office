@@ -188,9 +188,9 @@ const GuestProjectView = () => {
             <div className="bg-white border-b border-slate-200 flex-none z-20 shadow-sm">
                 <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white font-black text-xs">P</div>
+                        <div className="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white font-semibold text-xs">P</div>
                         <div>
-                            <h1 className="text-sm font-black text-slate-800 uppercase tracking-wide">{project.project_name}</h1>
+                            <h1 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">{project.project_name}</h1>
                             <p className="text-[10px] text-slate-400 font-bold">Ref: {project.project_number}</p>
                         </div>
                     </div>
@@ -202,8 +202,8 @@ const GuestProjectView = () => {
                 <div className="max-w-3xl mx-auto px-4 py-6 space-y-4 pb-10">
 
                     {/* 1. Status Timeline */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                        <h2 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-4 border-b border-slate-50 pb-2">Projektstatus</h2>
+                    <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm">
+                        <h2 className="text-xs font-semibold uppercase text-slate-400 tracking-widest mb-4 border-b border-slate-50 pb-2">Projektstatus</h2>
                         <div className="relative flex justify-between items-center px-2">
                             <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-100 -z-10 mx-4"></div>
                             <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-brand-100 -z-10 mx-4 transition-all duration-1000" style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%` }}></div>
@@ -233,9 +233,9 @@ const GuestProjectView = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Customer */}
                         {project.customer && (
-                            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm h-full">
+                            <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm h-full">
                                 <div className="flex justify-between items-center mb-3 border-b border-slate-50 pb-2">
-                                    <h2 className="text-xs font-black uppercase text-slate-400 tracking-widest">Ihre Daten</h2>
+                                    <h2 className="text-xs font-semibold uppercase text-slate-400 tracking-widest">Ihre Daten</h2>
                                     {!isEditingCustomer ? (
                                         <button onClick={() => setIsEditingCustomer(true)} className="text-slate-300 hover:text-brand-600 transition"><FaEdit /></button>
                                     ) : (
@@ -293,10 +293,10 @@ const GuestProjectView = () => {
                         )}
 
                         {/* Project/Language */}
-                        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm h-full flex flex-col">
-                            <h2 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-3 border-b border-slate-50 pb-2">Projektdetails</h2>
+                        <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm h-full flex flex-col">
+                            <h2 className="text-xs font-semibold uppercase text-slate-400 tracking-widest mb-3 border-b border-slate-50 pb-2">Projektdetails</h2>
                             <div className="flex-1 flex flex-col justify-center gap-4">
-                                <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg">
+                                <div className="flex items-center justify-between bg-slate-50 p-3 rounded-sm">
                                     <div className="flex items-center gap-2">
                                         <img src={getFlagUrl(project.source_lang?.iso_code || 'de')} className="w-6 h-4 rounded shadow-sm" />
                                         <span className="text-xs font-bold text-slate-700">{project.source_lang?.name_native || project.source_lang?.name_internal || 'Deutsch'}</span>
@@ -309,16 +309,16 @@ const GuestProjectView = () => {
                                 </div>
                                 <div className="flex justify-between items-center px-2">
                                     <span className="text-[10px] font-bold uppercase text-slate-400">Liefertermin</span>
-                                    <span className="text-sm font-black text-slate-800">{project.deadline ? formatDate(project.deadline) : '-'}</span>
+                                    <span className="text-sm font-semibold text-slate-800">{project.deadline ? formatDate(project.deadline) : '-'}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* 3. Description (Compact) */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm">
                         <div className="flex justify-between items-center mb-2">
-                            <h2 className="text-xs font-black uppercase text-slate-400 tracking-widest">Beschreibung</h2>
+                            <h2 className="text-xs font-semibold uppercase text-slate-400 tracking-widest">Beschreibung</h2>
                         </div>
                         <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
                             {project.description || <span className="italic text-slate-300">Keine Anmerkungen.</span>}
@@ -326,10 +326,10 @@ const GuestProjectView = () => {
                     </div>
 
                     {/* 4. Calculation & Payment (Compact) */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <h2 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-3 border-b border-slate-50 pb-2">Kostenaufstellung</h2>
+                                <h2 className="text-xs font-semibold uppercase text-slate-400 tracking-widest mb-3 border-b border-slate-50 pb-2">Kostenaufstellung</h2>
                                 <table className="w-full text-sm">
                                     <tbody className="text-slate-600">
                                         {project.positions && project.positions.map((pos: any, idx: number) => (
@@ -353,10 +353,10 @@ const GuestProjectView = () => {
                                     </tfoot>
                                 </table>
                             </div>
-                            <div className="bg-slate-50 p-3 rounded-lg self-start">
+                            <div className="bg-slate-50 p-3 rounded-sm self-start">
                                 <div className="flex items-center gap-2 mb-2">
                                     <FaUniversity className="text-slate-400" />
-                                    <h3 className="text-xs font-black uppercase text-slate-700">Bankverbindung</h3>
+                                    <h3 className="text-xs font-semibold uppercase text-slate-700">Bankverbindung</h3>
                                 </div>
                                 {project.tenant ? (
                                     <div className="space-y-1 text-xs text-slate-600">
@@ -386,13 +386,13 @@ const GuestProjectView = () => {
 
                     {/* 5. Results (Compact) */}
                     {targetFiles.length > 0 && (
-                        <div className="bg-gradient-to-br from-white to-brand-50/30 p-4 rounded-xl border border-brand-100 shadow-sm">
-                            <h2 className="text-xs font-black uppercase text-brand-800 tracking-widest mb-3 flex items-center gap-2">
+                        <div className="bg-gradient-to-br from-white to-brand-50/30 p-4 rounded-sm border border-brand-100 shadow-sm">
+                            <h2 className="text-xs font-semibold uppercase text-brand-800 tracking-widest mb-3 flex items-center gap-2">
                                 <FaDownload /> Ergebnisse
                             </h2>
                             <div className="space-y-2">
                                 {targetFiles.map((file: any) => (
-                                    <div key={file.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-brand-50 shadow-sm hover:shadow-md transition cursor-pointer">
+                                    <div key={file.id} className="flex items-center justify-between p-2 bg-white rounded-sm border border-brand-50 shadow-sm hover:shadow-md transition cursor-pointer">
                                         <div className="flex items-center gap-3">
                                             {getFileIcon(file.file_name)}
                                             <div>
@@ -408,9 +408,9 @@ const GuestProjectView = () => {
                     )}
 
                     {/* 6. Communication (Compact) */}
-                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[400px]">
+                    <div className="bg-white rounded-sm border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[400px]">
                         <div className="bg-slate-50 p-3 border-b border-slate-100 flex justify-between items-center">
-                            <h2 className="text-xs font-black uppercase text-slate-500 tracking-widest">Kommunikation</h2>
+                            <h2 className="text-xs font-semibold uppercase text-slate-500 tracking-widest">Kommunikation</h2>
                             <span className="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-bold">{project.messages?.length || 0}</span>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-white flex flex-col-reverse">
@@ -479,14 +479,14 @@ const GuestProjectView = () => {
             {/* Modals */}
             {activeModal && (
                 <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto relative p-8">
+                    <div className="bg-white rounded-sm shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto relative p-8">
                         <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center">
                             <FaTimes />
                         </button>
 
                         {activeModal === 'imprint' && (
                             <div className="prose prose-sm max-w-none text-slate-700">
-                                <h2 className="text-xl font-black mb-4 uppercase tracking-wide border-b border-slate-100 pb-2">Impressum</h2>
+                                <h2 className="text-xl font-semibold mb-4 uppercase tracking-wide border-b border-slate-100 pb-2">Impressum</h2>
                                 <p className="mb-4 text-xs italic">Angaben gemäß § 5 TMG</p>
 
                                 <div className="mb-6">
@@ -538,7 +538,7 @@ const GuestProjectView = () => {
 
                         {activeModal === 'privacy' && (
                             <div className="prose prose-sm max-w-none text-slate-700">
-                                <h2 className="text-xl font-black mb-4 uppercase tracking-wide border-b border-slate-100 pb-2">Datenschutzerklärung</h2>
+                                <h2 className="text-xl font-semibold mb-4 uppercase tracking-wide border-b border-slate-100 pb-2">Datenschutzerklärung</h2>
 
                                 <h3 className="font-bold text-slate-800 mt-4 mb-2">1. Datenschutz auf einen Blick</h3>
                                 <p className="font-bold">Allgemeine Hinweise</p>
@@ -573,7 +573,7 @@ const GuestProjectView = () => {
 
                         {activeModal === 'terms' && (
                             <div className="prose prose-sm max-w-none text-slate-700">
-                                <h2 className="text-xl font-black mb-4 uppercase tracking-wide border-b border-slate-100 pb-2">Allgemeine Geschäftsbedingungen</h2>
+                                <h2 className="text-xl font-semibold mb-4 uppercase tracking-wide border-b border-slate-100 pb-2">Allgemeine Geschäftsbedingungen</h2>
                                 <p className="italic text-xs mb-4">Stand: 01.01.2026</p>
 
                                 <h3 className="font-bold text-slate-800 mt-4 mb-2">§ 1 Geltungsbereich</h3>
@@ -610,9 +610,9 @@ const GuestProjectView = () => {
 
                         {activeModal === 'avv' && (
                             <div className="prose prose-sm max-w-none text-slate-700">
-                                <h2 className="text-xl font-black mb-4 uppercase tracking-wide border-b border-slate-100 pb-2">Auftragsverarbeitung (AVV)</h2>
+                                <h2 className="text-xl font-semibold mb-4 uppercase tracking-wide border-b border-slate-100 pb-2">Auftragsverarbeitung (AVV)</h2>
                                 <p>Hier können Sie den Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO herunterladen.</p>
-                                <div className="bg-slate-50 p-6 rounded-lg border border-slate-100 flex items-center justify-between mt-4">
+                                <div className="bg-slate-50 p-6 rounded-sm border border-slate-100 flex items-center justify-between mt-4">
                                     <div className="flex items-center gap-3">
                                         <FaFileContract className="text-3xl text-brand-600" />
                                         <div>
@@ -620,7 +620,7 @@ const GuestProjectView = () => {
                                             <div className="text-xs text-slate-500">PDF-Dokument (Muster)</div>
                                         </div>
                                     </div>
-                                    <button className="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-bold uppercase hover:bg-brand-700 transition" onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/guest/project/${token}/avv`, '_blank')}>Download</button>
+                                    <button className="px-4 py-2 bg-brand-600 text-white rounded-sm text-xs font-bold uppercase hover:bg-brand-700 transition" onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/guest/project/${token}/avv`, '_blank')}>Download</button>
                                 </div>
                             </div>
                         )}

@@ -90,16 +90,16 @@ const UniversalForm: React.FC<UniversalFormProps> = ({
     };
 
     return (
-        <div className={clsx("animate-fadeIn space-y-4 pt-2 bg-slate-50 p-4 rounded-lg border border-slate-200", className)}>
+        <div className={clsx("animate-fadeIn space-y-4 pt-2 bg-slate-50 p-4 rounded-sm border border-slate-200", className)}>
             {/* Header / Title */}
             {(title || onCancel) && (
                 <div className="flex justify-between items-center">
-                    {title && <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</h5>}
+                    {title && <h5 className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{title}</h5>}
                     {onCancel && (
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="text-[10px] text-red-500 font-bold flex items-center gap-1 hover:text-red-700 transition"
+                            className="text-[10px] text-red-500 font-semibold flex items-center gap-1 hover:text-red-700 transition"
                         >
                             <FaTimes /> Abbrechen
                         </button>
@@ -149,7 +149,7 @@ const UniversalForm: React.FC<UniversalFormProps> = ({
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full h-11 bg-brand-700 text-white rounded text-[10px] font-bold uppercase hover:bg-brand-800 transition shadow-lg flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full h-11 bg-brand-700 text-white rounded-sm text-[10px] font-semibold uppercase hover:bg-brand-800 transition shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isLoading ? 'Speichern...' : (
                             <>

@@ -23,6 +23,7 @@ interface ConfirmModalProps {
     cancelLabel?: string;
     variant?: 'danger' | 'warning' | 'info';
     isLoading?: boolean;
+    children?: React.ReactNode;
 }
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -31,15 +32,16 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     onConfirm,
     title,
     message,
-    confirmLabel = 'Löschen',
+    confirmLabel = 'Bestätigen',
     cancelLabel = 'Abbrechen',
-    variant = 'danger',
-    isLoading = false
+    variant = 'info',
+    isLoading = false,
+    children
 }) => {
     const variantStyles = {
         danger: 'bg-red-600 hover:bg-red-700 text-white',
-        warning: 'bg-amber-500 hover:bg-amber-600 text-white',
-        info: 'bg-brand-600 hover:bg-brand-700 text-white',
+        warning: 'bg-amber-500 hover:bg-amber-600 text-white inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        info: 'bg-brand-600 hover:bg-brand-700 text-white inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
     };
 
     return (
@@ -49,12 +51,18 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     <AlertDialogTitle>{title}</AlertDialogTitle>
                     <AlertDialogDescription>{message}</AlertDialogDescription>
                 </AlertDialogHeader>
+                <div className="py-2">
+                    {children}
+                </div>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={onClose} disabled={isLoading}>
                         {cancelLabel}
                     </AlertDialogCancel>
                     <AlertDialogAction
-                        onClick={onConfirm}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onConfirm();
+                        }}
                         disabled={isLoading}
                         className={cn(variantStyles[variant])}
                     >

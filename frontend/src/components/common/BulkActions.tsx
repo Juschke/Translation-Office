@@ -26,11 +26,11 @@ export const BulkActions = ({ selectedCount, onClearSelection, actions, classNam
 
     return (
         <div className={clsx(
-            "mb-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg flex justify-between items-center animate-fadeIn shadow-sm z-10 relative",
+            "mb-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-sm flex justify-between items-center animate-fadeIn shadow-sm z-10 relative",
             className
         )}>
             <div className="flex items-center gap-4">
-                <span className="text-slate-600 text-xs font-bold uppercase tracking-widest shrink-0">
+                <span className="text-slate-600 text-xs font-semibold uppercase tracking-widest shrink-0">
                     {selectedCount} ausgewählt
                 </span>
                 <div className="h-4 w-px bg-slate-300"></div>
@@ -52,7 +52,7 @@ export const BulkActions = ({ selectedCount, onClearSelection, actions, classNam
 };
 
 const BulkActionButton = ({ label, icon, onClick, variant = 'default' }: BulkActionItem) => {
-    const baseStyles = "px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wide transition flex items-center gap-2 shadow-sm border";
+    const baseStyles = "px-3 py-1.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide transition flex items-center gap-2 shadow-sm border";
 
     // Define variant styles
     // Note: We use border-transparent for solid buttons to maintain size consistency if others have borders
@@ -60,7 +60,7 @@ const BulkActionButton = ({ label, icon, onClick, variant = 'default' }: BulkAct
         default: "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800",
         primary: "bg-white border-slate-200 text-slate-600 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200",
         danger: "bg-white border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200",
-        dangerSolid: "bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 shadow-md",
+        dangerSolid: "bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 shadow-sm",
         success: "bg-white border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200",
         warning: "bg-white border-slate-200 text-slate-600 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200"
     };

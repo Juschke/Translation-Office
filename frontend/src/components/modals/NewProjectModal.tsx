@@ -712,6 +712,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         options={statusOptions}
                                         value={status}
                                         onChange={setStatus}
+                                        preserveOrder={true}
                                     />
                                 </div>
 

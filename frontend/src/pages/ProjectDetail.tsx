@@ -284,7 +284,7 @@ const HistoryTab = ({ projectId, historySearch, setHistorySearch, historySortKey
     };
 
     return (
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-10 h-full flex flex-col">
+        <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden mb-10 h-full flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
                 <div className="flex items-center gap-3">
                     <h3 className="font-bold text-slate-700 flex items-center gap-2">
@@ -431,12 +431,12 @@ const MessagesTab = ({ projectData, projectId }: { projectData: any, projectId: 
                                     toast.success('Gast-Link generiert');
                                 });
                             }}
-                            className="px-3 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase rounded-lg hover:bg-brand-700 transition shadow-sm"
+                            className="px-3 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase rounded-sm hover:bg-brand-700 transition shadow-sm"
                         >
                             Gast-Zugang aktivieren
                         </button>
                     ) : (
-                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-sm px-2 py-1">
                             <span className="text-[10px] text-slate-500 font-mono select-all truncate max-w-[150px]">
                                 {window.location.origin}/guest/project/{projectData.access_token}
                             </span>
@@ -536,6 +536,7 @@ const ProjectDetail = () => {
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
 
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [isDocumentMenuOpen, setIsDocumentMenuOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type?: string; id?: string } | null>(null);
     const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
@@ -562,20 +563,7 @@ const ProjectDetail = () => {
         enabled: !!id
     });
 
-    const generateDocumentMutation = useMutation({
-        mutationFn: (type: 'confirmation' | 'pickup' | 'reminder') => projectService.generateDocument(id!, type),
-        onSuccess: (data: any) => {
-            if (data.url) {
-                window.open(data.url, '_blank');
-                toast.success('Dokument erfolgreich generiert');
-            } else {
-                toast.success(data.message || 'Dokument erstellt!');
-            }
-        },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.error || 'Fehler beim Erstellen des Dokuments.');
-        }
-    });
+
 
     useEffect(() => {
         if (projectResponse) {
@@ -1174,6 +1162,22 @@ const ProjectDetail = () => {
     const targetLang = getLanguageInfo(projectData.target);
     const deadlineStatus = getDeadlineStatus();
 
+    const handleDownloadConfirmation = async (type: 'order_confirmation' | 'pickup_confirmation') => {
+        try {
+            const toastId = toast.loading('Dokument wird erstellt...');
+            const response = await projectService.downloadConfirmation(id!, type);
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            toast.dismiss(toastId);
+            toast.success('Dokument geöffnet');
+        } catch (error) {
+            console.error('Download error:', error);
+            toast.dismiss();
+            toast.error('Dokument konnte nicht geladen werden.');
+        }
+    };
+
     return (
         <div className="flex flex-col fade-in min-h-screen bg-slate-50/30">
             {/* Project Header Container */}
@@ -1217,13 +1221,46 @@ const ProjectDetail = () => {
                             <div className="flex items-center gap-2 md:justify-end pl-12 md:pl-0">
                                 <button
                                     onClick={() => setIsEditModalOpen(true)}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                                    className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
                                 >
                                     <FaEdit /> Bearbeiten
                                 </button>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsDocumentMenuOpen(!isDocumentMenuOpen)}
+                                        className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                                    >
+                                        <FaFilePdf /> Dokumente <FaChevronDown className={clsx("transition-transform", isDocumentMenuOpen ? "rotate-180" : "")} />
+                                    </button>
+                                    {isDocumentMenuOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setIsDocumentMenuOpen(false)}></div>
+                                            <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-sm shadow-xl z-20 overflow-hidden animate-fadeIn">
+                                                <button
+                                                    onClick={() => {
+                                                        handleDownloadConfirmation('order_confirmation');
+                                                        setIsDocumentMenuOpen(false);
+                                                    }}
+                                                    className="w-full text-left px-4 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600 border-b border-slate-50 transition-colors flex items-center gap-2"
+                                                >
+                                                    <FaFilePdf className="text-slate-400" /> Auftragsbestätigung
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        handleDownloadConfirmation('pickup_confirmation');
+                                                        setIsDocumentMenuOpen(false);
+                                                    }}
+                                                    className="w-full text-left px-4 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors flex items-center gap-2"
+                                                >
+                                                    <FaFilePdf className="text-slate-400" /> Abholbestätigung
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                                 <button
                                     onClick={() => setIsInvoiceModalOpen(true)}
-                                    className="bg-brand-600 text-white hover:bg-brand-700 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-brand-500/20 transition active:scale-95"
+                                    className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
                                 >
                                     <FaFileInvoiceDollar /> Rechnung
                                 </button>
@@ -1378,7 +1415,7 @@ const ProjectDetail = () => {
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-fadeIn">
                         <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between">
                             <h3 className="font-black text-[12px] text-slate-800 uppercase tracking-widest flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                                <div className="w-8 h-8 rounded-sm bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                                     <FaFileInvoiceDollar className="text-brand-500 text-sm" />
                                 </div>
                                 Projekt-Übersicht
@@ -1404,12 +1441,12 @@ const ProjectDetail = () => {
 
                                         <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Sprachpaar</span>
                                         <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-700 shadow-sm font-bold">
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-sm text-[11px] text-slate-700 shadow-sm font-bold">
                                                 <img src={sourceLang.flagUrl} alt="" className="w-4 h-3 rounded-[2px] object-cover" />
                                                 {sourceLang.name}
                                             </div>
                                             <FaArrowRight className="text-slate-300 text-xs" />
-                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-700 shadow-sm font-bold">
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-sm text-[11px] text-slate-700 shadow-sm font-bold">
                                                 <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-[2px] object-cover" />
                                                 {targetLang.name}
                                             </div>
@@ -1509,16 +1546,14 @@ const ProjectDetail = () => {
 
                                     <div className="mt-8 flex gap-3 justify-end">
                                         <button
-                                            onClick={() => generateDocumentMutation.mutate('confirmation')}
-                                            disabled={generateDocumentMutation.isPending}
-                                            className="px-4 py-2 bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-slate-200 hover:bg-white hover:text-brand-600 transition shadow-sm disabled:opacity-50"
+                                            onClick={() => handleDownloadConfirmation('order_confirmation')}
+                                            className="px-4 py-2 bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-sm border border-slate-200 hover:bg-white hover:text-brand-600 transition shadow-sm"
                                         >
                                             Auftragsbestätigung
                                         </button>
                                         <button
-                                            onClick={() => generateDocumentMutation.mutate('pickup')}
-                                            disabled={generateDocumentMutation.isPending}
-                                            className="px-4 py-2 bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-slate-200 hover:bg-white hover:text-brand-600 transition shadow-sm disabled:opacity-50"
+                                            onClick={() => handleDownloadConfirmation('pickup_confirmation')}
+                                            className="px-4 py-2 bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-sm border border-slate-200 hover:bg-white hover:text-brand-600 transition shadow-sm"
                                         >
                                             Abholbestätigung
                                         </button>
@@ -1535,7 +1570,7 @@ const ProjectDetail = () => {
                                         <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Dokumentenart</span>
                                         <div className="flex flex-wrap gap-2">
                                             {projectData.docType.length > 0 ? projectData.docType.map((d: string) => (
-                                                <span key={d} className="px-2.5 py-1 bg-brand-50 text-brand-700 rounded-lg text-[10px] font-black uppercase tracking-tight border border-brand-100">
+                                                <span key={d} className="px-2.5 py-1 bg-brand-50 text-brand-700 rounded-sm text-[10px] font-black uppercase tracking-tight border border-brand-100">
                                                     {d}
                                                 </span>
                                             )) : <span className="text-slate-300 italic">Keine Angabe</span>}
@@ -1652,7 +1687,7 @@ const ProjectDetail = () => {
                                                 <FaUserPlus className="text-2xl" />
                                             </div>
                                             <p className="text-slate-400 font-bold text-xs uppercase tracking-wider">Kein Partner zugewiesen</p>
-                                            <button onClick={() => setIsPartnerModalOpen(true)} className="mt-4 px-4 py-2 bg-white text-brand-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-brand-200 hover:bg-brand-50 transition shadow-sm">
+                                            <button onClick={() => setIsPartnerModalOpen(true)} className="mt-4 px-4 py-2 bg-white text-brand-600 text-[10px] font-black uppercase tracking-widest rounded-sm border border-brand-200 hover:bg-brand-50 transition shadow-sm">
                                                 Partner auswählen
                                             </button>
                                         </div>
@@ -1661,13 +1696,13 @@ const ProjectDetail = () => {
                                     <div className="mt-8 flex gap-3 justify-end">
                                         {!projectData.documentsSent ? (
                                             <button
-                                                className="px-5 py-2.5 bg-brand-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center gap-2"
+                                                className="px-5 py-2.5 bg-brand-600 text-white text-[10px] font-black uppercase tracking-widest rounded-sm hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center gap-2"
                                                 onClick={() => updateProjectMutation.mutate({ documents_sent: true })}
                                             >
                                                 <FaPaperPlane className="text-[9px]" /> Dokumente senden
                                             </button>
                                         ) : (
-                                            <div className="px-5 py-2.5 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 border border-emerald-100 shadow-sm">
+                                            <div className="px-5 py-2.5 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-sm flex items-center gap-2 border border-emerald-100 shadow-sm">
                                                 <FaCheckCircle /> Versand bestätigt
                                             </div>
                                         )}
@@ -1689,14 +1724,14 @@ const ProjectDetail = () => {
 
 
                 {activeTab === 'files' && (
-                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10">
+                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden animate-fadeIn px-6 mb-10">
                         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center bg-white gap-4">
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-4">
                                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Projekt-Dateien</h3>
                                     <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">{projectData.files.length}</span>
                                 </div>
-                                <div className="flex bg-slate-100 p-1 rounded-lg w-fit">
+                                <div className="flex bg-slate-100 p-1 rounded-sm w-fit">
                                     <button
                                         onClick={() => setFileFilterTab('all')}
                                         className={clsx("px-3 py-1 text-[10px] font-bold rounded-md transition", fileFilterTab === 'all' ? "bg-white text-brand-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}
@@ -1860,7 +1895,7 @@ const ProjectDetail = () => {
                                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                     <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
+                                            <div className="w-8 h-8 rounded-sm bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
                                                 <FaFileInvoiceDollar />
                                             </div>
                                             <div>
@@ -2037,7 +2072,7 @@ const ProjectDetail = () => {
                                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                     <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm">
+                                            <div className="w-8 h-8 rounded-sm bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm">
                                                 <FaFileInvoiceDollar />
                                             </div>
                                             <div>
@@ -2148,7 +2183,7 @@ const ProjectDetail = () => {
                                                 <span className="font-bold text-red-400">- {financials.partnerTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                                             </div>
 
-                                            <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100 mt-4">
+                                            <div className="bg-emerald-50 rounded-sm p-3 border border-emerald-100 mt-4">
                                                 <div className="flex justify-between items-end mb-1">
                                                     <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Marge / Gewinn</span>
                                                     <span className="text-lg font-black text-emerald-700">{financials.margin.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
@@ -2175,7 +2210,7 @@ const ProjectDetail = () => {
                                         <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-3">
                                             <button
                                                 onClick={() => setIsInvoiceModalOpen(true)}
-                                                className="col-span-2 py-2.5 bg-brand-600 text-white rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
+                                                className="col-span-2 py-2.5 bg-brand-600 text-white rounded-sm text-[11px] font-black uppercase tracking-widest hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
                                             >
                                                 <FaFileInvoiceDollar /> Rechnung erstellen
                                             </button>

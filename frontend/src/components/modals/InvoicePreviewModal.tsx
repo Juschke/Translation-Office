@@ -5,6 +5,7 @@ import { invoiceService } from '../../api/services';
 import api from '../../api/axios';
 import InvoiceStatusBadge from '../invoices/InvoiceStatusBadge';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../common/ConfirmModal';
 
 interface InvoicePreviewModalProps {
     isOpen: boolean;
@@ -16,6 +17,13 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
     const queryClient = useQueryClient();
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [isFetchingPreview, setIsFetchingPreview] = useState(false);
+
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => { });
+    const [confirmVariant, setConfirmVariant] = useState<'danger' | 'warning' | 'info'>('info');
+    const [cancelReason, setCancelReason] = useState('');
 
     useEffect(() => {
         if (isOpen && invoice?.id) {
@@ -97,7 +105,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white shadow-2xl w-full h-full flex flex-col overflow-hidden animate-slideUp">
+            <div className="bg-white shadow-2xl w-full h-full flex flex-col overflow-hidden fade-in">
                 {/* Header */}
                 <div className="px-4 md:px-6 py-3 md:py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-slate-50 gap-3 shrink-0">
                     <div className="flex items-center gap-3 md:gap-4">
@@ -124,7 +132,10 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                         {!isDraft && !isCreditNote && invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
                             <button
                                 onClick={() => {
-                                    if (confirm("Mahnung für diese Rechnung erstellen/hochstufen?")) {
+                                    setConfirmTitle('Mahnung erstellen');
+                                    setConfirmMessage('Mahnung für diese Rechnung erstellen/hochstufen?');
+                                    setConfirmVariant('warning');
+                                    setConfirmAction(() => () => {
                                         const nextLevel = (invoice.reminder_level || 0) + 1;
                                         invoiceService.bulkUpdate([invoice.id], {
                                             reminder_level: nextLevel,
@@ -132,7 +143,8 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                         }).then(() => {
                                             queryClient.invalidateQueries({ queryKey: ['invoices'] });
                                         });
-                                    }
+                                    });
+                                    setConfirmOpen(true);
                                 }}
                                 className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 text-orange-600 hover:bg-orange-50 border border-transparent hover:border-orange-200 rounded-md transition font-medium text-xs md:text-sm"
                                 title="Mahnung"
@@ -146,10 +158,12 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                         {canCancel && (
                             <button
                                 onClick={() => {
-                                    const reason = prompt('Storno-Grund (optional):');
-                                    if (reason !== null) {
-                                        cancelMutation.mutate(reason || undefined);
-                                    }
+                                    setConfirmTitle('Rechnung stornieren');
+                                    setConfirmMessage('Möchten Sie diese Rechnung wirklich stornieren? Es wird eine automatische Gutschrift erstellt.');
+                                    setConfirmVariant('warning');
+                                    setCancelReason('');
+                                    setConfirmAction(() => () => cancelMutation.mutate(cancelReason || undefined));
+                                    setConfirmOpen(true);
                                 }}
                                 className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 rounded-md transition font-medium text-xs md:text-sm border border-transparent ${isCreditNote
                                     ? 'text-red-600 hover:bg-red-50 hover:border-red-200'
@@ -166,9 +180,11 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                         {isDraft && (
                             <button
                                 onClick={() => {
-                                    if (confirm('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform)')) {
-                                        issueMutation.mutate();
-                                    }
+                                    setConfirmTitle('Rechnung ausstellen');
+                                    setConfirmMessage('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform)');
+                                    setConfirmVariant('info');
+                                    setConfirmAction(() => () => issueMutation.mutate());
+                                    setConfirmOpen(true);
                                 }}
                                 className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 text-indigo-600 hover:bg-indigo-50 border border-transparent hover:border-indigo-200 rounded-md transition font-medium text-xs md:text-sm"
                                 title="Ausstellen"
@@ -182,7 +198,11 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                         {isDraft && (
                             <button
                                 onClick={() => {
-                                    if (confirm("Rechnungsentwurf endgültig löschen?")) deleteMutation.mutate();
+                                    setConfirmTitle('Entwurf löschen');
+                                    setConfirmMessage('Rechnungsentwurf endgültig löschen?');
+                                    setConfirmVariant('danger');
+                                    setConfirmAction(() => () => deleteMutation.mutate());
+                                    setConfirmOpen(true);
                                 }}
                                 className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-md transition font-medium text-xs md:text-sm"
                                 title="Löschen"
@@ -218,6 +238,32 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                         </div>
                     )}
                 </div>
+
+                <ConfirmModal
+                    isOpen={confirmOpen}
+                    onClose={() => setConfirmOpen(false)}
+                    onConfirm={() => {
+                        confirmAction();
+                        setConfirmOpen(false);
+                    }}
+                    title={confirmTitle}
+                    message={confirmMessage}
+                    variant={confirmVariant}
+                    isLoading={deleteMutation.isPending || issueMutation.isPending || cancelMutation.isPending}
+                >
+                    {confirmTitle === 'Rechnung stornieren' && (
+                        <div className="mt-4">
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Storno-Grund (optional)</label>
+                            <textarea
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                                className="w-full border border-slate-200 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                placeholder="z.B. Korrektur, Fehlbuchung..."
+                                rows={3}
+                            />
+                        </div>
+                    )}
+                </ConfirmModal>
             </div>
         </div>
     );

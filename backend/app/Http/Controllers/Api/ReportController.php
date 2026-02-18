@@ -245,4 +245,125 @@ class ReportController extends Controller
             'data' => $data->pluck('count')->toArray()
         ]);
     }
+
+    public function taxReport(Request $request)
+    {
+        [$startDate, $endDate] = $this->getDateRange($request);
+
+        // Group by month
+        $data = \App\Models\Invoice::whereBetween('date', [$startDate, $endDate])
+            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'deleted')
+            ->select(
+                DB::raw('DATE_FORMAT(date, "%Y-%m") as month'),
+                'tax_exemption',
+                'tax_rate',
+                DB::raw('SUM(amount_net) as net'),
+                DB::raw('SUM(amount_tax) as tax'),
+                DB::raw('SUM(amount_gross) as gross')
+            )
+            ->groupBy('month', 'tax_exemption', 'tax_rate')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        // Also get partner costs for estimated input tax (Vorsteuer)
+        $partnerCosts = \App\Models\Project::whereBetween('created_at', [$startDate, $endDate])
+            ->select(
+                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+                DB::raw('SUM(partner_cost_net) as cost')
+            )
+            ->groupBy('month')
+            ->get();
+
+        $months = $data->pluck('month')->unique()->values();
+
+        $report = $months->map(function ($month) use ($data, $partnerCosts) {
+            $monthData = $data->where('month', $month);
+            $monthCost = $partnerCosts->where('month', $month)->first();
+
+            $standard = $monthData->where('tax_exemption', 'none')->first();
+            $reverse = $monthData->where('tax_exemption', 'reverse_charge')->sum('net');
+            $small = $monthData->where('tax_exemption', '§19_ustg')->sum('net');
+
+            $net19 = $monthData->where('tax_exemption', 'none')->where('tax_rate', 19.00)->sum('net');
+            $tax19 = $monthData->where('tax_exemption', 'none')->where('tax_rate', 19.00)->sum('tax');
+
+            $net7 = $monthData->where('tax_exemption', 'none')->where('tax_rate', 7.00)->sum('net');
+            $tax7 = $monthData->where('tax_exemption', 'none')->where('tax_rate', 7.00)->sum('tax');
+
+            // Estimation: Assume 19% input tax on partner costs if not specified otherwise
+            // in a real app, this would come from a 'Bills' table.
+            $basisVorsteuer = $monthCost ? $monthCost->cost : 0;
+            $vorsteuerEst = ($basisVorsteuer / 100) * 0.19 * 100; // in cents
+
+            return [
+                'month' => $month,
+                'label' => Carbon::parse($month . '-01')->translatedFormat('F Y'),
+                'revenue_19_net' => $net19 / 100,
+                'revenue_19_tax' => $tax19 / 100,
+                'revenue_7_net' => $net7 / 100,
+                'revenue_7_tax' => $tax7 / 100,
+                'revenue_reverse_charge' => $reverse / 100,
+                'revenue_small_business' => $small / 100,
+                'total_net' => $monthData->sum('net') / 100,
+                'total_tax' => $monthData->sum('tax') / 100,
+                'total_gross' => $monthData->sum('gross') / 100,
+                'input_tax_est' => $vorsteuerEst / 100,
+                'payable_tax' => ($monthData->sum('tax') - $vorsteuerEst) / 100
+            ];
+        });
+
+        return response()->json($report);
+    }
+
+    public function detailedProfitability(Request $request)
+    {
+        [$startDate, $endDate] = $this->getDateRange($request);
+
+        $projects = \App\Models\Project::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', '!=', 'deleted')
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $data = $projects->map(function ($p) {
+            $revenue = $p->price_total; // This is the final agreed price
+            $cost = $p->partner_cost_net; // Total cost to partners
+            $profit = $revenue - $cost;
+            $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
+
+            return [
+                'id' => $p->id,
+                'project_number' => $p->project_number,
+                'project_name' => $p->project_name,
+                'date' => $p->created_at->format('d.m.Y'),
+                'customer' => $p->customer ? ($p->customer->company_name ?: ($p->customer->first_name . ' ' . $p->customer->last_name)) : 'N/A',
+                'revenue' => $revenue,
+                'cost' => $cost,
+                'profit' => $profit,
+                'margin' => round($margin, 2),
+                'status' => $p->status,
+                'status_label' => $this->getStatusLabel($p->status)
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+    private function getStatusLabel(?string $status): string
+    {
+        $map = [
+            'draft' => 'Angebot',
+            'ordered' => 'Bearbeitung',
+            'delivery' => 'Geliefert',
+            'invoiced' => 'Rechnung',
+            'pickup' => 'Abholbereit',
+            'completed' => 'Abgeschlossen',
+            'cancelled' => 'Storniert',
+            'archived' => 'Archiviert',
+            'deleted' => 'Gelöscht'
+        ];
+        return $map[$status] ?? ucfirst($status ?? '-');
+    }
 }
+

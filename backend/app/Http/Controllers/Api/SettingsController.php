@@ -12,16 +12,16 @@ class SettingsController extends Controller
         $user = $request->user();
         $tenantId = $user->tenant_id ?? 1;
         $tenant = \App\Models\Tenant::find($tenantId);
-        
+
         // Get all key-value settings
         $settings = \App\Models\TenantSetting::where('tenant_id', $tenantId)->pluck('value', 'key')->toArray();
-        
+
         // Basic fields from tenant model that should be available if not in settings
         $tenantData = $tenant ? $tenant->toArray() : [];
-        
+
         // Merge: Settings overwrite tenant model defaults
         $response = array_merge($tenantData, $settings);
-        
+
         return response()->json($response);
     }
 
@@ -39,12 +39,18 @@ class SettingsController extends Controller
             'address_zip' => 'nullable|string',
             'address_city' => 'nullable|string',
             'address_country' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|string',
+            'opening_hours' => 'nullable|string',
             'tax_id' => 'nullable|string',
             'tax_number' => 'nullable|string',
             'vat_id' => 'nullable|string',
+            'tax_office' => 'nullable|string',
             'bank_name' => 'nullable|string',
             'bank_iban' => 'nullable|string',
             'bank_bic' => 'nullable|string',
+            'bank_code' => 'nullable|string',
+            'bank_account_holder' => 'nullable|string',
             'website' => 'nullable|string',
             'domain' => 'nullable|string',
             'currency' => 'nullable|string',
@@ -70,9 +76,25 @@ class SettingsController extends Controller
 
         // Fields that exist in the Tenant model and should be synced
         $tenantFields = [
-            'company_name', 'legal_form', 'address_street', 'address_house_no', 
-            'address_zip', 'address_city', 'address_country', 'tax_number', 
-            'vat_id', 'bank_name', 'bank_iban', 'bank_bic', 'domain'
+            'company_name',
+            'legal_form',
+            'address_street',
+            'address_house_no',
+            'address_zip',
+            'address_city',
+            'address_country',
+            'phone',
+            'email',
+            'opening_hours',
+            'tax_number',
+            'vat_id',
+            'tax_office',
+            'bank_name',
+            'bank_iban',
+            'bank_bic',
+            'bank_code',
+            'bank_account_holder',
+            'domain'
         ];
 
         $tenantUpdateData = [];
@@ -125,7 +147,7 @@ class SettingsController extends Controller
         try {
             // Use smtps:// for SSL (port 465), smtp:// for TLS/STARTTLS (port 587)
             $scheme = ($encryption === 'ssl' || $smtpPort === 465) ? 'smtps' : 'smtp';
-            
+
             $dsn = sprintf(
                 '%s://%s:%s@%s:%d',
                 $scheme,
@@ -137,7 +159,7 @@ class SettingsController extends Controller
 
             $transport = \Symfony\Component\Mailer\Transport::fromDsn($dsn);
             $mailer = new \Symfony\Component\Mailer\Mailer($transport);
-            
+
             $email = (new \Symfony\Component\Mime\Email())
                 ->from($validated['mail_username'])
                 ->to($validated['mail_username'])
@@ -146,12 +168,12 @@ class SettingsController extends Controller
 
             $mailer->send($email);
             $results['smtp'] = [
-                'success' => true, 
+                'success' => true,
                 'message' => "SMTP Verbindung erfolgreich über {$scheme}://...:{$smtpPort} (Test-Mail gesendet)."
             ];
         } catch (\Exception $e) {
             $results['smtp'] = [
-                'success' => false, 
+                'success' => false,
                 'message' => 'SMTP Fehler (' . $validated['mail_host'] . ':' . $smtpPort . '): ' . $e->getMessage()
             ];
         }
@@ -163,23 +185,23 @@ class SettingsController extends Controller
             $imapEncryption = ($encryption === 'ssl') ? 'ssl' : ($encryption === 'none' ? false : 'tls');
 
             $client = \Webklex\IMAP\Facades\Client::make([
-                'host'          => $validated['mail_host'],
-                'port'          => $imapPort,
-                'encryption'    => $imapEncryption,
+                'host' => $validated['mail_host'],
+                'port' => $imapPort,
+                'encryption' => $imapEncryption,
                 'validate_cert' => false,
-                'username'      => $validated['mail_username'],
-                'password'      => $validated['mail_password'],
-                'protocol'      => 'imap'
+                'username' => $validated['mail_username'],
+                'password' => $validated['mail_password'],
+                'protocol' => 'imap'
             ]);
 
             $client->connect();
             $results['imap'] = [
-                'success' => true, 
+                'success' => true,
                 'message' => "IMAP Verbindung erfolgreich über Port {$imapPort}."
             ];
         } catch (\Exception $e) {
             $results['imap'] = [
-                'success' => false, 
+                'success' => false,
                 'message' => 'IMAP Fehler: ' . $e->getMessage()
             ];
         }

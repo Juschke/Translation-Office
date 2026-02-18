@@ -378,13 +378,32 @@ class ProjectController extends Controller
         return response()->json(['access_token' => $project->access_token]);
     }
 
+    public function downloadConfirmation(Request $request, \App\Models\Project $project, $type)
+    {
+        if (!in_array($type, ['order_confirmation', 'pickup_confirmation'])) {
+            abort(404);
+        }
+
+        $project->load(['customer', 'tenant', 'positions', 'sourceLanguage', 'targetLanguage']);
+
+        if ($type === 'order_confirmation') {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.order_confirmation', compact('project'));
+            $filename = 'Auftragsbestaetigung_' . ($project->project_number ?? $project->id) . '.pdf';
+        } else {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.pickup_confirmation', compact('project'));
+            $filename = 'Abholbestaetigung_' . ($project->project_number ?? $project->id) . '.pdf';
+        }
+
+        return $pdf->download($filename);
+    }
+
     public function postMessage(Request $request, $id)
     {
         $project = \App\Models\Project::findOrFail($id);
         $request->validate(['content' => 'required|string']);
 
         $message = $project->messages()->create([
-            'content' => $request->content,
+            'content' => $request->input('content'),
             'user_id' => $request->user()->id,
             'sender_name' => $request->user()->name,
             'is_read' => true,

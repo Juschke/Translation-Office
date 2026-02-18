@@ -12,13 +12,13 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     ({ className, label, error, helperText, containerClassName, children, ...props }, ref) => {
         return (
             <div className={cn("w-full", containerClassName)}>
-                {label && <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{label}</label>}
+                {label && <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">{label}</label>}
                 <div className="relative">
                     <select
                         className={cn(
-                            "flex h-9 w-full appearance-none bg-white px-3 py-1.5 pr-8 text-sm font-semibold text-slate-800 shadow-sm transition-all",
+                            "flex h-9 w-full appearance-none rounded-sm bg-white px-3 py-1.5 pr-8 text-sm font-semibold text-slate-800 shadow-sm transition-all",
                             "border border-slate-200 hover:border-slate-300",
-                            "focus:outline-none focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500",
+                            "focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500",
                             "disabled:cursor-not-allowed disabled:opacity-50",
                             error && "border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10",
                             className
@@ -35,7 +35,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                     </div>
                 </div>
                 {helperText && (
-                    <p className={cn("mt-1 text-[10px] font-medium ml-1", error ? "text-red-600" : "text-slate-400")}>
+                    <p className={cn("mt-1 text-[11px] font-medium ml-0.5", error ? "text-red-600" : "text-slate-400")}>
                         {helperText}
                     </p>
                 )}

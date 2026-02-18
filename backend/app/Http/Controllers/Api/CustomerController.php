@@ -9,16 +9,21 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        return response()->json(
-            \App\Models\Customer::with('priceMatrix')
-                ->withCount('projects')
-                ->withSum([
-                    'invoices as sales' => function ($query) {
-                        $query->whereYear('date', now()->year);
-                    }
-                ], 'amount_net')
-                ->get()
-        );
+        $customers = \App\Models\Customer::with('priceMatrix')
+            ->withCount('projects')
+            ->withSum([
+                'invoices as sales_cents' => function ($query) {
+                    $query->whereYear('date', now()->year)
+                        ->where('status', '!=', \App\Models\Invoice::STATUS_CANCELLED);
+                }
+            ], 'amount_net')
+            ->get();
+
+        foreach ($customers as $customer) {
+            $customer->sales = ($customer->sales_cents ?? 0) / 100;
+        }
+
+        return response()->json($customers);
     }
 
     public function stats()
@@ -95,7 +100,36 @@ class CustomerController extends Controller
 
     public function show($id)
     {
-        return response()->json(\App\Models\Customer::with(['priceMatrix', 'creator', 'editor'])->findOrFail($id));
+        $customer = \App\Models\Customer::with(['priceMatrix', 'creator', 'editor'])
+            ->withCount('projects')
+            ->findOrFail($id);
+
+        $currentYear = now()->year;
+        $lastYear = now()->subYear()->year;
+
+        // Sums are in cents, so we divide by 100 to get EUR
+        $customer->sales_current_year = ($customer->invoices()
+            ->whereYear('date', $currentYear)
+            ->where('status', '!=', \App\Models\Invoice::STATUS_CANCELLED)
+            ->sum('amount_net')) / 100;
+
+        $customer->sales_last_year = ($customer->invoices()
+            ->whereYear('date', $lastYear)
+            ->where('status', '!=', \App\Models\Invoice::STATUS_CANCELLED)
+            ->sum('amount_net')) / 100;
+
+        $customer->sales_total = ($customer->invoices()
+            ->where('status', '!=', \App\Models\Invoice::STATUS_CANCELLED)
+            ->sum('amount_net')) / 100;
+
+        $customer->projects_open_count = $customer->projects()
+            ->whereNotIn('status', ['completed', 'cancelled', 'archived', 'deleted', 'gelöscht', 'storniert', 'abgeschlossen'])
+            ->count();
+
+        // For backward compatibility / existing UI
+        $customer->sales = $customer->sales_current_year;
+
+        return response()->json($customer);
     }
 
     public function update(Request $request, $id)

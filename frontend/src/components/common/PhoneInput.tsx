@@ -20,7 +20,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
     helperText,
     required
 }) => {
-    const labelClasses = "block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1";
+    const labelClasses = "block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5";
 
     return (
         <div className="w-full transition-all animate-fadeIn">
@@ -36,14 +36,14 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
                     onChange={(val) => onChange(val || '')}
                     className={clsx(
                         "flex w-full px-3 transition-all outline-none border shadow-sm bg-white h-9 text-sm font-medium items-center",
-                        "focus-within:ring-2 focus-within:ring-brand-500/10",
+                        "focus-within:ring-2 focus-within:ring-brand-500/20",
                         error ? "border-red-500 bg-red-50/10 focus-within:border-red-500" : "border-slate-200 focus-within:border-brand-500 hover:border-slate-300",
                         "rounded-none"
                     )}
                 />
             </div>
             {helperText && (
-                <p className={clsx("mt-1.5 text-[10px] font-medium ml-1", error ? "text-red-500" : "text-slate-400")}>
+                <p className={clsx("mt-1 text-[11px] font-medium ml-0.5", error ? "text-red-500" : "text-slate-400")}>
                     {helperText}
                 </p>
             )}

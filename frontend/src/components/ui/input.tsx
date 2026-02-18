@@ -15,7 +15,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ({ className, type, label, error, helperText, startIcon, endIcon, onEndIconClick, containerClassName, ...props }, ref) => {
         return (
             <div className={cn("w-full", containerClassName)}>
-                {label && <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">{label}</label>}
+                {label && <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">{label}</label>}
                 <div className="relative group">
                     {startIcon && (
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition-colors z-10 text-xs">
@@ -25,10 +25,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     <input
                         type={type}
                         className={cn(
-                            "flex h-9 w-full bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all",
+                            "flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all",
                             "border border-slate-200 hover:border-slate-300",
                             "placeholder:text-slate-400 placeholder:font-normal",
-                            "focus:outline-none focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500",
+                            "focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500",
                             "disabled:cursor-not-allowed disabled:opacity-50",
                             "file:border-0 file:bg-transparent file:text-sm file:font-medium",
                             error && "border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10",
@@ -52,7 +52,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     )}
                 </div>
                 {helperText && (
-                    <p className={cn("mt-1 text-[10px] font-medium ml-1", error ? "text-red-600" : "text-slate-400")}>
+                    <p className={cn("mt-1 text-[11px] font-medium ml-0.5", error ? "text-red-600" : "text-slate-400")}>
                         {helperText}
                     </p>
                 )}

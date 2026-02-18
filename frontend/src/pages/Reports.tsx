@@ -1,6 +1,6 @@
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import { FaCalendarAlt, FaDownload, FaChartLine, FaEuroSign, FaPercentage, FaLayerGroup, FaUserTie, FaTasks, FaTable, FaCalculator, FaFileInvoiceDollar } from 'react-icons/fa';
+import { FaCalendarAlt, FaChartLine, FaEuroSign, FaPercentage, FaLayerGroup, FaUserTie, FaTasks, FaTable, FaCalculator, FaFileInvoiceDollar, FaFilter } from 'react-icons/fa';
 import KPICard from '../components/common/KPICard';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -28,7 +28,9 @@ const Reports = () => {
         startOfMonth(subMonths(new Date(), 5)),
         endOfMonth(new Date())
     ]);
-    const [startDate, endDate] = dateRange;
+
+    const [appliedDateRange, setAppliedDateRange] = useState(dateRange);
+    const [startDate, endDate] = appliedDateRange;
 
     const queryParams = {
         startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
@@ -232,8 +234,8 @@ const Reports = () => {
                         <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
                         <DatePicker
                             selectsRange
-                            startDate={startDate}
-                            endDate={endDate}
+                            startDate={dateRange[0]}
+                            endDate={dateRange[1]}
                             onChange={(update) => setDateRange(update)}
                             isClearable={false}
                             locale="de"
@@ -243,8 +245,11 @@ const Reports = () => {
                             maxDate={new Date()}
                         />
                     </div>
-                    <button className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center gap-2 transition">
-                        <FaDownload className="text-xs" /> Export
+                    <button
+                        onClick={() => setAppliedDateRange(dateRange)}
+                        className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center gap-2 transition"
+                    >
+                        <FaFilter className="text-xs" /> Anzeigen
                     </button>
                 </div>
             </div>

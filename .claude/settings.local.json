@@ -8,7 +8,8 @@
       "Bash(php artisan migrate:*)",
       "Bash(php artisan route:list:*)",
       "Bash(npm run build:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(grep:*)"
     ]
   }
 }

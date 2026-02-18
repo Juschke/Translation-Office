@@ -81,9 +81,9 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
 
     return (
         <div className="relative" ref={containerRef}>
-            <label className="block text-xs font-medium text-slate-500 uppercase mb-1">{label}</label>
+            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">{label}</label>
             <div
-                className={`w-full border rounded px-3 py-2 min-h-[42px] bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm ${isOpen ? 'border-brand-500 ring-4 ring-brand-500/5' : 'border-slate-300 hover:border-slate-400'}`}
+                className={`w-full border rounded-sm px-3 py-2 min-h-[42px] bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm ${isOpen ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-300 hover:border-slate-400'}`}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
                 tabIndex={0}
@@ -92,7 +92,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
                     value.map(v => {
                         const option = options.find(o => o.value === v);
                         return (
-                            <span key={v} className="bg-slate-100 text-slate-700 text-xs font-medium px-2 py-1 rounded flex items-center gap-1 border border-slate-200">
+                            <span key={v} className="bg-slate-100 text-slate-700 text-xs font-medium px-2 py-1 rounded-sm flex items-center gap-1 border border-slate-200">
                                 {option?.label || v}
                                 <FaTimes
                                     className="text-slate-400 hover:text-red-500 cursor-pointer"
@@ -119,7 +119,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
             </div>
 
             {isOpen && (
-                <div className="absolute z-50 w-full bg-white border border-slate-200 max-h-60 overflow-hidden flex flex-col">
+                <div className="absolute z-50 w-full rounded-sm bg-white border border-slate-200 max-h-60 overflow-hidden flex flex-col shadow-sm">
                     <div className="border-b border-slate-100 bg-white relative">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                         <input
@@ -146,7 +146,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
                                     }
                                 }}
                             >
-                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${value.includes(option.value) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
+                                <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition ${value.includes(option.value) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
                                     {value.includes(option.value) && <span className="text-white text-[10px]">✓</span>}
                                 </div>
                                 {option.label}

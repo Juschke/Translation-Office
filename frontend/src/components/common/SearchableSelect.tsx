@@ -15,11 +15,12 @@ interface SearchableSelectProps {
     onAddNew?: () => void;
     addNewLabel?: string;
     id?: string;
+    preserveOrder?: boolean;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
-    isMulti = false, onAddNew, addNewLabel = "Neu hinzufügen", id
+    isMulti = false, onAddNew, addNewLabel = "Neu hinzufügen", id, preserveOrder = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -61,11 +62,14 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
         const sortedGroups = Object.keys(groups).sort().map(groupName => ({
             name: groupName,
-            items: groups[groupName].sort((a, b) => a.label.localeCompare(b.label))
+            items: preserveOrder ? groups[groupName] : groups[groupName].sort((a, b) => a.label.localeCompare(b.label))
         }));
 
-        return { sortedGroups, noGroup: noGroup.sort((a, b) => a.label.localeCompare(b.label)) };
-    }, [filteredOptions]);
+        return {
+            sortedGroups,
+            noGroup: preserveOrder ? noGroup : noGroup.sort((a, b) => a.label.localeCompare(b.label))
+        };
+    }, [filteredOptions, preserveOrder]);
 
     // Flat list for keyboard navigation
     const flatOptions = useMemo(() => {
@@ -156,7 +160,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const dropdownContent = (
         <div
             ref={dropdownRef}
-            className="fixed z-[9999] bg-white border border-slate-200 shadow-xl overflow-hidden animate-fadeIn searchable-select-dropdown flex flex-col"
+            className="fixed z-[9999] bg-white border border-slate-200 shadow-sm overflow-hidden animate-fadeIn searchable-select-dropdown flex flex-col"
             style={{
                 top: coords.top,
                 left: coords.left,
@@ -168,20 +172,36 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 <input
                     type="text"
-                    className="w-full pl-9 pr-3 py-2.5 border-none text-sm focus:outline-none"
+                    className="w-full pl-9 pr-8 py-2.5 border-none text-sm focus:outline-none"
                     placeholder="Suchen..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={handleKeyDown}
                     autoFocus
                 />
+                {search && (
+                    <FaTimes
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 cursor-pointer text-xs"
+                        onClick={() => setSearch('')}
+                    />
+                )}
             </div>
-            <div className="overflow-y-auto custom-scrollbar flex-1">
+            <div className="overflow-y-auto custom-scrollbar flex-1" ref={(el) => {
+                if (el && isOpen && !search) {
+                    // Try to scroll to selected item on open
+                    const selectedEl = el.querySelector('[data-selected="true"]');
+                    if (selectedEl) {
+                        requestAnimationFrame(() => {
+                            selectedEl.scrollIntoView({ block: 'nearest' });
+                        });
+                    }
+                }
+            }}>
                 {flatOptions.length > 0 ? (
                     <>
                         {groupedOptions.sortedGroups.map(group => (
                             <div key={group.name}>
-                                <div className="px-4 py-1.5 bg-slate-50 text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] border-y border-slate-100/50">
+                                <div className="px-4 py-1.5 bg-slate-50 text-[9px] font-semibold text-slate-400 uppercase tracking-[0.15em] border-y border-slate-100/50">
                                     {group.name}
                                 </div>
                                 {group.items.map((opt) => {
@@ -190,24 +210,25 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                     return (
                                         <div
                                             key={opt.value}
+                                            data-selected={isSelected}
                                             className={clsx(
                                                 "px-4 py-2 text-sm cursor-pointer transition flex justify-between items-center",
                                                 activeIndex === index ? 'bg-brand-50/50 text-brand-700' : 'text-slate-700 hover:bg-slate-50',
-                                                isSelected ? 'font-bold bg-brand-50/30' : ''
+                                                isSelected ? 'font-semibold bg-brand-50/30' : ''
                                             )}
                                             onClick={() => handleSelect(opt.value)}
                                         >
                                             <div className="flex items-center gap-2">
                                                 {isMulti && (
                                                     <div className={clsx(
-                                                        "w-3.5 h-3.5 rounded border transition-colors flex items-center justify-center mr-1",
+                                                        "w-3.5 h-3.5 rounded-sm border transition-colors flex items-center justify-center mr-1",
                                                         isSelected ? "bg-brand-600 border-brand-600" : "bg-white border-slate-300"
                                                     )}>
                                                         {isSelected && <FaCheck className="text-white text-[7px]" />}
                                                     </div>
                                                 )}
                                                 {opt.icon && <img src={opt.icon} className="w-5 h-3.5 object-cover shrink-0 shadow-sm" alt="" />}
-                                                <span className="truncate">{opt.label}</span>
+                                                <span>{opt.label}</span>
                                             </div>
                                             {!isMulti && isSelected && <FaCheck className="text-[10px] shrink-0 text-brand-600" />}
                                         </div>
@@ -218,7 +239,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         {groupedOptions.noGroup.length > 0 && (
                             <div>
                                 {groupedOptions.sortedGroups.length > 0 && (
-                                    <div className="px-4 py-1.5 bg-slate-50 text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] border-y border-slate-100/50">
+                                    <div className="px-4 py-1.5 bg-slate-50 text-[9px] font-semibold text-slate-400 uppercase tracking-[0.15em] border-y border-slate-100/50">
                                         Sonstiges
                                     </div>
                                 )}
@@ -228,24 +249,25 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                     return (
                                         <div
                                             key={opt.value}
+                                            data-selected={isSelected}
                                             className={clsx(
                                                 "px-4 py-2 text-sm cursor-pointer transition flex justify-between items-center",
                                                 activeIndex === index ? 'bg-brand-50/50 text-brand-700' : 'text-slate-700 hover:bg-slate-50',
-                                                isSelected ? 'font-bold bg-brand-50/30' : ''
+                                                isSelected ? 'font-semibold bg-brand-50/30' : ''
                                             )}
                                             onClick={() => handleSelect(opt.value)}
                                         >
                                             <div className="flex items-center gap-2">
                                                 {isMulti && (
                                                     <div className={clsx(
-                                                        "w-3.5 h-3.5 rounded border transition-colors flex items-center justify-center mr-1",
+                                                        "w-3.5 h-3.5 rounded-sm border transition-colors flex items-center justify-center mr-1",
                                                         isSelected ? "bg-brand-600 border-brand-600" : "bg-white border-slate-300"
                                                     )}>
                                                         {isSelected && <FaCheck className="text-white text-[7px]" />}
                                                     </div>
                                                 )}
                                                 {opt.icon && <img src={opt.icon} className="w-5 h-3.5 object-cover shrink-0 shadow-sm" alt="" />}
-                                                <span className="truncate">{opt.label}</span>
+                                                <span>{opt.label}</span>
                                             </div>
                                             {!isMulti && isSelected && <FaCheck className="text-[10px] shrink-0 text-brand-600" />}
                                         </div>
@@ -268,7 +290,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             onAddNew();
                             setIsOpen(false);
                         }}
-                        className="w-full py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded text-[10px] font-bold text-brand-700 uppercase tracking-widest flex items-center justify-center gap-2 transition"
+                        className="w-full py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-sm text-[10px] font-semibold text-brand-700 uppercase tracking-widest flex items-center justify-center gap-2 transition"
                     >
                         <FaPlus className="text-[10px]" /> {addNewLabel}
                     </button>
@@ -279,7 +301,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
     return (
         <div className="relative w-full" ref={wrapperRef} data-error={error}>
-            {label && <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">{label}</label>}
+            {label && <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">{label}</label>}
             <div
                 id={id}
                 className={clsx(
@@ -300,10 +322,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             return (
                                 <div key={v} className={clsx(
                                     "flex items-center gap-1",
-                                    isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded text-[11px] font-bold text-slate-700" : "font-bold text-slate-800"
+                                    isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded-sm text-[11px] font-semibold text-slate-700" : "font-semibold text-slate-800"
                                 )}>
                                     {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
-                                    <span className="truncate max-w-[150px]">{opt.label}</span>
+                                    <span>{opt.label}</span>
                                     {isMulti && (
                                         <FaTimes
                                             className="ml-1 text-slate-400 hover:text-red-500 transition-colors"

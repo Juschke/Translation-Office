@@ -169,7 +169,7 @@ const DataTable = <T extends { id: string | number }>({
     }, []);
 
     return (
-        <div className="flex flex-col h-full bg-white border border-slate-200 rounded-md shadow-sm fade-in overflow-hidden">
+        <div className="flex flex-col h-full bg-white border border-slate-200 rounded-sm shadow-sm fade-in overflow-hidden">
             {/* Table Controls */}
             <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-slate-100 flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between bg-white relative z-30">
                 <div className="flex gap-2 sm:gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0 pt-1 pb-1">
@@ -188,7 +188,7 @@ const DataTable = <T extends { id: string | number }>({
                             value={searchTerm}
                             onChange={handleSearch}
                             placeholder={searchPlaceholder}
-                            className="w-full pl-8 pr-4 py-1.5 border border-slate-200 rounded-md text-[11px] font-medium focus:outline-none focus:border-brand-500 bg-slate-50/50"
+                            className="w-full pl-8 pr-4 py-1.5 border border-slate-200 rounded-sm text-[11px] font-medium focus:outline-none focus:border-brand-500 bg-slate-50/50"
                         />
                     </div>
 
@@ -207,8 +207,8 @@ const DataTable = <T extends { id: string | number }>({
                                 <FaColumns className="text-sm" />
                             </button>
                             {isSettingsOpen && (
-                                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl border border-slate-100 rounded-md z-[100] p-4 fade-in max-h-[400px] overflow-y-auto custom-scrollbar">
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Spalten anzeigen</h4>
+                                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 rounded-sm z-[100] p-4 fade-in max-h-[400px] overflow-y-auto custom-scrollbar">
+                                    <h4 className="text-[10px] font-semibold uppercase text-slate-400 mb-3 tracking-widest">Spalten anzeigen</h4>
                                     <div className="space-y-2">
                                         {columns.map((col) => (
                                             <div
@@ -234,7 +234,7 @@ const DataTable = <T extends { id: string | number }>({
 
             <div className="overflow-x-auto flex-1 relative z-10 custom-scrollbar">
                 <table className="w-full min-w-[1000px] text-left text-xs border-collapse">
-                    <thead className="bg-slate-50 text-slate-500 uppercase font-bold sticky top-0 z-10 shadow-sm border-b border-slate-200">
+                    <thead className="bg-slate-50 text-slate-500 uppercase font-semibold sticky top-0 z-10 shadow-sm border-b border-slate-200">
                         <tr>
                             {activeColumns.map((col, idx) => {
                                 const sortKey = col.sortKey || (typeof col.accessor === 'string' ? col.accessor : '');
@@ -266,7 +266,7 @@ const DataTable = <T extends { id: string | number }>({
                                 <td colSpan={activeColumns.length} className="px-4 py-12 text-center text-slate-400">
                                     <div className="flex flex-col items-center gap-2 text-brand-600">
                                         <div className="w-6 h-6 border-2 border-brand-100 border-t-brand-600 rounded-full animate-spin"></div>
-                                        <span className="text-[10px] font-bold uppercase tracking-widest mt-2">Lade Daten...</span>
+                                        <span className="text-[10px] font-semibold uppercase tracking-widest mt-2">Lade Daten...</span>
                                     </div>
                                 </td>
                             </tr>
@@ -312,7 +312,7 @@ const DataTable = <T extends { id: string | number }>({
                                             <FaSearch className="text-2xl" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-sm font-bold text-slate-600">Keine Datensätze gefunden</p>
+                                            <p className="text-sm font-semibold text-slate-600">Keine Datensätze gefunden</p>
                                             <p className="text-xs text-slate-400">Möchtest du einen neuen Datensatz hinzufügen?</p>
                                         </div>
                                         {onAddClick && (
@@ -330,7 +330,7 @@ const DataTable = <T extends { id: string | number }>({
 
             {/* Pagination UI */}
             <div className="flex items-center justify-between px-4 py-2 border-t border-slate-100 bg-slate-50/50">
-                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
                     {sortedData.length > 0 ? (
                         <>
                             <span className="text-slate-800">{(currentPage - 1) * pageSize + 1}</span>-<span className="text-slate-800">{Math.min(currentPage * pageSize, sortedData.length)}</span> / <span className="text-slate-800">{sortedData.length}</span>
@@ -355,7 +355,7 @@ const DataTable = <T extends { id: string | number }>({
                                     key={i}
                                     onClick={() => setCurrentPage(i + 1)}
                                     className={clsx(
-                                        "w-6 h-6 text-[10px] font-bold transition flex items-center justify-center shrink-0",
+                                        "w-6 h-6 text-[10px] font-semibold transition flex items-center justify-center shrink-0",
                                         currentPage === i + 1
                                             ? "bg-brand-700 text-white shadow-sm"
                                             : "bg-white border border-slate-300 text-slate-600 hover:bg-slate-50"

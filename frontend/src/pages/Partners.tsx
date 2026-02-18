@@ -215,7 +215,7 @@ const Partners = () => {
             header: 'Partner / Dienstleister',
             accessor: (p: any) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-md shrink-0 bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100">
+                    <div className="w-8 h-8 rounded-sm shrink-0 bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100">
                         {p.first_name?.[0] || ''}{p.last_name?.[0] || 'P'}
                     </div>
                     <div className="flex flex-col min-w-0">
@@ -267,7 +267,7 @@ const Partners = () => {
                 };
                 const status = p.status?.toLowerCase();
                 return (
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                    <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
                         {labels[status] || p.status}
                     </span>
                 );
@@ -351,9 +351,9 @@ const Partners = () => {
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Details"><FaEye /></button>
-                    <button onClick={() => { setEditingPartner(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Bearbeiten"><FaEdit /></button>
-                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Löschen"><FaTrash /></button>
+                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-sm transition" title="Details"><FaEye /></button>
+                    <button onClick={() => { setEditingPartner(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
+                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Löschen"><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -362,11 +362,11 @@ const Partners = () => {
 
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
-            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white flex items-center gap-2 shadow-sm transition">
+            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded-sm text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white flex items-center gap-2 shadow-sm transition">
                 <FaDownload /> Export
             </button>
             {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-xl border border-slate-100 z-[100] overflow-hidden animate-slideUp">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-xl border border-slate-100 z-[100] overflow-hidden animate-slideUp">
                     <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
                     <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
                     <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>
@@ -465,7 +465,7 @@ const Partners = () => {
                     <p className="text-slate-500 text-sm hidden sm:block">Verwaltung externer Übersetzer, Dolmetscher und Agenturen.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                    <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95">
+                    <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95">
                         <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neuer Partner</span><span className="inline sm:hidden">Partner</span>
                     </button>
                 </div>

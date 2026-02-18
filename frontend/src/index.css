@@ -5,22 +5,22 @@
 @theme {
   --font-sans: 'Outfit', sans-serif;
 
-  /* Brand colors — consistent teal palette */
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
-  --color-brand-200: #99f6e4;
-  --color-brand-300: #5eead4;
-  --color-brand-400: #2dd4bf;
-  --color-brand-500: #14b8a6;
-  --color-brand-600: #0d9488;
-  --color-brand-700: #008B8B;
-  --color-brand-800: #115e59;
-  --color-brand-900: #134e4a;
+  /* Brand colors — cool, muted teal palette */
+  --color-brand-50: #f0f9f8;
+  --color-brand-100: #d5efec;
+  --color-brand-200: #a8ddd7;
+  --color-brand-300: #6fc4bc;
+  --color-brand-400: #3ea8a0;
+  --color-brand-500: #1a8f88;
+  --color-brand-600: #13756f;
+  --color-brand-700: #0f5f5b;
+  --color-brand-800: #0c4a47;
+  --color-brand-900: #093836;
 }
 
 /* ============================================
    DESIGN TOKENS — Single Source of Truth
-   border-radius: 6px (rounded-md) everywhere
+   border-radius: 2px (rounded-sm) everywhere
    spacing scale: 4px base
    ============================================ */
 
@@ -39,7 +39,7 @@
   }
 
   button:focus-visible {
-    @apply outline-none ring-2 ring-brand-500/30 ring-offset-1;
+    @apply outline-none ring-2 ring-brand-500/20 ring-offset-1;
   }
 
   /* Consistent selection color */
@@ -58,19 +58,18 @@
 
 /* ====== ANIMATIONS ====== */
 
-.fade-in {
+.fade-in,
+.animate-fadeIn {
   animation: fadeIn 0.2s ease-in-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(5px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -141,7 +140,7 @@
 .react-datepicker {
   font-family: 'Outfit', sans-serif !important;
   border-color: #e2e8f0 !important;
-  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05) !important;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
 }
 
 .react-datepicker__header {
@@ -151,12 +150,12 @@
 
 .react-datepicker__day--selected,
 .react-datepicker__day--in-range {
-  background-color: #0d9488 !important;
+  background-color: #13756f !important;
 }
 
 .react-datepicker__day:hover {
-  background-color: #f0fdfa !important;
-  color: #0d9488 !important;
+  background-color: #f0f9f8 !important;
+  color: #13756f !important;
 }
 
 /* ====== EMAIL CONTENT ====== */
@@ -175,7 +174,7 @@
 }
 
 .email-content-container a {
-  color: #008B8B;
+  color: #0f5f5b;
   text-decoration: underline;
 }
 
@@ -213,7 +212,7 @@
   display: flex;
   flex-direction: column;
   background: #f8fafc;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
 }

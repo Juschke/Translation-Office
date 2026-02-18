@@ -594,7 +594,7 @@ const Projects = () => {
             </div>
 
             <div className="flex justify-end -mb-2">
-                <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 overflow-hidden">
+                <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-hidden">
                     <button
                         onClick={() => setViewMode('list')}
                         className={clsx(
