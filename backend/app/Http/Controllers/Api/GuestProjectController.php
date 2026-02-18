@@ -67,8 +67,8 @@ class GuestProjectController extends Controller
         $project = Project::where('access_token', $token)->firstOrFail();
 
         $request->validate([
-            'content' => 'required|string',
-            'sender_name' => 'nullable|string'
+            'content' => 'required|string|max:5000',
+            'sender_name' => 'nullable|string|max:255'
         ]);
 
         $message = $project->messages()->create([
@@ -85,7 +85,7 @@ class GuestProjectController extends Controller
         $project = Project::where('access_token', $token)->firstOrFail();
 
         $request->validate([
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,rtf,odt,ods,csv,jpg,jpeg,png,gif,zip',
         ]);
 
         $file = $request->file('file');

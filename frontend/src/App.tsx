@@ -26,7 +26,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import Notifications from './pages/Notifications';
 
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute, PublicRoute } from './components/auth/AuthGuard';
+import { ProtectedRoute, PublicRoute, RoleGuard } from './components/auth/AuthGuard';
 import { Toaster } from 'react-hot-toast';
 
 
@@ -61,13 +61,13 @@ function App() {
             <Route path="/customers/:id" element={<CustomerDetail />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/partners/:id" element={<PartnerDetail />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/inbox" element={<Inbox />} />
-            <Route path="/reports" element={<Reports />} />
+            <Route path="/invoices" element={<RoleGuard minRole="manager"><Invoices /></RoleGuard>} />
+            <Route path="/inbox" element={<RoleGuard minRole="manager"><Inbox /></RoleGuard>} />
+            <Route path="/reports" element={<RoleGuard minRole="manager"><Reports /></RoleGuard>} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/settings/*" element={<Settings />} />
-            <Route path="/billing" element={<Billing />} />
+            <Route path="/settings/*" element={<RoleGuard minRole="manager"><Settings /></RoleGuard>} />
+            <Route path="/billing" element={<RoleGuard minRole="owner"><Billing /></RoleGuard>} />
           </Route>
 
           {/* Catch all */}

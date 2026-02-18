@@ -26,9 +26,8 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'admin',
+            'role' => User::ROLE_OWNER,
             'status' => 'active',
-            'is_admin' => false,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -43,6 +42,12 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+            'code' => 'nullable|string',
+        ]);
+
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -163,7 +168,7 @@ class AuthController extends Controller
                     'email' => $email,
                     'name' => 'Eingeladener Benutzer',
                     'password' => Hash::make(str()->random(16)),
-                    'role' => 'user',
+                    'role' => User::ROLE_EMPLOYEE,
                 ]);
                 // TODO: Send actual invitation email
             }

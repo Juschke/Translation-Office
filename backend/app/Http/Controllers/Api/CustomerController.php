@@ -146,9 +146,17 @@ class CustomerController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'exists:customers,id',
             'data' => 'required|array',
+            'data.status' => 'sometimes|string|in:active,inactive,archiviert',
         ]);
 
-        \App\Models\Customer::whereIn('id', $validated['ids'])->update($validated['data']);
+        $allowedFields = ['status'];
+        $updateData = array_intersect_key($validated['data'], array_flip($allowedFields));
+
+        if (empty($updateData)) {
+            return response()->json(['message' => 'Keine gültigen Felder zum Aktualisieren.'], 422);
+        }
+
+        \App\Models\Customer::whereIn('id', $validated['ids'])->update($updateData);
 
         return response()->json(['message' => 'Customers updated successfully']);
     }

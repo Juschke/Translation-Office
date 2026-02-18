@@ -12,7 +12,6 @@ class Project extends Model
     use HasFactory, BelongsToTenant, LogsAllActivity;
 
     protected $fillable = [
-        'tenant_id',
         'project_number',
         'customer_id',
         'partner_id',

@@ -163,21 +163,67 @@ class ProjectController extends Controller
     public function update(Request $request, $id)
     {
         $project = \App\Models\Project::findOrFail($id);
-        $project->update($request->except(['positions', 'payments']));
+
+        $validated = $request->validate([
+            'customer_id' => 'sometimes|exists:customers,id',
+            'partner_id' => 'sometimes|nullable|exists:partners,id',
+            'source_lang_id' => 'sometimes|nullable|exists:languages,id',
+            'target_lang_id' => 'sometimes|nullable|exists:languages,id',
+            'document_type_id' => 'sometimes|nullable|exists:document_types,id',
+            'additional_doc_types' => 'nullable|string',
+            'project_name' => 'sometimes|string|max:255',
+            'status' => 'sometimes|string',
+            'priority' => 'sometimes|nullable|string',
+            'word_count' => 'nullable|integer',
+            'line_count' => 'nullable|integer',
+            'price_total' => 'nullable|numeric',
+            'partner_cost_net' => 'nullable|numeric',
+            'down_payment' => 'nullable|numeric',
+            'down_payment_date' => 'nullable|date',
+            'down_payment_note' => 'nullable|string',
+            'currency' => 'sometimes|string|max:3',
+            'deadline' => 'nullable|date',
+            'is_certified' => 'nullable|boolean',
+            'has_apostille' => 'nullable|boolean',
+            'is_express' => 'nullable|boolean',
+            'classification' => 'nullable|boolean',
+            'copies_count' => 'nullable|integer',
+            'copy_price' => 'nullable|numeric',
+            'notes' => 'nullable|string',
+            'positions' => 'nullable|array',
+            'positions.*.description' => 'required|string',
+            'positions.*.amount' => 'required|numeric',
+            'positions.*.unit' => 'nullable|string',
+            'positions.*.quantity' => 'nullable|numeric',
+            'positions.*.partner_rate' => 'nullable|numeric',
+            'positions.*.partner_mode' => 'nullable|in:unit,flat',
+            'positions.*.partner_total' => 'nullable|numeric',
+            'positions.*.customer_rate' => 'nullable|numeric',
+            'positions.*.customer_mode' => 'nullable|in:unit,flat,rate',
+            'positions.*.customer_total' => 'nullable|numeric',
+            'positions.*.margin_type' => 'nullable|in:markup,discount',
+            'positions.*.margin_percent' => 'nullable|numeric',
+            'payments' => 'nullable|array',
+            'payments.*.amount' => 'required|numeric',
+            'payments.*.payment_date' => 'required|date',
+            'payments.*.payment_method' => 'nullable|string',
+            'payments.*.note' => 'nullable|string',
+        ]);
+
+        $project->update(collect($validated)->except(['positions', 'payments'])->toArray());
 
         if ($request->has('positions')) {
             $project->positions()->delete();
-            foreach ($request->positions as $posData) {
+            foreach ($validated['positions'] as $posData) {
                 $project->positions()->create($posData);
             }
         }
 
         if ($request->has('payments')) {
             $project->payments()->delete();
-            foreach ($request->payments as $paymentData) {
+            foreach ($validated['payments'] as $paymentData) {
                 $project->payments()->create($paymentData);
             }
-            // Update single field for compatibility
             $project->update(['down_payment' => $project->payments()->sum('amount')]);
         }
 
@@ -196,9 +242,19 @@ class ProjectController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'exists:projects,id',
             'data' => 'required|array',
+            'data.status' => 'sometimes|string',
+            'data.priority' => 'sometimes|nullable|string',
+            'data.partner_id' => 'sometimes|nullable|exists:partners,id',
         ]);
 
-        \App\Models\Project::whereIn('id', $validated['ids'])->update($validated['data']);
+        $allowedFields = ['status', 'priority', 'partner_id'];
+        $updateData = array_intersect_key($validated['data'], array_flip($allowedFields));
+
+        if (empty($updateData)) {
+            return response()->json(['message' => 'Keine gültigen Felder zum Aktualisieren.'], 422);
+        }
+
+        \App\Models\Project::whereIn('id', $validated['ids'])->update($updateData);
 
         return response()->json(['message' => 'Projects updated successfully']);
     }

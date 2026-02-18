@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 const Navigation = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, hasMinRole } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -158,22 +158,28 @@ const Navigation = () => {
                                 <NavBadge count={dashboardData?.stats?.active_partners} label="Aktive Partner" activeColor="bg-brand-400" />
                             </Link>
 
-                            <Link to="/invoices" className={navLinkClass("/invoices")}>
-                                Rechnungen
-                                <NavBadge
-                                    count={dashboardData?.stats?.unpaid_invoices}
-                                    label="Offene Rechnungen"
-                                    activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
-                                    isPriority={dashboardData?.stats?.overdue_invoices > 0}
-                                />
-                            </Link>
+                            {hasMinRole('manager') && (
+                                <Link to="/invoices" className={navLinkClass("/invoices")}>
+                                    Rechnungen
+                                    <NavBadge
+                                        count={dashboardData?.stats?.unpaid_invoices}
+                                        label="Offene Rechnungen"
+                                        activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
+                                        isPriority={dashboardData?.stats?.overdue_invoices > 0}
+                                    />
+                                </Link>
+                            )}
 
-                            <Link to="/inbox" className={navLinkClass("/inbox")}>
-                                Email
-                                <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
-                            </Link>
+                            {hasMinRole('manager') && (
+                                <Link to="/inbox" className={navLinkClass("/inbox")}>
+                                    Email
+                                    <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
+                                </Link>
+                            )}
 
-                            <Link to="/reports" className={navLinkClass("/reports")}>Auswertung</Link>
+                            {hasMinRole('manager') && (
+                                <Link to="/reports" className={navLinkClass("/reports")}>Auswertung</Link>
+                            )}
                         </div>
                     </div>
 
@@ -263,12 +269,16 @@ const Navigation = () => {
                                         <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
                                             Profil
                                         </Link>
-                                        <Link to="/settings" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                            Einstellungen
-                                        </Link>
-                                        <Link to="/billing" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                            Abonnement
-                                        </Link>
+                                        {hasMinRole('manager') && (
+                                            <Link to="/settings" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
+                                                Einstellungen
+                                            </Link>
+                                        )}
+                                        {hasMinRole('owner') && (
+                                            <Link to="/billing" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
+                                                Abonnement
+                                            </Link>
+                                        )}
                                     </div>
                                     <div className="border-t border-slate-100 py-1 font-normal text-left">
                                         <button
@@ -305,20 +315,26 @@ const Navigation = () => {
                             Partner
                             <NavBadge count={dashboardData?.stats?.active_partners} label="Aktive Partner" activeColor="bg-brand-400" />
                         </Link>
-                        <Link to="/invoices" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                            Rechnungen
-                            <NavBadge
-                                count={dashboardData?.stats?.unpaid_invoices}
-                                label="Offene Rechnungen"
-                                activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
-                                isPriority={dashboardData?.stats?.overdue_invoices > 0}
-                            />
-                        </Link>
-                        <Link to="/inbox" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                            Email
-                            <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
-                        </Link>
-                        <Link to="/reports" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Auswertung</Link>
+                        {hasMinRole('manager') && (
+                            <Link to="/invoices" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
+                                Rechnungen
+                                <NavBadge
+                                    count={dashboardData?.stats?.unpaid_invoices}
+                                    label="Offene Rechnungen"
+                                    activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
+                                    isPriority={dashboardData?.stats?.overdue_invoices > 0}
+                                />
+                            </Link>
+                        )}
+                        {hasMinRole('manager') && (
+                            <Link to="/inbox" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
+                                Email
+                                <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
+                            </Link>
+                        )}
+                        {hasMinRole('manager') && (
+                            <Link to="/reports" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Auswertung</Link>
+                        )}
                     </div>
                 </div>
             )}

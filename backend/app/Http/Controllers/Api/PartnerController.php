@@ -118,9 +118,17 @@ class PartnerController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'exists:partners,id',
             'data' => 'required|array',
+            'data.status' => 'sometimes|string|in:active,inactive,archiviert',
         ]);
 
-        Partner::whereIn('id', $validated['ids'])->update($validated['data']);
+        $allowedFields = ['status'];
+        $updateData = array_intersect_key($validated['data'], array_flip($allowedFields));
+
+        if (empty($updateData)) {
+            return response()->json(['message' => 'Keine gültigen Felder zum Aktualisieren.'], 422);
+        }
+
+        Partner::whereIn('id', $validated['ids'])->update($updateData);
 
         return response()->json(['message' => 'Partners updated successfully']);
     }

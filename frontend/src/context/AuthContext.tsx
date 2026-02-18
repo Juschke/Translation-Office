@@ -1,20 +1,52 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../api/services';
 
+export type UserRole = 'owner' | 'manager' | 'employee';
+
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: UserRole;
+    is_admin: boolean;
+    tenant_id: number | null;
+    status: string;
+    tenant?: {
+        id: number;
+        company_name: string;
+        subscription_plan: string;
+        [key: string]: any;
+    };
+    two_factor_confirmed_at?: string | null;
+    email_verified_at?: string | null;
+    language?: string;
+    [key: string]: any;
+}
+
+const ROLE_LEVEL: Record<UserRole, number> = {
+    employee: 1,
+    manager: 2,
+    owner: 3,
+};
+
 interface AuthContextType {
-    user: any;
+    user: User | null;
     isLoading: boolean;
     login: (data: any) => Promise<any>;
     register: (data: any) => Promise<void>;
     logout: () => Promise<void>;
     onboard: (data: any) => Promise<void>;
     refreshUser: () => Promise<void>;
+    isOwner: boolean;
+    isManager: boolean;
+    isEmployee: boolean;
+    hasMinRole: (role: UserRole) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const refreshUser = async () => {
@@ -71,8 +103,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await refreshUser();
     };
 
+    const isOwner = user?.role === 'owner';
+    const isManager = user?.role === 'manager';
+    const isEmployee = user?.role === 'employee';
+
+    const hasMinRole = (role: UserRole): boolean => {
+        if (!user) return false;
+        return (ROLE_LEVEL[user.role] ?? 0) >= (ROLE_LEVEL[role] ?? 99);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, register, logout, onboard, refreshUser }}>
+        <AuthContext.Provider value={{
+            user, isLoading, login, register, logout, onboard, refreshUser,
+            isOwner, isManager, isEmployee, hasMinRole
+        }}>
             {children}
         </AuthContext.Provider>
     );

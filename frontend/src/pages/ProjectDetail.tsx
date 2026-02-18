@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaCheckCircle, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy, FaArchive, FaBolt, FaCheck, FaCamera, FaFile, FaStar, FaCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaCloudUploadAlt, FaPlus, FaEdit, FaPhone, FaCheckCircle, FaArrowRight, FaExclamationTriangle, FaFlag, FaPaperPlane, FaClock, FaFileInvoiceDollar, FaComments, FaExternalLinkAlt, FaTrashAlt, FaDownload, FaAt, FaHashtag, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEye, FaPaperclip, FaUserPlus, FaInfoCircle, FaCopy, FaArchive, FaBolt, FaCheck, FaCamera, FaFile, FaStar, FaCircle, FaChevronDown } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -533,6 +533,7 @@ const ProjectDetail = () => {
     const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
 
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -1174,503 +1175,516 @@ const ProjectDetail = () => {
     const deadlineStatus = getDeadlineStatus();
 
     return (
-        <div className="flex flex-col fade-in pb-10">
-            <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 md:p-6 mb-6">
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3 md:gap-4">
-                        <button
-                            onClick={() => navigate('/projects')}
-                            className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
-                        >
-                            <FaArrowLeft />
-                        </button>
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg md:text-xl font-bold border border-emerald-100 shadow-sm shrink-0">
-                            {projectData.name.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <h1 className="text-lg md:text-2xl font-bold text-slate-800 truncate">{projectData.name}</h1>
-                                {projectData.priority !== 'low' && (
-                                    <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight border",
-                                        projectData.priority === 'express' ? "bg-red-50 text-red-700 border-red-200" : "bg-orange-50 text-orange-700 border-orange-200"
-                                    )}>
-                                        <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
-                                        {projectData.priority === 'express' ? <FaBolt className="text-[10px]" /> : <FaFlag className="text-[10px]" />}
+        <div className="flex flex-col fade-in min-h-screen bg-slate-50/30">
+            {/* Project Header Container */}
+            <div className="bg-white border-b border-slate-200 shadow-sm">
+                <div className="max-w-[1600px] mx-auto">
+                    <div className="px-4 md:px-8 py-4">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => navigate('/projects')}
+                                    className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
+                                >
+                                    <FaArrowLeft />
+                                </button>
+
+                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                    <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-black border border-brand-100 shadow-sm shrink-0">
+                                        {projectData.name.substring(0, 2).toUpperCase()}
                                     </div>
-                                )}
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <h1 className="text-lg md:text-xl font-black text-slate-800 truncate tracking-tight">{projectData.name}</h1>
+                                            {projectData.priority !== 'low' && (
+                                                <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
+                                                    projectData.priority === 'express' ? "bg-red-50 text-red-600 border-red-100" : "bg-orange-50 text-orange-600 border-orange-100"
+                                                )}>
+                                                    {projectData.priority === 'express' ? <FaBolt /> : <FaFlag />}
+                                                    <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-4 text-[11px] text-slate-400 font-medium mt-1">
+                                            {getStatusBadge(projectData.status)}
+                                            <span className="text-slate-200">|</span>
+                                            <span>ID: <span className="text-slate-600 font-bold">{projectData.id}</span></span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-slate-500 flex-wrap mt-2">
+
+                            <div className="flex items-center gap-2 md:justify-end pl-12 md:pl-0">
+                                <button
+                                    onClick={() => setIsEditModalOpen(true)}
+                                    className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                                >
+                                    <FaEdit /> Bearbeiten
+                                </button>
+                                <button
+                                    onClick={() => setIsInvoiceModalOpen(true)}
+                                    className="bg-brand-600 text-white hover:bg-brand-700 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-brand-500/20 transition active:scale-95"
+                                >
+                                    <FaFileInvoiceDollar /> Rechnung
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Meta Info Bar */}
+                    <div className="px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-6 text-[10px] text-slate-400 flex-wrap">
+                        <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            <span>Erstellt am <span className="text-slate-600">{projectData.createdAt}</span> {projectData.creator && `von ${projectData.creator.name}`}</span>
+                        </div>
+                        <span className="text-slate-200">•</span>
+                        <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                            <span>Zuletzt geändert: <span className="text-slate-600">{projectData.updatedAt}</span></span>
+                        </div>
+                    </div>
+
+                    {/* Tabs Navigation */}
+                    <div className="px-4 md:px-8 border-t border-slate-100 flex items-center justify-between md:justify-start">
+                        {/* Mobile Tab Menu Button */}
+                        <div className="md:hidden flex-1 py-3">
+                            <button
+                                onClick={() => setIsTabMenuOpen(!isTabMenuOpen)}
+                                className="flex items-center gap-3 text-slate-600 font-black uppercase tracking-widest text-[11px] hover:text-brand-600 transition-colors w-full"
+                            >
+                                <div className="w-4 h-3 flex flex-col justify-between">
+                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "rotate-45 translate-y-1" : "")}></span>
+                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "opacity-0" : "")}></span>
+                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "-rotate-45 -translate-y-1.5" : "")}></span>
+                                </div>
+                                <span>Menü: {
+                                    activeTab === 'overview' ? 'Stammdaten' :
+                                        activeTab === 'files' ? 'Dateien' :
+                                            activeTab === 'finances' ? 'Kalkulation & Marge' :
+                                                activeTab === 'history' ? 'Historie' : 'Kommunikation'
+                                }</span>
+                                <FaChevronDown className={clsx("ml-auto transition-transform", isTabMenuOpen && "rotate-180")} />
+                            </button>
+                        </div>
+
+                        {/* Desktop Tabs */}
+                        <div className="hidden md:flex gap-8">
+                            {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
+                                let badgeCount = 0;
+                                if (tab === 'files') badgeCount = projectData?.files?.length || 0;
+                                if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                                if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
+
+                                const isActive = activeTab === tab;
+
+                                return (
+                                    <button
+                                        key={tab}
+                                        onClick={() => {
+                                            setActiveTab(tab);
+                                            setIsTabMenuOpen(false);
+                                        }}
+                                        className={clsx(
+                                            "py-4 text-[11px] font-black uppercase tracking-widest border-b-2 transition-all relative flex items-center gap-2.5 -mb-[1px]",
+                                            isActive
+                                                ? 'border-brand-600 text-brand-700'
+                                                : 'border-transparent text-slate-400 hover:text-slate-600'
+                                        )}
+                                    >
+                                        {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
+                                        {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
+                                        {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
+                                        {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
+                                        {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
+
+                                        {tab === 'overview' ? 'Stammdaten' :
+                                            tab === 'files' ? 'Dateien' :
+                                                tab === 'finances' ? 'Kalkulation & Marge' :
+                                                    tab === 'history' ? 'Historie' : 'Kommunikation'}
+
+                                        {tab !== 'overview' && tab !== 'history' && (
+                                            <span className={clsx(
+                                                "px-2 py-0.5 rounded-full text-[9px] font-bold transition-colors",
+                                                isActive ? "bg-brand-100 text-brand-700" : "bg-slate-100 text-slate-500"
+                                            )}>
+                                                {badgeCount}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Mobile Tab Menu Overlay */}
+                    {isTabMenuOpen && (
+                        <div className="md:hidden border-t border-slate-100 bg-white animate-slideUp">
+                            <div className="flex flex-col">
+                                {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
+                                    let badgeCount = 0;
+                                    if (tab === 'files') badgeCount = projectData?.files?.length || 0;
+                                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                                    if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
+
+                                    const isActive = activeTab === tab;
+
+                                    return (
+                                        <button
+                                            key={tab}
+                                            onClick={() => {
+                                                setActiveTab(tab);
+                                                setIsTabMenuOpen(false);
+                                            }}
+                                            className={clsx(
+                                                "px-6 py-4 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 border-l-4 transition-all",
+                                                isActive
+                                                    ? 'border-brand-600 bg-brand-50 text-brand-700'
+                                                    : 'border-transparent text-slate-500 hover:bg-slate-50'
+                                            )}
+                                        >
+                                            {tab === 'overview' && <FaInfoCircle className="text-base" />}
+                                            {tab === 'files' && <FaFileAlt className="text-base" />}
+                                            {tab === 'finances' && <FaFileInvoiceDollar className="text-base" />}
+                                            {tab === 'messages' && <FaComments className="text-base" />}
+                                            {tab === 'history' && <FaClock className="text-base" />}
+
+                                            <span className="flex-1 text-left">
+                                                {tab === 'overview' ? 'Stammdaten' :
+                                                    tab === 'files' ? 'Dateien' :
+                                                        tab === 'finances' ? 'Kalkulation & Marge' :
+                                                            tab === 'history' ? 'Historie' : 'Kommunikation'}
+                                            </span>
+
+                                            {tab !== 'overview' && tab !== 'history' && (
+                                                <span className={clsx(
+                                                    "px-2 py-0.5 rounded-full text-[9px] font-bold",
+                                                    isActive ? "bg-brand-200 text-brand-700" : "bg-slate-100 text-slate-500"
+                                                )}>
+                                                    {badgeCount}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 max-w-[1600px] mx-auto w-full px-4 md:px-8 py-8 transition-all duration-300">
+                {activeTab === 'overview' && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-fadeIn">
+                        <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between">
+                            <h3 className="font-black text-[12px] text-slate-800 uppercase tracking-widest flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                                    <FaFileInvoiceDollar className="text-brand-500 text-sm" />
+                                </div>
+                                Projekt-Übersicht
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Status:</span>
                                 {getStatusBadge(projectData.status)}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-wrap ml-0 md:ml-auto self-start mt-1">
-                            <button
-                                onClick={() => setIsEditModalOpen(true)}
-                                className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-3 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
-                            >
-                                <FaEdit /> Bearbeiten
-                            </button>
-                            <button
-                                onClick={() => setIsInvoiceModalOpen(true)}
-                                className="bg-brand-600 border border-brand-600 text-white hover:bg-brand-700 px-3 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
-                            >
-                                <FaFileInvoiceDollar /> Rechnung
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Meta Information Row */}
-                <div className="px-6 py-2 mt-4 flex border-t border-slate-100 items-center gap-6 flex-wrap text-[11px] text-slate-400">
-                    <span>Projekt-ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
-                    <span className="hidden sm:inline text-slate-300">|</span>
-                    <span>Erstellt: <span className="text-slate-600">{projectData.createdAt} {projectData.creator ? `von ${projectData.creator.name}` : ''}</span></span>
-                    <span className="hidden sm:inline text-slate-300">|</span>
-                    <span>Geändert: <span className="text-slate-600">{projectData.updatedAt} {projectData.editor ? `von ${projectData.editor.name}` : ''}</span></span>
-                </div>
-
-
-
-            </div>
-
-            {/* Tab Contents */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {activeTab === 'overview' && (
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-10">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                            <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                                <FaFileInvoiceDollar className="text-brand-500" /> Projekt-Stammdaten
-                            </h3>
-
-                        </div>
-
-                        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-y-10 gap-x-12">
+                        <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-y-12 gap-x-16">
                             {/* Left Column: Core Info & Customer */}
-                            <div className="flex flex-col gap-8 h-full">
+                            <div className="space-y-10">
                                 {/* Section: Basisdaten */}
                                 <div>
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Basisdaten</h4>
-                                    <div className="grid grid-cols-[110px_1fr] gap-y-3 gap-x-4 text-sm">
-                                        <span className="text-slate-500 font-medium font-bold">Projekt-Nr</span>
-                                        <span className="text-slate-800 font-bold">{projectData.id}</span>
+                                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] border-b border-slate-100 pb-3 mb-6">Basisdaten</h4>
+                                    <div className="grid grid-cols-[130px_1fr] gap-y-4 gap-x-6 text-sm">
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Projekt-ID</span>
+                                        <span className="text-slate-800 font-black tracking-tight">{projectData.id}</span>
 
-                                        <span className="text-slate-500 font-medium">Bezeichnung</span>
-                                        <span className="text-slate-800">{projectData.name}</span>
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Bezeichnung</span>
+                                        <span className="text-slate-800 font-semibold">{projectData.name}</span>
 
-                                        <span className="text-slate-500 font-medium">Sprachpaar</span>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-700 shadow-sm">
-                                                <img src={sourceLang.flagUrl} alt="" className="w-3.5 h-2.5 rounded-[1px] object-cover" />
-                                                <span className="font-medium">{sourceLang.name}</span>
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Sprachpaar</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-700 shadow-sm font-bold">
+                                                <img src={sourceLang.flagUrl} alt="" className="w-4 h-3 rounded-[2px] object-cover" />
+                                                {sourceLang.name}
                                             </div>
-                                            <FaArrowLeft className="rotate-180 text-slate-300 text-xs" />
-                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-700 shadow-sm">
-                                                <img src={targetLang.flagUrl} alt="" className="w-3.5 h-2.5 rounded-[1px] object-cover" />
-                                                <span className="font-medium">{targetLang.name}</span>
+                                            <FaArrowRight className="text-slate-300 text-xs" />
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-700 shadow-sm font-bold">
+                                                <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-[2px] object-cover" />
+                                                {targetLang.name}
                                             </div>
                                         </div>
 
-                                        <span className="text-slate-500 font-medium">Status</span>
-                                        <div>{getStatusBadge(projectData.status)}</div>
-
-                                        <span className="text-slate-500 font-medium">Lieferdatum</span>
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Termin</span>
                                         <div className="flex items-center gap-3">
-                                            <div className="flex flex-col">
-                                                <span className="text-slate-800">
-                                                    {projectData.due ? (() => {
-                                                        const d = new Date(projectData.due);
-                                                        const days = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
-                                                        return `${days[d.getDay()]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} `;
-                                                    })() : <span className="text-slate-400 italic">Keine Angabe</span>}
-                                                </span>
-                                            </div>
+                                            <span className="text-slate-800 font-semibold bg-slate-50 px-2 py-1 rounded">
+                                                {projectData.due ? (() => {
+                                                    const d = new Date(projectData.due);
+                                                    const days = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
+                                                    return `${days[d.getDay()]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} | ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+                                                })() : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}
+                                            </span>
                                             {projectData.due && (
-                                                <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight border shadow-sm", deadlineStatus.color)}>
+                                                <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border shadow-sm", deadlineStatus.color)}>
                                                     {deadlineStatus.label}
                                                 </div>
                                             )}
                                         </div>
 
-                                        <span className="text-slate-500 font-medium">Priorität</span>
-                                        <div className="flex items-center gap-2">
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Priorität</span>
+                                        <div>
                                             {projectData.priority === 'low' ? (
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">
-                                                    <FaClock className="text-[10px]" />
-                                                    <span>Standard</span>
-                                                </div>
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">
+                                                    <FaClock /> Standard
+                                                </span>
                                             ) : projectData.priority === 'medium' ? (
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight bg-blue-50 text-blue-700 border border-blue-200">
-                                                    <FaFlag className="text-[10px]" />
-                                                    <span>Normal</span>
-                                                </div>
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight bg-blue-50 text-blue-700 border border-blue-200">
+                                                    <FaFlag /> Normal
+                                                </span>
                                             ) : (
-                                                <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight border",
+                                                <span className={clsx("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight border",
                                                     projectData.priority === 'express' || projectData.priority === 'high' ? "bg-red-50 text-red-700 border-red-200" : "bg-orange-50 text-orange-700 border-orange-200"
                                                 )}>
-                                                    {projectData.priority === 'express' || projectData.priority === 'high' ? <FaBolt className="text-[10px]" /> : <FaFlag className="text-[10px]" />}
-                                                    <span>{projectData.priority === 'express' || projectData.priority === 'high' ? 'Express' : 'Dringend'}</span>
-                                                </div>
+                                                    {projectData.priority === 'express' || projectData.priority === 'high' ? <FaBolt /> : <FaFlag />}
+                                                    {projectData.priority === 'express' || projectData.priority === 'high' ? 'Express-Service' : 'Hohe Priorität'}
+                                                </span>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Section: Kunde */}
-                                <div className="flex flex-col flex-1">
-                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-4">
-                                        <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Kunde / Auftraggeber</h4>
-                                        <div className="flex gap-3">
+                                <div>
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-6">
+                                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Kunde / Auftraggeber</h4>
+                                        <div className="flex gap-4">
                                             {projectData.customer_id && (
-                                                <>
-                                                    <button
-                                                        onClick={() => setIsCustomerEditModalOpen(true)}
-                                                        className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
-                                                    >
-                                                        <FaEdit /> Bearbeiten
-                                                    </button>
-                                                    <button
-                                                        onClick={() => navigate(`/customers/${projectData.customer_id}`, { state: { from: location.pathname } })}
-                                                        className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
-                                                    >
-                                                        <FaExternalLinkAlt /> Akte
-                                                    </button>
-                                                </>
+                                                <button
+                                                    onClick={() => navigate(`/customers/${projectData.customer_id}`, { state: { from: location.pathname } })}
+                                                    className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1.5 transition-colors uppercase tracking-widest"
+                                                >
+                                                    <FaExternalLinkAlt className="text-[9px]" /> Akte öffnen
+                                                </button>
                                             )}
-                                            <button onClick={() => setIsCustomerSearchOpen(true)} className="text-[10px] text-brand-600 font-bold hover:underline">Ändern</button>
+                                            <button onClick={() => setIsCustomerSearchOpen(true)} className="text-[10px] text-brand-600 font-black uppercase tracking-widest hover:underline">Ändern</button>
                                         </div>
                                     </div>
 
-                                    <div className="flex-1 flex flex-col justify-between">
-                                        <div className="grid grid-cols-[110px_1fr] gap-y-2 gap-x-4 text-sm mb-4">
-                                            <span className="text-slate-500 font-medium">Kunden-Nr</span>
-                                            <span className="text-slate-800">{projectData.customer.id}</span>
+                                    <div className="grid grid-cols-[130px_1fr] gap-y-4 gap-x-6 text-sm">
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Kunden-ID</span>
+                                        <span className="text-slate-800 font-black">{projectData.customer.id}</span>
 
-                                            <span className="text-slate-500 font-medium">Firma/Name</span>
-                                            <span className="text-slate-800">{projectData.customer.name}</span>
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Name / Firma</span>
+                                        <span className="text-slate-800 font-black text-base tracking-tight">{projectData.customer.name}</span>
 
-                                            <span className="text-slate-500 font-medium">Ansprechpartner</span>
-                                            <span className="text-slate-800">{projectData.customer.contact}</span>
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Ansprechpartner</span>
+                                        <span className="text-slate-700 font-medium">{projectData.customer.contact || <span className="text-slate-300 italic">Keine Angabe</span>}</span>
 
-                                            <span className="text-slate-500 font-medium">Straße</span>
-                                            <span className="text-slate-800">{projectData.customer.address_street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                            <span className="text-slate-500 font-medium">Hausnummer</span>
-                                            <span className="text-slate-800">{projectData.customer.address_house_no || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                            <span className="text-slate-500 font-medium">PLZ</span>
-                                            <span className="text-slate-800">{projectData.customer.address_zip || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                            <span className="text-slate-500 font-medium">Stadt</span>
-                                            <span className="text-slate-800">{projectData.customer.address_city || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                            <span className="text-slate-500 font-medium">Land</span>
-                                            <span className="text-slate-800">
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Adresse</span>
+                                        <div className="text-slate-700 leading-relaxed">
+                                            {projectData.customer.address_street} {projectData.customer.address_house_no}<br />
+                                            {projectData.customer.address_zip} {projectData.customer.address_city}<br />
+                                            <span className="text-[10px] font-bold uppercase text-slate-400">
                                                 {projectData.customer.address_country === 'DE' ? 'Deutschland' :
                                                     projectData.customer.address_country === 'AT' ? 'Österreich' :
                                                         projectData.customer.address_country === 'CH' ? 'Schweiz' :
-                                                            projectData.customer.address_country || <span className="text-slate-400 italic">Keine Angabe</span>}
+                                                            projectData.customer.address_country}
                                             </span>
+                                        </div>
 
-                                            <span className="text-slate-500 font-medium">Email</span>
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Kontakt</span>
+                                        <div className="space-y-1">
                                             {projectData.customer.email ? (
-                                                <a href={`mailto:${projectData.customer.email} `} className="text-brand-600 hover:underline truncate block">{projectData.customer.email}</a>
-                                            ) : (
-                                                <span className="text-slate-400 italic">Keine Angabe</span>
+                                                <a href={`mailto:${projectData.customer.email}`} className="text-brand-600 font-bold hover:underline flex items-center gap-2">
+                                                    <FaAt className="text-xs opacity-50" /> {projectData.customer.email}
+                                                </a>
+                                            ) : <span className="text-slate-300 text-xs">Keine E-Mail</span>}
+                                            {projectData.customer.phone && (
+                                                <div className="text-slate-600 font-medium text-xs flex items-center gap-2">
+                                                    <FaPhone className="text-xs opacity-50" /> {projectData.customer.phone}
+                                                </div>
                                             )}
-
-                                            <span className="text-slate-500 font-medium">Telefon</span>
-                                            <span className="text-slate-800">{projectData.customer.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
                                         </div>
+                                    </div>
 
-                                        <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-slate-200">
-                                            <button
-                                                onClick={() => generateDocumentMutation.mutate('reminder')}
-                                                disabled={generateDocumentMutation.isPending}
-                                                title="Zahlungserinnerung / Mahnung erstellen"
-                                                className="px-3 py-1.5 bg-white text-slate-600 text-[10px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-2 shadow-sm disabled:opacity-50">
-                                                <FaClock className="text-slate-400" /> Mahnung
-                                            </button>
-                                            <button
-                                                onClick={() => generateDocumentMutation.mutate('pickup')}
-                                                disabled={generateDocumentMutation.isPending}
-                                                title="Abholbestätigung erstellen"
-                                                className="px-3 py-1.5 bg-white text-slate-600 text-[10px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-2 shadow-sm disabled:opacity-50">
-                                                <FaPaperPlane className="text-slate-400" /> Abhol-Best.
-                                            </button>
-                                            <button
-                                                onClick={() => generateDocumentMutation.mutate('confirmation')}
-                                                disabled={generateDocumentMutation.isPending}
-                                                title="Auftragsbestätigung erstellen"
-                                                className="px-3 py-1.5 bg-white text-slate-600 text-[10px] font-bold uppercase rounded border border-slate-200 hover:bg-slate-50 hover:text-brand-600 transition flex items-center gap-2 shadow-sm disabled:opacity-50">
-                                                <FaCheckCircle className="text-slate-400" /> Auftrags-Best.
-                                            </button>
-                                        </div>
+                                    <div className="mt-8 flex gap-3 justify-end">
+                                        <button
+                                            onClick={() => generateDocumentMutation.mutate('confirmation')}
+                                            disabled={generateDocumentMutation.isPending}
+                                            className="px-4 py-2 bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-slate-200 hover:bg-white hover:text-brand-600 transition shadow-sm disabled:opacity-50"
+                                        >
+                                            Auftragsbestätigung
+                                        </button>
+                                        <button
+                                            onClick={() => generateDocumentMutation.mutate('pickup')}
+                                            disabled={generateDocumentMutation.isPending}
+                                            className="px-4 py-2 bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-slate-200 hover:bg-white hover:text-brand-600 transition shadow-sm disabled:opacity-50"
+                                        >
+                                            Abholbestätigung
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Right Column: Order Details & Partner */}
-                            <div className="flex flex-col gap-8 h-full">
+                            <div className="space-y-10">
                                 {/* Section: Auftragsdetails */}
                                 <div>
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest border-b border-slate-100 pb-2 mb-4">Auftragsdetails</h4>
-                                    <div className="grid grid-cols-[110px_1fr] gap-y-3 gap-x-4 text-sm">
-                                        <span className="text-slate-500 font-medium mt-1">Dokumentenart</span>
-                                        <div className="flex flex-wrap gap-1.5">
+                                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] border-b border-slate-100 pb-3 mb-6">Auftragsdetails</h4>
+                                    <div className="grid grid-cols-[130px_1fr] gap-y-4 gap-x-6 text-sm">
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Dokumentenart</span>
+                                        <div className="flex flex-wrap gap-2">
                                             {projectData.docType.length > 0 ? projectData.docType.map((d: string) => (
-                                                <span key={d} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase border border-slate-200 tracking-wide">{d}</span>
-                                            )) : <span className="text-slate-400 italic">Keine Angabe</span>}
+                                                <span key={d} className="px-2.5 py-1 bg-brand-50 text-brand-700 rounded-lg text-[10px] font-black uppercase tracking-tight border border-brand-100">
+                                                    {d}
+                                                </span>
+                                            )) : <span className="text-slate-300 italic">Keine Angabe</span>}
                                         </div>
 
-                                        <span className="text-slate-500 font-medium mt-1">Besonderheiten</span>
-                                        <ul className="flex flex-col gap-1 text-sm text-slate-700">
+                                        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Services</span>
+                                        <div className="space-y-2">
                                             {!projectData.isCertified && !projectData.hasApostille && !projectData.isExpress && projectData.classification !== 'ja' && projectData.copies <= 0 && (
-                                                <li className="text-slate-400 italic">Keine Besonderheiten</li>
+                                                <span className="text-slate-300 italic">Keine Besonderheiten</span>
                                             )}
-                                            {projectData.isCertified && (
-                                                <li className="flex items-center gap-2">
-                                                    <FaCheck className="text-emerald-500 text-[10px]" /> Beglaubigung
-                                                </li>
-                                            )}
-                                            {projectData.hasApostille && (
-                                                <li className="flex items-center gap-2">
-                                                    <FaCheck className="text-emerald-500 text-[10px]" /> Apostille
-                                                </li>
-                                            )}
-                                            {projectData.isExpress && (
-                                                <li className="flex items-center gap-2">
-                                                    <FaBolt className="text-orange-500 text-[10px]" /> Express-Service
-                                                </li>
-                                            )}
-                                            {projectData.classification === 'ja' && (
-                                                <li className="flex items-center gap-2">
-                                                    <FaCheck className="text-emerald-500 text-[10px]" /> Klassifizierung
-                                                </li>
-                                            )}
-                                            {projectData.copies > 0 && (
-                                                <li className="flex items-center gap-2">
-                                                    <FaCopy className="text-slate-400 text-[10px]" />
-                                                    <span>
-                                                        {projectData.copies}x Kopie(n)
-                                                        {projectData.copyPrice > 0 && (
-                                                            <span className="text-slate-500 text-xs ml-1">
-                                                                (+ {formatCurrency(projectData.copies * projectData.copyPrice)})
-                                                            </span>
-                                                        )}
+                                            <div className="flex flex-wrap gap-2">
+                                                {projectData.isCertified && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+                                                        <FaCheck /> Beglaubigt
                                                     </span>
-                                                </li>
-                                            )}
-                                        </ul>
+                                                )}
+                                                {projectData.hasApostille && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-100 shadow-sm">
+                                                        <FaCheck /> Apostille
+                                                    </span>
+                                                )}
+                                                {projectData.classification === 'ja' && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-purple-50 text-purple-700 border border-purple-100 shadow-sm">
+                                                        <FaCheck /> Klassifiziert
+                                                    </span>
+                                                )}
+                                                {projectData.copies > 0 && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-slate-50 text-slate-700 border border-slate-200 shadow-sm">
+                                                        <FaCopy /> {projectData.copies}x Kopie
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Section: Partner */}
-                                <div className="flex flex-col flex-1">
-                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-4">
-                                        <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Ausführender Partner</h4>
-                                        <div className="flex gap-3">
+                                <div>
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-6">
+                                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Ausführender Partner</h4>
+                                        <div className="flex gap-4">
                                             {projectData.translator?.id && (
-                                                <>
-                                                    <button
-                                                        onClick={() => setIsPartnerEditModalOpen(true)}
-                                                        className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
-                                                    >
-                                                        <FaEdit /> Bearbeiten
-                                                    </button>
-                                                    <button
-                                                        onClick={() => navigate(`/partners/${projectData.translator.id}`, { state: { from: location.pathname } })}
-                                                        className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1 transition-colors"
-                                                    >
-                                                        <FaExternalLinkAlt /> Akte
-                                                    </button>
-                                                </>
+                                                <button
+                                                    onClick={() => navigate(`/partners/${projectData.translator.id}`, { state: { from: location.pathname } })}
+                                                    className="text-[10px] text-slate-400 font-bold hover:text-brand-600 flex items-center gap-1.5 transition-colors uppercase tracking-widest"
+                                                >
+                                                    <FaExternalLinkAlt className="text-[9px]" /> Akte öffnen
+                                                </button>
                                             )}
-                                            <button onClick={() => setIsPartnerModalOpen(true)} className="text-[10px] text-brand-600 font-bold hover:underline">Ändern</button>
+                                            <button onClick={() => setIsPartnerModalOpen(true)} className="text-[10px] text-brand-600 font-black uppercase tracking-widest hover:underline">Ändern</button>
                                         </div>
                                     </div>
 
-                                    <div className="flex-1 flex flex-col justify-between">
-                                        {projectData.translator?.id ? (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-0 text-sm mb-4">
-                                                {/* Left Column: Basic Info & Contact */}
-                                                <div className="space-y-2 mt-2">
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium font-bold">Partner-Nr</span>
-                                                        <span className="text-slate-800 font-bold">{projectData.translator.id}</span>
-                                                    </div>
+                                    {projectData.translator?.id ? (
+                                        <div className="grid grid-cols-[130px_1fr] gap-y-4 gap-x-6 text-sm">
+                                            <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Partner-ID</span>
+                                            <span className="text-slate-800 font-black">{projectData.translator.id}</span>
 
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Partner</span>
-                                                        <span className="text-slate-800">{projectData.translator.name}</span>
-                                                    </div>
+                                            <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Name</span>
+                                            <span className="text-slate-800 font-black text-base tracking-tight">{projectData.translator.name}</span>
 
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium text-xs">Bewertung</span>
-                                                        <div className="flex items-center gap-1 text-amber-400 text-[10px]">
-                                                            {[1, 2, 3, 4, 5].map(star => (
-                                                                <FaStar key={star} className={star <= (projectData.translator.rating || 0) ? "" : "text-slate-200"} />
-                                                            ))}
-                                                            <span className="text-slate-500 font-bold ml-1 text-[10px]">({projectData.translator.rating || 0})</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Email</span>
-                                                        <div className="text-slate-800 text-sm">
-                                                            {projectData.translator.email ? (
-                                                                <a href={`mailto:${projectData.translator.email}`} className="text-brand-600 hover:underline transition-colors">{projectData.translator.email}</a>
-                                                            ) : <span className="text-slate-400 italic">Keine Angabe</span>}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Telefon</span>
-                                                        <div className="text-slate-800 text-sm">
-                                                            {projectData.translator.phone ? (
-                                                                <a href={`tel:${projectData.translator.phone}`} className="text-slate-800 hover:text-brand-600 transition-colors">{projectData.translator.phone}</a>
-                                                            ) : <span className="text-slate-400 italic">Keine Angabe</span>}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Sprachen</span>
-                                                        <div className="flex flex-wrap gap-1.5 pt-0.5">
-                                                            {(Array.isArray(projectData.translator.languages) ? projectData.translator.languages : []).map((langCode: string, i: number) => (
-                                                                <div key={i} className="flex items-center gap-1.5 px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-700 shadow-sm">
-                                                                    <img src={getFlagUrl(langCode)} alt={langCode} className="w-3.5 h-2.5 rounded-[1px] object-cover" />
-                                                                    <span className="font-medium">{getLanguageLabel(langCode)}</span>
-                                                                </div>
-                                                            ))}
-                                                            {(!projectData.translator.languages || projectData.translator.languages.length === 0) && <span className="text-slate-400 italic text-[10px]">Keine Angabe</span>}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4 pt-1">
-                                                        <span className="text-slate-500 font-medium">Status</span>
-                                                        <div className="flex items-center gap-2 pt-0.5">
-                                                            <div className={clsx("w-2 h-2 rounded-full", projectData.documentsSent ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-slate-300")}></div>
-                                                            <span className={clsx("text-xs font-semibold", projectData.documentsSent ? "text-emerald-700" : "text-slate-500")}>
-                                                                {projectData.documentsSent ? 'Dokumente versendet' : 'Bereit für Versand'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Right Column: Address & Rates */}
-                                                <div className="space-y-2 mt-2">
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Straße</span>
-                                                        <span className="text-slate-800">{projectData.translator.address_street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Hausnummer</span>
-                                                        <span className="text-slate-800">{projectData.translator.address_house_no || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">PLZ / Stadt</span>
-                                                        <span className="text-slate-800">
-                                                            {projectData.translator.address_zip || ''} {projectData.translator.address_city || ''}
-                                                            {!projectData.translator.address_zip && !projectData.translator.address_city && <span className="text-slate-400 italic">Keine Angabe</span>}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Land</span>
-                                                        <span className="text-slate-800">
-                                                            {projectData.translator.address_country === 'DE' ? 'Deutschland' :
-                                                                projectData.translator.address_country === 'AT' ? 'Österreich' :
-                                                                    projectData.translator.address_country === 'CH' ? 'Schweiz' :
-                                                                        getCountryName(projectData.translator.address_country) || projectData.translator.address_country || <span className="text-slate-400 italic">Keine Angabe</span>}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4 pt-1">
-                                                        <span className="text-slate-500 font-medium border-t border-slate-50 pt-1">Wortpreis</span>
-                                                        <span className="text-slate-800 text-xs border-t border-slate-50 pt-1">
-                                                            {(() => {
-                                                                const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
-                                                                const rate = rates.find((r: any) => r.type === 'word' || r.type === 'Word')?.price;
-                                                                return rate ? <span className="font-mono">{parseFloat(rate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span> : <span className="text-slate-400 italic">0,0000 €</span>;
-                                                            })()}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Zeilenpreis</span>
-                                                        <span className="text-slate-800 text-xs">
-                                                            {(() => {
-                                                                const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
-                                                                const rate = rates.find((r: any) => r.type === 'line' || r.type === 'Line')?.price;
-                                                                return rate ? <span className="font-mono">{parseFloat(rate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span> : <span className="text-slate-400 italic">0,0000 €</span>;
-                                                            })()}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Stundensatz</span>
-                                                        <span className="text-slate-800 text-xs">
-                                                            {(() => {
-                                                                const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
-                                                                const rate = rates.find((r: any) => r.type === 'hourly' || r.type === 'Hourly')?.price;
-                                                                return rate ? <span className="font-mono">{parseFloat(rate).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span> : <span className="text-slate-400 italic">0,00 €</span>;
-                                                            })()}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-[110px_1fr] gap-x-4">
-                                                        <span className="text-slate-500 font-medium">Mindestpauschale</span>
-                                                        <span className="text-slate-800 text-xs">
-                                                            {(() => {
-                                                                const rates = Array.isArray(projectData.translator.flat_rates) ? projectData.translator.flat_rates : [];
-                                                                const rate = rates.find((r: any) => r.type === 'minimum' || r.type === 'Minimum')?.price;
-                                                                return rate ? <span className="font-mono">{parseFloat(rate).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span> : <span className="text-slate-400 italic">0,00 €</span>;
-                                                            })()}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                            <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Bewertung</span>
+                                            <div className="flex items-center gap-1.5 text-amber-400">
+                                                {[1, 2, 3, 4, 5].map(star => (
+                                                    <FaStar key={star} className={star <= (projectData.translator.rating || 0) ? "text-amber-400" : "text-slate-200"} />
+                                                ))}
+                                                <span className="text-[10px] font-black text-slate-400 ml-1">({(projectData.translator.rating || 0).toFixed(1)})</span>
                                             </div>
+
+                                            <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Adresse</span>
+                                            <div className="text-slate-700 leading-relaxed">
+                                                {projectData.translator.address_street} {projectData.translator.address_house_no}<br />
+                                                {projectData.translator.address_zip} {projectData.translator.address_city}<br />
+                                                <span className="text-[10px] font-bold uppercase text-slate-400">
+                                                    {projectData.translator.address_country === 'DE' ? 'Deutschland' :
+                                                        projectData.translator.address_country === 'AT' ? 'Österreich' :
+                                                            projectData.translator.address_country === 'CH' ? 'Schweiz' :
+                                                                (projectData.translator.address_country ? getCountryName(projectData.translator.address_country) : '') || projectData.translator.address_country}
+                                                </span>
+                                            </div>
+
+                                            <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Kontakt</span>
+                                            <div className="space-y-1">
+                                                {projectData.translator.email ? (
+                                                    <a href={`mailto:${projectData.translator.email}`} className="text-brand-600 font-bold hover:underline flex items-center gap-2">
+                                                        <FaAt className="text-xs opacity-50" /> {projectData.translator.email}
+                                                    </a>
+                                                ) : <span className="text-slate-300 text-xs">Keine E-Mail</span>}
+                                                {projectData.translator.phone && (
+                                                    <div className="text-slate-600 font-medium text-xs flex items-center gap-2">
+                                                        <FaPhone className="text-xs opacity-50" /> {projectData.translator.phone}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <span className="text-slate-400 font-bold text-[11px] uppercase tracking-wider">Konditionen</span>
+                                            <div className="flex flex-wrap gap-2">
+                                                {(() => {
+                                                    const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
+                                                    const wordRate = rates.find((r: any) => r.type?.toLowerCase() === 'word')?.price;
+                                                    const lineRate = rates.find((r: any) => r.type?.toLowerCase() === 'line')?.price;
+                                                    return (
+                                                        <>
+                                                            {wordRate && <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black border border-slate-200 uppercase">Wort: {parseFloat(wordRate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span>}
+                                                            {lineRate && <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black border border-slate-200 uppercase">Zeile: {parseFloat(lineRate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span>}
+                                                        </>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="py-10 flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                            <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-slate-300 shadow-sm mb-4">
+                                                <FaUserPlus className="text-2xl" />
+                                            </div>
+                                            <p className="text-slate-400 font-bold text-xs uppercase tracking-wider">Kein Partner zugewiesen</p>
+                                            <button onClick={() => setIsPartnerModalOpen(true)} className="mt-4 px-4 py-2 bg-white text-brand-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-brand-200 hover:bg-brand-50 transition shadow-sm">
+                                                Partner auswählen
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-8 flex gap-3 justify-end">
+                                        {!projectData.documentsSent ? (
+                                            <button
+                                                className="px-5 py-2.5 bg-brand-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center gap-2"
+                                                onClick={() => updateProjectMutation.mutate({ documents_sent: true })}
+                                            >
+                                                <FaPaperPlane className="text-[9px]" /> Dokumente senden
+                                            </button>
                                         ) : (
-                                            <div className="py-8 flex flex-col items-center justify-center bg-slate-50/50 rounded-lg border border-dashed border-slate-200 mb-4">
-                                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 mb-2">
-                                                    <FaUserPlus className="text-xl" />
-                                                </div>
-                                                <p className="text-slate-400 italic text-sm">Kein Partner zugewiesen</p>
-                                                <button onClick={() => setIsPartnerModalOpen(true)} className="mt-3 text-[10px] font-bold uppercase text-brand-600 hover:underline">Partner jetzt auswählen</button>
+                                            <div className="px-5 py-2.5 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 border border-emerald-100 shadow-sm">
+                                                <FaCheckCircle /> Versand bestätigt
                                             </div>
                                         )}
-
-                                        <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-slate-200">
-                                            {!projectData.documentsSent ? (
-                                                <button
-                                                    className="px-3 py-1.5 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded hover:bg-brand-700 transition shadow-sm flex items-center gap-2"
-                                                    onClick={() => updateProjectMutation.mutate({ documents_sent: true })}
-                                                >
-                                                    <FaPaperPlane /> Dokumente senden
-                                                </button>
-                                            ) : (
-                                                <div className="px-3 py-1.5 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase rounded flex items-center gap-2 border border-brand-100 w-fit">
-                                                    <FaCheckCircle /> Versand bestätigt
-                                                </div>
-                                            )}
-                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Full Width: Notes */}
-                            <div className="lg:col-span-2 pt-4 border-t border-slate-100">
-                                <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Interne Notizen</h4>
-                                <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50/50 p-3 rounded border border-slate-100 min-h-[60px]">
-                                    {projectData.notes || <span className="italic text-slate-400">Keine Notizen hinterlegt.</span>}
-                                </p>
+                            <div className="lg:col-span-2 pt-10 border-t border-slate-100">
+                                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4">Interne Notizen</h4>
+                                <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 min-h-[100px] text-sm text-slate-600 leading-relaxed whitespace-pre-wrap shadow-inner font-medium">
+                                    {projectData.notes || <span className="italic text-slate-300">Keine internen Notizen hinterlegt.</span>}
+                                </div>
                             </div>
                         </div>
                     </div>
-                )
-                }
+                )}
 
 
 
@@ -2200,43 +2214,6 @@ const ProjectDetail = () => {
 
             </div>
 
-            {/* Tab Navigation (Bottom) */}
-            <div className="px-6 py-1 bg-white border-t border-slate-200 flex gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0 z-20">
-                {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
-                    let badgeCount = 0;
-                    if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                    if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
-
-                    return (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={clsx(
-                                "py-3 text-[11px] font-black uppercase tracking-widest border-t-2 transition relative shrink-0 flex items-center gap-2 -mt-[1px]",
-                                activeTab === tab
-                                    ? 'border-brand-500 text-brand-700'
-                                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                            )}
-                        >
-                            {tab === 'overview' ? 'Stammdaten' :
-                                tab === 'files' ? 'Dateien' :
-                                    tab === 'finances' ? 'Kalkulation & Marge' :
-                                        tab === 'history' ? 'Historie' : 'Kommunikation'}
-
-                            {tab !== 'overview' && tab !== 'history' && (
-                                <span className={clsx(
-                                    "px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                                    activeTab === tab ? "bg-brand-100 text-brand-700" : "bg-slate-100 text-slate-500"
-                                )}>
-                                    {badgeCount}
-                                </span>
-                            )}
-                        </button>
-                    )
-                })}
-            </div>
-
             <CustomerSelectionModal
                 isOpen={isCustomerSearchOpen}
                 onClose={() => setIsCustomerSearchOpen(false)}
@@ -2257,7 +2234,6 @@ const ProjectDetail = () => {
                                 initials: customer.initials,
                                 type: customer.type
                             },
-                            // Also update 'client' display field if used
                             client: customer.company || customer.name
                         });
                     }
@@ -2329,9 +2305,6 @@ const ProjectDetail = () => {
                 onClose={() => setIsInviteModalOpen(false)}
                 projectId={id!}
             />
-
-            {/* Spacer for bottom padding */}
-            <div className="h-32" />
         </div >
     );
 };

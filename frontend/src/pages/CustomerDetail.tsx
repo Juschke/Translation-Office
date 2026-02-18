@@ -88,7 +88,7 @@ const CustomerDetail = () => {
                             onClick={() => navigate('/inbox', { state: { compose: true, to: customer.email, subject: `Nachricht an: ${name}` } })}
                             className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-3 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
                         >
-                            <FaEnvelope /> Email
+                            <FaEnvelope /> E-Mail
                         </button>
                         <button
                             onClick={() => setIsEditModalOpen(true)}
@@ -99,10 +99,9 @@ const CustomerDetail = () => {
                         <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block"></div>
                         <button
                             onClick={() => setIsConfirmOpen(true)}
-                            className="text-slate-400 hover:text-red-600 p-2 rounded transition hover:bg-red-50"
-                            title="Löschen"
+                            className="bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 px-3 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
                         >
-                            <FaTrash />
+                            <FaTrash /> Löschen
                         </button>
                     </div>
 
@@ -151,12 +150,12 @@ const CustomerDetail = () => {
                                     <span className="text-slate-500 font-medium">Nachname</span>
                                     <span className="text-slate-800 font-bold">{customer.last_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
 
-                                    <span className="text-slate-500 font-medium mt-2">Email</span>
+                                    <span className="text-slate-500 font-medium mt-2">E-Mail</span>
                                     <span className="text-brand-600 mt-2 hover:underline cursor-pointer">{customer.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
 
                                     {customer.additional_emails?.length > 0 && (
                                         <>
-                                            <span className="text-slate-500 font-medium">Weitere Emails</span>
+                                            <span className="text-slate-500 font-medium">Weitere E-Mails</span>
                                             <span className="text-slate-800">{customer.additional_emails.join(', ')}</span>
                                         </>
                                     )}
@@ -276,7 +275,7 @@ const CustomerDetail = () => {
                         </div>
                         <div className="p-5 flex flex-col gap-4">
                             <div>
-                                <span className="text-xs text-slate-400 uppercase tracking-wider block mb-1">Umsatz YTD</span>
+                                <span className="text-xs text-slate-400 uppercase tracking-wider block mb-1">Umsatz lfd. Jahr</span>
                                 <span className="text-2xl font-black text-slate-800">
                                     {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(customer.sales || 0)}
                                 </span>
