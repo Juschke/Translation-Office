@@ -180,7 +180,13 @@ class InvoiceController extends Controller
                 $this->createInvoiceItems($invoice, $project, $validated['tax_rate'] ?? 19);
             }
 
-            // 5. Audit log
+            // 5. Auto-advance project status to "ready_pickup" when invoice is created
+            $advancedStatuses = ['ready_pickup', 'completed', 'invoiced', 'archived'];
+            if (!in_array($project->status, $advancedStatuses)) {
+                $project->update(['status' => 'ready_pickup']);
+            }
+
+            // 6. Audit log
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_DRAFT);
 
             return response()->json($invoice->load('items'), 201);

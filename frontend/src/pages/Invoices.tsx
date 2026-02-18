@@ -158,6 +158,16 @@ const Invoices = () => {
         }
     });
 
+    const markAsPaidMutation = useMutation({
+        mutationFn: (id: number) => invoiceService.bulkUpdate([id], { status: 'paid' }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+            toast.success('Rechnung als bezahlt markiert');
+        },
+        onError: () => toast.error('Fehler beim Aktualisieren'),
+    });
+
     const filteredInvoices = useMemo(() => {
         if (!Array.isArray(invoices)) return [];
         const today = new Date();
@@ -485,6 +495,17 @@ const Invoices = () => {
                             title="Stornieren (Gutschrift erstellen)"
                         >
                             <FaBan />
+                        </button>
+                    )}
+                    {/* Quick: mark as paid — show for issued/sent/overdue only */}
+                    {['issued', 'sent', 'overdue'].includes(inv.status) && (
+                        <button
+                            onClick={() => markAsPaidMutation.mutate(inv.id)}
+                            disabled={markAsPaidMutation.isPending}
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-sm transition disabled:opacity-40"
+                            title="Als bezahlt markieren"
+                        >
+                            <FaCheck />
                         </button>
                     )}
                     <button onClick={() => handlePrint(inv)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-sm transition" title="Drucken"><FaPrint /></button>

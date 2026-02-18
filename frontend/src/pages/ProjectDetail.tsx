@@ -134,6 +134,16 @@ interface ProjectData {
     payments: any[];
     notes: string;
     files: ProjectFile[];
+    invoices?: Array<{
+        id: number;
+        invoice_number: string;
+        status: string;
+        type: string;
+        amount_gross: number;
+        date: string;
+        due_date: string;
+        is_locked: boolean;
+    }>;
 }
 
 // ==== ATTRIBUTE LABEL MAP ====
@@ -656,6 +666,7 @@ const ProjectDetail = () => {
                 notes: projectResponse.notes || '',
                 messages: projectResponse.messages || [],
                 access_token: projectResponse.access_token,
+                invoices: (projectResponse.invoices || []).filter((inv: any) => inv.type !== 'credit_note'),
                 files: (projectResponse.files || []).map((f: any) => ({
                     id: f.id.toString(),
                     name: f.file_name || f.original_name,
@@ -1088,9 +1099,10 @@ const ProjectDetail = () => {
         mutationFn: invoiceService.create,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['project', id] });
             setIsInvoiceModalOpen(false);
+            toast.success('Rechnung erstellt – Projektstatus auf „Abholbereit" gesetzt.');
             navigate('/invoices');
-            toast.success('Rechnung erfolgreich erstellt');
         },
         onError: () => {
             toast.error('Fehler beim Erstellen der Rechnung');
@@ -1258,12 +1270,25 @@ const ProjectDetail = () => {
                                         </>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => setIsInvoiceModalOpen(true)}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
-                                >
-                                    <FaFileInvoiceDollar /> Rechnung
-                                </button>
+                                {(() => {
+                                    const activeInvoice = projectData.invoices?.find(inv => !['cancelled'].includes(inv.status));
+                                    return activeInvoice ? (
+                                        <button
+                                            onClick={() => navigate('/invoices')}
+                                            className="bg-purple-50 border border-purple-200 text-purple-700 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition hover:bg-purple-100"
+                                            title={`Rechnung ${activeInvoice.invoice_number} ansehen`}
+                                        >
+                                            <FaFileInvoiceDollar /> {activeInvoice.invoice_number}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => setIsInvoiceModalOpen(true)}
+                                            className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                                        >
+                                            <FaFileInvoiceDollar /> Rechnung
+                                        </button>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>
@@ -2207,13 +2232,53 @@ const ProjectDetail = () => {
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-3">
-                                            <button
-                                                onClick={() => setIsInvoiceModalOpen(true)}
-                                                className="col-span-2 py-2.5 bg-brand-600 text-white rounded-sm text-[11px] font-black uppercase tracking-widest hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
-                                            >
-                                                <FaFileInvoiceDollar /> Rechnung erstellen
-                                            </button>
+                                        <div className="pt-4 border-t border-slate-100 space-y-3">
+                                            {(() => {
+                                                const activeInvoice = projectData.invoices?.find(inv => !['cancelled'].includes(inv.status));
+                                                if (activeInvoice) {
+                                                    const statusColors: Record<string, string> = {
+                                                        draft: 'text-slate-600 bg-slate-100',
+                                                        issued: 'text-indigo-700 bg-indigo-100',
+                                                        sent: 'text-blue-700 bg-blue-100',
+                                                        paid: 'text-emerald-700 bg-emerald-100',
+                                                        overdue: 'text-red-700 bg-red-100',
+                                                    };
+                                                    const statusLabels: Record<string, string> = {
+                                                        draft: 'Entwurf', issued: 'Ausgestellt', sent: 'Versendet',
+                                                        paid: 'Bezahlt', overdue: 'Überfällig',
+                                                    };
+                                                    return (
+                                                        <div className="rounded-sm border border-purple-200 bg-purple-50 p-3 space-y-2">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-[10px] font-black text-purple-600 uppercase tracking-wider">Rechnung verknüpft</span>
+                                                                <span className={clsx('text-[10px] font-bold px-2 py-0.5 rounded-full', statusColors[activeInvoice.status] ?? 'bg-slate-100 text-slate-600')}>
+                                                                    {statusLabels[activeInvoice.status] ?? activeInvoice.status}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-sm font-bold text-slate-800">{activeInvoice.invoice_number}</div>
+                                                            <div className="text-xs text-slate-500">
+                                                                {(activeInvoice.amount_gross / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                                                                {' · '}
+                                                                {activeInvoice.due_date ? `Fällig ${new Date(activeInvoice.due_date).toLocaleDateString('de-DE')}` : ''}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => navigate('/invoices')}
+                                                                className="w-full py-2 bg-purple-600 text-white rounded-sm text-[11px] font-black uppercase tracking-widest hover:bg-purple-700 transition flex items-center justify-center gap-2"
+                                                            >
+                                                                <FaFileInvoiceDollar /> Zur Rechnung
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                }
+                                                return (
+                                                    <button
+                                                        onClick={() => setIsInvoiceModalOpen(true)}
+                                                        className="w-full py-2.5 bg-brand-600 text-white rounded-sm text-[11px] font-black uppercase tracking-widest hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
+                                                    >
+                                                        <FaFileInvoiceDollar /> Rechnung erstellen
+                                                    </button>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

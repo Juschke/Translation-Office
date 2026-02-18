@@ -106,7 +106,7 @@ class ProjectController extends Controller
 
     public function show($id)
     {
-        $project = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'files.uploader', 'positions', 'payments', 'messages.user'])->findOrFail($id);
+        $project = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'files.uploader', 'positions', 'payments', 'messages.user', 'invoices'])->findOrFail($id);
 
         // Fetch creator and editor from activities
         $creationActivity = \Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Project::class)

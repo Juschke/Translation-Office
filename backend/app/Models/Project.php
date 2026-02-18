@@ -99,4 +99,11 @@ class Project extends Model
     {
         return $this->hasMany(Message::class);
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class)
+            ->whereNotIn('status', ['deleted'])
+            ->orderBy('created_at', 'desc');
+    }
 }
