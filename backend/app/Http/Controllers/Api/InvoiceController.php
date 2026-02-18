@@ -705,9 +705,12 @@ class InvoiceController extends Controller
         $sellerCountry = $this->getCountryCode($invoice->snapshot_seller_country);
         $buyerCountry = $this->getCountryCode($invoice->snapshot_customer_country);
 
-        // Fetch seller contact details from settings
-        $sellerEmail = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'company_email')->value('value');
-        $sellerPhone = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'phone')->value('value');
+        // Fetch seller contact details — TenantSetting first, Tenant model as fallback
+        $tenantModel = \App\Models\Tenant::find($invoice->tenant_id);
+        $sellerEmail = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'company_email')->value('value')
+            ?: ($tenantModel?->email ?? null);
+        $sellerPhone = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'phone')->value('value')
+            ?: ($tenantModel?->phone ?? null);
 
         // Use XRechnung 3.0 Profile explicitly for E-Rechnung compliance
         $documentBuilder = ZugferdLaravel::createDocumentInXRechnung30Profile();
@@ -738,16 +741,16 @@ class InvoiceController extends Controller
             $sellerCountry
         );
 
-        // Mandatory Contact for EN16931
-        if ($sellerEmail || $sellerPhone) {
-            $documentBuilder->setDocumentSellerContact(
-                null, // Contact Person Name
-                null, // Contact Department
-                $sellerPhone,
-                null, // Fax
-                $sellerEmail
-            );
-        }
+        // BR-DE-5 (BT-41) and BR-DE-7 (BT-43) are mandatory for XRechnung
+        // BT-41: Contact point name — fall back to seller name if not set
+        // BT-43: Contact email — mandatory, use whatever we have
+        $documentBuilder->setDocumentSellerContact(
+            $invoice->snapshot_seller_name, // BT-41: Contact point name (mandatory)
+            null,                            // Contact Department
+            $sellerPhone ?: null,            // BT-40: Phone
+            null,                            // Fax
+            $sellerEmail ?: null             // BT-43: Email (mandatory)
+        );
 
         if ($invoice->snapshot_seller_vat_id) {
             $documentBuilder->addDocumentSellerVATRegistrationNumber($invoice->snapshot_seller_vat_id);
@@ -761,10 +764,12 @@ class InvoiceController extends Controller
             $invoice->snapshot_customer_name,
             $invoice->customer_id
         );
+        // BR-11: postcode (BT-53), city (BT-52), country (BT-55) are mandatory
         $documentBuilder->setDocumentBuyerAddress(
             $invoice->snapshot_customer_address,
             null,
             null,
+            $invoice->snapshot_customer_zip,
             $invoice->snapshot_customer_city,
             $buyerCountry
         );
@@ -827,11 +832,13 @@ class InvoiceController extends Controller
             foreach ($invoice->items as $item) {
                 $unitCode = $this->mapUnitToUNECE($item->unit);
 
+                // BR-24: BT-131 (line net amount) is mandatory
                 $documentBuilder->addNewPosition((string) $item->position)
                     ->setDocumentPositionProductDetails($item->description)
                     ->setDocumentPositionGrossPrice(abs($item->unit_price_eur))
                     ->setDocumentPositionNetPrice(abs($item->unit_price_eur))
-                    ->setDocumentPositionQuantity(abs((float) $item->quantity), $unitCode);
+                    ->setDocumentPositionQuantity(abs((float) $item->quantity), $unitCode)
+                    ->setDocumentPositionLineSummation(abs($item->total_eur));
 
                 $documentBuilder->addDocumentPositionTax(
                     $taxCategory,
@@ -845,7 +852,8 @@ class InvoiceController extends Controller
                 ->setDocumentPositionProductDetails($invoice->snapshot_project_name ?: 'Dienstleistung')
                 ->setDocumentPositionGrossPrice(abs($invoice->amount_net_eur))
                 ->setDocumentPositionNetPrice(abs($invoice->amount_net_eur))
-                ->setDocumentPositionQuantity(1, 'C62');
+                ->setDocumentPositionQuantity(1, 'C62')
+                ->setDocumentPositionLineSummation(abs($invoice->amount_net_eur)); // BR-24: BT-131
 
             $documentBuilder->addDocumentPositionTax(
                 $taxCategory,
