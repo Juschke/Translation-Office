@@ -14,7 +14,8 @@ class CustomerController extends Controller
             ->withSum([
                 'invoices as sales_cents' => function ($query) {
                     $query->whereYear('date', now()->year)
-                        ->where('status', '!=', \App\Models\Invoice::STATUS_CANCELLED);
+                        ->where('status', '!=', \App\Models\Invoice::STATUS_CANCELLED)
+                        ->where('status', '!=', \App\Models\Invoice::STATUS_DELETED);
                 }
             ], 'amount_net')
             ->get();
@@ -44,10 +45,16 @@ class CustomerController extends Controller
             ->first();
 
         // 3. Total Revenue YTD
-        $totalRevenueYtd = \App\Models\Invoice::whereYear('date', $currentYear)->sum('amount_net');
+        $totalRevenueYtd = \App\Models\Invoice::whereYear('date', $currentYear)
+            ->where('status', '!=', \App\Models\Invoice::STATUS_CANCELLED)
+            ->where('status', '!=', \App\Models\Invoice::STATUS_DELETED)
+            ->sum('amount_net') / 100;
 
         // 4. Revenue Trend (vs Last Year)
-        $totalRevenueLastYear = \App\Models\Invoice::whereYear('date', $lastYear)->sum('amount_net');
+        $totalRevenueLastYear = \App\Models\Invoice::whereYear('date', $lastYear)
+            ->where('status', '!=', \App\Models\Invoice::STATUS_CANCELLED)
+            ->where('status', '!=', \App\Models\Invoice::STATUS_DELETED)
+            ->sum('amount_net') / 100;
 
         $trend = 0;
         if ($totalRevenueLastYear > 0) {

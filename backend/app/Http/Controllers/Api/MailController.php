@@ -20,11 +20,12 @@ class MailController extends Controller
                 return [
                     'id' => $mail->id,
                     'from' => $mail->from_email,
+                    'to_emails' => $mail->to_emails,
                     'subject' => $mail->subject,
                     'body' => $mail->body,
                     'preview' => substr(strip_tags($mail->body), 0, 100) . '...',
-                    'time' => $mail->created_at->diffForHumans(),
-                    'full_time' => $mail->created_at->format('d.m.Y H:i'),
+                    'time' => ($mail->date ?? $mail->created_at)->diffForHumans(),
+                    'full_time' => ($mail->date ?? $mail->created_at)->format('d.m.Y H:i'),
                     'read' => $mail->is_read,
                     'attachments' => $mail->attachments ?? []
                 ];
@@ -50,9 +51,9 @@ class MailController extends Controller
             ->from($account->email)
             ->to(...array_map('trim', explode(',', $validated['to'])))
             ->subject($validated['subject'] ?? '(Kein Betreff)')
-            ->html($validated['body']);
+            ->html($validated['body'] ?? '');
 
-        if ($validated['cc']) {
+        if (!empty($validated['cc'])) {
             $email->cc(...array_map('trim', explode(',', $validated['cc'])));
         }
 
@@ -98,6 +99,7 @@ class MailController extends Controller
             'subject' => $validated['subject'] ?? '(Kein Betreff)',
             'body' => $validated['body'],
             'is_read' => true,
+            'date' => now(),
             'attachments' => $attachments
         ]);
 
@@ -201,6 +203,7 @@ class MailController extends Controller
                         'subject' => $message->getSubject()->get()[0] ?? '(Kein Betreff)',
                         'body' => $message->hasHTMLBody() ? $message->getHTMLBody() : $message->getTextBody(),
                         'is_read' => $message->getFlags()->has('seen'),
+                        'date' => $message->getDate()->first(),
                         'attachments' => $attachmentsInfo
                     ]);
                     $totalCreated++;

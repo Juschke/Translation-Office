@@ -20,19 +20,19 @@ export { Avatar, AvatarImage, AvatarFallback } from './avatar'
 export { ScrollArea, ScrollBar } from './scroll-area'
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './tooltip'
 export {
-    Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger,
-    DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
+ Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger,
+ DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
 } from './dialog'
 export {
-    AlertDialog, AlertDialogPortal, AlertDialogOverlay, AlertDialogTrigger,
-    AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
-    AlertDialogDescription, AlertDialogAction, AlertDialogCancel
+ AlertDialog, AlertDialogPortal, AlertDialogOverlay, AlertDialogTrigger,
+ AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle,
+ AlertDialogDescription, AlertDialogAction, AlertDialogCancel
 } from './alert-dialog'
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
 export {
-    DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
-    DropdownMenuCheckboxItem, DropdownMenuRadioItem, DropdownMenuLabel,
-    DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuGroup,
-    DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent,
-    DropdownMenuSubTrigger, DropdownMenuRadioGroup
+ DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+ DropdownMenuCheckboxItem, DropdownMenuRadioItem, DropdownMenuLabel,
+ DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuGroup,
+ DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent,
+ DropdownMenuSubTrigger, DropdownMenuRadioGroup
 } from './dropdown-menu'

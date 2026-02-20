@@ -24,6 +24,7 @@ class Mail extends Model
         'body',
         'is_read',
         'attachments',
+        'date',
     ];
 
     protected $casts = [
@@ -31,6 +32,7 @@ class Mail extends Model
         'cc_emails' => 'array',
         'is_read' => 'boolean',
         'attachments' => 'array',
+        'date' => 'datetime',
     ];
 
     public function account()

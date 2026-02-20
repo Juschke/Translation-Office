@@ -9,6 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -125,52 +129,86 @@ class AuthController extends Controller
             'address_house_no' => 'nullable|string|max:20',
             'address_zip' => 'nullable|string|max:20',
             'address_city' => 'nullable|string|max:255',
-            'address_country' => 'nullable|string|max:10',
+            'address_country' => 'nullable|string|max:100',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|string|email|max:255',
+            'website' => 'nullable|string|max:255',
             'bank_name' => 'nullable|string|max:255',
             'bank_iban' => 'nullable|string|max:50',
             'bank_bic' => 'nullable|string|max:20',
+            'bank_account_holder' => 'nullable|string|max:255',
+            'bank_code' => 'nullable|string|max:20',
             'tax_number' => 'nullable|string|max:100',
+            'tax_office' => 'nullable|string|max:255',
             'vat_id' => 'nullable|string|max:100',
-            'subscription_plan' => 'required|string|in:basic,pro,premium,enterprise',
+            'opening_hours' => 'nullable|string|max:255',
+            'subscription_plan' => 'required|string',
             'license_key' => 'nullable|string|max:255',
-            'invitations' => 'nullable|array',
-            'invitations.*' => 'email'
+            'invitations' => 'nullable|string', // JSON string from FormData
+            'logo' => 'nullable|file|image|max:4096'
         ]);
 
         $user = $request->user();
 
-        $tenant = Tenant::create([
+        $tenantData = [
             'company_name' => $validated['company_name'] ?: ($user->name . 's Büro'),
-            'legal_form' => $validated['legal_form'],
-            'address_street' => $validated['address_street'],
-            'address_house_no' => $validated['address_house_no'],
-            'address_zip' => $validated['address_zip'],
-            'address_city' => $validated['address_city'],
-            'address_country' => $validated['address_country'] ?: 'DE',
-            'bank_name' => $validated['bank_name'],
-            'bank_iban' => $validated['bank_iban'],
-            'bank_bic' => $validated['bank_bic'],
-            'tax_number' => $validated['tax_number'],
-            'vat_id' => $validated['vat_id'],
+            'legal_form' => $validated['legal_form'] ?? null,
+            'address_street' => $validated['address_street'] ?? null,
+            'address_house_no' => $validated['address_house_no'] ?? null,
+            'address_zip' => $validated['address_zip'] ?? null,
+            'address_city' => $validated['address_city'] ?? null,
+            'address_country' => $validated['address_country'] ?: 'Deutschland',
+            'phone' => $validated['phone'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'website' => $validated['website'] ?? null,
+            'opening_hours' => $validated['opening_hours'] ?? null,
+            'bank_name' => $validated['bank_name'] ?? null,
+            'bank_iban' => $validated['bank_iban'] ?? null,
+            'bank_bic' => $validated['bank_bic'] ?? null,
+            'bank_account_holder' => $validated['bank_account_holder'] ?? null,
+            'bank_code' => $validated['bank_code'] ?? null,
+            'tax_number' => $validated['tax_number'] ?? null,
+            'tax_office' => $validated['tax_office'] ?? null,
+            'vat_id' => $validated['vat_id'] ?? null,
             'subscription_plan' => $validated['subscription_plan'],
-            'license_key' => $validated['license_key'],
+            'license_key' => $validated['license_key'] ?? null,
             'status' => 'active',
-        ]);
+        ];
+
+        $tenant = Tenant::create($tenantData);
+
+        // Handle settings & logo
+        $settings = [];
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('tenant_logos', 'public');
+            $settings['company_logo'] = $path;
+        }
+
+        if (!empty($settings)) {
+            $tenant->settings = $settings;
+            $tenant->save();
+        }
 
         $user->tenant_id = $tenant->id;
         $user->save();
 
+        // Seed master data for the new tenant
+        (new \Database\Seeders\MasterDataSeeder())->seedForTenant($tenant->id);
+
         // Process Invitations
-        if (!empty($validated['invitations'])) {
-            foreach ($validated['invitations'] as $email) {
-                User::create([
-                    'tenant_id' => $tenant->id,
-                    'email' => $email,
-                    'name' => 'Eingeladener Benutzer',
-                    'password' => Hash::make(str()->random(16)),
-                    'role' => User::ROLE_EMPLOYEE,
-                ]);
-                // TODO: Send actual invitation email
+        $invitations = isset($validated['invitations']) ? json_decode($validated['invitations'], true) : [];
+        if (!empty($invitations) && is_array($invitations)) {
+            foreach ($invitations as $email) {
+                if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    User::create([
+                        'tenant_id' => $tenant->id,
+                        'email' => $email,
+                        'name' => 'Eingeladener Benutzer',
+                        'password' => Hash::make(str()->random(16)),
+                        'role' => User::ROLE_EMPLOYEE,
+                    ]);
+                    // TODO: Send actual invitation email
+                }
             }
         }
 
@@ -203,7 +241,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8|confirmed|different:current_password',
         ]);
 
         $user = $request->user();
@@ -218,8 +256,52 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        // Revoke all other tokens for security (optional but recommended)
+        $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
+
         return response()->json([
             'message' => 'Passwort erfolgreich geändert',
         ]);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        // We use a custom response to avoid disclosing if email exists
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        return $status === Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Wir haben Ihnen einen Link zum Zurücksetzen Ihres Passworts per E-Mail gesendet.'])
+            : response()->json(['message' => 'E-Mail konnte nicht gesendet werden.'], 400);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->setRememberToken(Str::random(60))->save();
+
+                event(new PasswordReset($user));
+                
+                // Revoke all tokens after reset
+                $user->tokens()->delete();
+            }
+        );
+
+        return $status === Password::PASSWORD_RESET
+            ? response()->json(['message' => 'Ihr Passwort wurde erfolgreich zurückgesetzt.'])
+            : response()->json(['message' => 'Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.'], 400);
     }
 }

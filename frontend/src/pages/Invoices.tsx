@@ -368,7 +368,7 @@ const Invoices = () => {
             accessor: (inv: any) => (
                 <div className="flex flex-col">
                     <span className="font-semibold text-slate-800">{inv.invoice_number}</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <span className="text-xs font-semibold text-slate-400">
                         {new Date(inv.date).toLocaleDateString('de-DE')}
                     </span>
                 </div>
@@ -385,7 +385,7 @@ const Invoices = () => {
                     <div className="flex flex-col">
                         <span className="font-medium text-slate-700">{name}</span>
                         {inv.type === 'credit_note' && (
-                            <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider">Gutschrift</span>
+                            <span className="text-xs font-medium text-red-500">Gutschrift</span>
                         )}
                     </div>
                 );
@@ -447,7 +447,7 @@ const Invoices = () => {
             header: '',
             accessor: (inv: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-sm transition" title="Ansehen">
+                    <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Ansehen">
                         <FaEye />
                     </button>
                     {/* Draft: show Issue button */}
@@ -520,9 +520,9 @@ const Invoices = () => {
                             <FaDownload />
                         </button>
                         {downloadDropdownOpen === inv.id && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-white shadow-2xl border border-slate-200 z-[100] rounded-lg overflow-hidden text-left origin-top-right ring-1 ring-black ring-opacity-5">
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-white shadow-sm border border-slate-200 z-[100] rounded-sm overflow-hidden text-left origin-top-right ring-1 ring-black ring-opacity-5">
                                 <div className="py-1">
-                                    <div className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50 border-b border-slate-100 mb-1">
+                                    <div className="px-4 py-2 text-xs font-medium text-slate-400 bg-transparent border-b border-slate-100 mb-1">
                                         Download Optionen
                                     </div>
                                     <button onClick={(e) => { e.stopPropagation(); handleDownload(inv); setDownloadDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-blue-50 flex items-center gap-3 text-slate-700 transition-colors group">
@@ -531,7 +531,7 @@ const Invoices = () => {
                                         </div>
                                         <div>
                                             <div className="font-semibold">PDF (Druckansicht)</div>
-                                            <div className="text-[10px] text-slate-400">Standard Dokument</div>
+                                            <div className="text-xs text-slate-400">Standard Dokument</div>
                                         </div>
                                     </button>
                                     <button onClick={(e) => { e.stopPropagation(); handleDownloadXml(inv); setDownloadDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-emerald-50 flex items-center gap-3 text-slate-700 transition-colors group">
@@ -540,7 +540,7 @@ const Invoices = () => {
                                         </div>
                                         <div>
                                             <div className="font-semibold">E-Rechnung (XML)</div>
-                                            <div className="text-[10px] text-slate-400">XRechnung 3.0 / ZUGFeRD</div>
+                                            <div className="text-xs text-slate-400">XRechnung 3.0 / ZUGFeRD</div>
                                         </div>
                                     </button>
                                 </div>
@@ -566,33 +566,33 @@ const Invoices = () => {
 
     const tabs = (
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
-            <button onClick={() => setStatusFilter('all')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'all' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Alle</button>
-            <button onClick={() => setStatusFilter('pending')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'pending' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Offen</button>
-            <button onClick={() => setStatusFilter('paid')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'paid' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bezahlt</button>
-            <button onClick={() => setStatusFilter('overdue')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'overdue' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Überfällig</button>
-            <button onClick={() => setStatusFilter('reminders')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Mahnungen</button>
-            <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
-            <button onClick={() => setStatusFilter('credit_notes')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Gutschriften</button>
+            <button onClick={() => setStatusFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Alle</button>
+            <button onClick={() => setStatusFilter('pending')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Offen</button>
+            <button onClick={() => setStatusFilter('paid')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'paid' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bezahlt</button>
+            <button onClick={() => setStatusFilter('overdue')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Überfällig</button>
+            <button onClick={() => setStatusFilter('reminders')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Mahnungen</button>
+            <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
+            <button onClick={() => setStatusFilter('credit_notes')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Gutschriften</button>
 
             {(showTrash || statusFilter === 'trash') && (
-                <button onClick={() => setStatusFilter('trash')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'trash' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
+                <button onClick={() => setStatusFilter('trash')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'trash' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
             )}
             {(showArchive || statusFilter === 'archive') && (
-                <button onClick={() => setStatusFilter('archive')} className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${statusFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
+                <button onClick={() => setStatusFilter('archive')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
             )}
         </div>
     );
 
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
-            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
+            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
                 <FaDownload /> Export
             </button>
             {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-xl border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
-                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV DATEV</button>
-                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Sammel-Report</button>
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-sm border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
+                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
+                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV DATEV</button>
+                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Sammel-Report</button>
                 </div>
             )}
         </div>
@@ -602,14 +602,14 @@ const Invoices = () => {
         <div className="relative" ref={viewSettingsRef}>
             <button
                 onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-brand-50 border-brand-200 text-brand-600" : ""}`}
+                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
                 title="Ansichtseinstellungen"
             >
                 <FaFilter className="text-sm" />
             </button>
             {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Ansicht anpassen</h4>
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
+                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between p-1">
                             <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
@@ -659,25 +659,25 @@ const Invoices = () => {
 
     return (
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
-            <div className="flex justify-between items-center sm:gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Rechnungen</h1>
+            <div className="flex justify-between items-center gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Rechnungen</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <button
                         onClick={() => setIsNewInvoiceOpen(true)}
                         className={clsx(
-                            "text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95",
-                            statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-brand-700 hover:bg-brand-800"
+                            "text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition",
+                            statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-slate-900 hover:bg-slate-800"
                         )}
                     >
-                        <FaPlus className="text-[10px]" />
+                        <FaPlus className="text-xs" />
                         <span className="hidden sm:inline">
                             {statusFilter === 'credit_notes' ? 'Neue Gutschrift' : 'Neue Rechnung'}
                         </span>
                         <span className="inline sm:hidden">
-                            {statusFilter === 'credit_notes' ? 'Gutschrift' : 'Rechnung'}
+                            Neu
                         </span>
                     </button>
                 </div>
@@ -797,7 +797,7 @@ const Invoices = () => {
             >
                 {confirmTitle === 'Rechnung stornieren' && (
                     <div className="mt-4">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Storno-Grund (optional)</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">Storno-Grund (optional)</label>
                         <textarea
                             value={cancelReason}
                             onChange={(e) => setCancelReason(e.target.value)}

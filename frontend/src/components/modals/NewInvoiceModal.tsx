@@ -6,7 +6,7 @@ import Input from '../common/Input';
 import { Button } from '../common/Button';
 import SearchableSelect from '../common/SearchableSelect';
 import { useQuery } from '@tanstack/react-query';
-import { projectService, settingsService } from '../../api/services';
+import { projectService, settingsService, invoiceService } from '../../api/services';
 import clsx from 'clsx';
 
 interface NewInvoiceModalProps {
@@ -42,6 +42,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
         service_period: '',
         tax_exemption: 'none',
         tax_rate: '19.00',
+        leitweg_id: '',
     });
 
     const [items, setItems] = useState<any[]>([]);
@@ -128,6 +129,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                     service_period: invoice.service_period || '',
                     tax_exemption: invoice.tax_exemption || 'none',
                     tax_rate: invoice.tax_rate?.toString() || '19.00',
+                    leitweg_id: invoice.snapshot_customer_leitweg_id || '',
                 });
                 if (invoice.items) {
                     setItems(invoice.items.map((i: any) => ({
@@ -143,13 +145,29 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
             } else {
                 setFormData(prev => ({
                     ...prev,
-                    invoice_number: 'Wird automatisch generiert',
+                    invoice_number: '', // Reset for new invoice
                     type: defaultType
                 }));
                 if (project?.id) setSelectedProjectId(project.id.toString());
+
+                // Fetch real next number
+                const year = new Date().getFullYear().toString();
+                invoiceService.getNextNumber(year).then(data => {
+                    setFormData(prev => ({ ...prev, invoice_number: data.next_number }));
+                });
             }
         }
     }, [isOpen, invoice, project, defaultType]);
+
+    // Fetch new number if year changes
+    useEffect(() => {
+        if (isOpen && !invoice && formData.date) {
+            const year = new Date(formData.date).getFullYear().toString();
+            invoiceService.getNextNumber(year).then(data => {
+                setFormData(prev => ({ ...prev, invoice_number: data.next_number }));
+            });
+        }
+    }, [formData.date, isOpen, invoice]);
 
     useEffect(() => {
         if (activeProject && !invoice) {
@@ -208,7 +226,8 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                 customer_id: activeProject.customer_id || activeProject.customer?.id,
                 service_period: servicePeriod || prev.service_period,
                 delivery_date: activeProject.delivery_date ? activeProject.delivery_date.split('T')[0] : prev.delivery_date,
-                paid_amount: (activeProject.payments || []).reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0).toFixed(2)
+                paid_amount: (activeProject.payments || []).reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0).toFixed(2),
+                leitweg_id: activeProject.customer?.leitweg_id || activeProject.customer_leitweg_id || ''
             }));
         }
     }, [activeProject]);
@@ -245,7 +264,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                     autoFocus
                     type={type}
                     defaultValue={value}
-                    className={clsx('w-full bg-white border-2 border-brand-500 rounded px-2 py-1 outline-none text-xs font-bold shadow-sm', className)}
+                    className={clsx('w-full bg-white border-2 border-slate-900 rounded px-2 py-1 outline-none text-xs font-medium shadow-sm', className)}
                     onBlur={(e) => { updateItem(id, field, e.target.value); setEditingCell(null); }}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') { updateItem(id, field, (e.target as HTMLInputElement).value); setEditingCell(null); }
@@ -257,7 +276,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
         return (
             <div
                 onClick={() => setEditingCell({ id, field })}
-                className={clsx('cursor-pointer hover:bg-brand-50 hover:text-brand-700 px-2 py-1 rounded transition', className)}
+                className={clsx('cursor-pointer hover:bg-slate-50 hover:text-slate-900 px-2 py-1 rounded transition', className)}
                 title="Klicken zum Bearbeiten"
             >
                 {value || '-'}
@@ -294,15 +313,15 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-            <div className="relative bg-white w-full max-w-[1240px] shadow-2xl overflow-hidden flex flex-col h-full md:h-[94vh]">
+            <div className="relative bg-white w-full max-w-[1240px] shadow-sm overflow-hidden flex flex-col h-full md:h-[94vh]">
 
                 {/* ── Header ── */}
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
                         <div className="w-8 h-8 rounded bg-slate-900 text-white flex items-center justify-center"><FaFileInvoiceDollar /></div>
                         <div>
-                            <h2 className="text-[14px] font-black uppercase text-slate-800 tracking-wider">Beleg-Erstellung</h2>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{activeProject ? `${activeProject.project_number} • ${activeProject.project_name}` : 'Abrechnung konfigurieren'}</p>
+                            <h2 className="text-[14px] font-semibold text-slate-800 tracking-wider">Beleg-Erstellung</h2>
+                            <p className="text-xs text-slate-400 font-medium">{activeProject ? `${activeProject.project_number} • ${activeProject.project_name}` : 'Abrechnung konfigurieren'}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><FaTimes /></button>
@@ -312,11 +331,11 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                     {/* ── Left: DIN 5008 Preview ── */}
                     <div className="flex-1 bg-slate-100 overflow-auto custom-scrollbar flex justify-start md:justify-center py-5 md:py-10 px-4 md:px-6 min-w-0">
-                        <div className="bg-white shadow-xl w-[210mm] min-w-[210mm] md:min-w-0 min-h-[297mm] h-fit relative text-black shrink-0 overflow-hidden flex flex-col" style={{ fontFamily: "'Arial', sans-serif", padding: '0' }}>
+                        <div className="bg-white shadow-sm w-[210mm] min-w-[210mm] md:min-w-0 min-h-[297mm] h-fit relative text-black shrink-0 overflow-hidden flex flex-col" style={{ fontFamily: "'Arial', sans-serif", padding: '0' }}>
                             {/* Header */}
                             <div className="relative h-[105mm] w-full shrink-0">
                                 <div className="absolute top-[20mm] right-[20mm] text-right">
-                                    <h2 className="text-[14pt] font-bold text-slate-800 m-0">{companyName}</h2>
+                                    <h2 className="text-[14pt] font-medium text-slate-800 m-0">{companyName}</h2>
                                 </div>
                                 <div className="absolute top-[45mm] left-[20mm] w-[85mm] text-[7pt] text-slate-500 underline whitespace-nowrap overflow-hidden">
                                     {companyName} • {companyStreet} • {companyCity} • {companyCountry}
@@ -329,20 +348,23 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                 </div>
                                 <div className="absolute top-[50mm] left-[125mm] w-[65mm] text-[9pt] space-y-1">
                                     <div className="flex justify-between">
-                                        <span className="font-bold text-slate-500">{formData.type === 'credit_note' ? 'Gutschrifts' : 'Rechnungs'}-Nr.</span>
+                                        <span className="font-medium text-slate-500">{formData.type === 'credit_note' ? 'Gutschrifts' : 'Rechnungs'}-Nr.</span>
                                         <span>{formData.invoice_number || 'ENTWURF'}</span>
                                     </div>
-                                    <div className="flex justify-between"><span className="font-bold text-slate-500">Datum</span><span>{fmtDate(formData.date)}</span></div>
-                                    <div className="flex justify-between"><span className="font-bold text-slate-500">Fällig am</span><span>{fmtDate(formData.due_date)}</span></div>
+                                    <div className="flex justify-between"><span className="font-medium text-slate-500">Datum</span><span>{fmtDate(formData.date)}</span></div>
+                                    <div className="flex justify-between"><span className="font-medium text-slate-500">Fällig am</span><span>{fmtDate(formData.due_date)}</span></div>
                                     {activeProject?.project_number && (
-                                        <div className="flex justify-between"><span className="font-bold text-slate-500">Projekt-Nr.</span><span>{activeProject.project_number}</span></div>
+                                        <div className="flex justify-between"><span className="font-medium text-slate-500">Projekt-Nr.</span><span>{activeProject.project_number}</span></div>
+                                    )}
+                                    {formData.service_period && (
+                                        <div className="flex justify-between"><span className="font-medium text-slate-500">Leistungszeitraum</span><span>{formData.service_period}</span></div>
                                     )}
                                 </div>
                             </div>
 
                             {/* Content */}
                             <div className="flex-1 px-[20mm]">
-                                <h1 className="text-[14pt] font-bold mb-4">{formData.type === 'credit_note' ? 'Gutschrift' : 'Rechnung'} Nr. {formData.invoice_number || 'ENTWURF'}</h1>
+                                <h1 className="text-[14pt] font-medium mb-4">{formData.type === 'credit_note' ? 'Gutschrift' : 'Rechnung'} Nr. {formData.invoice_number || 'ENTWURF'}</h1>
                                 <p className="text-[10pt] mb-6 leading-relaxed">
                                     Sehr geehrte Damen und Herren,<br /><br />
                                     {formData.type === 'credit_note' ? 'wir erstellen Ihnen hiermit folgende Gutschrift:' : 'wir stellen Ihnen hiermit folgende Leistungen in Rechnung:'}
@@ -350,7 +372,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                                 <table className="w-full text-left text-[10pt] mb-4 border-collapse">
                                     <thead className="border-b-[1pt] border-black">
-                                        <tr className="text-[9pt] font-black uppercase text-slate-500">
+                                        <tr className="text-[9pt] font-semibold text-slate-500">
                                             <th className="py-2 w-10 text-center">Pos.</th>
                                             <th className="py-2">Leistung</th>
                                             <th className="py-2 text-right">Menge</th>
@@ -392,7 +414,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                     {parseFloat(formData.discount) > 0 && (
                                         <div className="flex justify-between text-[10pt]"><span>Rabatt:</span><span>- {fmtEur(formData.discount)}</span></div>
                                     )}
-                                    <div className="border-t border-black pt-1 flex justify-between text-[11pt] font-bold">
+                                    <div className="border-t border-black pt-1 flex justify-between text-[11pt] font-medium">
                                         <span>Gesamtbetrag:</span>
                                         <span>{fmtEur(computedFinancials.amount_gross)}</span>
                                     </div>
@@ -402,7 +424,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                             <span>- {fmtEur(formData.paid_amount)}</span>
                                         </div>
                                     )}
-                                    <div className="flex justify-between text-[11pt] font-bold border-t border-slate-200 pt-1 mt-1">
+                                    <div className="flex justify-between text-[11pt] font-medium border-t border-slate-200 pt-1 mt-1">
                                         {computedFinancials.amount_due <= 0 ? (
                                             <><span className="text-emerald-600">Betrag beglichen</span><span className="text-emerald-600">0,00 €</span></>
                                         ) : (
@@ -425,9 +447,9 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                             {/* Footer */}
                             <div className="px-[20mm] pb-[15mm] shrink-0">
                                 <div className="border-t border-slate-200 pt-2 grid grid-cols-3 gap-4 text-[7pt] text-slate-400 leading-tight">
-                                    <div><strong className="text-slate-500 uppercase block mb-1">Anschrift</strong>{companyName}<br />{companyStreet}<br />{companyCity}<br />{companyCountry}</div>
-                                    <div className="text-center"><strong className="text-slate-500 uppercase block mb-1">Kontakt</strong>Email: {companyEmail}<br />Telefon: {companyPhone}</div>
-                                    <div className="text-right"><strong className="text-slate-500 uppercase block mb-1">Steuer & Bank</strong>St.-Nr: {companyTaxNr}<br />USt-ID: {companyVatId}<br />IBAN: {companyIBAN}</div>
+                                    <div><strong className="text-slate-500 block mb-1">Anschrift</strong>{companyName}<br />{companyStreet}<br />{companyCity}<br />{companyCountry}</div>
+                                    <div className="text-center"><strong className="text-slate-500 block mb-1">Kontakt</strong>Email: {companyEmail}<br />Telefon: {companyPhone}</div>
+                                    <div className="text-right"><strong className="text-slate-500 block mb-1">Steuer & Bank</strong>St.-Nr: {companyTaxNr}<br />USt-ID: {companyVatId}<br />IBAN: {companyIBAN}</div>
                                 </div>
                             </div>
                         </div>
@@ -439,21 +461,21 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                             {/* ── Sektion 1: Dokument ── */}
                             <section>
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Dokumenten-Konfiguration</h4>
+                                <h4 className="text-xs font-semibold text-slate-400 mb-4">Dokumenten-Konfiguration</h4>
                                 <div className="space-y-4">
                                     <SearchableSelect label="Referenz-Projekt" options={projectOptions} value={selectedProjectId} onChange={setSelectedProjectId} />
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] font-bold text-slate-500 mb-1.5 block uppercase tracking-tighter">Beleg-Typ</label>
-                                            <select className="w-full h-10 border-slate-200 border text-sm font-bold focus:border-slate-800 outline-none" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value as any })}>
+                                            <label className="text-xs font-medium text-slate-500 mb-1.5 blocker">Beleg-Typ</label>
+                                            <select className="w-full h-10 border-slate-200 border text-sm font-medium focus:border-slate-800 outline-none" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value as any })}>
                                                 <option value="invoice">Rechnung</option>
                                                 <option value="credit_note">Gutschrift</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-bold text-slate-500 mb-1.5 block uppercase tracking-tighter">Umsatzsteuer</label>
+                                            <label className="text-xs font-medium text-slate-500 mb-1.5 blocker">Umsatzsteuer</label>
                                             <select
-                                                className="w-full h-10 border-slate-200 border text-sm font-bold focus:border-slate-800 outline-none"
+                                                className="w-full h-10 border-slate-200 border text-sm font-medium focus:border-slate-800 outline-none"
                                                 value={formData.tax_exemption === 'none' ? formData.tax_rate : formData.tax_exemption}
                                                 onChange={e => {
                                                     const v = e.target.value;
@@ -467,12 +489,18 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                             </select>
                                         </div>
                                     </div>
+                                    <Input
+                                        label="Leitweg-ID / Käuferreferenz (E-Rechnung)"
+                                        value={formData.leitweg_id}
+                                        onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
+                                        placeholder="0204:..."
+                                    />
                                 </div>
                             </section>
 
                             {/* ── Sektion 2: Datum ── */}
                             <section>
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Datum & Fristen</h4>
+                                <h4 className="text-xs font-semibold text-slate-400 mb-4">Datum & Fristen</h4>
                                 <div className="grid grid-cols-2 gap-4">
                                     <Input label="Belegdatum" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
                                     <Input label="Fälligkeit" type="date" value={formData.due_date} onChange={e => setFormData({ ...formData, due_date: e.target.value })} />
@@ -484,10 +512,10 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                             {/* ── Sektion 3: Positionen (Kalkulations-Tabelle) ── */}
                             <section>
                                 <div className="flex justify-between items-center mb-3">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Positionen</h4>
+                                    <h4 className="text-xs font-semibold text-slate-400">Positionen</h4>
                                     <button
                                         onClick={addItem}
-                                        className="px-3 py-1.5 bg-slate-50 text-slate-600 border border-slate-200 rounded text-[10px] font-bold uppercase hover:bg-slate-100 hover:text-slate-800 transition shadow-sm flex items-center gap-1.5"
+                                        className="px-3 py-1.5 bg-slate-50 text-slate-600 border border-slate-200 rounded text-xs font-medium hover:bg-slate-100 hover:text-slate-800 transition shadow-sm flex items-center gap-1.5"
                                     >
                                         <FaPlus className="mb-0.5" /> Neu
                                     </button>
@@ -504,14 +532,14 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                                 <div className="overflow-x-auto rounded-sm border border-slate-200">
                                     <table className="w-full text-left border-collapse min-w-[380px]">
-                                        <thead className="bg-slate-50/80 text-slate-500 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
+                                        <thead className="bg-slate-50/80 text-slate-500 text-xs font-semibold border-b border-slate-200">
                                             <tr>
                                                 <th className="px-3 py-2.5 w-8 text-center">#</th>
                                                 <th className="px-3 py-2.5">Beschreibung</th>
                                                 <th className="px-3 py-2.5 w-14 text-right">Menge</th>
                                                 <th className="px-3 py-2.5 w-20 text-right">Einh.</th>
                                                 <th className="px-3 py-2.5 w-20 text-right bg-emerald-50/30 text-emerald-600 border-l border-slate-100">VK (Stk)</th>
-                                                <th className="px-3 py-2.5 w-20 text-right font-black text-slate-700 bg-emerald-50/30 border-l border-slate-100">Gesamt</th>
+                                                <th className="px-3 py-2.5 w-20 text-right font-semibold text-slate-700 bg-emerald-50/30 border-l border-slate-100">Gesamt</th>
                                                 <th className="px-2 py-2.5 w-8"></th>
                                             </tr>
                                         </thead>
@@ -520,7 +548,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                 <tr key={item.id} className="group hover:bg-slate-50 transition-colors">
                                                     <td className="px-3 py-2.5 text-center text-slate-400 font-medium">{idx + 1}</td>
                                                     <td className="px-3 py-2.5">
-                                                        {renderItemCell(item.id, 'description', item.description, 'text', 'font-bold text-slate-700 w-full bg-transparent outline-none')}
+                                                        {renderItemCell(item.id, 'description', item.description, 'text', 'font-medium text-slate-700 w-full bg-transparent outline-none')}
                                                     </td>
                                                     <td className="px-3 py-2.5 text-right">
                                                         {renderItemCell(item.id, 'quantity', String(item.quantity), 'number', 'text-right font-mono text-slate-600 bg-transparent outline-none')}
@@ -529,7 +557,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                         <select
                                                             value={item.unit}
                                                             onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
-                                                            className="text-right text-[10px] font-bold uppercase text-slate-400 bg-transparent outline-none cursor-pointer hover:text-brand-600 transition-colors w-full appearance-none"
+                                                            className="text-right text-xs font-medium text-slate-400 bg-transparent outline-none cursor-pointer hover:text-slate-700 transition-colors w-full appearance-none"
                                                         >
                                                             {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                                         </select>
@@ -540,14 +568,14 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                             <select
                                                                 value={item.price_mode || 'unit'}
                                                                 onChange={(e) => updateItem(item.id, 'price_mode', e.target.value)}
-                                                                className="text-right text-[9px] font-bold uppercase text-emerald-400 bg-transparent outline-none cursor-pointer hover:text-emerald-600 transition-colors appearance-none"
+                                                                className="text-right text-xs font-medium text-emerald-400 bg-transparent outline-none cursor-pointer hover:text-emerald-600 transition-colors appearance-none"
                                                             >
                                                                 <option value="unit">/ Einheit</option>
                                                                 <option value="fixed">Pauschal</option>
                                                             </select>
                                                         </div>
                                                     </td>
-                                                    <td className="px-3 py-2.5 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 group-hover:bg-emerald-50/30 transition-colors">
+                                                    <td className="px-3 py-2.5 text-right font-semibold text-slate-800 border-l border-slate-100 bg-emerald-50/10 group-hover:bg-emerald-50/30 transition-colors">
                                                         {(parseFloat(item.total) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                     </td>
                                                     <td className="px-2 py-2.5 text-center">
@@ -556,7 +584,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                             className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                                                             title="Position löschen"
                                                         >
-                                                            <FaTrash className="text-[10px]" />
+                                                            <FaTrash className="text-xs" />
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -575,7 +603,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                             {/* ── Sektion 4: Finanzen & Summen ── */}
                             <section>
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Finanzen & Summen</h4>
+                                <h4 className="text-xs font-semibold text-slate-400 mb-4">Finanzen & Summen</h4>
 
                                 {formData.type !== 'credit_note' && (
                                     <div className="grid grid-cols-3 gap-3 mb-5">
@@ -586,7 +614,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                             <button
                                                 type="button"
                                                 onClick={() => setFormData({ ...formData, paid_amount: computedFinancials.amount_gross.toFixed(2) })}
-                                                className="text-[8px] font-bold text-brand-600 hover:text-brand-800 uppercase mt-1 transition-colors"
+                                                className="text-xs font-medium text-slate-700 hover:text-slate-800 mt-1 transition-colors"
                                             >
                                                 100% bezahlt
                                             </button>
@@ -596,22 +624,22 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                                 {/* Financial Summary — identischer Stil wie ProjectFinancesTab-Sidebar */}
                                 <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
-                                    <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            <FaFileInvoiceDollar className="text-brand-500" /> Finanz-Übersicht
+                                    <div className="p-4 border-b border-slate-100 bg-transparent">
+                                        <h3 className="text-xs font-semibold text-slate-400 flex items-center gap-2">
+                                            <FaFileInvoiceDollar className="text-slate-600" /> Finanz-Übersicht
                                         </h3>
                                     </div>
                                     <div className="p-4 space-y-4">
                                         <div className="text-center pb-4 border-b border-slate-100 border-dashed">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                            <p className="text-xs font-medium text-slate-400 mb-1">
                                                 {formData.type === 'credit_note' ? 'Gutschriftsbetrag' : 'Gesamtbetrag (Brutto)'}
                                             </p>
-                                            <div className={clsx("text-3xl font-black tracking-tight", formData.type === 'credit_note' ? "text-red-600" : "text-slate-800")}>
-                                                {computedFinancials.amount_gross.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-lg text-slate-400 font-bold">€</span>
+                                            <div className={clsx("text-3xl font-semibold tracking-tight", formData.type === 'credit_note' ? "text-red-600" : "text-slate-800")}>
+                                                {computedFinancials.amount_gross.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-lg text-slate-400 font-medium">€</span>
                                             </div>
                                             <div className="mt-2">
                                                 <span className={clsx(
-                                                    'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border',
+                                                    'px-2 py-0.5 rounded text-xs font-medium border',
                                                     formData.type === 'credit_note' ? 'bg-red-50 text-red-700 border-red-100' :
                                                         (computedFinancials.amount_due <= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100')
                                                 )}>
@@ -624,30 +652,30 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                         <div className="space-y-2.5">
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-slate-500 font-medium">Netto Umsatz</span>
-                                                <span className="font-bold text-slate-700">{fmtEur(computedFinancials.amount_net)}</span>
+                                                <span className="font-medium text-slate-700">{fmtEur(computedFinancials.amount_net)}</span>
                                             </div>
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-slate-500 font-medium flex items-center gap-1.5">
                                                     {formData.tax_exemption === 'none' ? `MwSt. (${formData.tax_rate}%)` : 'MwSt. (Befreit)'}
-                                                    <FaInfoCircle className="text-slate-300 text-[10px]" />
+                                                    <FaInfoCircle className="text-slate-300 text-xs" />
                                                 </span>
-                                                <span className="font-bold text-slate-700">{fmtEur(computedFinancials.amount_tax)}</span>
+                                                <span className="font-medium text-slate-700">{fmtEur(computedFinancials.amount_tax)}</span>
                                             </div>
                                             {parseFloat(formData.shipping) > 0 && (
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-slate-500 font-medium">Versand</span>
-                                                    <span className="font-bold text-slate-700">+ {fmtEur(formData.shipping)}</span>
+                                                    <span className="font-medium text-slate-700">+ {fmtEur(formData.shipping)}</span>
                                                 </div>
                                             )}
                                             {parseFloat(formData.discount) > 0 && (
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-slate-500 font-medium">Rabatt</span>
-                                                    <span className="font-bold text-red-400">- {fmtEur(formData.discount)}</span>
+                                                    <span className="font-medium text-red-400">- {fmtEur(formData.discount)}</span>
                                                 </div>
                                             )}
                                             <div className="flex justify-between items-center text-sm border-t border-slate-100 pt-2">
-                                                <span className="font-bold text-slate-800">Gesamtbetrag (Brutto)</span>
-                                                <span className="font-bold text-slate-800">{fmtEur(computedFinancials.amount_gross)}</span>
+                                                <span className="font-medium text-slate-800">Gesamtbetrag (Brutto)</span>
+                                                <span className="font-medium text-slate-800">{fmtEur(computedFinancials.amount_gross)}</span>
                                             </div>
 
                                             {/* Anzahlung & Zahlbetrag */}
@@ -655,7 +683,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                 <>
                                                     <div className="flex justify-between items-center text-sm">
                                                         <span className="text-slate-500 font-medium">Anzahlung / bezahlt</span>
-                                                        <span className="font-bold text-emerald-600">- {fmtEur(formData.paid_amount)}</span>
+                                                        <span className="font-medium text-emerald-600">- {fmtEur(formData.paid_amount)}</span>
                                                     </div>
                                                     <div className={clsx(
                                                         'rounded-sm p-3 border mt-2',
@@ -663,13 +691,13 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                             (computedFinancials.amount_due <= 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100')
                                                     )}>
                                                         <div className="flex justify-between items-end">
-                                                            <span className={clsx('text-[10px] font-bold uppercase tracking-wider',
+                                                            <span className={clsx('text-xs font-medium',
                                                                 formData.type === 'credit_note' ? 'text-red-700' :
                                                                     (computedFinancials.amount_due <= 0 ? 'text-emerald-700' : 'text-red-600')
                                                             )}>
                                                                 {formData.type === 'credit_note' ? 'Auszuzahlen' : (computedFinancials.amount_due <= 0 ? 'Vollständig bezahlt' : 'Noch zu zahlen')}
                                                             </span>
-                                                            <span className={clsx('text-lg font-black',
+                                                            <span className={clsx('text-lg font-semibold',
                                                                 formData.type === 'credit_note' ? 'text-red-700' :
                                                                     (computedFinancials.amount_due <= 0 ? 'text-emerald-700' : 'text-red-600')
                                                             )}>
@@ -677,7 +705,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                             </span>
                                                         </div>
                                                         {computedFinancials.amount_due <= 0 && formData.type !== 'credit_note' && (
-                                                            <div className="flex items-center gap-1 mt-1 text-[10px] text-emerald-600 font-bold">
+                                                            <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600 font-medium">
                                                                 <FaCheckCircle /> Rechnung ausgeglichen
                                                             </div>
                                                         )}
@@ -694,13 +722,20 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                         {/* ── Actions Footer ── */}
                         <div className="p-6 border-t border-slate-50 flex justify-end gap-4 shrink-0 bg-white">
-                            <button onClick={onClose} className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">Abbrechen</button>
+                            <button onClick={onClose} className="px-6 py-2 text-xs font-semibold text-slate-400 hover:text-slate-900 transition-colors">Abbrechen</button>
                             <Button
                                 variant="primary"
-                                onClick={() => onSubmit({ ...formData, ...computedFinancials, items })}
+                                onClick={() => {
+                                    // GoBD: Backend generates the final number for new invoices.
+                                    // For drafts being updated, we can send it, but backend store() ignores it anyway.
+                                    // We omit it here for new invoices to avoid sending placeholders to the server.
+                                    const { invoice_number, ...submitData } = formData;
+                                    const payload = invoice ? { ...formData, ...computedFinancials, items } : { ...submitData, ...computedFinancials, items };
+                                    onSubmit(payload);
+                                }}
                                 isLoading={isLoading}
                                 disabled={!selectedProjectId || items.length === 0 || invoice?.status === 'cancelled'}
-                                className="h-12 px-6 md:px-10 rounded-none text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-100 italic"
+                                className="h-12 px-6 md:px-10 rounded-none text-xs font-semibold shadow-sm shadow-slate-100 italic"
                             >
                                 Beleg Jetzt Finalisieren
                             </Button>

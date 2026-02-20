@@ -220,6 +220,10 @@ export const invoiceService = {
         const response = await api.get('/invoices');
         return response.data;
     },
+    getNextNumber: async (year?: string) => {
+        const response = await api.get('/invoices/next-number', { params: { year } });
+        return response.data;
+    },
     getById: async (id: number) => {
         const response = await api.get(`/invoices/${id}`);
         return response.data;
@@ -404,6 +408,14 @@ export const authService = {
     },
     changePassword: async (data: any) => {
         const response = await api.put('/user/password', data);
+        return response.data;
+    },
+    forgotPassword: async (email: string) => {
+        const response = await api.post('/forgot-password', { email });
+        return response.data;
+    },
+    resetPassword: async (data: any) => {
+        const response = await api.post('/reset-password', data);
         return response.data;
     }
 };

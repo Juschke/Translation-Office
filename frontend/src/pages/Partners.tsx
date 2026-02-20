@@ -2,8 +2,9 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    FaUserTie, FaPlus, FaEye, FaEdit, FaTrash, FaGlobe, FaStar, FaHandshake,
-    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter
+    FaUserTie, FaPlus, FaEye, FaEdit, FaTrash, FaStar, FaHandshake,
+    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter,
+    FaEuroSign
 } from 'react-icons/fa';
 import clsx from 'clsx';
 
@@ -13,7 +14,7 @@ import Switch from '../components/common/Switch';
 import KPICard from '../components/common/KPICard';
 import DataTable from '../components/common/DataTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { partnerService } from '../api/services';
+import { partnerService, projectService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -132,18 +133,28 @@ const Partners = () => {
         });
     }, [partners]);
 
-    const activePartnersCount = activePartnersList.length;
-    const languagePairsCount = useMemo(() => {
-        const pairs = new Set();
-        activePartnersList.forEach((p: any) => {
-            if (Array.isArray(p.languages)) {
-                p.languages.forEach((l: string) => pairs.add(l));
-            } else if (p.languages) {
-                pairs.add(p.languages);
-            }
-        });
-        return pairs.size;
+    const { data: allProjectsData } = useQuery({
+        queryKey: ['projects'],
+        queryFn: () => projectService.getAll()
+    });
+
+    const partnerFinancials = useMemo(() => {
+        const projects = Array.isArray(allProjectsData) ? allProjectsData : (allProjectsData?.data || []);
+        // Only consider projects that have a partner assigned
+        const partnerProjects = projects.filter((p: any) => p.partner_id);
+        const totalCost = partnerProjects.reduce((sum: number, p: any) => sum + (parseFloat(p.partner_cost_net) || 0), 0);
+        const avgCost = partnerProjects.length > 0 ? totalCost / partnerProjects.length : 0;
+        return { totalCost, avgCost };
+    }, [allProjectsData]);
+
+    const partnerQuality = useMemo(() => {
+        const rated = activePartnersList.filter((p: any) => p.rating > 0);
+        if (rated.length === 0) return 0;
+        const total = rated.reduce((sum: number, p: any) => sum + (parseFloat(p.rating) || 0), 0);
+        return total / rated.length;
     }, [activePartnersList]);
+
+    const activePartnersCount = activePartnersList.length;
 
     const filteredPartners = useMemo(() => {
         if (!Array.isArray(partners)) return [];
@@ -159,11 +170,11 @@ const Partners = () => {
             if (typeFilter === 'all') return true;
 
             if (typeFilter === 'service_providers') {
-                return p.type === 'translator' || p.type === 'interpreter';
+                return p.type === 'translator' || p.type === 'interpreter' || p.type === 'trans_interp';
             }
 
             // Map German filter names to English type values
-            const mappedType = p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type;
+            const mappedType = p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type;
             return mappedType === typeFilter;
         });
     }, [partners, typeFilter]);
@@ -215,16 +226,19 @@ const Partners = () => {
             header: 'Partner / Dienstleister',
             accessor: (p: any) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-sm shrink-0 bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-100">
+                    <div className="w-8 h-8 rounded-sm shrink-0 bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-medium border border-indigo-100">
                         {p.first_name?.[0] || ''}{p.last_name?.[0] || 'P'}
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-slate-800 truncate">{p.company || `${p.first_name} ${p.last_name}`}</span>
-                        <div className="flex gap-2">
-                            <span className="text-[10px] text-slate-400 font-medium">{p.id.toString().padStart(4, '0')}</span>
-                            <span className="text-[10px] text-slate-300">•</span>
-                            <span className="text-[10px] text-slate-500 font-medium">
-                                {p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type}
+                        <span className="font-medium text-slate-800 truncate" title={p.company || `${p.first_name} ${p.last_name}`}>{p.company || `${p.first_name} ${p.last_name}`}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-xs text-slate-400 font-medium shrink-0">{p.id.toString().padStart(4, '0')}</span>
+                            <span className="text-xs text-slate-300 shrink-0">•</span>
+                            <span
+                                className="text-xs text-slate-500 font-medium truncate shrink"
+                                title={p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type}
+                            >
+                                {p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type}
                             </span>
                         </div>
                     </div>
@@ -238,7 +252,7 @@ const Partners = () => {
             header: 'Projekte',
             accessor: (p: any) => (
                 <div className="flex flex-col items-center">
-                    <span className="text-xs font-black text-slate-700">{p.projects_count || 0}</span>
+                    <span className="text-xs font-semibold text-slate-700">{p.projects_count || 0}</span>
                 </div>
             ),
             sortable: true,
@@ -267,7 +281,7 @@ const Partners = () => {
                 };
                 const status = p.status?.toLowerCase();
                 return (
-                    <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                    <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
                         {labels[status] || p.status}
                     </span>
                 );
@@ -279,18 +293,32 @@ const Partners = () => {
         {
             id: 'languages',
             header: 'Sprachen',
-            accessor: (p: any) => (
-                <div className="flex flex-col gap-1.5 max-w-[200px]">
-                    <div className="flex flex-wrap gap-1">
-                        {(Array.isArray(p.languages) ? p.languages : (p.languages ? [p.languages] : [])).map((lang: string, i: number) => (
-                            <span key={i} className="inline-flex items-center gap-1.5 px-1.5 py-0.5 bg-slate-50 text-slate-600 rounded border border-slate-200 text-[10px] font-medium shadow-sm whitespace-nowrap">
-                                <img src={getFlagUrl(lang)} className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm" alt={lang} />
-                                {getLanguageName(lang)}
-                            </span>
-                        ))}
+            accessor: (p: any) => {
+                const languages = Array.isArray(p.languages) ? p.languages : (p.languages ? [p.languages] : []);
+                const visibleLangs = languages.slice(0, 2);
+                const hiddenCount = languages.length - 2;
+
+                return (
+                    <div className="flex flex-col gap-1.5 max-w-[200px]">
+                        <div className="flex flex-wrap gap-1">
+                            {visibleLangs.map((lang: string, i: number) => (
+                                <span key={i} className="inline-flex items-center gap-1.5 px-1.5 py-0.5 bg-slate-50 text-slate-600 rounded border border-slate-200 text-xs font-medium shadow-sm whitespace-nowrap">
+                                    <img src={getFlagUrl(lang)} className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm" alt={lang} />
+                                    <span className="truncate max-w-[60px]" title={getLanguageName(lang)}>{getLanguageName(lang)}</span>
+                                </span>
+                            ))}
+                            {hiddenCount > 0 && (
+                                <span
+                                    className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200 text-xs font-medium shadow-sm cursor-help"
+                                    title={languages.slice(2).map((l: string) => getLanguageName(l)).join(', ')}
+                                >
+                                    +{hiddenCount}
+                                </span>
+                            )}
+                        </div>
                     </div>
-                </div>
-            ),
+                );
+            },
         },
         {
             id: 'location',
@@ -300,10 +328,10 @@ const Partners = () => {
                     <span className="text-slate-700 text-xs font-medium truncate" title={[p.address_street, p.address_house_no].filter(Boolean).join(' ')}>
                         {[p.address_street, p.address_house_no].filter(Boolean).join(' ') || '-'}
                     </span>
-                    <span className="text-[10px] text-slate-500 truncate" title={[p.address_zip, p.address_city].filter(Boolean).join(' ')}>
+                    <span className="text-xs text-slate-500 truncate" title={[p.address_zip, p.address_city].filter(Boolean).join(' ')}>
                         {[p.address_zip, p.address_city].filter(Boolean).join(' ')}
                     </span>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">{p.address_country || ''}</span>
+                    <span className="text-xs text-slate-400">{p.address_country || ''}</span>
                 </div>
             ),
             sortable: true,
@@ -328,13 +356,13 @@ const Partners = () => {
             header: 'Bewertung',
             accessor: (p: any) => (
                 <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-slate-600">{p.rating || 0}</span>
+                    <span className="text-xs font-medium text-slate-600">{p.rating || 0}</span>
                     <div className="flex items-center gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                             <FaStar
                                 key={star}
                                 className={clsx(
-                                    "text-[10px]",
+                                    "text-xs",
                                     star <= (p.rating || 0) ? "text-amber-400" : "text-slate-200"
                                 )}
                             />
@@ -351,8 +379,8 @@ const Partners = () => {
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-sm transition" title="Details"><FaEye /></button>
-                    <button onClick={() => { setEditingPartner(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
+                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye /></button>
+                    <button onClick={() => { setEditingPartner(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
                     <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Löschen"><FaTrash /></button>
                 </div>
             ),
@@ -362,14 +390,14 @@ const Partners = () => {
 
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
-            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded-sm text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white flex items-center gap-2 shadow-sm transition">
+            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded-sm text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white flex items-center gap-2 shadow-sm transition">
                 <FaDownload /> Export
             </button>
             {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-xl border border-slate-100 z-[100] overflow-hidden animate-slideUp">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
-                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
-                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
+                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
+                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
+                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>
                 </div>
             )}
         </div>
@@ -379,31 +407,31 @@ const Partners = () => {
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
             <button
                 onClick={() => setTypeFilter('all')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'all' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Alle
             </button>
             <button
                 onClick={() => setTypeFilter('service_providers')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'service_providers' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'service_providers' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Übersetzer & Dolmetscher
             </button>
             <button
                 onClick={() => setTypeFilter('Übersetzer')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Übersetzer' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Übersetzer' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Übersetzer
             </button>
             <button
                 onClick={() => setTypeFilter('Dolmetscher')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Dolmetscher' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Dolmetscher' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Dolmetscher
             </button>
             <button
                 onClick={() => setTypeFilter('Agentur')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Agentur' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Agentur' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Agenturen
             </button>
@@ -411,7 +439,7 @@ const Partners = () => {
             {(showTrash || typeFilter === 'trash') && (
                 <button
                     onClick={() => setTypeFilter('trash')}
-                    className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
                 >
                     Papierkorb
                 </button>
@@ -420,7 +448,7 @@ const Partners = () => {
             {(showArchive || typeFilter === 'archive') && (
                 <button
                     onClick={() => setTypeFilter('archive')}
-                    className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
                 >
                     Archiv
                 </button>
@@ -432,14 +460,14 @@ const Partners = () => {
         <div className="relative" ref={viewSettingsRef}>
             <button
                 onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-brand-50 border-brand-200 text-brand-600" : ""}`}
+                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
                 title="Ansichtseinstellungen"
             >
                 <FaFilter className="text-sm" />
             </button>
             {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Ansicht anpassen</h4>
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
+                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between p-1">
                             <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
@@ -459,22 +487,35 @@ const Partners = () => {
 
     return (
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
-            <div className="flex justify-between items-center sm:gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Partnernetzwerk</h1>
+            <div className="flex justify-between items-center gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Partnernetzwerk</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">Verwaltung externer Übersetzer, Dolmetscher und Agenturen.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                    <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95">
-                        <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neuer Partner</span><span className="inline sm:hidden">Partner</span>
+                    <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition">
+                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neuer Partner</span><span className="inline sm:hidden">Neu</span>
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Aktive Partner" value={activePartnersCount} icon={<FaUserTie />} />
-                <KPICard label="Sprachabdeckung" value={languagePairsCount} icon={<FaGlobe />} iconColor="text-blue-600" iconBg="bg-blue-50" subValue="Verfügbare Sprachpaare" />
-                <KPICard label="Zusammenarbeit" value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" iconBg="bg-green-50" subValue="Projekte diesen Monat" />
+                <KPICard
+                    label="Partner Kosten"
+                    value={partnerFinancials.totalCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                    icon={<FaEuroSign />}
+                    iconColor="text-rose-600"
+                    subValue={`Ø ${partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} / Projekt`}
+                />
+                <KPICard
+                    label="Qualitätsschnitt"
+                    value={`${partnerQuality.toFixed(1)} / 5.0`}
+                    icon={<FaStar />}
+                    iconColor="text-amber-500"
+                    subValue="Durchschnittliche Bewertung"
+                />
+                <KPICard label="Zusammenarbeit" value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" subValue="Projekte diesen Monat" />
             </div>
 
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
@@ -571,8 +612,8 @@ const Partners = () => {
                     }
                 }}
                 initialData={editingPartner || (
-                    ['Übersetzer', 'Dolmetscher', 'Agentur'].includes(typeFilter)
-                        ? { type: typeFilter === 'Übersetzer' ? 'translator' : typeFilter === 'Dolmetscher' ? 'interpreter' : 'agency' }
+                    ['Übersetzer', 'Dolmetscher', 'Agentur', 'service_providers'].includes(typeFilter)
+                        ? { type: typeFilter === 'Übersetzer' ? 'translator' : typeFilter === 'Dolmetscher' ? 'interpreter' : typeFilter === 'service_providers' ? 'trans_interp' : 'agency' }
                         : undefined
                 )}
                 isLoading={createMutation.isPending || updateMutation.isPending}
@@ -595,7 +636,7 @@ const Partners = () => {
                 message="Sind Sie sicher, dass Sie diesen Partner in den Papierkorb verschieben möchten? Dieser Vorgang kann später im Papierkorb endgültig gelöscht oder wiederhergestellt werden."
                 isLoading={deleteMutation.isPending}
             />
-        </div>
+        </div >
     );
 };
 

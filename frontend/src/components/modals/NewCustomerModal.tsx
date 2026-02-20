@@ -5,6 +5,9 @@ import CountrySelect from '../common/CountrySelect';
 import PhoneInput from '../common/PhoneInput';
 import SearchableSelect from '../common/SearchableSelect';
 import { fetchCityByZip } from '../../utils/autoFill';
+import { IMaskInput } from 'react-imask';
+import clsx from 'clsx';
+import toast from 'react-hot-toast';
 
 const legalFormOptions = [
     { value: 'Einzelunternehmen', label: 'Einzelunternehmen' },
@@ -45,8 +48,11 @@ interface CustomerFormData {
     iban: string;
     bic: string;
     bank_name: string;
+    bank_code: string;
+    bank_account_holder: string;
     tax_id: string;
     vat_id: string;
+    leitweg_id: string;
 }
 
 interface NewCustomerModalProps {
@@ -78,12 +84,16 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         iban: '',
         bic: '',
         bank_name: '',
+        bank_code: '',
+        bank_account_holder: '',
         tax_id: '',
         vat_id: '',
+        leitweg_id: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [isValidatingIban, setIsValidatingIban] = useState(false);
 
     const validate = useCallback((data: typeof formData) => {
         const newErrors: Record<string, string> = {};
@@ -167,11 +177,15 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                 iban: '',
                 bic: '',
                 bank_name: '',
+                bank_code: '',
+                bank_account_holder: '',
                 tax_id: '',
                 vat_id: '',
+                leitweg_id: '',
             });
             setTouched({});
             setErrors({});
+            setIsValidatingIban(false);
         }
     }, [initialData, isOpen]);
 
@@ -223,22 +237,82 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         }
     };
 
+    const handleIbanBlur = async () => {
+        const cleanIban = (formData.iban || '').replace(/\s/g, '');
+        if (!cleanIban || cleanIban.length < 15) return;
+        setIsValidatingIban(true);
+        try {
+            const response = await fetch(`https://openiban.com/validate/${cleanIban}?getBIC=true&validateBankCode=true`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.valid) {
+                    setFormData(prev => ({
+                        ...prev,
+                        bic: data.bankData?.bic || prev.bic,
+                        bank_name: data.bankData?.name || prev.bank_name,
+                        bank_code: data.bankData?.bankCode || prev.bank_code,
+                    }));
+                    setErrors(prev => ({ ...prev, iban: '' }));
+                    toast.success(`Bank erkannt: ${data.bankData?.name || 'IBAN valide'}`);
+                } else {
+                    setErrors(prev => ({ ...prev, iban: 'Ungültige IBAN' }));
+                }
+            }
+        } catch (error) {
+            console.warn('IBAN Validation API unavailable');
+        } finally {
+            setIsValidatingIban(false);
+        }
+    };
+
+    const handleBicBlur = () => {
+        const bicVal = (formData.bic || '').toUpperCase().trim();
+        if (!bicVal || bicVal.length < 4) return;
+        const commonBanks: Record<string, string> = {
+            'DEUTDE': 'Deutsche Bank AG',
+            'COMADE': 'Commerzbank AG',
+            'DRESDE': 'Dresdner Bank',
+            'PBNKDE': 'Postbank (DB)',
+            'INGDDE': 'ING-DiBa AG',
+            'N26ADE': 'N26 Bank AG',
+            'SOLODE': 'Solarisbank AG',
+            'DKBADE': 'DKB Deutsche Kreditbank',
+            'GENODE': 'Volksbanken Raiffeisenbanken',
+            'HASADE': 'Hamburger Sparkasse',
+            'BELADE': 'Berliner Sparkasse',
+            'MAZADE': 'Mainzer Volksbank',
+            'KRHADE': 'Sparkasse Hannover',
+            'WELADE': 'Landesbank Baden-Württemberg',
+            'BYLADE': 'BayernLB',
+            'HEFADE': 'Helaba',
+            'NOLA DE': 'NordLB'
+        };
+        const prefix6 = bicVal.substring(0, 6);
+        const prefix4 = bicVal.substring(0, 4);
+        if (!formData.bank_name) {
+            const foundBank = commonBanks[prefix6] || commonBanks[prefix4];
+            if (foundBank) {
+                setFormData(prev => ({ ...prev, bank_name: foundBank }));
+            }
+        }
+    };
+
     const getError = (field: string) => touched[field] ? errors[field] : '';
 
     return (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden animate-fade-in-up transform transition-all">
+            <div className="bg-white rounded-sm shadow-sm w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden animate-fade-in-up transform transition-all">
                 <form onSubmit={handleSave} className="flex flex-col h-full overflow-hidden">
                     {/* Header */}
                     <div className="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                         <div>
-                            <h3 className="font-black text-base text-slate-800 uppercase tracking-tight flex items-center gap-3">
+                            <h3 className="font-semibold text-base text-slate-800 flex items-center gap-3">
                                 {initialData ? 'Kunde bearbeiten' : 'Neuen Kunden anlegen'}
-                                <span className="text-[9px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100 uppercase tracking-widest">
+                                <span className="text-xs font-medium text-slate-900 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
                                     CRM Stammdaten
                                 </span>
                             </h3>
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Zentrale Verwaltung der Kundenprofile</p>
+                            <p className="text-xs text-slate-400 font-medium mt-0.5">Zentrale Verwaltung der Kundenprofile</p>
                         </div>
                         <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
                             <FaTimes className="text-lg" />
@@ -250,19 +324,19 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Section 1: Classification */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">01</div>
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Klassifizierung & Name</h4>
+                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">01</div>
+                                <h4 className="text-xs font-semibold text-slate-800">Klassifizierung & Name</h4>
                             </div>
 
                             <div className="grid grid-cols-12 gap-x-6 gap-y-4">
                                 <div className="col-span-12">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Kunden-Typ</label>
-                                    <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 w-fit">
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'private' }))} className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'private' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'company' }))} className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'authority' }))} className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${formData.type === 'authority' ? 'bg-white shadow-sm text-brand-700 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
+                                    <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Kunden-Typ</label>
+                                    <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 w-fit">
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'private' }))} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'private' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'company' }))} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'authority' }))} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'authority' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
                                     </div>
-                                    <p className="mt-1 text-[10px] text-slate-400 font-medium ml-1">Wählen Sie die Rechtsform des Kunden für korrekte Rechnungsstellung</p>
+                                    <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Wählen Sie die Rechtsform des Kunden für korrekte Rechnungsstellung</p>
                                 </div>
 
                                 {(formData.type === 'company' || formData.type === 'authority') && (
@@ -276,15 +350,26 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                             helperText={getError('company_name') || (formData.type === 'authority' ? 'Name der Behörde' : 'Firmenname')}
                                             error={!!getError('company_name')}
                                         />
-                                        <div className="md:mt-0">
-                                            <SearchableSelect
-                                                label="Rechtsform"
-                                                options={legalFormOptions}
-                                                value={formData.legal_form}
-                                                onChange={(val) => setFormData(prev => ({ ...prev, legal_form: val }))}
-                                                placeholder="Rechtsform wählen..."
+                                        {formData.type === 'authority' ? (
+                                            <Input
+                                                label="Leitweg-ID (E-Rechnung)"
+                                                name="leitweg_id"
+                                                value={formData.leitweg_id}
+                                                onChange={handleChange}
+                                                placeholder="z.B. 1234-5678-90"
+                                                helperText="Erforderlich für XRechnung / ZUGFeRD"
                                             />
-                                        </div>
+                                        ) : (
+                                            <div className="md:mt-0">
+                                                <SearchableSelect
+                                                    label="Rechtsform"
+                                                    options={legalFormOptions}
+                                                    value={formData.legal_form}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, legal_form: val }))}
+                                                    placeholder="Rechtsform wählen..."
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -332,8 +417,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Section 2: Contact */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">02</div>
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kontaktdaten</h4>
+                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">02</div>
+                                <h4 className="text-xs font-semibold text-slate-800">Kontaktdaten</h4>
                             </div>
 
                             <div className="grid grid-cols-12 gap-4">
@@ -364,15 +449,15 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 <button
                                                     type="button"
                                                     onClick={() => removeField('additional_emails', i)}
-                                                    className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-md transition flex-shrink-0"
+                                                    className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-sm transition flex-shrink-0"
                                                 >
                                                     <FaTrash size={12} />
                                                 </button>
                                             </div>
                                         ))}
                                         {formData.additional_emails.length < 3 && (
-                                            <button type="button" onClick={() => addField('additional_emails')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-2 ml-1">
-                                                <FaPlus className="text-[8px]" /> Weitere E-Mail hinzufügen
+                                            <button type="button" onClick={() => addField('additional_emails')} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-2 ml-1">
+                                                <FaPlus className="text-xs" /> Weitere E-Mail hinzufügen
                                             </button>
                                         )}
                                     </div>
@@ -399,15 +484,15 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 <button
                                                     type="button"
                                                     onClick={() => removeField('additional_phones', i)}
-                                                    className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-md transition flex-shrink-0"
+                                                    className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-sm transition flex-shrink-0"
                                                 >
                                                     <FaTrash size={12} />
                                                 </button>
                                             </div>
                                         ))}
                                         {formData.additional_phones.length < 3 && (
-                                            <button type="button" onClick={() => addField('additional_phones')} className="text-[10px] text-brand-600 font-bold flex items-center gap-1.5 hover:text-brand-700 transition-colors uppercase py-2 ml-1">
-                                                <FaPlus className="text-[8px]" /> Weitere Nummer hinzufügen
+                                            <button type="button" onClick={() => addField('additional_phones')} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-2 ml-1">
+                                                <FaPlus className="text-xs" /> Weitere Nummer hinzufügen
                                             </button>
                                         )}
                                     </div>
@@ -418,8 +503,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Section 3: Address */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">03</div>
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Standort & Adresse</h4>
+                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">03</div>
+                                <h4 className="text-xs font-semibold text-slate-800">Standort & Adresse</h4>
                             </div>
 
                             <div className="grid grid-cols-12 gap-x-6 gap-y-4">
@@ -468,7 +553,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         onChange={handleChange}
                                         required
                                         placeholder="Kassel"
-                                        className="font-bold"
+                                        className="font-medium"
                                         helperText={getError('address_city') || 'Vollständiger Name der Stadt'}
                                         error={!!getError('address_city')}
                                     />
@@ -487,8 +572,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Section 4: Bookkeeping */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">04</div>
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Buchhaltung & Zahlungsdaten</h4>
+                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">04</div>
+                                <h4 className="text-xs font-semibold text-slate-800">Buchhaltung & Zahlungsdaten</h4>
                             </div>
 
                             <div className="grid grid-cols-12 gap-x-6 gap-y-4">
@@ -525,40 +610,101 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         />
                                     </div>
                                 )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">05</div>
+                                <h4 className="text-xs font-semibold text-slate-800">Bankverbindung</h4>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-x-6 gap-y-4">
                                 <div className="col-span-12">
                                     <Input
-                                        label="IBAN"
-                                        name="iban"
-                                        value={formData.iban}
+                                        label="Kontoinhaber"
+                                        name="bank_account_holder"
+                                        value={formData.bank_account_holder}
                                         onChange={handleChange}
-                                        placeholder="DE00 0000 0000 0000 0000 00"
+                                        placeholder={formData.type === 'company' || formData.type === 'authority' ? formData.company_name || 'Musterfirma GmbH' : `${formData.first_name || 'Max'} ${formData.last_name || 'Mustermann'}`.trim()}
+                                        helperText="Automatisch vorausgefüllt basierend auf dem Namen."
                                     />
                                 </div>
-                                <div className="col-span-12 md:col-span-4">
-                                    <Input
-                                        label="BIC"
-                                        name="bic"
-                                        value={formData.bic}
-                                        onChange={handleChange}
-                                        placeholder="ABCDEFGH"
-                                    />
+                                <div className="col-span-12">
+                                    <div className="flex flex-col">
+                                        <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">IBAN</label>
+                                        <div className="relative">
+                                            <IMaskInput
+                                                mask="aa00 0000 0000 0000 0000 00"
+                                                definitions={{ 'a': /[a-zA-Z]/ }}
+                                                placeholder="DE00 0000 0000 0000 0000 00"
+                                                value={formData.iban || ''}
+                                                onAccept={(value) => {
+                                                    setFormData(prev => ({ ...prev, iban: value.toUpperCase() }));
+                                                    setTouched(prev => ({ ...prev, iban: true }));
+                                                }}
+                                                onBlur={handleIbanBlur}
+                                                className={clsx(
+                                                    'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
+                                                    'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
+                                                    errors.iban && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
+                                                )}
+                                            />
+                                            {isValidatingIban && (
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                    <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {errors.iban && <span className="text-xs text-red-500 font-medium block mt-1">{errors.iban}</span>}
+                                    </div>
                                 </div>
-                                <div className="col-span-12 md:col-span-8">
+                                <div className="col-span-12 sm:col-span-4">
                                     <Input
                                         label="Bankname"
                                         name="bank_name"
                                         value={formData.bank_name}
                                         onChange={handleChange}
-                                        placeholder="Sparkasse XY"
+                                        placeholder="Musterbank AG"
                                     />
+                                </div>
+                                <div className="col-span-12 sm:col-span-4">
+                                    <Input
+                                        label="BLZ"
+                                        name="bank_code"
+                                        value={formData.bank_code}
+                                        onChange={handleChange}
+                                        placeholder="000 000 00"
+                                    />
+                                </div>
+                                <div className="col-span-12 sm:col-span-4">
+                                    <div className="flex flex-col">
+                                        <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">BIC</label>
+                                        <IMaskInput
+                                            mask="aaaaaa aa [aaa]"
+                                            definitions={{ 'a': /[a-zA-Z0-9]/ }}
+                                            placeholder="ABCDEFGH"
+                                            value={formData.bic || ''}
+                                            onAccept={(value) => {
+                                                setFormData(prev => ({ ...prev, bic: value.toUpperCase() }));
+                                                setTouched(prev => ({ ...prev, bic: true }));
+                                            }}
+                                            onBlur={handleBicBlur}
+                                            className={clsx(
+                                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
+                                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900'
+                                            )}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        {/* Section 4: Notes */}
+
+                        {/* Section 6: Notes */}
                         <div className="space-y-6 pb-10">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-brand-50 text-brand-700 flex items-center justify-center text-[10px] font-black uppercase">05</div>
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Interne Akte</h4>
+                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">06</div>
+                                <h4 className="text-xs font-semibold text-slate-800">Interne Akte</h4>
                             </div>
                             <Input
                                 isTextArea
@@ -577,13 +723,13 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-2 rounded border border-slate-300 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-sm"
+                            className="px-5 py-2 rounded border border-slate-300 text-slate-600 text-xs font-semibold hover:bg-white transition-all shadow-sm"
                         >
                             Abbrechen
                         </button>
                         <button
                             type="submit"
-                            className="px-8 py-2 bg-brand-700 text-white rounded text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-800 transition-all active:scale-95"
+                            className="px-8 py-2 bg-slate-900 text-white rounded text-xs font-semibold shadow-sm hover:bg-slate-800 transition-all"
                         >
                             {initialData ? 'Änderungen speichern' : 'Kunde anlegen'}
                         </button>

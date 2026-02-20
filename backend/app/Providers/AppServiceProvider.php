@@ -56,5 +56,9 @@ class AppServiceProvider extends ServiceProvider
                 'signature' => $queryParams['signature'] ?? ''
             ]);
         });
+
+        \Illuminate\Auth\Notifications\ResetPassword::createUrlUsing(function ($user, string $token) {
+            return env('FRONTEND_URL', 'http://localhost:5173') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+        });
     }
 }

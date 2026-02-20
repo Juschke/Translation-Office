@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['throttle:10,1'])->group(function () {
     Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
     Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']);
+    Route::post('/forgot-password', [\App\Http\Controllers\Api\AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [\App\Http\Controllers\Api\AuthController::class, 'resetPassword']);
 });
 
 Route::get('/email/verify/{id}/{hash}', [\App\Http\Controllers\Api\VerificationController::class, 'verify'])
@@ -81,6 +83,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('projects/bulk-update', [\App\Http\Controllers\Api\ProjectController::class, 'bulkUpdate']);
 
         // Invoices
+        Route::get('invoices/next-number', [\App\Http\Controllers\Api\InvoiceController::class, 'nextNumber']);
         Route::post('invoices/bulk-update', [\App\Http\Controllers\Api\InvoiceController::class, 'bulkUpdate']);
         Route::post('invoices/datev-export', [\App\Http\Controllers\Api\InvoiceController::class, 'datevExport']);
         Route::post('invoices/{invoice}/generate-pdf', [\App\Http\Controllers\Api\InvoiceController::class, 'generatePdf']);

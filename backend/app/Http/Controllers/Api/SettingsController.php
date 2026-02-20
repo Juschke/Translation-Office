@@ -54,24 +54,7 @@ class SettingsController extends Controller
             'website' => 'nullable|string',
             'domain' => 'nullable|string',
             'currency' => 'nullable|string',
-            'primary_color' => 'nullable|string',
-            // SMTP settings
-            'mail_host' => 'nullable|string',
-            'mail_port' => 'nullable|string',
-            'mail_username' => 'nullable|string',
-            'mail_password' => 'nullable|string',
-            'mail_encryption' => 'nullable|string',
-            // ID Settings
-            'customer_id_prefix' => 'nullable|string',
-            'partner_id_prefix' => 'nullable|string',
-            'project_id_prefix' => 'nullable|string',
-            'invoice_id_prefix' => 'nullable|string',
-            // Payment Methods
-            'payment_method_type' => 'nullable|string',
-            'paypal_email' => 'nullable|string',
-            'stripe_api_key' => 'nullable|string',
-            'stripe_secret' => 'nullable|string',
-            'credit_card_provider' => 'nullable|string',
+            'logo' => 'nullable|file|image|max:4096'
         ]);
 
         // Fields that exist in the Tenant model and should be synced
@@ -85,6 +68,7 @@ class SettingsController extends Controller
             'address_country',
             'phone',
             'email',
+            'website',
             'opening_hours',
             'tax_number',
             'vat_id',
@@ -113,8 +97,25 @@ class SettingsController extends Controller
         }
 
         // Sync back to tenant model for GoBD snapshots (InvoiceController reads from Tenant model)
-        if ($tenant && !empty($tenantUpdateData)) {
-            $tenant->update($tenantUpdateData);
+        if ($tenant) {
+            if (!empty($tenantUpdateData)) {
+                $tenant->update($tenantUpdateData);
+            }
+
+            // Handle logo specifically
+            if ($request->hasFile('logo')) {
+                $path = $request->file('logo')->store('tenant_logos', 'public');
+                $tenantSettings = $tenant->settings ?? [];
+                $tenantSettings['company_logo'] = $path;
+                $tenant->settings = $tenantSettings;
+                $tenant->save();
+
+                // Also save to settings table for consistency
+                \App\Models\TenantSetting::updateOrCreate(
+                    ['tenant_id' => $tenantId, 'key' => 'company_logo'],
+                    ['value' => $path]
+                );
+            }
         }
 
         return response()->json(['message' => 'Settings updated successfully']);

@@ -23,8 +23,25 @@
             text-align: right;
         }
 
+        .text-center {
+            text-align: center;
+        }
+
         .font-bold {
             font-weight: bold;
+        }
+
+        .font-medium {
+            font-weight: 500;
+        }
+
+        .text-muted {
+            color: #64748b;
+        }
+
+        .text-small {
+            font-size: 7.5pt;
+            color: #64748b;
         }
 
         /* ── DIN 5008 Falzmarken & Lochmarke ── */
@@ -37,43 +54,34 @@
             border-top: 0.5pt solid #999;
         }
 
-        /* Obere Falzmarke: 105mm vom oberen Blattrand */
         .fold-mark-top {
             top: 85mm;
-            /* 105mm - 20mm page margin */
         }
 
-        /* Lochmarke: 148.5mm vom oberen Blattrand */
         .punch-mark {
             top: 128.5mm;
-            /* 148.5mm - 20mm page margin */
         }
 
-        /* Untere Falzmarke: 210mm vom oberen Blattrand */
         .fold-mark-bottom {
             top: 190mm;
-            /* 210mm - 20mm page margin */
         }
 
         /* ── Anschriftfeld DIN 5008 Form B ── */
-        /* Beginnt bei 45mm vom oberen Blattrand = 25mm vom Content-Start */
         .address-field {
             position: relative;
             margin-top: 15mm;
             width: 85mm;
         }
 
-        /* Rücksendeangabe (Zusatz- und Vermerkzone) */
         .sender-small {
             font-size: 6.5pt;
             text-decoration: underline;
-            color: #555;
+            color: #64748b;
             line-height: 1.2;
             height: 5mm;
             overflow: hidden;
         }
 
-        /* Empfängeradresse */
         .recipient-address {
             margin-top: 1mm;
             font-size: 10pt;
@@ -84,7 +92,7 @@
             margin: 0;
         }
 
-        /* ── Header-Bereich (Anschrift links, Info rechts) ── */
+        /* ── Header-Bereich ── */
         .header-container {
             width: 100%;
             margin-bottom: 8mm;
@@ -97,7 +105,7 @@
 
         .info-box {
             float: right;
-            width: 75mm;
+            width: 65mm;
             margin-top: 15mm;
         }
 
@@ -107,9 +115,13 @@
         }
 
         .info-table td {
-            padding: 1mm 0;
-            font-size: 8.5pt;
-            border-bottom: 0.1mm solid #eee;
+            padding: 1.2mm 0;
+            font-size: 9pt;
+        }
+
+        .info-table td:first-child {
+            color: #64748b;
+            font-weight: 500;
         }
 
         /* ── Titel & Einleitung ── */
@@ -120,12 +132,14 @@
 
         .title {
             font-size: 12pt;
-            font-weight: bold;
+            font-weight: 500;
             margin-bottom: 3mm;
         }
 
         .intro-text {
-            margin-bottom: 4mm;
+            margin-bottom: 5mm;
+            font-size: 9pt;
+            line-height: 1.5;
         }
 
         /* ── Positions-Tabelle ── */
@@ -139,22 +153,29 @@
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
             text-align: left;
-            padding: 2mm 1mm;
+            padding: 2mm 1.5mm;
             font-size: 8.5pt;
+            font-weight: 600;
+            color: #64748b;
         }
 
         .items-table td {
-            padding: 1.5mm 1mm;
-            border-bottom: 0.1mm solid #eee;
+            padding: 2mm 1.5mm;
+            border-bottom: 0.1mm solid #e2e8f0;
             vertical-align: top;
-            font-size: 8.5pt;
+            font-size: 9pt;
+        }
+
+        .items-table td.pos-nr {
+            color: #94a3b8;
+            text-align: center;
         }
 
         /* ── Summen-Bereich ── */
         .totals-wrapper {
             float: right;
-            width: 70mm;
-            margin-top: 3mm;
+            width: 80mm;
+            margin-top: 4mm;
         }
 
         .totals-table {
@@ -173,10 +194,24 @@
             font-size: 10pt;
         }
 
-        /* ── Zahlungsbedingungen ── */
+        .total-due {
+            border-top: 0.5pt solid #e2e8f0;
+        }
+
+        .text-green {
+            color: #059669;
+        }
+
+        .text-red {
+            color: #dc2626;
+        }
+
+        /* ── Zahlungshinweis ── */
         .payment-terms {
             clear: both;
-            margin-top: 8mm;
+            margin-top: 10mm;
+            padding-top: 4mm;
+            border-top: 0.1mm solid #e2e8f0;
             font-size: 9pt;
         }
 
@@ -184,7 +219,7 @@
             margin: 0 0 2mm 0;
         }
 
-        /* ── Footer (fixiert am Seitenende) ── */
+        /* ── Footer ── */
         .footer {
             position: fixed;
             bottom: -20mm;
@@ -195,7 +230,7 @@
             padding-top: 2mm;
             font-size: 7pt;
             line-height: 1.3;
-            color: #444;
+            color: #64748b;
         }
 
         .footer-table {
@@ -215,6 +250,13 @@
         .footer-table td:last-child {
             padding-right: 0;
         }
+
+        .footer-label {
+            font-weight: bold;
+            color: #475569;
+            display: block;
+            margin-bottom: 1mm;
+        }
     </style>
 </head>
 
@@ -225,10 +267,28 @@
         $tenant = \App\Models\Tenant::find($tId);
         $settings = \App\Models\TenantSetting::where('tenant_id', $tId)->pluck('value', 'key');
 
-        $companyName = $tenant->company_name ?? $tenant->name ?? $settings['company_name'] ?? 'Amplicore GmbH';
-        $fullAddressLine = ($tenant->address_street ?? $settings['address_street'] ?? 'Sandkamp 1') . ' · ' .
-            ($tenant->address_zip ?? $settings['address_zip'] ?? '22111') . ' ' .
-            ($tenant->address_city ?? $settings['address_city'] ?? 'Hamburg');
+        $companyName = $tenant->company_name ?? $tenant->name ?? $settings['company_name'] ?? 'Firma';
+        $companyStreet = ($tenant->address_street ?? $settings['address_street'] ?? '') . ' ' . ($tenant->address_house_no ?? '');
+        $companyZip = $tenant->address_zip ?? $settings['address_zip'] ?? '';
+        $companyCity = $tenant->address_city ?? $settings['address_city'] ?? '';
+        $companyCountry = $tenant->address_country ?? $settings['address_country'] ?? 'Deutschland';
+        $fullAddressLine = trim($companyStreet) . ' · ' . $companyZip . ' ' . $companyCity . ' · ' . $companyCountry;
+
+        $companyEmail = $tenant->email ?? $settings['email'] ?? $settings['company_email'] ?? '';
+        $companyPhone = $tenant->phone ?? $settings['phone'] ?? '';
+        $companyBank = $tenant->bank_name ?? $settings['bank_name'] ?? '';
+        $companyIBAN = $tenant->bank_iban ?? $settings['bank_iban'] ?? '';
+        $companyBIC = $tenant->bank_bic ?? $settings['bank_bic'] ?? '';
+        $companyTaxNr = $tenant->tax_number ?? $settings['tax_number'] ?? '';
+        $companyVatId = $tenant->vat_id ?? $settings['vat_id'] ?? '';
+
+        $isCreditNote = ($invoice->buyer->custom_fields['invoice_type'] ?? 'invoice') === 'credit_note';
+        $docTypeLabel = $isCreditNote ? 'Gutschrift' : 'Rechnung';
+
+        // Paid amount & due amount
+        $paidAmount = $invoice->buyer->custom_fields['paid_amount'] ?? 0;
+        $grossAmount = $invoice->total_amount ?? 0;
+        $dueAmount = max(0, $grossAmount - $paidAmount);
     @endphp
 
     {{-- DIN 5008 Falzmarken und Lochmarke --}}
@@ -236,54 +296,36 @@
     <div class="punch-mark"></div>
     <div class="fold-mark-bottom"></div>
 
-    {{-- Footer (muss im DOM vor dem Content stehen für dompdf fixed positioning) --}}
+    {{-- Footer --}}
     <div class="footer">
         <table class="footer-table">
             <tr>
                 <td style="width: 30%;">
-                    <strong>{{ $companyName }}</strong><br>
-                    {{ $tenant->address_street ?? $settings['address_street'] ?? 'Sandkamp 1' }}<br>
-                    {{ $tenant->address_zip ?? $settings['address_zip'] ?? '22111' }}
-                    {{ $tenant->address_city ?? $settings['address_city'] ?? 'Hamburg' }}<br>
-
-                    @if(!empty($tenant->tax_number) || !empty($settings['tax_number']))
-                        Steuer-Nr.: {{ $tenant->tax_number ?? $settings['tax_number'] }}<br>
-                    @endif
-
-                    @if(!empty($tenant->vat_id) || !empty($settings['vat_id']))
-                        USt-IdNr.: {{ $tenant->vat_id ?? $settings['vat_id'] }}<br>
-                    @endif
-
-                    @if(!empty($tenant->tax_office))
-                        Finanzamt: {{ $tenant->tax_office }}
-                    @endif
+                    <span class="footer-label">Anschrift</span>
+                    {{ $companyName }}<br>
+                    {{ trim($companyStreet) }}<br>
+                    {{ $companyZip }} {{ $companyCity }}<br>
+                    {{ $companyCountry }}
                 </td>
                 <td style="width: 30%;">
-                    <strong>Kontakt</strong><br>
-                    @if(!empty($tenant->phone) || !empty($settings['phone']))
-                        Tel: {{ $tenant->phone ?? $settings['phone'] }}<br>
+                    <span class="footer-label">Kontakt</span>
+                    @if($companyEmail)
+                        Email: {{ $companyEmail }}<br>
                     @endif
-
-                    @if(!empty($tenant->email) || !empty($settings['email']) || !empty($settings['company_email']))
-                        {{ $tenant->email ?? $settings['email'] ?? $settings['company_email'] }}<br>
-                    @endif
-
-                    @if(!empty($tenant->domain) || !empty($settings['website']))
-                        {{ $tenant->domain ?? $settings['website'] }}
+                    @if($companyPhone)
+                        Telefon: {{ $companyPhone }}
                     @endif
                 </td>
                 <td style="width: 40%;">
-                    <strong>Bankverbindung</strong><br>
-                    @if(!empty($tenant->bank_name) || !empty($settings['bank_name']))
-                        {{ $tenant->bank_name ?? $settings['bank_name'] }}<br>
+                    <span class="footer-label">Steuer & Bank</span>
+                    @if($companyTaxNr)
+                        St.-Nr: {{ $companyTaxNr }}<br>
                     @endif
-
-                    @if(!empty($tenant->bank_iban) || !empty($settings['bank_iban']))
-                        IBAN: {{ $tenant->bank_iban ?? $settings['bank_iban'] }}<br>
+                    @if($companyVatId)
+                        USt-ID: {{ $companyVatId }}<br>
                     @endif
-
-                    @if(!empty($tenant->bank_bic) || !empty($settings['bank_bic']))
-                        BIC: {{ $tenant->bank_bic ?? $settings['bank_bic'] }}
+                    @if($companyIBAN)
+                        IBAN: {{ $companyIBAN }}
                     @endif
                 </td>
             </tr>
@@ -314,34 +356,25 @@
         <div class="info-box">
             <table class="info-table">
                 <tr>
-                    <td class="font-bold">Rechnungs-Nr.</td>
+                    <td>{{ $docTypeLabel }}-Nr.</td>
                     <td class="text-right">{{ $invoice->name }}</td>
                 </tr>
                 <tr>
-                    <td class="font-bold">Rechnungsdatum</td>
+                    <td>Datum</td>
                     <td class="text-right">
-                        {{ $invoice->date ? $invoice->date->format('d.m.Y') : now()->format('d.m.Y') }}</td>
+                        {{ $invoice->date ? $invoice->date->format('d.m.Y') : now()->format('d.m.Y') }}
+                    </td>
                 </tr>
-                @if(isset($invoice->buyer->custom_fields['reference']))
+                @if(isset($invoice->buyer->custom_fields['due_date']))
                     <tr>
-                        <td class="font-bold">Referenz</td>
-                        <td class="text-right">{{ $invoice->buyer->custom_fields['reference'] }}</td>
+                        <td>Fällig am</td>
+                        <td class="text-right">{{ $invoice->buyer->custom_fields['due_date'] }}</td>
                     </tr>
                 @endif
                 @if(isset($invoice->buyer->custom_fields['service_period']))
                     <tr>
-                        <td class="font-bold">Leistungszeitraum</td>
+                        <td>Leistungszeitraum</td>
                         <td class="text-right">{{ $invoice->buyer->custom_fields['service_period'] }}</td>
-                    </tr>
-                @endif
-                <tr>
-                    <td class="font-bold">Kundennummer</td>
-                    <td class="text-right">{{ $invoice->buyer->custom_fields['customer_id'] ?? '' }}</td>
-                </tr>
-                @if(isset($invoice->buyer->custom_fields['due_date']))
-                    <tr>
-                        <td class="font-bold">Fälligkeitsdatum</td>
-                        <td class="text-right">{{ $invoice->buyer->custom_fields['due_date'] }}</td>
                     </tr>
                 @endif
             </table>
@@ -350,41 +383,40 @@
 
     {{-- Rechnungsinhalt --}}
     <div class="content-body">
-        @php
-            $docTitle = ($invoice->buyer->custom_fields['invoice_type'] ?? 'invoice') === 'credit_note'
-                ? 'Gutschrift Nr. ' . $invoice->name
-                : 'Rechnung Nr. ' . $invoice->name;
-        @endphp
-        <div class="title">{{ $docTitle }}</div>
+        <div class="title">{{ $docTypeLabel }} Nr. {{ $invoice->name }}</div>
 
         <div class="intro-text">
-            Sehr geehrte Damen und Herren,<br>
-            @if(($invoice->buyer->custom_fields['invoice_type'] ?? 'invoice') === 'credit_note')
-                hiermit erhalten Sie die folgende Gutschrift:
+            Sehr geehrte Damen und Herren,<br><br>
+            @if($isCreditNote)
+                wir erstellen Ihnen hiermit folgende Gutschrift:
             @else
-                vielen Dank für Ihren Auftrag! Hiermit stellen wir Ihnen die folgenden Leistungen in Rechnung:
+                wir stellen Ihnen hiermit folgende Leistungen in Rechnung:
             @endif
         </div>
 
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 50%">Beschreibung</th>
-                    <th class="text-right" style="width: 10%">Menge</th>
-                    <th class="text-right" style="width: 20%">Einzelpreis</th>
-                    <th class="text-right" style="width: 20%">Gesamtpreis</th>
+                    <th style="width: 5%; text-align: center;">Pos.</th>
+                    <th style="width: 40%">Leistung</th>
+                    <th class="text-right" style="width: 12%">Menge</th>
+                    <th class="text-right" style="width: 13%">Einheit</th>
+                    <th class="text-right" style="width: 15%">Einzel</th>
+                    <th class="text-right" style="width: 15%">Gesamt</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($invoice->items as $item)
+                @foreach($invoice->items as $index => $item)
                     <tr>
+                        <td class="pos-nr">{{ $index + 1 }}</td>
                         <td>
                             <strong>{{ $item->title }}</strong>
                             @if($item->description)
-                                <br><span style="font-size: 7.5pt; color: #666;">{{ $item->description }}</span>
+                                <br><span class="text-small">{{ $item->description }}</span>
                             @endif
                         </td>
                         <td class="text-right">{{ number_format($item->quantity, 2, ',', '.') }}</td>
+                        <td class="text-right">{{ $item->units ?? 'Stk' }}</td>
                         <td class="text-right">{{ number_format($item->price_per_unit, 2, ',', '.') }} €</td>
                         <td class="text-right">{{ number_format($item->sub_total_price, 2, ',', '.') }} €</td>
                     </tr>
@@ -395,19 +427,51 @@
         <div class="totals-wrapper">
             <table class="totals-table">
                 <tr>
-                    <td class="text-right">Nettobetrag:</td>
+                    <td>Nettosumme:</td>
                     <td class="text-right">{{ number_format($invoice->taxable_amount, 2, ',', '.') }} €</td>
                 </tr>
                 @if($invoice->total_taxes > 0)
                     <tr>
-                        <td class="text-right">USt. {{ number_format($invoice->tax_rate ?? 19, 0) }}%:</td>
+                        <td>Umsatzsteuer {{ number_format($invoice->tax_rate ?? 19, 0) }}%:</td>
                         <td class="text-right">{{ number_format($invoice->total_taxes, 2, ',', '.') }} €</td>
+                    </tr>
+                @elseif(isset($invoice->buyer->custom_fields['invoice_type']) && $invoice->buyer->custom_fields['invoice_type'] !== 'credit_note')
+                    <tr>
+                        <td colspan="2" class="text-right text-small" style="font-style: italic;">
+                            Kein USt-Ausweis gem. § 19 UStG
+                        </td>
+                    </tr>
+                @endif
+                @if(isset($invoice->total_shipping) && $invoice->total_shipping > 0)
+                    <tr>
+                        <td>Versandkosten:</td>
+                        <td class="text-right">{{ number_format($invoice->total_shipping, 2, ',', '.') }} €</td>
+                    </tr>
+                @endif
+                @if(isset($invoice->total_discount) && $invoice->total_discount > 0)
+                    <tr>
+                        <td>Rabatt:</td>
+                        <td class="text-right">- {{ number_format($invoice->total_discount, 2, ',', '.') }} €</td>
                     </tr>
                 @endif
                 <tr class="total-brutto">
-                    <td class="text-right">Bruttobetrag:</td>
+                    <td>Gesamtbetrag:</td>
                     <td class="text-right">{{ number_format($invoice->total_amount, 2, ',', '.') }} €</td>
                 </tr>
+                @if($paidAmount > 0)
+                    <tr>
+                        <td class="text-muted">Bereits bezahlt:</td>
+                        <td class="text-right text-muted">- {{ number_format($paidAmount, 2, ',', '.') }} €</td>
+                    </tr>
+                    <tr class="total-due">
+                        <td class="font-bold {{ $dueAmount <= 0 ? 'text-green' : 'text-red' }}">
+                            {{ $dueAmount <= 0 ? 'Betrag beglichen' : 'Noch zu zahlen:' }}
+                        </td>
+                        <td class="text-right font-bold {{ $dueAmount <= 0 ? 'text-green' : 'text-red' }}">
+                            {{ number_format($dueAmount, 2, ',', '.') }} €
+                        </td>
+                    </tr>
+                @endif
             </table>
         </div>
 
@@ -417,15 +481,23 @@
             @endif
 
             <p>
-                <strong>Zahlungsbedingungen:</strong> Zahlung innerhalb von 14 Tagen ab Rechnungseingang ohne Abzüge.
+                Bitte überweisen Sie den Betrag von <strong>{{ number_format($dueAmount > 0 ? $dueAmount : $grossAmount, 2, ',', '.') }} €</strong>
                 @if(isset($invoice->buyer->custom_fields['due_date']))
-                    <br>Der Rechnungsbetrag ist bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong>
-                    fällig.
+                    bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong>.
+                @else
+                    innerhalb von 14 Tagen ab Rechnungseingang.
                 @endif
+                <br>Verwendungszweck: <strong>{{ $invoice->name }}</strong>
             </p>
-            <p>Bitte überweisen Sie den Betrag auf das unten angegebene Konto unter Angabe der Rechnungsnummer
-                <strong>{{ $invoice->name }}</strong>.</p>
-            <p>Mit freundlichen Grüßen,<br>{{ $settings['ceo_name'] ?? $companyName }}</p>
+
+            @if($companyBank || $companyIBAN)
+                <p>
+                    <strong>Bankverbindung:</strong>
+                    {{ $companyBank }}
+                    @if($companyIBAN) | IBAN: {{ $companyIBAN }} @endif
+                    @if($companyBIC) | BIC: {{ $companyBIC }} @endif
+                </p>
+            @endif
         </div>
     </div>
 

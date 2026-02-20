@@ -2,49 +2,87 @@
 @import "react-datepicker/dist/react-datepicker.css";
 @plugin "tailwindcss-animate";
 
-@theme {
-  --font-sans: 'Outfit', sans-serif;
+/* ============================================
+   SHADCN-STYLE DESIGN SYSTEM
+   HSL CSS Variables — Single Source of Truth
+   ============================================ */
 
-  /* Brand colors — cool, muted teal palette */
-  --color-brand-50: #f0f9f8;
-  --color-brand-100: #d5efec;
-  --color-brand-200: #a8ddd7;
-  --color-brand-300: #6fc4bc;
-  --color-brand-400: #3ea8a0;
-  --color-brand-500: #1a8f88;
-  --color-brand-600: #13756f;
-  --color-brand-700: #0f5f5b;
-  --color-brand-800: #0c4a47;
-  --color-brand-900: #093836;
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+
+  --radius: 0.375rem;
+
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
 }
 
-/* ============================================
-   DESIGN TOKENS — Single Source of Truth
-   border-radius: 2px (rounded-sm) everywhere
-   spacing scale: 4px base
-   ============================================ */
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Neutral palette for shadcn-style */
+  --color-brand-50: hsl(210 40% 98%);
+  --color-brand-100: hsl(210 40% 96.1%);
+  --color-brand-200: hsl(214.3 31.8% 91.4%);
+  --color-brand-300: hsl(212.7 26.8% 83.9%);
+  --color-brand-400: hsl(215 20.2% 65.1%);
+  --color-brand-500: hsl(215.4 16.3% 46.9%);
+  --color-brand-600: hsl(215.3 25% 26.7%);
+  --color-brand-700: hsl(217.2 32.6% 17.5%);
+  --color-brand-800: hsl(222.2 47.4% 11.2%);
+  --color-brand-900: hsl(222.2 84% 4.9%);
+}
 
 @layer base {
   body {
-    @apply antialiased bg-[#F3F4F6] text-slate-700 font-sans h-screen flex flex-col overflow-hidden;
-    min-width: 320px;
+    @apply antialiased bg-white text-slate-900 font-sans h-screen flex flex-col overflow-hidden;
+    min-width: 375px;
+    overflow-x: hidden;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: -0.011em;
   }
 
-  /* Focus styles — consistent across all interactive elements */
+  /* Focus styles — ring-based, shadcn-style */
   input:focus,
   select:focus,
   textarea:focus {
-    @apply outline-none ring-2 ring-brand-500/20 border-brand-500;
+    @apply outline-none ring-2 ring-slate-950/5 border-slate-400;
   }
 
   button:focus-visible {
-    @apply outline-none ring-2 ring-brand-500/20 ring-offset-1;
+    @apply outline-none ring-2 ring-slate-950/10 ring-offset-1;
   }
 
   /* Consistent selection color */
   ::selection {
-    @apply bg-brand-200/50;
+    @apply bg-slate-200;
   }
 
   button,
@@ -54,13 +92,23 @@
   .cursor-pointer-all {
     cursor: pointer !important;
   }
+
+  /* Headlines: tracking-tight */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply tracking-tight;
+  }
 }
 
 /* ====== ANIMATIONS ====== */
 
 .fade-in,
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-in-out;
+  animation: fadeIn 0.15s ease-in-out;
 }
 
 @keyframes fadeIn {
@@ -108,12 +156,12 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: hsl(var(--border));
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: hsl(var(--muted-foreground) / 0.3);
 }
 
 /* Hide scrollbar but keep scroll behavior */
@@ -138,24 +186,25 @@
 }
 
 .react-datepicker {
-  font-family: 'Outfit', sans-serif !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  border-color: hsl(var(--border)) !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+  border-radius: var(--radius) !important;
 }
 
 .react-datepicker__header {
-  background: #f8fafc !important;
-  border-bottom-color: #e2e8f0 !important;
+  background: hsl(var(--muted)) !important;
+  border-bottom-color: hsl(var(--border)) !important;
 }
 
 .react-datepicker__day--selected,
 .react-datepicker__day--in-range {
-  background-color: #13756f !important;
+  background-color: hsl(var(--primary)) !important;
 }
 
 .react-datepicker__day:hover {
-  background-color: #f0f9f8 !important;
-  color: #13756f !important;
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 /* ====== EMAIL CONTENT ====== */
@@ -174,7 +223,7 @@
 }
 
 .email-content-container a {
-  color: #0f5f5b;
+  color: hsl(var(--primary));
   text-decoration: underline;
 }
 
@@ -202,7 +251,7 @@
 }
 
 .quill-container .ql-toolbar {
-  background: #f8fafc;
+  background: hsl(var(--muted));
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
@@ -211,15 +260,15 @@
 .quill-modern {
   display: flex;
   flex-direction: column;
-  background: #f8fafc;
-  border-radius: 2px;
+  background: hsl(var(--muted));
+  border-radius: var(--radius);
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid hsl(var(--border));
 }
 
 .quill-modern .ql-toolbar {
   border: none !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
   background: white !important;
   padding: 12px !important;
 }
@@ -284,7 +333,7 @@
 }
 
 .animate-slideUp {
-  animation: slideUp 0.25s ease-out;
+  animation: slideUp 0.2s ease-out;
 }
 
 /* ====== PRINT STYLES ====== */

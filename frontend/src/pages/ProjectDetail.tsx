@@ -169,6 +169,7 @@ const ProjectDetail = () => {
     const [isCustomerEditModalOpen, setIsCustomerEditModalOpen] = useState(false);
     const [isPartnerEditModalOpen, setIsPartnerEditModalOpen] = useState(false);
     const [deleteFileConfirm, setDeleteFileConfirm] = useState<{ isOpen: boolean; fileId: string | null; fileName: string }>({ isOpen: false, fileId: null, fileName: '' });
+    const [isProjectDeleteConfirmOpen, setIsProjectDeleteConfirmOpen] = useState(false);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
     // Comprehensive Project State
@@ -322,14 +323,14 @@ const ProjectDetail = () => {
 
     // addWorkingDays kept for future use
     // const addWorkingDays = (days: number) => {
-    //     if (!projectData) return;
-    //     let date = new Date();
-    //     let added = 0;
-    //     while (added < days) {
-    //         date.setDate(date.getDate() + 1);
-    //         if (date.getDay() !== 0 && date.getDay() !== 6) added++;
-    //     }
-    //     updateProjectMutation.mutate({ deadline: date.toISOString().split('T')[0] });
+    // if (!projectData) return;
+    // let date = new Date();
+    // let added = 0;
+    // while (added < days) {
+    // date.setDate(date.getDate() + 1);
+    // if (date.getDay() !== 0 && date.getDay() !== 6) added++;
+    // }
+    // updateProjectMutation.mutate({ deadline: date.toISOString().split('T')[0] });
     // };
 
     const getLanguageInfo = (code: string) => {
@@ -352,6 +353,22 @@ const ProjectDetail = () => {
         },
         onError: () => {
             toast.error('Fehler beim Aktualisieren des Projekts');
+        }
+    });
+
+    const deleteProjectMutation = useMutation({
+        mutationFn: (projectId: string) => projectService.delete(projectId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+            toast.success('Projekt erfolgreich gelöscht');
+            navigate('/projects');
+        },
+        onError: () => {
+            toast.error('Fehler beim Löschen des Projekts');
+        },
+        onSettled: () => {
+            setIsProjectDeleteConfirmOpen(false);
         }
     });
 
@@ -447,7 +464,7 @@ const ProjectDetail = () => {
         };
 
         return (
-            <div className={clsx("flex items-center gap-2 text-xs font-bold uppercase tracking-tight", colors[status] || 'text-slate-600')}>
+            <div className={clsx("flex items-center gap-2 text-xs font-medium", colors[status] || 'text-slate-600')}>
                 {icons[status] || <FaClock />}
                 <span>{labels[status] || status}</span>
             </div>
@@ -693,7 +710,7 @@ const ProjectDetail = () => {
             {/* Project Header Container */}
             <div className="bg-white border-b border-slate-200 shadow-sm">
                 <div className="max-w-[1600px] mx-auto">
-                    <div className="px-4 md:px-8 py-4">
+                    <div className="px-3 sm:px-4 md:px-8 py-4">
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-4">
                                 <button
@@ -704,14 +721,14 @@ const ProjectDetail = () => {
                                 </button>
 
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-black border border-brand-100 shadow-sm shrink-0">
+                                    <div className="w-12 h-12 rounded-sm bg-slate-50 text-slate-700 flex items-center justify-center text-xl font-semibold border border-slate-100 shadow-sm shrink-0">
                                         {projectData.name.substring(0, 2).toUpperCase()}
                                     </div>
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-3 flex-wrap">
-                                            <h1 className="text-lg md:text-xl font-black text-slate-800 truncate tracking-tight">{projectData.name}</h1>
+                                            <h1 className="text-lg md:text-xl font-semibold text-slate-800 tracking-tight break-words min-w-0" style={{ wordBreak: 'break-word' }}>{projectData.name}</h1>
                                             {projectData.priority !== 'low' && (
-                                                <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
+                                                <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0",
                                                     projectData.priority === 'express' ? "bg-red-50 text-red-600 border-red-100" : "bg-orange-50 text-orange-600 border-orange-100"
                                                 )}>
                                                     {projectData.priority === 'express' ? <FaBolt /> : <FaFlag />}
@@ -719,35 +736,42 @@ const ProjectDetail = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-4 text-[11px] text-slate-400 font-medium mt-1">
+                                        <div className="flex items-center gap-2 md:gap-4 text-sm text-slate-400 font-medium mt-1 flex-wrap">
                                             {getStatusBadge(projectData.status)}
-                                            <span className="text-slate-200">|</span>
-                                            <span>ID: <span className="text-slate-600 font-bold">{projectData.id}</span></span>
+                                            <span className="text-slate-200 hidden sm:inline">|</span>
+                                            <span>ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 md:justify-end pl-12 md:pl-0">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end mt-4 md:mt-0">
                                 <button
                                     onClick={() => setIsEditModalOpen(true)}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEdit /> Bearbeiten
                                 </button>
 
                                 <button
-                                    onClick={() => handleDownloadConfirmation('order_confirmation')}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                                    onClick={() => setIsProjectDeleteConfirmOpen(true)}
+                                    className="bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
-                                    <FaFilePdf className="text-brand-500" /> Auftrag
+                                    <FaTrashAlt /> Löschen
+                                </button>
+
+                                <button
+                                    onClick={() => handleDownloadConfirmation('order_confirmation')}
+                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                >
+                                    <FaFilePdf className="text-slate-600" /> Auftrag
                                 </button>
 
                                 <button
                                     onClick={() => handleDownloadConfirmation('pickup_confirmation')}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
-                                    <FaFilePdf className="text-brand-500" /> Abholung
+                                    <FaFilePdf className="text-slate-600" /> Abholung
                                 </button>
 
                                 {(() => {
@@ -771,15 +795,15 @@ const ProjectDetail = () => {
                                     return activeInvoice ? (
                                         <button
                                             onClick={() => handleDownloadInvoice(Number(activeInvoice.id))}
-                                            className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition hover:bg-emerald-100 active:scale-95"
+                                            className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition hover:bg-emerald-100 flex-1 sm:flex-none justify-center"
                                             title={`Rechnung ${activeInvoice.invoice_number} öffnen`}
                                         >
-                                            <FaFileInvoiceDollar /> {activeInvoice.invoice_number}
+                                            <FaFileInvoiceDollar /> <span className="truncate">{activeInvoice.invoice_number}</span>
                                         </button>
                                     ) : (
                                         <button
                                             onClick={() => setIsInvoiceModalOpen(true)}
-                                            className="bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 px-4 py-2 rounded-sm text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95"
+                                            className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                         >
                                             <FaFileInvoiceDollar /> Rechnung
                                         </button>
@@ -790,7 +814,7 @@ const ProjectDetail = () => {
                     </div>
 
                     {/* Meta Info Bar */}
-                    <div className="px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-6 text-[10px] text-slate-400 flex-wrap">
+                    <div className="px-3 sm:px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-4 sm:gap-6 text-xs text-slate-400 flex-wrap">
                         <div className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                             <span>Erstellt am <span className="text-slate-600">{projectData.createdAt}</span> {projectData.creator && `von ${projectData.creator.name}`}</span>
@@ -803,12 +827,12 @@ const ProjectDetail = () => {
                     </div>
 
                     {/* Tabs Navigation */}
-                    <div className="px-4 md:px-8 border-t border-slate-100 flex items-center justify-between md:justify-start">
+                    <div className="px-3 sm:px-4 md:px-8 border-t border-slate-100 flex items-center justify-between md:justify-start">
                         {/* Mobile Tab Menu Button */}
                         <div className="md:hidden flex-1 py-3">
                             <button
                                 onClick={() => setIsTabMenuOpen(!isTabMenuOpen)}
-                                className="flex items-center gap-3 text-slate-600 font-black uppercase tracking-widest text-[11px] hover:text-brand-600 transition-colors w-full"
+                                className="flex items-center gap-3 text-slate-600 font-semibold text-sm hover:text-slate-700 transition-colors w-full"
                             >
                                 <div className="w-4 h-3 flex flex-col justify-between">
                                     <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "rotate-45 translate-y-1" : "")}></span>
@@ -843,17 +867,17 @@ const ProjectDetail = () => {
                                             setIsTabMenuOpen(false);
                                         }}
                                         className={clsx(
-                                            "py-4 text-[11px] font-black uppercase tracking-widest border-b-2 transition-all relative flex items-center gap-2.5 -mb-[1px]",
+                                            "py-4 text-sm font-medium border-b-2 transition-all relative flex items-center gap-2.5 -mb-[1px]",
                                             isActive
-                                                ? 'border-brand-600 text-brand-700'
+                                                ? 'border-slate-900 text-slate-900'
                                                 : 'border-transparent text-slate-400 hover:text-slate-600'
                                         )}
                                     >
-                                        {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
-                                        {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
-                                        {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
-                                        {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
-                                        {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-brand-500" : "text-slate-300")} />}
+                                        {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
+                                        {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
+                                        {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
+                                        {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
+                                        {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
 
                                         {tab === 'overview' ? 'Stammdaten' :
                                             tab === 'files' ? 'Dateien' :
@@ -862,8 +886,8 @@ const ProjectDetail = () => {
 
                                         {tab !== 'overview' && tab !== 'history' && (
                                             <span className={clsx(
-                                                "px-2 py-0.5 rounded-full text-[9px] font-bold transition-colors",
-                                                isActive ? "bg-brand-100 text-brand-700" : "bg-slate-100 text-slate-500"
+                                                "px-2 py-0.5 rounded-full text-xs font-medium transition-colors",
+                                                isActive ? "bg-slate-100 text-slate-900" : "bg-slate-100 text-slate-500"
                                             )}>
                                                 {badgeCount}
                                             </span>
@@ -894,9 +918,9 @@ const ProjectDetail = () => {
                                                 setIsTabMenuOpen(false);
                                             }}
                                             className={clsx(
-                                                "px-6 py-4 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 border-l-4 transition-all",
+                                                "px-6 py-4 text-sm font-medium flex items-center gap-4 border-l-4 transition-all",
                                                 isActive
-                                                    ? 'border-brand-600 bg-brand-50 text-brand-700'
+                                                    ? 'border-slate-900 bg-slate-50 text-slate-900'
                                                     : 'border-transparent text-slate-500 hover:bg-slate-50'
                                             )}
                                         >
@@ -915,8 +939,8 @@ const ProjectDetail = () => {
 
                                             {tab !== 'overview' && tab !== 'history' && (
                                                 <span className={clsx(
-                                                    "px-2 py-0.5 rounded-full text-[9px] font-bold",
-                                                    isActive ? "bg-brand-200 text-brand-700" : "bg-slate-100 text-slate-500"
+                                                    "px-2 py-0.5 rounded-full text-xs font-medium",
+                                                    isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
                                                 )}>
                                                     {badgeCount}
                                                 </span>
@@ -931,7 +955,7 @@ const ProjectDetail = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 max-w-[1600px] mx-auto w-full px-4 md:px-8 py-8 transition-all duration-300">
+            <div className="flex-1 max-w-[1600px] mx-auto w-full px-3 sm:px-4 md:px-8 py-4 sm:py-8 transition-all duration-300">
                 {activeTab === 'overview' && (
                     <ProjectOverviewTab
                         projectData={projectData}
@@ -1080,8 +1104,18 @@ const ProjectDetail = () => {
                 message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen ? Diese Aktion kann nicht rückgängig gemacht werden.`}
                 confirmText="Löschen"
                 cancelText="Abbrechen"
-                type="danger"
                 isLoading={deleteFileMutation.isPending}
+            />
+            <ConfirmModal
+                isOpen={isProjectDeleteConfirmOpen}
+                onClose={() => setIsProjectDeleteConfirmOpen(false)}
+                onConfirm={() => deleteProjectMutation.mutate(id!)}
+                title="Projekt löschen"
+                message={`Möchten Sie das Projekt "${projectData.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                confirmText="Löschen"
+                cancelText="Abbrechen"
+                type="danger"
+                isLoading={deleteProjectMutation.isPending}
             />
             <InviteParticipantModal
                 isOpen={isInviteModalOpen}

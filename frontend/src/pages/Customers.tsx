@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
-    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter
+    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter, FaUserPlus
 } from 'react-icons/fa';
 
 
@@ -149,6 +149,12 @@ const Customers = () => {
 
     const activeCustomersCount = activeCustomersData.length;
 
+    const newCustomersCount = useMemo(() => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return activeCustomersData.filter((c: any) => new Date(c.created_at) >= thirtyDaysAgo).length;
+    }, [activeCustomersData]);
+
 
     const filteredCustomers = useMemo(() => {
         if (!Array.isArray(customers)) return [];
@@ -232,15 +238,15 @@ const Customers = () => {
             header: 'Unternehmen',
             accessor: (c: any) => (
                 <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 shrink-0 bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-semibold border-slate-100 border rounded-md`}>
+                    <div className={`w-8 h-8 shrink-0 bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold border-slate-100 border rounded-sm`}>
                         {c.company_name?.substring(0, 2).toUpperCase() || c.last_name?.substring(0, 2).toUpperCase() || 'CU'}
                     </div>
                     <div className="flex flex-col min-w-0">
                         <span className="font-semibold text-slate-800 truncate">{c.company_name || `${c.first_name} ${c.last_name}`}</span>
                         <div className="flex gap-2">
-                            <span className="text-[10px] text-slate-400 font-medium">ID: {c.id.toString().padStart(4, '0')}</span>
-                            <span className="text-[10px] text-slate-300">•</span>
-                            <span className="text-[10px] text-slate-500 font-medium">{c.type}</span>
+                            <span className="text-xs text-slate-400 font-medium">ID: {c.id.toString().padStart(4, '0')}</span>
+                            <span className="text-xs text-slate-300">•</span>
+                            <span className="text-xs text-slate-500 font-medium">{c.type}</span>
                         </div>
                     </div>
                 </div>
@@ -266,7 +272,7 @@ const Customers = () => {
             accessor: (c: any) => (
                 <div className="flex flex-col max-w-[150px]">
                     <span className="text-slate-700 truncate">{c.address_street} {c.address_house_no}</span>
-                    <span className="text-[10px] text-slate-400 truncate">{c.address_zip} {c.address_city}</span>
+                    <span className="text-xs text-slate-400 truncate">{c.address_zip} {c.address_city}</span>
                 </div>
             ),
             sortable: true,
@@ -284,7 +290,7 @@ const Customers = () => {
             header: 'Projekte',
             accessor: (c: any) => (
                 <div className="flex items-center justify-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                    <div className="w-6 h-6 rounded-sm bg-slate-100 flex items-center justify-center text-xs font-medium text-slate-600">
                         {c.projects_count || 0}
                     </div>
                 </div>
@@ -319,7 +325,7 @@ const Customers = () => {
                 };
                 const displayStatus = c.status === 'Aktiv' ? 'active' : c.status === 'Inaktiv' ? 'inactive' : c.status?.toLowerCase();
                 return (
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase border tracking-tight ${statusStyles[displayStatus] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                    <span className={`px-2 py-0.5 rounded-sm text-xs font-semibold border tracking-tight ${statusStyles[displayStatus] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
                         {labels[displayStatus] || c.status}
                     </span>
                 );
@@ -333,14 +339,14 @@ const Customers = () => {
             header: '',
             accessor: (c: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Details"><FaEye /></button>
-                    <button onClick={() => { setEditingCustomer(c); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition" title="Bearbeiten"><FaEdit /></button>
+                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye /></button>
+                    <button onClick={() => { setEditingCustomer(c); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
                     <button onClick={() => {
                         setCustomerToDelete(c.id);
                         setConfirmTitle('Kunde löschen');
                         setConfirmMessage('Sind Sie sicher, dass Sie diesen Kunden in den Papierkorb verschieben möchten?');
                         setIsConfirmOpen(true);
-                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-md transition" title="Löschen"><FaTrash /></button>
+                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Löschen"><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -351,19 +357,19 @@ const Customers = () => {
         <div className="relative group z-50" ref={exportRef}>
             <button
                 onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }}
-                className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest bg-white rounded-md flex items-center gap-2 shadow-sm transition"
+                className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition"
             >
                 <FaDownload /> Export
             </button>
             {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-xl border border-slate-100 z-[100] overflow-hidden animate-slideUp">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
+                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
                         <FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)
                     </button>
-                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
+                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
                         <FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)
                     </button>
-                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition">
+                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition">
                         <FaFilePdf className="text-red-600 text-sm" /> PDF Report
                     </button>
                 </div>
@@ -375,25 +381,25 @@ const Customers = () => {
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
             <button
                 onClick={() => setTypeFilter('all')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'all' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Alle
             </button>
             <button
                 onClick={() => setTypeFilter('Privat')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Privat' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Privat' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Privat
             </button>
             <button
                 onClick={() => setTypeFilter('Firma')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Firma' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Firma' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Firmen
             </button>
             <button
                 onClick={() => setTypeFilter('Behörde')}
-                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'Behörde' ? 'bg-brand-600 border-brand-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Behörde' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Behörden
             </button>
@@ -401,7 +407,7 @@ const Customers = () => {
             {(showTrash || typeFilter === 'trash') && (
                 <button
                     onClick={() => setTypeFilter('trash')}
-                    className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
                 >
                     Papierkorb
                 </button>
@@ -410,7 +416,7 @@ const Customers = () => {
             {(showArchive || typeFilter === 'archive') && (
                 <button
                     onClick={() => setTypeFilter('archive')}
-                    className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
                 >
                     Archiv
                 </button>
@@ -422,14 +428,14 @@ const Customers = () => {
         <div className="relative" ref={viewSettingsRef}>
             <button
                 onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-brand-50 border-brand-200 text-brand-600" : ""}`}
+                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
                 title="Ansichtseinstellungen"
             >
                 <FaFilter className="text-sm" />
             </button>
             {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Ansicht anpassen</h4>
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
+                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between p-1">
                             <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
@@ -449,30 +455,30 @@ const Customers = () => {
 
     return (
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
-            <div className="flex justify-between items-center sm:gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Kundenstamm</h1>
+            <div className="flex justify-between items-center gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Kundenstamm</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Auftraggeber und Rechnungsadressen.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <button
                         onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
-                        className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95"
+                        className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition"
                     >
-                        <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neuer Kunde</span><span className="inline sm:hidden">Kunde</span>
+                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neuer Kunde</span><span className="inline sm:hidden">Neu</span>
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Gesamtkunden" value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
-                <KPICard label="Top Auftraggeber" value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" iconBg="bg-blue-50" subValue="Höchster Umsatz YTD" />
+                <KPICard label="Neuzugänge" value={newCustomersCount} icon={<FaUserPlus />} iconColor="text-indigo-600" subValue="Letzte 30 Tage" />
+                <KPICard label="Top Auftraggeber" value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" subValue="Höchster Umsatz YTD" />
                 <KPICard
                     label="Umsatz YTD"
                     value={formatCurrency(stats?.total_revenue_ytd || 0)}
                     icon={<FaChartLine />}
                     iconColor="text-green-600"
-                    iconBg="bg-green-50"
                     trend={stats?.revenue_trend !== undefined ? {
                         value: `${stats.revenue_trend > 0 ? '+' : ''}${stats.revenue_trend}%`,
                         label: 'vs. Vorjahr',

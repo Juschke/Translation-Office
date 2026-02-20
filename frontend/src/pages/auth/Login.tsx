@@ -69,22 +69,22 @@ const LoginPage = () => {
     return (
         <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-                <div className="mx-auto h-20 w-20 bg-brand-600 rounded-xl flex items-center justify-center text-3xl font-bold text-white shadow-lg">
+                <div className="mx-auto h-20 w-20 bg-slate-900 rounded-sm flex items-center justify-center text-3xl font-medium text-white shadow-sm">
                     TO
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-gray-900">
+                <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-slate-900">
                     {showTwoFactor ? '2FA Bestätigung' : 'Willkommen zurück'}
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
+                <p className="mt-2 text-center text-sm text-slate-600">
                     {showTwoFactor ? 'Bitte geben Sie Ihren Authenticator-Code ein.' : 'Melden Sie sich an, um auf Ihr Dashboard zuzugreifen.'}
                 </p>
             </div>
 
             <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
+                <div className="bg-white py-8 px-4 shadow sm:rounded-sm sm:px-10 border border-slate-100">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {error && (
-                            <div className="rounded-md bg-red-50 p-4 border border-red-200">
+                            <div className="rounded-sm bg-red-50 p-4 border border-red-200">
                                 <div className="flex">
                                     <div className="flex-shrink-0">
                                         <FaExclamationCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
@@ -99,12 +99,12 @@ const LoginPage = () => {
                         {!showTwoFactor ? (
                             <>
                                 <div>
-                                    <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+                                    <label htmlFor="email" className="block text-sm font-medium leading-6 text-slate-900">
                                         E-Mail-Adresse
                                     </label>
-                                    <div className="mt-2 relative rounded-md shadow-sm">
+                                    <div className="mt-2 relative rounded-sm shadow-sm">
                                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <FaUser className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                            <FaUser className="h-5 w-5 text-slate-400" aria-hidden="true" />
                                         </div>
                                         <input
                                             id="email"
@@ -114,7 +114,7 @@ const LoginPage = () => {
                                             required
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="block w-full rounded-md border-0 py-2.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
+                                            className="block w-full rounded-sm border-0 py-2.5 pl-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
                                             placeholder="name@company.com"
                                         />
                                     </div>
@@ -122,18 +122,18 @@ const LoginPage = () => {
 
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
+                                        <label htmlFor="password" className="block text-sm font-medium leading-6 text-slate-900">
                                             Passwort
                                         </label>
                                         <div className="text-sm">
-                                            <a href="#" className="font-semibold text-brand-600 hover:text-brand-500">
+                                            <Link to="/forgot-password" title="Passwort vergessen?" className="font-semibold text-slate-700 hover:text-slate-600">
                                                 Passwort vergessen?
-                                            </a>
+                                            </Link>
                                         </div>
                                     </div>
-                                    <div className="mt-2 relative rounded-md shadow-sm">
+                                    <div className="mt-2 relative rounded-sm shadow-sm">
                                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                            <FaLock className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                            <FaLock className="h-5 w-5 text-slate-400" aria-hidden="true" />
                                         </div>
                                         <input
                                             id="password"
@@ -143,7 +143,7 @@ const LoginPage = () => {
                                             required
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="block w-full rounded-md border-0 py-2.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
+                                            className="block w-full rounded-sm border-0 py-2.5 pl-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
                                             placeholder="••••••••"
                                         />
                                     </div>
@@ -151,12 +151,12 @@ const LoginPage = () => {
                             </>
                         ) : (
                             <div>
-                                <label htmlFor="code" className="block text-sm font-medium leading-6 text-gray-900">
+                                <label htmlFor="code" className="block text-sm font-medium leading-6 text-slate-900">
                                     Sicherheitscode / Recovery Code
                                 </label>
-                                <div className="mt-2 relative rounded-md shadow-sm">
+                                <div className="mt-2 relative rounded-sm shadow-sm">
                                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <FaShieldAlt className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                        <FaShieldAlt className="h-5 w-5 text-slate-400" aria-hidden="true" />
                                     </div>
                                     <input
                                         id="code"
@@ -167,12 +167,12 @@ const LoginPage = () => {
                                         autoFocus
                                         value={twoFactorCode}
                                         onChange={(e) => setTwoFactorCode(e.target.value)}
-                                        className="block w-full rounded-md border-0 py-2.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all tracking-widest"
+                                        className="block w-full rounded-sm border-0 py-2.5 pl-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6 transition-all"
                                         placeholder="000 000"
                                     />
                                 </div>
                                 <div className="mt-2 text-right">
-                                    <button type="button" onClick={() => setShowTwoFactor(false)} className="text-xs text-brand-600 hover:underline">
+                                    <button type="button" onClick={() => setShowTwoFactor(false)} className="text-xs text-slate-700 hover:underline">
                                         Zurück zur Anmeldung
                                     </button>
                                 </div>
@@ -184,7 +184,7 @@ const LoginPage = () => {
                                 type="submit"
                                 disabled={isLoading}
                                 className={clsx(
-                                    "flex w-full justify-center rounded-md bg-brand-600 px-3 py-2.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all",
+                                    "flex w-full justify-center rounded-sm bg-slate-900 px-3 py-2.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all",
                                     isLoading && "opacity-70 cursor-not-allowed"
                                 )}
                             >
@@ -205,15 +205,15 @@ const LoginPage = () => {
                         <div className="mt-6">
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-300" />
+                                    <div className="w-full border-t border-slate-300" />
                                 </div>
                                 <div className="relative flex justify-center text-sm">
-                                    <span className="bg-white px-2 text-gray-500">Neu hier?</span>
+                                    <span className="bg-white px-2 text-slate-500">Neu hier?</span>
                                 </div>
                             </div>
 
                             <div className="mt-6 text-center">
-                                <Link to="/register" className="font-semibold leading-6 text-brand-600 hover:text-brand-500 transition-colors">
+                                <Link to="/register" className="font-semibold leading-6 text-slate-700 hover:text-slate-600 transition-colors">
                                     Kostenloses Konto erstellen
                                 </Link>
                             </div>
@@ -221,7 +221,7 @@ const LoginPage = () => {
                     )}
                 </div>
 
-                <p className="mt-8 text-center text-xs text-gray-500">
+                <p className="mt-8 text-center text-xs text-slate-500">
                     &copy; 2024 Translator Office. Alle Rechte vorbehalten.
                 </p>
             </div>

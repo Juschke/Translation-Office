@@ -1,12 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBell, FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
+import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService, notificationService } from '../api/services';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "./ui/tooltip";
 
 const ROLE_LABELS: Record<string, string> = {
     owner: 'Inhaber',
@@ -25,6 +31,7 @@ const Navigation = () => {
 
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
+    const navRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -34,10 +41,21 @@ const Navigation = () => {
             if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
                 setIsNotifOpen(false);
             }
+            // Close mobile menu when clicking outside the whole navigation bar
+            if (isMobileMenuOpen && navRef.current && !navRef.current.contains(event.target as Node)) {
+                setIsMobileMenuOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [isMobileMenuOpen]);
+
+    // Close all menus when navigation occurs
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+        setIsProfileOpen(false);
+        setIsNotifOpen(false);
+    }, [location]);
 
     const { data: dashboardData } = useQuery({
         queryKey: ['dashboard', 'stats'],
@@ -83,10 +101,10 @@ const Navigation = () => {
     const isActive = (path: string) => location.pathname === path;
 
     const navLinkClass = (path: string) => clsx(
-        "px-3 py-4 text-sm font-medium border-b-2 transition h-full flex items-center",
+        "px-2 sm:px-3 py-4 text-sm font-medium border-b-2 transition h-full flex items-center gap-2",
         isActive(path)
-            ? "border-brand-500 text-white bg-brand-800/50"
-            : "border-transparent text-slate-200 hover:bg-brand-800 hover:text-white"
+            ? "border-white text-white"
+            : "border-transparent text-slate-400 hover:text-white"
     );
 
     const NavBadge = ({ count, label, activeColor = "bg-rose-500", isPriority = false }: { count: number | undefined, label: string, activeColor?: string, isPriority?: boolean }) => {
@@ -94,16 +112,16 @@ const Navigation = () => {
         return (
             <div className="relative group ml-1.5 flex items-center">
                 <span className={clsx(
-                    "text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm transition-all duration-300",
+                    "text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm transition-all duration-300",
                     displayCount === 0 ? "bg-slate-700/50 text-slate-400 group-hover:bg-slate-600" : activeColor,
                     isPriority && displayCount > 0 && "animate-pulse ring-2 ring-rose-500/20"
                 )}>
                     {displayCount}
                 </span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-slate-900/95 text-white text-[11px] rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm border border-slate-700/50 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-slate-900/95 text-white text-sm rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm border border-slate-700/50 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0">
                     <div className="font-semibold">{label}</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">{displayCount} insgesamt</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{displayCount} insgesamt</div>
                     <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-slate-900/95"></span>
                 </div>
             </div>
@@ -120,77 +138,175 @@ const Navigation = () => {
     };
 
     return (
-        <nav className="bg-brand-900 text-white shadow-sm z-30 flex-none relative">
+        <nav ref={navRef} className="bg-slate-900 text-white shadow-sm z-30 flex-none relative">
             <div className="w-full px-4 sm:px-6">
-                <div className="flex items-center justify-between h-14">
+                <div className="flex items-center justify-between h-12">
                     {/* Left Side: Logo + Main Menu */}
-                    <div className="flex items-center h-full gap-4 lg:gap-8">
-                        {/* Mobile Menu Button */}
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 xl:hidden text-slate-300 hover:text-white"
-                        >
-                            <div className="w-5 h-4 flex flex-col justify-between">
-                                <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "rotate-45 translate-y-1.5" : "")}></span>
-                                <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "opacity-0" : "")}></span>
-                                <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "-rotate-45 -translate-y-2" : "")}></span>
-                            </div>
-                        </button>
+                    <div className="flex items-center h-full gap-4 lg:gap-6">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
-                            <div className="bg-brand-500 w-8 h-8 rounded-sm flex items-center justify-center font-semibold text-white">TO</div>
-                            <span className="font-semibold text-lg tracking-tight">Translator Office</span>
+                            <div className="bg-slate-700 w-8 h-8 rounded-sm flex items-center justify-center font-semibold text-white">TO</div>
+                            <span className="font-semibold text-lg tracking-tight hidden lg:inline">Translator Office</span>
                         </Link>
 
-                        {/* Main Menu */}
-                        <div className="hidden xl:flex space-x-1 h-full">
-                            <Link to="/" className={navLinkClass("/")}>
-                                Dashboard
-                                <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
-                            </Link>
+                        {/* Main Menu - Only Desktop */}
+                        <TooltipProvider delayDuration={0}>
+                            <div className="hidden lg:flex space-x-1 h-full">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link to="/" className={navLinkClass("/")}>
+                                            <FaHome className="text-base lg:hidden" />
+                                            <span className="hidden lg:inline">Dashboard</span>
+                                            <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="font-semibold text-sm">Dashboard</span>
+                                            {dashboardData?.stats?.deadlines_today > 0 && (
+                                                <div className="flex items-center gap-2 text-xs text-rose-400">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                                                    {dashboardData?.stats?.deadlines_today} Termine Heute
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Link to="/projects" className={navLinkClass("/projects")}>
-                                Projekte
-                                <NavBadge count={dashboardData?.stats?.open_projects} label="Offene Projekte" activeColor="bg-rose-500" />
-                            </Link>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link to="/projects" className={navLinkClass("/projects")}>
+                                            <FaLayerGroup className="text-base lg:hidden" />
+                                            <span className="hidden lg:inline">Projekte</span>
+                                            <NavBadge count={dashboardData?.stats?.open_projects} label="Offene Projekte" activeColor="bg-rose-500" />
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="font-semibold text-sm">Projekte</span>
+                                            {dashboardData?.stats?.open_projects > 0 && (
+                                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+                                                    {dashboardData?.stats?.open_projects} offene Projekte
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Link to="/customers" className={navLinkClass("/customers")}>
-                                Kunden
-                                <NavBadge count={dashboardData?.stats?.active_customers} label="Aktive Kunden" activeColor="bg-brand-400" />
-                            </Link>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link to="/customers" className={navLinkClass("/customers")}>
+                                            <FaUsers className="text-base lg:hidden" />
+                                            <span className="hidden lg:inline">Kunden</span>
+                                            <NavBadge count={dashboardData?.stats?.active_customers} label="Aktive Kunden" activeColor="bg-slate-500" />
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="font-semibold text-sm">Kunden</span>
+                                            {dashboardData?.stats?.active_customers > 0 && (
+                                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+                                                    {dashboardData?.stats?.active_customers} aktive Kunden
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Link to="/partners" className={navLinkClass("/partners")}>
-                                Partner
-                                <NavBadge count={dashboardData?.stats?.active_partners} label="Aktive Partner" activeColor="bg-brand-400" />
-                            </Link>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link to="/partners" className={navLinkClass("/partners")}>
+                                            <FaUserTie className="text-base lg:hidden" />
+                                            <span className="hidden lg:inline">Partner</span>
+                                            <NavBadge count={dashboardData?.stats?.active_partners} label="Aktive Partner" activeColor="bg-slate-500" />
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="font-semibold text-sm">Partner</span>
+                                            {dashboardData?.stats?.active_partners > 0 && (
+                                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+                                                    {dashboardData?.stats?.active_partners} aktive Partner
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            {hasMinRole('manager') && (
-                                <Link to="/invoices" className={navLinkClass("/invoices")}>
-                                    Rechnungen
-                                    <NavBadge
-                                        count={dashboardData?.stats?.unpaid_invoices}
-                                        label="Offene Rechnungen"
-                                        activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
-                                        isPriority={dashboardData?.stats?.overdue_invoices > 0}
-                                    />
-                                </Link>
-                            )}
+                                {hasMinRole('manager') && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Link to="/invoices" className={navLinkClass("/invoices")}>
+                                                <FaFileInvoiceDollar className="text-base lg:hidden" />
+                                                <span className="hidden lg:inline">Rechnungen</span>
+                                                <NavBadge
+                                                    count={dashboardData?.stats?.unpaid_invoices}
+                                                    label="Offene Rechnungen"
+                                                    activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
+                                                    isPriority={dashboardData?.stats?.overdue_invoices > 0}
+                                                />
+                                            </Link>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-semibold text-sm">Rechnungen</span>
+                                                {dashboardData?.stats?.unpaid_invoices > 0 && (
+                                                    <div className={clsx("flex items-center gap-2 text-xs", dashboardData?.stats?.overdue_invoices > 0 ? "text-rose-400" : "text-slate-400")}>
+                                                        <div className={clsx("w-1.5 h-1.5 rounded-full", dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-500 animate-pulse" : "bg-slate-500")}></div>
+                                                        {dashboardData?.stats?.unpaid_invoices} offene Rechnungen
+                                                        {dashboardData?.stats?.overdue_invoices > 0 && ` (${dashboardData.stats.overdue_invoices} überfällig)`}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
 
-                            {hasMinRole('manager') && (
-                                <Link to="/inbox" className={navLinkClass("/inbox")}>
-                                    Email
-                                    <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
-                                </Link>
-                            )}
+                                {hasMinRole('manager') && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Link to="/inbox" className={navLinkClass("/inbox")}>
+                                                <FaEnvelope className="text-base lg:hidden" />
+                                                <span className="hidden lg:inline">Email</span>
+                                                <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
+                                            </Link>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-semibold text-sm">Email</span>
+                                                {unreadEmails > 0 && (
+                                                    <div className="flex items-center gap-2 text-xs text-rose-400">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                                                        {unreadEmails} ungelesene Emails
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
 
-                            {hasMinRole('manager') && (
-                                <Link to="/reports" className={navLinkClass("/reports")}>Auswertung</Link>
-                            )}
-                        </div>
+                                {hasMinRole('manager') && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Link to="/reports" className={navLinkClass("/reports")}>
+                                                <FaChartBar className="text-base lg:hidden" />
+                                                <span className="hidden lg:inline">Auswertung</span>
+                                            </Link>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                            <span className="font-semibold text-sm">Auswertung</span>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
+                            </div>
+                        </TooltipProvider>
                     </div>
 
-                    {/* User Profile & Notifications */}
-                    <div className="flex items-center gap-4 relative">
+                    {/* Right Side: Notifications, Profile & Mobile Menu */}
+                    <div className="flex items-center gap-3 relative">
                         {/* Notification Bell */}
                         <div className="relative" ref={notifRef}>
                             <button
@@ -210,7 +326,7 @@ const Navigation = () => {
                                         <span>Benachrichtigungen</span>
                                         <button
                                             onClick={handleMarkAllRead}
-                                            className="text-xs text-brand-600 hover:underline disabled:text-slate-400 cursor-pointer font-medium"
+                                            className="text-xs text-slate-700 hover:underline disabled:text-slate-400 cursor-pointer font-medium"
                                             disabled={pendingNotifications === 0}
                                         >
                                             Alle als gelesen
@@ -224,13 +340,13 @@ const Navigation = () => {
                                                 <div
                                                     key={n.id}
                                                     onClick={() => handleNotificationClick(n)}
-                                                    className={clsx("block p-3 hover:bg-slate-50 border-b border-slate-50 cursor-pointer text-left", !n.read_at ? "bg-brand-50/50" : "")}
+                                                    className={clsx("block p-3 hover:bg-slate-50 border-b border-slate-50 cursor-pointer text-left", !n.read_at ? "bg-transparent" : "")}
                                                 >
                                                     <div className="flex justify-between items-center mb-1">
                                                         <div className="text-xs text-slate-400">
                                                             {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: de })}
                                                         </div>
-                                                        {!n.read_at && <div className="w-2 h-2 rounded-full bg-brand-500"></div>}
+                                                        {!n.read_at && <div className="w-2 h-2 rounded-full bg-slate-700"></div>}
                                                     </div>
                                                     <p className={clsx("text-sm", !n.read_at ? "font-semibold" : "font-medium")}>{n.data.title}</p>
                                                     <p className="text-xs text-slate-500 line-clamp-2">{n.data.message}</p>
@@ -241,7 +357,7 @@ const Navigation = () => {
                                     <div className="p-2 text-center border-t border-slate-100">
                                         <Link
                                             to="/notifications"
-                                            className="text-xs font-medium text-brand-700 hover:underline block w-full"
+                                            className="text-xs font-medium text-slate-900 hover:underline block w-full"
                                             onClick={() => setIsNotifOpen(false)}
                                         >
                                             Alle anzeigen
@@ -257,47 +373,49 @@ const Navigation = () => {
                                 className="flex items-center gap-2 cursor-pointer focus:outline-none"
                                 onClick={(e) => { e.stopPropagation(); setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
                             >
-                                <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-xs border border-brand-500 text-white font-semibold">
-                                    {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('') : 'U'}
+                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[11px] border border-slate-700 text-white font-bold uppercase shadow-sm">
+                                    {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
                                 </div>
-                                <div className="hidden lg:block text-left">
-                                    <span className="text-sm text-slate-200 block leading-tight">{user?.name || 'Benutzer'}</span>
-                                    {user?.role && (
-                                        <span className="text-[10px] text-slate-400 leading-tight block">
-                                            {ROLE_LABELS[user.role] ?? user.role}
-                                        </span>
-                                    )}
-                                </div>
-                                <FaChevronDown className={clsx("text-xs text-slate-400 transition-transform", isProfileOpen && "rotate-180")} />
+                                <FaChevronDown className={clsx("text-xs text-slate-500 transition-transform", isProfileOpen && "rotate-180")} />
                             </div>
 
                             {/* Profile Dropdown */}
                             {isProfileOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl border border-slate-200 z-50 text-slate-800 origin-top-right animate-slideUp">
-                                    <div className="p-3 border-b border-slate-100 font-normal text-left">
-                                        <p className="text-sm font-semibold">{user?.name || 'Benutzer'}</p>
-                                        <p className="text-xs text-slate-500">{user?.email || 'admin@translator.office'}</p>
-                                        {user?.role && (
-                                            <p className="text-[11px] text-brand-600 font-medium mt-0.5">{ROLE_LABELS[user.role] ?? user.role}</p>
-                                        )}
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-200 z-50 text-slate-800 origin-top-right animate-slideUp">
+                                    <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-[10px] text-white font-bold shrink-0 shadow-sm uppercase">
+                                            {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
+                                        </div>
+                                        <div className="overflow-hidden text-left">
+                                            <p className="text-sm font-bold text-slate-900 truncate">{user?.name || 'Benutzer'}</p>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <FaEnvelope className="text-[10px] text-slate-400 shrink-0" />
+                                                <p className="text-[10px] text-slate-500 truncate leading-tight">{user?.email || 'admin@translator.office'}</p>
+                                            </div>
+                                            {user?.role && (
+                                                <span className="inline-block px-1.5 py-0 px-1.5 py-0 bg-slate-200 text-slate-700 text-[9px] font-bold rounded-full mt-1.5 uppercase tracking-wider">
+                                                    {ROLE_LABELS[user.role] ?? user.role}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="py-1 font-normal text-left">
                                         <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                            Profil
+                                            <FaUser className="mr-3 text-slate-400 w-3.5 h-3.5" /> Profil
                                         </Link>
-                                        {hasMinRole('manager') && (
-                                            <Link to="/settings" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                                Einstellungen
-                                            </Link>
-                                        )}
                                         {hasMinRole('owner') && (
                                             <Link to="/team" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                                Mitarbeiter
+                                                <FaUsers className="mr-3 text-slate-400 w-3.5 h-3.5" /> Mitarbeiter
                                             </Link>
                                         )}
                                         {hasMinRole('owner') && (
                                             <Link to="/billing" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                                Abonnement
+                                                <FaCreditCard className="mr-3 text-slate-400 w-3.5 h-3.5" /> Abonnement
+                                            </Link>
+                                        )}
+                                        {hasMinRole('manager') && (
+                                            <Link to="/settings" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center border-t border-slate-50 mt-1" onClick={() => setIsProfileOpen(false)}>
+                                                <FaCog className="mr-3 text-slate-400 w-3.5 h-3.5" /> Einstellungen
                                             </Link>
                                         )}
                                     </div>
@@ -312,50 +430,69 @@ const Navigation = () => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Mobile Menu Button — right side */}
+                        <button
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="p-2 lg:hidden text-slate-400 hover:text-white"
+                        >
+                            <div className="w-5 h-4 flex flex-col justify-between">
+                                <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "rotate-45 translate-y-1.5" : "")}></span>
+                                <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "opacity-0" : "")}></span>
+                                <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "-rotate-45 -translate-y-2" : "")}></span>
+                            </div>
+                        </button>
                     </div>
                 </div>
             </div>
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
-                <div className="xl:hidden bg-brand-900 border-t border-brand-800">
+                <div className="lg:hidden bg-slate-900 border-t border-slate-800 animate-slideDown">
                     <div className="px-4 py-3 space-y-1">
-                        <Link to="/" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                            Dashboard
-                            <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
-                        </Link>
-                        <Link to="/projects" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                            Projekte
-                            <NavBadge count={dashboardData?.stats?.open_projects} label="Offene Projekte" activeColor="bg-rose-500" />
-                        </Link>
-                        <Link to="/customers" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                            Kunden
-                            <NavBadge count={dashboardData?.stats?.active_customers} label="Aktive Kunden" activeColor="bg-brand-400" />
-                        </Link>
-                        <Link to="/partners" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                            Partner
-                            <NavBadge count={dashboardData?.stats?.active_partners} label="Aktive Partner" activeColor="bg-brand-400" />
-                        </Link>
-                        {hasMinRole('manager') && (
-                            <Link to="/invoices" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                                Rechnungen
-                                <NavBadge
-                                    count={dashboardData?.stats?.unpaid_invoices}
-                                    label="Offene Rechnungen"
-                                    activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
-                                    isPriority={dashboardData?.stats?.overdue_invoices > 0}
-                                />
-                            </Link>
-                        )}
-                        {hasMinRole('manager') && (
-                            <Link to="/inbox" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white flex items-center justify-between" onClick={() => setIsMobileMenuOpen(false)}>
-                                Email
-                                <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
-                            </Link>
-                        )}
-                        {hasMinRole('manager') && (
-                            <Link to="/reports" className="block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-brand-800 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Auswertung</Link>
-                        )}
+                        {[
+                            { path: '/', label: 'Dashboard', icon: <FaHome />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute" },
+                            { path: '/projects', label: 'Projekte', icon: <FaLayerGroup />, count: dashboardData?.stats?.open_projects, badgeLabel: "Offene Projekte" },
+                            { path: '/customers', label: 'Kunden', icon: <FaUsers />, count: dashboardData?.stats?.active_customers, badgeLabel: "Aktive Kunden", color: "bg-slate-500" },
+                            { path: '/partners', label: 'Partner', icon: <FaUserTie />, count: dashboardData?.stats?.active_partners, badgeLabel: "Aktive Partner", color: "bg-slate-500" },
+                            {
+                                path: '/invoices',
+                                label: 'Rechnungen',
+                                icon: <FaFileInvoiceDollar />,
+                                role: 'manager',
+                                count: dashboardData?.stats?.unpaid_invoices,
+                                badgeLabel: "Offene Rechnungen",
+                                color: dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"
+                            },
+                            { path: '/inbox', label: 'Email', icon: <FaEnvelope />, role: 'manager', count: unreadEmails, badgeLabel: "Ungelesene E-Mails" },
+                            { path: '/reports', label: 'Auswertung', icon: <FaChartBar />, role: 'manager' },
+                        ].map((item) => {
+                            if (item.role && !hasMinRole(item.role)) return null;
+                            const active = isActive(item.path);
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={clsx(
+                                        "px-3 py-2.5 rounded-sm text-base font-medium flex items-center justify-between transition-colors",
+                                        active
+                                            ? "bg-slate-800 text-white border-l-2 border-white pl-2.5"
+                                            : "text-slate-400 hover:bg-slate-800/50 hover:text-white border-l-2 border-transparent"
+                                    )}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className={clsx("text-lg", active ? "text-white" : "text-slate-500")}>
+                                            {item.icon}
+                                        </span>
+                                        {item.label}
+                                    </div>
+                                    {item.count !== undefined && (
+                                        <NavBadge count={item.count} label={item.badgeLabel || ""} activeColor={item.color} />
+                                    )}
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             )}

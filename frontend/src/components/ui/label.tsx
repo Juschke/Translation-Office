@@ -3,17 +3,17 @@ import * as LabelPrimitive from "@radix-ui/react-label"
 import { cn } from "@/lib/utils"
 
 const Label = React.forwardRef<
-    React.ComponentRef<typeof LabelPrimitive.Root>,
-    React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
+ React.ComponentRef<typeof LabelPrimitive.Root>,
+ React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
 >(({ className, ...props }, ref) => (
-    <LabelPrimitive.Root
-        ref={ref}
-        className={cn(
-            "block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5 peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-            className
-        )}
-        {...props}
-    />
+ <LabelPrimitive.Root
+ ref={ref}
+ className={cn(
+ "text-sm font-medium text-slate-700 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+ className
+ )}
+ {...props}
+ />
 ))
 Label.displayName = LabelPrimitive.Root.displayName
 

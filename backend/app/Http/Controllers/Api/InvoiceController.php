@@ -46,6 +46,28 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Get the next available invoice number for preview.
+     */
+    public function nextNumber(Request $request)
+    {
+        $year = $request->query('year') ?? date('Y');
+        $tenantId = $request->user()->tenant_id;
+
+        $lastSeq = Invoice::where('tenant_id', $tenantId)
+            ->whereYear('date', $year)
+            ->max('invoice_number_sequence') ?? 0;
+
+        $newSeq = $lastSeq + 1;
+        $invoiceNumber = sprintf('RE-%s-%05d', $year, $newSeq);
+
+        return response()->json([
+            'next_number' => $invoiceNumber,
+            'sequence' => $newSeq,
+            'year' => (int) $year
+        ]);
+    }
+
+    /**
      * Show a single invoice.
      */
     public function show($id)
@@ -83,6 +105,7 @@ class InvoiceController extends Controller
             'notes' => 'nullable|string',
             'service_period' => 'nullable|string',
             'tax_exemption' => 'nullable|string|in:none,§19_ustg,reverse_charge',
+            'leitweg_id' => 'nullable|string',
             'items' => 'nullable|array',
             'items.*.description' => 'required|string',
             'items.*.quantity' => 'required|numeric',
@@ -91,17 +114,26 @@ class InvoiceController extends Controller
             'items.*.total' => 'required|numeric',
         ]);
 
-        return DB::transaction(function () use ($validated, $request) {
-            // 1. Generate sequential, gap-free invoice number
-            $year = date('Y');
-            $tenantId = $request->user()->tenant_id;
+        // Wrap the whole creation in a retry loop to handle rare duplicate key race conditions
+        $maxAttempts = 3;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                return DB::transaction(function () use ($validated, $request) {
+                    // 1. Generate sequential, gap-free invoice number
+                    // GoBD Requirement: Consecutive numbering per tenant/year
+                    $invoiceDate = new \DateTime($validated['date']);
+                    $year = $invoiceDate->format('Y');
+                    $tenantId = $request->user()->tenant_id;
 
-            $lastSeq = Invoice::where('tenant_id', $tenantId)
-                ->whereYear('date', $year)
-                ->max('invoice_number_sequence') ?? 0;
+                    // Lock the invoices table rows for this tenant/year to prevent race conditions
+                    $lastSeq = DB::table('invoices')
+                        ->where('tenant_id', $tenantId)
+                        ->whereYear('date', $year)
+                        ->lockForUpdate()
+                        ->max('invoice_number_sequence') ?? 0;
 
-            $newSeq = $lastSeq + 1;
-            $invoiceNumber = sprintf('RE-%s-%05d', $year, $newSeq);
+                    $newSeq = $lastSeq + 1;
+                    $invoiceNumber = sprintf('RE-%s-%05d', $year, $newSeq);
 
             // 2. Load related data for snapshot
             $customer = \App\Models\Customer::findOrFail($validated['customer_id']);
@@ -143,7 +175,7 @@ class InvoiceController extends Controller
                 'snapshot_customer_city' => $customer->address_city,
                 'snapshot_customer_country' => $customer->address_country ?? 'DE',
                 'snapshot_customer_vat_id' => $customer->vat_id ?? null,
-                'snapshot_customer_leitweg_id' => $customer->leitweg_id ?? null,
+                'snapshot_customer_leitweg_id' => $validated['leitweg_id'] ?? $customer->leitweg_id ?? null,
 
                 // --- Seller snapshot (§ 14 UStG: eigener Name, Anschrift, StNr) ---
                 'snapshot_seller_name' => $tenant->company_name ?: $tenant->name,
@@ -190,7 +222,17 @@ class InvoiceController extends Controller
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_DRAFT);
 
             return response()->json($invoice->load('items'), 201);
-        });
+                });
+            } catch (\Illuminate\Database\QueryException $e) {
+                // If duplicate entry error, retry
+                if ($e->getCode() === '23000' && $attempt < $maxAttempts) {
+                    continue; // retry loop
+                }
+                throw $e;
+            }
+        }
+        // If we exit loop without returning, rethrow last exception
+        throw new \Exception('Failed to create invoice after multiple attempts');
     }
 
     /**
@@ -244,6 +286,7 @@ class InvoiceController extends Controller
             'notes' => 'nullable|string',
             'service_period' => 'nullable|string',
             'tax_exemption' => 'nullable|string|in:none,§19_ustg,reverse_charge',
+            'leitweg_id' => 'nullable|string',
             'status' => 'string|in:draft',
             'items' => 'nullable|array',
             'items.*.description' => 'required|string',
@@ -268,27 +311,50 @@ class InvoiceController extends Controller
             $validated['paid_amount_cents'] = (int) round($validated['paid_amount'] * 100);
 
         return DB::transaction(function () use ($invoice, $validated) {
+            // Map request fields to database snapshot fields if provided
+            if (isset($validated['leitweg_id'])) {
+                $validated['snapshot_customer_leitweg_id'] = $validated['leitweg_id'];
+            }
+
             // Invalidate PDF cache on update
             $invoice->pdf_path = null;
             $invoice->update($validated);
 
-            // Update items if provided
+            // Update items if provided (Preserve IDs where possible to avoid "funny IDs" shifting)
             if (isset($validated['items'])) {
-                // Delete old items
-                $invoice->items()->delete();
+                $incomingItemIds = collect($validated['items'])->pluck('id')->filter()->toArray();
 
-                // Create new ones
+                // 1. Delete items not in the request
+                $invoice->items()->whereNotIn('id', $incomingItemIds)->delete();
+
+                // 2. Upsert items
                 foreach ($validated['items'] as $index => $itemData) {
-                    InvoiceItem::create([
-                        'invoice_id' => $invoice->id,
-                        'position' => $index + 1,
-                        'description' => $itemData['description'],
-                        'quantity' => (float) $itemData['quantity'],
-                        'unit' => $itemData['unit'] ?? 'Words',
-                        'unit_price_cents' => (int) round($itemData['price'] * 100),
-                        'total_cents' => (int) round($itemData['total'] * 100),
-                        'tax_rate' => $validated['tax_rate'] ?? $invoice->tax_rate ?? 19,
-                    ]);
+                    $itemId = $itemData['id'] ?? null;
+
+                    // Check if it's a numeric ID (existing) or a temporary string ID
+                    if (is_numeric($itemId)) {
+                        $invoice->items()->where('id', $itemId)->update([
+                            'position' => $index + 1,
+                            'description' => $itemData['description'],
+                            'quantity' => (float) $itemData['quantity'],
+                            'unit' => $itemData['unit'] ?? 'Words',
+                            'unit_price_cents' => (int) round($itemData['price'] * 100),
+                            'total_cents' => (int) round($itemData['total'] * 100),
+                            'tax_rate' => $validated['tax_rate'] ?? $invoice->tax_rate ?? 19,
+                        ]);
+                    } else {
+                        // Create new item
+                        InvoiceItem::create([
+                            'invoice_id' => $invoice->id,
+                            'position' => $index + 1,
+                            'description' => $itemData['description'],
+                            'quantity' => (float) $itemData['quantity'],
+                            'unit' => $itemData['unit'] ?? 'Words',
+                            'unit_price_cents' => (int) round($itemData['price'] * 100),
+                            'total_cents' => (int) round($itemData['total'] * 100),
+                            'tax_rate' => $validated['tax_rate'] ?? $invoice->tax_rate ?? 19,
+                        ]);
+                    }
                 }
             }
 
@@ -698,7 +764,9 @@ class InvoiceController extends Controller
             $documentBuilder->addDocumentBuyerVATRegistrationNumber($invoice->snapshot_customer_vat_id);
         }
 
-        // Mandatory Buyer Reference - Fallback to Customer ID if no Leitweg-ID
+        // BT-10: Buyer Reference (Mandatory for XRechnung, especially B2G)
+        // BT-10 is used by public authorities to route the invoice to the correct department (Leitweg-ID)
+        // If not present, we fall back to customer ID as per EN16931 rules, but Leitweg-ID is preferred.
         $buyerRef = $invoice->snapshot_customer_leitweg_id ?: (string) $invoice->customer_id;
         $documentBuilder->setDocumentBuyerReference($buyerRef);
 
@@ -842,14 +910,26 @@ class InvoiceController extends Controller
      */
     private function mapUnitToUNECE(string $unit): string
     {
-        $u = strtolower($unit);
+        $u = mb_strtolower($unit);
+
+        // Standard UN/ECE Rec20 unit codes
+        // HUR = Hour, C62 = Unit/Piece, LBR = Pound, MTQ = Cubic Meter, MTR = Meter, PK = Package
+        // For translation: 
+        // NAR = Number of articles (Alternative to C62)
+        // HUR = Hours
+        // SEC = Seconds
+        // DAY = Days
+        // 74 = Million words (actually used often in industry is just NR for Number)
+        // Decided to stick with C62 (One) for most industry units and HUR for hours
+
         return match ($u) {
-            'hours', 'stunden', 'std' => 'HUR',  // Hour
-            // C62 = One (Unit/Stück) - safest for generic items
-            'words', 'wörter', 'wort' => 'C62',
-            'lines', 'zeilen', 'zeile' => 'C62',
-            'pages', 'seiten', 'seite' => 'C62',
-            'flat', 'pauschale', 'stk' => 'C62',
+            'hours', 'stunden', 'std', 'h', 'stunde' => 'HUR',
+            'minuten', 'min', 'm' => 'MIN',
+            'tag', 'tage', 'day', 'days' => 'DAY',
+            'wörter', 'words', 'worte', 'wort', 'word' => 'C62', // NR is also common
+            'zeilen', 'lines', 'zeile', 'line' => 'C62',
+            'seiten', 'pages', 'seite', 'page' => 'C62',
+            'pauschal', 'flat', 'stk', 'stück', 'unit', 'units' => 'C62',
             default => 'C62',
         };
     }

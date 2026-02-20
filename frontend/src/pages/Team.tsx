@@ -27,13 +27,13 @@ const ROLE_LABELS: Record<string, string> = {
 
 const ROLE_COLORS: Record<string, string> = {
     owner: 'bg-amber-100 text-amber-800',
-    manager: 'bg-brand-100 text-brand-800',
+    manager: 'bg-slate-100 text-slate-800',
     employee: 'bg-slate-100 text-slate-700',
 };
 
 const RoleIcon = ({ role }: { role: string }) => {
     if (role === 'owner') return <FaUserShield className="text-amber-500" />;
-    if (role === 'manager') return <FaUserTie className="text-brand-500" />;
+    if (role === 'manager') return <FaUserTie className="text-slate-600" />;
     return <FaUser className="text-slate-400" />;
 };
 
@@ -73,7 +73,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                     value={form.name}
                     onChange={e => set('name', e.target.value)}
                     required
-                    className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                    className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                     placeholder="Max Mustermann"
                 />
             </div>
@@ -84,7 +84,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                     value={form.email}
                     onChange={e => set('email', e.target.value)}
                     required
-                    className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                    className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                     placeholder="max@beispiel.de"
                 />
             </div>
@@ -93,7 +93,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                 <select
                     value={form.role}
                     onChange={e => set('role', e.target.value as Role)}
-                    className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                    className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                 >
                     <option value="employee">Mitarbeiter</option>
                     <option value="manager">Manager</option>
@@ -112,7 +112,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                     onChange={e => set('password', e.target.value)}
                     required={!isEdit}
                     minLength={8}
-                    className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                    className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                     placeholder={isEdit ? '••••••••' : 'Mindestens 8 Zeichen'}
                 />
             </div>
@@ -122,7 +122,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                     <select
                         value={form.status}
                         onChange={e => set('status', e.target.value)}
-                        className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                        className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                     >
                         <option value="active">Aktiv</option>
                         <option value="inactive">Inaktiv</option>
@@ -130,13 +130,13 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                 </div>
             )}
             <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={onCancel} className="px-4 py-2 text-sm border border-slate-200 rounded-md hover:bg-slate-50">
+                <button type="button" onClick={onCancel} className="px-4 py-2 text-sm border border-slate-200 rounded-sm hover:bg-slate-50">
                     Abbrechen
                 </button>
                 <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 text-sm bg-brand-600 text-white rounded-md hover:bg-brand-700 disabled:opacity-50"
+                    className="px-4 py-2 text-sm bg-slate-900 text-white rounded-sm hover:bg-slate-900 disabled:opacity-50"
                 >
                     {loading ? 'Speichern…' : isEdit ? 'Speichern' : 'Hinzufügen'}
                 </button>
@@ -191,34 +191,36 @@ const Team: React.FC = () => {
     };
 
     return (
-        <div className="p-6 max-w-5xl mx-auto">
+        <div className="p-4 sm:p-6 max-w-5xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-xl font-bold text-slate-800">Team & Mitarbeiter</h1>
-                    <p className="text-sm text-slate-500 mt-0.5">Verwalten Sie die Benutzer Ihres Mandanten.</p>
+            <div className="flex items-center justify-between mb-6 gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl font-medium text-slate-800 truncate">Team & Mitarbeiter</h1>
+                    <p className="text-sm text-slate-500 mt-0.5 hidden sm:block">Verwalten Sie die Benutzer Ihres Mandanten.</p>
                 </div>
-                <button
-                    onClick={() => setModal({ type: 'add' })}
-                    className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-brand-700"
-                >
-                    <FaPlus className="text-xs" /> Mitarbeiter hinzufügen
-                </button>
+                <div className="shrink-0">
+                    <button
+                        onClick={() => setModal({ type: 'add' })}
+                        className="flex items-center justify-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-sm text-sm font-medium hover:bg-slate-900"
+                    >
+                        <FaPlus className="text-xs" /> <span className="hidden xs:inline">Mitarbeiter hinzufügen</span><span className="xs:hidden">Neu+</span>
+                    </button>
+                </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            {/* Table Container */}
+            <div className="bg-white rounded-sm border border-slate-200 overflow-x-auto shadow-sm custom-scrollbar">
                 {isLoading ? (
                     <div className="p-8 text-center text-sm text-slate-500">Wird geladen…</div>
                 ) : (
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Name</th>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">E-Mail</th>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Rolle</th>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Status</th>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wide">Letzter Login</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">Name</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">E-Mail</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">Rolle</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">Status</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">Letzter Login</th>
                                 <th className="px-4 py-3"></th>
                             </tr>
                         </thead>
@@ -227,7 +229,7 @@ const Team: React.FC = () => {
                                 <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-xs font-semibold text-brand-700 flex-shrink-0">
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-900 flex-shrink-0">
                                                 {u.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                                             </div>
                                             <span className="font-medium text-slate-800">
@@ -255,7 +257,7 @@ const Team: React.FC = () => {
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => setModal({ type: 'edit', user: u })}
-                                                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors"
+                                                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors"
                                                 title="Bearbeiten"
                                             >
                                                 <FaEdit />
@@ -289,15 +291,15 @@ const Team: React.FC = () => {
             <div className="mt-4 flex items-center gap-6 text-xs text-slate-500">
                 <span className="font-medium text-slate-600">Rollenübersicht:</span>
                 <span className="flex items-center gap-1"><FaUserShield className="text-amber-500" /> Inhaber – Vollzugriff, Abonnement, Team</span>
-                <span className="flex items-center gap-1"><FaUserTie className="text-brand-500" /> Manager – Rechnungen, Berichte, Einstellungen</span>
+                <span className="flex items-center gap-1"><FaUserTie className="text-slate-600" /> Manager – Rechnungen, Berichte, Einstellungen</span>
                 <span className="flex items-center gap-1"><FaUser className="text-slate-400" /> Mitarbeiter – Projekte, Kunden</span>
             </div>
 
             {/* Add Modal */}
             {modal?.type === 'add' && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-                        <h2 className="text-base font-bold text-slate-800 mb-4">Mitarbeiter hinzufügen</h2>
+                    <div className="bg-white rounded-sm shadow-sm w-full max-w-md p-6">
+                        <h2 className="text-base font-medium text-slate-800 mb-4">Mitarbeiter hinzufügen</h2>
                         <UserForm
                             onSubmit={data => createMutation.mutate(data)}
                             onCancel={() => setModal(null)}
@@ -310,8 +312,8 @@ const Team: React.FC = () => {
             {/* Edit Modal */}
             {modal?.type === 'edit' && modal.user && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-                        <h2 className="text-base font-bold text-slate-800 mb-4">Mitarbeiter bearbeiten</h2>
+                    <div className="bg-white rounded-sm shadow-sm w-full max-w-md p-6">
+                        <h2 className="text-base font-medium text-slate-800 mb-4">Mitarbeiter bearbeiten</h2>
                         <UserForm
                             initial={modal.user}
                             isEdit

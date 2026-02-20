@@ -224,13 +224,13 @@ const Reports = () => {
     return (
         <div className="max-w-screen-xl mx-auto flex flex-col gap-5 pb-10 fade-in">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-sm border border-slate-200 shadow-sm">
-                <div>
-                    <h1 className="text-xl font-bold text-slate-800">Berichte & Analysen</h1>
-                    <p className="text-slate-500 text-sm">Detaillierte Auswertung Ihrer Geschäftsdaten.</p>
+            <div className="flex justify-between items-center gap-4 bg-white p-4 rounded-sm border border-slate-200 shadow-sm">
+                <div className="min-w-0">
+                    <h1 className="text-xl font-medium text-slate-800 truncate">Berichte & Analysen</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">Detaillierte Auswertung Ihrer Geschäftsdaten.</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative z-20">
+                <div className="flex items-center gap-3 shrink-0">
+                    <div className="relative z-20 flex-1 sm:flex-none">
                         <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
                         <DatePicker
                             selectsRange
@@ -240,16 +240,16 @@ const Reports = () => {
                             isClearable={false}
                             locale="de"
                             dateFormat="dd.MM.yyyy"
-                            className="pl-9 pr-3 py-2 border border-slate-300 rounded text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 w-[240px] cursor-pointer hover:border-brand-400 transition"
+                            className="pl-9 pr-3 py-2 border border-slate-300 rounded text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-[240px] cursor-pointer hover:border-brand-400 transition"
                             placeholderText="Zeitraum wählen"
                             maxDate={new Date()}
                         />
                     </div>
                     <button
                         onClick={() => setAppliedDateRange(dateRange)}
-                        className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center gap-2 transition"
+                        className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition shrink-0"
                     >
-                        <FaFilter className="text-xs" /> Anzeigen
+                        <FaFilter className="text-xs" /> <span className="hidden xs:inline">Anzeigen</span><span className="xs:hidden">Anzeigen</span>
                     </button>
                 </div>
             </div>
@@ -259,7 +259,7 @@ const Reports = () => {
                 <button
                     onClick={() => setActiveTab('analytics')}
                     className={clsx(
-                        "px-5 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-[1px] flex items-center gap-2",
+                        "px-5 py-2 text-sm font-medium transition-all rounded-[1px] flex items-center gap-2",
                         activeTab === 'analytics' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
                     )}
                 >
@@ -268,7 +268,7 @@ const Reports = () => {
                 <button
                     onClick={() => setActiveTab('finance')}
                     className={clsx(
-                        "px-5 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-[1px] flex items-center gap-2",
+                        "px-5 py-2 text-sm font-medium transition-all rounded-[1px] flex items-center gap-2",
                         activeTab === 'finance' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
                     )}
                 >
@@ -284,7 +284,7 @@ const Reports = () => {
                             label="Gesamtumsatz"
                             value={fmt(kpis?.revenue ?? 0)}
                             icon={<FaEuroSign />}
-                            iconColor="text-brand-700"
+                            iconColor="text-slate-900"
                         />
                         <KPICard
                             label="Netto-Marge Ø"
@@ -310,8 +310,8 @@ const Reports = () => {
                     {/* Row 1: Revenue (large) + Margin (small) */}
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
                         <div className="lg:col-span-3 bg-white p-5 rounded-sm shadow-sm border border-slate-200">
-                            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-4">
-                                <FaChartLine className="text-brand-500" /> Umsatzentwicklung
+                            <h3 className="text-xs font-medium text-slate-600 flex items-center gap-2 mb-4">
+                                <FaChartLine className="text-slate-600" /> Umsatzentwicklung
                             </h3>
                             <div className="h-[240px]">
                                 <Line options={lineOptions} data={revenueData} />
@@ -319,7 +319,7 @@ const Reports = () => {
                         </div>
 
                         <div className="lg:col-span-2 bg-white p-5 rounded-sm shadow-sm border border-slate-200">
-                            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-4">
+                            <h3 className="text-xs font-medium text-slate-600 flex items-center gap-2 mb-4">
                                 <FaPercentage className="text-emerald-500" /> Marge pro Monat
                             </h3>
                             <div className="h-[240px]">
@@ -331,7 +331,7 @@ const Reports = () => {
                     {/* Row 2: Language + Customer + Status */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                         <div className="bg-white p-5 rounded-sm shadow-sm border border-slate-200">
-                            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-4">
+                            <h3 className="text-xs font-medium text-slate-600 flex items-center gap-2 mb-4">
                                 <FaTasks className="text-teal-500" /> Umsatz nach Sprache
                             </h3>
                             {(langDist?.revenue?.length ?? 0) > 0 ? (
@@ -344,7 +344,7 @@ const Reports = () => {
                         </div>
 
                         <div className="bg-white p-5 rounded-sm shadow-sm border border-slate-200">
-                            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-4">
+                            <h3 className="text-xs font-medium text-slate-600 flex items-center gap-2 mb-4">
                                 <FaUserTie className="text-blue-500" /> Top Kunden (Umsatz)
                             </h3>
                             {(customerStats?.revenue?.length ?? 0) > 0 ? (
@@ -357,7 +357,7 @@ const Reports = () => {
                         </div>
 
                         <div className="bg-white p-5 rounded-sm shadow-sm border border-slate-200">
-                            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2 mb-4">
+                            <h3 className="text-xs font-medium text-slate-600 flex items-center gap-2 mb-4">
                                 <FaLayerGroup className="text-indigo-500" /> Projektstatus
                             </h3>
                             {(statusDist?.data?.length ?? 0) > 0 ? (
@@ -374,17 +374,17 @@ const Reports = () => {
                 <div className="space-y-5">
                     {/* Finance Table */}
                     <div className="bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm">
-                        <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-transparent">
                             <div>
-                                <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                    <FaFileInvoiceDollar className="text-brand-600" /> Finanz-Berichte
+                                <h3 className="text-xs font-semibold text-slate-900 flex items-center gap-2">
+                                    <FaFileInvoiceDollar className="text-slate-700" /> Finanz-Berichte
                                 </h3>
                                 <div className="flex gap-4 mt-2">
                                     <button
                                         onClick={() => setFinanceSubTab('tax')}
                                         className={clsx(
-                                            "text-[10px] font-black uppercase tracking-tight pb-1 border-b-2 transition-all",
-                                            financeSubTab === 'tax' ? "text-brand-600 border-brand-600" : "text-slate-400 border-transparent hover:text-slate-600"
+                                            "text-xs font-semibold pb-1 border-b-2 transition-all",
+                                            financeSubTab === 'tax' ? "text-slate-700 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"
                                         )}
                                     >
                                         USt.-Voranmeldung
@@ -392,15 +392,15 @@ const Reports = () => {
                                     <button
                                         onClick={() => setFinanceSubTab('profitability')}
                                         className={clsx(
-                                            "text-[10px] font-black uppercase tracking-tight pb-1 border-b-2 transition-all",
-                                            financeSubTab === 'profitability' ? "text-brand-600 border-brand-600" : "text-slate-400 border-transparent hover:text-slate-600"
+                                            "text-xs font-semibold pb-1 border-b-2 transition-all",
+                                            financeSubTab === 'profitability' ? "text-slate-700 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"
                                         )}
                                     >
                                         Rentabilitäts-Analyse
                                     </button>
                                 </div>
                             </div>
-                            <button className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:underline flex items-center gap-2">
+                            <button className="text-xs font-semibold text-slate-700 hover:underline flex items-center gap-2">
                                 <FaTable /> DATEV XML Export
                             </button>
                         </div>
@@ -408,7 +408,7 @@ const Reports = () => {
                             {financeSubTab === 'tax' ? (
                                 <table className="w-full text-left">
                                     <thead>
-                                        <tr className="bg-slate-50/80 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200">
+                                        <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                                             <th className="px-5 py-3">Monat</th>
                                             <th className="px-5 py-3 text-right">Umsatz 19% (Netto)</th>
                                             <th className="px-5 py-3 text-right">USt 19%</th>
@@ -422,17 +422,17 @@ const Reports = () => {
                                     <tbody className="divide-y divide-slate-100">
                                         {taxData?.map((row: any, i: number) => (
                                             <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-5 py-3 text-xs font-black text-slate-900 uppercase">{row.label}</td>
-                                                <td className="px-5 py-3 text-xs font-bold text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_19_net)}</td>
-                                                <td className="px-5 py-3 text-xs font-black text-brand-600 text-right tabular-nums">{fmtNum(row.revenue_19_tax)}</td>
-                                                <td className="px-5 py-3 text-xs font-bold text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_7_net)}</td>
-                                                <td className="px-5 py-3 text-xs font-black text-brand-600 text-right tabular-nums">{fmtNum(row.revenue_7_tax)}</td>
-                                                <td className="px-5 py-3 text-xs font-bold text-slate-500 text-right tabular-nums">{fmtNum(row.revenue_reverse_charge)}</td>
-                                                <td className="px-5 py-3 text-xs font-black text-emerald-600 text-right tabular-nums border-l border-slate-100 bg-emerald-50/20">
+                                                <td className="px-5 py-3 text-xs font-semibold text-slate-900">{row.label}</td>
+                                                <td className="px-5 py-3 text-xs font-medium text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_19_net)}</td>
+                                                <td className="px-5 py-3 text-xs font-semibold text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_19_tax)}</td>
+                                                <td className="px-5 py-3 text-xs font-medium text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_7_net)}</td>
+                                                <td className="px-5 py-3 text-xs font-semibold text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_7_tax)}</td>
+                                                <td className="px-5 py-3 text-xs font-medium text-slate-500 text-right tabular-nums">{fmtNum(row.revenue_reverse_charge)}</td>
+                                                <td className="px-5 py-3 text-xs font-semibold text-emerald-600 text-right tabular-nums border-l border-slate-100 bg-emerald-50/20">
                                                     -{fmtNum(row.input_tax_est)}
                                                 </td>
                                                 <td className={clsx(
-                                                    "px-5 py-3 text-xs font-black text-right tabular-nums bg-slate-50/50",
+                                                    "px-5 py-3 text-xs font-semibold text-right tabular-nums bg-transparent",
                                                     row.payable_tax >= 0 ? "text-slate-900" : "text-emerald-700"
                                                 )}>
                                                     {fmtNum(row.payable_tax)}
@@ -446,7 +446,7 @@ const Reports = () => {
                                         )}
                                     </tbody>
                                     {taxData && taxData.length > 0 && (
-                                        <tfoot className="bg-slate-900 text-white font-black uppercase tracking-widest text-[10px]">
+                                        <tfoot className="bg-slate-900 text-white font-semibold text-xs">
                                             <tr>
                                                 <td className="px-5 py-3">Gesamt</td>
                                                 <td className="px-5 py-3 text-right">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_19_net, 0))}</td>
@@ -455,7 +455,7 @@ const Reports = () => {
                                                 <td className="px-5 py-3 text-right">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_7_tax, 0))}</td>
                                                 <td className="px-5 py-3 text-right">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_reverse_charge, 0))}</td>
                                                 <td className="px-5 py-3 text-right border-l border-slate-700">-{fmtNum(taxData.reduce((a: number, r: any) => a + r.input_tax_est, 0))}</td>
-                                                <td className="px-5 py-3 text-right bg-brand-600">{fmtNum(taxData.reduce((a: number, r: any) => a + r.payable_tax, 0))}</td>
+                                                <td className="px-5 py-3 text-right bg-slate-900">{fmtNum(taxData.reduce((a: number, r: any) => a + r.payable_tax, 0))}</td>
                                             </tr>
                                         </tfoot>
                                     )}
@@ -463,7 +463,7 @@ const Reports = () => {
                             ) : (
                                 <table className="w-full text-left">
                                     <thead>
-                                        <tr className="bg-slate-50/80 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200">
+                                        <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                                             <th className="px-5 py-3">Projekt / Kunde</th>
                                             <th className="px-5 py-3">Datum</th>
                                             <th className="px-5 py-3 text-right">Umsatz (Netto)</th>
@@ -477,16 +477,16 @@ const Reports = () => {
                                         {profitabilityData?.map((row: any) => (
                                             <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                                                 <td className="px-5 py-3">
-                                                    <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{row.project_number}</p>
-                                                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">{row.customer}</p>
+                                                    <p className="text-xs font-semibold text-slate-900">{row.project_number}</p>
+                                                    <p className="text-xs font-medium text-slate-400 mt-0.5">{row.customer}</p>
                                                 </td>
                                                 <td className="px-5 py-3 text-xs text-slate-500 tabular-nums">{row.date}</td>
-                                                <td className="px-5 py-3 text-xs font-bold text-slate-700 text-right tabular-nums">{fmtNum(row.revenue ?? 0)}</td>
-                                                <td className="px-5 py-3 text-xs font-bold text-red-500/70 text-right tabular-nums">-{fmtNum(row.cost ?? 0)}</td>
-                                                <td className="px-5 py-3 text-xs font-black text-emerald-600 text-right tabular-nums">{fmtNum(row.profit ?? 0)}</td>
+                                                <td className="px-5 py-3 text-xs font-medium text-slate-700 text-right tabular-nums">{fmtNum(row.revenue ?? 0)}</td>
+                                                <td className="px-5 py-3 text-xs font-medium text-red-500/70 text-right tabular-nums">-{fmtNum(row.cost ?? 0)}</td>
+                                                <td className="px-5 py-3 text-xs font-semibold text-emerald-600 text-right tabular-nums">{fmtNum(row.profit ?? 0)}</td>
                                                 <td className="px-5 py-3 text-right tabular-nums">
                                                     <span className={clsx(
-                                                        "text-[10px] font-black px-2 py-0.5 rounded-full",
+                                                        "text-xs font-semibold px-2 py-0.5 rounded-full",
                                                         (row.margin ?? 0) >= 30 ? "bg-emerald-100 text-emerald-700"
                                                             : (row.margin ?? 0) >= 15 ? "bg-blue-100 text-blue-700"
                                                                 : "bg-amber-100 text-amber-700"
@@ -496,7 +496,7 @@ const Reports = () => {
                                                 </td>
                                                 <td className="px-5 py-3">
                                                     <span className={clsx(
-                                                        "text-[9px] font-black uppercase px-2 py-0.5 rounded-sm",
+                                                        "text-xs font-semibold px-2 py-0.5 rounded-sm",
                                                         row.status === 'completed' || row.status === 'invoiced'
                                                             ? "bg-emerald-100 text-emerald-700"
                                                             : row.status === 'delivery'
@@ -520,12 +520,12 @@ const Reports = () => {
                                         const totalProfit = profitabilityData.reduce((a: number, r: any) => a + (r.profit ?? 0), 0);
                                         const avgMargin = totalRev > 0 ? Math.round((totalProfit / totalRev) * 100) : 0;
                                         return (
-                                            <tfoot className="bg-slate-900 text-white font-black uppercase tracking-widest text-[10px]">
+                                            <tfoot className="bg-slate-900 text-white font-semibold text-xs">
                                                 <tr>
                                                     <td colSpan={2} className="px-5 py-3">Gesamt ({profitabilityData.length} Projekte)</td>
                                                     <td className="px-5 py-3 text-right">{fmtNum(totalRev)}</td>
                                                     <td className="px-5 py-3 text-right">-{fmtNum(totalCost)}</td>
-                                                    <td className="px-5 py-3 text-right bg-brand-600">{fmtNum(totalProfit)}</td>
+                                                    <td className="px-5 py-3 text-right bg-slate-900">{fmtNum(totalProfit)}</td>
                                                     <td className="px-5 py-3 text-right">{avgMargin} %</td>
                                                     <td></td>
                                                 </tr>
@@ -539,30 +539,30 @@ const Reports = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="bg-white p-5 border border-slate-200 rounded-sm">
-                            <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-3">Hinweise zur UStVA</h4>
+                            <h4 className="text-sm font-medium text-slate-900 mb-3">Hinweise zur UStVA</h4>
                             <ul className="space-y-2.5 text-xs text-slate-500">
                                 <li className="flex gap-2">
-                                    <span className="text-brand-600 font-black shrink-0">1.</span>
+                                    <span className="text-slate-700 font-semibold shrink-0">1.</span>
                                     Die Zahllast berechnet sich aus der Summe der vereinnahmten Umsatzsteuer abzüglich der gezahlten Vorsteuer.
                                 </li>
                                 <li className="flex gap-2">
-                                    <span className="text-brand-600 font-black shrink-0">2.</span>
+                                    <span className="text-slate-700 font-semibold shrink-0">2.</span>
                                     Reverse Charge Umsätze (innergemeinschaftliche Leistungen) sind im Inland steuerfrei, müssen aber in der UStVA gemeldet werden.
                                 </li>
                                 <li className="flex gap-2">
-                                    <span className="text-brand-600 font-black shrink-0">3.</span>
+                                    <span className="text-slate-700 font-semibold shrink-0">3.</span>
                                     Die Vorsteuer wird aktuell basierend auf den Projektkosten mit 19% geschätzt, solange keine expliziten Eingangsrechnungen erfasst sind.
                                 </li>
                             </ul>
                         </div>
                         <div className="bg-sky-50 p-5 border border-sky-100 rounded-sm flex flex-col justify-between">
                             <div>
-                                <h4 className="text-[11px] font-black text-sky-900 uppercase tracking-widest mb-2">Finanzamt Export</h4>
+                                <h4 className="text-sm font-medium text-sky-900 mb-2">Finanzamt Export</h4>
                                 <p className="text-xs text-sky-700 leading-relaxed">
                                     Sie können diese Daten direkt für Ihre monatliche oder vierteljährliche Umsatzsteuer-Voranmeldung verwenden. Ein direkter Elster-Export ist in Vorbereitung.
                                 </p>
                             </div>
-                            <button className="mt-5 w-full bg-sky-600 text-white py-2 rounded-sm text-[11px] font-black uppercase tracking-widest hover:bg-sky-700 transition">
+                            <button className="mt-5 w-full bg-sky-600 text-white py-2 rounded-sm text-sm font-medium hover:bg-sky-700 transition">
                                 PDF Finanzbericht erstellen
                             </button>
                         </div>

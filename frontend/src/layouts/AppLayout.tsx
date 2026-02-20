@@ -7,21 +7,21 @@ const AppLayout = () => {
     const isFetching = useIsFetching();
 
     return (
-        <div className="h-screen flex flex-col bg-slate-50 overflow-hidden font-sans text-slate-700">
+        <div className="h-screen flex flex-col bg-white overflow-hidden font-sans text-slate-900">
             <Navigation />
 
             {/* Global Loading Indicator */}
             <div className={clsx(
-                "fixed bottom-6 right-6 bg-white pl-3 pr-4 py-2 shadow-lg border border-slate-200 z-50 transition-all duration-300 flex items-center gap-3 pointer-events-none rounded-md",
+                "fixed bottom-6 right-6 bg-white pl-3 pr-4 py-2 border border-slate-200 z-50 transition-all duration-300 flex items-center gap-3 pointer-events-none rounded-sm",
                 isFetching > 0 ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
             )}>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-200 border-t-brand-600"></div>
-                <span className="text-xs font-semibold text-slate-600">Daten werden aktualisiert...</span>
+                <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-slate-200 border-t-slate-900"></div>
+                <span className="text-xs text-slate-500">Daten werden aktualisiert...</span>
             </div>
 
             {/* Main Content */}
             <main className="flex-1 overflow-hidden relative">
-                <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-6 md:px-16 py-8">
+                <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-6 md:py-8">
                     <Outlet />
                 </div>
             </main>

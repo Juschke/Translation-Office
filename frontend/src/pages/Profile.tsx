@@ -139,7 +139,7 @@ const Profile = () => {
         <div className="max-w-4xl mx-auto fade-in pb-10">
             {/* Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-slate-800">Mein Profil</h1>
+                <h1 className="text-2xl font-medium text-slate-800">Mein Profil</h1>
                 <p className="text-slate-500 text-sm">Verwalten Sie Ihre persönlichen Informationen und Sicherheitseinstellungen.</p>
             </div>
 
@@ -154,17 +154,17 @@ const Profile = () => {
                 {/* Left Column */}
                 <div className="space-y-6">
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="h-20 bg-brand-900"></div>
+                        <div className="h-20 bg-slate-900"></div>
                         <div className="px-6 pb-6 text-center">
                             <div className="relative -mt-10 mb-4 inline-block">
-                                <div className="w-20 h-20 rounded-sm bg-white p-1 shadow-md mx-auto">
-                                    <div className="w-full h-full rounded bg-slate-100 flex items-center justify-center text-2xl font-bold text-brand-700 border border-slate-100 uppercase">
+                                <div className="w-20 h-20 rounded-sm bg-white p-1 shadow-sm mx-auto">
+                                    <div className="w-full h-full rounded bg-slate-100 flex items-center justify-center text-2xl font-medium text-slate-900 border border-slate-100">
                                         {formData.firstName || formData.lastName ? getInitials(`${formData.firstName} ${formData.lastName}`) : 'JD'}
                                     </div>
                                 </div>
                             </div>
-                            <h2 className="text-lg font-bold text-slate-800 truncate px-2">{formData.firstName} {formData.lastName}</h2>
-                            <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">{user.role || 'User'}</p>
+                            <h2 className="text-lg font-medium text-slate-800 truncate px-2">{formData.firstName} {formData.lastName}</h2>
+                            <p className="text-xs font-medium text-slate-400 mt-1">{user.role || 'User'}</p>
                             <div className="mt-6 pt-6 border-t border-slate-100 text-left space-y-3">
                                 <div className="flex items-center text-sm text-slate-600">
                                     <FaEnvelope className="w-4 flex-shrink-0 mr-3 text-slate-400" />
@@ -185,10 +185,10 @@ const Profile = () => {
                     {/* Personal Info Form */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 p-8">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-sm bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-100 shadow-sm"><FaUser className="text-sm" /></div>
+                            <div className="w-10 h-10 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center border border-slate-100 shadow-sm"><FaUser className="text-sm" /></div>
                             <div>
-                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Persönliche Daten</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Ihre Grundinformationen</p>
+                                <h3 className="text-sm font-semibold text-slate-800">Persönliche Daten</h3>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">Ihre Grundinformationen</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
@@ -229,7 +229,7 @@ const Profile = () => {
                             <button
                                 onClick={handleUpdateProfile}
                                 disabled={isLoading}
-                                className="px-8 py-2.5 bg-brand-700 text-white rounded text-[11px] font-black uppercase tracking-widest hover:bg-brand-800 transition-all shadow-xl shadow-brand-500/10 active:scale-95 disabled:opacity-50"
+                                className="px-8 py-2.5 bg-slate-900 text-white rounded text-sm font-medium hover:bg-slate-800 transition-all shadow-sm shadow-brand-500/10 disabled:opacity-50"
                             >
                                 Profil speichern
                             </button>
@@ -239,10 +239,10 @@ const Profile = () => {
                     {/* Security */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 p-8">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-sm bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-100 shadow-sm"><FaShieldAlt className="text-sm" /></div>
+                            <div className="w-10 h-10 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center border border-slate-100 shadow-sm"><FaShieldAlt className="text-sm" /></div>
                             <div>
-                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Sicherheit & Zugang</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Passwort & Authentifizierung</p>
+                                <h3 className="text-sm font-semibold text-slate-800">Sicherheit & Zugang</h3>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">Passwort & Authentifizierung</p>
                             </div>
                         </div>
 
@@ -250,14 +250,14 @@ const Profile = () => {
                         <div className="mb-10 pb-10 border-b border-slate-100">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <h4 className="text-sm src-slate-700 font-bold">Passwort ändern</h4>
-                                    <p className="text-[11px] text-slate-500 mt-1">Geben Sie Ihr aktuelles und ein neues Passwort ein.</p>
+                                    <h4 className="text-sm src-slate-700 font-medium">Passwort ändern</h4>
+                                    <p className="text-sm text-slate-500 mt-1">Geben Sie Ihr aktuelles und ein neues Passwort ein.</p>
                                 </div>
                                 <button
                                     onClick={() => setShowPasswordForm(!showPasswordForm)}
                                     className={clsx(
-                                        "px-4 py-2 rounded text-[10px] font-black uppercase tracking-widest transition-all",
-                                        showPasswordForm ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+                                        "px-4 py-2 rounded text-xs font-semibold transition-all",
+                                        showPasswordForm ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-slate-50 text-slate-900 hover:bg-slate-100"
                                     )}
                                 >
                                     {showPasswordForm ? 'Abbrechen' : 'Passwort ändern'}
@@ -276,26 +276,49 @@ const Profile = () => {
                                                 onChange={e => setPasswordData({ ...passwordData, current_password: e.target.value })}
                                             />
                                         </div>
-                                        <Input
-                                            type="password"
-                                            label="Neues Passwort"
-                                            placeholder="••••••••"
-                                            value={passwordData.password}
-                                            onChange={e => setPasswordData({ ...passwordData, password: e.target.value })}
-                                        />
-                                        <Input
-                                            type="password"
-                                            label="Wiederholen"
-                                            placeholder="••••••••"
-                                            value={passwordData.password_confirmation}
-                                            onChange={e => setPasswordData({ ...passwordData, password_confirmation: e.target.value })}
-                                        />
+                                        <div>
+                                            <Input
+                                                type="password"
+                                                label="Neues Passwort"
+                                                placeholder="••••••••"
+                                                value={passwordData.password}
+                                                onChange={e => setPasswordData({ ...passwordData, password: e.target.value })}
+                                            />
+                                            <div className="mt-1.5">
+                                                <div className="flex gap-1 h-1">
+                                                    {[1, 2, 3, 4].map((level) => (
+                                                        <div
+                                                            key={level}
+                                                            className={clsx(
+                                                                "flex-1 rounded-full bg-slate-200 transition-all duration-300",
+                                                                passwordData.password.length >= level * 3 && (level === 1 ? "bg-red-400" : level === 2 ? "bg-amber-400" : level === 3 ? "bg-blue-400" : "bg-emerald-400")
+                                                            )}>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                                                    {passwordData.password.length === 0 ? 'Passwortstärke' :
+                                                        passwordData.password.length < 6 ? 'Sehr schwach' :
+                                                            passwordData.password.length < 9 ? 'Schwach' :
+                                                                passwordData.password.length < 12 ? 'Mittel' : 'Stark'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Input
+                                                type="password"
+                                                label="Wiederholen"
+                                                placeholder="••••••••"
+                                                value={passwordData.password_confirmation}
+                                                onChange={e => setPasswordData({ ...passwordData, password_confirmation: e.target.value })}
+                                            />
+                                        </div>
                                     </div>
                                     <div className="flex justify-end pt-2">
                                         <button
                                             onClick={handleChangePassword}
                                             disabled={isLoading}
-                                            className="px-8 py-2.5 bg-brand-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-70"
+                                            className="px-8 py-2.5 bg-slate-900 text-white rounded text-xs font-semibold hover:bg-black transition-all shadow-sm disabled:opacity-70"
                                         >
                                             Sicherheitsupdate bestätigen
                                         </button>
@@ -308,27 +331,27 @@ const Profile = () => {
                         <div className="space-y-6">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h4 className="text-sm src-slate-700 font-bold flex items-center gap-2">
+                                    <h4 className="text-sm src-slate-700 font-medium flex items-center gap-2">
                                         Zwei-Faktor-Authentifizierung (2FA)
-                                        {user.two_factor_confirmed_at ? <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] rounded uppercase font-bold">Aktiv</span> : <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded uppercase font-bold">Inaktiv</span>}
+                                        {user.two_factor_confirmed_at ? <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded font-medium">Aktiv</span> : <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs rounded font-medium">Inaktiv</span>}
                                     </h4>
-                                    <p className="text-[11px] text-slate-500 mt-1">Schützen Sie Ihr Konto zusätzlich mit einem Code von Ihrem Smartphone.</p>
+                                    <p className="text-sm text-slate-500 mt-1">Schützen Sie Ihr Konto zusätzlich mit einem Code von Ihrem Smartphone.</p>
                                 </div>
                                 {!user.two_factor_confirmed_at ? (
                                     <button
                                         onClick={handleEnable2FA}
                                         disabled={isLoading}
                                         className={clsx(
-                                            "px-4 py-2 rounded text-[10px] font-black uppercase tracking-widest transition-all",
-                                            showTwoFactorInline ? "bg-slate-100 text-slate-500" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+                                            "px-4 py-2 rounded text-xs font-semibold transition-all",
+                                            showTwoFactorInline ? "bg-slate-100 text-slate-500" : "bg-slate-50 text-slate-900 hover:bg-slate-100"
                                         )}
                                     >
                                         {showTwoFactorInline ? 'Abbrechen' : 'Aktivieren'}
                                     </button>
                                 ) : (
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setShowRecoveryCodesInline(!showRecoveryCodesInline); if (!showRecoveryCodesInline) showRecoveryCodes(); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-[10px] font-black uppercase tracking-widest hover:bg-slate-200">Codes</button>
-                                        <button onClick={() => setShowDisableConfirmInline(!showDisableConfirmInline)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded text-[10px] font-black uppercase tracking-widest hover:bg-red-100">Deaktivieren</button>
+                                        <button onClick={() => { setShowRecoveryCodesInline(!showRecoveryCodesInline); if (!showRecoveryCodesInline) showRecoveryCodes(); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-xs font-semibold hover:bg-slate-200">Codes</button>
+                                        <button onClick={() => setShowDisableConfirmInline(!showDisableConfirmInline)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded text-xs font-semibold hover:bg-red-100">Deaktivieren</button>
                                     </div>
                                 )}
                             </div>
@@ -342,24 +365,24 @@ const Profile = () => {
                                         </div>
                                         <div className="flex-1 space-y-4">
                                             <div>
-                                                <h5 className="text-xs font-bold text-slate-700 uppercase mb-1">Authenticator scannen</h5>
-                                                <p className="text-[11px] text-slate-500">Scannen Sie diesen QR-Code mit Ihrer Authenticator-App (z.B. Google Authenticator).</p>
+                                                <h5 className="text-xs font-medium text-slate-700 mb-1">Authenticator scannen</h5>
+                                                <p className="text-sm text-slate-500">Scannen Sie diesen QR-Code mit Ihrer Authenticator-App (z.B. Google Authenticator).</p>
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block ml-1">Verifizierungscode</label>
+                                                <label className="text-xs font-medium text-slate-400 block ml-1">Verifizierungscode</label>
                                                 <div className="flex gap-2">
                                                     <input
                                                         type="text"
                                                         placeholder="000 000"
                                                         value={twoFactorCode}
                                                         onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                                                        className="flex-1 text-center text-xl tracking-widest font-black border border-slate-300 rounded-md py-2 focus:border-brand-500 outline-none"
+                                                        className="flex-1 text-center text-xl font-semibold border border-slate-300 rounded-sm py-2 focus:border-slate-900 outline-none"
                                                         maxLength={6}
                                                     />
                                                     <button
                                                         onClick={handleConfirm2FA}
                                                         disabled={twoFactorCode.length < 6 || isLoading}
-                                                        className="px-6 bg-brand-700 text-white font-black text-[10px] uppercase rounded-md hover:bg-brand-800 disabled:opacity-50 transition-all shadow-lg shadow-brand-500/10"
+                                                        className="px-6 bg-slate-900 text-white font-semibold text-xs rounded-sm hover:bg-slate-800 disabled:opacity-50 transition-all shadow-sm shadow-brand-500/10"
                                                     >
                                                         Bestätigen
                                                     </button>
@@ -375,17 +398,17 @@ const Profile = () => {
                                 <div className="bg-slate-50 p-6 rounded-sm border border-slate-200 animate-slideDown">
                                     <div className="flex items-center gap-3 mb-4">
                                         <FaLock className="text-amber-500" />
-                                        <h5 className="text-xs font-bold text-slate-700 uppercase">Wiederherstellungscodes</h5>
+                                        <h5 className="text-xs font-medium text-slate-700">Wiederherstellungscodes</h5>
                                     </div>
-                                    <p className="text-[11px] text-slate-500 mb-4">Speichern Sie diese Codes an einem sicheren Ort. Sie können verwendet werden, wenn Sie keinen Zugriff auf Ihr Gerät haben.</p>
+                                    <p className="text-sm text-slate-500 mb-4">Speichern Sie diese Codes an einem sicheren Ort. Sie können verwendet werden, wenn Sie keinen Zugriff auf Ihr Gerät haben.</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
                                         {recoveryCodes.map((code, i) => (
-                                            <div key={i} className="text-center py-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-black text-slate-700 shadow-sm">{code}</div>
+                                            <div key={i} className="text-center py-1.5 bg-white border border-slate-200 rounded-sm text-sm font-medium text-slate-700 shadow-sm">{code}</div>
                                         ))}
                                     </div>
                                     <div className="flex gap-3">
-                                        <button onClick={handleRegenerateRecoveryCodes} disabled={isLoading} className="flex-1 py-2 bg-brand-50 text-brand-700 font-black text-[10px] uppercase rounded hover:bg-brand-100 transition-all border border-brand-200">Neue Codes generieren</button>
-                                        <button onClick={() => setShowRecoveryCodesInline(false)} className="flex-1 py-2 bg-slate-800 text-white font-black text-[10px] uppercase rounded hover:bg-black transition-all">Verstanden</button>
+                                        <button onClick={handleRegenerateRecoveryCodes} disabled={isLoading} className="flex-1 py-2 bg-slate-50 text-slate-900 font-semibold text-xs rounded hover:bg-slate-100 transition-all border border-slate-200">Neue Codes generieren</button>
+                                        <button onClick={() => setShowRecoveryCodesInline(false)} className="flex-1 py-2 bg-slate-800 text-white font-semibold text-xs rounded hover:bg-black transition-all">Verstanden</button>
                                     </div>
                                 </div>
                             )}
@@ -395,21 +418,21 @@ const Profile = () => {
                                 <div className="bg-rose-50 p-6 rounded-sm border border-rose-100 animate-slideDown">
                                     <div className="flex items-center gap-3 mb-4">
                                         <FaShieldAlt className="text-rose-600" />
-                                        <h5 className="text-xs font-bold text-rose-700 uppercase">2FA Deaktivieren</h5>
+                                        <h5 className="text-xs font-medium text-rose-700">2FA Deaktivieren</h5>
                                     </div>
-                                    <p className="text-[11px] text-rose-600/80 mb-4 font-medium">Bitte bestätigen Sie Ihr Passwort, um die Zwei-Faktor-Authentifizierung für Ihr Konto zu deaktivieren.</p>
+                                    <p className="text-sm text-rose-600/80 mb-4 font-medium">Bitte bestätigen Sie Ihr Passwort, um die Zwei-Faktor-Authentifizierung für Ihr Konto zu deaktivieren.</p>
                                     <div className="flex gap-2">
                                         <input
                                             type="password"
                                             placeholder="Passwort bestätigen"
                                             value={disablePassword}
                                             onChange={e => setDisablePassword(e.target.value)}
-                                            className="flex-1 px-4 py-2 border border-rose-200 rounded-md text-sm outline-none focus:border-rose-500 bg-white shadow-inner"
+                                            className="flex-1 px-4 py-2 border border-rose-200 rounded-sm text-sm outline-none focus:border-rose-500 bg-white shadow-inner"
                                         />
                                         <button
                                             onClick={handleDisable2FA}
                                             disabled={!disablePassword || isLoading}
-                                            className="px-6 bg-rose-600 text-white font-black text-[10px] uppercase rounded-md hover:bg-rose-700 disabled:opacity-50 transition-all shadow-lg shadow-rose-500/10"
+                                            className="px-6 bg-rose-600 text-white font-semibold text-xs rounded-sm hover:bg-rose-700 disabled:opacity-50 transition-all shadow-sm shadow-rose-500/10"
                                         >
                                             Deaktivieren
                                         </button>

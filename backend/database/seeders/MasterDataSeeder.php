@@ -14,8 +14,11 @@ class MasterDataSeeder extends Seeder
     public function run(): void
     {
         $tenant = Tenant::first() ?? Tenant::create(['company_name' => 'Default Office']);
-        $tenantId = $tenant->id;
+        $this->seedForTenant($tenant->id);
+    }
 
+    public function seedForTenant(int $tenantId): void
+    {
         // 1. Comprehensive Language List (A-Z)
         $languages = [
             ['iso_code' => 'af-ZA', 'name_internal' => 'Afrikaans', 'name_native' => 'Afrikaans', 'flag_icon' => 'za'],
