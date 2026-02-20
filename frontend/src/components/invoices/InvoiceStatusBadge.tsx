@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaFileAlt, FaStamp, FaPaperPlane, FaCheckCircle, FaExclamationTriangle, FaBan, FaArchive, FaTrashAlt, FaBell } from 'react-icons/fa';
+import { FaFileAlt, FaStamp, FaCheckCircle, FaExclamationTriangle, FaBan, FaArchive, FaTrashAlt, FaBell } from 'react-icons/fa';
 
 interface InvoiceStatusBadgeProps {
     status: string;
@@ -17,7 +17,6 @@ const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({ status, reminde
     if (['bezahlt', 'paid'].includes(statusLower)) normalizedStatus = 'paid';
     if (['offen', 'pending'].includes(statusLower)) normalizedStatus = 'pending';
     if (['überfällig', 'overdue'].includes(statusLower)) normalizedStatus = 'overdue';
-    if (['gesendet', 'sent'].includes(statusLower)) normalizedStatus = 'sent';
     if (['storniert', 'cancelled'].includes(statusLower)) normalizedStatus = 'cancelled';
     if (['gelöscht', 'deleted'].includes(statusLower)) normalizedStatus = 'deleted';
     if (['archiviert', 'archived'].includes(statusLower)) normalizedStatus = 'archived';
@@ -30,7 +29,6 @@ const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({ status, reminde
     const config: Record<string, { bg: string; icon: React.ReactNode; label: string }> = {
         'draft': { bg: 'bg-slate-50 text-slate-600 border-slate-200', icon: <FaFileAlt className="text-[8px]" />, label: 'Entwurf' },
         'issued': { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', icon: <FaStamp className="text-[8px]" />, label: 'Ausgestellt' },
-        'sent': { bg: 'bg-blue-50 text-blue-700 border-blue-200', icon: <FaPaperPlane className="text-[8px]" />, label: 'Gesendet' },
         'paid': { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <FaCheckCircle className="text-[8px]" />, label: 'Bezahlt' },
         'overdue': { bg: 'bg-red-50 text-red-700 border-red-200', icon: <FaExclamationTriangle className="text-[8px]" />, label: 'Überfällig' },
         'pending': { bg: 'bg-amber-50 text-amber-700 border-amber-200', icon: <FaFileAlt className="text-[8px]" />, label: 'Offen' },

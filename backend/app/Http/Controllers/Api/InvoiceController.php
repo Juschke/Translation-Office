@@ -180,10 +180,10 @@ class InvoiceController extends Controller
                 $this->createInvoiceItems($invoice, $project, $validated['tax_rate'] ?? 19);
             }
 
-            // 5. Auto-advance project status to "ready_pickup" when invoice is created
-            $advancedStatuses = ['ready_pickup', 'completed', 'invoiced', 'archived'];
+            // 5. Auto-advance project status to "ready_for_pickup" when invoice is created
+            $advancedStatuses = ['ready_for_pickup', 'completed', 'invoiced', 'archived'];
             if (!in_array($project->status, $advancedStatuses)) {
-                $project->update(['status' => 'ready_pickup']);
+                $project->update(['status' => 'ready_for_pickup']);
             }
 
             // 6. Audit log
@@ -202,6 +202,13 @@ class InvoiceController extends Controller
     public function update(Request $request, $id)
     {
         $invoice = Invoice::findOrFail($id);
+
+        // Cancelled invoices are final and immutable
+        if ($invoice->status === Invoice::STATUS_CANCELLED) {
+            return response()->json([
+                'error' => 'Stornierte Rechnungen können nicht mehr bearbeitet werden.'
+            ], 403);
+        }
 
         // Explicitly reject changes on locked invoices (clearer error for frontend)
         if ($invoice->is_locked) {
@@ -306,7 +313,7 @@ class InvoiceController extends Controller
         }
 
         $invoice->delete();
-        return response()->json(['message' => 'Rechnungsentwurf gelöscht']);
+        return response()->json(['message' => 'Rechnungsentwurf in den Papierkorb verschoben']);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -420,112 +427,17 @@ class InvoiceController extends Controller
         }
 
         return DB::transaction(function () use ($invoice, $request) {
-            $year = date('Y');
-            $tenantId = $request->user()->tenant_id;
-
-            // Sequential number for the credit note (same number series!)
-            $lastSeq = Invoice::where('tenant_id', $tenantId)
-                ->whereYear('date', $year)
-                ->max('invoice_number_sequence') ?? 0;
-
-            $newSeq = $lastSeq + 1;
-            $creditNoteNumber = sprintf('RE-%s-%05d', $year, $newSeq);
-
-            // 1. Create credit note with negated amounts
-            $creditNote = Invoice::create([
-                'type' => Invoice::TYPE_CREDIT_NOTE,
-                'invoice_number' => $creditNoteNumber,
-                'invoice_number_sequence' => $newSeq,
-                'cancelled_invoice_id' => $invoice->id,
-                'project_id' => $invoice->project_id,
-                'customer_id' => $invoice->customer_id,
-                'date' => now()->toDateString(),
-                'due_date' => now()->addDays(14)->toDateString(),
-                'delivery_date' => $invoice->delivery_date,
-                'service_period' => $invoice->service_period,
-                'tax_exemption' => $invoice->tax_exemption,
-
-                // Negated amounts (Gutschrift)
-                'amount_net' => -$invoice->amount_net,
-                'tax_rate' => $invoice->tax_rate,
-                'amount_tax' => -$invoice->amount_tax,
-                'amount_gross' => -$invoice->amount_gross,
-
-                'currency' => $invoice->currency,
-                'notes' => 'Storno zu Rechnung ' . $invoice->invoice_number .
-                    ($request->input('reason') ? '. Grund: ' . $request->input('reason') : ''),
-                'status' => Invoice::STATUS_DRAFT,
-                'is_locked' => false,
-                'issued_at' => null,
-
-                // Copy all snapshots from original (GoBD: same data as original)
-                'snapshot_customer_name' => $invoice->snapshot_customer_name,
-                'snapshot_customer_address' => $invoice->snapshot_customer_address,
-                'snapshot_customer_zip' => $invoice->snapshot_customer_zip,
-                'snapshot_customer_city' => $invoice->snapshot_customer_city,
-                'snapshot_customer_country' => $invoice->snapshot_customer_country,
-                'snapshot_customer_vat_id' => $invoice->snapshot_customer_vat_id,
-                'snapshot_customer_leitweg_id' => $invoice->snapshot_customer_leitweg_id,
-                'snapshot_seller_name' => $invoice->snapshot_seller_name,
-                'snapshot_seller_address' => $invoice->snapshot_seller_address,
-                'snapshot_seller_zip' => $invoice->snapshot_seller_zip,
-                'snapshot_seller_city' => $invoice->snapshot_seller_city,
-                'snapshot_seller_country' => $invoice->snapshot_seller_country,
-                'snapshot_seller_tax_number' => $invoice->snapshot_seller_tax_number,
-                'snapshot_seller_vat_id' => $invoice->snapshot_seller_vat_id,
-                'snapshot_seller_bank_name' => $invoice->snapshot_seller_bank_name,
-                'snapshot_seller_bank_iban' => $invoice->snapshot_seller_bank_iban,
-                'snapshot_seller_bank_bic' => $invoice->snapshot_seller_bank_bic,
-                'snapshot_project_name' => $invoice->snapshot_project_name,
-                'snapshot_project_number' => $invoice->snapshot_project_number,
-            ]);
-
-            // 2. Create negated line items
-            foreach ($invoice->items as $item) {
-                InvoiceItem::create([
-                    'invoice_id' => $creditNote->id,
-                    'position' => $item->position,
-                    'description' => $item->description,
-                    'quantity' => $item->quantity,
-                    'unit' => $item->unit,
-                    'unit_price_cents' => -$item->unit_price_cents,
-                    'total_cents' => -$item->total_cents,
-                    'tax_rate' => $item->tax_rate,
-                ]);
-            }
-
-            // 3. Mark original as cancelled
+            // 1. Mark original as cancelled
             $oldStatus = $invoice->status;
             $invoice->status = Invoice::STATUS_CANCELLED;
             $invoice->save();
 
-            // 4. PDF generation skipped for draft (will be generated on issue)
-
-            // 5. Audit logs
+            // 2. Audit logs
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CANCELLED, $oldStatus, Invoice::STATUS_CANCELLED, [
-                'credit_note_id' => $creditNote->id,
-                'credit_note_number' => $creditNoteNumber,
-                'reason' => $request->input('reason'),
+                'reason' => $request->input('reason') ?? 'Manuelle Stornierung'
             ]);
 
-            $this->logAuditEvent($creditNote, $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_DRAFT, [
-                'original_invoice_id' => $invoice->id,
-                'type' => 'credit_note',
-            ]);
-
-            // 6. Release project for new invoicing (remove invoiced status if applicable)
-            if ($invoice->project_id) {
-                $project = \App\Models\Project::find($invoice->project_id);
-                if ($project && $project->status === 'invoiced') {
-                    $project->update(['status' => 'completed']);
-                }
-            }
-
-            return response()->json([
-                'original' => $invoice->fresh()->load('items'),
-                'credit_note' => $creditNote->load('items'),
-                'message' => 'Rechnung storniert. Gutschrift-Entwurf ' . $creditNoteNumber . ' erstellt.',
-            ]);
+            return response()->json($invoice);
         });
     }
 
@@ -549,7 +461,9 @@ class InvoiceController extends Controller
             return response()->json(['error' => 'Keine erlaubten Felder für Massenaktualisierung.'], 422);
         }
 
-        Invoice::whereIn('id', $validated['ids'])->update($updateData);
+        Invoice::whereIn('id', $validated['ids'])
+            ->where('status', '!=', Invoice::STATUS_CANCELLED)
+            ->update($updateData);
 
         return response()->json(['message' => 'Rechnungen aktualisiert']);
     }

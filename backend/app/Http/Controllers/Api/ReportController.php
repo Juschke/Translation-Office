@@ -353,11 +353,14 @@ class ReportController extends Controller
     private function getStatusLabel(?string $status): string
     {
         $map = [
-            'draft' => 'Angebot',
-            'ordered' => 'Bearbeitung',
-            'delivery' => 'Geliefert',
+            'draft' => 'Entwurf',
+            'offer' => 'Angebot',
+            'pending' => 'Angebot',
+            'in_progress' => 'Bearbeitung',
+            'review' => 'Lektorat/Review',
+            'ready_for_pickup' => 'Abholbereit',
+            'delivered' => 'Geliefert',
             'invoiced' => 'Rechnung',
-            'pickup' => 'Abholbereit',
             'completed' => 'Abgeschlossen',
             'cancelled' => 'Storniert',
             'archived' => 'Archiviert',

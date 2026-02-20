@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -195,7 +196,7 @@ const Invoices = () => {
             if (statusFilter === 'overdue') return isOverdue;
             if (statusFilter === 'reminders') return (inv.reminder_level > 0 || isOverdue) && status !== 'paid' && status !== 'cancelled';
             if (statusFilter === 'pending') {
-                return (status === 'pending' || status === 'sent' || status === 'draft' || status === 'issued') && !isOverdue;
+                return (status === 'pending' || status === 'draft' || status === 'issued') && !isOverdue;
             }
             if (statusFilter === 'all') return true;
 
@@ -479,8 +480,8 @@ const Invoices = () => {
                             <FaPen />
                         </button>
                     )}
-                    {/* Issued/Sent/Paid: show Cancel (Storno) button */}
-                    {['issued', 'sent', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note && (
+                    {/* Issued/Paid: show Cancel (Storno) button */}
+                    {['issued', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note && (
                         <button
                             onClick={() => {
                                 setConfirmTitle('Rechnung stornieren');
@@ -497,8 +498,8 @@ const Invoices = () => {
                             <FaBan />
                         </button>
                     )}
-                    {/* Quick: mark as paid — show for issued/sent/overdue only */}
-                    {['issued', 'sent', 'overdue'].includes(inv.status) && (
+                    {/* Quick: mark as paid — show for issued/overdue only */}
+                    {['issued', 'overdue'].includes(inv.status) && (
                         <button
                             onClick={() => markAsPaidMutation.mutate(inv.id)}
                             disabled={markAsPaidMutation.isPending}
@@ -666,9 +667,18 @@ const Invoices = () => {
                 <div className="flex gap-2 shrink-0">
                     <button
                         onClick={() => setIsNewInvoiceOpen(true)}
-                        className="bg-brand-700 hover:bg-brand-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95"
+                        className={clsx(
+                            "text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-[11px] sm:text-sm font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition active:scale-95",
+                            statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-brand-700 hover:bg-brand-800"
+                        )}
                     >
-                        <FaPlus className="text-[10px]" /> <span className="hidden sm:inline">Neue Rechnung</span><span className="inline sm:hidden">Rechnung</span>
+                        <FaPlus className="text-[10px]" />
+                        <span className="hidden sm:inline">
+                            {statusFilter === 'credit_notes' ? 'Neue Gutschrift' : 'Neue Rechnung'}
+                        </span>
+                        <span className="inline sm:hidden">
+                            {statusFilter === 'credit_notes' ? 'Gutschrift' : 'Rechnung'}
+                        </span>
                     </button>
                 </div>
             </div>
@@ -719,16 +729,7 @@ const Invoices = () => {
                             variant: 'primary',
                             show: statusFilter === 'reminders' || statusFilter === 'overdue'
                         },
-                        {
-                            label: 'Senden',
-                            icon: <FaPaperPlane className="text-xs" />,
-                            onClick: () => {
-                                toast.loading(`${selectedInvoices.length} Rechnungen werden gesendet...`, { duration: 2000 });
-                                bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'sent' } });
-                            },
-                            variant: 'primary',
-                            show: statusFilter !== 'trash' && statusFilter !== 'cancelled'
-                        },
+
                         {
                             label: 'Wiederherstellen',
                             icon: <FaTrashRestore className="text-xs" />,
@@ -776,6 +777,7 @@ const Invoices = () => {
                 }}
                 isLoading={createMutation.isPending || updateMutation.isPending}
                 invoice={invoiceToEdit}
+                defaultType={statusFilter === 'credit_notes' ? 'credit_note' : 'invoice'}
             />
 
             <ConfirmModal

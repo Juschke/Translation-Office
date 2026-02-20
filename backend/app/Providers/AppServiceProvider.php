@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use App\Models\User;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
         }
         \App\Models\User::observe(\App\Observers\UserObserver::class);
         \App\Models\Project::observe(\App\Observers\ProjectObserver::class);
+
+        Gate::define('viewPulse', function (User $user) {
+            return $user->isPlatformAdmin();
+        });
 
         \Illuminate\Auth\Notifications\VerifyEmail::createUrlUsing(function ($notifiable) {
             $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');

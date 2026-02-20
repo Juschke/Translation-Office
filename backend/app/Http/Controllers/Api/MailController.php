@@ -72,14 +72,14 @@ class MailController extends Controller
         // Send the email
         try {
             // Use smtps:// for SSL (port 465), smtp:// for TLS/STARTTLS (port 587)
-            $scheme = ((int) $account->port === 465 || ($account->encryption ?? 'ssl') === 'ssl') ? 'smtps' : 'smtp';
+            $scheme = ((int) $account->smtp_port === 465 || ($account->smtp_encryption ?? 'ssl') === 'ssl') ? 'smtps' : 'smtp';
             $transport = \Symfony\Component\Mailer\Transport::fromDsn(sprintf(
                 '%s://%s:%s@%s:%s',
                 $scheme,
                 urlencode($account->username),
                 urlencode($account->password),
-                $account->host,
-                $account->port
+                $account->smtp_host,
+                $account->smtp_port
             ));
 
             $mailer = new \Symfony\Component\Mailer\Mailer($transport);
@@ -128,84 +128,103 @@ class MailController extends Controller
     {
         $tenantId = $request->user()->tenant_id ?? 1;
 
-        // Fetch Mail Settings
-        $settings = \App\Models\TenantSetting::where('tenant_id', $tenantId)
-            ->whereIn('key', ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption'])
-            ->pluck('value', 'key');
+        // Fetch all active MailAccounts for the tenant
+        $accounts = \App\Models\MailAccount::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->get();
 
-        if (!$settings->has('mail_host') || !$settings->has('mail_username') || !$settings->has('mail_password')) {
-            return response()->json(['message' => 'Bitte konfigurieren Sie zuerst Ihre Mail-Einstellungen (Host, Benutzer, Passwort).'], 400);
+        if ($accounts->isEmpty()) {
+            return response()->json(['message' => 'Bitte konfigurieren Sie zuerst mindestens ein E-Mail-Konto.'], 400);
         }
 
-        // IMAP port is derived from encryption: SSL uses 993, TLS/none uses 143
-        $encryption = $settings['mail_encryption'] ?? 'ssl';
-        $port = ($encryption === 'ssl') ? 993 : 143;
+        $totalCreated = 0;
+        $errors = [];
 
-        try {
-            // Configure IMAP Client on the fly
-            $client = \Webklex\IMAP\Facades\Client::make([
-                'host' => $settings['mail_host'],
-                'port' => $port,
-                'encryption' => $settings['mail_encryption'] ?? 'ssl',
-                'validate_cert' => false,
-                'username' => $settings['mail_username'],
-                'password' => $settings['mail_password'],
-                'protocol' => 'imap'
-            ]);
+        foreach ($accounts as $account) {
+            $protocol = $account->incoming_protocol ?? 'imap';
+            $encryption = $account->imap_encryption ?? 'ssl';
+            $defaultPort = $protocol === 'pop3' ? ($encryption === 'ssl' ? 995 : 110) : ($encryption === 'ssl' ? 993 : 143);
+            $port = $account->imap_port ?? $defaultPort;
 
-            // Connect to the server
-            $client->connect();
-
-            // Get INBOX folder
-            $folder = $client->getFolder('INBOX');
-
-            // Fetch the latest 50 messages
-            $messages = $folder->query()->all()->limit(50)->get();
-
-            $createdCount = 0;
-            foreach ($messages as $message) {
-                $messageId = $message->getMessageId()->get()[0] ?? $message->getUid();
-
-                if (Mail::where('tenant_id', $tenantId)->where('message_id', $messageId)->exists()) {
-                    continue;
-                }
-
-                $attachmentsInfo = [];
-                if ($message->getAttachments()->count() > 0) {
-                    foreach ($message->getAttachments() as $attachment) {
-                        $attachmentsInfo[] = [
-                            'name' => $attachment->getName(),
-                            'size' => $attachment->getSize(),
-                            'extension' => $attachment->getExtension()
-                        ];
-                    }
-                }
-
-                Mail::create([
-                    'tenant_id' => $tenantId,
-                    'message_id' => $messageId,
-                    'folder' => 'inbox',
-                    'from_email' => $message->getFrom()[0]->mail,
-                    'to_emails' => array_map(fn($to) => $to->mail, $message->getTo()->toArray()),
-                    'subject' => $message->getSubject()->get()[0] ?? '(Kein Betreff)',
-                    'body' => $message->hasHTMLBody() ? $message->getHTMLBody() : $message->getTextBody(),
-                    'is_read' => $message->getFlags()->has('seen'),
-                    'attachments' => $attachmentsInfo
+            try {
+                // Configure IMAP/POP3 Client on the fly
+                $client = \Webklex\IMAP\Facades\Client::make([
+                    'host' => $account->imap_host,
+                    'port' => $port,
+                    'encryption' => $encryption,
+                    'validate_cert' => false,
+                    'username' => $account->username,
+                    'password' => $account->password,
+                    'protocol' => $protocol
                 ]);
-                $createdCount++;
+
+                // Connect to the server
+                $client->connect();
+
+                // Get INBOX folder
+                $folder = $client->getFolder('INBOX');
+
+                // Fetch the latest 50 messages
+                $messages = $folder->query()->all()->limit(50)->get();
+
+                foreach ($messages as $message) {
+                    $messageId = $message->getMessageId()->get()[0] ?? $message->getUid();
+
+                    if (Mail::where('tenant_id', $tenantId)->where('mail_account_id', $account->id)->where('message_id', $messageId)->exists()) {
+                        continue;
+                    }
+
+                    // For backward compatibility: if mail exists without mail_account_id, update and skip
+                    if (Mail::where('tenant_id', $tenantId)->whereNull('mail_account_id')->where('message_id', $messageId)->exists()) {
+                        Mail::where('tenant_id', $tenantId)->whereNull('mail_account_id')->where('message_id', $messageId)->update(['mail_account_id' => $account->id]);
+                        continue;
+                    }
+
+                    $attachmentsInfo = [];
+                    if ($message->getAttachments()->count() > 0) {
+                        foreach ($message->getAttachments() as $attachment) {
+                            $attachmentsInfo[] = [
+                                'name' => $attachment->getName(),
+                                'size' => $attachment->getSize(),
+                                'extension' => $attachment->getExtension()
+                            ];
+                        }
+                    }
+
+                    Mail::create([
+                        'tenant_id' => $tenantId,
+                        'mail_account_id' => $account->id,
+                        'message_id' => $messageId,
+                        'folder' => 'inbox',
+                        'from_email' => $message->getFrom()[0]->mail,
+                        'to_emails' => array_map(fn($to) => $to->mail, $message->getTo()->toArray()),
+                        'subject' => $message->getSubject()->get()[0] ?? '(Kein Betreff)',
+                        'body' => $message->hasHTMLBody() ? $message->getHTMLBody() : $message->getTextBody(),
+                        'is_read' => $message->getFlags()->has('seen'),
+                        'attachments' => $attachmentsInfo
+                    ]);
+                    $totalCreated++;
+                }
+
+            } catch (\Exception $e) {
+                \Log::error("IMAP Sync Failed for account {$account->email}: " . $e->getMessage());
+                $errors[] = "Fehler bei {$account->email}: " . $e->getMessage();
             }
+        }
 
+        if (count($errors) > 0 && $totalCreated === 0) {
             return response()->json([
-                'message' => $createdCount > 0 ? "$createdCount neue E-Mails empfangen." : "Postfach ist auf dem neuesten Stand.",
-                'new_count' => $createdCount
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error("IMAP Sync Failed: " . $e->getMessage());
-
-            return response()->json([
-                'message' => 'Verbindung zum Mail-Server fehlgeschlagen: ' . $e->getMessage() . '. Bitte prüfen Sie Host, Port (993) und Passwort.'
+                'message' => 'Synchronisierung fehlgeschlagen.',
+                'errors' => $errors
             ], 500);
         }
+
+        return response()->json([
+            'message' => $totalCreated > 0
+                ? "$totalCreated neue E-Mails empfangen."
+                : (count($errors) > 0 ? "Teilweise erfolgreich." : "Postfach ist auf dem neuesten Stand."),
+            'new_count' => $totalCreated,
+            'errors' => $errors
+        ]);
     }
 }

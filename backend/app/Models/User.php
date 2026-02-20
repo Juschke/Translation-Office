@@ -8,7 +8,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements MustVerifyEmail
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+
+class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, \App\Traits\BelongsToTenant;
@@ -23,8 +26,8 @@ class User extends Authenticatable implements MustVerifyEmail
     // Role hierarchy (higher = more permissions)
     const ROLE_LEVEL = [
         self::ROLE_EMPLOYEE => 1,
-        self::ROLE_MANAGER  => 2,
-        self::ROLE_OWNER    => 3,
+        self::ROLE_MANAGER => 2,
+        self::ROLE_OWNER => 3,
     ];
 
     /**
@@ -101,5 +104,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isPlatformAdmin(): bool
     {
         return (bool) $this->is_admin;
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->isPlatformAdmin();
     }
 }

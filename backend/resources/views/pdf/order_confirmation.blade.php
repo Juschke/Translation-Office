@@ -1,331 +1,349 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Auftragsbestätigung</title>
+    <meta charset="utf-8">
+    <title>Auftragsbestätigung {{ $project->project_number ?? $project->id }}</title>
     <style>
+        @page {
+            margin: 20mm 20mm 30mm 25mm;
+        }
+
         body {
-            font-family: sans-serif;
-            font-size: 10pt;
-            color: #333;
-        }
-
-        .header {
-            width: 100%;
-            border-bottom: 3px solid
-                {{ $project->tenant->primary_color ?? '#e2e8f0' }}
-            ;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-
-        .header table {
-            width: 100%;
-        }
-
-        .logo {
-            max-height: 80px;
-        }
-
-        .company-info {
-            text-align: right;
+            font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 9pt;
-            color: #666;
+            line-height: 1.4;
+            color: #000;
+            margin: 0;
+            padding: 0;
         }
 
-        .address-block {
-            float: left;
-            width: 45%;
-            margin-bottom: 40px;
-        }
-
-        .meta-block {
-            float: right;
-            width: 45%;
+        .text-right {
             text-align: right;
         }
 
-        .meta-table {
-            width: 100%;
-            text-align: right;
-        }
-
-        .meta-table td {
-            padding: 2px 0;
-        }
-
-        .meta-label {
+        .font-bold {
             font-weight: bold;
-            color: #666;
         }
 
-        .clear {
-            clear: both;
+        /* DIN 5008 Markierungen */
+        .fold-mark-top,
+        .fold-mark-bottom,
+        .punch-mark {
+            position: fixed;
+            left: -20mm;
+            width: 4mm;
+            border-top: 0.5pt solid #999;
         }
 
-        h1 {
-            font-size: 18pt;
-            margin-bottom: 5px;
-            color:
-                {{ $project->tenant->primary_color ?? '#1e293b' }}
-            ;
+        .fold-mark-top {
+            top: 85mm;
         }
 
-        .subtitle {
-            font-size: 12pt;
-            margin-bottom: 20px;
-            color: #666;
+        .punch-mark {
+            top: 128.5mm;
         }
 
-        .content {
-            margin-bottom: 30px;
-            line-height: 1.5;
+        .fold-mark-bottom {
+            top: 190mm;
         }
 
-        table.positions {
+        /* Anschriftfeld */
+        .address-field {
+            position: relative;
+            margin-top: 15mm;
+            width: 85mm;
+        }
+
+        .sender-small {
+            font-size: 6.5pt;
+            text-decoration: underline;
+            color: #555;
+            line-height: 1.2;
+            height: 5mm;
+            overflow: hidden;
+        }
+
+        .recipient-address {
+            margin-top: 1mm;
+            font-size: 10pt;
+            line-height: 1.3;
+        }
+
+        .recipient-address p {
+            margin: 0;
+        }
+
+        /* Header Info Box */
+        .header-container {
+            width: 100%;
+            margin-bottom: 8mm;
+        }
+
+        .header-left {
+            float: left;
+            width: 85mm;
+        }
+
+        .info-box {
+            float: right;
+            width: 75mm;
+            margin-top: 15mm;
+        }
+
+        .info-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
         }
 
-        table.positions th {
-            background-color: #f8fafc;
-            border-bottom: 2px solid #e2e8f0;
-            padding: 10px;
-            text-align: left;
-            font-size: 9pt;
-            text-transform: uppercase;
-            color: #64748b;
+        .info-table td {
+            padding: 1mm 0;
+            font-size: 8.5pt;
+            border-bottom: 0.1mm solid #eee;
         }
 
-        table.positions td {
-            border-bottom: 1px solid #f1f5f9;
-            padding: 10px;
-            vertical-align: top;
+        .content-body {
+            clear: both;
+            padding-top: 2mm;
         }
 
-        table.positions td.num {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .totals {
-            width: 100%;
-            margin-top: 20px;
-            page-break-inside: avoid;
-        }
-
-        .totals td {
-            padding: 5px 10px;
-            text-align: right;
-        }
-
-        .totals .label {
-            font-weight: bold;
-            color: #666;
-        }
-
-        .totals .amount {
-            width: 120px;
-        }
-
-        .totals .final-row td {
-            border-top: 2px solid #e2e8f0;
-            border-bottom: 2px solid #e2e8f0;
-            padding: 10px;
-            font-weight: bold;
+        .title {
             font-size: 12pt;
-            color:
-                {{ $project->tenant->primary_color ?? '#1e293b' }}
-            ;
+            font-weight: bold;
+            margin-bottom: 3mm;
+        }
+
+        .intro-text {
+            margin-bottom: 4mm;
+        }
+
+        /* Tabelle */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5mm;
+        }
+
+        .items-table th {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: left;
+            padding: 2mm 1mm;
+            font-size: 8.5pt;
+        }
+
+        .items-table td {
+            padding: 1.5mm 1mm;
+            border-bottom: 0.1mm solid #eee;
+            vertical-align: top;
+            font-size: 8.5pt;
+        }
+
+        .totals-wrapper {
+            float: right;
+            width: 70mm;
+            margin-top: 3mm;
+        }
+
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .totals-table td {
+            padding: 1.5mm 1mm;
+            font-size: 9pt;
+        }
+
+        .total-brutto {
+            border-top: 1px solid #000;
+            font-weight: bold;
+            font-size: 10pt;
         }
 
         .footer {
             position: fixed;
-            bottom: 0;
+            bottom: -20mm;
             left: 0;
+            right: 0;
             width: 100%;
-            font-size: 8pt;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 10px;
-            text-align: center;
+            border-top: 0.5pt solid #ccc;
+            padding-top: 2mm;
+            font-size: 7pt;
+            line-height: 1.3;
+            color: #444;
         }
 
-        .footer-cols {
+        .footer-table {
             width: 100%;
-            table-layout: fixed;
+            border-collapse: collapse;
         }
 
-        .footer-cols td {
+        .footer-table td {
             vertical-align: top;
-            padding: 0 10px;
+            padding: 0 2mm;
+        }
+
+        .signature-table {
+            width: 100%;
+            margin-top: 15mm;
+            clear: both;
+        }
+
+        .signature-table td {
+            width: 50%;
+            padding-top: 10mm;
+            border-bottom: 0.5pt solid #000;
+            font-size: 8pt;
+        }
+
+        .signature-label {
+            font-size: 7pt;
+            color: #666;
+            margin-top: 1mm;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <table>
-            <tr>
-                <td valign="top">
-                    @if($project->tenant->logo_url)
-                        <img src="{{ $project->tenant->logo_url }}" class="logo" />
-                    @else
-                        <h2 style="margin:0; color: {{ $project->tenant->primary_color ?? '#000' }}">
-                            {{ $project->tenant->company_name }}</h2>
-                    @endif
-                </td>
-                <td class="company-info" valign="top">
-                    <strong>{{ $project->tenant->company_name }}</strong><br>
-                    {{ $project->tenant->address_street }} {{ $project->tenant->address_house_no }}<br>
-                    {{ $project->tenant->address_zip }} {{ $project->tenant->address_city }}<br>
-                    {{ $project->tenant->email }} | {{ $project->tenant->phone }}
-                </td>
-            </tr>
-        </table>
-    </div>
+    @php
+        $tenant = $project->tenant;
+        $companyName = $tenant->company_name;
+        $fullAddressLine = $tenant->address_street . ' ' . $tenant->address_house_no . ' · ' . $tenant->address_zip . ' ' . $tenant->address_city;
+    @endphp
 
-    <div class="address-block">
-        <div style="font-size: 7pt; color: #aaa; margin-bottom: 5px; text-decoration: underline;">
-            {{ $project->tenant->company_name }} • {{ $project->tenant->address_street }}
-            {{ $project->tenant->address_house_no }} • {{ $project->tenant->address_zip }}
-            {{ $project->tenant->address_city }}
-        </div>
-        <strong>{{ $project->customer->company_name }}</strong><br>
-        @if($project->customer->contact_person) z.Hd. {{ $project->customer->contact_person }}<br> @endif
-        {{ $project->customer->address_street }} {{ $project->customer->address_house_no }}<br>
-        {{ $project->customer->address_zip }} {{ $project->customer->address_city }}<br>
-        {{ $project->customer->address_country }}
-    </div>
-
-    <div class="meta-block">
-        <table class="meta-table">
-            <tr>
-                <td class="meta-label">Datum:</td>
-                <td>{{ date('d.m.Y') }}</td>
-            </tr>
-            <tr>
-                <td class="meta-label">Projekt-Nr.:</td>
-                <td><strong>{{ $project->project_number ?? $project->id }}</strong></td>
-            </tr>
-            <tr>
-                <td class="meta-label">Kunden-Nr.:</td>
-                <td>{{ $project->customer->customer_number ?? $project->customer->id }}</td>
-            </tr>
-            @if($project->deadline)
-                <tr>
-                    <td class="meta-label">Liefertermin:</td>
-                    <td>{{ \Carbon\Carbon::parse($project->deadline)->format('d.m.Y H:i') }}</td>
-                </tr>
-            @endif
-        </table>
-    </div>
-
-    <div class="clear"></div>
-
-    <div style="margin-top: 40px;">
-        <h1>Auftragsbestätigung</h1>
-        <div class="subtitle">Bestätigung zum Projekt: {{ $project->project_name }}</div>
-    </div>
-
-    <div class="content">
-        <p>Sehr geehrte Damen und Herren,</p>
-        <p>vielen Dank für Ihren Auftrag. Hiermit bestätigen wir die Annahme des Projekts zu den folgenden Konditionen:
-        </p>
-    </div>
-
-    <table class="positions">
-        <thead>
-            <tr>
-                <th width="5%">Pos.</th>
-                <th width="45%">Beschreibung</th>
-                <th width="15%" class="num">Menge / Einh.</th>
-                <th width="15%" class="num">Einzelpreis</th>
-                <th width="20%" class="num">Gesamtpreis</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($project->positions as $index => $pos)
-                <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>
-                        <strong>{{ $pos->description }}</strong><br>
-                        <span style="font-size: 8pt; color: #666;">
-                            {{ $project->sourceLanguage->name }} <span style="font-family: DejaVu Sans;">→</span>
-                            {{ $project->targetLanguage->name }}
-                            @if($pos->document_type) • {{ $pos->document_type }} @endif
-                        </span>
-                    </td>
-                    <td class="num">
-                        {{ number_format($pos->quantity, 2, ',', '.') }}<br>
-                        <span style="font-size: 8pt; color: #999;">{{ $pos->unit }}</span>
-                    </td>
-                    <td class="num">{{ number_format($pos->customer_rate, 2, ',', '.') }} €</td>
-                    <td class="num">{{ number_format($pos->customer_total, 2, ',', '.') }} €</td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <table class="totals" align="right">
-        <tr>
-            <td class="label">Nettosumme:</td>
-            <td class="amount">{{ number_format($project->price_total, 2, ',', '.') }} €</td>
-        </tr>
-        <tr>
-            <td class="label">Umsatzsteuer 19%:</td>
-            <td class="amount">{{ number_format($project->price_total * 0.19, 2, ',', '.') }} €</td>
-        </tr>
-        <tr class="final-row">
-            <td>Gesamtsumme:</td>
-            <td class="amount">{{ number_format($project->price_total * 1.19, 2, ',', '.') }} €</td>
-        </tr>
-    </table>
-
-    <div class="content" style="margin-top: 40px;">
-        <p>Wir beginnen umgehend mit der Bearbeitung. Bei Rückfragen stehen wir Ihnen gerne zur Verfügung.</p>
-        <p>Mit freundlichen Grüßen</p>
-        <p style="margin-top: 30px;">
-            {{ $project->tenant->company_name }}<br>
-            <span style="font-size: 9pt; color: #999;">(Dieses Dokument wurde maschinell erstellt und ist ohne
-                Unterschrift gültig)</span>
-        </p>
-    </div>
+    <div class="fold-mark-top"></div>
+    <div class="punch-mark"></div>
+    <div class="fold-mark-bottom"></div>
 
     <div class="footer">
-        <table class="footer-cols">
+        <table class="footer-table">
             <tr>
-                <td>
-                    <strong>Anschrift</strong><br>
-                    {{ $project->tenant->company_name }}<br>
-                    {{ $project->tenant->address_street }} {{ $project->tenant->address_house_no }}<br>
-                    {{ $project->tenant->address_zip }} {{ $project->tenant->address_city }}
+                <td style="width: 30%;">
+                    <strong>{{ $companyName }}</strong><br>
+                    {{ $tenant->address_street }} {{ $tenant->address_house_no }}<br>
+                    {{ $tenant->address_zip }} {{ $tenant->address_city }}<br>
+                    Steuer-Nr.: {{ $tenant->tax_number }}<br>
+                    USt-IdNr.: {{ $tenant->vat_id }}
                 </td>
-                <td>
+                <td style="width: 30%;">
                     <strong>Kontakt</strong><br>
-                    Tel: {{ $project->tenant->phone }}<br>
-                    Mail: {{ $project->tenant->email }}<br>
-                    Web: {{ $project->tenant->domain ?? $project->tenant->website }}<br>
-                    @if($project->tenant->opening_hours)
-                    <span style="font-size: 7pt;">{{ $project->tenant->opening_hours }}</span>
-                    @endif
+                    Tel: {{ $tenant->phone }}<br>
+                    {{ $tenant->email }}<br>
+                    {{ $tenant->domain ?? $tenant->website }}
                 </td>
-                <td>
+                <td style="width: 40%;">
                     <strong>Bankverbindung</strong><br>
-                    IBAN: {{ $project->tenant->bank_iban }}<br>
-                    BIC: {{ $project->tenant->bank_bic }}<br>
-                    Bank: {{ $project->tenant->bank_name }}
-                </td>
-                <td>
-                    <strong>Register</strong><br>
-                    USt-ID: {{ $project->tenant->vat_id }}<br>
-                    St-Nr.: {{ $project->tenant->tax_number }}<br>
-                    Amtsgericht: {{ $project->tenant->register_court ?? '' }}
+                    {{ $tenant->bank_name }}<br>
+                    IBAN: {{ $tenant->bank_iban }}<br>
+                    BIC: {{ $tenant->bank_bic }}
                 </td>
             </tr>
         </table>
+    </div>
+
+    <div class="header-container">
+        <div class="header-left">
+            <div class="address-field">
+                <div class="sender-small">{{ $companyName }} · {{ $fullAddressLine }}</div>
+                <div class="recipient-address">
+                    <p>
+                        <strong>{{ $project->customer->company_name }}</strong><br>
+                        @if($project->customer->contact_person) z.Hd. {{ $project->customer->contact_person }}<br>
+                        @endif
+                        {{ $project->customer->address_street }} {{ $project->customer->address_house_no }}<br>
+                        {{ $project->customer->address_zip }} {{ $project->customer->address_city }}<br>
+                        {{ $project->customer->address_country }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <table class="info-table">
+                <tr>
+                    <td class="font-bold">Belegart</td>
+                    <td class="text-right">Auftragsbestätigung</td>
+                </tr>
+                <tr>
+                    <td class="font-bold">Datum</td>
+                    <td class="text-right">{{ date('d.m.Y') }}</td>
+                </tr>
+                <tr>
+                    <td class="font-bold">Projekt-Nr.</td>
+                    <td class="text-right">{{ $project->project_number ?? $project->id }}</td>
+                </tr>
+                <tr>
+                    <td class="font-bold">Kunden-Nr.</td>
+                    <td class="text-right">{{ $project->customer->customer_number ?? $project->customer->id }}</td>
+                </tr>
+                @if($project->deadline)
+                    <tr>
+                        <td class="font-bold">Liefertermin</td>
+                        <td class="text-right">{{ \Carbon\Carbon::parse($project->deadline)->format('d.m.Y') }}</td>
+                    </tr>
+                @endif
+            </table>
+        </div>
+    </div>
+
+    <div class="content-body">
+        <div class="title">Auftragsbestätigung zum Projekt: {{ $project->project_name }}</div>
+
+        <div class="intro-text">
+            Sehr geehrte Damen und Herren,<br>
+            vielen Dank für Ihren Auftrag! Hiermit bestätigen wir die Annahme des Projekts zu den folgenden Konditionen:
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%">Beschreibung</th>
+                    <th class="text-right" style="width: 10%">Menge</th>
+                    <th class="text-right" style="width: 20%">Einzelpreis</th>
+                    <th class="text-right" style="width: 20%">Gesamtpreis</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($project->positions as $pos)
+                    <tr>
+                        <td>
+                            <strong>{{ $pos->description }}</strong><br>
+                            <span style="font-size: 7.5pt; color: #666;">
+                                {{ $project->sourceLanguage->name }} <span style="font-family: DejaVu Sans;">→</span>
+                                {{ $project->targetLanguage->name }}
+                                @if($pos->document_type) • {{ $pos->document_type }} @endif
+                            </span>
+                        </td>
+                        <td class="text-right">{{ number_format($pos->quantity, 2, ',', '.') }} {{ $pos->unit }}</td>
+                        <td class="text-right">{{ number_format($pos->customer_rate, 2, ',', '.') }} €</td>
+                        <td class="text-right">{{ number_format($pos->customer_total, 2, ',', '.') }} €</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        <div class="totals-wrapper">
+            <table class="totals-table">
+                <tr>
+                    <td class="text-right">Nettobetrag:</td>
+                    <td class="text-right">{{ number_format($project->price_total, 2, ',', '.') }} €</td>
+                </tr>
+                <tr>
+                    <td class="text-right">USt. 19%:</td>
+                    <td class="text-right">{{ number_format($project->price_total * 0.19, 2, ',', '.') }} €</td>
+                </tr>
+                <tr class="total-brutto">
+                    <td class="text-right">Gesamtbetrag:</td>
+                    <td class="text-right">{{ number_format($project->price_total * 1.19, 2, ',', '.') }} €</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="clear: both; margin-top: 10mm;">
+            <p>Wir beginnen umgehend mit der Bearbeitung. Bei Rückfragen stehen wir Ihnen gerne zur Verfügung.</p>
+            <p>Mit freundlichen Grüßen,<br>{{ $tenant->company_name }}</p>
+        </div>
     </div>
 </body>
 

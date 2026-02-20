@@ -451,19 +451,19 @@ export const mailService = {
         return response.data;
     },
     getTemplates: async () => {
-        const response = await api.get('/mail/templates');
+        const response = await api.get('/settings/email-templates');
         return response.data;
     },
     createTemplate: async (data: any) => {
-        const response = await api.post('/mail/templates', data);
+        const response = await api.post('/settings/email-templates', data);
         return response.data;
     },
     updateTemplate: async (id: number, data: any) => {
-        const response = await api.put(`/mail/templates/${id}`, data);
+        const response = await api.put(`/settings/email-templates/${id}`, data);
         return response.data;
     },
     deleteTemplate: async (id: number) => {
-        const response = await api.delete(`/mail/templates/${id}`);
+        const response = await api.delete(`/settings/email-templates/${id}`);
         return response.data;
     },
     getSignatures: async () => {

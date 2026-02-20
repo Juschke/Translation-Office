@@ -276,11 +276,10 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                         <th className="px-6 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider cursor-pointer hover:text-teal-700 transition" onClick={() => handleSort('name')}>
                                             <div className="flex items-center">Partner {getSortIcon('name')}</div>
                                         </th>
-                                        <th className="px-6 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider w-40">Sprachen</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Wort</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Zeile</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Std.</th>
-                                        <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Mind.</th>
+                                        <th className="px-6 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">Sprachen</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">Email</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">Telefon</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">Adresse</th>
                                         <th className="px-6 py-2.5"></th>
                                     </tr>
                                 </thead>
@@ -333,17 +332,14 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                                         {p.languages.length > 3 && <span className="text-[8px] text-slate-400 font-bold">+{p.languages.length - 3}</span>}
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-2.5 text-center  text-[10px] font-bold text-slate-600">
-                                                    {p.priceList?.find(pr => pr.unit.toLowerCase() === 'wort')?.price.toFixed(3) || '-'}
+                                                <td className="px-4 py-2.5 text-[10px] font-medium text-slate-500 truncate max-w-[150px]" title={p.email}>
+                                                    {p.email || '-'}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-center  text-[10px] font-bold text-slate-600">
-                                                    {p.priceList?.find(pr => pr.unit.toLowerCase() === 'zeile')?.price.toFixed(2) || '-'}
+                                                <td className="px-4 py-2.5 text-[10px] font-medium text-slate-500 whitespace-nowrap">
+                                                    {p.phone || '-'}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-center  text-[10px] font-bold text-slate-600">
-                                                    {p.priceList?.find(pr => pr.unit.toLowerCase() === 'stunde')?.price.toFixed(2) || '-'}
-                                                </td>
-                                                <td className="px-4 py-2.5 text-center  text-[10px] font-black text-teal-700">
-                                                    {p.priceList?.find(pr => pr.label.toLowerCase().includes('mindest'))?.price.toFixed(2) || '-'}
+                                                <td className="px-4 py-2.5 text-[10px] font-medium text-slate-500 truncate max-w-[200px]" title={`${p.street}, ${p.zip} ${p.city}`}>
+                                                    {p.street ? `${p.street}, ${p.zip} ${p.city}` : '-'}
                                                 </td>
                                                 <td className="px-6 py-2.5 text-right">
                                                     <button

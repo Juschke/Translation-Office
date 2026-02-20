@@ -9,7 +9,12 @@
       "Bash(php artisan route:list:*)",
       "Bash(npm run build:*)",
       "Bash(ls:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell -File:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

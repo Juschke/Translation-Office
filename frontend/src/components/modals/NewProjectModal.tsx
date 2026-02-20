@@ -505,6 +505,30 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             newErrorSet.add('translator');
         }
 
+        // Extended Plausibility Checks
+        const hasActiveInvoice = initialData?.invoices?.some((inv: any) => inv.status !== 'cancelled') ||
+            initialData?.invoices_count > 0;
+
+        if (status === 'ready_for_pickup' && !hasActiveInvoice) {
+            errors.push("Status 'Abholbereit' erfordert eine bereits erstellte Rechnung.");
+            newErrorSet.add('status');
+        }
+
+        if (status === 'invoiced' && !hasActiveInvoice) {
+            errors.push("Status 'Rechnung' erfordert eine bereits erstellte Rechnung.");
+            newErrorSet.add('status');
+        }
+
+        if (status === 'delivered' && (!initialData?.files || initialData.files.length === 0)) {
+            errors.push("Status 'Geliefert' erfordert hochgeladene Zieldateien.");
+            newErrorSet.add('status');
+        }
+
+        if (status === 'completed' && !hasActiveInvoice) {
+            errors.push("Status 'Abgeschlossen' erfordert eine erstellte Rechnung.");
+            newErrorSet.add('status');
+        }
+
         setValidationErrors(newErrorSet);
 
         if (errors.length > 0) {

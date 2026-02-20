@@ -13,9 +13,12 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        host: '',
-        port: 587,
-        encryption: 'tls',
+        smtp_host: '',
+        smtp_port: 587,
+        smtp_encryption: 'tls',
+        imap_host: '',
+        imap_port: 993,
+        imap_encryption: 'ssl',
         username: '',
         password: '',
         is_default: false,
@@ -31,9 +34,12 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
             setFormData({
                 name: '',
                 email: '',
-                host: '',
-                port: 587,
-                encryption: 'tls',
+                smtp_host: '',
+                smtp_port: 587,
+                smtp_encryption: 'tls',
+                imap_host: '',
+                imap_port: 993,
+                imap_encryption: 'ssl',
                 username: '',
                 password: '',
                 is_default: false,
@@ -48,7 +54,7 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
         const checked = (e.target as HTMLInputElement).checked;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : (name === 'port' ? parseInt(value) || 587 : value)
+            [name]: type === 'checkbox' ? checked : (name === 'smtp_port' || name === 'imap_port' ? parseInt(value) || 0 : value)
         }));
     };
 
@@ -109,18 +115,18 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
 
                         <div className="border-t border-slate-100"></div>
 
-                        {/* Section 2: Server Configuration */}
+                        {/* Section 2: SMTP Configuration */}
                         <div className="space-y-4">
                             <label className="block text-xs font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
-                                <FaServer className="text-brand-600" /> Server-Konfiguration
+                                <FaServer className="text-brand-600" /> Ausgangsserver (SMTP)
                             </label>
 
                             <div className="grid grid-cols-4 gap-4">
                                 <div className="col-span-3">
                                     <Input
                                         label="SMTP Host *"
-                                        name="host"
-                                        value={formData.host}
+                                        name="smtp_host"
+                                        value={formData.smtp_host}
                                         onChange={handleChange}
                                         placeholder="smtp.domain.de"
                                         required
@@ -129,8 +135,8 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
                                 <div className="col-span-1">
                                     <Input
                                         label="Port *"
-                                        name="port"
-                                        value={formData.port.toString()}
+                                        name="smtp_port"
+                                        value={formData.smtp_port.toString()}
                                         onChange={handleChange}
                                         type="number"
                                         placeholder="587"
@@ -141,12 +147,58 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
                                     <Input
                                         isSelect
                                         label="Verschlüsselung"
-                                        name="encryption"
-                                        value={formData.encryption}
+                                        name="smtp_encryption"
+                                        value={formData.smtp_encryption}
                                         onChange={handleChange}
                                     >
                                         <option value="tls">TLS (empfohlen)</option>
                                         <option value="ssl">SSL</option>
+                                        <option value="none">Keine</option>
+                                    </Input>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-100"></div>
+
+                        {/* Section 2b: IMAP Configuration */}
+                        <div className="space-y-4">
+                            <label className="block text-xs font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
+                                <FaServer className="text-brand-600" /> Eingangsserver (IMAP)
+                            </label>
+
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-3">
+                                    <Input
+                                        label="IMAP Host *"
+                                        name="imap_host"
+                                        value={formData.imap_host}
+                                        onChange={handleChange}
+                                        placeholder="imap.domain.de"
+                                        required
+                                    />
+                                </div>
+                                <div className="col-span-1">
+                                    <Input
+                                        label="Port *"
+                                        name="imap_port"
+                                        value={formData.imap_port.toString()}
+                                        onChange={handleChange}
+                                        type="number"
+                                        placeholder="993"
+                                        required
+                                    />
+                                </div>
+                                <div className="col-span-4">
+                                    <Input
+                                        isSelect
+                                        label="Verschlüsselung"
+                                        name="imap_encryption"
+                                        value={formData.imap_encryption}
+                                        onChange={handleChange}
+                                    >
+                                        <option value="ssl">SSL (empfohlen)</option>
+                                        <option value="tls">TLS</option>
                                         <option value="none">Keine</option>
                                     </Input>
                                 </div>

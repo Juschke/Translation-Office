@@ -9,14 +9,18 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
         "dcblogdev/laravel-sent-emails": "^2.0",
+        "filament/filament": "^5.2",
         "horstoeko/zugferd-laravel": "^1.0",
         "laravel/framework": "^12.0",
+        "laravel/pulse": "^1.5",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "laraveldaily/laravel-invoices": "^4.1",
         "pragmarx/google2fa": "^9.0",
+        "shuvroroy/filament-spatie-laravel-health": "^3.2",
         "spatie/laravel-activitylog": "^4.11",
         "spatie/laravel-backup": "^9.4",
+        "spatie/laravel-health": "^1.37",
         "webklex/laravel-imap": "^6.2"
     },
     "require-dev": {
@@ -60,7 +64,8 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"

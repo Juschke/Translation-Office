@@ -11,6 +11,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { mailService } from '../api/services';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import NewEmailAccountModal from '../components/modals/NewEmailAccountModal';
+import NewEmailTemplateModal from '../components/modals/NewEmailTemplateModal';
 
 const CommunicationHub = () => {
     const location = useLocation();
@@ -24,6 +26,11 @@ const CommunicationHub = () => {
     const [composeSubject, setComposeSubject] = useState('');
     const [composeBody, setComposeBody] = useState('');
     const [composeAttachments, setComposeAttachments] = useState<File[]>([]);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [accountToEdit, setAccountToEdit] = useState<any>(null);
+
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [templateToEdit, setTemplateToEdit] = useState<any>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -133,6 +140,64 @@ const CommunicationHub = () => {
         }
     });
 
+    const createAccountMutation = useMutation({
+        mutationFn: mailService.createAccount,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+            setIsAccountModalOpen(false);
+            toast.success('Konto erstellt');
+        },
+        onError: () => toast.error('Fehler beim Erstellen des Kontos')
+    });
+
+    const updateAccountMutation = useMutation({
+        mutationFn: ({ id, data }: { id: number, data: any }) => mailService.updateAccount(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+            setIsAccountModalOpen(false);
+            toast.success('Konto aktualisiert');
+        },
+        onError: () => toast.error('Fehler beim Aktualisieren des Kontos')
+    });
+
+    const deleteAccountMutation = useMutation({
+        mutationFn: mailService.deleteAccount,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+            toast.success('Konto gelöscht');
+        },
+        onError: () => toast.error('Fehler beim Löschen des Kontos')
+    });
+
+    const createTemplateMutation = useMutation({
+        mutationFn: mailService.createTemplate,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+            setIsTemplateModalOpen(false);
+            toast.success('Vorlage erstellt');
+        },
+        onError: () => toast.error('Fehler beim Erstellen der Vorlage')
+    });
+
+    const updateTemplateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: number, data: any }) => mailService.updateTemplate(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+            setIsTemplateModalOpen(false);
+            toast.success('Vorlage aktualisiert');
+        },
+        onError: () => toast.error('Fehler beim Aktualisieren der Vorlage')
+    });
+
+    const deleteTemplateMutation = useMutation({
+        mutationFn: mailService.deleteTemplate,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+            toast.success('Vorlage gelöscht');
+        },
+        onError: () => toast.error('Fehler beim Löschen der Vorlage')
+    });
+
     if (isLoadingInbox || isLoadingSent) return <div className="p-10 text-center font-bold text-slate-400 flex items-center justify-center gap-3">
         <div className="w-5 h-5 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
         <span>Lade E-Mails...</span>
@@ -212,12 +277,25 @@ const CommunicationHub = () => {
                                 items={templates}
                                 type="template"
                                 headers={['Name', 'Betreff', 'Kategorie']}
+                                onAdd={() => {
+                                    setTemplateToEdit(null);
+                                    setIsTemplateModalOpen(true);
+                                }}
+                                onEdit={(tpl: any) => {
+                                    setTemplateToEdit(tpl);
+                                    setIsTemplateModalOpen(true);
+                                }}
+                                onDelete={(tpl: any) => {
+                                    if (window.confirm('Vorlage wirklich löschen?')) {
+                                        deleteTemplateMutation.mutate(tpl.id);
+                                    }
+                                }}
                                 renderRow={(tpl: any) => (
                                     <>
                                         <td className="px-6 py-4 text-xs font-bold text-slate-800">{tpl.name}</td>
                                         <td className="px-6 py-4 text-xs text-slate-500">{tpl.subject}</td>
                                         <td className="px-6 py-4">
-                                            <span className="px-2 py-0.5 bg-slate-100 text-[9px] font-black uppercase">{tpl.category || 'Allgemein'}</span>
+                                            <span className="px-2 py-0.5 bg-slate-100 text-[9px] font-black uppercase">{tpl.type || 'Allgemein'}</span>
                                         </td>
                                     </>
                                 )}
@@ -232,6 +310,19 @@ const CommunicationHub = () => {
                                 items={accounts}
                                 type="account"
                                 headers={['Bezeichnung', 'Email', 'Server', 'Status']}
+                                onAdd={() => {
+                                    setAccountToEdit(null);
+                                    setIsAccountModalOpen(true);
+                                }}
+                                onEdit={(acc: any) => {
+                                    setAccountToEdit(acc);
+                                    setIsAccountModalOpen(true);
+                                }}
+                                onDelete={(acc: any) => {
+                                    if (window.confirm('Konto wirklich löschen?')) {
+                                        deleteAccountMutation.mutate(acc.id);
+                                    }
+                                }}
                                 renderRow={(acc: any) => (
                                     <>
                                         <td className="px-6 py-4 text-xs font-bold text-slate-800">
@@ -241,7 +332,10 @@ const CommunicationHub = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-xs font-mono text-slate-500">{acc.email}</td>
-                                        <td className="px-6 py-4 text-xs font-mono text-slate-400">{acc.host}</td>
+                                        <td className="px-6 py-4 text-[10px] font-mono text-slate-400">
+                                            <div>SMTP: {acc.smtp_host}</div>
+                                            <div>IMAP: {acc.imap_host}</div>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
                                         </td>
@@ -283,15 +377,10 @@ const CommunicationHub = () => {
                                             ))}
                                         </select>
                                         <button
-                                            onClick={() => {
-                                                const name = prompt('Name des Kontos:');
-                                                const email = prompt('E-Mail Adresse:');
-                                                if (name && email) {
-                                                    mailService.createAccount({
-                                                        name, email, host: 'mail.test.de', port: 587,
-                                                        encryption: 'tls', username: email, password: 'password'
-                                                    }).then(() => queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] }));
-                                                }
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setAccountToEdit(null);
+                                                setIsAccountModalOpen(true);
                                             }}
                                             className="w-10 h-10 flex items-center justify-center border border-slate-300 text-slate-500 hover:bg-brand-600 hover:text-white hover:border-brand-600 transition"
                                         >
@@ -377,7 +466,7 @@ const CommunicationHub = () => {
                                                 className="w-full text-left p-3 bg-white border border-slate-200 hover:border-brand-500 transition text-[11px]"
                                             >
                                                 <div className="font-black text-slate-800 mb-0.5">{tpl.name}</div>
-                                                <div className="text-slate-400 truncate uppercase text-[9px] font-bold tracking-tight">{tpl.category}</div>
+                                                <div className="text-slate-400 truncate uppercase text-[9px] font-bold tracking-tight">{tpl.type}</div>
                                             </button>
                                         ))}
                                     </div>
@@ -443,6 +532,32 @@ const CommunicationHub = () => {
                     </div>
                 </div>
             )}
+
+            <NewEmailAccountModal
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
+                initialData={accountToEdit}
+                onSubmit={(data) => {
+                    if (accountToEdit) {
+                        updateAccountMutation.mutate({ id: accountToEdit.id, data });
+                    } else {
+                        createAccountMutation.mutate(data);
+                    }
+                }}
+            />
+
+            <NewEmailTemplateModal
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                initialData={templateToEdit}
+                onSubmit={(data) => {
+                    if (templateToEdit) {
+                        updateTemplateMutation.mutate({ id: templateToEdit.id, data });
+                    } else {
+                        createTemplateMutation.mutate(data);
+                    }
+                }}
+            />
         </div>
     );
 };
@@ -503,11 +618,11 @@ const EmailTable = ({ mails, folder }: { mails: any[], folder: string }) => (
     </div>
 );
 
-const ResourceTable = ({ title, items, headers, renderRow }: any) => (
+const ResourceTable = ({ title, items, headers, renderRow, onAdd, onEdit, onDelete }: any) => (
     <div className="bg-white border border-slate-200">
         <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white/50">
             <h2 className="text-xs font-black text-slate-800 uppercase tracking-widest">{title}</h2>
-            <button className="text-[10px] font-black bg-brand-600 text-white px-3 py-1.5 uppercase transition hover:bg-brand-700">
+            <button onClick={onAdd} className="text-[10px] font-black bg-brand-600 text-white px-3 py-1.5 uppercase transition hover:bg-brand-700">
                 Neu+
             </button>
         </div>
@@ -531,9 +646,9 @@ const ResourceTable = ({ title, items, headers, renderRow }: any) => (
                             {renderRow(item)}
                             <td className="px-6 py-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                    <button className="p-2 text-slate-300 hover:text-brand-600 transition" title="Bearbeiten"><FaEdit /></button>
+                                    <button onClick={() => onEdit?.(item)} className="p-2 text-slate-300 hover:text-brand-600 transition" title="Bearbeiten"><FaEdit /></button>
                                     <button className="p-2 text-slate-300 hover:text-slate-800 transition" title="Details"><FaFolderOpen /></button>
-                                    <button className="p-2 text-slate-300 hover:text-red-500 transition" title="Entfernen"><FaTrashAlt /></button>
+                                    <button onClick={() => onDelete?.(item)} className="p-2 text-slate-300 hover:text-red-500 transition" title="Entfernen"><FaTrashAlt /></button>
                                 </div>
                             </td>
                         </tr>

@@ -20,9 +20,13 @@ class MailResourceController extends Controller
         $validated = $request->validate([
             'name' => 'required|string',
             'email' => 'required|email',
-            'host' => 'required|string',
-            'port' => 'required|integer',
-            'encryption' => 'required|string',
+            'smtp_host' => 'required|string',
+            'smtp_port' => 'required|integer',
+            'smtp_encryption' => 'required|string',
+            'incoming_protocol' => 'required|string|in:imap,pop3',
+            'imap_host' => 'required|string',
+            'imap_port' => 'required|integer',
+            'imap_encryption' => 'required|string',
             'username' => 'required|string',
             'password' => 'required|string',
             'is_default' => 'boolean',
@@ -41,9 +45,13 @@ class MailResourceController extends Controller
         $validated = $request->validate([
             'name' => 'required|string',
             'email' => 'required|email',
-            'host' => 'required|string',
-            'port' => 'required|integer',
-            'encryption' => 'required|string',
+            'smtp_host' => 'required|string',
+            'smtp_port' => 'required|integer',
+            'smtp_encryption' => 'required|string',
+            'incoming_protocol' => 'required|string|in:imap,pop3',
+            'imap_host' => 'required|string',
+            'imap_port' => 'required|integer',
+            'imap_encryption' => 'required|string',
             'username' => 'required|string',
             'password' => 'nullable|string',
             'is_default' => 'boolean',
@@ -52,7 +60,7 @@ class MailResourceController extends Controller
         if ($validated['is_default'] ?? false) {
             MailAccount::where('id', '!=', $id)->update(['is_default' => false]);
         }
-        
+
         if (empty($validated['password'])) {
             unset($validated['password']);
         }

@@ -19,20 +19,20 @@ class Invoice extends Model
     use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity;
 
     // ─── Invoice types ───────────────────────────────────────────────
-    public const TYPE_INVOICE    = 'invoice';
+    public const TYPE_INVOICE = 'invoice';
     public const TYPE_CREDIT_NOTE = 'credit_note';
 
     // ─── Status workflow ─────────────────────────────────────────────
-    public const STATUS_DRAFT     = 'draft';
-    public const STATUS_ISSUED    = 'issued';
-    public const STATUS_SENT      = 'sent';
-    public const STATUS_PAID      = 'paid';
-    public const STATUS_OVERDUE   = 'overdue';
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_ISSUED = 'issued';
+    public const STATUS_PAID = 'paid';
+    public const STATUS_OVERDUE = 'overdue';
     public const STATUS_CANCELLED = 'cancelled';
-    public const STATUS_ARCHIVED  = 'archived';
+    public const STATUS_ARCHIVED = 'archived';
+    public const STATUS_DELETED = 'deleted';
 
     // ─── Tax exemption types ─────────────────────────────────────────
-    public const TAX_NONE           = 'none';
+    public const TAX_NONE = 'none';
     public const TAX_SMALL_BUSINESS = '§19_ustg';       // Kleinunternehmerregelung
     public const TAX_REVERSE_CHARGE = 'reverse_charge'; // Reverse Charge (EU B2B)
 
@@ -97,22 +97,22 @@ class Invoice extends Model
     ];
 
     protected $casts = [
-        'date'                 => 'date',
-        'due_date'             => 'date',
-        'delivery_date'        => 'date',
+        'date' => 'date',
+        'due_date' => 'date',
+        'delivery_date' => 'date',
         'service_period_start' => 'date',
-        'service_period_end'   => 'date',
-        'issued_at'            => 'datetime',
-        'last_reminder_date'   => 'date',
-        'amount_net'           => 'integer',
-        'amount_tax'           => 'integer',
-        'amount_gross'         => 'integer',
-        'shipping_cents'       => 'integer',
-        'discount_cents'       => 'integer',
-        'paid_amount_cents'    => 'integer',
-        'tax_rate'             => 'decimal:2',
-        'is_locked'            => 'boolean',
-        'reminder_level'       => 'integer',
+        'service_period_end' => 'date',
+        'issued_at' => 'datetime',
+        'last_reminder_date' => 'date',
+        'amount_net' => 'integer',
+        'amount_tax' => 'integer',
+        'amount_gross' => 'integer',
+        'shipping_cents' => 'integer',
+        'discount_cents' => 'integer',
+        'paid_amount_cents' => 'integer',
+        'tax_rate' => 'decimal:2',
+        'is_locked' => 'boolean',
+        'reminder_level' => 'integer',
     ];
 
     // ─── IMMUTABILITY GUARD (GoBD) ───────────────────────────────────
@@ -150,6 +150,12 @@ class Invoice extends Model
                 throw new \RuntimeException(
                     'GoBD-Verstoß: Ausgestellte Rechnungen dürfen nicht gelöscht werden.'
                 );
+            }
+
+            // Soft delete for drafts: move them to trash instead of hard deletion
+            if ($invoice->status !== self::STATUS_DELETED) {
+                $invoice->update(['status' => self::STATUS_DELETED]);
+                return false; // Cancel the hard delete
             }
         });
     }
@@ -279,7 +285,6 @@ class Invoice extends Model
     {
         return in_array($this->status, [
             self::STATUS_ISSUED,
-            self::STATUS_SENT,
             self::STATUS_PAID,
             self::STATUS_OVERDUE,
         ]);
