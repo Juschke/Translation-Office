@@ -28,6 +28,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::put('/user/profile', [\App\Http\Controllers\Api\AuthController::class, 'updateProfile']);
     Route::put('/user/password', [\App\Http\Controllers\Api\AuthController::class, 'changePassword']);
+    Route::patch('/user/locale', [\App\Http\Controllers\Api\AuthController::class, 'updateLocale']);
     Route::post('/onboarding', [\App\Http\Controllers\Api\AuthController::class, 'onboarding']);
 
     // Email Verification
@@ -53,6 +54,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
         // Company Settings
         Route::put('/settings/company', [\App\Http\Controllers\Api\SettingsController::class, 'update']);
+        Route::post('/settings/company/logo', [\App\Http\Controllers\Api\SettingsController::class, 'uploadLogo']);
+        Route::delete('/settings/company/logo', [\App\Http\Controllers\Api\SettingsController::class, 'deleteLogo']);
         Route::post('/settings/mail/test', [\App\Http\Controllers\Api\SettingsController::class, 'testMailConnection']);
 
         // Subscription & Billing
@@ -132,8 +135,12 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // ── Employee+ routes (all authenticated users) ──
     // Customers (read + create for everyone, stats)
+    Route::post('customers/check-duplicates', [\App\Http\Controllers\Api\CustomerController::class, 'checkDuplicates']);
     Route::get('/customers/stats', [\App\Http\Controllers\Api\CustomerController::class, 'stats']);
     Route::apiResource('customers', \App\Http\Controllers\Api\CustomerController::class);
+
+    // Partners (Deduplication Check)
+    Route::post('partners/check-duplicates', [\App\Http\Controllers\Api\PartnerController::class, 'checkDuplicates']);
 
     // Projects
     Route::post('projects/analyze', [\App\Http\Controllers\Api\ProjectController::class, 'analyze']);

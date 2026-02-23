@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaPlus, FaTrash, FaStar, FaEnvelope } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
+import type { PartnerFormData } from './partnerTypes';
+import { partnerService } from '../../api/services';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
-import CountrySelect from '../common/CountrySelect';
 import PhoneInput from '../common/PhoneInput';
-import { IMaskInput } from 'react-imask';
 import toast from 'react-hot-toast';
 import MultiSelect from '../common/MultiSelect';
 import { fetchCityByZip, fetchBankByIban } from '../../utils/autoFill';
 import clsx from 'clsx';
+import AddressForm from '../common/AddressForm';
+import PartnerDuplicateWarning from './PartnerDuplicateWarning';
+import PartnerBankingSection from './PartnerBankingSection';
+import PartnerRatesSection from './PartnerRatesSection';
+import PartnerInternalSection from './PartnerInternalSection';
 
 
 const DOMAIN_OPTIONS = [
@@ -38,41 +43,14 @@ const DOMAIN_OPTIONS = [
   { value: 'wirtschaft', label: 'Wirtschaft' }
 ];
 
-export interface PartnerFormData {
-  id?: number;
-  type: string;
-  salutation: string;
-  firstName: string;
-  lastName: string;
-  company: string;
-  street: string;
-  houseNo: string;
-  zip: string;
-  city: string;
-  country: string;
-  emails: string[];
-  phones: string[];
-  languages: string[];
-  domains: string[];
-  bankAccountHolder: string;
-  bankCode: string;
-  software: string;
-  priceMode: string;
-  unitRates: { word: string; line: string; hour: string };
-  flatRates: { minimum: string; cert: string };
-  paymentTerms: string;
-  taxId: string;
-  bankName: string;
-  iban: string;
-  bic: string;
-  notes: string;
-  status: string;
-  rating: number;
-}
+export type { PartnerFormData } from './partnerTypes';
 
 interface PartnerFormProps {
   initialData?: Partial<PartnerFormData> | any;
   onChange: (data: PartnerFormData) => void;
+  onDuplicatesChange?: (hasDuplicates: boolean) => void;
+  ignoreDuplicates?: boolean;
+  onIgnoreDuplicatesChange?: (ignore: boolean) => void;
   validationErrors?: Set<string>;
   layout?: 'full' | 'compact';
 }
@@ -80,6 +58,9 @@ interface PartnerFormProps {
 const PartnerForm: React.FC<PartnerFormProps> = ({
   initialData,
   onChange,
+  onDuplicatesChange,
+  ignoreDuplicates,
+  onIgnoreDuplicatesChange,
   validationErrors: externalValidationErrors = new Set(),
   layout = 'full'
 }) => {
@@ -117,6 +98,68 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isValidatingIban, setIsValidatingIban] = useState(false);
+  const [duplicates, setDuplicates] = useState<any[]>([]);
+  const [savedGroupData, setSavedGroupData] = useState<Partial<PartnerFormData>>({});
+
+  const handleTypeChange = (newType: string) => {
+    if (newType === formData.type) return;
+
+    // Save current type-specific data before switching
+    if (formData.type === 'agency') {
+      setSavedGroupData(prev => ({
+        ...prev,
+        company: formData.company
+      }));
+    }
+
+    setFormData(prev => {
+      const next = { ...prev, type: newType };
+
+      if (newType !== 'agency') {
+        next.company = '';
+      } else {
+        next.company = savedGroupData.company || prev.company || '';
+      }
+
+      onChange(next); // Inform parent about the new state
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    onDuplicatesChange?.(duplicates.length > 0);
+  }, [duplicates.length, onDuplicatesChange]);
+
+  // Debounced duplication check
+  useEffect(() => {
+    const check = async () => {
+      // Only check if we have some identifying info
+      if (!formData.lastName && !formData.company) {
+        setDuplicates([]);
+        return;
+      }
+
+      // Don't check if fields are too short to be unique
+      if ((formData.lastName?.length || 0) < 3 && (formData.company?.length || 0) < 3 && !formData.emails[0] && !formData.phones[0]) {
+        setDuplicates([]);
+        return;
+      }
+
+      try {
+        const results = await partnerService.checkDuplicates(formData);
+
+        // Filter out current record if editing
+        const filtered = (results || []).filter((d: any) => d.id !== formData.id);
+        setDuplicates(filtered);
+        if (filtered.length === 0) onIgnoreDuplicatesChange?.(false);
+      } catch (error) {
+        console.error('Deduplication check failed', error);
+      }
+    };
+
+    const timer = setTimeout(check, 600);
+    return () => clearTimeout(timer);
+  }, [formData.firstName, formData.lastName, formData.emails[0], formData.phones[0], formData.company, formData.id]);
 
   const validate = useCallback((data: PartnerFormData) => {
     const newErrors: Record<string, string> = {};
@@ -151,7 +194,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
       if (formData.zip.length === 5 && !formData.city) {
         const city = await fetchCityByZip(formData.zip, formData.country);
         if (city) {
-          setFormData(prev => ({ ...prev, city }));
+          setFormData((prev: PartnerFormData) => ({ ...prev, city }));
         }
       }
     };
@@ -165,7 +208,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
       if (cleanIban.length >= 15 && (!formData.bankName || !formData.bic)) {
         const bankData = await fetchBankByIban(cleanIban);
         if (bankData) {
-          setFormData(prev => ({
+          setFormData((prev: PartnerFormData) => ({
             ...prev,
             bankName: prev.bankName || bankData.bankName,
             bic: prev.bic || bankData.bic
@@ -225,11 +268,11 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
   }, [formData, validate, onChange]);
 
   const updateFormData = (updates: Partial<PartnerFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData((prev: PartnerFormData) => ({ ...prev, ...updates }));
   };
 
   const markTouched = (field: string) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev: Record<string, boolean>) => ({ ...prev, [field]: true }));
   };
 
   const addEmail = () => updateFormData({ emails: [...formData.emails, ''] });
@@ -267,10 +310,10 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
             bankName: data.bankData?.name || formData.bankName,
             bankCode: data.bankData?.bankCode || formData.bankCode,
           });
-          setErrors(prev => ({ ...prev, iban: '' }));
+          setErrors((prev: Record<string, string>) => ({ ...prev, iban: '' }));
           toast.success(`Bank erkannt: ${data.bankData?.name || 'IBAN valide'}`);
         } else {
-          setErrors(prev => ({ ...prev, iban: 'Ungültige IBAN' }));
+          setErrors((prev: Record<string, string>) => ({ ...prev, iban: 'Ungültige IBAN' }));
         }
       }
     } catch (error: unknown) {
@@ -317,6 +360,13 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
 
   return (
     <div className={clsx(isCompact ? "space-y-6" : "space-y-12 pb-10")}>
+      {/* Duplication Warning */}
+      <PartnerDuplicateWarning
+        duplicates={duplicates}
+        ignoreDuplicates={ignoreDuplicates}
+        onIgnoreDuplicatesChange={onIgnoreDuplicatesChange}
+      />
+
       {/* Section: Typ & Basis */}
       <div className="space-y-6">
         {!isCompact && (
@@ -334,7 +384,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                 <button
                   key={pt.value}
                   type="button"
-                  onClick={() => updateFormData({ type: pt.value })}
+                  onClick={() => handleTypeChange(pt.value)}
                   className={clsx(
                     "px-4 py-2 rounded-sm text-xs font-medium transition-all",
                     formData.type === pt.value ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-700"
@@ -353,7 +403,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                 label="Firma / Agenturname *"
                 placeholder="z.B. Übersetzungsbüro Kassel"
                 value={formData.company}
-                error={!!getError('company')}
+                error={!!getError('company') || duplicates.some(d => d.company === formData.company && formData.company !== '')}
                 onChange={e => updateFormData({ company: e.target.value })}
                 onBlur={() => markTouched('company')}
                 helperText={getError('company') || "Vollständiger Name der Agentur laut Handelsregister"}
@@ -377,7 +427,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
               label="Vorname *"
               placeholder="z.B. Maria"
               value={formData.firstName}
-              error={!!getError('firstName')}
+              error={!!getError('firstName') || duplicates.some(d => d.first_name === formData.firstName && d.last_name === formData.lastName && formData.firstName !== '')}
               onChange={e => updateFormData({ firstName: e.target.value })}
               onBlur={() => markTouched('firstName')}
               helperText={getError('firstName') || "Vorname des Partners"}
@@ -388,7 +438,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
               label="Nachname *"
               placeholder="z.B. Musterfrau"
               value={formData.lastName}
-              error={!!getError('lastName')}
+              error={!!getError('lastName') || duplicates.some(d => d.last_name === formData.lastName && formData.lastName !== '')}
               onChange={e => updateFormData({ lastName: e.target.value })}
               onBlur={() => markTouched('lastName')}
               helperText={getError('lastName') || "Familienname des Partners"}
@@ -440,7 +490,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     startIcon={<FaEnvelope />}
                     placeholder={i === 0 ? "haupt.partner@beispiel.de" : "zusatz.partner@beispiel.de"}
                     value={email}
-                    error={i === 0 && !!getError('email')}
+                    error={(i === 0 && !!getError('email')) || (i === 0 && duplicates.some(d => d.email === email && email !== ''))}
                     onChange={e => updateEmail(i, e.target.value)}
                     helperText={i === 0 ? (getError('email') || "Hauptkontakt für alle Projektanfragen") : undefined}
                   />
@@ -472,6 +522,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     <PhoneInput
                       label={i === 0 ? "Telefon (Primär) *" : undefined}
                       value={phone}
+                      error={(i === 0 && duplicates.some(d => (d.phone === phone || d.phones?.[0] === phone) && phone !== ''))}
                       onChange={val => {
                         const newPhones = [...formData.phones];
                         newPhones[i] = val;
@@ -513,57 +564,28 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
 
         <div className="grid grid-cols-12 gap-x-8 gap-y-6">
           {!isCompact && (
-            <>
-              <div className="col-span-12 md:col-span-9">
-                <Input
-                  label="Straße"
-                  placeholder="z.B. Königsplatz"
-                  value={formData.street}
-                  onChange={e => updateFormData({ street: e.target.value })}
-                  helperText="Straßenbezeichnung"
-                />
-              </div>
-              <div className="col-span-12 md:col-span-3">
-                <Input
-                  label="Nr."
-                  placeholder="10"
-                  value={formData.houseNo}
-                  onChange={e => updateFormData({ houseNo: e.target.value })}
-                  helperText="Hausnummer"
-                />
-              </div>
-              <div className="col-span-12 md:col-span-4">
-                <Input
-                  label="PLZ"
-                  placeholder="34117"
-                  value={formData.zip}
-                  maxLength={10}
-                  error={!!getError('zip')}
-                  onChange={e => updateFormData({ zip: e.target.value })}
-                  onBlur={() => markTouched('zip')}
-                  helperText={getError('zip') || "5-stellige Postleitzahl"}
-                />
-              </div>
-              <div className="col-span-12 md:col-span-8">
-                <Input
-                  label="Stadt"
-                  placeholder="Kassel"
-                  className="font-medium"
-                  value={formData.city}
-                  onChange={e => updateFormData({ city: e.target.value })}
-                  helperText="Vollständiger Name des Wohnorts"
-                />
-              </div>
-
-              <div className="col-span-12">
-                <CountrySelect
-                  label="Land"
-                  value={formData.country || 'Deutschland'}
-                  onChange={v => updateFormData({ country: v })}
-                  helperText="Land für steuerliche Zuordnung"
-                />
-              </div>
-            </>
+            <div className="col-span-12">
+              <AddressForm
+                street={formData.street}
+                houseNo={formData.houseNo}
+                zip={formData.zip}
+                city={formData.city}
+                country={formData.country}
+                onChange={(field, value) => {
+                  const fieldMap: Record<string, string> = {
+                    street: 'street',
+                    houseNo: 'houseNo',
+                    zip: 'zip',
+                    city: 'city',
+                    country: 'country'
+                  };
+                  updateFormData({ [fieldMap[field]]: value });
+                }}
+                errors={{
+                  address_zip: getError('zip'),
+                }}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -601,230 +623,21 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           </div>
 
           {/* Section: Bankdaten */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-              <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">05</div>
-              <h4 className="text-xs font-semibold text-slate-800">Finanzen & Steuer</h4>
-            </div>
-
-            <div className="grid grid-cols-12 gap-x-8 gap-y-6">
-              <div className="col-span-12">
-                <Input
-                  label="Kontoinhaber"
-                  value={formData.bankAccountHolder}
-                  onChange={e => updateFormData({ bankAccountHolder: e.target.value })}
-                  placeholder={formData.type === 'agency' ? formData.company || 'Agenturname' : `${formData.firstName || 'Vorname'} ${formData.lastName || 'Nachname'}`.trim()}
-                  helperText="Automatisch vorausgefüllt basierend auf dem Namen."
-                />
-              </div>
-              <div className="col-span-12">
-                <div className="flex flex-col">
-                  <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">IBAN</label>
-                  <div className="relative">
-                    <IMaskInput
-                      mask="aa00 0000 0000 0000 0000 00"
-                      definitions={{ 'a': /[a-zA-Z]/ }}
-                      placeholder="DE00 0000 0000 0000 0000 00"
-                      value={formData.iban || ''}
-                      onAccept={(value) => {
-                        updateFormData({ iban: value.toUpperCase() });
-                        markTouched('iban');
-                      }}
-                      onBlur={handleIbanBlur}
-                      className={clsx(
-                        'flex w-full rounded-sm bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none min-h-[42px]',
-                        'border-slate-300 hover:border-slate-400 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
-                        getError('iban') && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
-                      )}
-                    />
-                    {isValidatingIban && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    )}
-                  </div>
-                  {getError('iban') && <span className="text-xs text-red-500 font-medium block mt-1">{getError('iban')}</span>}
-                </div>
-              </div>
-              <div className="col-span-12 sm:col-span-4">
-                <Input label="Bankname" placeholder="Name der Bank" value={formData.bankName} onChange={e => updateFormData({ bankName: e.target.value })} helperText="Name der Bankgesellschaft" />
-              </div>
-              <div className="col-span-12 sm:col-span-4">
-                <Input label="BLZ" placeholder="000 000 00" value={formData.bankCode} onChange={e => updateFormData({ bankCode: e.target.value })} />
-              </div>
-              <div className="col-span-12 sm:col-span-4">
-                <div className="flex flex-col">
-                  <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">BIC</label>
-                  <IMaskInput
-                    mask="aaaaaa aa [aaa]"
-                    definitions={{ 'a': /[a-zA-Z0-9]/ }}
-                    placeholder="ABCDEFGH"
-                    value={formData.bic || ''}
-                    onAccept={(value) => {
-                      updateFormData({ bic: value.toUpperCase() });
-                      markTouched('bic');
-                    }}
-                    onBlur={handleBicBlur}
-                    className={clsx(
-                      'flex w-full rounded-sm bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none min-h-[42px]',
-                      'border-slate-300 hover:border-slate-400 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900'
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="col-span-12 md:col-span-4">
-                <Input
-                  label="Zahlungsziel (Tage)"
-                  type="number"
-                  min={0}
-                  value={formData.paymentTerms}
-                  onChange={e => updateFormData({ paymentTerms: e.target.value })}
-                  className="font-medium"
-                  helperText="Frist in Tagen ab Rechnungserhalt"
-                />
-              </div>
-              <div className="col-span-12 md:col-span-8">
-                <Input
-                  label="Steuernummer / USt-IdNr."
-                  placeholder="DE123456789"
-                  value={formData.taxId}
-                  onChange={e => updateFormData({ taxId: e.target.value })}
-                  className="font-medium"
-                  helperText="Wichtig für die korrekte Abrechnung von Honoraren"
-                />
-              </div>
-            </div>
-          </div>
+          <PartnerBankingSection
+            formData={formData}
+            updateFormData={updateFormData}
+            markTouched={markTouched}
+            getError={getError}
+            handleIbanBlur={handleIbanBlur}
+            handleBicBlur={handleBicBlur}
+            isValidatingIban={isValidatingIban}
+          />
 
           {/* Section: Tarife */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-              <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">06</div>
-              <h4 className="text-xs font-semibold text-slate-800">Konditionen & Tarife</h4>
-            </div>
-
-            <div className="grid grid-cols-12 gap-x-8 gap-y-6">
-              <div className="col-span-12 md:col-span-4">
-                <Input
-                  label="Wortpreis (Netto)"
-                  type="number"
-                  step="0.001"
-                  min={0}
-                  placeholder="0.080"
-                  value={formData.unitRates.word}
-                  onChange={e => updateFormData({ unitRates: { ...formData.unitRates, word: e.target.value } })}
-                  endIcon={<span className="text-xs font-medium text-slate-300">€</span>}
-                  helperText="Netto-Preis pro Wort"
-                />
-              </div>
-              <div className="col-span-12 md:col-span-4">
-                <Input
-                  label="Zeilenpreis (Netto)"
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  placeholder="1.20"
-                  value={formData.unitRates.line}
-                  onChange={e => updateFormData({ unitRates: { ...formData.unitRates, line: e.target.value } })}
-                  endIcon={<span className="text-xs font-medium text-slate-300">€</span>}
-                  helperText="Preis pro Normzeile (55 Anschläge)"
-                />
-              </div>
-              <div className="col-span-12 md:col-span-4">
-                <Input
-                  label="Stundensatz (Netto)"
-                  type="number"
-                  step="1"
-                  min={0}
-                  placeholder="55.00"
-                  value={formData.unitRates.hour}
-                  onChange={e => updateFormData({ unitRates: { ...formData.unitRates, hour: e.target.value } })}
-                  endIcon={<span className="text-xs font-medium text-slate-300">€</span>}
-                  helperText="Für Dolmetschen oder Lektorat"
-                />
-              </div>
-              <div className="col-span-12 md:col-span-6">
-                <Input
-                  label="Mindestpauschale"
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  placeholder="45.00"
-                  value={formData.flatRates.minimum}
-                  onChange={e => updateFormData({ flatRates: { ...formData.flatRates, minimum: e.target.value } })}
-                  endIcon={<span className="text-xs font-medium text-slate-300">€</span>}
-                  helperText="Min. Vergütung pro Auftrag"
-                />
-              </div>
-              <div className="col-span-12 md:col-span-6">
-                <Input
-                  label="Beglaubigungsgebühr"
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  placeholder="5.00"
-                  value={formData.flatRates.cert}
-                  onChange={e => updateFormData({ flatRates: { ...formData.flatRates, cert: e.target.value } })}
-                  endIcon={<span className="text-xs font-medium text-slate-300">€</span>}
-                  helperText="Pauschale pro Beglaubigungssatz"
-                />
-              </div>
-            </div>
-          </div>
+          <PartnerRatesSection formData={formData} updateFormData={updateFormData} />
 
           {/* Section: Internes */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-              <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">07</div>
-              <h4 className="text-xs font-semibold text-slate-800">Interne Akte & Notizen</h4>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <Input
-                  isSelect
-                  label="Basis-Status"
-                  className="font-medium"
-                  value={formData.status}
-                  onChange={e => updateFormData({ status: e.target.value })}
-                  helperText="Bestimmt die Sichtbarkeit in Projekten"
-                >
-                  <option value="available">Verfügbar / Aktiv</option>
-                  <option value="busy">Derzeit ausgelastet</option>
-                  <option value="vacation">Urlaub / Abwesend</option>
-                  <option value="blacklisted">Gesperrt / Blacklist</option>
-                </Input>
-              </div>
-              <div className="space-y-4">
-                <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Bewertung / Ranking</label>
-                <div className="flex items-center gap-3 h-11 bg-white ">
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => updateFormData({ rating: star })}
-                      className={clsx("transition-all hover:scale-125", formData.rating >= star ? "text-amber-400" : "text-slate-200")}
-                    >
-                      <FaStar size={24} />
-                    </button>
-                  ))}
-                  <span className="ml-2 text-xs font-semibold text-slate-600">{formData.rating}.0</span>
-                </div>
-                <p className="text-xs text-slate-400 font-medium ml-1">Qualitätsindex basierend auf Feedback</p>
-              </div>
-              <div className="col-span-2">
-                <Input
-                  label="Interne Notizen"
-                  isTextArea
-                  placeholder="Interne Anmerkungen / Erfahrungen / Feedback (nur für Admins sichtbar)..."
-                  value={formData.notes}
-                  onChange={(e) => updateFormData({ notes: e.target.value })}
-                  helperText="Informationen werden nicht an den Partner kommuniziert"
-                />
-              </div>
-            </div>
-          </div>
+          <PartnerInternalSection formData={formData} updateFormData={updateFormData} />
         </>
       )}
     </div>

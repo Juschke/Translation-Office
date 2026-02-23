@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaTimes, FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaEnvelope, FaExclamationTriangle, FaExternalLinkAlt } from 'react-icons/fa';
+import { customerService } from '../../api/services';
+import { Link } from 'react-router-dom';
 import Input from '../common/Input';
-import CountrySelect from '../common/CountrySelect';
-import PhoneInput from '../common/PhoneInput';
 import SearchableSelect from '../common/SearchableSelect';
-import { fetchCityByZip } from '../../utils/autoFill';
+import AddressForm from '../common/AddressForm';
+import PhoneInput from '../common/PhoneInput';
 import { IMaskInput } from 'react-imask';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -62,38 +63,124 @@ interface NewCustomerModalProps {
     initialData?: Partial<CustomerFormData>;
 }
 
+const EMPTY_CUSTOMER: CustomerFormData = {
+    type: 'private',
+    salutation: 'Herr',
+    first_name: '',
+    last_name: '',
+    company_name: '',
+    legal_form: '',
+    address_street: '',
+    address_house_no: '',
+    address_zip: '',
+    address_city: '',
+    address_country: 'Deutschland',
+    email: '',
+    phone: '',
+    notes: '',
+    additional_emails: [],
+    additional_phones: [],
+    payment_terms_days: 14,
+    iban: '',
+    bic: '',
+    bank_name: '',
+    bank_code: '',
+    bank_account_holder: '',
+    tax_id: '',
+    vat_id: '',
+    leitweg_id: '',
+};
+
 const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
-    const [formData, setFormData] = useState<CustomerFormData>({
-        type: 'private',
-        salutation: 'Herr',
-        first_name: '',
-        last_name: '',
-        company_name: '',
-        legal_form: '',
-        address_street: '',
-        address_house_no: '',
-        address_zip: '',
-        address_city: '',
-        address_country: 'Deutschland',
-        email: '',
-        phone: '',
-        notes: '',
-        additional_emails: [],
-        additional_phones: [],
-        payment_terms_days: 14, // Default payment terms
-        iban: '',
-        bic: '',
-        bank_name: '',
-        bank_code: '',
-        bank_account_holder: '',
-        tax_id: '',
-        vat_id: '',
-        leitweg_id: '',
-    });
+    const [formData, setFormData] = useState<CustomerFormData>({ ...EMPTY_CUSTOMER });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isValidatingIban, setIsValidatingIban] = useState(false);
+    const [duplicates, setDuplicates] = useState<any[]>([]);
+    const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
+    const [savedGroupData, setSavedGroupData] = useState<Partial<CustomerFormData>>({});
+
+    const handleTypeChange = (newType: 'private' | 'company' | 'authority') => {
+        if (newType === formData.type) return;
+
+        // Save current type-specific data before switching
+        if (formData.type === 'company' || formData.type === 'authority') {
+            setSavedGroupData(prev => ({
+                ...prev,
+                company_name: formData.company_name,
+                legal_form: formData.legal_form,
+                vat_id: formData.vat_id,
+                tax_id: formData.tax_id,
+                leitweg_id: formData.leitweg_id
+            }));
+        }
+
+        setFormData(prev => {
+            const next = { ...prev, type: newType };
+
+            if (newType === 'private') {
+                next.company_name = '';
+                next.legal_form = '';
+                next.vat_id = '';
+                next.tax_id = '';
+                next.leitweg_id = '';
+            } else if (newType === 'company') {
+                next.company_name = savedGroupData.company_name || prev.company_name || '';
+                next.legal_form = savedGroupData.legal_form || prev.legal_form || '';
+                next.vat_id = savedGroupData.vat_id || prev.vat_id || '';
+                next.tax_id = savedGroupData.tax_id || prev.tax_id || '';
+                next.leitweg_id = ''; // Authority only
+            } else if (newType === 'authority') {
+                next.company_name = savedGroupData.company_name || prev.company_name || '';
+                next.legal_form = ''; // Authority doesn't have legal form
+                next.vat_id = savedGroupData.vat_id || prev.vat_id || '';
+                next.tax_id = savedGroupData.tax_id || prev.tax_id || '';
+                next.leitweg_id = savedGroupData.leitweg_id || prev.leitweg_id || '';
+            }
+
+            return next;
+        });
+    };
+
+    // Debounced duplication check
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const check = async () => {
+            // Only check if we have some identifying info
+            if (!formData.last_name && !formData.company_name) {
+                setDuplicates([]);
+                return;
+            }
+
+            // Don't check if fields are too short to be unique
+            if ((formData.last_name?.length || 0) < 3 && (formData.company_name?.length || 0) < 3 && !formData.email && !formData.phone) {
+                setDuplicates([]);
+                return;
+            }
+
+            try {
+                const results = await customerService.checkDuplicates({
+                    first_name: formData.first_name,
+                    last_name: formData.last_name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    company_name: formData.company_name
+                });
+
+                // Filter out current record if editing
+                const filtered = (results || []).filter((d: any) => d.id !== formData.id);
+                setDuplicates(filtered);
+                if (filtered.length === 0) setIgnoreDuplicates(false);
+            } catch (error) {
+                console.error('Deduplication check failed', error);
+            }
+        };
+
+        const timer = setTimeout(check, 600);
+        return () => clearTimeout(timer);
+    }, [formData.first_name, formData.last_name, formData.email, formData.phone, formData.company_name, formData.id, isOpen]);
 
     const validate = useCallback((data: typeof formData) => {
         const newErrors: Record<string, string> = {};
@@ -131,60 +218,31 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         return Object.keys(newErrors).length === 0;
     }, []);
 
-    // ZIP to City Auto-Fill enrichment
-    useEffect(() => {
-        const fillCity = async () => {
-            // Only auto-fill if ZIP looks complete (e.g. 5 digits for DE)
-            if (formData.address_zip && formData.address_zip.length === 5 && !formData.address_city) {
-                const city = await fetchCityByZip(formData.address_zip, formData.address_country);
-                if (city) {
-                    setFormData(prev => ({ ...prev, address_city: city }));
-                }
-            }
-        };
-        fillCity();
-    }, [formData.address_zip, formData.address_country]);
+
 
     useEffect(() => {
         if (initialData) {
             setFormData({
-                ...formData,
+                ...EMPTY_CUSTOMER,
                 ...initialData,
                 additional_emails: initialData.additional_emails || [],
                 additional_phones: initialData.additional_phones || [],
                 type: ((initialData.type as any) === 'Firma' || initialData.type === 'company') ? 'company' :
                     ((initialData.type as any) === 'Privat' || initialData.type === 'private') ? 'private' : 'authority',
             });
-        } else if (isOpen) {
-            setFormData({
-                type: 'private',
-                salutation: 'Herr',
-                first_name: '',
-                last_name: '',
-                company_name: '',
-                legal_form: '',
-                address_street: '',
-                address_house_no: '',
-                address_zip: '',
-                address_city: '',
-                address_country: 'Deutschland',
-                email: '',
-                phone: '',
-                notes: '',
-                additional_emails: [],
-                additional_phones: [],
-                payment_terms_days: 14,
-                iban: '',
-                bic: '',
-                bank_name: '',
-                bank_code: '',
-                bank_account_holder: '',
-                tax_id: '',
-                vat_id: '',
-                leitweg_id: '',
-            });
+            setSavedGroupData({});
             setTouched({});
             setErrors({});
+            setDuplicates([]);
+            setIgnoreDuplicates(false);
+            setIsValidatingIban(false);
+        } else if (isOpen) {
+            setFormData({ ...EMPTY_CUSTOMER });
+            setSavedGroupData({});
+            setTouched({});
+            setErrors({});
+            setDuplicates([]);
+            setIgnoreDuplicates(false);
             setIsValidatingIban(false);
         }
     }, [initialData, isOpen]);
@@ -197,35 +255,40 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        setTouched(prev => ({ ...prev, [name]: true }));
+        setFormData((prev: CustomerFormData) => ({ ...prev, [name]: value }));
+        setTouched((prev: Record<string, boolean>) => ({ ...prev, [name]: true }));
     };
 
     const handlePhoneChange = (value: string) => {
-        setFormData(prev => ({ ...prev, phone: value }));
-        setTouched(prev => ({ ...prev, phone: true }));
+        setFormData((prev: CustomerFormData) => ({ ...prev, phone: value }));
+        setTouched((prev: Record<string, boolean>) => ({ ...prev, phone: true }));
     };
 
     const handleArrayChange = (index: number, value: string, field: 'additional_emails' | 'additional_phones') => {
         const newArr = [...formData[field]];
         newArr[index] = value;
-        setFormData(prev => ({ ...prev, [field]: newArr }));
+        setFormData((prev: CustomerFormData) => ({ ...prev, [field]: newArr }));
     };
 
     const addField = (field: 'additional_emails' | 'additional_phones') => {
         if (formData[field].length < 3) {
-            setFormData(prev => ({ ...prev, [field]: [...prev[field], ''] }));
+            setFormData((prev: CustomerFormData) => ({ ...prev, [field]: [...prev[field], ''] }));
         } else {
             // Optional: Toast notification or shaking effect could be added here
         }
     };
 
     const removeField = (field: 'additional_emails' | 'additional_phones', index: number) => {
-        setFormData(prev => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
+        setFormData((prev: CustomerFormData) => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
     };
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (duplicates.length > 0 && !ignoreDuplicates) {
+            toast.error('Bitte prüfen Sie die Dubletten oder bestätigen Sie die Neuanlage explizit.');
+            return;
+        }
 
         // Mark all as touched to show errors
         const allTouched: Record<string, boolean> = {};
@@ -246,16 +309,16 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
             if (response.ok) {
                 const data = await response.json();
                 if (data.valid) {
-                    setFormData(prev => ({
+                    setFormData((prev: CustomerFormData) => ({
                         ...prev,
                         bic: data.bankData?.bic || prev.bic,
                         bank_name: data.bankData?.name || prev.bank_name,
                         bank_code: data.bankData?.bankCode || prev.bank_code,
                     }));
-                    setErrors(prev => ({ ...prev, iban: '' }));
+                    setErrors((prev: Record<string, string>) => ({ ...prev, iban: '' }));
                     toast.success(`Bank erkannt: ${data.bankData?.name || 'IBAN valide'}`);
                 } else {
-                    setErrors(prev => ({ ...prev, iban: 'Ungültige IBAN' }));
+                    setErrors((prev: Record<string, string>) => ({ ...prev, iban: 'Ungültige IBAN' }));
                 }
             }
         } catch (error) {
@@ -292,7 +355,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         if (!formData.bank_name) {
             const foundBank = commonBanks[prefix6] || commonBanks[prefix4];
             if (foundBank) {
-                setFormData(prev => ({ ...prev, bank_name: foundBank }));
+                setFormData((prev: CustomerFormData) => ({ ...prev, bank_name: foundBank }));
             }
         }
     };
@@ -321,6 +384,55 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-8 bg-white">
+                        {/* Duplication Warning */}
+                        {duplicates.length > 0 && (
+                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-sm mb-6 flex gap-4 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                                <FaExclamationTriangle className="text-amber-500 shrink-0 mt-1" size={18} />
+                                <div className="flex-1">
+                                    <p className="text-amber-800 text-[11px] font-medium italic">
+                                        Es wurden bereits Kunden mit ähnlichen Daten gefunden. Falls es sich um eine andere Person handelt, bestätigen Sie dies unten.
+                                    </p>
+                                    <div className="mt-3 space-y-2">
+                                        {duplicates.map((d: any) => (
+                                            <div key={d.id} className="flex items-center justify-between bg-white p-2 rounded border border-amber-100 shadow-sm transition-all hover:border-amber-300">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
+                                                        {d.company_name || `${d.first_name} ${d.last_name}`}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-medium">
+                                                        ID: {d.id} • {d.email || 'Keine E-Mail'} • {d.phone || 'Kein Telefon'}
+                                                    </span>
+                                                </div>
+                                                <Link
+                                                    to={`/customers/${d.id}`}
+                                                    target="_blank"
+                                                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded text-[10px] font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                                                >
+                                                    <FaExternalLinkAlt size={10} />
+                                                    DATENSATZ ÖFFNEN
+                                                </Link>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Ignore duplicates switch */}
+                                    <div className="mt-4 pt-3 border-t border-amber-200 flex items-center gap-3">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={ignoreDuplicates}
+                                                onChange={(e) => setIgnoreDuplicates(e.target.checked)}
+                                            />
+                                            <div className="w-9 h-5 bg-amber-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                                            <span className="ms-3 text-[11px] font-bold text-amber-900 uppercase tracking-wide">Trotzdem als neuen Datensatz anlegen</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Section 1: Classification */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
@@ -332,9 +444,9 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 <div className="col-span-12">
                                     <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Kunden-Typ</label>
                                     <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 w-fit">
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'private' }))} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'private' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'company' }))} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
-                                        <button type="button" onClick={() => setFormData(p => ({ ...p, type: 'authority' }))} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'authority' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
+                                        <button type="button" onClick={() => handleTypeChange('private')} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'private' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
+                                        <button type="button" onClick={() => handleTypeChange('company')} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
+                                        <button type="button" onClick={() => handleTypeChange('authority')} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'authority' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
                                     </div>
                                     <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Wählen Sie die Rechtsform des Kunden für korrekte Rechnungsstellung</p>
                                 </div>
@@ -348,7 +460,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                             onChange={handleChange}
                                             placeholder={formData.type === 'authority' ? 'z.B. Standesamt Kassel' : 'z.B. Muster GmbH'}
                                             helperText={getError('company_name') || (formData.type === 'authority' ? 'Name der Behörde' : 'Firmenname')}
-                                            error={!!getError('company_name')}
+                                            error={!!getError('company_name') || duplicates.some(d => d.company_name === formData.company_name && formData.company_name !== '')}
                                         />
                                         {formData.type === 'authority' ? (
                                             <Input
@@ -396,7 +508,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         required
                                         placeholder="Max"
                                         helperText={getError('first_name') || 'Vorname des Ansprechpartners'}
-                                        error={!!getError('first_name')}
+                                        error={!!getError('first_name') || duplicates.some(d => d.first_name === formData.first_name && d.last_name === formData.last_name && formData.first_name !== '')}
                                     />
                                 </div>
                                 <div className="col-span-12 md:col-span-6">
@@ -408,7 +520,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         required
                                         placeholder="Mustermann"
                                         helperText={getError('last_name') || 'Pflichtfeld: Nachname der Person'}
-                                        error={!!getError('last_name')}
+                                        error={!!getError('last_name') || duplicates.some(d => d.last_name === formData.last_name && formData.last_name !== '')}
                                     />
                                 </div>
                             </div>
@@ -432,7 +544,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         startIcon={<FaEnvelope />}
                                         placeholder="max.mustermann@beispiel.de"
                                         helperText={getError('email') || 'Hauptadresse für E-Mails und Dokumente'}
-                                        error={!!getError('email')}
+                                        error={!!getError('email') || duplicates.some(d => d.email === formData.email && formData.email !== '')}
                                     />
 
                                     <div className="space-y-2">
@@ -469,7 +581,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         value={formData.phone}
                                         onChange={handlePhoneChange}
                                         helperText={getError('phone') || 'Format: +49 123 456789'}
-                                        error={!!getError('phone')}
+                                        error={!!getError('phone') || duplicates.some(d => d.phone === formData.phone && formData.phone !== '')}
                                     />
 
                                     <div className="space-y-2">
@@ -478,7 +590,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 <div className="flex-1">
                                                     <PhoneInput
                                                         value={phone}
-                                                        onChange={(val) => handleArrayChange(i, val, 'additional_phones')}
+                                                        onChange={(val: string) => handleArrayChange(i, val, 'additional_phones')}
                                                     />
                                                 </div>
                                                 <button
@@ -500,73 +612,35 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             </div>
                         </div>
 
-                        {/* Section 3: Address */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">03</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Standort & Adresse</h4>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-x-6 gap-y-4">
-                                <div className="col-span-12 md:col-span-9">
-                                    <Input
-                                        label="Straße *"
-                                        name="address_street"
-                                        value={formData.address_street}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Königsplatz"
-                                        helperText={getError('address_street') || 'Straßenname ohne Hausnummer'}
-                                        error={!!getError('address_street')}
-                                    />
-                                </div>
-                                <div className="col-span-12 md:col-span-3">
-                                    <Input
-                                        label="Nr. *"
-                                        name="address_house_no"
-                                        value={formData.address_house_no}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="10"
-                                        helperText={getError('address_house_no') || 'Nr. / Zusatz'}
-                                        error={!!getError('address_house_no')}
-                                    />
-                                </div>
-                                <div className="col-span-12 md:col-span-4">
-                                    <Input
-                                        label="PLZ *"
-                                        name="address_zip"
-                                        value={formData.address_zip}
-                                        placeholder="34117"
-                                        maxLength={10}
-                                        onChange={handleChange}
-                                        required
-                                        helperText={getError('address_zip') || '5-stellige Postleitzahl'}
-                                        error={!!getError('address_zip')}
-                                    />
-                                </div>
-                                <div className="col-span-12 md:col-span-8">
-                                    <Input
-                                        label="Stadt *"
-                                        name="address_city"
-                                        value={formData.address_city}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Kassel"
-                                        className="font-medium"
-                                        helperText={getError('address_city') || 'Vollständiger Name der Stadt'}
-                                        error={!!getError('address_city')}
-                                    />
-                                </div>
-                                <div className="col-span-12">
-                                    <CountrySelect
-                                        label="Land"
-                                        value={formData.address_country || 'Deutschland'}
-                                        onChange={(val) => setFormData(prev => ({ ...prev, address_country: val }))}
-                                        helperText="Land für steuerliche Zuordnung"
-                                    />
-                                </div>
-                            </div>
+                            <AddressForm
+                                street={formData.address_street}
+                                houseNo={formData.address_house_no}
+                                zip={formData.address_zip}
+                                city={formData.address_city}
+                                country={formData.address_country}
+                                onChange={(field, value) => {
+                                    const fieldMap: Record<string, keyof CustomerFormData> = {
+                                        street: 'address_street',
+                                        houseNo: 'address_house_no',
+                                        zip: 'address_zip',
+                                        city: 'address_city',
+                                        country: 'address_country'
+                                    };
+                                    setFormData(prev => ({ ...prev, [fieldMap[field]]: value }));
+                                }}
+                                errors={{
+                                    address_street: getError('address_street'),
+                                    address_house_no: getError('address_house_no'),
+                                    address_zip: getError('address_zip'),
+                                    address_city: getError('address_city'),
+                                }}
+                            />
                         </div>
 
                         {/* Section 4: Bookkeeping */}

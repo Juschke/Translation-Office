@@ -1,7 +1,10 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect, useRef } from 'react';
+import { openBlobInNewTab } from '../utils/download';
+import { mapProjectResponse } from '../utils/projectDataMapper';
+import { useProjectModals } from '../hooks/useProjectModals';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaCheckCircle, FaFlag, FaPaperPlane, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaArchive, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaCheckCircle, FaFlag, FaPaperPlane, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaArchive, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -12,6 +15,8 @@ import FileUploadModal from '../components/modals/FileUploadModal';
 import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
+import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
+import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, invoiceService, customerService, partnerService } from '../api/services';
@@ -143,6 +148,9 @@ interface ProjectData {
         due_date: string;
         is_locked: boolean;
     }>;
+    appointment_location?: string;
+    customer_reference?: string;
+    customer_date?: string | null;
 }
 
 
@@ -153,24 +161,42 @@ const ProjectDetail = () => {
     const location = useLocation();
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('overview');
-    const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
-
-    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type?: string; id?: string } | null>(null);
     const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
     const [historySearch, setHistorySearch] = useState('');
     const [historySortKey, setHistorySortKey] = useState<'date' | 'user' | 'action'>('date');
     const [historySortDir, setHistorySortDir] = useState<'asc' | 'desc'>('asc');
-    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
-    const [isCustomerEditModalOpen, setIsCustomerEditModalOpen] = useState(false);
-    const [isPartnerEditModalOpen, setIsPartnerEditModalOpen] = useState(false);
-    const [deleteFileConfirm, setDeleteFileConfirm] = useState<{ isOpen: boolean; fileId: string | null; fileName: string }>({ isOpen: false, fileId: null, fileName: '' });
-    const [isProjectDeleteConfirmOpen, setIsProjectDeleteConfirmOpen] = useState(false);
-    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+    const {
+        isPartnerModalOpen, setIsPartnerModalOpen,
+        isEditModalOpen, setIsEditModalOpen,
+        isUploadModalOpen, setIsUploadModalOpen,
+        isInvoiceModalOpen, setIsInvoiceModalOpen,
+        isPaymentModalOpen, setIsPaymentModalOpen,
+        isCustomerSearchOpen, setIsCustomerSearchOpen,
+        isCustomerEditModalOpen, setIsCustomerEditModalOpen,
+        isPartnerEditModalOpen, setIsPartnerEditModalOpen,
+        isProjectDeleteConfirmOpen, setIsProjectDeleteConfirmOpen,
+        isInviteModalOpen, setIsInviteModalOpen,
+        isInterpreterModalOpen, setIsInterpreterModalOpen,
+        previewFile, setPreviewFile,
+        deleteFileConfirm, setDeleteFileConfirm,
+    } = useProjectModals();
+
+    const [previewInvoice, setPreviewInvoice] = useState<any>(null);
+    const [isActionsOpen, setIsActionsOpen] = useState(false);
+    const actionsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isActionsOpen) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
+                setIsActionsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isActionsOpen]);
 
     // Comprehensive Project State
     const [projectData, setProjectData] = useState<ProjectData | null>(null);
@@ -185,123 +211,11 @@ const ProjectDetail = () => {
 
     useEffect(() => {
         if (projectResponse) {
-            // Map backend data to frontend structure
-            const mapped: ProjectData = {
-                id: projectResponse.id.toString(),
-                name: projectResponse.project_name || '',
-                client: projectResponse.customer?.company_name || `${projectResponse.customer?.first_name} ${projectResponse.customer?.last_name} ` || 'Unbekannter Kunde',
-                customer_id: projectResponse.customer_id,
-                customer: projectResponse.customer ? {
-                    id: projectResponse.customer.id.toString(),
-                    name: projectResponse.customer.company_name || `${projectResponse.customer.first_name} ${projectResponse.customer.last_name} `,
-                    contact: projectResponse.customer.company_name ? `${projectResponse.customer.first_name} ${projectResponse.customer.last_name} ` : 'Privatkunde',
-                    email: projectResponse.customer.email || '',
-                    phone: projectResponse.customer.phone || '',
-                    initials: ((projectResponse.customer.first_name?.[0] || '') + (projectResponse.customer.last_name?.[0] || 'K')).toUpperCase(),
-                    type: projectResponse.customer.type || 'client',
-                    // Address fields from backend
-                    address_street: projectResponse.customer.address_street || '',
-                    address_house_no: projectResponse.customer.address_house_no || '',
-                    address_zip: projectResponse.customer.address_zip || '',
-                    address_city: projectResponse.customer.address_city || '',
-                    address_country: projectResponse.customer.address_country || ''
-                } : { id: '', name: 'Unbekannt', contact: '', email: '', phone: '', initials: '?', type: '' },
-                source: projectResponse.source_language?.iso_code || projectResponse.source || 'de',
-                target: projectResponse.target_language?.iso_code || projectResponse.target || 'en',
-                source_language: projectResponse.source_language,
-                target_language: projectResponse.target_language,
-                progress: projectResponse.progress || 0,
-                status: projectResponse.status || 'draft',
-                priority: projectResponse.priority || 'medium',
-                due: projectResponse.deadline || projectResponse.due || '',
-                isCertified: !!projectResponse.is_certified,
-                hasApostille: !!projectResponse.has_apostille,
-                isExpress: !!projectResponse.is_express,
-                classification: projectResponse.classification ? 'ja' : 'nein',
-                copies: projectResponse.copies_count || 0,
-                copyPrice: parseFloat(projectResponse.copy_price) || 5,
-                docType: projectResponse.document_type ? [projectResponse.document_type.name] : (projectResponse.document_type_id ? [projectResponse.document_type_id.toString()] : []),
-                document_type_id: projectResponse.document_type_id,
-                additional_doc_types: projectResponse.additional_doc_types,
-                translator: projectResponse.partner ? {
-                    id: projectResponse.partner.id.toString(),
-                    name: projectResponse.partner.company || `${projectResponse.partner.first_name} ${projectResponse.partner.last_name} `,
-                    email: projectResponse.partner.email,
-                    initials: ((projectResponse.partner.first_name?.[0] || '') + (projectResponse.partner.last_name?.[0] || 'P')).toUpperCase(),
-                    phone: projectResponse.partner.phone || '',
-                    address_street: projectResponse.partner.address_street,
-                    address_house_no: projectResponse.partner.address_house_no,
-                    address_zip: projectResponse.partner.address_zip,
-                    address_city: projectResponse.partner.address_city,
-                    address_country: projectResponse.partner.address_country,
-                    rating: projectResponse.partner.rating,
-                    languages: projectResponse.partner.languages,
-                    unit_rates: Array.isArray(projectResponse.partner.unit_rates) ? projectResponse.partner.unit_rates : (typeof projectResponse.partner.unit_rates === 'string' ? JSON.parse(projectResponse.partner.unit_rates) : []),
-                    flat_rates: Array.isArray(projectResponse.partner.flat_rates) ? projectResponse.partner.flat_rates : (typeof projectResponse.partner.flat_rates === 'string' ? JSON.parse(projectResponse.partner.flat_rates) : [])
-                } : {
-                    name: '-',
-                    email: '',
-                    initials: '?',
-                    phone: ''
-                },
-                documentsSent: !!projectResponse.documents_sent,
-                pm: projectResponse.pm?.name || 'Admin',
-                createdAt: new Date(projectResponse.created_at).toLocaleDateString('de-DE'),
-                updatedAt: new Date(projectResponse.updated_at).toLocaleDateString('de-DE'),
-                creator: projectResponse.creator,
-                editor: projectResponse.editor,
-                positions: (projectResponse.positions || []).map((p: any) => ({
-                    id: p.id.toString(),
-                    description: p.description,
-                    amount: p.amount?.toString() || '0',
-                    unit: p.unit,
-                    quantity: p.quantity?.toString() || '1',
-                    partnerRate: p.partner_rate?.toString() || '0',
-                    partnerMode: p.partner_mode,
-                    partnerTotal: p.partner_total?.toString() || '0',
-                    customerRate: p.customer_rate?.toString() || '0',
-                    customerTotal: p.customer_total?.toString() || '0',
-                    customerMode: p.customer_mode,
-                    marginType: p.margin_type,
-                    marginPercent: p.margin_percent?.toString() || '0'
-                })),
-                payments: projectResponse.payments || (projectResponse.down_payment ? [{
-                    amount: projectResponse.down_payment,
-                    payment_date: projectResponse.down_payment_date,
-                    payment_method: projectResponse.down_payment_method,
-                    note: projectResponse.down_payment_note
-                }] : []),
-                notes: projectResponse.notes || '',
-                messages: projectResponse.messages || [],
-                access_token: projectResponse.access_token,
-                invoices: (projectResponse.invoices || []).filter((inv: any) => inv.type !== 'credit_note'),
-                files: (projectResponse.files || []).map((f: any) => ({
-                    id: f.id.toString(),
-                    name: f.file_name || f.original_name,
-                    fileName: f.file_name || f.original_name,
-                    original_name: f.original_name,
-                    ext: f.extension || (f.file_name || f.original_name || '').split('.').pop()?.toUpperCase() || '',
-                    extension: f.extension,
-                    type: f.type,
-                    mime_type: f.mime_type,
-                    version: f.version || '1.0',
-                    size: f.file_size,
-                    file_size: f.file_size,
-                    words: f.word_count || 0,
-                    chars: f.char_count || 0,
-                    word_count: f.word_count || 0,
-                    char_count: f.char_count || 0,
-                    status: f.status || 'ready',
-                    uploaded_by: f.uploader?.name || f.uploader?.email || 'System',
-                    uploader: f.uploader,
-                    created_at: f.created_at,
-                    upload_date: f.created_at,
-                    upload_time: f.created_at ? new Date(f.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''
-                }))
-            };
+            const mapped = mapProjectResponse(projectResponse) as ProjectData;
             setProjectData(mapped);
         }
     }, [projectResponse]);
+
 
 
 
@@ -614,7 +528,7 @@ const ProjectDetail = () => {
         mutationFn: invoiceService.create,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            queryClient.invalidateQueries({ queryKey: ['project', id] });
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
             setIsInvoiceModalOpen(false);
             toast.success('Rechnung erstellt – Projektstatus auf „Abholbereit" gesetzt.');
             navigate('/invoices');
@@ -694,8 +608,7 @@ const ProjectDetail = () => {
             const toastId = toast.loading('Dokument wird erstellt...');
             const response = await projectService.downloadConfirmation(id!, type);
             const blob = new Blob([response.data], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            window.open(url, '_blank');
+            openBlobInNewTab(blob);
             toast.dismiss(toastId);
             toast.success('Dokument geöffnet');
         } catch (error) {
@@ -748,7 +661,7 @@ const ProjectDetail = () => {
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end mt-4 md:mt-0">
                                 <button
                                     onClick={() => setIsEditModalOpen(true)}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEdit /> Bearbeiten
                                 </button>
@@ -760,55 +673,67 @@ const ProjectDetail = () => {
                                     <FaTrashAlt /> Löschen
                                 </button>
 
+                                {/* Email senden */}
                                 <button
-                                    onClick={() => handleDownloadConfirmation('order_confirmation')}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    onClick={() => navigate('/inbox', { state: { openCompose: true, projectId: String(projectData.id) } })}
+                                    className="bg-slate-900 text-white hover:bg-slate-800 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
-                                    <FaFilePdf className="text-slate-600" /> Auftrag
+                                    <FaEnvelope /> E-Mail senden
                                 </button>
 
-                                <button
-                                    onClick={() => handleDownloadConfirmation('pickup_confirmation')}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
-                                >
-                                    <FaFilePdf className="text-slate-600" /> Abholung
-                                </button>
+                                {/* Mehr Aktionen Dropdown */}
+                                <div className="relative flex-1 sm:flex-none" ref={actionsRef}>
+                                    <button
+                                        onClick={() => setIsActionsOpen(v => !v)}
+                                        className="w-full bg-white border border-slate-200 text-slate-600 hover:text-slate-700 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
+                                    >
+                                        Mehr Aktionen <FaChevronDown className={clsx('text-[10px] transition-transform', isActionsOpen && 'rotate-180')} />
+                                    </button>
 
-                                {(() => {
-                                    const activeInvoice = projectData.invoices?.find(inv => !['cancelled'].includes(inv.status));
+                                    {isActionsOpen && (
+                                        <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-sm shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-1">
+                                            <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
+                                            <button
+                                                onClick={() => { handleDownloadConfirmation('order_confirmation'); setIsActionsOpen(false); }}
+                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                            >
+                                                <FaFilePdf className="text-red-400 shrink-0" /> Auftragsbestätigung
+                                            </button>
+                                            <button
+                                                onClick={() => { handleDownloadConfirmation('pickup_confirmation'); setIsActionsOpen(false); }}
+                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                            >
+                                                <FaFilePdf className="text-red-400 shrink-0" /> Abholbestätigung
+                                            </button>
+                                            <button
+                                                onClick={() => { setIsInterpreterModalOpen(true); setIsActionsOpen(false); }}
+                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                            >
+                                                <FaFilePdf className="text-red-400 shrink-0" /> Dolmetscherbestätigung
+                                            </button>
 
-                                    const handleDownloadInvoice = async (invoiceId: number) => {
-                                        try {
-                                            const toastId = toast.loading('Rechnung wird geladen...');
-                                            const response = await invoiceService.download(invoiceId);
-                                            const blob = new Blob([response.data], { type: 'application/pdf' });
-                                            const url = window.URL.createObjectURL(blob);
-                                            window.open(url, '_blank');
-                                            toast.dismiss(toastId);
-                                        } catch (error) {
-                                            console.error('Invoice download error:', error);
-                                            toast.dismiss();
-                                            toast.error('Rechnung konnte nicht geladen werden.');
-                                        }
-                                    };
-
-                                    return activeInvoice ? (
-                                        <button
-                                            onClick={() => handleDownloadInvoice(Number(activeInvoice.id))}
-                                            className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition hover:bg-emerald-100 flex-1 sm:flex-none justify-center"
-                                            title={`Rechnung ${activeInvoice.invoice_number} öffnen`}
-                                        >
-                                            <FaFileInvoiceDollar /> <span className="truncate">{activeInvoice.invoice_number}</span>
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => setIsInvoiceModalOpen(true)}
-                                            className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
-                                        >
-                                            <FaFileInvoiceDollar /> Rechnung
-                                        </button>
-                                    );
-                                })()}
+                                            <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-100 mt-1">Rechnung</div>
+                                            {(() => {
+                                                const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
+                                                return activeInvoice ? (
+                                                    <button
+                                                        onClick={() => { setPreviewInvoice(activeInvoice); setIsActionsOpen(false); }}
+                                                        className="w-full text-left px-4 py-2.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 flex items-center gap-3 transition"
+                                                    >
+                                                        <FaFileInvoiceDollar className="text-emerald-500 shrink-0" /> {activeInvoice.invoice_number} öffnen
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => { setIsInvoiceModalOpen(true); setIsActionsOpen(false); }}
+                                                        className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                                    >
+                                                        <FaFileInvoiceDollar className="text-slate-400 shrink-0" /> Rechnung erstellen
+                                                    </button>
+                                                );
+                                            })()}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -991,7 +916,10 @@ const ProjectDetail = () => {
                         onSavePositions={(positions) => updateProjectMutation.mutate({ positions })}
                         onRecordPayment={() => setIsPaymentModalOpen(true)}
                         onCreateInvoice={() => setIsInvoiceModalOpen(true)}
-                        onGoToInvoice={() => navigate('/invoices')}
+                        onGoToInvoice={() => {
+                            const activeInvoice = projectData.invoices?.find(inv => !['cancelled'].includes(inv.status));
+                            if (activeInvoice) setPreviewInvoice(activeInvoice);
+                        }}
                         isPendingSave={updateProjectMutation.isPending}
                     />
                 )}
@@ -1121,6 +1049,18 @@ const ProjectDetail = () => {
                 isOpen={isInviteModalOpen}
                 onClose={() => setIsInviteModalOpen(false)}
                 projectId={id!}
+            />
+
+            <InterpreterConfirmationModal
+                isOpen={isInterpreterModalOpen}
+                onClose={() => setIsInterpreterModalOpen(false)}
+                project={projectData}
+            />
+
+            <InvoicePreviewModal
+                isOpen={!!previewInvoice}
+                onClose={() => setPreviewInvoice(null)}
+                invoice={previewInvoice}
             />
         </div >
     );

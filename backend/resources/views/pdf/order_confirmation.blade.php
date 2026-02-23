@@ -10,9 +10,9 @@
         }
 
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-family: 'Inter', 'Helvetica', 'Arial', sans-serif;
             font-size: 9pt;
-            line-height: 1.4;
+            line-height: 1.5;
             color: #000;
             margin: 0;
             padding: 0;
@@ -20,6 +20,10 @@
 
         .text-right {
             text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
         }
 
         .font-bold {
@@ -33,7 +37,7 @@
             position: fixed;
             left: -20mm;
             width: 4mm;
-            border-top: 0.5pt solid #999;
+            border-top: 0.5pt solid #000;
         }
 
         .fold-mark-top {
@@ -58,7 +62,7 @@
         .sender-small {
             font-size: 6.5pt;
             text-decoration: underline;
-            color: #555;
+            color: #000;
             line-height: 1.2;
             height: 5mm;
             overflow: hidden;
@@ -97,9 +101,13 @@
         }
 
         .info-table td {
-            padding: 1mm 0;
+            padding: 1.2mm 0;
             font-size: 8.5pt;
-            border-bottom: 0.1mm solid #eee;
+            border-bottom: 0.5pt solid #000;
+        }
+
+        .info-table td:first-child {
+            font-weight: bold;
         }
 
         .content-body {
@@ -108,13 +116,14 @@
         }
 
         .title {
-            font-size: 12pt;
+            font-size: 13pt;
             font-weight: bold;
-            margin-bottom: 3mm;
+            margin-bottom: 4mm;
+            text-transform: uppercase;
         }
 
         .intro-text {
-            margin-bottom: 4mm;
+            margin-bottom: 5mm;
         }
 
         /* Tabelle */
@@ -125,24 +134,26 @@
         }
 
         .items-table th {
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            text-align: left;
-            padding: 2mm 1mm;
-            font-size: 8.5pt;
+            border-top: 1.5pt solid #000;
+            border-bottom: 1.5pt solid #000;
+            text-align: right;
+            padding: 3mm 1.5mm;
+            font-size: 8pt;
+            font-weight: bold;
+            text-transform: uppercase;
         }
 
         .items-table td {
-            padding: 1.5mm 1mm;
-            border-bottom: 0.1mm solid #eee;
+            padding: 3mm 1.5mm;
+            border-bottom: 0.5pt solid #000;
             vertical-align: top;
-            font-size: 8.5pt;
+            font-size: 9pt;
         }
 
         .totals-wrapper {
             float: right;
-            width: 70mm;
-            margin-top: 3mm;
+            width: 80mm;
+            margin-top: 4mm;
         }
 
         .totals-table {
@@ -156,7 +167,7 @@
         }
 
         .total-brutto {
-            border-top: 1px solid #000;
+            border-top: 1.5pt solid #000;
             font-weight: bold;
             font-size: 10pt;
         }
@@ -167,11 +178,11 @@
             left: 0;
             right: 0;
             width: 100%;
-            border-top: 0.5pt solid #ccc;
-            padding-top: 2mm;
-            font-size: 7pt;
-            line-height: 1.3;
-            color: #444;
+            border-top: 1pt solid #000;
+            padding-top: 3mm;
+            font-size: 7.5pt;
+            line-height: 1.4;
+            color: #000;
         }
 
         .footer-table {
@@ -184,23 +195,12 @@
             padding: 0 2mm;
         }
 
-        .signature-table {
-            width: 100%;
-            margin-top: 15mm;
-            clear: both;
-        }
-
-        .signature-table td {
-            width: 50%;
-            padding-top: 10mm;
-            border-bottom: 0.5pt solid #000;
-            font-size: 8pt;
-        }
-
-        .signature-label {
+        .footer-label {
+            font-weight: bold;
+            text-transform: uppercase;
             font-size: 7pt;
-            color: #666;
-            margin-top: 1mm;
+            margin-bottom: 1.5mm;
+            display: block;
         }
     </style>
 </head>
@@ -219,24 +219,33 @@
     <div class="footer">
         <table class="footer-table">
             <tr>
-                <td style="width: 30%;">
+                <td style="width: 33%;">
+                    <span class="footer-label">Anschrift</span>
                     <strong>{{ $companyName }}</strong><br>
                     {{ $tenant->address_street }} {{ $tenant->address_house_no }}<br>
-                    {{ $tenant->address_zip }} {{ $tenant->address_city }}<br>
-                    Steuer-Nr.: {{ $tenant->tax_number }}<br>
-                    USt-IdNr.: {{ $tenant->vat_id }}
+                    {{ $tenant->address_zip }} {{ $tenant->address_city }}
                 </td>
-                <td style="width: 30%;">
-                    <strong>Kontakt</strong><br>
+                <td style="width: 33%; text-align: left;">
+                    <span class="footer-label">Kontakt</span>
                     Tel: {{ $tenant->phone }}<br>
-                    {{ $tenant->email }}<br>
-                    {{ $tenant->domain ?? $tenant->website }}
+                    Email: {{ $tenant->email }}<br>
+                    Web: {{ $tenant->domain ?? $tenant->website }}
                 </td>
-                <td style="width: 40%;">
-                    <strong>Bankverbindung</strong><br>
-                    {{ $tenant->bank_name }}<br>
-                    IBAN: {{ $tenant->bank_iban }}<br>
-                    BIC: {{ $tenant->bank_bic }}
+                <td style="width: 34%;">
+                    <span class="footer-label">Bank & Steuer</span>
+                    @if($tenant->bank_name)
+                        {{ $tenant->bank_name }}@if($tenant->bank_bic) | BIC: {{ $tenant->bank_bic }}@endif<br>
+                        @if($tenant->bank_code) BLZ: {{ $tenant->bank_code }}<br>@endif
+                    @endif
+                    @if($tenant->bank_iban)
+                        IBAN: {{ $tenant->bank_iban }}<br>
+                    @endif
+                    @if($tenant->vat_id)
+                        USt-IdNr.: {{ $tenant->vat_id }}<br>
+                    @endif
+                    @if($tenant->tax_number)
+                        St.-Nr.: {{ $tenant->tax_number }}
+                    @endif
                 </td>
             </tr>
         </table>
@@ -262,24 +271,24 @@
         <div class="info-box">
             <table class="info-table">
                 <tr>
-                    <td class="font-bold">Belegart</td>
+                    <td>Belegart</td>
                     <td class="text-right">Auftragsbestätigung</td>
                 </tr>
                 <tr>
-                    <td class="font-bold">Datum</td>
+                    <td>Datum</td>
                     <td class="text-right">{{ date('d.m.Y') }}</td>
                 </tr>
                 <tr>
-                    <td class="font-bold">Projekt-Nr.</td>
+                    <td>Projekt-Nr.</td>
                     <td class="text-right">{{ $project->project_number ?? $project->id }}</td>
                 </tr>
                 <tr>
-                    <td class="font-bold">Kunden-Nr.</td>
+                    <td>Kunden-Nr.</td>
                     <td class="text-right">{{ $project->customer->customer_number ?? $project->customer->id }}</td>
                 </tr>
                 @if($project->deadline)
                     <tr>
-                        <td class="font-bold">Liefertermin</td>
+                        <td>Liefertermin</td>
                         <td class="text-right">{{ \Carbon\Carbon::parse($project->deadline)->format('d.m.Y') }}</td>
                     </tr>
                 @endif
@@ -288,20 +297,20 @@
     </div>
 
     <div class="content-body">
-        <div class="title">Auftragsbestätigung zum Projekt: {{ $project->project_name }}</div>
+        <div class="title">Auftragsbestätigung: {{ $project->project_name }}</div>
 
         <div class="intro-text">
-            Sehr geehrte Damen und Herren,<br>
-            vielen Dank für Ihren Auftrag! Hiermit bestätigen wir die Annahme des Projekts zu den folgenden Konditionen:
+            Sehr geehrte Damen und Herren,<br><br>
+            vielen Dank für Ihren Auftrag. Hiermit bestätigen wir die Annahme des Projekts zu den folgenden Konditionen:
         </div>
 
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 50%">Beschreibung</th>
-                    <th class="text-right" style="width: 10%">Menge</th>
-                    <th class="text-right" style="width: 20%">Einzelpreis</th>
-                    <th class="text-right" style="width: 20%">Gesamtpreis</th>
+                    <th style="width: 50%; text-align: left;">Bezeichnung</th>
+                    <th style="width: 10%">Menge</th>
+                    <th style="width: 20%">Einzelpreis</th>
+                    <th style="width: 20%">Gesamtpreis</th>
                 </tr>
             </thead>
             <tbody>
@@ -309,8 +318,8 @@
                     <tr>
                         <td>
                             <strong>{{ $pos->description }}</strong><br>
-                            <span style="font-size: 7.5pt; color: #666;">
-                                {{ $project->sourceLanguage->name }} <span style="font-family: DejaVu Sans;">→</span>
+                            <span style="font-size: 7.5pt; color: #000;">
+                                {{ $project->sourceLanguage->name }} →
                                 {{ $project->targetLanguage->name }}
                                 @if($pos->document_type) • {{ $pos->document_type }} @endif
                             </span>
@@ -330,7 +339,7 @@
                     <td class="text-right">{{ number_format($project->price_total, 2, ',', '.') }} €</td>
                 </tr>
                 <tr>
-                    <td class="text-right">USt. 19%:</td>
+                    <td class="text-right">zzgl. 19% USt.:</td>
                     <td class="text-right">{{ number_format($project->price_total * 0.19, 2, ',', '.') }} €</td>
                 </tr>
                 <tr class="total-brutto">
@@ -340,9 +349,9 @@
             </table>
         </div>
 
-        <div style="clear: both; margin-top: 10mm;">
+        <div style="clear: both; margin-top: 15mm;">
             <p>Wir beginnen umgehend mit der Bearbeitung. Bei Rückfragen stehen wir Ihnen gerne zur Verfügung.</p>
-            <p>Mit freundlichen Grüßen,<br>{{ $tenant->company_name }}</p>
+            <p>Mit freundlichen Grüßen,<br><br><strong>{{ $companyName }}</strong></p>
         </div>
     </div>
 </body>

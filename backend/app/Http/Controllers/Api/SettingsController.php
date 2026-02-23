@@ -34,6 +34,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'company_name' => 'nullable|string',
             'legal_form' => 'nullable|string',
+            'managing_director' => 'nullable|string',
             'address_street' => 'nullable|string',
             'address_house_no' => 'nullable|string',
             'address_zip' => 'nullable|string',
@@ -54,13 +55,18 @@ class SettingsController extends Controller
             'website' => 'nullable|string',
             'domain' => 'nullable|string',
             'currency' => 'nullable|string',
-            'logo' => 'nullable|file|image|max:4096'
+            'logo' => 'nullable|file|image|max:4096',
+            'invoice_layout' => 'nullable|string|in:din5008,modern,classic',
+            'invoice_font_family' => 'nullable|string',
+            'invoice_font_size' => 'nullable|string',
+            'invoice_primary_color' => 'nullable|string',
         ]);
 
         // Fields that exist in the Tenant model and should be synced
         $tenantFields = [
             'company_name',
             'legal_form',
+            'managing_director',
             'address_street',
             'address_house_no',
             'address_zip',
@@ -119,6 +125,60 @@ class SettingsController extends Controller
         }
 
         return response()->json(['message' => 'Settings updated successfully']);
+    }
+
+    public function uploadLogo(Request $request)
+    {
+        $request->validate([
+            'logo' => 'required|file|image|max:4096',
+        ]);
+
+        $user = $request->user();
+        $tenantId = $user->tenant_id ?? 1;
+        $tenant = \App\Models\Tenant::find($tenantId);
+
+        $path = $request->file('logo')->store('tenant_logos', 'public');
+
+        // Save to tenant model
+        if ($tenant) {
+            $tenantSettings = $tenant->settings ?? [];
+            $tenantSettings['company_logo'] = $path;
+            $tenant->settings = $tenantSettings;
+            $tenant->save();
+        }
+
+        // Save to settings table
+        \App\Models\TenantSetting::updateOrCreate(
+            ['tenant_id' => $tenantId, 'key' => 'company_logo'],
+            ['value' => $path]
+        );
+
+        return response()->json(['message' => 'Logo hochgeladen', 'path' => $path]);
+    }
+
+    public function deleteLogo(Request $request)
+    {
+        $user = $request->user();
+        $tenantId = $user->tenant_id ?? 1;
+        $tenant = \App\Models\Tenant::find($tenantId);
+
+        // Remove from tenant model
+        if ($tenant) {
+            $tenantSettings = $tenant->settings ?? [];
+            if (isset($tenantSettings['company_logo'])) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($tenantSettings['company_logo']);
+                unset($tenantSettings['company_logo']);
+                $tenant->settings = $tenantSettings;
+                $tenant->save();
+            }
+        }
+
+        // Remove from settings table
+        \App\Models\TenantSetting::where('tenant_id', $tenantId)
+            ->where('key', 'company_logo')
+            ->delete();
+
+        return response()->json(['message' => 'Logo entfernt']);
     }
 
     public function testMailConnection(Request $request)

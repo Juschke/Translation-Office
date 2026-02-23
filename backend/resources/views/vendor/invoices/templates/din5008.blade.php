@@ -4,18 +4,65 @@
 <head>
     <meta charset="utf-8">
     <title>Rechnung {{ $invoice->name }}</title>
+    @php
+        // Resolve design variables with sensible defaults
+        $tenantId = $invoice->buyer->custom_fields['tenant_id'] ?? null;
+        if (!isset($fontFamily)) {
+            $fontFamily = $tenantId
+                ? (\App\Models\TenantSetting::where('tenant_id', $tenantId)->where('key', 'invoice_font_family')->value('value') ?? "'Inter', Helvetica, Arial, sans-serif")
+                : "'Inter', Helvetica, Arial, sans-serif";
+        }
+        if (!isset($fontSize)) {
+            $fontSize = $tenantId
+                ? (\App\Models\TenantSetting::where('tenant_id', $tenantId)->where('key', 'invoice_font_size')->value('value') ?? '9pt')
+                : '9pt';
+        }
+        if (!isset($primaryColor)) {
+            $primaryColor = $tenantId
+                ? (\App\Models\TenantSetting::where('tenant_id', $tenantId)->where('key', 'invoice_primary_color')->value('value') ?? '#000000')
+                : '#000000';
+        }
+        if (!isset($companyLogo)) {
+            $companyLogo = null;
+            if ($tenantId) {
+                $companyLogo = \App\Models\TenantSetting::where('tenant_id', $tenantId)->where('key', 'company_logo')->value('value');
+            }
+        }
+    @endphp
     <style>
         @page {
             margin: 20mm 20mm 30mm 25mm;
         }
 
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 9pt;
-            line-height: 1.4;
+            font-family:
+                {{ $fontFamily }}
+            ;
+            font-size:
+                {{ $fontSize }}
+            ;
+            line-height: 1.5;
             color: #000;
             margin: 0;
             padding: 0;
+        }
+
+        .accent-color {
+            color:
+                {{ $primaryColor }}
+            ;
+        }
+
+        .accent-border {
+            border-color:
+                {{ $primaryColor }}
+            ;
+        }
+
+        .company-logo {
+            max-height: 18mm;
+            max-width: 50mm;
+            object-fit: contain;
         }
 
         /* ── Hilfsklassen ── */
@@ -31,17 +78,13 @@
             font-weight: bold;
         }
 
-        .font-medium {
-            font-weight: 500;
-        }
-
         .text-muted {
-            color: #64748b;
+            color: #000;
         }
 
         .text-small {
             font-size: 7.5pt;
-            color: #64748b;
+            color: #000;
         }
 
         /* ── DIN 5008 Falzmarken & Lochmarke ── */
@@ -76,7 +119,7 @@
         .sender-small {
             font-size: 6.5pt;
             text-decoration: underline;
-            color: #64748b;
+            color: #000;
             line-height: 1.2;
             height: 5mm;
             overflow: hidden;
@@ -120,8 +163,8 @@
         }
 
         .info-table td:first-child {
-            color: #64748b;
-            font-weight: 500;
+            color: #000;
+            font-weight: bold;
         }
 
         /* ── Titel & Einleitung ── */
@@ -150,24 +193,31 @@
         }
 
         .items-table th {
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            text-align: left;
-            padding: 2mm 1.5mm;
-            font-size: 8.5pt;
-            font-weight: 600;
-            color: #64748b;
+            border-top: 1.5pt solid
+                {{ $primaryColor }}
+            ;
+            border-bottom: 1.5pt solid
+                {{ $primaryColor }}
+            ;
+            padding: 3mm 1.5mm;
+            font-size: 8pt;
+            font-weight: bold;
+            color:
+                {{ $primaryColor }}
+            ;
+            text-transform: uppercase;
+            letter-spacing: 0.1mm;
         }
 
         .items-table td {
-            padding: 2mm 1.5mm;
-            border-bottom: 0.1mm solid #e2e8f0;
+            padding: 3mm 1.5mm;
+            border-bottom: 0.5pt solid #000;
             vertical-align: top;
             font-size: 9pt;
         }
 
         .items-table td.pos-nr {
-            color: #94a3b8;
+            color: #000;
             text-align: center;
         }
 
@@ -189,21 +239,23 @@
         }
 
         .total-brutto {
-            border-top: 1px solid #000;
+            border-top: 1.5pt solid
+                {{ $primaryColor }}
+            ;
             font-weight: bold;
             font-size: 10pt;
         }
 
         .total-due {
-            border-top: 0.5pt solid #e2e8f0;
+            border-top: 0.5pt solid #000;
         }
 
         .text-green {
-            color: #059669;
+            color: #000;
         }
 
         .text-red {
-            color: #dc2626;
+            color: #000;
         }
 
         /* ── Zahlungshinweis ── */
@@ -226,11 +278,11 @@
             left: 0;
             right: 0;
             width: 100%;
-            border-top: 0.5pt solid #ccc;
-            padding-top: 2mm;
-            font-size: 7pt;
-            line-height: 1.3;
-            color: #64748b;
+            border-top: 1pt solid #000;
+            padding-top: 3mm;
+            font-size: 7.5pt;
+            line-height: 1.4;
+            color: #000;
         }
 
         .footer-table {
@@ -243,19 +295,13 @@
             padding: 0 2mm;
         }
 
-        .footer-table td:first-child {
-            padding-left: 0;
-        }
-
-        .footer-table td:last-child {
-            padding-right: 0;
-        }
-
         .footer-label {
             font-weight: bold;
-            color: #475569;
+            color: #000;
             display: block;
-            margin-bottom: 1mm;
+            margin-bottom: 1.5mm;
+            text-transform: uppercase;
+            font-size: 7pt;
         }
     </style>
 </head>
@@ -276,11 +322,25 @@
 
         $companyEmail = $tenant->email ?? $settings['email'] ?? $settings['company_email'] ?? '';
         $companyPhone = $tenant->phone ?? $settings['phone'] ?? '';
+        $companyWebsite = $tenant->website ?? $settings['website'] ?? '';
         $companyBank = $tenant->bank_name ?? $settings['bank_name'] ?? '';
         $companyIBAN = $tenant->bank_iban ?? $settings['bank_iban'] ?? '';
         $companyBIC = $tenant->bank_bic ?? $settings['bank_bic'] ?? '';
+        $companyBankCode = $tenant->bank_code ?? $settings['bank_code'] ?? '';
+        $companyAccountHolder = $tenant->bank_account_holder ?? $settings['bank_account_holder'] ?? $companyName;
         $companyTaxNr = $tenant->tax_number ?? $settings['tax_number'] ?? '';
         $companyVatId = $tenant->vat_id ?? $settings['vat_id'] ?? '';
+
+        // Layout settings
+        $fontFamily = $settings['invoice_font_family'] ?? 'Inter, Helvetica, Arial, sans-serif';
+        $fontSize = $settings['invoice_font_size'] ?? '9pt';
+        $primaryColor = $settings['invoice_primary_color'] ?? '#000000';
+        $logoPath = $settings['company_logo'] ?? ($tenant->settings['company_logo'] ?? null);
+        $logoFullPath = $logoPath ? storage_path('app/public/' . $logoPath) : null;
+        $logoBase64 = null;
+        if ($logoFullPath && file_exists($logoFullPath)) {
+            $logoBase64 = 'data:image/' . pathinfo($logoFullPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode(file_get_contents($logoFullPath));
+        }
 
         $isCreditNote = ($invoice->buyer->custom_fields['invoice_type'] ?? 'invoice') === 'credit_note';
         $docTypeLabel = $isCreditNote ? 'Gutschrift' : 'Rechnung';
@@ -307,25 +367,32 @@
                     {{ $companyZip }} {{ $companyCity }}<br>
                     {{ $companyCountry }}
                 </td>
-                <td style="width: 30%;">
+                <td style="width: 33%; text-align: left;">
                     <span class="footer-label">Kontakt</span>
                     @if($companyEmail)
                         Email: {{ $companyEmail }}<br>
                     @endif
                     @if($companyPhone)
-                        Telefon: {{ $companyPhone }}
+                        Telefon: {{ $companyPhone }}<br>
+                    @endif
+                    @if($companyWebsite)
+                        Web: {{ $companyWebsite }}
                     @endif
                 </td>
-                <td style="width: 40%;">
-                    <span class="footer-label">Steuer & Bank</span>
-                    @if($companyTaxNr)
-                        St.-Nr: {{ $companyTaxNr }}<br>
+                <td style="width: 34%; text-align: left;">
+                    <span class="footer-label">Bank & Steuer</span>
+                    @if($companyBank)
+                        {{ $companyBank }}@if($companyBIC) | BIC: {{ $companyBIC }}@endif<br>
+                        @if($companyBankCode) BLZ: {{ $companyBankCode }}<br>@endif
+                    @endif
+                    @if($companyIBAN)
+                        IBAN: {{ $companyIBAN }}<br>
                     @endif
                     @if($companyVatId)
                         USt-ID: {{ $companyVatId }}<br>
                     @endif
-                    @if($companyIBAN)
-                        IBAN: {{ $companyIBAN }}
+                    @if($companyTaxNr)
+                        St.-Nr: {{ $companyTaxNr }}
                     @endif
                 </td>
             </tr>
@@ -354,6 +421,11 @@
         </div>
 
         <div class="info-box">
+            @if($logoBase64)
+                <div style="text-align: right; margin-bottom: 4mm;">
+                    <img src="{{ $logoBase64 }}" class="company-logo" alt="Logo">
+                </div>
+            @endif
             <table class="info-table">
                 <tr>
                     <td>{{ $docTypeLabel }}-Nr.</td>
@@ -397,12 +469,12 @@
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 5%; text-align: center;">Pos.</th>
-                    <th style="width: 40%">Leistung</th>
-                    <th class="text-right" style="width: 12%">Menge</th>
-                    <th class="text-right" style="width: 13%">Einheit</th>
-                    <th class="text-right" style="width: 15%">Einzel</th>
-                    <th class="text-right" style="width: 15%">Gesamt</th>
+                    <th style="width: 5%; text-align: center;">Pos</th>
+                    <th style="width: 40%; text-align: left;">Bezeichnung</th>
+                    <th style="width: 12%; text-align: right;">Menge</th>
+                    <th style="width: 13%; text-align: right;">Einheit</th>
+                    <th style="width: 15%; text-align: right;">Einzelpreis</th>
+                    <th style="width: 15%; text-align: right;">Gesamtpreis</th>
                 </tr>
             </thead>
             <tbody>
@@ -412,7 +484,8 @@
                         <td>
                             <strong>{{ $item->title }}</strong>
                             @if($item->description)
-                                <br><span class="text-small">{{ $item->description }}</span>
+                                <br><span class="text-small"
+                                    style="font-weight: normal;">{!! nl2br(e($item->description)) !!}</span>
                             @endif
                         </td>
                         <td class="text-right">{{ number_format($item->quantity, 2, ',', '.') }}</td>
@@ -427,7 +500,7 @@
         <div class="totals-wrapper">
             <table class="totals-table">
                 <tr>
-                    <td>Nettosumme:</td>
+                    <td>Nettobetrag:</td>
                     <td class="text-right">{{ number_format($invoice->taxable_amount, 2, ',', '.') }} €</td>
                 </tr>
                 @if($invoice->total_taxes > 0)
@@ -455,7 +528,7 @@
                     </tr>
                 @endif
                 <tr class="total-brutto">
-                    <td>Gesamtbetrag:</td>
+                    <td>Rechnungsbetrag:</td>
                     <td class="text-right">{{ number_format($invoice->total_amount, 2, ',', '.') }} €</td>
                 </tr>
                 @if($paidAmount > 0)
@@ -480,24 +553,23 @@
                 <p>{!! nl2br(e($invoice->notes)) !!}</p>
             @endif
 
-            <p>
-                Bitte überweisen Sie den Betrag von <strong>{{ number_format($dueAmount > 0 ? $dueAmount : $grossAmount, 2, ',', '.') }} €</strong>
-                @if(isset($invoice->buyer->custom_fields['due_date']))
-                    bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong>.
-                @else
-                    innerhalb von 14 Tagen ab Rechnungseingang.
-                @endif
-                <br>Verwendungszweck: <strong>{{ $invoice->name }}</strong>
-            </p>
-
-            @if($companyBank || $companyIBAN)
+            @if($dueAmount > 0)
                 <p>
-                    <strong>Bankverbindung:</strong>
-                    {{ $companyBank }}
-                    @if($companyIBAN) | IBAN: {{ $companyIBAN }} @endif
-                    @if($companyBIC) | BIC: {{ $companyBIC }} @endif
+                    Bitte überweisen Sie den Betrag von
+                    <strong>{{ number_format($dueAmount, 2, ',', '.') }} €</strong>
+                    @if(isset($invoice->buyer->custom_fields['due_date']))
+                        bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong>.
+                    @else
+                        innerhalb von 14 Tagen ab Rechnungseingang.
+                    @endif
+                    <br>Verwendungszweck: <strong>{{ $invoice->name }}</strong>
+                </p>
+            @else
+                <p class="font-bold text-green" style="font-style: italic;">
+                    Betrag dankend erhalten. Es ist keine weitere Zahlung erforderlich.
                 </p>
             @endif
+
         </div>
     </div>
 

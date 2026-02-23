@@ -14,16 +14,22 @@ class MailController extends Controller
     {
         $folder = $request->query('folder', 'inbox');
         $mails = Mail::where('folder', $folder)
-            ->latest()
+            ->orderByRaw('COALESCE(date, created_at) DESC')
             ->get()
             ->map(function ($mail) {
+                $preview = preg_replace('/<style\b[^>]*>(.*?)<\/style>/is', '', $mail->body);
+                $preview = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $preview);
+                $preview = strip_tags($preview);
+                $preview = html_entity_decode($preview);
+                $preview = trim(preg_replace('/\s+/', ' ', $preview));
+
                 return [
                     'id' => $mail->id,
                     'from' => $mail->from_email,
                     'to_emails' => $mail->to_emails,
                     'subject' => $mail->subject,
                     'body' => $mail->body,
-                    'preview' => substr(strip_tags($mail->body), 0, 100) . '...',
+                    'preview' => mb_substr($preview, 0, 100) . '...',
                     'time' => ($mail->date ?? $mail->created_at)->diffForHumans(),
                     'full_time' => ($mail->date ?? $mail->created_at)->format('d.m.Y H:i'),
                     'read' => $mail->is_read,
@@ -42,16 +48,33 @@ class MailController extends Controller
             'cc' => 'nullable|string',
             'subject' => 'nullable|string',
             'body' => 'nullable|string',
+            'project_id' => 'nullable|exists:projects,id',
         ]);
 
         $account = \App\Models\MailAccount::findOrFail($validated['mail_account_id']);
+        $tenant = $request->user()->tenant;
+        $user = $request->user();
+
+        // 1. Prepare variables
+        $mailTemplateService = app(\App\Services\MailTemplateService::class);
+        $variables = [];
+        if (!empty($validated['project_id'])) {
+            $project = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType'])->find($validated['project_id']);
+            if ($project) {
+                $variables = $mailTemplateService->getProjectVariables($project);
+            }
+        }
+
+        // 2. Replace variables in Subject and Body
+        $finalSubject = $mailTemplateService->parseTemplate($validated['subject'] ?? '(Kein Betreff)', $variables, $tenant, $user);
+        $finalBody = $mailTemplateService->parseTemplate($validated['body'] ?? '', $variables, $tenant, $user);
 
         $attachments = [];
         $email = (new \Symfony\Component\Mime\Email())
             ->from($account->email)
             ->to(...array_map('trim', explode(',', $validated['to'])))
-            ->subject($validated['subject'] ?? '(Kein Betreff)')
-            ->html($validated['body'] ?? '');
+            ->subject($finalSubject)
+            ->html($finalBody);
 
         if (!empty($validated['cc'])) {
             $email->cc(...array_map('trim', explode(',', $validated['cc'])));
@@ -66,7 +89,7 @@ class MailController extends Controller
                     'size' => $file->getSize(),
                     'mime' => $file->getMimeType()
                 ];
-                $email->attachFromPath(storage_path('app/' . $path), $file->getClientOriginalName());
+                $email->attachFromPath(\Storage::path($path), $file->getClientOriginalName());
             }
         }
 
@@ -95,9 +118,9 @@ class MailController extends Controller
             'folder' => 'sent',
             'from_email' => $account->email,
             'to_emails' => array_map('trim', explode(',', $validated['to'])),
-            'cc_emails' => $validated['cc'] ? array_map('trim', explode(',', $validated['cc'])) : [],
-            'subject' => $validated['subject'] ?? '(Kein Betreff)',
-            'body' => $validated['body'],
+            'cc_emails' => !empty($validated['cc']) ? array_map('trim', explode(',', $validated['cc'])) : [],
+            'subject' => $finalSubject,
+            'body' => $finalBody,
             'is_read' => true,
             'date' => now(),
             'attachments' => $attachments
@@ -118,10 +141,9 @@ class MailController extends Controller
         $mail = Mail::findOrFail($id);
 
         if ($mail->folder === 'trash') {
-            $mail->forceDelete();
+            $mail->delete(); // Soft delete so it's hidden from the UI but sync ignores it
         } else {
-            $mail->update(['folder' => 'trash']);
-            $mail->delete(); // Soft delete
+            $mail->update(['folder' => 'trash']); // Move to trash, remain visible in Trash UI
         }
 
         return response()->json(['message' => 'Mail deleted']);
@@ -166,19 +188,32 @@ class MailController extends Controller
                 // Get INBOX folder
                 $folder = $client->getFolder('INBOX');
 
-                // Fetch the latest 50 messages
-                $messages = $folder->query()->all()->limit(50)->get();
+                // Fetch only messages newer than the last synced mail for this account
+                $lastMailDate = Mail::withTrashed()
+                    ->where('tenant_id', $tenantId)
+                    ->where('mail_account_id', $account->id)
+                    ->where('folder', 'inbox')
+                    ->max('date');
+
+                if ($lastMailDate) {
+                    // Subsequent sync: only fetch emails since last known mail (minus 5 min buffer)
+                    $since = \Carbon\Carbon::parse($lastMailDate)->subMinutes(5);
+                    $messages = $folder->query()->since($since)->get();
+                } else {
+                    // First sync: fetch up to 500 messages
+                    $messages = $folder->query()->all()->limit(500)->get();
+                }
 
                 foreach ($messages as $message) {
                     $messageId = $message->getMessageId()->get()[0] ?? $message->getUid();
 
-                    if (Mail::where('tenant_id', $tenantId)->where('mail_account_id', $account->id)->where('message_id', $messageId)->exists()) {
+                    if (Mail::withTrashed()->where('tenant_id', $tenantId)->where('mail_account_id', $account->id)->where('message_id', $messageId)->exists()) {
                         continue;
                     }
 
                     // For backward compatibility: if mail exists without mail_account_id, update and skip
-                    if (Mail::where('tenant_id', $tenantId)->whereNull('mail_account_id')->where('message_id', $messageId)->exists()) {
-                        Mail::where('tenant_id', $tenantId)->whereNull('mail_account_id')->where('message_id', $messageId)->update(['mail_account_id' => $account->id]);
+                    if (Mail::withTrashed()->where('tenant_id', $tenantId)->whereNull('mail_account_id')->where('message_id', $messageId)->exists()) {
+                        Mail::withTrashed()->where('tenant_id', $tenantId)->whereNull('mail_account_id')->where('message_id', $messageId)->update(['mail_account_id' => $account->id]);
                         continue;
                     }
 

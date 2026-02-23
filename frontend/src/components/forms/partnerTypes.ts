@@ -1,0 +1,31 @@
+export interface PartnerFormData {
+  id?: number;
+  type: string;
+  salutation: string;
+  firstName: string;
+  lastName: string;
+  company: string;
+  street: string;
+  houseNo: string;
+  zip: string;
+  city: string;
+  country: string;
+  emails: string[];
+  phones: string[];
+  languages: string[];
+  domains: string[];
+  bankAccountHolder: string;
+  bankCode: string;
+  software: string;
+  priceMode: string;
+  unitRates: { word: string; line: string; hour: string };
+  flatRates: { minimum: string; cert: string };
+  paymentTerms: string;
+  taxId: string;
+  bankName: string;
+  iban: string;
+  bic: string;
+  notes: string;
+  status: string;
+  rating: number;
+}

@@ -19,15 +19,15 @@ const MasterDataTab = () => {
  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; item: any | null }>({ isOpen: false, item: null });
 
  const { data: languages = [], isLoading: isLanguagesLoading } = useQuery<any[]>({
- queryKey: ['languages'],
+ queryKey: ['settings', 'languages'],
  queryFn: settingsService.getLanguages
  });
  const { data: docTypes = [], isLoading: isDocTypesLoading } = useQuery<any[]>({
- queryKey: ['docTypes'],
+ queryKey: ['settings', 'docTypes'],
  queryFn: settingsService.getDocTypes
  });
  const { data: services = [], isLoading: isServicesLoading } = useQuery<any[]>({
- queryKey: ['services'],
+ queryKey: ['settings', 'services'],
  queryFn: settingsService.getServices
  });
  const { data: emailTemplates = [], isLoading: isTemplatesLoading } = useQuery<any[]>({
@@ -35,17 +35,17 @@ const MasterDataTab = () => {
  queryFn: settingsService.getEmailTemplates
  });
 
- const createLanguageMutation = useMutation({ mutationFn: settingsService.createLanguage, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['languages'] }); setIsModalOpen(false); } });
- const updateLanguageMutation = useMutation({ mutationFn: ({ id, data }: any) => settingsService.updateLanguage(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['languages'] }); setIsModalOpen(false); } });
- const deleteLanguageMutation = useMutation({ mutationFn: settingsService.deleteLanguage, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['languages'] }) });
+ const createLanguageMutation = useMutation({ mutationFn: settingsService.createLanguage, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['settings', 'languages'] }); setIsModalOpen(false); } });
+ const updateLanguageMutation = useMutation({ mutationFn: ({ id, data }: any) => settingsService.updateLanguage(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['settings', 'languages'] }); setIsModalOpen(false); } });
+ const deleteLanguageMutation = useMutation({ mutationFn: settingsService.deleteLanguage, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['settings', 'languages'] }) });
 
- const createDocTypeMutation = useMutation({ mutationFn: settingsService.createDocType, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['docTypes'] }); setIsModalOpen(false); } });
- const updateDocTypeMutation = useMutation({ mutationFn: ({ id, data }: any) => settingsService.updateDocType(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['docTypes'] }); setIsModalOpen(false); } });
- const deleteDocTypeMutation = useMutation({ mutationFn: settingsService.deleteDocType, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['docTypes'] }) });
+ const createDocTypeMutation = useMutation({ mutationFn: settingsService.createDocType, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['settings', 'docTypes'] }); setIsModalOpen(false); } });
+ const updateDocTypeMutation = useMutation({ mutationFn: ({ id, data }: any) => settingsService.updateDocType(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['settings', 'docTypes'] }); setIsModalOpen(false); } });
+ const deleteDocTypeMutation = useMutation({ mutationFn: settingsService.deleteDocType, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['settings', 'docTypes'] }) });
 
- const createServiceMutation = useMutation({ mutationFn: settingsService.createService, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['services'] }); setIsModalOpen(false); } });
- const updateServiceMutation = useMutation({ mutationFn: ({ id, data }: any) => settingsService.updateService(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['services'] }); setIsModalOpen(false); } });
- const deleteServiceMutation = useMutation({ mutationFn: settingsService.deleteService, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['services'] }) });
+ const createServiceMutation = useMutation({ mutationFn: settingsService.createService, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['settings', 'services'] }); setIsModalOpen(false); } });
+ const updateServiceMutation = useMutation({ mutationFn: ({ id, data }: any) => settingsService.updateService(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['settings', 'services'] }); setIsModalOpen(false); } });
+ const deleteServiceMutation = useMutation({ mutationFn: settingsService.deleteService, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['settings', 'services'] }) });
 
  const createTemplateMutation = useMutation({ mutationFn: settingsService.createEmailTemplate, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['emailTemplates'] }); setIsModalOpen(false); } });
  const updateTemplateMutation = useMutation({ mutationFn: ({ id, data }: any) => settingsService.updateEmailTemplate(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['emailTemplates'] }); setIsModalOpen(false); } });

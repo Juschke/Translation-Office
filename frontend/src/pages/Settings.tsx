@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { FaBuilding, FaDatabase, FaHistory, FaFileInvoiceDollar } from 'react-icons/fa';
+import { FaBuilding, FaDatabase, FaHistory, FaFileInvoiceDollar, FaUser } from 'react-icons/fa';
 import clsx from 'clsx';
 import CompanySettingsTab from '../components/settings/CompanySettingsTab';
 import InvoiceSettingsTab from '../components/settings/InvoiceSettingsTab';
 import MasterDataTab from '../components/settings/MasterDataTab';
 import AuditLogsTab from '../components/settings/AuditLogsTab';
+import ProfileTab from '../components/settings/ProfileTab';
 
 const tabs = [
+    { id: 'profile', label: 'Profil', icon: FaUser },
     { id: 'company', label: 'Unternehmen', icon: FaBuilding },
     { id: 'invoice', label: 'Rechnung & Angebot', icon: FaFileInvoiceDollar },
     { id: 'master_data', label: 'Stammdaten', icon: FaDatabase },
@@ -50,6 +52,7 @@ const Settings: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex-1 min-w-0 pb-20 flex flex-col">
+                    {activeTab === 'profile' && <ProfileTab />}
                     {activeTab === 'company' && <CompanySettingsTab />}
                     {activeTab === 'invoice' && <InvoiceSettingsTab />}
                     {activeTab === 'master_data' && <MasterDataTab />}

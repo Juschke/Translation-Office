@@ -165,6 +165,7 @@ class ProjectController extends Controller
         $project = \App\Models\Project::findOrFail($id);
 
         $validated = $request->validate([
+            'project_number' => 'sometimes|nullable|string',
             'customer_id' => 'sometimes|exists:customers,id',
             'partner_id' => 'sometimes|nullable|exists:partners,id',
             'source_lang_id' => 'sometimes|nullable|exists:languages,id',
@@ -190,6 +191,9 @@ class ProjectController extends Controller
             'copies_count' => 'nullable|integer',
             'copy_price' => 'nullable|numeric',
             'notes' => 'nullable|string',
+            'appointment_location' => 'nullable|string',
+            'customer_reference' => 'nullable|string',
+            'customer_date' => 'nullable|date',
             'positions' => 'nullable|array',
             'positions.*.description' => 'required|string',
             'positions.*.amount' => 'required|numeric',
@@ -380,18 +384,30 @@ class ProjectController extends Controller
 
     public function downloadConfirmation(Request $request, \App\Models\Project $project, $type)
     {
-        if (!in_array($type, ['order_confirmation', 'pickup_confirmation'])) {
+        if (!in_array($type, ['order_confirmation', 'pickup_confirmation', 'interpreter_confirmation'])) {
             abort(404);
         }
 
-        $project->load(['customer', 'tenant', 'positions', 'sourceLanguage', 'targetLanguage']);
+        $project->load(['customer', 'tenant', 'positions', 'sourceLanguage', 'targetLanguage', 'partner']);
+
+        // Fetch creator from activities
+        $creationActivity = \Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Project::class)
+            ->where('subject_id', $project->id)
+            ->where('event', 'created')
+            ->orderBy('id', 'asc')
+            ->with('causer')
+            ->first();
+        $project->creator = $creationActivity ? $creationActivity->causer : null;
 
         if ($type === 'order_confirmation') {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.order_confirmation', compact('project'));
             $filename = 'Auftragsbestaetigung_' . ($project->project_number ?? $project->id) . '.pdf';
-        } else {
+        } elseif ($type === 'pickup_confirmation') {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.pickup_confirmation', compact('project'));
             $filename = 'Abholbestaetigung_' . ($project->project_number ?? $project->id) . '.pdf';
+        } else {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.interpreter_confirmation', compact('project'));
+            $filename = 'Dolmetscherbestaetigung_' . ($project->project_number ?? $project->id) . '.pdf';
         }
 
         return $pdf->download($filename);

@@ -50,53 +50,53 @@ const ProjectOverviewTab = ({
                     <div>
                         <h4 className="text-xs font-semibold text-slate-400 border-b border-slate-100 pb-3 mb-4 md:mb-6">Basisdaten</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-y-2 sm:gap-y-4 gap-x-6 text-sm">
-                            <span className="text-slate-400 font-medium text-sm">Projekt-ID</span>
-                            <span className="text-slate-800 font-semibold tracking-tight break-all">{projectData.id}</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Projekt-ID</span>
+                            <span className="text-slate-800 font-medium tracking-tight break-all">{projectData.id || <span className="text-slate-300 italic">Keine Angabe</span>}</span>
 
-                            <span className="text-slate-400 font-medium text-sm">Bezeichnung</span>
-                            <span className="text-slate-800 font-semibold break-words">{projectData.name}</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Bezeichnung</span>
+                            <span className="text-slate-800 font-bold break-words">{projectData.name || <span className="text-slate-300 italic">Keine Angabe</span>}</span>
 
-                            <span className="text-slate-400 font-medium text-sm">Sprachpaar</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Sprachpaar</span>
                             <div className="flex items-center gap-3 flex-wrap">
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-sm text-sm text-slate-700 shadow-sm font-medium">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-sm text-xs text-slate-700 shadow-sm font-bold uppercase tracking-tight">
                                     <img src={sourceLang.flagUrl} alt="" className="w-4 h-3 rounded-[2px] object-cover" />
                                     {sourceLang.name}
                                 </div>
-                                <FaArrowRight className="text-slate-300 text-xs" />
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-sm text-sm text-slate-700 shadow-sm font-medium">
+                                <FaArrowRight className="text-slate-300 text-[10px]" />
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-sm text-xs text-slate-700 shadow-sm font-bold uppercase tracking-tight">
                                     <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-[2px] object-cover" />
                                     {targetLang.name}
                                 </div>
                             </div>
 
-                            <span className="text-slate-400 font-medium text-sm">Termin</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Termin</span>
                             <div className="flex items-center gap-3 flex-wrap">
-                                <span className="text-slate-800 font-semibold bg-slate-50 px-2 py-1 rounded">
+                                <span className="text-slate-800 font-bold bg-slate-50 px-2.5 py-1 rounded-sm border border-slate-100 text-[11px]">
                                     {projectData.due ? (() => {
                                         const d = new Date(projectData.due);
-                                        const days = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
+                                        const days = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
                                         return `${days[d.getDay()]}, ${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} | ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
-                                    })() : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}
+                                    })() : <span className="text-slate-300 italic font-normal">Keine Angabe</span>}
                                 </span>
                                 {projectData.due && (
-                                    <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-sm", deadlineStatus.color)}>
+                                    <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tight border shadow-sm", deadlineStatus.color)}>
                                         {deadlineStatus.label}
                                     </div>
                                 )}
                             </div>
 
-                            <span className="text-slate-400 font-medium text-sm">Priorität</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Priorität</span>
                             <div>
                                 {projectData.priority === 'low' ? (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">
                                         <FaClock /> Standard
                                     </span>
                                 ) : projectData.priority === 'medium' ? (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight bg-blue-50 text-blue-700 border border-blue-200">
                                         <FaFlag /> Normal
                                     </span>
                                 ) : (
-                                    <span className={clsx("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border",
+                                    <span className={clsx("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight border",
                                         projectData.priority === 'express' || projectData.priority === 'high' ? "bg-red-50 text-red-700 border-red-200" : "bg-orange-50 text-orange-700 border-orange-200"
                                     )}>
                                         {projectData.priority === 'express' || projectData.priority === 'high' ? <FaBolt /> : <FaFlag />}
@@ -125,39 +125,43 @@ const ProjectOverviewTab = ({
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-y-2 sm:gap-y-4 gap-x-6 text-sm">
-                            <span className="text-slate-400 font-medium text-sm">Kunden-ID</span>
-                            <span className="text-slate-800 font-semibold break-all">{projectData.customer.id}</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Kunden-ID</span>
+                            <span className="text-slate-800 font-medium break-all">{projectData.customer.id || <span className="text-slate-300 italic">Keine Angabe</span>}</span>
 
-                            <span className="text-slate-400 font-medium text-sm">Name / Firma</span>
-                            <span className="text-slate-800 font-semibold text-base tracking-tight break-words">{projectData.customer.name}</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Name / Firma</span>
+                            <span className="text-slate-800 font-bold text-base tracking-tight break-words">{projectData.customer.name || <span className="text-slate-300 italic">Keine Angabe</span>}</span>
 
-                            <span className="text-slate-400 font-medium text-sm">Ansprechpartner</span>
-                            <span className="text-slate-700 font-medium">{projectData.customer.contact || <span className="text-slate-300 italic">Keine Angabe</span>}</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Ansprechpartner</span>
+                            <span className="text-slate-700 font-medium">{projectData.customer.contact || <span className="text-slate-300 italic text-[11px]">Keine Angabe</span>}</span>
 
-                            <span className="text-slate-400 font-medium text-sm">Adresse</span>
-                            <div className="text-slate-700 leading-relaxed">
-                                {projectData.customer.address_street} {projectData.customer.address_house_no}<br />
-                                {projectData.customer.address_zip} {projectData.customer.address_city}<br />
-                                <span className="text-xs font-medium text-slate-400">
-                                    {projectData.customer.address_country === 'DE' ? 'Deutschland' :
-                                        projectData.customer.address_country === 'AT' ? 'Österreich' :
-                                            projectData.customer.address_country === 'CH' ? 'Schweiz' :
-                                                projectData.customer.address_country}
-                                </span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Adresse</span>
+                            <div className="text-slate-700 font-medium leading-relaxed">
+                                {projectData.customer.address_street || projectData.customer.address_house_no ? (
+                                    <>
+                                        {projectData.customer.address_street} {projectData.customer.address_house_no}<br />
+                                        {projectData.customer.address_zip} {projectData.customer.address_city}<br />
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            {projectData.customer.address_country === 'DE' ? 'Deutschland' :
+                                                projectData.customer.address_country === 'AT' ? 'Österreich' :
+                                                    projectData.customer.address_country === 'CH' ? 'Schweiz' :
+                                                        projectData.customer.address_country}
+                                        </span>
+                                    </>
+                                ) : <span className="text-slate-300 italic text-[11px]">Keine Angabe</span>}
                             </div>
 
-                            <span className="text-slate-400 font-medium text-sm">Kontakt</span>
+                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Kontakt</span>
                             <div className="space-y-1 min-w-0">
                                 {projectData.customer.email ? (
                                     <a href={`mailto:${projectData.customer.email}`} className="text-slate-700 font-medium hover:underline flex items-center gap-2 break-all">
                                         <FaAt className="text-xs opacity-50 shrink-0" /> <span className="break-all">{projectData.customer.email}</span>
                                     </a>
-                                ) : <span className="text-slate-300 text-xs">Keine E-Mail</span>}
-                                {projectData.customer.phone && (
+                                ) : <div className="text-slate-300 italic text-[11px]">Keine E-Mail</div>}
+                                {projectData.customer.phone ? (
                                     <div className="text-slate-600 font-medium text-xs flex items-center gap-2">
                                         <FaPhone className="text-xs opacity-50" /> {projectData.customer.phone}
                                     </div>
-                                )}
+                                ) : <div className="text-slate-300 italic text-[11px]">Keine Telefonnummer</div>}
                             </div>
                         </div>
 
@@ -231,56 +235,61 @@ const ProjectOverviewTab = ({
 
                         {projectData.translator?.id ? (
                             <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-y-2 sm:gap-y-4 gap-x-6 text-sm">
-                                <span className="text-slate-400 font-medium text-sm">Partner-ID</span>
-                                <span className="text-slate-800 font-semibold break-all">{projectData.translator.id}</span>
+                                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Partner-ID</span>
+                                <span className="text-slate-800 font-medium break-all">{projectData.translator.id || <span className="text-slate-300 italic">Keine Angabe</span>}</span>
 
-                                <span className="text-slate-400 font-medium text-sm">Name</span>
-                                <span className="text-slate-800 font-semibold text-base tracking-tight break-words">{projectData.translator.name}</span>
+                                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Name</span>
+                                <span className="text-slate-800 font-bold text-base tracking-tight break-words">{projectData.translator.name || <span className="text-slate-300 italic">Keine Angabe</span>}</span>
 
-                                <span className="text-slate-400 font-medium text-sm">Bewertung</span>
+                                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Bewertung</span>
                                 <div className="flex items-center gap-1.5 text-amber-400">
                                     {[1, 2, 3, 4, 5].map(star => (
-                                        <FaStar key={star} className={star <= (projectData.translator.rating || 0) ? "text-amber-400" : "text-slate-200"} />
+                                        <FaStar key={star} size={10} className={star <= (projectData.translator.rating || 0) ? "text-amber-400" : "text-slate-200"} />
                                     ))}
-                                    <span className="text-xs font-semibold text-slate-400 ml-1">({(projectData.translator.rating || 0).toFixed(1)})</span>
+                                    <span className="text-[10px] font-bold text-slate-400 ml-1">({(projectData.translator.rating || 0).toFixed(1)})</span>
                                 </div>
 
-                                <span className="text-slate-400 font-medium text-sm">Adresse</span>
-                                <div className="text-slate-700 leading-relaxed">
-                                    {projectData.translator.address_street} {projectData.translator.address_house_no}<br />
-                                    {projectData.translator.address_zip} {projectData.translator.address_city}<br />
-                                    <span className="text-xs font-medium text-slate-400">
-                                        {projectData.translator.address_country === 'DE' ? 'Deutschland' :
-                                            projectData.translator.address_country === 'AT' ? 'Österreich' :
-                                                projectData.translator.address_country === 'CH' ? 'Schweiz' :
-                                                    (projectData.translator.address_country ? getCountryName(projectData.translator.address_country) : '') || projectData.translator.address_country}
-                                    </span>
+                                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Adresse</span>
+                                <div className="text-slate-700 font-medium leading-relaxed">
+                                    {projectData.translator.address_street || projectData.translator.address_house_no ? (
+                                        <>
+                                            {projectData.translator.address_street} {projectData.translator.address_house_no}<br />
+                                            {projectData.translator.address_zip} {projectData.translator.address_city}<br />
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                {projectData.translator.address_country === 'DE' ? 'Deutschland' :
+                                                    projectData.translator.address_country === 'AT' ? 'Österreich' :
+                                                        projectData.translator.address_country === 'CH' ? 'Schweiz' :
+                                                            (projectData.translator.address_country ? getCountryName(projectData.translator.address_country) : '') || projectData.translator.address_country}
+                                            </span>
+                                        </>
+                                    ) : <span className="text-slate-300 italic text-[11px]">Keine Angabe</span>}
                                 </div>
 
-                                <span className="text-slate-400 font-medium text-sm">Kontakt</span>
+                                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Kontakt</span>
                                 <div className="space-y-1 min-w-0">
                                     {projectData.translator.email ? (
                                         <a href={`mailto:${projectData.translator.email}`} className="text-slate-700 font-medium hover:underline flex items-center gap-2 break-all">
                                             <FaAt className="text-xs opacity-50 shrink-0" /> <span className="break-all">{projectData.translator.email}</span>
                                         </a>
-                                    ) : <span className="text-slate-300 text-xs">Keine E-Mail</span>}
-                                    {projectData.translator.phone && (
+                                    ) : <div className="text-slate-300 italic text-[11px]">Keine E-Mail</div>}
+                                    {projectData.translator.phone ? (
                                         <div className="text-slate-600 font-medium text-xs flex items-center gap-2">
                                             <FaPhone className="text-xs opacity-50" /> {projectData.translator.phone}
                                         </div>
-                                    )}
+                                    ) : <div className="text-slate-300 italic text-[11px]">Keine Telefonnummer</div>}
                                 </div>
 
-                                <span className="text-slate-400 font-medium text-sm">Konditionen</span>
+                                <span className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Konditionen</span>
                                 <div className="flex flex-wrap gap-2">
                                     {(() => {
                                         const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
                                         const wordRate = rates.find((r: any) => r.type?.toLowerCase() === 'word')?.price;
                                         const lineRate = rates.find((r: any) => r.type?.toLowerCase() === 'line')?.price;
+                                        if (!wordRate && !lineRate) return <span className="text-slate-300 italic text-[11px]">Keine Konditionen</span>;
                                         return (
                                             <>
-                                                {wordRate && <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-semibold border border-slate-200">Wort: {parseFloat(wordRate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span>}
-                                                {lineRate && <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-semibold border border-slate-200">Zeile: {parseFloat(lineRate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span>}
+                                                {wordRate && <span className="px-2 py-0.5 bg-slate-50 text-slate-600 rounded-sm text-[10px] font-bold border border-slate-100 uppercase tracking-tight">Wort: {parseFloat(wordRate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span>}
+                                                {lineRate && <span className="px-2 py-0.5 bg-slate-50 text-slate-600 rounded-sm text-[10px] font-bold border border-slate-100 uppercase tracking-tight">Zeile: {parseFloat(lineRate).toLocaleString('de-DE', { minimumFractionDigits: 4 })} €</span>}
                                             </>
                                         );
                                     })()}

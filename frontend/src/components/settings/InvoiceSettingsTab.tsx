@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FaSave, FaPlus, FaTrash, FaEye } from 'react-icons/fa';
+import { FaSave, FaPlus, FaTrash, FaEye, FaPalette } from 'react-icons/fa';
 import clsx from 'clsx';
 import { settingsService } from '../../api/services';
 import Input from '../common/Input';
@@ -64,6 +64,12 @@ const InvoiceSettingsTab = () => {
 
         // Lohnkostenanteil
         show_labor_cost_hint: false,
+
+        // Design
+        invoice_layout: 'din5008',
+        invoice_font_family: 'Inter, Helvetica, Arial, sans-serif',
+        invoice_font_size: '9pt',
+        invoice_primary_color: '#000000',
     });
 
     const [newTaxRate, setNewTaxRate] = useState({ rate: '', label: '', paragraph: '' });
@@ -92,6 +98,10 @@ const InvoiceSettingsTab = () => {
                 show_footer: companyData.show_footer ?? prev.show_footer,
                 show_sender_line: companyData.show_sender_line ?? prev.show_sender_line,
                 show_labor_cost_hint: companyData.show_labor_cost_hint ?? prev.show_labor_cost_hint,
+                invoice_layout: companyData.invoice_layout || prev.invoice_layout,
+                invoice_font_family: companyData.invoice_font_family || prev.invoice_font_family,
+                invoice_font_size: companyData.invoice_font_size || prev.invoice_font_size,
+                invoice_primary_color: companyData.invoice_primary_color || prev.invoice_primary_color,
             }));
             if (companyData.tax_rates && Array.isArray(companyData.tax_rates)) {
                 setFormData((prev: any) => ({ ...prev, tax_rates: companyData.tax_rates }));
@@ -154,8 +164,8 @@ const InvoiceSettingsTab = () => {
         { id: 'tax', label: 'Steuersätze' },
         { id: 'texts', label: 'Textvorlagen' },
         { id: 'layout', label: 'Layout & Fußzeile' },
+        { id: 'design', label: 'Design' },
     ];
-
     return (
         <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden animate-fadeIn">
             {/* Header */}
@@ -626,6 +636,229 @@ const InvoiceSettingsTab = () => {
                                                 </p>
                                             </div>
                                         )}
+                                    </div>
+                                )}
+                            </div>
+                        </SettingRow>
+                    </div>
+                )}
+
+                {/* ── Design ── */}
+                {activeSection === 'design' && (
+                    <div>
+                        <SettingRow
+                            label="Rechnungs-Layout"
+                            description="Wählen Sie eines der drei verfügbaren Layouts. Das Layout bestimmt die grundlegende Struktur Ihrer Rechnungs-PDF."
+                        >
+                            <div className="grid grid-cols-3 gap-4">
+                                {[
+                                    {
+                                        id: 'din5008',
+                                        label: 'DIN 5008',
+                                        desc: 'Klassisches Geschäftsbrief-Format nach DIN-Norm',
+                                        preview: (
+                                            <div className="space-y-1">
+                                                <div className="h-1.5 w-8 bg-current opacity-20 rounded-sm" />
+                                                <div className="h-1 w-12 bg-current opacity-10 rounded-sm" />
+                                                <div className="mt-2 space-y-0.5">
+                                                    <div className="h-0.5 w-full bg-current opacity-30" />
+                                                    <div className="h-2 w-full bg-current opacity-5" />
+                                                    <div className="h-2 w-full bg-current opacity-5" />
+                                                    <div className="h-0.5 w-full bg-current opacity-30" />
+                                                </div>
+                                                <div className="h-1 w-10 bg-current opacity-15 ml-auto rounded-sm" />
+                                            </div>
+                                        )
+                                    },
+                                    {
+                                        id: 'modern',
+                                        label: 'Modern',
+                                        desc: 'Farbiger Header, zeitgemäßes Design mit Akzentfarben',
+                                        preview: (
+                                            <div className="space-y-1">
+                                                <div className="h-4 w-full rounded-sm" style={{ background: formData.invoice_primary_color || '#1e293b' }} />
+                                                <div className="h-1 w-10 bg-current opacity-10 rounded-sm" />
+                                                <div className="mt-1 space-y-0.5">
+                                                    <div className="h-1.5 w-full rounded-sm" style={{ background: formData.invoice_primary_color || '#1e293b', opacity: 0.8 }} />
+                                                    <div className="h-2 w-full bg-current opacity-5" />
+                                                    <div className="h-2 w-full bg-slate-100" />
+                                                    <div className="h-2 w-full bg-current opacity-5" />
+                                                </div>
+                                                <div className="h-1 w-10 bg-current opacity-15 ml-auto rounded-sm" />
+                                            </div>
+                                        )
+                                    },
+                                    {
+                                        id: 'classic',
+                                        label: 'Klassisch',
+                                        desc: 'Formaler Stil mit zentriertem Kopf, Serifen-Schrift',
+                                        preview: (
+                                            <div className="space-y-1">
+                                                <div className="text-center space-y-0.5">
+                                                    <div className="h-1.5 w-8 bg-current opacity-20 rounded-sm mx-auto" />
+                                                    <div className="h-0.5 w-14 bg-current opacity-10 rounded-sm mx-auto" />
+                                                    <div className="h-px w-full bg-current opacity-20 mt-1" />
+                                                    <div className="h-px w-full bg-current opacity-20" />
+                                                </div>
+                                                <div className="mt-1 space-y-0.5">
+                                                    <div className="h-0.5 w-full bg-current opacity-15" />
+                                                    <div className="h-2 w-full bg-current opacity-5" />
+                                                    <div className="h-2 w-full bg-current opacity-5" />
+                                                    <div className="h-0.5 w-full bg-current opacity-15" />
+                                                </div>
+                                                <div className="h-1 w-10 bg-current opacity-15 ml-auto rounded-sm" />
+                                            </div>
+                                        )
+                                    }
+                                ].map(layout => (
+                                    <button
+                                        key={layout.id}
+                                        onClick={() => handleChange('invoice_layout', layout.id)}
+                                        className={clsx(
+                                            'relative flex flex-col border rounded-sm p-4 transition-all text-left group',
+                                            formData.invoice_layout === layout.id
+                                                ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
+                                                : 'border-slate-200 hover:border-slate-400 hover:bg-slate-50/50'
+                                        )}
+                                    >
+                                        <div className="w-full aspect-[3/4] bg-white border border-slate-100 rounded-sm p-3 mb-3 overflow-hidden">
+                                            {layout.preview}
+                                        </div>
+                                        <span className={clsx(
+                                            'text-sm font-semibold block',
+                                            formData.invoice_layout === layout.id ? 'text-slate-900' : 'text-slate-600'
+                                        )}>
+                                            {layout.label}
+                                        </span>
+                                        <span className="text-xs text-slate-400 mt-0.5 leading-snug">{layout.desc}</span>
+                                        {formData.invoice_layout === layout.id && (
+                                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">✓</div>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </SettingRow>
+
+                        <SettingRow
+                            label="Schriftart"
+                            description="Die Schriftart für Ihre Rechnungs-PDFs. Bitte beachten Sie, dass nicht alle Schriften auf allen Systemen verfügbar sind."
+                        >
+                            <select
+                                className="w-full h-10 border border-slate-200 rounded-sm px-3 text-sm font-medium text-slate-800 focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 outline-none transition"
+                                value={formData.invoice_font_family}
+                                onChange={(e) => handleChange('invoice_font_family', e.target.value)}
+                            >
+                                <option value="Inter, Helvetica, Arial, sans-serif">Inter (Standard)</option>
+                                <option value="Arial, Helvetica, sans-serif">Arial</option>
+                                <option value="Helvetica, Arial, sans-serif">Helvetica</option>
+                                <option value="Roboto, Arial, sans-serif">Roboto</option>
+                                <option value="Georgia, Times New Roman, serif">Georgia (Serif)</option>
+                                <option value="Times New Roman, Times, serif">Times New Roman</option>
+                                <option value="Palatino, Book Antiqua, serif">Palatino</option>
+                                <option value="Courier New, monospace">Courier New (Monospace)</option>
+                            </select>
+                            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-sm">
+                                <span className="text-xs text-slate-400 block mb-1">Vorschau:</span>
+                                <span className="text-sm text-slate-700" style={{ fontFamily: formData.invoice_font_family }}>
+                                    Rechnung Nr. RE-2026-00001 — Nettobetrag: 1.250,00 €
+                                </span>
+                            </div>
+                        </SettingRow>
+
+                        <SettingRow
+                            label="Schriftgröße"
+                            description="Die Basisschriftgröße für die Rechnung. Größere Schrift ist besser lesbar, kleinere passt mehr Inhalt auf die Seite."
+                        >
+                            <div className="flex gap-2">
+                                {['8pt', '9pt', '10pt', '11pt'].map(size => (
+                                    <button
+                                        key={size}
+                                        onClick={() => handleChange('invoice_font_size', size)}
+                                        className={clsx(
+                                            'px-5 py-2.5 rounded-sm text-sm font-medium border transition',
+                                            formData.invoice_font_size === size
+                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                                        )}
+                                    >
+                                        {size}
+                                    </button>
+                                ))}
+                            </div>
+                        </SettingRow>
+
+                        <SettingRow
+                            label="Hauptfarbe"
+                            description="Die Akzentfarbe für Linien, Überschriften und den Header (Modern-Layout). Wirkt sich auf die gesamte Optik der Rechnung aus."
+                        >
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        type="color"
+                                        value={formData.invoice_primary_color}
+                                        onChange={(e) => handleChange('invoice_primary_color', e.target.value)}
+                                        className="w-10 h-10 rounded-sm border border-slate-200 cursor-pointer p-0.5"
+                                    />
+                                    <Input
+                                        placeholder="#000000"
+                                        value={formData.invoice_primary_color}
+                                        onChange={(e) => handleChange('invoice_primary_color', e.target.value)}
+                                        className="w-32"
+                                    />
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { color: '#000000', label: 'Schwarz' },
+                                        { color: '#1e293b', label: 'Slate' },
+                                        { color: '#1e3a5f', label: 'Navy' },
+                                        { color: '#14532d', label: 'Grün' },
+                                        { color: '#7c2d12', label: 'Braun' },
+                                        { color: '#581c87', label: 'Lila' },
+                                        { color: '#0f172a', label: 'Dunkel' },
+                                        { color: '#0c4a6e', label: 'Blau' },
+                                    ].map(preset => (
+                                        <button
+                                            key={preset.color}
+                                            onClick={() => handleChange('invoice_primary_color', preset.color)}
+                                            className={clsx(
+                                                'flex items-center gap-2 px-3 py-1.5 rounded-sm border text-xs font-medium transition',
+                                                formData.invoice_primary_color === preset.color
+                                                    ? 'border-slate-900 bg-slate-50'
+                                                    : 'border-slate-200 hover:border-slate-300'
+                                            )}
+                                            title={preset.label}
+                                        >
+                                            <span
+                                                className="w-4 h-4 rounded-full border border-slate-200"
+                                                style={{ background: preset.color }}
+                                            />
+                                            {preset.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-sm border border-slate-200">
+                                    <span className="text-xs text-slate-400 block mb-2">Vorschau:</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-6 w-24 rounded-sm" style={{ background: formData.invoice_primary_color }} />
+                                        <span className="text-sm font-semibold" style={{ color: formData.invoice_primary_color }}>Rechnungsbetrag: 1.250,00 €</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </SettingRow>
+
+                        <SettingRow
+                            label="Firmenlogo"
+                            description="Ihr Logo erscheint auf allen generierten Rechnungs-PDFs. Laden Sie es unter Unternehmensdaten hoch."
+                        >
+                            <div className="flex items-center gap-4">
+                                {companyData?.company_logo || companyData?.settings?.company_logo ? (
+                                    <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-sm">
+                                        <FaPalette className="text-slate-400" />
+                                        <span className="text-sm text-slate-600 font-medium">Logo vorhanden ✓</span>
+                                    </div>
+                                ) : (
+                                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-sm">
+                                        <span className="text-xs text-amber-700 font-medium">Kein Logo hinterlegt. Laden Sie es unter "Unternehmensdaten" hoch.</span>
                                     </div>
                                 )}
                             </div>

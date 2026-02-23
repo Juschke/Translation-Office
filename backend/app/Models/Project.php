@@ -39,6 +39,9 @@ class Project extends Model
         'copies_count',
         'copy_price',
         'notes',
+        'appointment_location',
+        'customer_reference',
+        'customer_date',
     ];
 
     protected $casts = [
@@ -53,6 +56,7 @@ class Project extends Model
         'down_payment' => 'decimal:2',
         'copy_price' => 'decimal:4',
         'down_payment_date' => 'datetime',
+        'customer_date' => 'datetime',
     ];
 
     public function documentType()

@@ -144,4 +144,39 @@ class PartnerController extends Controller
 
         return response()->json(['message' => 'Partners deleted successfully']);
     }
+
+    public function checkDuplicates(Request $request)
+    {
+        $firstName = $request->input('first_name');
+        $lastName = $request->input('last_name');
+        $email = $request->input('email');
+        $phone = $request->input('phone');
+        $company = $request->input('company');
+
+        $query = Partner::query();
+
+        $query->where(function ($q) use ($firstName, $lastName, $email, $phone, $company) {
+            if ($email) {
+                $q->orWhere('email', $email);
+            }
+            if ($phone) {
+                $q->orWhere('phone', $phone);
+            }
+            if ($lastName) {
+                $q->orWhere(function ($sq) use ($firstName, $lastName) {
+                    $sq->where('last_name', $lastName);
+                    if ($firstName) {
+                        $sq->where('first_name', $firstName);
+                    }
+                });
+            }
+            if ($company) {
+                $q->orWhere('company', $company);
+            }
+        });
+
+        $duplicates = $query->limit(5)->get();
+
+        return response()->json($duplicates);
+    }
 }

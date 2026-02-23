@@ -224,27 +224,33 @@ class MasterDataSeeder extends Seeder
         $emailTemplates = [
             [
                 'name' => 'Angebot Standard',
-                'type' => 'offer',
+                'type' => 'Angebot',
                 'subject' => 'Ihr Übersetzungsangebot {offer_number}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage. Anbei finden Sie unser Angebot für das Projekt '{project_name}'.\n\nWir freuen uns auf Ihre Bestätigung.\n\nMit freundlichen Grüßen,\nIhr Translation Office"
+                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage und das damit verbundene Interesse an unseren Dienstleistungen.\n\nAnbei erhalten Sie unser unverbindliches Angebot für das Projekt '{project_name}'. Wir würden uns sehr freuen, diesen Auftrag für Sie ausführen zu dürfen.\n\nFür Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n\n{sender_name}\n\n{company_name}\n{company_address}\nTel: {company_phone}\nEmail: {company_email}\nWeb: {company_website}\n\nGeschäftsführung: {managing_director}\nUSt-IdNr.: {vat_id}"
             ],
             [
                 'name' => 'Rechnung Standard',
-                'type' => 'invoice',
+                'type' => 'Rechnung',
                 'subject' => 'Rechnung {invoice_number} - {project_name}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die Rechnung zu Ihren Unterlagen. Bitte begleichen Sie den Betrag bis zum {due_date}.\n\nVielen Dank für die angenehme Zusammenarbeit.\n\nMit freundlichen Grüßen,\nIhr Translation Office"
+                'body' => "Sehr geehrte Damen und Herren,\n\nin der Anlage erhalten Sie die Rechnung zu Ihrem Projekt '{project_name}' als PDF-Dokument.\n\nWir bitten um Begleichung des Rechnungsbetrages bis zum {due_date}. Sollten Sie den Betrag bereits überwiesen haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.\n\nVielen Dank für die angenehme Zusammenarbeit und Ihr Vertrauen in unsere Arbeit.\n\nMit freundlichen Grüßen,\n\n{sender_name}\n\n{company_name}\n{company_address}\nTel: {company_phone}\nEmail: {company_email}\nWeb: {company_website}\n\nBankverbindung:\n{bank_name}\nIBAN: {bank_iban}\nBIC: {bank_bic}\nKontoinhaber: {bank_holder}\n\nUSt-IdNr.: {vat_id} | Steuernummer: {tax_number}"
             ],
             [
                 'name' => 'Auftragsbestätigung',
-                'type' => 'order_confirmation',
-                'subject' => 'Bestätigung Ihres Auftrags {project_number}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nhiermit bestätigen wir den Eingang Ihres Auftrags. Wir haben mit der Bearbeitung begonnen.\n\nGeplante Lieferung: {deadline}\n\nMit freundlichen Grüßen,\nIhr Translation Office"
+                'type' => 'Auftragsbestätigung',
+                'subject' => 'Auftragsbestätigung: Projekt {project_number}',
+                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihren Auftrag. Hiermit bestätigen wir Ihnen die Annahme und den Beginn der Bearbeitung Ihres Projektes '{project_name}'.\n\nDie geplante Fertigstellung erfolgt bis zum {deadline}.\n\nSollten Sie noch Ergänzungen oder Fragen haben, lassen Sie es uns bitte wissen.\n\nMit freundlichen Grüßen,\n\n{sender_name}\n\n{company_name}\n{company_address}\nTel: {company_phone}"
             ],
             [
-                'name' => 'Partner-Anfrage',
-                'type' => 'partner_inquiry',
-                'subject' => 'Anfrage: Projekt {project_name} ({source} > {target})',
-                'body' => "Hallo,\n\nhast du Kapazitäten für ein neues Projekt?\nVolumen: {volume}\nDeadline: {deadline}\n\nBitte um kurze Rückmeldung.\n\nBeste Grüße"
+                'name' => 'Partner-Anfrage (Übersetzung)',
+                'type' => 'Partner-Anfrage',
+                'subject' => 'Verfügbarkeitsanfrage: Projekt {project_name} ({source} > {target})',
+                'body' => "Guten Tag,\n\nwir haben ein neues Projekt im Bereich {source} > {target} erhalten und möchten anfragen, ob Sie hierfür aktuell Kapazitäten frei haben.\n\nEckdaten des Projekts:\n- Volumen: {volume}\n- Liefertermin: {deadline}\n\nBitte geben Sie uns kurz Bescheid, ob Sie diesen Auftrag übernehmen können. Wir freuen uns auf eine mögliche Zusammenarbeit.\n\nBeste Grüße,\n\n{sender_name}\nProjektmanagement | {company_name}"
+            ],
+            [
+                'name' => 'Abholbestätigung',
+                'type' => 'Abholbestätigung',
+                'subject' => 'Abholbestätigung für Ihren Auftrag {project_number}',
+                'body' => "Sehr geehrte Damen und Herren,\n\nwir freuen uns, Ihnen mitteilen zu können, dass Ihr Auftrag '{project_name}' fertiggestellt wurde und zur Abholung bereitliegt.\n\nSie können Ihre Unterlagen zu unseren Öffnungszeiten in unserem Büro abholen.\n\nWir danken für die gute Zusammenarbeit.\n\nMit freundlichen Grüßen,\n\n{sender_name}\n\n{company_name}\n{company_address}\nTel: {company_phone}"
             ],
         ];
 

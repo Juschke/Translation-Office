@@ -264,6 +264,21 @@ class AuthController extends Controller
         ]);
     }
 
+    public function updateLocale(Request $request)
+    {
+        $validated = $request->validate([
+            'locale' => 'required|string|in:de,en',
+        ]);
+
+        $user = $request->user();
+        $user->update(['locale' => $validated['locale']]);
+
+        return response()->json([
+            'message' => 'Sprache aktualisiert',
+            'locale' => $user->locale,
+        ]);
+    }
+
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => 'required|email']);

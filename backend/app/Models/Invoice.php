@@ -128,8 +128,8 @@ class Invoice extends Model
 
     protected static function booted(): void
     {
-        static::updating(function (Invoice $invoice) {
-            if ($invoice->getOriginal('is_locked') && $invoice->is_locked) {
+        static::saving(function (Invoice $invoice) {
+            if ($invoice->is_locked && $invoice->getOriginal('is_locked')) {
                 $allowedFields = ['status', 'reminder_level', 'last_reminder_date', 'pdf_path'];
                 $dirty = array_keys($invoice->getDirty());
                 $forbidden = array_diff($dirty, $allowedFields);
@@ -142,6 +142,9 @@ class Invoice extends Model
                     );
                 }
             }
+
+            // Automate status transitions
+            $invoice->syncStatus();
         });
 
         // Prevent hard deletion of any invoice (GoBD: Aufbewahrungspflicht)
@@ -288,6 +291,38 @@ class Invoice extends Model
             self::STATUS_PAID,
             self::STATUS_OVERDUE,
         ]);
+    }
+
+    /**
+     * Automatically synchronize the invoice status based on finances and dates.
+     *
+     * Rules:
+     * 1. Paid: Gross amount is fully covered by paid_amount_cents.
+     * 2. Overdue: Due date is in the past and status is not draft/paid/cancelled.
+     */
+    public function syncStatus(): void
+    {
+        // Don't touch archived or cancelled invoices
+        if (in_array($this->status, [self::STATUS_CANCELLED, self::STATUS_ARCHIVED])) {
+            return;
+        }
+
+        $gross = $this->amount_gross;
+        $paid = $this->paid_amount_cents;
+
+        // 1. Check for full payment
+        if ($gross > 0 && $paid >= $gross) {
+            $this->status = self::STATUS_PAID;
+            return;
+        }
+
+        // 2. Check for overdue (only for non-drafts)
+        if ($this->status !== self::STATUS_DRAFT && $this->due_date) {
+            $dueDate = \Illuminate\Support\Carbon::parse($this->due_date);
+            if ($dueDate->isPast() && $this->status !== self::STATUS_PAID) {
+                $this->status = self::STATUS_OVERDUE;
+            }
+        }
     }
 
     // ─── Serialization ───────────────────────────────────────────────

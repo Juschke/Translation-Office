@@ -213,4 +213,40 @@ class CustomerController extends Controller
 
         return response()->json(['message' => 'Customers deleted successfully']);
     }
+
+    public function checkDuplicates(Request $request)
+    {
+        $firstName = $request->input('first_name');
+        $lastName = $request->input('last_name');
+        $email = $request->input('email');
+        $phone = $request->input('phone');
+        $companyName = $request->input('company_name');
+
+        $query = \App\Models\Customer::query();
+
+        $query->where(function ($q) use ($firstName, $lastName, $email, $phone, $companyName) {
+            if ($email) {
+                $q->orWhere('email', $email);
+            }
+            if ($phone) {
+                $q->orWhere('phone', $phone);
+            }
+            if ($lastName) {
+                $q->orWhere(function ($sq) use ($firstName, $lastName) {
+                    $sq->where('last_name', $lastName);
+                    if ($firstName) {
+                        $sq->where('first_name', $firstName);
+                    }
+                });
+            }
+            if ($companyName) {
+                $q->orWhere('company_name', $companyName);
+            }
+        });
+
+        // Filter out soft deleted or similar if needed, but here simple get
+        $duplicates = $query->limit(5)->get();
+
+        return response()->json($duplicates);
+    }
 }

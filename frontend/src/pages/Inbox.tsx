@@ -1,71 +1,121 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { mailService, projectService, customerService, partnerService } from '../api/services';
+import { useEmailCompose } from '../hooks/useEmailCompose';
+import MailTabButton from '../components/inbox/MailTabButton';
+import MailListPanel from '../components/inbox/MailListPanel';
+import MailDetailPanel from '../components/inbox/MailDetailPanel';
+import MailResourceTable from '../components/inbox/MailResourceTable';
 import SearchableSelect from '../components/common/SearchableSelect';
 import {
-    FaPaperPlane, FaTimes, FaPaperclip, FaPlus, FaEdit,
-    FaFileAlt, FaUserCircle, FaKey, FaEye, FaTrashAlt,
-    FaFolderOpen, FaReply, FaForward, FaCode, FaCloudUploadAlt,
-    FaSearchPlus, FaCheckCircle, FaProjectDiagram, FaAddressBook
+    FaPaperPlane, FaTimes, FaPaperclip, FaPlus,
+    FaFileAlt, FaUserCircle, FaEye, FaTrashAlt,
+    FaFolderOpen, FaCode, FaCloudUploadAlt,
+    FaProjectDiagram, FaSearchPlus, FaCheckCircle
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import DOMPurify from 'dompurify';
 import NewEmailAccountModal from '../components/modals/NewEmailAccountModal';
 import NewEmailTemplateModal from '../components/modals/NewEmailTemplateModal';
 import {
-    Tooltip,
-    TooltipContent,
     TooltipProvider,
-    TooltipTrigger,
 } from "../components/ui/tooltip";
 import {
-    Button,
-    Input,
-    Label,
-    Separator,
     Badge,
     ScrollArea,
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
-    DialogFooter,
-    DialogClose
+    DialogClose,
+    Button
 } from "../components/ui";
+import ConfirmModal from '../components/common/ConfirmModal';
+import { BulkActions } from '../components/common/BulkActions';
+import Checkbox from '../components/common/Checkbox';
+
+const ALL_VARIABLES: { key: string; label: string; desc: string; group: string }[] = [
+    // Kunde
+    { key: 'customer_name', label: 'Kundenname', desc: 'Firmen- oder Vollname des Kunden', group: 'Kunde' },
+    { key: 'contact_person', label: 'Ansprechpartner', desc: 'Kontaktperson beim Kunden', group: 'Kunde' },
+    { key: 'customer_email', label: 'Kunden-E-Mail', desc: 'E-Mail-Adresse des Kunden', group: 'Kunde' },
+    { key: 'customer_phone', label: 'Telefon', desc: 'Telefonnummer des Kunden', group: 'Kunde' },
+    { key: 'customer_address', label: 'Adresse', desc: 'Straße und Hausnummer', group: 'Kunde' },
+    { key: 'customer_city', label: 'Stadt', desc: 'Stadt des Kunden', group: 'Kunde' },
+    { key: 'customer_zip', label: 'PLZ', desc: 'Postleitzahl des Kunden', group: 'Kunde' },
+    // Projekt
+    { key: 'project_number', label: 'Projektnummer', desc: 'Eindeutige Projektnummer', group: 'Projekt' },
+    { key: 'project_name', label: 'Projektname', desc: 'Bezeichnung des Projekts', group: 'Projekt' },
+    { key: 'project_status', label: 'Status', desc: 'Aktueller Projektstatus', group: 'Projekt' },
+    { key: 'source_language', label: 'Ausgangssprache', desc: 'Ausgangssprache des Dokuments', group: 'Projekt' },
+    { key: 'target_language', label: 'Zielsprache', desc: 'Zielsprache des Dokuments', group: 'Projekt' },
+    { key: 'deadline', label: 'Deadline', desc: 'Abgabetermin des Projekts', group: 'Projekt' },
+    { key: 'document_type', label: 'Dokumentenart', desc: 'Art des zu übersetzenden Dokuments', group: 'Projekt' },
+    { key: 'priority', label: 'Priorität', desc: 'Projektpriorität (Standard / Express)', group: 'Projekt' },
+    // Finanzen
+    { key: 'price_net', label: 'Betrag (Netto)', desc: 'Netto-Projektbetrag', group: 'Finanzen' },
+    { key: 'price_gross', label: 'Betrag (Brutto)', desc: 'Brutto-Betrag inkl. MwSt.', group: 'Finanzen' },
+    { key: 'payment_terms', label: 'Zahlungsziel', desc: 'Zahlungsfrist in Tagen', group: 'Finanzen' },
+    // Partner
+    { key: 'partner_name', label: 'Partnername', desc: 'Name des Übersetzers / Partners', group: 'Partner' },
+    { key: 'partner_email', label: 'Partner-E-Mail', desc: 'E-Mail-Adresse des Partners', group: 'Partner' },
+    // Allgemein
+    { key: 'date', label: 'Aktuelles Datum', desc: 'Heutiges Datum', group: 'Allgemein' },
+    { key: 'sender_name', label: 'Absender', desc: 'Name des Sachbearbeiters', group: 'Allgemein' },
+    { key: 'company_name', label: 'Firmenname', desc: 'Name Ihres Unternehmens', group: 'Allgemein' },
+];
+
+const VAR_GROUPS = ['Kunde', 'Projekt', 'Finanzen', 'Partner', 'Allgemein'];
 
 const CommunicationHub = () => {
-    const location = useLocation();
     const queryClient = useQueryClient();
+    const location = useLocation();
 
     const [activeTab, setActiveTab] = useState('inbox');
-    const [isComposeOpen, setIsComposeOpen] = useState(false);
-
     const [selectedAccount, setSelectedAccount] = useState<any>(null);
-    const [composeTo, setComposeTo] = useState('');
-    const [showToSuggestions, setShowToSuggestions] = useState(false);
-    const [suggestionIndex, setSuggestionIndex] = useState(0);
-    const [composeSubject, setComposeSubject] = useState('');
-    const [composeBody, setComposeBody] = useState('');
-    const [composeAttachments, setComposeAttachments] = useState<File[]>([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountToEdit, setAccountToEdit] = useState<any>(null);
-
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [templateToEdit, setTemplateToEdit] = useState<any>(null);
-
     const [viewingMail, setViewingMail] = useState<any>(null);
-    const [isComposePreview, setIsComposePreview] = useState(false);
 
-    // Project & Drag-and-Drop States
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-    const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-    const [isDragOver, setIsDragOver] = useState(false);
-    const [isProjectFilesModalOpen, setIsProjectFilesModalOpen] = useState(false);
+    // Selection state
+    const [selectedMails, setSelectedMails] = useState<number[]>([]);
+
+    // Deletion state
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [mailToDelete, setMailToDelete] = useState<number | null>(null);
+    const [deleteType, setDeleteType] = useState<'single' | 'bulk'>('single');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const varPickerRef = useRef<HTMLDivElement>(null);
+    const [isVarPickerOpen, setIsVarPickerOpen] = useState(false);
+    const [varSearch, setVarSearch] = useState('');
+
+    const {
+        isComposeOpen, setIsComposeOpen,
+        composeTo, setComposeTo,
+        composeSubject, setComposeSubject,
+        composeBody, setComposeBody,
+        composeAttachments, setComposeAttachments,
+        isComposePreview, setIsComposePreview,
+        selectedProjectId, setSelectedProjectId,
+        selectedCustomerId, setSelectedCustomerId,
+        isDragOver, setIsDragOver,
+        isProjectFilesModalOpen, setIsProjectFilesModalOpen,
+        showToSuggestions, setShowToSuggestions,
+        suggestionIndex, setSuggestionIndex,
+        sendMutation,
+        resetCompose,
+        handleReply,
+        handleForward,
+        handleApplyTemplate,
+        handleFileChange,
+        removeAttachment,
+    } = useEmailCompose();
 
     const { data: inboxMessages = [], isLoading: isLoadingInbox } = useQuery({
         queryKey: ['mails', 'inbox'],
@@ -75,6 +125,11 @@ const CommunicationHub = () => {
     const { data: sentMessages = [], isLoading: isLoadingSent } = useQuery({
         queryKey: ['mails', 'sent'],
         queryFn: () => mailService.getAll('sent')
+    });
+
+    const { data: trashMessages = [], isLoading: _isLoadingTrash } = useQuery({
+        queryKey: ['mails', 'trash'],
+        queryFn: () => mailService.getAll('trash')
     });
 
     const { data: accounts = [] } = useQuery({
@@ -103,13 +158,13 @@ const CommunicationHub = () => {
     });
 
     const { data: projectDetails } = useQuery({
-        queryKey: ['project', selectedProjectId],
+        queryKey: ['projects', selectedProjectId],
         queryFn: () => selectedProjectId ? projectService.getById(selectedProjectId) : null,
         enabled: !!selectedProjectId
     });
 
     const { data: customerDetails } = useQuery({
-        queryKey: ['customer', selectedCustomerId],
+        queryKey: ['customers', selectedCustomerId],
         queryFn: () => selectedCustomerId ? customerService.getById(parseInt(selectedCustomerId)) : null,
         enabled: !!selectedCustomerId && !selectedProjectId
     });
@@ -145,59 +200,29 @@ const CommunicationHub = () => {
         }
     }, [accounts]);
 
+    // Close variable picker on outside click
     useEffect(() => {
-        if (location.state?.compose) {
-            setComposeTo(location.state.to || '');
-            setComposeSubject(location.state.subject || '');
-            setComposeBody(location.state.body || '');
+        if (!isVarPickerOpen) return;
+        const handler = (e: MouseEvent) => {
+            if (varPickerRef.current && !varPickerRef.current.contains(e.target as Node)) {
+                setIsVarPickerOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [isVarPickerOpen]);
+
+    // Auto-open compose when navigated from ProjectDetail with openCompose state
+    useEffect(() => {
+        if (location.state?.openCompose) {
             setIsComposeOpen(true);
+            if (location.state.projectId) {
+                setSelectedProjectId(location.state.projectId);
+            }
+            // Clear the navigation state so re-renders don't re-trigger
+            window.history.replaceState({}, '');
         }
-    }, [location.state]);
-
-    const sendMutation = useMutation({
-        mutationFn: (data: any) => {
-            const formData = new FormData();
-            formData.append('mail_account_id', data.mail_account_id);
-            formData.append('to', data.to);
-            formData.append('subject', data.subject);
-            formData.append('body', data.body);
-            composeAttachments.forEach((file, index) => {
-                formData.append(`attachments[${index}]`, file);
-            });
-            return mailService.send(formData);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['mails'] });
-            resetCompose();
-            toast.success('E-Mail erfolgreich gesendet');
-        },
-        onError: () => {
-            toast.error('Fehler beim Senden der E-Mail');
-        }
-    });
-
-    const resetCompose = () => {
-        setIsComposeOpen(false);
-        setComposeTo('');
-        setComposeSubject('');
-        setComposeBody('');
-        setComposeAttachments([]);
-        setIsComposePreview(false);
-        setSelectedProjectId(null);
-        setSelectedCustomerId(null);
-        setComposeTo('');
-        setShowToSuggestions(false);
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setComposeAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
-        }
-    };
-
-    const removeAttachment = (index: number) => {
-        setComposeAttachments(prev => prev.filter((_, i) => i !== index));
-    };
+    }, []);
 
     const handleAddProjectFiles = async (filesToAttach: any[]) => {
         const toastId = toast.loading('Projekt-Dateien werden vorbereitet...');
@@ -224,11 +249,6 @@ const CommunicationHub = () => {
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    };
-
-    const handleApplyTemplate = (template: any) => {
-        setComposeSubject(template.subject);
-        setComposeBody(template.body);
     };
 
     const quillModules = {
@@ -258,20 +278,15 @@ const CommunicationHub = () => {
         }
     });
 
-    const handleReply = (mail: any) => {
-        setComposeTo(mail.from);
-        setComposeSubject(`Re: ${mail.subject}`);
-        setComposeBody(`<br/><br/>--- Am ${mail.full_time} schrieb ${mail.from}:<br/><blockquote>${mail.body}</blockquote>`);
+    // Wrapper: schließt die Mail-Detail-Ansicht bevor der Hook den Compose-State setzt
+    const handleReplyWithClose = (mail: any) => {
         setViewingMail(null);
-        setIsComposeOpen(true);
+        handleReply(mail);
     };
 
-    const handleForward = (mail: any) => {
-        setComposeTo('');
-        setComposeSubject(`Fwd: ${mail.subject}`);
-        setComposeBody(`<br/><br/>--- Weitergeleitete Nachricht ---<br/>Von: ${mail.from}<br/>Datum: ${mail.full_time}<br/>Betreff: ${mail.subject}<br/><br/>${mail.body}`);
+    const handleForwardWithClose = (mail: any) => {
         setViewingMail(null);
-        setIsComposeOpen(true);
+        handleForward(mail);
     };
 
     const handleViewMail = (mail: any) => {
@@ -305,14 +320,14 @@ const CommunicationHub = () => {
         const contact = data.customer?.contact_person || 'Max Mustermann';
 
         return html
-            .replace(/{{customer_name}}/g, custName)
-            .replace(/{{contact_person}}/g, contact)
-            .replace(/{{project_number}}/g, data.project_number || 'PRJ-XXXX-XXXX')
-            .replace(/{{project_name}}/g, data.name || data.project_name || 'Beispiel Projekt')
-            .replace(/{{deadline}}/g, data.deadline ? new Date(data.deadline).toLocaleDateString('de-DE') : 'DD.MM.YYYY')
-            .replace(/{{price_net}}/g, data.total_amount ? `${parseFloat(data.total_amount).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €` : '0,00 €')
-            .replace(/{{date}}/g, new Date().toLocaleDateString('de-DE'))
-            .replace(/{{sender_name}}/g, 'Ihre Administration');
+            .replace(/{{customer_name}}|{customer_name}/g, custName)
+            .replace(/{{contact_person}}|{contact_person}/g, contact)
+            .replace(/{{project_number}}|{project_number}/g, data.project_number || 'PRJ-XXXX-XXXX')
+            .replace(/{{project_name}}|{project_name}/g, data.name || data.project_name || 'Beispiel Projekt')
+            .replace(/{{deadline}}|{deadline}/g, data.deadline ? new Date(data.deadline).toLocaleDateString('de-DE') : 'DD.MM.YYYY')
+            .replace(/{{price_net}}|{price_net}/g, data.total_amount || data.price_total ? `${parseFloat(data.total_amount || data.price_total).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €` : '0,00 €')
+            .replace(/{{date}}|{date}/g, new Date().toLocaleDateString('de-DE'))
+            .replace(/{{sender_name}}|{sender_name}/g, 'Ihre Administration');
     };
 
     const createAccountMutation = useMutation({
@@ -405,79 +420,132 @@ const CommunicationHub = () => {
 
             <div className="flex-1 flex overflow-hidden">
                 <div className="w-16 md:w-56 bg-white border-r border-slate-200 flex flex-col shrink-0">
-                    <nav className="flex-1 p-2 space-y-1">
+                    <nav className="flex-1 flex flex-col p-2 space-y-4">
                         <TooltipProvider delayDuration={0}>
-                            <TabButton
-                                active={activeTab === 'inbox'}
-                                onClick={() => setActiveTab('inbox')}
-                                icon={<FaFolderOpen />}
-                                label="Posteingang"
-                            />
-                            <TabButton
-                                active={activeTab === 'sent'}
-                                onClick={() => setActiveTab('sent')}
-                                icon={<FaPaperPlane />}
-                                label="Gesendet"
-                            />
-                            <TabButton
-                                active={activeTab === 'templates'}
-                                onClick={() => setActiveTab('templates')}
-                                icon={<FaFileAlt />}
-                                label="Vorlagen"
-                            />
-                            <TabButton
-                                active={activeTab === 'accounts'}
-                                onClick={() => setActiveTab('accounts')}
-                                icon={<FaUserCircle />}
-                                label="Konten"
-                            />
+                            <div className="space-y-1">
+                                <div className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 hidden md:block">
+                                    E-Mails
+                                </div>
+                                <MailTabButton
+                                    active={activeTab === 'inbox'}
+                                    onClick={() => setActiveTab('inbox')}
+                                    icon={<FaFolderOpen />}
+                                    label="Posteingang"
+                                />
+                                <MailTabButton
+                                    active={activeTab === 'sent'}
+                                    onClick={() => setActiveTab('sent')}
+                                    icon={<FaPaperPlane />}
+                                    label="Gesendet"
+                                />
+                                <MailTabButton
+                                    active={activeTab === 'trash'}
+                                    onClick={() => setActiveTab('trash')}
+                                    icon={<FaTrashAlt />}
+                                    label="Papierkorb"
+                                />
+                            </div>
+
+                            <div className="space-y-1 mt-auto!">
+                                <div className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 hidden md:block">
+                                    Verwaltung
+                                </div>
+                                <MailTabButton
+                                    active={activeTab === 'templates'}
+                                    onClick={() => setActiveTab('templates')}
+                                    icon={<FaFileAlt />}
+                                    label="Vorlagen"
+                                />
+                                <MailTabButton
+                                    active={activeTab === 'accounts'}
+                                    onClick={() => setActiveTab('accounts')}
+                                    icon={<FaUserCircle />}
+                                    label="Konten"
+                                />
+                            </div>
                         </TooltipProvider>
                     </nav>
                 </div>
 
-                <div className="flex-1 overflow-hidden flex flex-col bg-slate-50">
-                    {activeTab === 'inbox' && (
-                        <div className="flex-1 flex flex-col min-h-0 bg-white">
-                            <EmailTable
-                                mails={inboxMessages}
-                                folder="inbox"
-                                onView={handleViewMail}
-                                onDelete={(id: number) => {
-                                    if (window.confirm('E-Mail wirklich löschen?')) {
-                                        mailService.delete(id).then(() => {
-                                            queryClient.invalidateQueries({ queryKey: ['mails'] });
-                                            toast.success('E-Mail gelöscht');
-                                        });
-                                    }
-                                }}
-                            />
-                        </div>
-                    )}
+                <div className="flex-1 overflow-hidden flex flex-col bg-white">
+                    {['inbox', 'sent', 'trash'].includes(activeTab) && (
+                        <div className="flex-1 flex min-h-0 overflow-hidden">
+                            {/* Email List Sidebar */}
+                            <div className={clsx(
+                                "flex flex-col border-r border-slate-200 transition-all overflow-hidden shrink-0",
+                                viewingMail ? "w-full md:w-[320px]" : "w-full"
+                            )}>
+                                {selectedMails.length > 0 && (
+                                    <div className="bg-slate-50 border-b border-slate-200">
+                                        <BulkActions
+                                            selectedCount={selectedMails.length}
+                                            onClearSelection={() => setSelectedMails([])}
+                                            actions={[
+                                                {
+                                                    label: activeTab === 'trash' ? 'Endgültig löschen' : 'In den Papierkorb',
+                                                    icon: <FaTrashAlt className="text-xs" />,
+                                                    onClick: () => {
+                                                        setDeleteType('bulk');
+                                                        setIsConfirmOpen(true);
+                                                    },
+                                                    variant: 'danger',
+                                                    show: true
+                                                }
+                                            ]}
+                                        />
+                                    </div>
+                                )}
+                                <MailListPanel
+                                    mails={activeTab === 'inbox' ? inboxMessages : activeTab === 'sent' ? sentMessages : trashMessages}
+                                    folder={activeTab}
+                                    onView={handleViewMail}
+                                    selectedId={viewingMail?.id}
+                                    selectedMails={selectedMails}
+                                    onSelectMail={(id) => {
+                                        setSelectedMails(prev =>
+                                            prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id]
+                                        );
+                                    }}
+                                    onSelectAll={() => {
+                                        const currentMails = activeTab === 'inbox' ? inboxMessages : activeTab === 'sent' ? sentMessages : trashMessages;
+                                        if (selectedMails.length === currentMails.length) {
+                                            setSelectedMails([]);
+                                        } else {
+                                            setSelectedMails(currentMails.map((m: any) => m.id));
+                                        }
+                                    }}
+                                    onDelete={(id: number) => {
+                                        setMailToDelete(id);
+                                        setDeleteType('single');
+                                        setIsConfirmOpen(true);
+                                    }}
+                                />
+                            </div>
 
-                    {activeTab === 'sent' && (
-                        <div className="flex-1 flex flex-col min-h-0 bg-white">
-                            <EmailTable
-                                mails={sentMessages}
-                                folder="sent"
-                                onView={handleViewMail}
-                                onDelete={(id: number) => {
-                                    if (window.confirm('E-Mail wirklich löschen?')) {
-                                        mailService.delete(id).then(() => {
-                                            queryClient.invalidateQueries({ queryKey: ['mails'] });
-                                            toast.success('E-Mail gelöscht');
-                                        });
-                                    }
-                                }}
-                            />
+                            {/* Email Content Detail View */}
+                            {viewingMail && (
+                                <div className="flex-1 flex flex-col min-w-0 bg-white">
+                                    <MailDetailPanel
+                                        mail={viewingMail}
+                                        onClose={() => setViewingMail(null)}
+                                        onReply={handleReplyWithClose}
+                                        onForward={handleForwardWithClose}
+                                        onDelete={(id: any) => {
+                                            setMailToDelete(id);
+                                            setDeleteType('single');
+                                            setIsConfirmOpen(true);
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {activeTab === 'templates' && (
                         <div className="flex-1 overflow-auto bg-white">
-                            <ResourceTable
+                            <MailResourceTable
                                 title="E-Mail Vorlagen"
                                 items={templates}
-                                type="template"
                                 headers={['Name', 'Betreff', 'Kategorie']}
                                 onAdd={() => {
                                     setTemplateToEdit(null);
@@ -507,10 +575,9 @@ const CommunicationHub = () => {
 
                     {activeTab === 'accounts' && (
                         <div className="flex-1 overflow-auto bg-white">
-                            <ResourceTable
+                            <MailResourceTable
                                 title="E-Mail Konten"
                                 items={accounts}
-                                type="account"
                                 headers={['Bezeichnung', 'Email', 'Server', 'Status']}
                                 onAdd={() => {
                                     setAccountToEdit(null);
@@ -549,26 +616,9 @@ const CommunicationHub = () => {
                 </div>
             </div>
 
-            {viewingMail && (
-                <EmailDetailModal
-                    mail={viewingMail}
-                    onClose={() => setViewingMail(null)}
-                    onReply={handleReply}
-                    onForward={handleForward}
-                    onDelete={(id: any) => {
-                        if (window.confirm('E-Mail wirklich löschen?')) {
-                            mailService.delete(id).then(() => {
-                                queryClient.invalidateQueries({ queryKey: ['mails'] });
-                                setViewingMail(null);
-                                toast.success('E-Mail gelöscht');
-                            });
-                        }
-                    }}
-                />
-            )}
 
             <Dialog open={isComposeOpen} onOpenChange={(open) => !open && setIsComposeOpen(false)}>
-                <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden border-none shadow-2xl rounded-sm">
+                <DialogContent hideClose className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden border-none shadow-2xl rounded-sm">
                     {/* Minimal Header */}
                     <div className="px-6 py-4 flex items-center justify-between bg-white border-b border-slate-100">
                         <div className="flex flex-col">
@@ -607,62 +657,103 @@ const CommunicationHub = () => {
                                     </div>
 
                                     {/* Recipient Field */}
-                                    <div className="flex items-center gap-4 py-2 border-b border-slate-50 group z-50">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-slate-900 transition-colors">AN</span>
-                                        <div className="flex-1 relative">
-                                            <input
-                                                value={composeTo}
-                                                onChange={(e) => {
-                                                    setComposeTo(e.target.value);
-                                                    setShowToSuggestions(true);
-                                                    setSuggestionIndex(0);
-                                                }}
-                                                onFocus={() => setShowToSuggestions(true)}
-                                                onBlur={() => setTimeout(() => setShowToSuggestions(false), 200)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'ArrowDown' && filteredToSuggestions.length > 0) {
-                                                        e.preventDefault();
-                                                        setSuggestionIndex(prev => (prev + 1) % filteredToSuggestions.length);
-                                                    } else if (e.key === 'ArrowUp' && filteredToSuggestions.length > 0) {
-                                                        e.preventDefault();
-                                                        setSuggestionIndex(prev => (prev - 1 + filteredToSuggestions.length) % filteredToSuggestions.length);
-                                                    } else if (e.key === 'Enter' && filteredToSuggestions.length > 0 && showToSuggestions) {
-                                                        e.preventDefault();
-                                                        setComposeTo(filteredToSuggestions[suggestionIndex].value);
-                                                        setShowToSuggestions(false);
-                                                    } else if (e.key === 'Escape') {
-                                                        setShowToSuggestions(false);
-                                                    }
-                                                }}
-                                                className="w-full bg-transparent border-none outline-none text-sm placeholder:text-slate-300 font-medium text-slate-800 py-1"
-                                                placeholder="empfaenger@beispiel.de"
-                                            />
-
-                                            {showToSuggestions && filteredToSuggestions.length > 0 && (
-                                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 shadow-xl rounded-sm overflow-hidden z-[101] animate-in fade-in slide-in-from-top-1">
-                                                    {filteredToSuggestions.map((s, idx) => (
+                                    <div className="flex items-start gap-4 py-2 border-b border-slate-50 group z-50">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-slate-900 transition-colors pt-1.5 shrink-0">AN</span>
+                                        <div className="flex-1 min-w-0">
+                                            {/* Quick-fill chips when project is selected */}
+                                            {projectDetails && (
+                                                <div className="flex gap-1.5 mb-1.5 flex-wrap">
+                                                    {projectDetails.customer?.email && (
                                                         <button
-                                                            key={idx}
-                                                            onClick={() => {
-                                                                setComposeTo(s.value);
-                                                                setShowToSuggestions(false);
-                                                            }}
+                                                            type="button"
+                                                            onClick={() => setComposeTo(projectDetails.customer.email)}
                                                             className={clsx(
-                                                                "w-full text-left px-4 py-3 flex items-center justify-between border-b border-slate-50 last:border-0 transition-colors",
-                                                                idx === suggestionIndex ? "bg-slate-50" : "hover:bg-slate-50/50"
+                                                                "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                                                composeTo === projectDetails.customer.email
+                                                                    ? "bg-slate-900 text-white border-slate-900"
+                                                                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-900 hover:text-slate-900"
                                                             )}
                                                         >
-                                                            <div className="flex flex-col">
-                                                                <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">{s.label}</span>
-                                                                <span className="text-[10px] font-medium text-slate-400 font-mono tracking-tight">{s.value}</span>
-                                                            </div>
-                                                            <Badge variant="outline" className="text-[8px] font-black px-1.5 py-0 border-slate-200 text-slate-400 bg-white">
-                                                                {s.type}
-                                                            </Badge>
+                                                            Kunde: {projectDetails.customer.company_name || projectDetails.customer.first_name + ' ' + projectDetails.customer.last_name}
                                                         </button>
-                                                    ))}
+                                                    )}
+                                                    {(() => {
+                                                        const p = projectDetails.partner || projectDetails.translator;
+                                                        const partnerEmail = p?.email;
+                                                        const partnerName = p?.name || p?.company || [p?.first_name, p?.last_name].filter(Boolean).join(' ') || partnerEmail;
+                                                        if (!partnerEmail) return null;
+                                                        return (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setComposeTo(partnerEmail)}
+                                                                className={clsx(
+                                                                    "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                                                    composeTo === partnerEmail
+                                                                        ? "bg-slate-900 text-white border-slate-900"
+                                                                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-900 hover:text-slate-900"
+                                                                )}
+                                                            >
+                                                                Partner: {partnerName}
+                                                            </button>
+                                                        );
+                                                    })()}
                                                 </div>
                                             )}
+                                            <div className="relative">
+                                                <input
+                                                    value={composeTo}
+                                                    onChange={(e) => {
+                                                        setComposeTo(e.target.value);
+                                                        setShowToSuggestions(true);
+                                                        setSuggestionIndex(0);
+                                                    }}
+                                                    onFocus={() => setShowToSuggestions(true)}
+                                                    onBlur={() => setTimeout(() => setShowToSuggestions(false), 200)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'ArrowDown' && filteredToSuggestions.length > 0) {
+                                                            e.preventDefault();
+                                                            setSuggestionIndex(prev => (prev + 1) % filteredToSuggestions.length);
+                                                        } else if (e.key === 'ArrowUp' && filteredToSuggestions.length > 0) {
+                                                            e.preventDefault();
+                                                            setSuggestionIndex(prev => (prev - 1 + filteredToSuggestions.length) % filteredToSuggestions.length);
+                                                        } else if (e.key === 'Enter' && filteredToSuggestions.length > 0 && showToSuggestions) {
+                                                            e.preventDefault();
+                                                            setComposeTo(filteredToSuggestions[suggestionIndex].value);
+                                                            setShowToSuggestions(false);
+                                                        } else if (e.key === 'Escape') {
+                                                            setShowToSuggestions(false);
+                                                        }
+                                                    }}
+                                                    className="w-full bg-transparent border-none outline-none text-sm placeholder:text-slate-300 font-medium text-slate-800 py-1"
+                                                    placeholder="empfaenger@beispiel.de"
+                                                    autoComplete="off"
+                                                />
+                                                {showToSuggestions && filteredToSuggestions.length > 0 && (
+                                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 shadow-xl rounded-sm overflow-hidden z-[101] animate-in fade-in slide-in-from-top-1">
+                                                        {filteredToSuggestions.map((s, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                onClick={() => {
+                                                                    setComposeTo(s.value);
+                                                                    setShowToSuggestions(false);
+                                                                }}
+                                                                className={clsx(
+                                                                    "w-full text-left px-4 py-3 flex items-center justify-between border-b border-slate-50 last:border-0 transition-colors",
+                                                                    idx === suggestionIndex ? "bg-slate-50" : "hover:bg-slate-50/50"
+                                                                )}
+                                                            >
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">{s.label}</span>
+                                                                    <span className="text-[10px] font-medium text-slate-400 font-mono tracking-tight">{s.value}</span>
+                                                                </div>
+                                                                <Badge variant="outline" className="text-[8px] font-black px-1.5 py-0 border-slate-200 text-slate-400 bg-white">
+                                                                    {s.type}
+                                                                </Badge>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -674,6 +765,7 @@ const CommunicationHub = () => {
                                             onChange={(e) => setComposeSubject(e.target.value)}
                                             className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-slate-300 font-bold text-slate-800 py-1"
                                             placeholder="Betreff eingeben..."
+                                            autoComplete="off"
                                         />
                                     </div>
 
@@ -714,24 +806,10 @@ const CommunicationHub = () => {
                                                 placeholder="Suchen Sie nach Projektnummer oder Name..."
                                                 className="bg-white border-slate-200"
                                             />
-                                            {projectDetails && (
-                                                <div className="flex flex-col gap-1 pt-1">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-[10px] font-medium text-slate-500 uppercase">Kunde</span>
-                                                        <span className="text-[10px] font-bold text-slate-900">{projectDetails.customer?.company_name || projectDetails.customer?.name}</span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-[10px] font-medium text-slate-500 uppercase">Status</span>
-                                                        <Badge variant="outline" className="text-[8px] font-bold text-emerald-600 border-emerald-200 bg-emerald-50 px-1 py-0 rounded-sm uppercase">
-                                                            {projectDetails.status || 'AKTIV'}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
 
-                                    {/* Editor Switcher */}
+                                    {/* Editor Switcher + Variables header row */}
                                     <div className="pt-6 flex items-center justify-between mb-2">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nachricht Text</span>
                                         <div className="flex bg-slate-100 p-0.5 rounded-sm">
@@ -756,13 +834,119 @@ const CommunicationHub = () => {
                                         </div>
                                     </div>
 
+                                    {/* Variable Picker — above editor */}
+                                    <div className="mb-2" ref={varPickerRef}>
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Variablen einfügen</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setIsVarPickerOpen(v => !v); setVarSearch(''); }}
+                                                className={clsx(
+                                                    "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                                    isVarPickerOpen
+                                                        ? "bg-slate-900 text-white border-slate-900"
+                                                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-900 hover:text-slate-900"
+                                                )}
+                                            >
+                                                <FaSearchPlus size={8} /> Variable wählen
+                                            </button>
+                                        </div>
+
+                                        {isVarPickerOpen && (
+                                            <div className="border border-slate-200 rounded-sm bg-white shadow-lg overflow-hidden">
+                                                {/* Search */}
+                                                <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
+                                                    <FaSearchPlus size={10} className="text-slate-400 shrink-0" />
+                                                    <input
+                                                        autoFocus
+                                                        type="text"
+                                                        value={varSearch}
+                                                        onChange={e => setVarSearch(e.target.value)}
+                                                        placeholder="Variable suchen..."
+                                                        className="flex-1 text-xs outline-none placeholder:text-slate-300 text-slate-700 font-medium"
+                                                    />
+                                                    {varSearch && (
+                                                        <button type="button" onClick={() => setVarSearch('')} className="text-slate-300 hover:text-slate-600">
+                                                            <FaTimes size={10} />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Results */}
+                                                <div className="max-h-64 overflow-y-auto">
+                                                    {(() => {
+                                                        const q = varSearch.toLowerCase();
+                                                        const filtered = ALL_VARIABLES.filter(v =>
+                                                            !q ||
+                                                            v.label.toLowerCase().includes(q) ||
+                                                            v.key.toLowerCase().includes(q) ||
+                                                            v.desc.toLowerCase().includes(q)
+                                                        );
+                                                        if (filtered.length === 0) return (
+                                                            <p className="px-4 py-6 text-[10px] text-slate-400 text-center font-medium">Keine Variable gefunden</p>
+                                                        );
+                                                        const groups = varSearch ? [''] : VAR_GROUPS;
+                                                        return groups.map(group => {
+                                                            const items = varSearch
+                                                                ? filtered
+                                                                : filtered.filter(v => v.group === group);
+                                                            if (items.length === 0) return null;
+                                                            return (
+                                                                <div key={group}>
+                                                                    {!varSearch && (
+                                                                        <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b border-slate-100">
+                                                                            {group}
+                                                                        </div>
+                                                                    )}
+                                                                    {items.map(v => {
+                                                                        const isSelected = composeBody.includes(`{{${v.key}}}`) || composeBody.includes(`{${v.key}}`);
+                                                                        return (
+                                                                            <button
+                                                                                key={v.key}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    if (isSelected) {
+                                                                                        // Toggle off - simple regex replacement
+                                                                                        const regex = new RegExp(`\\s?{{${v.key}}}|\\s?{${v.key}}`, 'g');
+                                                                                        setComposeBody(prev => prev.replace(regex, ''));
+                                                                                    } else {
+                                                                                        setComposeBody(prev => prev + ` {{${v.key}}}`);
+                                                                                    }
+                                                                                }}
+                                                                                className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center justify-between gap-4 border-b border-slate-50 last:border-0 group"
+                                                                            >
+                                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                                    <div className="shrink-0" onClick={e => e.stopPropagation()}>
+                                                                                        <Checkbox
+                                                                                            checked={isSelected}
+                                                                                            onChange={() => { }} // Controlled via button click for larger hit area
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="min-w-0">
+                                                                                        <div className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">{v.label}</div>
+                                                                                        <div className="text-[10px] text-slate-400 font-medium truncate">{v.desc}</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <code className="text-[10px] font-mono text-slate-400 group-hover:text-slate-700 shrink-0 bg-slate-100 px-1.5 py-0.5 rounded">{`{{${v.key}}}`}</code>
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            );
+                                                        });
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     {/* Editor Content */}
                                     <div className="min-h-[400px] border border-slate-100 rounded-sm overflow-hidden">
                                         {isComposePreview ? (
                                             <div className="p-8 h-full bg-slate-50/30">
                                                 <div
                                                     className="prose prose-slate max-w-none text-sm text-slate-800 font-medium leading-relaxed"
-                                                    dangerouslySetInnerHTML={{ __html: getPreviewHtml(composeBody) }}
+                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(getPreviewHtml(composeBody)) }}
                                                 />
                                             </div>
                                         ) : (
@@ -871,12 +1055,7 @@ const CommunicationHub = () => {
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <Button
-                                        onClick={() => sendMutation.mutate({
-                                            mail_account_id: selectedAccount?.id,
-                                            to: composeTo,
-                                            subject: composeSubject,
-                                            body: composeBody
-                                        })}
+                                        onClick={() => sendMutation.mutate(selectedAccount?.id)}
                                         disabled={sendMutation.isPending || !composeTo || !composeSubject}
                                         className="h-10 px-10 bg-slate-900 border-none hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10 gap-3 transition-all rounded-sm disabled:opacity-20"
                                     >
@@ -915,42 +1094,6 @@ const CommunicationHub = () => {
                                         </div>
                                     </div>
 
-                                    {/* Variables Section */}
-                                    {(selectedProjectId || selectedCustomerId) && (
-                                        <div className="space-y-4 pt-6 mt-6 border-t border-slate-100">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                                    <FaKey className="text-slate-400" /> VARIABLEN
-                                                </h4>
-                                                <Badge variant="outline" className="text-[8px] font-bold px-1.5 py-1 border-emerald-200 text-emerald-600 bg-emerald-50 uppercase rounded-sm">Daten bereit</Badge>
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-1">
-                                                {[
-                                                    { label: 'Kunde', key: 'customer_name' },
-                                                    { label: 'Ansprechp.', key: 'contact_person' },
-                                                    { label: 'Projekt #', key: 'project_number', hidden: !selectedProjectId },
-                                                    { label: 'Name', key: 'project_name', hidden: !selectedProjectId },
-                                                    { label: 'Deadline', key: 'deadline', hidden: !selectedProjectId },
-                                                    { label: 'Betrag', key: 'price_net', hidden: !selectedProjectId },
-                                                    { label: 'Datum', key: 'date' },
-                                                    { label: 'User', key: 'sender_name' },
-                                                ].filter(v => !v.hidden).map(v => (
-                                                    <button
-                                                        key={v.key}
-                                                        onClick={() => setComposeBody(prev => prev + ` {{${v.key}}}`)}
-                                                        className="p-2.5 bg-white border border-slate-100 hover:border-slate-900 hover:shadow-sm text-xs font-mono text-slate-600 flex flex-col gap-1 transition-all group rounded-sm"
-                                                        title={`Klicken zum Einfügen: {{${v.key}}}`}
-                                                    >
-                                                        <span className="font-black text-slate-700 text-[9px] uppercase tracking-widest">{v.label}</span>
-                                                        <code className="text-[10px] text-slate-400 opacity-60 group-hover:text-slate-900 group-hover:opacity-100 transition-opacity whitespace-nowrap">{"{{" + v.key + "}}"}</code>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                            <div className="p-3 bg-brand-50/50 border border-brand-100 rounded-sm">
-                                                <p className="text-[9px] font-bold text-brand-700 leading-normal uppercase tracking-tight">Tipp: Variablen werden beim Senden automatisch durch Echt-Daten ersetzt.</p>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </ScrollArea>
                         </div>
@@ -984,8 +1127,25 @@ const CommunicationHub = () => {
                                         const isAlreadyAttached = composeAttachments.some(a => a.name === actualFileName);
 
                                         return (
-                                            <div key={file.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-sm hover:border-slate-900 transition-all group">
+                                            <div
+                                                key={file.id}
+                                                onClick={() => {
+                                                    if (!isAlreadyAttached) {
+                                                        handleAddProjectFiles([file]);
+                                                    } else {
+                                                        const idx = composeAttachments.findIndex(a => a.name === actualFileName);
+                                                        if (idx !== -1) removeAttachment(idx);
+                                                    }
+                                                }}
+                                                className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-sm hover:border-slate-900 transition-all group cursor-pointer"
+                                            >
                                                 <div className="flex items-center gap-4 overflow-hidden">
+                                                    <div className="shrink-0" onClick={e => e.stopPropagation()}>
+                                                        <Checkbox
+                                                            checked={isAlreadyAttached}
+                                                            onChange={() => { }} // Controlled via parent div click
+                                                        />
+                                                    </div>
                                                     <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200 shrink-0 shadow-sm group-hover:border-slate-900 transition-colors">
                                                         <FaFileAlt className="text-slate-400 text-sm group-hover:text-slate-900" />
                                                     </div>
@@ -996,18 +1156,17 @@ const CommunicationHub = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant={isAlreadyAttached ? "ghost" : "outline"}
-                                                    disabled={isAlreadyAttached}
-                                                    onClick={() => handleAddProjectFiles([file])}
-                                                    className={clsx(
-                                                        "h-8 px-4 text-[9px] font-bold uppercase tracking-widest transition-all rounded-sm",
-                                                        isAlreadyAttached ? "text-emerald-600 bg-emerald-50" : "border-slate-300 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                                                <div className="shrink-0">
+                                                    {isAlreadyAttached ? (
+                                                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-sm flex items-center gap-1.5">
+                                                            <FaCheckCircle size={10} /> ANGEHÄNGT
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[9px] font-bold text-slate-400 group-hover:text-slate-900 transition-colors uppercase tracking-widest">
+                                                            Hinzufügen
+                                                        </span>
                                                     )}
-                                                >
-                                                    {isAlreadyAttached ? <><FaCheckCircle size={10} className="mr-2" /> Angehängt</> : 'Hinzufügen'}
-                                                </Button>
+                                                </div>
                                             </div>
                                         );
                                     })
@@ -1059,183 +1218,36 @@ const CommunicationHub = () => {
                     }
                 }}
             />
+
+            <ConfirmModal
+                isOpen={isConfirmOpen}
+                onClose={() => {
+                    setIsConfirmOpen(false);
+                    setMailToDelete(null);
+                }}
+                onConfirm={async () => {
+                    setIsConfirmOpen(false);
+                    try {
+                        if (deleteType === 'single' && mailToDelete) {
+                            await mailService.delete(mailToDelete);
+                            if (viewingMail?.id === mailToDelete) setViewingMail(null);
+                            toast.success('E-Mail gelöscht');
+                        } else if (deleteType === 'bulk' && selectedMails.length > 0) {
+                            await Promise.all(selectedMails.map(id => mailService.delete(id)));
+                            if (viewingMail && selectedMails.includes(viewingMail.id)) setViewingMail(null);
+                            setSelectedMails([]);
+                            toast.success(`${selectedMails.length} E-Mail(s) gelöscht`);
+                        }
+                        queryClient.invalidateQueries({ queryKey: ['mails'] });
+                    } catch (error) {
+                        toast.error('Geringfügiger Fehler beim Löschen aufgetreten');
+                    }
+                }}
+                title={deleteType === 'single' ? "E-Mail löschen" : `${selectedMails.length} E-Mails löschen`}
+                message={deleteType === 'single' ? "Möchten Sie diese E-Mail wirklich löschen?" : "Möchten Sie diese markierten E-Mails wirklich löschen?"}
+            />
         </div>
     );
 };
-
-const TabButton = ({ active, onClick, icon, label }: any) => (
-    <Tooltip>
-        <TooltipTrigger asChild>
-            <button
-                onClick={onClick}
-                className={clsx(
-                    "w-full flex items-center gap-3 px-4 py-3 text-xs transition-all",
-                    active
-                        ? "bg-slate-100 text-slate-800 font-semibold border-r-4 border-slate-900"
-                        : "text-slate-400 hover:bg-slate-50 hover:text-slate-600 font-medium"
-                )}
-            >
-                <span className={clsx("text-base", active ? "text-slate-700" : "")}>{icon}</span>
-                <span className="hidden md:inline">{label}</span>
-            </button>
-        </TooltipTrigger>
-        <TooltipContent side="right" className="md:hidden">
-            {label}
-        </TooltipContent>
-    </Tooltip>
-);
-
-const EmailTable = ({ mails, folder, onView, onDelete }: { mails: any[], folder: string, onView: (m: any) => void, onDelete: (id: number) => void }) => (
-    <div className="flex-1 overflow-auto">
-        <table className="w-full text-left border-collapse table-fixed">
-            <thead className="sticky top-0 bg-white z-10">
-                <tr className="border-b border-slate-200">
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 w-1/4">
-                        {folder === 'inbox' ? 'Absender' : 'Empfänger'}
-                    </th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 w-2/4">Betreff</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 w-1/4">Datum</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 text-right w-32">Aktionen</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-                {mails.length === 0 ? (
-                    <tr>
-                        <td colSpan={4} className="px-6 py-10 text-center text-xs text-slate-400 font-medium">Keine E-Mails vorhanden</td>
-                    </tr>
-                ) : (
-                    mails.map((mail: any) => (
-                        <tr
-                            key={mail.id}
-                            onClick={() => onView(mail)}
-                            className={clsx(
-                                "hover:bg-slate-50 transition group cursor-pointer",
-                                !mail.read && folder === 'inbox' ? "bg-slate-50/50 font-semibold" : ""
-                            )}
-                        >
-                            <td className="px-6 py-4 text-xs font-medium text-slate-700 truncate">
-                                {folder === 'inbox' ? mail.from : mail.to_emails?.join(', ')}
-                                {!mail.read && folder === 'inbox' && <span className="ml-2 w-2 h-2 rounded-full bg-slate-900 inline-block"></span>}
-                            </td>
-                            <td className="px-6 py-4 text-xs text-slate-500 truncate">
-                                {mail.subject || '(Kein Betreff)'}
-                            </td>
-                            <td className="px-6 py-4 text-xs text-slate-400 font-mono whitespace-nowrap">{mail.full_time}</td>
-                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center justify-end gap-2">
-                                    <button onClick={() => onView(mail)} className="p-2 text-slate-300 hover:text-slate-700 transition" title="Ansehen"><FaEye /></button>
-                                    <button onClick={() => onDelete(mail.id)} className="p-2 text-slate-300 hover:text-red-500 transition" title="Löschen"><FaTrashAlt /></button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))
-                )}
-            </tbody>
-        </table>
-    </div>
-);
-
-const EmailDetailModal = ({ mail, onClose, onReply, onForward, onDelete }: any) => {
-    if (!mail) return null;
-    return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-5xl h-full md:h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
-                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-lg">
-                            {mail.from.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="text-base font-bold text-slate-900 truncate max-w-2xl leading-tight mb-1">{mail.subject || '(Kein Betreff)'}</h3>
-                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                                <span className="text-slate-900">{mail.from}</span>
-                                <span>•</span>
-                                <span>{mail.full_time}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <button onClick={() => onReply(mail)} className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition" title="Antworten">
-                            <FaReply /> Antworten
-                        </button>
-                        <button onClick={() => onForward(mail)} className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition" title="Weiterleiten">
-                            <FaForward /> Weiterleiten
-                        </button>
-                        <div className="w-[1px] h-4 bg-slate-200 mx-2" />
-                        <button onClick={() => onDelete(mail.id)} className="p-2 text-slate-400 hover:text-red-500 transition" title="Löschen">
-                            <FaTrashAlt />
-                        </button>
-                        <button onClick={onClose} className="ml-2 p-2 text-slate-400 hover:text-slate-900 transition">
-                            <FaTimes size={20} />
-                        </button>
-                    </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-10 bg-white">
-                    <div className="max-w-4xl mx-auto">
-                        <div
-                            className="email-body-content text-slate-800 text-sm leading-relaxed prose prose-slate max-w-none"
-                            dangerouslySetInnerHTML={{ __html: mail.body }}
-                        />
-                    </div>
-                </div>
-                {mail.attachments && mail.attachments.length > 0 && (
-                    <div className="px-10 py-6 border-t border-slate-100 bg-slate-50">
-                        <h4 className="text-[10px] font-bold text-slate-400 mb-4 uppercase tracking-[0.1em]">Anhänge ({mail.attachments.length})</h4>
-                        <div className="flex flex-wrap gap-3">
-                            {mail.attachments.map((at: any, i: number) => (
-                                <div key={i} className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 shadow-sm text-xs font-semibold text-slate-700 group hover:border-slate-400 transition cursor-default">
-                                    <FaPaperclip className="text-slate-400 group-hover:text-slate-600" />
-                                    <span>{at.name}</span>
-                                    <span className="text-slate-400 font-normal">({(at.size / 1024).toFixed(0)} KB)</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-const ResourceTable = ({ title, items, headers, renderRow, onAdd, onEdit, onDelete }: any) => (
-    <div className="bg-white">
-        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white sticky top-0 z-10">
-            <h2 className="text-xs font-semibold text-slate-800">{title}</h2>
-            <button onClick={onAdd} className="text-xs font-semibold bg-slate-900 text-white px-3 py-1.5 transition hover:bg-slate-900">
-                Neu+
-            </button>
-        </div>
-        <table className="w-full text-left border-collapse">
-            <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/30">
-                    {headers.map((h: string) => (
-                        <th key={h} className="px-6 py-4 text-xs font-semibold text-slate-400">{h}</th>
-                    ))}
-                    <th className="px-6 py-4 text-xs font-semibold text-slate-400 text-right">Aktionen</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-                {items.length === 0 ? (
-                    <tr>
-                        <td colSpan={headers.length + 1} className="px-6 py-10 text-center text-xs text-slate-400 font-medium">Keine Daten vorhanden</td>
-                    </tr>
-                ) : (
-                    items.map((item: any) => (
-                        <tr key={item.id} className="hover:bg-slate-50 transition">
-                            {renderRow(item)}
-                            <td className="px-6 py-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    <button onClick={() => onEdit?.(item)} className="p-2 text-slate-300 hover:text-slate-700 transition" title="Bearbeiten"><FaEdit /></button>
-                                    <button className="p-2 text-slate-300 hover:text-slate-800 transition" title="Details"><FaFolderOpen /></button>
-                                    <button onClick={() => onDelete?.(item)} className="p-2 text-slate-300 hover:text-red-500 transition" title="Entfernen"><FaTrashAlt /></button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))
-                )}
-            </tbody>
-        </table>
-    </div>
-);
 
 export default CommunicationHub;

@@ -35,11 +35,10 @@ class ReportController extends Controller
 
         $data = Project::select(
             DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
-            DB::raw('DATE_FORMAT(created_at, "%Y-%m-%d") as date_val'),
             DB::raw('SUM(price_total) as total')
         )
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->groupBy('month')
+            ->groupBy(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'))
             ->orderBy('month')
             ->get();
 
@@ -77,7 +76,7 @@ class ReportController extends Controller
             DB::raw('SUM(partner_cost_net) as cost')
         )
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->groupBy('month')
+            ->groupBy(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'))
             ->get();
 
         $labels = [];
@@ -262,7 +261,7 @@ class ReportController extends Controller
                 DB::raw('SUM(amount_tax) as tax'),
                 DB::raw('SUM(amount_gross) as gross')
             )
-            ->groupBy('month', 'tax_exemption', 'tax_rate')
+            ->groupBy(DB::raw('DATE_FORMAT(date, "%Y-%m")'), 'tax_exemption', 'tax_rate')
             ->orderBy('month', 'desc')
             ->get();
 
@@ -272,7 +271,7 @@ class ReportController extends Controller
                 DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
                 DB::raw('SUM(partner_cost_net) as cost')
             )
-            ->groupBy('month')
+            ->groupBy(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'))
             ->get();
 
         $months = $data->pluck('month')->unique()->values();

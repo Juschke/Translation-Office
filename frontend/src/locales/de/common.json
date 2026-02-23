@@ -1,0 +1,83 @@
+{
+  "actions": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "close": "Schließen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "export": "Export",
+    "import": "Import",
+    "download": "Herunterladen",
+    "upload": "Hochladen",
+    "send": "Senden",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "add": "Hinzufügen",
+    "remove": "Entfernen",
+    "open": "Öffnen",
+    "view": "Ansehen",
+    "print": "Drucken",
+    "loading": "Laden...",
+    "sending": "Sende...",
+    "saving": "Speichern..."
+  },
+  "status": {
+    "draft": "Entwurf",
+    "active": "Aktiv",
+    "pending": "Ausstehend",
+    "completed": "Abgeschlossen",
+    "cancelled": "Storniert",
+    "overdue": "Überfällig",
+    "paid": "Bezahlt",
+    "open": "Offen"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projekte",
+    "customers": "Kunden",
+    "partners": "Partner",
+    "invoices": "Rechnungen",
+    "inbox": "Posteingang",
+    "settings": "Einstellungen",
+    "reports": "Berichte"
+  },
+  "fields": {
+    "name": "Name",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "address": "Adresse",
+    "city": "Stadt",
+    "zip": "PLZ",
+    "country": "Land",
+    "notes": "Notizen",
+    "date": "Datum",
+    "amount": "Betrag",
+    "status": "Status",
+    "type": "Typ",
+    "description": "Beschreibung"
+  },
+  "errors": {
+    "required": "Pflichtfeld",
+    "generic": "Ein Fehler ist aufgetreten",
+    "notFound": "Nicht gefunden",
+    "unauthorized": "Nicht autorisiert"
+  },
+  "confirm": {
+    "deleteTitle": "Wirklich löschen?",
+    "deleteMessage": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "yes": "Ja, löschen",
+    "no": "Abbrechen"
+  },
+  "pagination": {
+    "showing": "Zeige {{from}}–{{to}} von {{total}}",
+    "perPage": "pro Seite"
+  },
+  "empty": {
+    "noData": "Keine Daten vorhanden",
+    "noResults": "Keine Ergebnisse gefunden"
+  }
+}

@@ -246,7 +246,6 @@ const Navigation = () => {
                                                     count={dashboardData?.stats?.unpaid_invoices}
                                                     label="Offene Rechnungen"
                                                     activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
-                                                    isPriority={dashboardData?.stats?.overdue_invoices > 0}
                                                 />
                                             </Link>
                                         </TooltipTrigger>
@@ -255,7 +254,7 @@ const Navigation = () => {
                                                 <span className="font-semibold text-sm">Rechnungen</span>
                                                 {dashboardData?.stats?.unpaid_invoices > 0 && (
                                                     <div className={clsx("flex items-center gap-2 text-xs", dashboardData?.stats?.overdue_invoices > 0 ? "text-rose-400" : "text-slate-400")}>
-                                                        <div className={clsx("w-1.5 h-1.5 rounded-full", dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-500 animate-pulse" : "bg-slate-500")}></div>
+                                                        <div className={clsx("w-1.5 h-1.5 rounded-full", dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-500" : "bg-slate-500")}></div>
                                                         {dashboardData?.stats?.unpaid_invoices} offene Rechnungen
                                                         {dashboardData?.stats?.overdue_invoices > 0 && ` (${dashboardData.stats.overdue_invoices} überfällig)`}
                                                     </div>

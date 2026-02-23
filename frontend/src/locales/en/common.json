@@ -1,0 +1,83 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "download": "Download",
+    "upload": "Upload",
+    "send": "Send",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "add": "Add",
+    "remove": "Remove",
+    "open": "Open",
+    "view": "View",
+    "print": "Print",
+    "loading": "Loading...",
+    "sending": "Sending...",
+    "saving": "Saving..."
+  },
+  "status": {
+    "draft": "Draft",
+    "active": "Active",
+    "pending": "Pending",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "overdue": "Overdue",
+    "paid": "Paid",
+    "open": "Open"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "customers": "Customers",
+    "partners": "Partners",
+    "invoices": "Invoices",
+    "inbox": "Inbox",
+    "settings": "Settings",
+    "reports": "Reports"
+  },
+  "fields": {
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "zip": "ZIP",
+    "country": "Country",
+    "notes": "Notes",
+    "date": "Date",
+    "amount": "Amount",
+    "status": "Status",
+    "type": "Type",
+    "description": "Description"
+  },
+  "errors": {
+    "required": "Required field",
+    "generic": "An error occurred",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized"
+  },
+  "confirm": {
+    "deleteTitle": "Really delete?",
+    "deleteMessage": "This action cannot be undone.",
+    "yes": "Yes, delete",
+    "no": "Cancel"
+  },
+  "pagination": {
+    "showing": "Showing {{from}}–{{to}} of {{total}}",
+    "perPage": "per page"
+  },
+  "empty": {
+    "noData": "No data available",
+    "noResults": "No results found"
+  }
+}
