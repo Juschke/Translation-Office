@@ -181,13 +181,22 @@ const DataTable = <T extends { id: string | number }>({
             <div className="px-3 sm:px-4 py-2 border-b border-[#dee2e6] flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between bg-[linear-gradient(180deg,#ffffff_0%,#f1f3f5_100%)] relative z-30">
                 <div className="flex gap-2 sm:gap-4 text-sm font-bold text-slate-700 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0 items-center">
                     {views.length > 0 && (
-                        <select
-                            value={currentView}
-                            onChange={(e) => onViewChange?.(e.target.value)}
-                            className="h-8 px-2 border border-[#dee2e6] rounded-sm text-xs font-bold bg-white shadow-sm focus:outline-none focus:border-slate-400"
-                        >
-                            {views.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
-                        </select>
+                        <div className="flex bg-slate-100/50 rounded-sm p-0.5 border border-[#ced4da] shadow-desktop-inset mr-2">
+                            {views.map(v => (
+                                <button
+                                    key={v.value}
+                                    onClick={() => onViewChange?.(v.value)}
+                                    className={clsx(
+                                        "px-3 py-1.5 text-[10px] font-bold rounded-sm transition-all uppercase tracking-wider whitespace-nowrap",
+                                        currentView === v.value
+                                            ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                                            : "text-slate-500 hover:text-slate-700"
+                                    )}
+                                >
+                                    {v.label}
+                                </button>
+                            ))}
+                        </div>
                     )}
                     {tabs || (
                         <div className="flex items-center gap-2">

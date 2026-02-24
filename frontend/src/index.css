@@ -17,24 +17,24 @@
   --popover: 0 0% 100%;
   --popover-foreground: 210 12% 5%;
 
-  --primary: 174 100% 12%;
+  --primary: 174 100% 33%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 210 10% 96.1%;
-  --secondary-foreground: 174 100% 12%;
+  --secondary-foreground: 174 100% 33%;
 
   --muted: 210 10% 96.1%;
   --muted-foreground: 215.4 16.3% 44.9%;
 
   --accent: 174 100% 95%;
-  --accent-foreground: 174 100% 12%;
+  --accent-foreground: 174 100% 33%;
 
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 100%;
 
   --border: 220 13% 91%;
   --input: 220 13% 91%;
-  --ring: 174 100% 12%;
+  --ring: 174 100% 33%;
 
   --radius: 0.125rem;
 
@@ -57,7 +57,7 @@
   --color-brand-600: hsl(174 100% 40%);
   --color-brand-700: hsl(174 100% 30%);
   --color-brand-800: hsl(174 100% 20%);
-  --color-brand-900: hsl(174 100% 12%);
+  --color-brand-900: hsl(174 100% 33%);
 
   /* Desktop App Specific Tokens */
   --shadow-desktop-raised: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);

@@ -129,7 +129,7 @@ const Dashboard = () => {
                         Neues Projekt
                     </Button>
                     <Button
-                        variant="dark"
+                        variant="primary"
                         onClick={() => setIsNewCustomerModalOpen(true)}
                         className="h-11 px-6 font-bold"
                     >
@@ -137,7 +137,7 @@ const Dashboard = () => {
                         Kunde
                     </Button>
                     <Button
-                        variant="dark"
+                        variant="primary"
                         onClick={() => setIsNewPartnerModalOpen(true)}
                         className="h-11 px-6 font-bold"
                     >
@@ -251,7 +251,7 @@ const Dashboard = () => {
                     >
                         <div className="divide-y divide-slate-100 -mx-6 -my-4">
                             {kpiSummary.map((item, idx) => (
-                                <div key={idx} className="px-6 py-5 flex flex-col gap-1 hover:bg-slate-50 transition-colors">
+                                <div key={idx} className="px-6 py-5 flex flex-col gap-1 transition-colors">
                                     <div className="flex justify-between items-center">
                                         <Text type="secondary" className="font-bold uppercase text-[11px] tracking-wider">{item.label}</Text>
                                         {item.trend !== '0' && (

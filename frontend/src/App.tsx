@@ -42,7 +42,7 @@ function App() {
             theme={{
                 algorithm: theme.defaultAlgorithm,
                 token: {
-                    colorPrimary: '#0d6efd', // Bootstrap Blue
+                    colorPrimary: '#00a89a', // Vibrant Teal
                     borderRadius: 2, // Sharp Enterprise Look
                     fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
                     colorBgBase: '#ffffff',

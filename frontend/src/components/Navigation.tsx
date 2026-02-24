@@ -104,8 +104,8 @@ const Navigation = () => {
     const navLinkClass = (path: string) => clsx(
         "px-2 sm:px-3 py-4 text-sm font-bold border-b-2 transition-all h-full flex items-center gap-2",
         isActive(path)
-            ? "border-teal-400 text-white bg-white/5"
-            : "border-transparent text-slate-400 hover:text-white hover:bg-white/5"
+            ? "border-white text-white bg-white/5"
+            : "border-transparent text-white/70 hover:text-white hover:bg-white/5"
     );
 
     const NavBadge = ({ count, label, activeColor = "bg-rose-500", isPriority = false }: { count: number | undefined, label: string, activeColor?: string, isPriority?: boolean }) => {
@@ -158,7 +158,7 @@ const Navigation = () => {
                                         <Link to="/" className={navLinkClass("/")}>
                                             <FaHome className="text-base lg:hidden" />
                                             <span className="hidden lg:inline">Dashboard</span>
-                                            <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
+                                            <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-slate-500" />
                                         </Link>
                                     </TooltipTrigger>
                                     <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
@@ -179,7 +179,7 @@ const Navigation = () => {
                                         <Link to="/projects" className={navLinkClass("/projects")}>
                                             <FaLayerGroup className="text-base lg:hidden" />
                                             <span className="hidden lg:inline">Projekte</span>
-                                            <NavBadge count={dashboardData?.stats?.open_projects} label="Offene Projekte" activeColor="bg-rose-500" />
+                                            <NavBadge count={dashboardData?.stats?.open_projects} label="Offene Projekte" activeColor="bg-slate-500" />
                                         </Link>
                                     </TooltipTrigger>
                                     <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
@@ -451,8 +451,8 @@ const Navigation = () => {
                 <div className="lg:hidden bg-slate-900 border-t border-slate-800 animate-slideDown">
                     <div className="px-4 py-3 space-y-1">
                         {[
-                            { path: '/', label: 'Dashboard', icon: <FaHome />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute" },
-                            { path: '/projects', label: 'Projekte', icon: <FaLayerGroup />, count: dashboardData?.stats?.open_projects, badgeLabel: "Offene Projekte" },
+                            { path: '/', label: 'Dashboard', icon: <FaHome />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute", color: "bg-slate-500" },
+                            { path: '/projects', label: 'Projekte', icon: <FaLayerGroup />, count: dashboardData?.stats?.open_projects, badgeLabel: "Offene Projekte", color: "bg-slate-500" },
                             { path: '/customers', label: 'Kunden', icon: <FaUsers />, count: dashboardData?.stats?.active_customers, badgeLabel: "Aktive Kunden", color: "bg-slate-500" },
                             { path: '/partners', label: 'Partner', icon: <FaUserTie />, count: dashboardData?.stats?.active_partners, badgeLabel: "Aktive Partner", color: "bg-slate-500" },
                             {

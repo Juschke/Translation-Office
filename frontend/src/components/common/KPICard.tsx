@@ -30,7 +30,7 @@ const KPICard: React.FC<KPICardProps> = ({
     return (
         <div
             onClick={onClick}
-            className={`bg-white border border-slate-200 rounded-sm shadow-sm p-4 sm:p-5 transition-all duration-200 ${onClick ? 'cursor-pointer hover:border-slate-300 hover:shadow-md' : ''} h-full flex flex-col justify-between`}
+            className={`bg-white border border-slate-200 rounded-sm shadow-sm p-4 sm:p-5 transition-all duration-200 ${onClick ? 'cursor-pointer' : ''} h-full flex flex-col justify-between`}
         >
             <div>
                 <div className="flex justify-between items-start mb-4 sm:mb-5 gap-2">
