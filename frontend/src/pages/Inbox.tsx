@@ -12,9 +12,10 @@ import {
     FaPaperPlane, FaTimes, FaPaperclip, FaPlus,
     FaFileAlt, FaUserCircle, FaEye, FaTrashAlt,
     FaFolderOpen, FaCode, FaCloudUploadAlt,
-    FaProjectDiagram, FaSearchPlus, FaCheckCircle
+    FaProjectDiagram, FaSearchPlus, FaCheckCircle,
+    FaSync
 } from 'react-icons/fa';
-import clsx from 'clsx';
+import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -394,31 +395,36 @@ const CommunicationHub = () => {
     </div>;
 
     return (
-        <div className="flex flex-col h-full gap-0 fade-in bg-white border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-200 gap-4">
-                <div className="min-w-0">
-                    <h1 className="text-xl font-semibold text-slate-800er truncate">Email Management</h1>
-                    <p className="text-slate-400 text-xs font-medium hidden sm:block">Zentrale Verwaltung</p>
+        <div className="flex flex-col h-full gap-0 fade-in bg-white">
+            <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 p-6 pb-0">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-1">E-Mail Management</h1>
+                    <p className="text-slate-500 font-medium tracking-tight">Zentrale Kommunikation & Dokumenttransfer</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                    <button
+                    <Button
+                        variant="outline"
+                        size="default"
                         onClick={() => syncMutation.mutate()}
-                        disabled={syncMutation.isPending}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 sm:px-6 py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50"
+                        isLoading={syncMutation.isPending}
+                        className="font-bold border-slate-300 gap-2 h-11 px-6 bg-white hover:bg-slate-50"
                     >
-                        <span className="hidden xs:inline">{syncMutation.isPending ? 'Synchronisiert...' : 'Postfach abrufen'}</span>
-                        <span className="xs:hidden">{syncMutation.isPending ? 'Sync...' : 'Abrufen'}</span>
-                    </button>
-                    <button
+                        <FaSync className={cn("text-xs", syncMutation.isPending && "animate-spin")} />
+                        <span>Abrufen</span>
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size="default"
                         onClick={() => setIsComposeOpen(true)}
-                        className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition"
+                        className="font-bold gap-2 h-11 px-8 shadow-md"
                     >
-                        <FaPlus /> <span className="hidden xs:inline">Neue Email</span><span className="xs:hidden">Mail</span>
-                    </button>
+                        <FaPlus />
+                        <span>Neue E-Mail</span>
+                    </Button>
                 </div>
             </div>
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden border border-slate-200 shadow-sm mx-6 mb-6 rounded-sm">
                 <div className="w-16 md:w-56 bg-white border-r border-slate-200 flex flex-col shrink-0">
                     <nav className="flex-1 flex flex-col p-2 space-y-4">
                         <TooltipProvider delayDuration={0}>
@@ -471,9 +477,9 @@ const CommunicationHub = () => {
                     {['inbox', 'sent', 'trash'].includes(activeTab) && (
                         <div className="flex-1 flex min-h-0 overflow-hidden">
                             {/* Email List Sidebar */}
-                            <div className={clsx(
+                            <div className={cn(
                                 "flex flex-col border-r border-slate-200 transition-all overflow-hidden shrink-0",
-                                viewingMail ? "w-full md:w-[320px]" : "w-full"
+                                viewingMail ? "w-full md:w-[350px]" : "w-full"
                             )}>
                                 {selectedMails.length > 0 && (
                                     <div className="bg-slate-50 border-b border-slate-200">
@@ -667,7 +673,7 @@ const CommunicationHub = () => {
                                                         <button
                                                             type="button"
                                                             onClick={() => setComposeTo(projectDetails.customer.email)}
-                                                            className={clsx(
+                                                            className={cn(
                                                                 "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
                                                                 composeTo === projectDetails.customer.email
                                                                     ? "bg-slate-900 text-white border-slate-900"
@@ -686,7 +692,7 @@ const CommunicationHub = () => {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setComposeTo(partnerEmail)}
-                                                                className={clsx(
+                                                                className={cn(
                                                                     "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
                                                                     composeTo === partnerEmail
                                                                         ? "bg-slate-900 text-white border-slate-900"
@@ -737,7 +743,7 @@ const CommunicationHub = () => {
                                                                     setComposeTo(s.value);
                                                                     setShowToSuggestions(false);
                                                                 }}
-                                                                className={clsx(
+                                                                className={cn(
                                                                     "w-full text-left px-4 py-3 flex items-center justify-between border-b border-slate-50 last:border-0 transition-colors",
                                                                     idx === suggestionIndex ? "bg-slate-50" : "hover:bg-slate-50/50"
                                                                 )}
@@ -815,7 +821,7 @@ const CommunicationHub = () => {
                                         <div className="flex bg-slate-100 p-0.5 rounded-sm">
                                             <button
                                                 onClick={() => setIsComposePreview(false)}
-                                                className={clsx(
+                                                className={cn(
                                                     "px-3 py-1 text-[9px] font-bold rounded-sm transition-all",
                                                     !isComposePreview ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                                                 )}
@@ -824,7 +830,7 @@ const CommunicationHub = () => {
                                             </button>
                                             <button
                                                 onClick={() => setIsComposePreview(true)}
-                                                className={clsx(
+                                                className={cn(
                                                     "px-3 py-1 text-[9px] font-bold rounded-sm transition-all",
                                                     isComposePreview ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                                                 )}
@@ -841,7 +847,7 @@ const CommunicationHub = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => { setIsVarPickerOpen(v => !v); setVarSearch(''); }}
-                                                className={clsx(
+                                                className={cn(
                                                     "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
                                                     isVarPickerOpen
                                                         ? "bg-slate-900 text-white border-slate-900"
@@ -962,7 +968,7 @@ const CommunicationHub = () => {
 
                                     {/* Dropzone / Attachment Zone */}
                                     <div
-                                        className={clsx(
+                                        className={cn(
                                             "mt-8 p-10 border-2 border-dashed rounded-sm transition-all flex flex-col items-center justify-center gap-4",
                                             isDragOver ? "border-brand-500 bg-brand-50/50" : "border-slate-100 bg-slate-50/20 hover:border-slate-200"
                                         )}

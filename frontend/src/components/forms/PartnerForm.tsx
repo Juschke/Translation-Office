@@ -4,6 +4,7 @@ import type { PartnerFormData } from './partnerTypes';
 import { partnerService } from '../../api/services';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
+import SearchableSelect from '../common/SearchableSelect';
 import PhoneInput from '../common/PhoneInput';
 import toast from 'react-hot-toast';
 import MultiSelect from '../common/MultiSelect';
@@ -17,30 +18,67 @@ import PartnerInternalSection from './PartnerInternalSection';
 
 
 const DOMAIN_OPTIONS = [
-  { value: 'agrarwirtschaft', label: 'Agrarwirtschaft' },
-  { value: 'architektur', label: 'Architektur' },
-  { value: 'automobil', label: 'Automobil' },
-  { value: 'bankwesen', label: 'Bankwesen' },
-  { value: 'bauwesen', label: 'Bauwesen' },
-  { value: 'chemie', label: 'Chemie' },
-  { value: 'elektrotechnik', label: 'Elektrotechnik' },
-  { value: 'energie', label: 'Energie' },
-  { value: 'finanzen', label: 'Finanzen' },
-  { value: 'it', label: 'IT & Software' },
-  { value: 'juristisch', label: 'Juristisch' },
-  { value: 'kosmetik', label: 'Kosmetik' },
-  { value: 'kunst', label: 'Kunst & Kultur' },
-  { value: 'literatur', label: 'Literatur' },
-  { value: 'marketing', label: 'Marketing & PR' },
-  { value: 'maschinenbau', label: 'Maschinenbau' },
-  { value: 'medizin', label: 'Medizin & Pharma' },
-  { value: 'nahrungsmittel', label: 'Nahrungsmittel' },
-  { value: 'oekologie', label: 'Ökologie & Umwelt' },
-  { value: 'recht', label: 'Recht' },
-  { value: 'technik', label: 'Technik' },
-  { value: 'telekommunikation', label: 'Telekommunikation' },
-  { value: 'tourismus', label: 'Tourismus' },
-  { value: 'wirtschaft', label: 'Wirtschaft' }
+  { value: 'agrarwirtschaft', label: 'Agrarwirtschaft', group: 'Natur & Umwelt' },
+  { value: 'architektur', label: 'Architektur', group: 'Technik & Bau' },
+  { value: 'automobil', label: 'Automobil', group: 'Technik & Bau' },
+  { value: 'bankwesen', label: 'Bankwesen', group: 'Finanzen & Wirtschaft' },
+  { value: 'bauwesen', label: 'Bauwesen', group: 'Technik & Bau' },
+  { value: 'chemie', label: 'Chemie', group: 'Natur & Umwelt' },
+  { value: 'elektrotechnik', label: 'Elektrotechnik', group: 'Technik & Bau' },
+  { value: 'energie', label: 'Energie', group: 'Technik & Bau' },
+  { value: 'finanzen', label: 'Finanzen', group: 'Finanzen & Wirtschaft' },
+  { value: 'it', label: 'IT & Software', group: 'Technologie' },
+  { value: 'juristisch', label: 'Juristisch / Recht', group: 'Recht & Patente' },
+  { value: 'kosmetik', label: 'Kosmetik', group: 'Lifestyle' },
+  { value: 'kunst', label: 'Kunst & Kultur', group: 'Lifestyle' },
+  { value: 'literatur', label: 'Literatur', group: 'Lifestyle' },
+  { value: 'marketing', label: 'Marketing & PR', group: 'Wirtschaft' },
+  { value: 'maschinenbau', label: 'Maschinenbau', group: 'Technik & Bau' },
+  { value: 'medizin', label: 'Medizin & Pharma', group: 'Gesundheit' },
+  { value: 'nahrungsmittel', label: 'Nahrungsmittel', group: 'Lifestyle' },
+  { value: 'oekologie', label: 'Ökologie & Umwelt', group: 'Natur & Umwelt' },
+  { value: 'recht', label: 'Recht (Allgemein)', group: 'Recht & Patente' },
+  { value: 'technik', label: 'Technik (Allgemein)', group: 'Technik & Bau' },
+  { value: 'telekommunikation', label: 'Telekommunikation', group: 'Technologie' },
+  { value: 'tourismus', label: 'Tourismus', group: 'Lifestyle' },
+  { value: 'wirtschaft', label: 'Wirtschaft', group: 'Finanzen & Wirtschaft' },
+  { value: 'patentrecht', label: 'Patentrecht', group: 'Recht & Patente' },
+  { value: 'gaming', label: 'Gaming & E-Sports', group: 'Technologie' },
+  { value: 'ecommerce', label: 'E-Commerce', group: 'Wirtschaft' },
+  { value: 'blockchain', label: 'Blockchain / Krypto', group: 'Technologie' },
+  { value: 'urkunden', label: 'Urkunden & Beglaubigungen', group: 'Recht & Patente' },
+  { value: 'vertraege', label: 'Verträge', group: 'Recht & Patente' },
+  { value: 'hr', label: 'Personalwesen (HR)', group: 'Wirtschaft' },
+  { value: 'bildung', label: 'Bildung & Wissenschaft', group: 'Lifestyle' },
+  { value: 'sport', label: 'Sport', group: 'Lifestyle' },
+  { value: 'mode', label: 'Mode & Lifestyle', group: 'Lifestyle' }
+];
+
+const SOFTWARE_OPTIONS = [
+  { value: 'trados', label: 'SDL Trados Studio', group: 'CAT-Tools' },
+  { value: 'memoq', label: 'memoQ', group: 'CAT-Tools' },
+  { value: 'phrase', label: 'Phrase (Memsource)', group: 'CAT-Tools' },
+  { value: 'smartcat', label: 'Smartcat', group: 'CAT-Tools' },
+  { value: 'wordfast', label: 'Wordfast', group: 'CAT-Tools' },
+  { value: 'across', label: 'Across', group: 'CAT-Tools' },
+  { value: 'star_transit', label: 'Star Transit', group: 'CAT-Tools' },
+  { value: 'xtm', label: 'XTM Cloud', group: 'CAT-Tools' },
+  { value: 'matecat', label: 'Matecat', group: 'CAT-Tools' },
+  { value: 'crowdin', label: 'Crowdin', group: 'Lokalisierung' },
+  { value: 'lokalise', label: 'Lokalise', group: 'Lokalisierung' },
+  { value: 'transifex', label: 'Transifex', group: 'Lokalisierung' },
+  { value: 'subtitle_edit', label: 'Subtitle Edit', group: 'AVT' },
+  { value: 'aegisub', label: 'Aegisub', group: 'AVT' },
+  { value: 'omnipage', label: 'OmniPage (OCR)', group: 'Tools' },
+  { value: 'abbyy', label: 'ABBYY FineReader', group: 'Tools' },
+  { value: 'indesign', label: 'Adobe InDesign', group: 'DTP' },
+  { value: 'photoshop', label: 'Adobe Photoshop', group: 'DTP' }
+];
+
+const salutationOptions = [
+  { value: 'Herr', label: 'Herr' },
+  { value: 'Frau', label: 'Frau' },
+  { value: 'Divers', label: 'Divers' }
 ];
 
 export type { PartnerFormData } from './partnerTypes';
@@ -412,15 +450,12 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           )}
 
           <div className="col-span-12 md:col-span-2">
-            <Input
-              isSelect
+            <SearchableSelect
               label="Anrede"
+              options={salutationOptions}
               value={formData.salutation}
-              onChange={e => updateFormData({ salutation: e.target.value })}
-              helperText="Formelle Korrespondenz"
-            >
-              <option>Herr</option><option>Frau</option><option>Divers</option>
-            </Input>
+              onChange={val => updateFormData({ salutation: val })}
+            />
           </div>
           <div className="col-span-12 md:col-span-5">
             <Input
@@ -611,13 +646,14 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                 <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Thematische Schwerpunkte und Expertise des Partners</p>
               </div>
               <div className="col-span-1 md:col-span-2">
-                <Input
+                <MultiSelect
                   label="Software-Kenntnisse"
-                  placeholder="z.B. SDL Trados, Memsource, memoQ..."
-                  value={formData.software}
-                  onChange={e => updateFormData({ software: e.target.value })}
-                  helperText="Verfügbare CAT-Tools und andere relevante Fachsoftware"
+                  options={SOFTWARE_OPTIONS}
+                  value={formData.software ? (Array.isArray(formData.software) ? formData.software : formData.software.split(',').map((s: string) => s.trim())) : []}
+                  onChange={v => updateFormData({ software: Array.isArray(v) ? v.join(', ') : v })}
+                  placeholder="Software auswählen..."
                 />
+                <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Verfügbare CAT-Tools und andere relevante Fachsoftware</p>
               </div>
             </div>
           </div>

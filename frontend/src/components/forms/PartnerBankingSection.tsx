@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { IMaskInput } from 'react-imask';
 import Input from '../common/Input';
+import SearchableSelect from '../common/SearchableSelect';
 import type { PartnerFormData } from './partnerTypes';
 
 interface PartnerBankingSectionProps {
@@ -95,14 +96,18 @@ const PartnerBankingSection = ({
             </div>
 
             <div className="col-span-12 md:col-span-4">
-                <Input
-                    label="Zahlungsziel (Tage)"
-                    type="number"
-                    min={0}
-                    value={formData.paymentTerms}
-                    onChange={e => updateFormData({ paymentTerms: e.target.value })}
-                    className="font-medium"
-                    helperText="Frist in Tagen ab Rechnungserhalt"
+                <SearchableSelect
+                    label="Zahlungsziel"
+                    options={[
+                        { value: '0', label: 'Sofort zahlbar' },
+                        { value: '7', label: '7 Tage' },
+                        { value: '14', label: '14 Tage' },
+                        { value: '30', label: '30 Tage' },
+                        { value: '45', label: '45 Tage' },
+                        { value: '60', label: '60 Tage' }
+                    ]}
+                    value={String(formData.paymentTerms)}
+                    onChange={val => updateFormData({ paymentTerms: val })}
                 />
             </div>
             <div className="col-span-12 md:col-span-8">

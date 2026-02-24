@@ -9,22 +9,39 @@ import PhoneInput from '../common/PhoneInput';
 import { IMaskInput } from 'react-imask';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { Button } from '../ui/button';
 
 const legalFormOptions = [
-    { value: 'Einzelunternehmen', label: 'Einzelunternehmen' },
-    { value: 'GbR', label: 'GbR (Gesellschaft bürgerlichen Rechts)' },
-    { value: 'GmbH', label: 'GmbH (Gesellschaft mit beschränkter Haftung)' },
-    { value: 'GmbH & Co. KG', label: 'GmbH & Co. KG' },
-    { value: 'UG (haftungsbeschränkt)', label: 'UG (haftungsbeschränkt)' },
-    { value: 'AG', label: 'AG (Aktiengesellschaft)' },
-    { value: 'KG', label: 'KG (Kommanditgesellschaft)' },
-    { value: 'OHG', label: 'OHG (Offene Handelsgesellschaft)' },
-    { value: 'e.K.', label: 'e.K. (eingetragener Kaufmann / -frau)' },
-    { value: 'PartG', label: 'PartG (Partnerschaftsgesellschaft)' },
-    { value: 'eG', label: 'eG (eingetragene Genossenschaft)' },
-    { value: 'e.V.', label: 'e.V. (eingetragener Verein)' },
-    { value: 'Stiftung', label: 'Stiftung' },
-    { value: 'Körperschaft d.ö.R.', label: 'Körperschaft d.ö.R.' }
+    { value: 'Einzelunternehmen', label: 'Einzelunternehmen', group: 'Personengesellschaften' },
+    { value: 'GbR', label: 'GbR (Gesellschaft bürgerlichen Rechts)', group: 'Personengesellschaften' },
+    { value: 'GmbH', label: 'GmbH (Gesellschaft mit beschränkter Haftung)', group: 'Kapitalgesellschaften' },
+    { value: 'GmbH & Co. KG', label: 'GmbH & Co. KG', group: 'Kapitalgesellschaften' },
+    { value: 'UG (haftungsbeschränkt)', label: 'UG (haftungsbeschränkt)', group: 'Kapitalgesellschaften' },
+    { value: 'AG', label: 'AG (Aktiengesellschaft)', group: 'Kapitalgesellschaften' },
+    { value: 'KG', label: 'KG (Kommanditgesellschaft)', group: 'Personengesellschaften' },
+    { value: 'OHG', label: 'OHG (Offene Handelsgesellschaft)', group: 'Personengesellschaften' },
+    { value: 'e.K.', label: 'e.K. (eingetragener Kaufmann / -frau)', group: 'Personengesellschaften' },
+    { value: 'PartG', label: 'PartG (Partnerschaftsgesellschaft)', group: 'Personengesellschaften' },
+    { value: 'PartG mbB', label: 'PartG mbB (mit beschr. Berufshaftung)', group: 'Personengesellschaften' },
+    { value: 'eG', label: 'eG (eingetragene Genossenschaft)', group: 'Sonstige' },
+    { value: 'e.V.', label: 'e.V. (eingetragener Verein)', group: 'Sonstige' },
+    { value: 'gGmbH', label: 'gGmbH (gemeinnützige GmbH)', group: 'Sonstige' },
+    { value: 'Stiftung', label: 'Stiftung', group: 'Sonstige' },
+    { value: 'Körperschaft d.ö.R.', label: 'Körperschaft d.ö.R.', group: 'Öffentlich-rechtlich' },
+    { value: 'Anstalt d.ö.R.', label: 'Anstalt d.ö.R.', group: 'Öffentlich-rechtlich' },
+    { value: 'Stiftung d.ö.R.', label: 'Stiftung d.ö.R.', group: 'Öffentlich-rechtlich' },
+    { value: 'SE', label: 'SE (Societas Europaea)', group: 'International' },
+    { value: 'Ltd.', label: 'Ltd. (Limited)', group: 'International' },
+    { value: 'S.A.', label: 'S.A. / S.p.A.', group: 'International' },
+    { value: 'S.r.l.', label: 'S.r.l.', group: 'International' }
+];
+
+const salutationOptions = [
+    { value: 'Herr', label: 'Herr' },
+    { value: 'Frau', label: 'Frau' },
+    { value: 'Divers', label: 'Divers' },
+    { value: 'Firma', label: 'Firma' },
+    { value: 'Behörde', label: 'Behörde' }
 ];
 
 interface CustomerFormData {
@@ -486,18 +503,13 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 )}
 
                                 <div className="col-span-12 md:col-span-2">
-                                    <Input
-                                        isSelect
+                                    <SearchableSelect
                                         label="Anrede"
-                                        name="salutation"
+                                        options={salutationOptions}
                                         value={formData.salutation}
-                                        onChange={handleChange}
-                                        helperText="Formelle Anrede"
-                                    >
-                                        <option value="Herr">Herr</option>
-                                        <option value="Frau">Frau</option>
-                                        <option value="Divers">Divers</option>
-                                    </Input>
+                                        onChange={(val) => setFormData(prev => ({ ...prev, salutation: val }))}
+                                        placeholder="Wählen..."
+                                    />
                                 </div>
                                 <div className="col-span-12 md:col-span-4">
                                     <Input
@@ -719,8 +731,9 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 }}
                                                 onBlur={handleIbanBlur}
                                                 className={clsx(
-                                                    'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                                    'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
+                                                    "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-slate-900 transition-all shadow-desktop-inset",
+                                                    "border border-slate-200 hover:border-slate-300 placeholder:text-slate-400",
+                                                    "focus:outline-none focus:ring-1 focus:ring-brand-600/5 focus:border-brand-600",
                                                     errors.iban && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
                                                 )}
                                             />
@@ -753,7 +766,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 </div>
                                 <div className="col-span-12 sm:col-span-4">
                                     <div className="flex flex-col">
-                                        <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">BIC</label>
+                                        <label className="block mb-1 ml-0.5">BIC</label>
                                         <IMaskInput
                                             mask="aaaaaa aa [aaa]"
                                             definitions={{ 'a': /[a-zA-Z0-9]/ }}
@@ -794,19 +807,23 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
                     {/* Footer */}
                     <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
-                        <button
+                        <Button
+                            variant="outline"
+                            size="sm"
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-2 rounded border border-slate-300 text-slate-600 text-xs font-semibold hover:bg-white transition-all shadow-sm"
+                            className="font-bold border-slate-300"
                         >
                             Abbrechen
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="sm"
                             type="submit"
-                            className="px-8 py-2 bg-slate-900 text-white rounded text-xs font-semibold shadow-sm hover:bg-slate-800 transition-all"
+                            className="font-bold shadow-md min-w-[120px]"
                         >
-                            {initialData ? 'Änderungen speichern' : 'Kunde anlegen'}
-                        </button>
+                            {initialData ? 'Speichern' : 'Kunden anlegen'}
+                        </Button>
                     </div>
                 </form >
             </div >

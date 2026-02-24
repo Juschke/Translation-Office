@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface MailTabButtonProps {
@@ -13,14 +13,14 @@ const MailTabButton = ({ active, onClick, icon, label }: MailTabButtonProps) => 
         <TooltipTrigger asChild>
             <button
                 onClick={onClick}
-                className={clsx(
-                    'w-full flex items-center gap-3 px-4 py-3 text-xs transition-all',
+                className={cn(
+                    'w-full flex items-center gap-3 px-4 py-3 text-xs transition-all border-r-2',
                     active
-                        ? 'bg-slate-100 text-slate-800 font-semibold border-r-4 border-slate-900'
-                        : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600 font-medium',
+                        ? 'bg-brand-50 text-brand-900 font-bold border-brand-600'
+                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-medium border-transparent',
                 )}
             >
-                <span className={clsx('text-base', active ? 'text-slate-700' : '')}>{icon}</span>
+                <span className={cn('text-base shrink-0', active ? 'text-brand-700' : 'text-slate-400')}>{icon}</span>
                 <span className="hidden md:inline">{label}</span>
             </button>
         </TooltipTrigger>

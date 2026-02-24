@@ -1,12 +1,11 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import clsx from 'clsx';
+import { useState, useMemo, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    FaPlus, FaCheck, FaCheckCircle, FaHistory,
-    FaFileExcel, FaFileCsv, FaFilePdf, FaDownload,
-    FaFileInvoiceDollar, FaTrashRestore, FaFilter, FaPaperPlane,
+    FaCheck, FaCheckCircle, FaHistory,
+    FaDownload,
+    FaFileInvoiceDollar, FaTrashRestore, FaPaperPlane,
 } from 'react-icons/fa';
 import { buildInvoiceColumns } from './invoiceColumns';
 
@@ -20,6 +19,12 @@ import { invoiceService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { BulkActions } from '../components/common/BulkActions';
+import type { MenuProps } from 'antd';
+import { Space, Dropdown, Typography, Card } from 'antd';
+import { Button } from '../components/ui/button';
+import { DownOutlined, FilterOutlined, PlusOutlined, FileExcelOutlined, FilePdfOutlined, FileTextOutlined } from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 
 
@@ -27,29 +32,18 @@ const Invoices = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'pending');
-    useEffect(() => {
-        setSelectedInvoices([]);
-    }, [statusFilter]);
-    const [isExportOpen, setIsExportOpen] = useState(false);
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
     const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
     const [downloadDropdownOpen, setDownloadDropdownOpen] = useState<number | null>(null);
+    useEffect(() => {
+        setSelectedInvoices([]);
+    }, [statusFilter]);
     const [showTrash, setShowTrash] = useState(false);
     const [showArchive, setShowArchive] = useState(false);
-    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
-
-    const exportRef = useRef<HTMLDivElement>(null);
-    const viewSettingsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
-                setIsExportOpen(false);
-            }
-            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
-                setIsViewSettingsOpen(false);
-            }
             if (!(event.target as Element).closest('.invoice-download-dropdown')) {
                 setDownloadDropdownOpen(null);
             }
@@ -234,7 +228,6 @@ const Invoices = () => {
                 link.click();
                 link.remove();
                 window.URL.revokeObjectURL(url);
-                setIsExportOpen(false);
                 toast.success('DATEV Export erfolgreich erstellt.');
             } catch (error) {
                 console.error('DATEV Export failure:', error);
@@ -257,8 +250,22 @@ const Invoices = () => {
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         triggerBlobDownload(blob, `Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
-        setIsExportOpen(false);
     };
+
+    const exportItems: MenuProps['items'] = [
+        { key: 'xlsx', label: 'Excel (.xlsx)', icon: <FileExcelOutlined className="text-emerald-600" />, onClick: () => handleExport('xlsx') },
+        { key: 'csv', label: 'CSV DATEV', icon: <FileTextOutlined className="text-blue-600" />, onClick: () => handleExport('csv') },
+        { key: 'pdf', label: 'PDF Sammel-Report', icon: <FilePdfOutlined className="text-red-600" />, onClick: () => handleExport('pdf') },
+    ];
+
+    const actions_export = (
+        <Dropdown menu={{ items: exportItems }} placement="bottomRight">
+            <Button className="h-9 px-4">
+                <FaDownload className="mr-2" />
+                Export <DownOutlined style={{ fontSize: '10px' }} />
+            </Button>
+        </Dropdown>
+    );
 
     const handlePrint = async (inv: any) => {
         try {
@@ -372,65 +379,42 @@ const Invoices = () => {
         setIsConfirmOpen,
     });
 
-    const tabs = (
-        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
-            <button onClick={() => setStatusFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Alle</button>
-            <button onClick={() => setStatusFilter('pending')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Offen</button>
-            <button onClick={() => setStatusFilter('paid')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'paid' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bezahlt</button>
-            <button onClick={() => setStatusFilter('overdue')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Überfällig</button>
-            <button onClick={() => setStatusFilter('reminders')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Mahnungen</button>
-            <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
-            <button onClick={() => setStatusFilter('credit_notes')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Gutschriften</button>
+    const views = [
+        { label: 'Alle Rechnungen', value: 'all' },
+        { label: 'Offene Rechnungen', value: 'pending' },
+        { label: 'Bezahlte Rechnungen', value: 'paid' },
+        { label: 'Überfällig', value: 'overdue' },
+        { label: 'Mahnungen', value: 'reminders' },
+        { label: 'Storniert', value: 'cancelled' },
+        { label: 'Gutschriften', value: 'credit_notes' },
+        ...(showTrash || statusFilter === 'trash' ? [{ label: 'Papierkorb', value: 'trash' }] : []),
+        ...(showArchive || statusFilter === 'archive' ? [{ label: 'Archiv', value: 'archive' }] : [])
+    ];
 
-            {(showTrash || statusFilter === 'trash') && (
-                <button onClick={() => setStatusFilter('trash')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'trash' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
-            )}
-            {(showArchive || statusFilter === 'archive') && (
-                <button onClick={() => setStatusFilter('archive')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
-            )}
-        </div>
-    );
-
-    const actions = (
-        <div className="relative group z-50" ref={exportRef}>
-            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
-                <FaDownload /> Export
-            </button>
-            {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-sm border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
-                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV DATEV</button>
-                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Sammel-Report</button>
-                </div>
-            )}
-        </div>
-    );
 
     const extraControls = (
-        <div className="relative" ref={viewSettingsRef}>
-            <button
-                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
-                title="Ansichtseinstellungen"
-            >
-                <FaFilter className="text-sm" />
-            </button>
-            {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
+        <Dropdown
+            dropdownRender={() => (
+                <Card size="small" className="w-64">
+                    <Text strong type="secondary" className="block mb-2 uppercase tracking-wider text-[10px]">Ansicht anpassen</Text>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Text>Papierkorb anzeigen</Text>
                             <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
                         </div>
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
+                        <div className="flex items-center justify-between">
+                            <Text>Archiv anzeigen</Text>
                             <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
                         </div>
                     </div>
-                </div>
+                </Card>
             )}
-        </div>
+            trigger={['click']}
+        >
+            <Button size="icon">
+                <FilterOutlined />
+            </Button>
+        </Dropdown>
     );
 
 
@@ -466,35 +450,28 @@ const Invoices = () => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
+        <div className="flex flex-col gap-6 fade-in pb-10">
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Rechnungen</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.</p>
+                    <Title level={4} style={{ margin: 0 }}>Rechnungen</Title>
+                    <Text type="secondary">Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.</Text>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                    <button
+                <Space>
+                    <Button
+                        variant={statusFilter === 'credit_notes' ? "danger" : "primary"}
                         onClick={() => setIsNewInvoiceOpen(true)}
-                        className={clsx(
-                            "text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition",
-                            statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-slate-900 hover:bg-slate-800"
-                        )}
+                        className="h-9 px-6 font-bold"
                     >
-                        <FaPlus className="text-xs" />
-                        <span className="hidden sm:inline">
-                            {statusFilter === 'credit_notes' ? 'Neue Gutschrift' : 'Neue Rechnung'}
-                        </span>
-                        <span className="inline sm:hidden">
-                            Neu
-                        </span>
-                    </button>
-                </div>
+                        <PlusOutlined className="mr-2" />
+                        {statusFilter === 'credit_notes' ? 'Neue Gutschrift' : 'Neue Rechnung'}
+                    </Button>
+                </Space>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Offener Betrag" value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={`${overdueCount} überfällig`} />
-                <KPICard label="Bezahlt (Gesamt)" value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={`${paidCount} Transaktionen`} />
-                <KPICard label="Mahnungen" value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue="Fällig / Aktiv" />
+                <KPICard label="Bezahlt (Gesamt)" value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle />} subValue={`${paidCount} Transaktionen`} />
+                <KPICard label="Mahnungen" value={`${reminderCount}`} icon={<FaPaperPlane />} subValue="Fällig / Aktiv" />
                 <KPICard label="Fremdkosten" value="0,00 €" icon={<FaHistory />} subValue="Diesen Monat" />
             </div>
 
@@ -561,8 +538,10 @@ const Invoices = () => {
                     pageSize={10}
                     searchPlaceholder="Suchen nach Nr., Kunde oder Projekt..."
                     searchFields={['invoice_number', 'customer.company_name', 'project.project_name']}
-                    actions={actions}
-                    tabs={tabs}
+                    actions={actions_export}
+                    onViewChange={(v) => setStatusFilter(v)}
+                    views={views}
+                    currentView={statusFilter}
                     extraControls={extraControls}
                     onRowClick={(inv: any) => setPreviewInvoice(inv)}
                 />

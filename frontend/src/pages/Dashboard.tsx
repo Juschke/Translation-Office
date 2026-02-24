@@ -6,6 +6,9 @@ import NewProjectModal from '../components/modals/NewProjectModal';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import NewInvoiceModal from '../components/modals/NewInvoiceModal';
+import { Space, Typography, Table, Tag, Card } from 'antd';
+import { PlusOutlined, UserAddOutlined, TeamOutlined } from '@ant-design/icons';
+import { Button } from '../components/ui/button';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +16,8 @@ import { dashboardService, projectService, invoiceService, customerService, part
 import RecentProjects from '../components/dashboard/RecentProjects';
 import DashboardSkeleton from '../components/common/DashboardSkeleton';
 import KPICard from '../components/common/KPICard';
+
+const { Title, Text } = Typography;
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -33,8 +38,6 @@ const Dashboard = () => {
         queryKey: ['projects'],
         queryFn: () => projectService.getAll()
     });
-
-
 
     // Mutations
     const createProjectMutation = useMutation({
@@ -95,9 +98,7 @@ const Dashboard = () => {
         unread_emails: 0
     };
 
-
-
-    const languageRevenue = dashboardData?.language_revenue || [];
+    const languageRevenue = (dashboardData?.language_revenue || []) as { label: string, value: number }[];
     const kpiSummary = [
         { label: 'Offene Projekte', value: stats.open_projects, trend: stats.open_projects_trend?.toString() || '0', color: 'text-slate-900' },
         { label: 'Fällige Tasks', value: stats.deadlines_today, trend: stats.deadlines_trend?.toString() || '0', color: stats.deadlines_today > 0 ? 'text-red-500' : 'text-slate-900' },
@@ -111,33 +112,39 @@ const Dashboard = () => {
 
     return (
         <div className="flex flex-col gap-6 fade-in pb-10">
-            {/* Minimalist Professional Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-end gap-6 pb-6">
+            {/* Skeuomorphic Premium Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pb-6 border-b border-slate-200/60">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight">Dashboard</h1>
-                    <p className="text-slate-500 text-sm mt-0.5 hidden sm:block">Übersicht & Operative Steuerung</p>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800, letterSpacing: '-0.02em' }}>Dashboard</Title>
+                    <Text type="secondary" style={{ fontSize: '14px' }}>Herzlich willkommen zurück! Hier ist Ihre heutige Übersicht.</Text>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                        onClick={() => navigate('/projects', { state: { openNewModal: true } })}
-                        className="bg-slate-900 text-white px-4 h-9 rounded-sm text-sm font-medium hover:bg-slate-800 transition"
+                <Space size="middle">
+                    <Button
+                        variant="primary"
+                        onClick={() => setIsNewProjectModalOpen(true)}
+                        className="h-11 px-6 font-bold shadow-lg"
                     >
+                        <PlusOutlined className="mr-2" />
                         Neues Projekt
-                    </button>
-                    <button
-                        onClick={() => navigate('/customers', { state: { openNewModal: true } })}
-                        className="bg-white border border-slate-200 text-slate-700 px-4 h-9 rounded-sm text-sm font-medium hover:bg-slate-50 transition"
+                    </Button>
+                    <Button
+                        variant="dark"
+                        onClick={() => setIsNewCustomerModalOpen(true)}
+                        className="h-11 px-6 font-bold"
                     >
-                        Kunde anlegen
-                    </button>
-                    <button
-                        onClick={() => navigate('/partners', { state: { openNewModal: true } })}
-                        className="bg-white border border-slate-200 text-slate-700 px-4 h-9 rounded-sm text-sm font-medium hover:bg-slate-50 transition"
+                        <UserAddOutlined className="mr-2" />
+                        Kunde
+                    </Button>
+                    <Button
+                        variant="dark"
+                        onClick={() => setIsNewPartnerModalOpen(true)}
+                        className="h-11 px-6 font-bold"
                     >
-                        Partner anlegen
-                    </button>
-                </div>
+                        <TeamOutlined className="mr-2" />
+                        Partner
+                    </Button>
+                </Space>
             </div>
 
             {/* Dashboard Layout Grid */}
@@ -145,119 +152,126 @@ const Dashboard = () => {
 
                 {/* Main Content (3/4 width) */}
                 <div className="lg:col-span-3 space-y-6">
-                    {/* Primary KPI Cards */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                        <KPICard
-                            label="Offene Projekte"
-                            value={stats.open_projects}
-                            icon={<FaLayerGroup />}
-                            onClick={() => navigate('/projects?filter=in_progress')}
-                        />
-                        <KPICard
-                            label="Deadlines (Heute)"
-                            value={stats.deadlines_today}
-                            icon={<FaClock />}
-                            iconColor="text-red-600"
-                            subValue={stats.deadlines_today > 0 ? "Prüfung erforderlich" : "Alles im Plan"}
-                            onClick={() => navigate('/projects')}
-                        />
-                        <KPICard
-                            label="Umsatz"
-                            value={stats.monthly_revenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                            icon={<FaEuroSign />}
-                            iconColor="text-green-600"
-                            subValue={`${stats.revenue_trend >= 0 ? '+' : ''}${stats.revenue_trend}% vs. Vorperiode`}
-                            onClick={() => navigate('/reports')}
-                        />
-                        <KPICard
-                            label="Ungelesene Mails"
-                            value={stats.unread_emails}
-                            icon={<FaEnvelope />}
-                            iconColor={stats.unread_emails > 0 ? "text-slate-700" : "text-slate-400"}
-                            subValue={stats.unread_emails > 0 ? `${stats.unread_emails} neue Nachrichten` : "Keine neuen Mails"}
-                            onClick={() => navigate('/inbox')}
-                        />
-                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 items-stretch">
+                        {/* Primary KPI Cards (2/5 width) */}
+                        <div className="xl:col-span-2 grid grid-cols-2 gap-3 sm:gap-4">
+                            <KPICard
+                                label="Offene Projekte"
+                                value={stats.open_projects}
+                                icon={<FaLayerGroup />}
+                                onClick={() => navigate('/projects?filter=in_progress')}
+                            />
+                            <KPICard
+                                label="Deadlines (Heute)"
+                                value={stats.deadlines_today}
+                                icon={<FaClock />}
+                                subValue={stats.deadlines_today > 0 ? "Prüfung erforderlich" : "Alles im Plan"}
+                                onClick={() => navigate('/projects')}
+                                iconColor={stats.deadlines_today > 0 ? "text-red-500" : "text-slate-400"}
+                            />
+                            <KPICard
+                                label="Umsatz"
+                                value={stats.monthly_revenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                                icon={<FaEuroSign />}
+                                subValue={`${stats.revenue_trend >= 0 ? '+' : ''}${stats.revenue_trend}% vs. Vorperiode`}
+                                onClick={() => navigate('/reports')}
+                            />
+                            <KPICard
+                                label="Ungelesene Mails"
+                                value={stats.unread_emails}
+                                icon={<FaEnvelope />}
+                                subValue={stats.unread_emails > 0 ? `${stats.unread_emails} neue Nachrichten` : "Keine neuen Mails"}
+                                onClick={() => navigate('/inbox')}
+                                iconColor={stats.unread_emails > 0 ? "text-teal-600" : "text-slate-400"}
+                            />
+                        </div>
 
-                    {/* Business Analysis Table */}
-                    <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
-                        <div className="px-5 py-4 border-b border-slate-200 flex justify-between items-center">
-                            <h3 className="text-sm font-medium text-slate-900">
-                                Umsatz-Performance nach Sprache
-                            </h3>
-                            <span className="text-xs text-slate-500 tabular-nums">Zeitraum: lfd. Monat</span>
-                        </div>
-                        <div className="p-0 overflow-x-auto">
-                            <table className="w-full text-left min-w-[500px]">
-                                <thead className="text-sm font-medium text-slate-500">
-                                    <tr>
-                                        <th className="px-5 py-3 border-b border-slate-200">Sprache</th>
-                                        <th className="px-5 py-3 border-b border-slate-200 text-right">Umsatz (€)</th>
-                                        <th className="px-5 py-3 border-b border-slate-200 text-right">Anteil (%)</th>
-                                        <th className="px-5 py-3 border-b border-slate-200 w-48">Tendenz</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {languageRevenue.map((item: any, i: number) => {
-                                        const share = stats.monthly_revenue > 0 ? (item.value / stats.monthly_revenue) * 100 : 0;
-                                        return (
-                                            <tr key={i} className="hover:bg-transparent transition-colors">
-                                                <td className="px-5 py-3 text-sm font-medium text-slate-900">{item.label}</td>
-                                                <td className="px-5 py-3 text-sm text-slate-900 text-right tabular-nums">
-                                                    {item.value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                                                </td>
-                                                <td className="px-5 py-3 text-sm text-slate-500 text-right tabular-nums">
-                                                    {share.toFixed(1)}%
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="bg-slate-900 h-full transition-all duration-700"
-                                                            style={{ width: `${Math.min(100, share)}%` }}
-                                                        ></div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                    {languageRevenue.length === 0 && (
-                                        <tr>
-                                            <td colSpan={4} className="px-5 py-8 text-center text-slate-500 text-sm">Keine Daten für diesen Zeitraum</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        {/* Business Analysis Table (3/5 width) */}
+                        <Card
+                            title={<span className="font-bold text-slate-800">Umsatz-Performance</span>}
+                            extra={<Tag color="default" className="font-bold px-3 border-slate-200">lfd. Monat</Tag>}
+                            className="xl:col-span-3 skeuo-card border-none overflow-hidden flex flex-col h-full shadow-sm"
+                            styles={{ body: { padding: 0, flex: 1, overflow: 'auto' } }}
+                        >
+                            <Table
+                                dataSource={languageRevenue}
+                                pagination={false}
+                                className="skeuo-table"
+                                rowKey="label"
+                                columns={[
+                                    {
+                                        title: 'Sprache',
+                                        dataIndex: 'label',
+                                        key: 'label',
+                                        render: (text) => <span className="font-bold text-slate-700 text-xs">{text}</span>
+                                    },
+                                    {
+                                        title: 'Umsatz (€)',
+                                        dataIndex: 'value',
+                                        key: 'value',
+                                        align: 'right',
+                                        render: (value: number) => <span className="tabular-nums font-semibold text-xs">{value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                    },
+                                    {
+                                        title: 'Share',
+                                        key: 'share',
+                                        align: 'right',
+                                        render: (_, record) => {
+                                            const share = stats.monthly_revenue > 0 ? (record.value / stats.monthly_revenue) * 100 : 0;
+                                            return <span className="tabular-nums text-slate-500 text-[10px] font-medium">{share.toFixed(1)}%</span>;
+                                        }
+                                    },
+                                    {
+                                        title: '',
+                                        key: 'trend',
+                                        width: 100,
+                                        render: (_, record) => {
+                                            const share = stats.monthly_revenue > 0 ? (record.value / stats.monthly_revenue) * 100 : 0;
+                                            return (
+                                                <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="bg-brand-900 h-full transition-all duration-700"
+                                                        style={{ width: `${Math.min(100, share * 2)}%` }}
+                                                    ></div>
+                                                </div>
+                                            );
+                                        }
+                                    }
+                                ]}
+                            />
+                        </Card>
                     </div>
                 </div>
 
                 {/* Sidebar: KPI Übersicht (1/4 width) */}
-                <div className="bg-white border border-slate-200 rounded-sm flex flex-col h-fit">
-                    <div className="px-5 py-4 border-b border-slate-200">
-                        <h3 className="text-sm font-medium text-slate-900">KPI Übersicht</h3>
-                    </div>
-                    <div className="flex-1 divide-y divide-slate-100">
-                        {kpiSummary.map((item, idx) => (
-                            <div key={idx} className="px-5 py-4 flex flex-col gap-1">
-                                <div className="flex justify-between items-baseline">
-                                    <span className="text-sm text-slate-500">{item.label}</span>
-                                    {item.trend !== '0' && (
-                                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded-sm ${item.trend.startsWith('-') ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-600'}`}>
-                                            {item.trend.startsWith('-') || item.trend.startsWith('+') ? item.trend : `+${item.trend}`}
-                                        </span>
-                                    )}
+                <div className="lg:col-span-1">
+                    <Card
+                        title={<span className="font-bold text-slate-800">KPI Übersicht</span>}
+                        className="skeuo-card border-none h-full"
+                    >
+                        <div className="divide-y divide-slate-100 -mx-6 -my-4">
+                            {kpiSummary.map((item, idx) => (
+                                <div key={idx} className="px-6 py-5 flex flex-col gap-1 hover:bg-slate-50 transition-colors">
+                                    <div className="flex justify-between items-center">
+                                        <Text type="secondary" className="font-bold uppercase text-[11px] tracking-wider">{item.label}</Text>
+                                        {item.trend !== '0' && (
+                                            <Tag color={item.trend.startsWith('-') ? 'error' : 'success'} className="rounded-full font-bold border-none m-0">
+                                                {item.trend.startsWith('-') || item.trend.startsWith('+') ? item.trend : `+${item.trend}`}
+                                            </Tag>
+                                        )}
+                                    </div>
+                                    <Title level={3} style={{ margin: 0, marginTop: 4 }} className={`tabular-nums ${item.color}`}>
+                                        {item.value}
+                                    </Title>
                                 </div>
-                                <span className={`text-2xl font-semibold tabular-nums ${item.color}`}>{item.value}</span>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    </Card>
                 </div>
             </div>
 
-
-
-            {/* Bottom Section: Recent Projects (Symmetrical full width or 2-col) */}
-            <div className="mb-4">
+            {/* Recent Projects */}
+            <div className="mt-4">
                 <RecentProjects projects={projectsData || []} />
             </div>
 

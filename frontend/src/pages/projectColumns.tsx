@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
 import { FaArrowRight, FaEdit, FaTrash, FaEye, FaEnvelope, FaTrashRestore } from 'react-icons/fa';
@@ -163,6 +163,8 @@ export function buildProjectColumns({
                     </div>
                 );
             },
+            sortable: true,
+            sortKey: 'partner_id',
         },
         {
             id: 'languages',
@@ -207,6 +209,8 @@ export function buildProjectColumns({
                     {parseFloat(p.down_payment || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                 </span>
             ),
+            sortable: true,
+            sortKey: 'down_payment',
             align: 'right' as const,
         },
         {
@@ -217,6 +221,8 @@ export function buildProjectColumns({
                     {parseFloat(p.price_total || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                 </span>
             ),
+            sortable: true,
+            sortKey: 'price_total',
             align: 'right' as const,
         },
         {

@@ -1,12 +1,20 @@
 import clsx from 'clsx';
 import { FaStar } from 'react-icons/fa';
 import Input from '../common/Input';
+import SearchableSelect from '../common/SearchableSelect';
 import type { PartnerFormData } from './partnerTypes';
 
 interface PartnerInternalSectionProps {
     formData: PartnerFormData;
     updateFormData: (patch: Partial<PartnerFormData>) => void;
 }
+
+const statusOptions = [
+    { value: 'available', label: 'Verfügbar / Aktiv' },
+    { value: 'busy', label: 'Derzeit ausgelastet' },
+    { value: 'vacation', label: 'Urlaub / Abwesend' },
+    { value: 'blacklisted', label: 'Gesperrt / Blacklist' }
+];
 
 const PartnerInternalSection = ({ formData, updateFormData }: PartnerInternalSectionProps) => (
     <div className="space-y-6">
@@ -17,19 +25,12 @@ const PartnerInternalSection = ({ formData, updateFormData }: PartnerInternalSec
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-                <Input
-                    isSelect
+                <SearchableSelect
                     label="Basis-Status"
-                    className="font-medium"
+                    options={statusOptions}
                     value={formData.status}
-                    onChange={e => updateFormData({ status: e.target.value })}
-                    helperText="Bestimmt die Sichtbarkeit in Projekten"
-                >
-                    <option value="available">Verfügbar / Aktiv</option>
-                    <option value="busy">Derzeit ausgelastet</option>
-                    <option value="vacation">Urlaub / Abwesend</option>
-                    <option value="blacklisted">Gesperrt / Blacklist</option>
-                </Input>
+                    onChange={val => updateFormData({ status: val })}
+                />
             </div>
             <div className="space-y-4">
                 <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Bewertung / Ranking</label>

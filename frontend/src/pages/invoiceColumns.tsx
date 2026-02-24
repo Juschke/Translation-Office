@@ -98,6 +98,7 @@ export function buildInvoiceColumns({
                 );
             },
             sortable: true,
+            sortKey: 'snapshot_customer_name',
         },
         {
             id: 'project',
@@ -106,6 +107,7 @@ export function buildInvoiceColumns({
                 <span className="text-xs font-medium text-slate-500">{inv.snapshot_project_name || inv.project?.project_name || inv.snapshot_project_number || ''}</span>
             ),
             sortable: true,
+            sortKey: 'snapshot_project_name',
         },
         {
             id: 'due_date',

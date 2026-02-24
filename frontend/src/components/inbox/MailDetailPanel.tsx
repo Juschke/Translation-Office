@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify';
 import { FaTimes, FaReply, FaForward, FaTrashAlt, FaPaperclip, FaFileAlt } from 'react-icons/fa';
 import { Button, ScrollArea, Separator } from '../ui';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface MailDetailPanelProps {
     mail: any;
@@ -13,23 +14,30 @@ interface MailDetailPanelProps {
 const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDetailPanelProps) => {
     if (!mail) return null;
 
+    const initial = mail.from.charAt(0).toUpperCase();
+
     return (
         <div className="h-full flex flex-col bg-white overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
             {/* Header / Toolbar */}
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
                 <div className="flex items-center gap-1">
-                    <button
-                        onClick={onClose}
-                        className="md:hidden p-2 -ml-2 text-slate-400 hover:text-slate-900 transition"
-                    >
-                        <FaTimes size={16} />
-                    </button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={onClose}
+                                className="md:hidden p-2 -ml-2 text-slate-400 hover:text-brand-900 transition rounded-sm"
+                            >
+                                <FaTimes size={16} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Schließen</TooltipContent>
+                    </Tooltip>
                     <div className="flex items-center gap-1">
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onReply(mail)}
-                            className="h-8 text-[10px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 gap-2 uppercase tracking-tight"
+                            className="h-8 text-[11px] font-bold text-slate-600 hover:bg-brand-50 hover:text-brand-900 gap-2 uppercase tracking-wider"
                         >
                             <FaReply size={10} /> Antworten
                         </Button>
@@ -37,28 +45,36 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                             variant="ghost"
                             size="sm"
                             onClick={() => onForward(mail)}
-                            className="h-8 text-[10px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 gap-2 uppercase tracking-tight"
+                            className="h-8 text-[11px] font-bold text-slate-600 hover:bg-brand-50 hover:text-brand-900 gap-2 uppercase tracking-wider"
                         >
                             <FaForward size={10} /> Weiterleiten
                         </Button>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => onDelete(mail.id)}
-                        className="p-2 text-slate-300 hover:text-red-500 transition rounded-sm"
-                        title="Löschen"
-                    >
-                        <FaTrashAlt size={14} />
-                    </button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={() => onDelete(mail.id)}
+                                className="p-2 text-slate-300 hover:text-red-500 transition rounded-sm"
+                            >
+                                <FaTrashAlt size={14} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Löschen</TooltipContent>
+                    </Tooltip>
                     <div className="hidden md:block w-[1px] h-4 bg-slate-100 mx-2" />
-                    <button
-                        onClick={onClose}
-                        className="hidden md:block p-2 text-slate-300 hover:text-slate-900 transition rounded-sm"
-                        title="Schließen"
-                    >
-                        <FaTimes size={18} />
-                    </button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={onClose}
+                                className="hidden md:block p-2 text-slate-300 hover:text-brand-900 transition rounded-sm"
+                            >
+                                <FaTimes size={18} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Schließen</TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
 
@@ -71,8 +87,8 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                         </h2>
 
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-1 shadow-sm">
-                                {mail.from.charAt(0).toUpperCase()}
+                            <div className="w-10 h-10 rounded-sm bg-brand-900 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-1 shadow-sm">
+                                {initial}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-1">
@@ -101,7 +117,7 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                     {/* Body */}
                     <div className="email-body-container">
                         <div
-                            className="email-body-content text-slate-800 text-[14px] leading-[1.8] prose prose-slate max-w-none font-medium selection:bg-slate-900 selection:text-white"
+                            className="email-body-content text-slate-800 text-[14px] leading-[1.8] prose prose-slate max-w-none font-medium selection:bg-brand-900 selection:text-white"
                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(mail.body ?? '') }}
                         />
                     </div>
@@ -116,13 +132,13 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                                 {mail.attachments.map((at: any, i: number) => (
                                     <div
                                         key={i}
-                                        className="flex items-center gap-4 px-4 py-4 bg-slate-50 border border-slate-100 rounded-sm group hover:border-slate-900 hover:bg-white transition-all cursor-default shadow-sm hover:shadow-md"
+                                        className="flex items-center gap-4 px-4 py-4 bg-slate-50 border border-slate-100 rounded-sm group hover:border-brand-900 hover:bg-white transition-all cursor-default shadow-sm hover:shadow-md"
                                     >
-                                        <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200 shrink-0 group-hover:border-slate-900 transition-colors">
-                                            <FaFileAlt className="text-slate-400 text-sm group-hover:text-slate-900" />
+                                        <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200 shrink-0 group-hover:border-brand-900 transition-colors">
+                                            <FaFileAlt className="text-slate-400 text-sm group-hover:text-brand-900" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-[11px] font-bold text-slate-700 truncate group-hover:text-slate-900 transition-colors mb-0.5">
+                                            <div className="text-[11px] font-bold text-slate-700 truncate group-hover:text-brand-900 transition-colors mb-0.5">
                                                 {at.name}
                                             </div>
                                             <div className="text-[9px] text-slate-400 font-black tracking-widest uppercase">

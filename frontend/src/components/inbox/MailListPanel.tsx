@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+import { cn } from '@/lib/utils';
 import { FaPaperclip, FaTrashAlt } from 'react-icons/fa';
 import Checkbox from '../common/Checkbox';
 
@@ -38,14 +38,14 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                         <div
                             key={mail.id}
                             onClick={() => onView(mail)}
-                            className={clsx(
-                                'px-3 py-2.5 hover:bg-slate-50 transition-colors cursor-pointer relative group',
-                                !mail.read && folder === 'inbox' ? 'bg-slate-50/50' : '',
+                            className={cn(
+                                'px-3 py-3 hover:bg-slate-50 transition-colors cursor-pointer relative group border-b border-slate-50',
+                                !mail.read && folder === 'inbox' ? 'bg-brand-50/30' : '',
                                 selectedId === mail.id ? 'bg-slate-100/80 ring-1 ring-inset ring-slate-200' : '',
                             )}
                         >
                             {selectedId === mail.id && (
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-900" />
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-600" />
                             )}
                             <div className="flex items-start gap-3 min-w-0">
                                 <div className="pt-2 shrink-0" onClick={e => e.stopPropagation()}>
@@ -54,17 +54,17 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                         onChange={() => onSelectMail(mail.id)}
                                     />
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm">
+                                <div className="w-8 h-8 rounded-sm bg-brand-900 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm">
                                     {initial}
                                 </div>
                                 <div className="flex-1 min-w-0 flex flex-col gap-1">
                                     <div className="flex items-center justify-between gap-2">
                                         <span
-                                            className={clsx(
+                                            className={cn(
                                                 'text-xs truncate',
                                                 !mail.read && folder === 'inbox'
                                                     ? 'font-bold text-slate-900'
-                                                    : 'font-medium text-slate-600',
+                                                    : 'font-medium text-slate-500',
                                             )}
                                         >
                                             {senderLabel}
@@ -74,7 +74,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                         </span>
                                     </div>
                                     <h4
-                                        className={clsx(
+                                        className={cn(
                                             'text-[11px] leading-snug line-clamp-2',
                                             !mail.read && folder === 'inbox'
                                                 ? 'font-bold text-slate-900'
@@ -93,7 +93,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                                 <FaPaperclip size={8} className="text-slate-300" />
                                             )}
                                             {!mail.read && folder === 'inbox' && (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 self-center" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-brand-600 self-center shadow-[0_0_8px_rgba(13,148,136,0.4)]" />
                                             )}
                                         </div>
                                         <button

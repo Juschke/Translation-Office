@@ -32,55 +32,91 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute, PublicRoute, RoleGuard } from './components/auth/AuthGuard';
 import { Toaster } from 'react-hot-toast';
 
-
+// Ant Design Imports
+import { ConfigProvider, theme } from 'antd';
+import './skeuomorphic.css';
 
 function App() {
     return (
-        <AuthProvider>
-            <Toaster position="top-right" toastOptions={{ style: { fontSize: '13px' } }} />
-            <Router>
-                <Routes>
-                    {/* Public Routes */}
-                    <Route path="/guest/project/:token" element={<GuestProjectView />} />
-                    <Route path="/verify-email" element={<VerifyEmail />} />
-                    <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route path="/reset-password" element={<ResetPassword />} />
-                    </Route>
+        <ConfigProvider
+            theme={{
+                algorithm: theme.defaultAlgorithm,
+                token: {
+                    colorPrimary: '#0d6efd', // Bootstrap Blue
+                    borderRadius: 2, // Sharp Enterprise Look
+                    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                    colorBgBase: '#ffffff',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
+                },
+                components: {
+                    Button: {
+                        controlHeight: 36,
+                        borderRadius: 2,
+                        fontWeight: 600,
+                    },
+                    Card: {
+                        borderRadiusLG: 2,
+                    },
+                    Input: {
+                        controlHeight: 36,
+                        borderRadius: 2,
+                    },
+                    Select: {
+                        controlHeight: 36,
+                        borderRadius: 2,
+                    },
+                    Table: {
+                        borderRadius: 2,
+                    }
+                }
+            }}
+        >
+            <AuthProvider>
+                <Toaster position="top-right" toastOptions={{ style: { fontSize: '13px' } }} />
+                <Router>
+                    <Routes>
+                        {/* Public Routes */}
+                        <Route path="/guest/project/:token" element={<GuestProjectView />} />
+                        <Route path="/verify-email" element={<VerifyEmail />} />
+                        <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route path="/reset-password" element={<ResetPassword />} />
+                        </Route>
 
-                    {/* Onboarding (Authenticated but no Tenant) */}
-                    <Route path="/onboarding" element={
-                        <ProtectedRoute>
-                            <Onboarding />
-                        </ProtectedRoute>
-                    } />
+                        {/* Onboarding (Authenticated but no Tenant) */}
+                        <Route path="/onboarding" element={
+                            <ProtectedRoute>
+                                <Onboarding />
+                            </ProtectedRoute>
+                        } />
 
-                    {/* Protected Routes (Authenticated & Tenant) */}
-                    <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/projects" element={<Projects />} />
-                        <Route path="/projects/:id" element={<ProjectDetail />} />
-                        <Route path="/customers" element={<Customers />} />
-                        <Route path="/customers/:id" element={<CustomerDetail />} />
-                        <Route path="/partners" element={<Partners />} />
-                        <Route path="/partners/:id" element={<PartnerDetail />} />
-                        <Route path="/invoices" element={<RoleGuard minRole="manager"><Invoices /></RoleGuard>} />
-                        <Route path="/inbox" element={<RoleGuard minRole="manager"><Inbox /></RoleGuard>} />
-                        <Route path="/reports" element={<RoleGuard minRole="manager"><Reports /></RoleGuard>} />
-                        <Route path="/notifications" element={<Notifications />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/settings/*" element={<RoleGuard minRole="manager"><Settings /></RoleGuard>} />
-                        <Route path="/billing" element={<RoleGuard minRole="owner"><Billing /></RoleGuard>} />
-                        <Route path="/team" element={<RoleGuard minRole="owner"><Team /></RoleGuard>} />
-                    </Route>
+                        {/* Protected Routes (Authenticated & Tenant) */}
+                        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/projects" element={<Projects />} />
+                            <Route path="/projects/:id" element={<ProjectDetail />} />
+                            <Route path="/customers" element={<Customers />} />
+                            <Route path="/customers/:id" element={<CustomerDetail />} />
+                            <Route path="/partners" element={<Partners />} />
+                            <Route path="/partners/:id" element={<PartnerDetail />} />
+                            <Route path="/invoices" element={<RoleGuard minRole="manager"><Invoices /></RoleGuard>} />
+                            <Route path="/inbox" element={<RoleGuard minRole="manager"><Inbox /></RoleGuard>} />
+                            <Route path="/reports" element={<RoleGuard minRole="manager"><Reports /></RoleGuard>} />
+                            <Route path="/notifications" element={<Notifications />} />
+                            <Route path="/profile" element={<Profile />} />
+                            <Route path="/settings/*" element={<RoleGuard minRole="manager"><Settings /></RoleGuard>} />
+                            <Route path="/billing" element={<RoleGuard minRole="owner"><Billing /></RoleGuard>} />
+                            <Route path="/team" element={<RoleGuard minRole="owner"><Team /></RoleGuard>} />
+                        </Route>
 
-                    {/* Catch all */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-            </Router>
-        </AuthProvider>
+                        {/* Catch all */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </Router>
+            </AuthProvider>
+        </ConfigProvider>
     )
 }
 

@@ -1,10 +1,9 @@
-﻿import { useState, useMemo, useEffect, useRef } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { openBlobInNewTab } from '../utils/download';
 import { mapProjectResponse } from '../utils/projectDataMapper';
 import { useProjectModals } from '../hooks/useProjectModals';
-import toast from 'react-hot-toast';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaCheckCircle, FaFlag, FaPaperPlane, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaArchive, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -17,12 +16,19 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
 import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
-import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, invoiceService, customerService, partnerService } from '../api/services';
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
+import { Typography, Button, Space, Tag, Dropdown, Tabs, type MenuProps } from 'antd';
+import {
+    ArrowLeftOutlined, EditOutlined, DeleteOutlined, MailOutlined,
+    MoreOutlined, FilePdfOutlined, FileTextOutlined,
+    ClockCircleOutlined, ExclamationCircleOutlined,
+    ThunderboltOutlined, FlagOutlined, PlusOutlined
+} from '@ant-design/icons';
 
+const { Title, Text } = Typography;
 
 import TableSkeleton from '../components/common/TableSkeleton';
 import FilePreviewModal from '../components/modals/FilePreviewModal';
@@ -161,7 +167,6 @@ const ProjectDetail = () => {
     const location = useLocation();
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('overview');
-    const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
     const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
     const [historySearch, setHistorySearch] = useState('');
     const [historySortKey, setHistorySortKey] = useState<'date' | 'user' | 'action'>('date');
@@ -184,19 +189,7 @@ const ProjectDetail = () => {
     } = useProjectModals();
 
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
-    const [isActionsOpen, setIsActionsOpen] = useState(false);
-    const actionsRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        if (!isActionsOpen) return;
-        const handleClickOutside = (e: MouseEvent) => {
-            if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
-                setIsActionsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isActionsOpen]);
 
     // Comprehensive Project State
     const [projectData, setProjectData] = useState<ProjectData | null>(null);
@@ -220,18 +213,18 @@ const ProjectDetail = () => {
 
 
     const getDeadlineStatus = () => {
-        if (!projectData?.due) return { label: 'Kein Datum', color: 'bg-slate-50 text-slate-400 border-slate-100', icon: <FaClock /> };
+        if (!projectData?.due) return { label: 'Kein Datum', color: 'bg-slate-50 text-slate-400 border-slate-100', icon: <ClockCircleOutlined /> };
         const today = new Date();
         const due = new Date(projectData.due);
         const diffTime = due.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays < 0) {
-            return { label: `${Math.abs(diffDays)} Tage überfällig`, color: 'bg-red-100 text-red-600 border-red-200', icon: <FaExclamationTriangle /> };
+            return { label: `${Math.abs(diffDays)} Tage überfällig`, color: 'bg-red-100 text-red-600 border-red-200', icon: <ExclamationCircleOutlined /> };
         } else if (diffDays === 0) {
-            return { label: 'Heute fällig', color: 'bg-orange-100 text-orange-600 border-orange-200', icon: <FaClock /> };
+            return { label: 'Heute fällig', color: 'bg-orange-100 text-orange-600 border-orange-200', icon: <ClockCircleOutlined /> };
         } else {
-            return { label: `in ${diffDays} Tagen`, color: 'bg-emerald-100 text-emerald-600 border-emerald-200', icon: <FaClock /> };
+            return { label: `in ${diffDays} Tagen`, color: 'bg-emerald-100 text-emerald-600 border-emerald-200', icon: <ClockCircleOutlined /> };
         }
     };
 
@@ -348,40 +341,25 @@ const ProjectDetail = () => {
             'archived': 'Archiviert',
             'deleted': 'Gelöscht'
         };
-        const icons: { [key: string]: React.ReactNode } = {
-            'draft': <FaEdit className="text-slate-400" />,
-            'offer': <FaClock className="text-orange-500" />,
-            'pending': <FaClock className="text-orange-500" />,
-            'in_progress': <FaClock className="text-blue-500" />,
-            'review': <FaClock className="text-blue-500" />,
-            'ready_for_pickup': <FaPaperPlane className="text-indigo-500" />,
-            'delivered': <FaCheckCircle className="text-emerald-500" />,
-            'invoiced': <FaFileInvoiceDollar className="text-purple-500" />,
-            'completed': <FaCheckCircle className="text-emerald-600" />,
-            'cancelled': <FaExclamationTriangle className="text-slate-400" />,
-            'archived': <FaArchive className="text-slate-400" />,
-            'deleted': <FaTrashAlt className="text-red-400" />
-        };
         const colors: { [key: string]: string } = {
-            'draft': 'text-slate-600',
-            'offer': 'text-orange-600',
-            'pending': 'text-orange-600',
-            'in_progress': 'text-blue-600',
-            'review': 'text-blue-600',
-            'ready_for_pickup': 'text-indigo-600',
-            'delivered': 'text-emerald-600',
-            'invoiced': 'text-purple-600',
-            'completed': 'text-emerald-700',
-            'cancelled': 'text-slate-500',
-            'archived': 'text-slate-500',
-            'deleted': 'text-red-600'
+            'draft': 'default',
+            'offer': 'warning',
+            'pending': 'warning',
+            'in_progress': 'processing',
+            'review': 'processing',
+            'ready_for_pickup': 'warning',
+            'delivered': 'success',
+            'invoiced': 'purple',
+            'completed': 'success',
+            'cancelled': 'default',
+            'archived': 'default',
+            'deleted': 'error'
         };
 
         return (
-            <div className={clsx("flex items-center gap-2 text-xs font-medium", colors[status] || 'text-slate-600')}>
-                {icons[status] || <FaClock />}
-                <span>{labels[status] || status}</span>
-            </div>
+            <Tag color={colors[status] || 'default'} className="font-medium">
+                {labels[status] || status}
+            </Tag>
         );
     }
 
@@ -618,269 +596,115 @@ const ProjectDetail = () => {
         }
     };
 
+    const moreActionsItems: MenuProps['items'] = [
+        { key: 'pdf_header', type: 'group', label: 'PDF Dokumente' },
+        { key: 'order_confirmation', label: 'Auftragsbestätigung', icon: <FilePdfOutlined className="text-red-500" />, onClick: () => handleDownloadConfirmation('order_confirmation') },
+        { key: 'pickup_confirmation', label: 'Abholbestätigung', icon: <FilePdfOutlined className="text-red-500" />, onClick: () => handleDownloadConfirmation('pickup_confirmation') },
+        { key: 'interpreter_confirmation', label: 'Dolmetscherbestätigung', icon: <FilePdfOutlined className="text-red-500" />, onClick: () => setIsInterpreterModalOpen(true) },
+        { key: 'invoice_sep', type: 'divider' },
+        { key: 'invoice_header', type: 'group', label: 'Abrechnung' },
+        ...(projectData.invoices?.filter((inv: any) => !['cancelled'].includes(inv.status)).map((inv: any) => ({
+            key: `inv_${inv.id}`,
+            label: `${inv.invoice_number} öffnen`,
+            icon: <FileTextOutlined className="text-emerald-500" />,
+            onClick: () => setPreviewInvoice(inv)
+        })) || []),
+        {
+            key: 'new_invoice',
+            label: 'Rechnung erstellen',
+            icon: <PlusOutlined className="text-slate-400" />,
+            onClick: () => setIsInvoiceModalOpen(true)
+        }
+    ];
+
     return (
-        <div className="flex flex-col fade-in min-h-screen bg-slate-50/30">
+        <div className="flex flex-col fade-in min-h-screen">
             {/* Project Header Container */}
-            <div className="bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-[1600px] mx-auto">
-                    <div className="px-3 sm:px-4 md:px-8 py-4">
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={() => navigate('/projects')}
-                                    className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
-                                >
-                                    <FaArrowLeft />
-                                </button>
+            <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
+                <div className="max-w-[1600px] mx-auto px-8 py-4">
+                    <div className="flex justify-between items-start gap-6">
+                        <div className="flex items-center gap-6 min-w-0">
+                            <Button
+                                icon={<ArrowLeftOutlined />}
+                                onClick={() => navigate('/projects')}
+                                className="border-none shadow-none hover:bg-slate-100 h-10 w-10 flex items-center justify-center shrink-0"
+                            />
 
-                                <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <div className="w-12 h-12 rounded-sm bg-slate-50 text-slate-700 flex items-center justify-center text-xl font-semibold border border-slate-100 shadow-sm shrink-0">
-                                        {projectData.name.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                            <h1 className="text-lg md:text-xl font-semibold text-slate-800 tracking-tight break-words min-w-0" style={{ wordBreak: 'break-word' }}>{projectData.name}</h1>
-                                            {projectData.priority !== 'low' && (
-                                                <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0",
-                                                    projectData.priority === 'express' ? "bg-red-50 text-red-600 border-red-100" : "bg-orange-50 text-orange-600 border-orange-100"
-                                                )}>
-                                                    {projectData.priority === 'express' ? <FaBolt /> : <FaFlag />}
-                                                    <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2 md:gap-4 text-sm text-slate-400 font-medium mt-1 flex-wrap">
-                                            {getStatusBadge(projectData.status)}
-                                            <span className="text-slate-200 hidden sm:inline">|</span>
-                                            <span>ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end mt-4 md:mt-0">
-                                <button
-                                    onClick={() => setIsEditModalOpen(true)}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
-                                >
-                                    <FaEdit /> Bearbeiten
-                                </button>
-
-                                <button
-                                    onClick={() => setIsProjectDeleteConfirmOpen(true)}
-                                    className="bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
-                                >
-                                    <FaTrashAlt /> Löschen
-                                </button>
-
-                                {/* Email senden */}
-                                <button
-                                    onClick={() => navigate('/inbox', { state: { openCompose: true, projectId: String(projectData.id) } })}
-                                    className="bg-slate-900 text-white hover:bg-slate-800 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
-                                >
-                                    <FaEnvelope /> E-Mail senden
-                                </button>
-
-                                {/* Mehr Aktionen Dropdown */}
-                                <div className="relative flex-1 sm:flex-none" ref={actionsRef}>
-                                    <button
-                                        onClick={() => setIsActionsOpen(v => !v)}
-                                        className="w-full bg-white border border-slate-200 text-slate-600 hover:text-slate-700 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
-                                    >
-                                        Mehr Aktionen <FaChevronDown className={clsx('text-[10px] transition-transform', isActionsOpen && 'rotate-180')} />
-                                    </button>
-
-                                    {isActionsOpen && (
-                                        <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-sm shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-1">
-                                            <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
-                                            <button
-                                                onClick={() => { handleDownloadConfirmation('order_confirmation'); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
-                                            >
-                                                <FaFilePdf className="text-red-400 shrink-0" /> Auftragsbestätigung
-                                            </button>
-                                            <button
-                                                onClick={() => { handleDownloadConfirmation('pickup_confirmation'); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
-                                            >
-                                                <FaFilePdf className="text-red-400 shrink-0" /> Abholbestätigung
-                                            </button>
-                                            <button
-                                                onClick={() => { setIsInterpreterModalOpen(true); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
-                                            >
-                                                <FaFilePdf className="text-red-400 shrink-0" /> Dolmetscherbestätigung
-                                            </button>
-
-                                            <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-100 mt-1">Rechnung</div>
-                                            {(() => {
-                                                const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
-                                                return activeInvoice ? (
-                                                    <button
-                                                        onClick={() => { setPreviewInvoice(activeInvoice); setIsActionsOpen(false); }}
-                                                        className="w-full text-left px-4 py-2.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 flex items-center gap-3 transition"
-                                                    >
-                                                        <FaFileInvoiceDollar className="text-emerald-500 shrink-0" /> {activeInvoice.invoice_number} öffnen
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => { setIsInvoiceModalOpen(true); setIsActionsOpen(false); }}
-                                                        className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
-                                                    >
-                                                        <FaFileInvoiceDollar className="text-slate-400 shrink-0" /> Rechnung erstellen
-                                                    </button>
-                                                );
-                                            })()}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Meta Info Bar */}
-                    <div className="px-3 sm:px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-4 sm:gap-6 text-xs text-slate-400 flex-wrap">
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            <span>Erstellt am <span className="text-slate-600">{projectData.createdAt}</span> {projectData.creator && `von ${projectData.creator.name}`}</span>
-                        </div>
-                        <span className="text-slate-200">•</span>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                            <span>Zuletzt geändert: <span className="text-slate-600">{projectData.updatedAt}</span></span>
-                        </div>
-                    </div>
-
-                    {/* Tabs Navigation */}
-                    <div className="px-3 sm:px-4 md:px-8 border-t border-slate-100 flex items-center justify-between md:justify-start">
-                        {/* Mobile Tab Menu Button */}
-                        <div className="md:hidden flex-1 py-3">
-                            <button
-                                onClick={() => setIsTabMenuOpen(!isTabMenuOpen)}
-                                className="flex items-center gap-3 text-slate-600 font-semibold text-sm hover:text-slate-700 transition-colors w-full"
-                            >
-                                <div className="w-4 h-3 flex flex-col justify-between">
-                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "rotate-45 translate-y-1" : "")}></span>
-                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "opacity-0" : "")}></span>
-                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "-rotate-45 -translate-y-1.5" : "")}></span>
-                                </div>
-                                <span>Menü: {
-                                    activeTab === 'overview' ? 'Stammdaten' :
-                                        activeTab === 'files' ? 'Dateien' :
-                                            activeTab === 'finances' ? 'Kalkulation & Marge' :
-                                                activeTab === 'history' ? 'Historie' : 'Kommunikation'
-                                }</span>
-                                <FaChevronDown className={clsx("ml-auto transition-transform", isTabMenuOpen && "rotate-180")} />
-                            </button>
-                        </div>
-
-                        {/* Desktop Tabs */}
-                        <div className="hidden md:flex gap-8">
-                            {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
-                                let badgeCount = 0;
-                                if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                                if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                                if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
-
-                                const isActive = activeTab === tab;
-
-                                return (
-                                    <button
-                                        key={tab}
-                                        onClick={() => {
-                                            setActiveTab(tab);
-                                            setIsTabMenuOpen(false);
-                                        }}
-                                        className={clsx(
-                                            "py-4 text-sm font-medium border-b-2 transition-all relative flex items-center gap-2.5 -mb-[1px]",
-                                            isActive
-                                                ? 'border-slate-900 text-slate-900'
-                                                : 'border-transparent text-slate-400 hover:text-slate-600'
-                                        )}
-                                    >
-                                        {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-                                        {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-                                        {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-                                        {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-                                        {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-
-                                        {tab === 'overview' ? 'Stammdaten' :
-                                            tab === 'files' ? 'Dateien' :
-                                                tab === 'finances' ? 'Kalkulation & Marge' :
-                                                    tab === 'history' ? 'Historie' : 'Kommunikation'}
-
-                                        {tab !== 'overview' && tab !== 'history' && (
-                                            <span className={clsx(
-                                                "px-2 py-0.5 rounded-full text-xs font-medium transition-colors",
-                                                isActive ? "bg-slate-100 text-slate-900" : "bg-slate-100 text-slate-500"
-                                            )}>
-                                                {badgeCount}
-                                            </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Mobile Tab Menu Overlay */}
-                    {isTabMenuOpen && (
-                        <div className="md:hidden border-t border-slate-100 bg-white animate-slideUp">
-                            <div className="flex flex-col">
-                                {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
-                                    let badgeCount = 0;
-                                    if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                                    if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
-
-                                    const isActive = activeTab === tab;
-
-                                    return (
-                                        <button
-                                            key={tab}
-                                            onClick={() => {
-                                                setActiveTab(tab);
-                                                setIsTabMenuOpen(false);
-                                            }}
-                                            className={clsx(
-                                                "px-6 py-4 text-sm font-medium flex items-center gap-4 border-l-4 transition-all",
-                                                isActive
-                                                    ? 'border-slate-900 bg-slate-50 text-slate-900'
-                                                    : 'border-transparent text-slate-500 hover:bg-slate-50'
-                                            )}
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <Title level={4} style={{ margin: 0 }} className="truncate max-w-lg">{projectData.name}</Title>
+                                    {projectData.priority !== 'low' && (
+                                        <Tag
+                                            color={projectData.priority === 'express' ? 'red' : 'orange'}
+                                            icon={projectData.priority === 'express' ? <ThunderboltOutlined /> : <FlagOutlined />}
+                                            className="font-bold border-none"
                                         >
-                                            {tab === 'overview' && <FaInfoCircle className="text-base" />}
-                                            {tab === 'files' && <FaFileAlt className="text-base" />}
-                                            {tab === 'finances' && <FaFileInvoiceDollar className="text-base" />}
-                                            {tab === 'messages' && <FaComments className="text-base" />}
-                                            {tab === 'history' && <FaClock className="text-base" />}
-
-                                            <span className="flex-1 text-left">
-                                                {tab === 'overview' ? 'Stammdaten' :
-                                                    tab === 'files' ? 'Dateien' :
-                                                        tab === 'finances' ? 'Kalkulation & Marge' :
-                                                            tab === 'history' ? 'Historie' : 'Kommunikation'}
-                                            </span>
-
-                                            {tab !== 'overview' && tab !== 'history' && (
-                                                <span className={clsx(
-                                                    "px-2 py-0.5 rounded-full text-xs font-medium",
-                                                    isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
-                                                )}>
-                                                    {badgeCount}
-                                                </span>
-                                            )}
-                                        </button>
-                                    );
-                                })}
+                                            {projectData.priority === 'express' ? 'Express' : 'Dringend'}
+                                        </Tag>
+                                    )}
+                                    {getStatusBadge(projectData.status)}
+                                </div>
+                                <div className="flex items-center gap-4 text-xs mt-1.5 font-medium">
+                                    <Text type="secondary">ID: <Text strong className="text-slate-700">{projectData.id}</Text></Text>
+                                    <Text type="secondary" className="hidden sm:inline">•</Text>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                                        <Text type="secondary">Erstellt am {projectData.createdAt}</Text>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    )}
+
+                        <Space size="small">
+                            <Button
+                                icon={<EditOutlined />}
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="skeuo-button"
+                            >
+                                Bearbeiten
+                            </Button>
+                            <Button
+                                icon={<DeleteOutlined />}
+                                onClick={() => setIsProjectDeleteConfirmOpen(true)}
+                                danger
+                            >
+                                Löschen
+                            </Button>
+                            <Button
+                                type="primary"
+                                icon={<MailOutlined />}
+                                onClick={() => navigate('/inbox', { state: { openCompose: true, projectId: String(projectData.id) } })}
+                                className="skeuo-button"
+                            >
+                                E-Mail
+                            </Button>
+                            <Dropdown menu={{ items: moreActionsItems }} placement="bottomRight">
+                                <Button icon={<MoreOutlined />} />
+                            </Dropdown>
+                        </Space>
+                    </div>
+                </div>
+
+                {/* Tabs Navigation */}
+                <div className="max-w-[1600px] mx-auto px-8">
+                    <Tabs
+                        activeKey={activeTab}
+                        onChange={setActiveTab}
+                        className="project-detail-tabs"
+                        tabBarGutter={32}
+                        items={[
+                            { key: 'overview', label: 'Stammdaten' },
+                            { key: 'files', label: `Dateien (${projectData.files?.length || 0})` },
+                            { key: 'finances', label: 'Kalkulation & Marge' },
+                            { key: 'messages', label: `Kommunikation (${projectData.messages?.length || 0})` },
+                            { key: 'history', label: 'Historie' },
+                        ]}
+                    />
                 </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 max-w-[1600px] mx-auto w-full px-3 sm:px-4 md:px-8 py-4 sm:py-8 transition-all duration-300">
+            <div className="flex-1 max-w-[1600px] mx-auto w-full px-8 py-8 transition-all duration-300">
                 {activeTab === 'overview' && (
                     <ProjectOverviewTab
                         projectData={projectData}
@@ -924,29 +748,23 @@ const ProjectDetail = () => {
                     />
                 )}
 
-                {
-                    activeTab === 'messages' && (
-                        <div className="mb-10 animate-fadeIn">
-                            <MessagesTab projectData={projectData} projectId={id!} />
-                        </div>
-                    )
-                }
+                {activeTab === 'messages' && (
+                    <div className="mb-10 animate-fadeIn">
+                        <MessagesTab projectData={projectData} projectId={id!} />
+                    </div>
+                )}
 
-                {
-                    activeTab === 'history' && (
-                        <HistoryTab
-                            projectId={id!}
-                            historySearch={historySearch}
-                            setHistorySearch={setHistorySearch}
-                            historySortKey={historySortKey}
-                            setHistorySortKey={setHistorySortKey}
-                            historySortDir={historySortDir}
-                            setHistorySortDir={setHistorySortDir}
-                        />
-                    )
-                }
-
-
+                {activeTab === 'history' && (
+                    <HistoryTab
+                        projectId={id!}
+                        historySearch={historySearch}
+                        setHistorySearch={setHistorySearch}
+                        historySortKey={historySortKey}
+                        setHistorySortKey={setHistorySortKey}
+                        historySortDir={historySortDir}
+                        setHistorySortDir={setHistorySortDir}
+                    />
+                )}
             </div>
 
             <CustomerSelectionModal
@@ -954,7 +772,6 @@ const ProjectDetail = () => {
                 onClose={() => setIsCustomerSearchOpen(false)}
                 onSelect={(customer) => {
                     updateProjectMutation.mutate({ customer_id: customer.id });
-                    // Optimistically update local state to reflect the change immediately
                     if (projectData) {
                         setProjectData({
                             ...projectData,
@@ -972,7 +789,6 @@ const ProjectDetail = () => {
                             client: customer.company || customer.name
                         });
                     }
-
                     setIsCustomerSearchOpen(false);
                 }}
             />
@@ -994,7 +810,6 @@ const ProjectDetail = () => {
                 totalAmount={financials.grossTotal}
             />
 
-            {/* Kunden-Bearbeitungsmodal */}
             <NewCustomerModal
                 isOpen={isCustomerEditModalOpen}
                 onClose={() => setIsCustomerEditModalOpen(false)}
@@ -1002,7 +817,6 @@ const ProjectDetail = () => {
                 initialData={projectResponse?.customer}
             />
 
-            {/* Partner-Bearbeitungsmodal */}
             <NewPartnerModal
                 isOpen={isPartnerEditModalOpen}
                 onClose={() => setIsPartnerEditModalOpen(false)}
@@ -1029,7 +843,7 @@ const ProjectDetail = () => {
                     }
                 }}
                 title="Datei löschen"
-                message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen ? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
                 confirmText="Löschen"
                 cancelText="Abbrechen"
                 isLoading={deleteFileMutation.isPending}
@@ -1062,7 +876,7 @@ const ProjectDetail = () => {
                 onClose={() => setPreviewInvoice(null)}
                 invoice={previewInvoice}
             />
-        </div >
+        </div>
     );
 };
 

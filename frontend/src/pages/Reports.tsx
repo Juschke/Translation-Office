@@ -1,20 +1,22 @@
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title as ChartTitle, Tooltip, Legend, ArcElement, BarElement } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import { FaCalendarAlt, FaChartLine, FaEuroSign, FaPercentage, FaLayerGroup, FaUserTie, FaTasks, FaTable, FaCalculator, FaFileInvoiceDollar, FaFilter } from 'react-icons/fa';
+import { FaEuroSign, FaPercentage, FaLayerGroup, FaUserTie, FaTasks, FaFileInvoiceDollar, FaChartLine, FaTable } from 'react-icons/fa';
 import KPICard from '../components/common/KPICard';
 import { useQuery } from '@tanstack/react-query';
-import clsx from 'clsx';
 import { reportService } from '../api/services';
 import ReportsSkeleton from '../components/common/ReportsSkeleton';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
-import { de } from 'date-fns/locale';
 import { useState } from 'react';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { Typography, Button, Space, DatePicker, Segmented } from 'antd';
+import { LineChartOutlined, CalculatorOutlined, FilterOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import 'dayjs/locale/de';
+import clsx from 'clsx';
 
-registerLocale('de', de);
+const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ChartTitle, Tooltip, Legend, ArcElement, BarElement);
 
 const fmt = (v: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v);
 
@@ -24,21 +26,21 @@ const STATUS_COLORS = [
 ];
 
 const Reports = () => {
-    const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-        startOfMonth(subMonths(new Date(), 5)),
-        endOfMonth(new Date())
+    const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([
+        dayjs(startOfMonth(subMonths(new Date(), 5))),
+        dayjs(endOfMonth(new Date()))
     ]);
 
     const [appliedDateRange, setAppliedDateRange] = useState(dateRange);
     const [startDate, endDate] = appliedDateRange;
 
     const queryParams = {
-        startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
-        endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined
+        startDate: startDate ? startDate.format('YYYY-MM-DD') : undefined,
+        endDate: endDate ? endDate.format('YYYY-MM-DD') : undefined
     };
 
-    const [activeTab, setActiveTab] = useState<'analytics' | 'finance'>('analytics');
-    const [financeSubTab, setFinanceSubTab] = useState<'tax' | 'profitability'>('tax');
+    const [activeTab, setActiveTab] = useState('analytics');
+    const [financeSubTab, setFinanceSubTab] = useState('tax');
 
     const { data: summary, isLoading: isSummaryLoading } = useQuery({
         queryKey: ['reports', 'summary', queryParams],
@@ -222,58 +224,41 @@ const Reports = () => {
     };
 
     return (
-        <div className="max-w-screen-xl mx-auto flex flex-col gap-5 pb-10 fade-in">
+        <div className="flex flex-col gap-6 fade-in pb-10">
             {/* Header */}
-            <div className="flex justify-between items-center gap-4 bg-white p-4 rounded-sm border border-slate-200 shadow-sm">
+            <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl font-medium text-slate-800 truncate">Berichte & Analysen</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Detaillierte Auswertung Ihrer Geschäftsdaten.</p>
+                    <Title level={4} style={{ margin: 0 }}>Berichte & Analysen</Title>
+                    <Text type="secondary">Detaillierte Auswertung Ihrer Geschäftsdaten.</Text>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                    <div className="relative z-20 flex-1 sm:flex-none">
-                        <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
-                        <DatePicker
-                            selectsRange
-                            startDate={dateRange[0]}
-                            endDate={dateRange[1]}
-                            onChange={(update) => setDateRange(update)}
-                            isClearable={false}
-                            locale="de"
-                            dateFormat="dd.MM.yyyy"
-                            className="pl-9 pr-3 py-2 border border-slate-300 rounded text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-[240px] cursor-pointer hover:border-brand-400 transition"
-                            placeholderText="Zeitraum wählen"
-                            maxDate={new Date()}
-                        />
-                    </div>
-                    <button
+                <Space size="middle">
+                    <RangePicker
+                        value={[dateRange[0], dateRange[1]]}
+                        onChange={(val) => setDateRange(val as any)}
+                        format="DD.MM.YYYY"
+                        className="h-9"
+                    />
+                    <Button
+                        icon={<FilterOutlined />}
                         onClick={() => setAppliedDateRange(dateRange)}
-                        className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition shrink-0"
+                        className="skeuo-button"
                     >
-                        <FaFilter className="text-xs" /> <span className="hidden xs:inline">Anzeigen</span><span className="xs:hidden">Anzeigen</span>
-                    </button>
-                </div>
+                        Anzeigen
+                    </Button>
+                </Space>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 self-start">
-                <button
-                    onClick={() => setActiveTab('analytics')}
-                    className={clsx(
-                        "px-5 py-2 text-sm font-medium transition-all rounded-[1px] flex items-center gap-2",
-                        activeTab === 'analytics' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                    )}
-                >
-                    <FaChartLine /> Grafische Analyse
-                </button>
-                <button
-                    onClick={() => setActiveTab('finance')}
-                    className={clsx(
-                        "px-5 py-2 text-sm font-medium transition-all rounded-[1px] flex items-center gap-2",
-                        activeTab === 'finance' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                    )}
-                >
-                    <FaCalculator /> Finanz-Auswertung (UStVA)
-                </button>
+            <div className="flex justify-start">
+                <Segmented
+                    options={[
+                        { label: 'Grafische Analyse', value: 'analytics', icon: <LineChartOutlined /> },
+                        { label: 'Finanz-Auswertung', value: 'finance', icon: <CalculatorOutlined /> }
+                    ]}
+                    value={activeTab}
+                    onChange={(v) => setActiveTab(v as string)}
+                    className="bg-slate-100 p-1 border border-slate-200"
+                />
             </div>
 
             {activeTab === 'analytics' ? (

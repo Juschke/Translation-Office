@@ -26,6 +26,7 @@ import type { ProjectPosition } from './projectTypes';
 import ProjectPositionsTable from './ProjectPositionsTable';
 import ProjectPaymentsTable from './ProjectPaymentsTable';
 import ProjectFinancialSidebar from './ProjectFinancialSidebar';
+import { Button } from '../ui/button';
 
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -663,7 +664,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 </button>
                             ))}
                         </div>
-                        <button onClick={onClose} className="w-8 h-9 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onClose}
+                            className="text-slate-400 hover:text-red-500 rounded-full transition-colors"
+                        >
+                            <FaTimes />
+                        </Button>
                     </div>
                 </div>
 
@@ -715,7 +723,15 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                     }))}
                                             />
                                         </div>
-                                        <button onClick={() => setShowDocTypeModal(true)} className="h-10 px-4 bg-slate-900 text-white rounded-r border-l-0 hover:bg-slate-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-medium">NEU</span></button>
+                                        <Button
+                                            variant="dark"
+                                            size="sm"
+                                            onClick={() => setShowDocTypeModal(true)}
+                                            className="rounded-l-none border-l-0"
+                                        >
+                                            <FaPlus className="text-[10px]" />
+                                            <span className="ml-1 tracking-wider">NEU</span>
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -776,7 +792,15 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         <div className="flex-1">
                                             <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
                                         </div>
-                                        <button onClick={() => setShowCustomerModal(true)} className="h-10 px-4 bg-slate-900 text-white rounded-r border-l-0 hover:bg-slate-800 transition flex items-center gap-2 shadow-sm"><FaPlus className="text-xs" /> <span className="text-xs font-medium">NEU</span></button>
+                                        <Button
+                                            variant="dark"
+                                            size="sm"
+                                            onClick={() => setShowCustomerModal(true)}
+                                            className="rounded-l-none border-l-0"
+                                        >
+                                            <FaPlus className="text-[10px]" />
+                                            <span className="ml-1 tracking-wider">NEU</span>
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -1105,10 +1129,23 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         )}
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={onClose} className="px-5 py-2 bg-white border border-slate-300 rounded text-xs font-medium hover:bg-slate-50 transition">Abbrechen</button>
-                        <button onClick={handleSubmit} disabled={isLoading || createCustomerMutation.isPending} className="px-6 py-2 bg-slate-900 text-white rounded text-xs font-medium shadow-sm hover:bg-slate-800 transition-all transform">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onClose}
+                            className="font-bold border-slate-300"
+                        >
+                            Abbrechen
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleSubmit}
+                            isLoading={isLoading || createCustomerMutation.isPending}
+                            className="font-bold shadow-md min-w-[120px]"
+                        >
                             {isLoading ? 'Speichere...' : initialData ? 'Projekt Aktualisieren' : 'Projekt Anlegen'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

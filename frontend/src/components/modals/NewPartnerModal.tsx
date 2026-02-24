@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
-import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import PartnerForm from '../forms/PartnerForm';
+import { Button } from '../ui/button';
 
 interface NewPartnerModalProps {
     isOpen: boolean;
@@ -81,22 +81,23 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
 
                 {/* Footer */}
                 <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
-                    <button
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={onClose}
-                        className="px-5 py-2 rounded border border-slate-300 text-slate-600 text-xs font-semibold hover:bg-white transition-all"
+                        className="font-bold border-slate-300"
                     >
                         Abbrechen
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size="sm"
                         onClick={handleSubmit}
-                        disabled={isLoading}
-                        className={clsx(
-                            "px-8 py-2 bg-slate-900 text-white rounded text-xs font-semibold shadow-sm hover:bg-slate-800 transition-all",
-                            isLoading && "opacity-50 cursor-not-allowed"
-                        )}
+                        isLoading={isLoading}
+                        className="font-bold shadow-md min-w-[120px]"
                     >
-                        {isLoading ? 'Verarbeitet...' : (initialData ? 'Änderungen speichern' : 'Partner anlegen')}
-                    </button>
+                        {isLoading ? 'Verarbeitet...' : (initialData ? 'Speichern' : 'Partner anlegen')}
+                    </Button>
                 </div>
             </div>
         </div>

@@ -1,16 +1,12 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    FaPlus, FaFileCsv,
-    FaFilePdf, FaFileExcel, FaLayerGroup, FaChartLine, FaGlobe,
-    FaDownload, FaFilter,
-    FaListUl, FaColumns,
+    FaDownload, FaLayerGroup, FaChartLine, FaGlobe,
     FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore
 } from 'react-icons/fa';
 import { buildProjectColumns } from './projectColumns';
-import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
 import NewProjectModal from '../components/modals/NewProjectModal';
 import Switch from '../components/common/Switch';
@@ -22,6 +18,12 @@ import TableSkeleton from '../components/common/TableSkeleton';
 import KanbanBoard from '../components/projects/KanbanBoard';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { BulkActions } from '../components/common/BulkActions';
+import type { MenuProps } from 'antd';
+import { Segmented, Space, Dropdown, Typography, Card } from 'antd';
+import { Button } from '../components/ui/button';
+import { DownOutlined, FilterOutlined, PlusOutlined, FileExcelOutlined, FilePdfOutlined, FileTextOutlined, LayoutOutlined, TableOutlined } from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 
 const Projects = () => {
@@ -31,28 +33,10 @@ const Projects = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filter, setFilter] = useState('all');
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-    const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<any>(null);
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
     const [showTrash, setShowTrash] = useState(false);
     const [showArchive, setShowArchive] = useState(false);
-    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
-
-    const exportRef = useRef<HTMLDivElement>(null);
-    const viewSettingsRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
-                setIsExportOpen(false);
-            }
-            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
-                setIsViewSettingsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     useEffect(() => {
         if (location.state?.openNewModal) {
@@ -211,7 +195,6 @@ const Projects = () => {
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         triggerBlobDownload(blob, `Projekte_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
-        setIsExportOpen(false);
     };
 
     const columns = buildProjectColumns({
@@ -229,118 +212,94 @@ const Projects = () => {
         setIsConfirmOpen,
     });
 
-    const tabs = (
-        <div className="flex items-center gap-2 whitespace-nowrap px-1">
-            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Übersicht</button>
-            <button onClick={() => setFilter('offer')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'offer' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Neu</button>
-            <button onClick={() => setFilter('in_progress')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'in_progress' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bearbeitung</button>
-            <button onClick={() => setFilter('delivered')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'delivered' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Geliefert</button>
-            <button onClick={() => setFilter('invoiced')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'invoiced' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Rechnung</button>
-            <button onClick={() => setFilter('ready_for_pickup')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'ready_for_pickup' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abholbereit</button>
-            <button onClick={() => setFilter('completed')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'completed' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abgeschlossen</button>
+    const views = [
+        { label: 'Alle Projekte', value: 'all' },
+        { label: 'Neue Angebote', value: 'offer' },
+        { label: 'In Bearbeitung', value: 'in_progress' },
+        { label: 'Geliefert', value: 'delivered' },
+        { label: 'In Rechnung', value: 'invoiced' },
+        { label: 'Abholbereit', value: 'ready_for_pickup' },
+        { label: 'Abgeschlossen', value: 'completed' },
+        ...(showTrash || filter === 'trash' ? [{ label: 'Papierkorb', value: 'trash' }] : []),
+        ...(showArchive || filter === 'archive' ? [{ label: 'Archiv', value: 'archive' }] : [])
+    ];
 
-            {(showTrash || filter === 'trash') && (
-                <button onClick={() => setFilter('trash')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'trash' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
-            )}
-            {(showArchive || filter === 'archive') && (
-                <button onClick={() => setFilter('archive')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
-            )}
-        </div>
-    );
+    const exportItems: MenuProps['items'] = [
+        { key: 'xlsx', label: 'Excel (.xlsx)', icon: <FileExcelOutlined className="text-emerald-600" />, onClick: () => handleExport('xlsx') },
+        { key: 'csv', label: 'CSV (.csv)', icon: <FileTextOutlined className="text-blue-600" />, onClick: () => handleExport('csv') },
+        { key: 'pdf', label: 'PDF Report', icon: <FilePdfOutlined className="text-red-600" />, onClick: () => handleExport('pdf') },
+    ];
 
     const actions = (
-        <div className="flex items-center gap-2">
-            <div className="relative group z-50" ref={exportRef}>
-                <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
-                    <FaDownload /> Export
-                </button>
-                {isExportOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
-                        <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
-                        <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
-                        <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>
-                    </div>
-                )}
-            </div>
-        </div>
+        <Dropdown menu={{ items: exportItems }} placement="bottomRight">
+            <Button className="h-9 px-4">
+                <FaDownload className="mr-2" />
+                Export <DownOutlined style={{ fontSize: '10px' }} />
+            </Button>
+        </Dropdown>
     );
     const extraControls = (
-        <div className="relative" ref={viewSettingsRef}>
-            <button
-                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
-                title="Ansichtseinstellungen"
-            >
-                <FaFilter className="text-sm" />
-            </button>
-            {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
+        <Dropdown
+            dropdownRender={() => (
+                <Card size="small" className="w-64">
+                    <Text strong type="secondary" className="block mb-2 uppercase tracking-wider text-[10px]">Ansicht anpassen</Text>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Text>Papierkorb anzeigen</Text>
                             <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
                         </div>
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
+                        <div className="flex items-center justify-between">
+                            <Text>Archiv anzeigen</Text>
                             <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
                         </div>
                     </div>
-                </div>
+                </Card>
             )}
-        </div>
+            trigger={['click']}
+        >
+            <Button size="icon">
+                <FilterOutlined />
+            </Button>
+        </Dropdown>
     );
 
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
+        <div className="flex flex-col gap-6 fade-in pb-10">
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Projekte & Aufträge</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Verwalten und überwachen Sie alle Übersetzungsaufträge.</p>
+                    <Title level={4} style={{ margin: 0 }}>Projekte & Aufträge</Title>
+                    <Text type="secondary">Verwalten und überwachen Sie alle Übersetzungsaufträge.</Text>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                    <button onClick={() => { setEditingProject(null); setIsModalOpen(true); }} className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition">
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neues Projekt</span><span className="inline sm:hidden">Neu</span>
-                    </button>
-                </div>
+                <Space>
+                    <Button
+                        variant="primary"
+                        onClick={() => { setEditingProject(null); setIsModalOpen(true); }}
+                        className="h-9 px-6 font-bold"
+                    >
+                        <PlusOutlined className="mr-2" />
+                        Neues Projekt
+                    </Button>
+                </Space>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Gesamtprojekte" value={totalProjectsCount} icon={<FaLayerGroup />} />
-                <KPICard label="Aktive Projekte" value={activeProjectsCount} icon={<FaChartLine />} iconColor="text-blue-600" iconBg="bg-blue-50" />
-                <KPICard label="Marge gesamt" value={totalMargin.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaGlobe />} iconColor="text-indigo-600" iconBg="bg-indigo-50" />
-                <KPICard label="Umsatz YTD" value={totalRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaChartLine />} iconColor="text-green-600" iconBg="bg-green-50" />
+                <KPICard label="Aktive Projekte" value={activeProjectsCount} icon={<FaChartLine />} />
+                <KPICard label="Marge gesamt" value={totalMargin.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaGlobe />} />
+                <KPICard label="Umsatz YTD" value={totalRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaChartLine />} />
             </div>
 
             <div className="flex justify-end -mb-2">
-                <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-hidden">
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className={clsx(
-                            "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all rounded-sm",
-                            viewMode === 'list'
-                                ? "bg-white text-slate-800 shadow-sm"
-                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-                        )}
-                        title="Tabellenansicht"
-                    >
-                        <FaListUl className="text-xs" />
-                    </button>
-                    <button
-                        onClick={() => setViewMode('kanban')}
-                        className={clsx(
-                            "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all rounded-sm",
-                            viewMode === 'kanban'
-                                ? "bg-white text-slate-800 shadow-sm"
-                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-                        )}
-                        title="Kanban-Ansicht"
-                    >
-                        <FaColumns className="text-xs" />
-                    </button>
-                </div>
+                <Segmented
+                    value={viewMode}
+                    onChange={(v) => setViewMode(v as 'list' | 'kanban')}
+                    options={[
+                        { value: 'list', icon: <TableOutlined /> },
+                        { value: 'kanban', icon: <LayoutOutlined /> }
+                    ]}
+                />
             </div>
 
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
@@ -427,13 +386,14 @@ const Projects = () => {
                         data={filteredProjects}
                         columns={columns as any}
                         onRowClick={(p) => navigate(`/projects/${p.id}`)}
-                        pageSize={window.innerWidth < 768 ? 5 : 10}
+                        pageSize={10}
                         searchPlaceholder="Suchen nach Projekten..."
                         searchFields={['project_name', 'project_number']}
                         actions={actions}
-                        tabs={tabs}
+                        onViewChange={(v) => setFilter(v)}
+                        views={views}
+                        currentView={filter}
                         extraControls={extraControls}
-                        onAddClick={() => { setEditingProject(null); setIsModalOpen(true); }}
                     />
                 ) : (
                     <div className="flex-1 min-h-0 flex flex-col pt-4 overflow-x-hidden">

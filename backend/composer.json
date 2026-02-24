@@ -3,7 +3,10 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
@@ -19,7 +22,7 @@
         "pragmarx/google2fa": "^9.0",
         "shuvroroy/filament-spatie-laravel-health": "^3.2",
         "spatie/laravel-activitylog": "^4.11",
-        "spatie/laravel-backup": "^9.4",
+        "spatie/laravel-backup": "^9.3",
         "spatie/laravel-health": "^1.37",
         "webklex/laravel-imap": "^6.2"
     },

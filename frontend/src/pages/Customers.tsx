@@ -1,10 +1,10 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
-    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter, FaUserPlus
+    FaUsers, FaBriefcase, FaChartLine,
+    FaCheck, FaBan, FaEnvelope, FaDownload, FaTrashRestore, FaUserPlus, FaTrash
 } from 'react-icons/fa';
 
 
@@ -18,6 +18,12 @@ import { customerService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { BulkActions } from '../components/common/BulkActions';
+import type { MenuProps } from 'antd';
+import { Space, Dropdown, Typography, Card } from 'antd';
+import { Button } from '../components/ui/button';
+import { DownOutlined, FilterOutlined, PlusOutlined, FileExcelOutlined, FilePdfOutlined, FileTextOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 
 const Customers = () => {
@@ -26,27 +32,9 @@ const Customers = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [typeFilter, setTypeFilter] = useState('Privat');
     const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
-    const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<any>(null);
     const [showTrash, setShowTrash] = useState(false);
     const [showArchive, setShowArchive] = useState(false);
-    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
-
-    const exportRef = useRef<HTMLDivElement>(null);
-    const viewSettingsRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
-                setIsExportOpen(false);
-            }
-            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
-                setIsViewSettingsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     useEffect(() => {
         if (location.state?.openNewModal) {
@@ -207,8 +195,8 @@ const Customers = () => {
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         triggerBlobDownload(blob, `Kunden_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
-        setIsExportOpen(false);
     };
+
 
     const columns = [
         {
@@ -333,146 +321,119 @@ const Customers = () => {
             header: '',
             accessor: (c: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye /></button>
-                    <button onClick={() => { setEditingCustomer(c); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
-                    <button onClick={() => {
-                        setCustomerToDelete(c.id);
-                        setConfirmTitle('Kunde löschen');
-                        setConfirmMessage('Sind Sie sicher, dass Sie diesen Kunden in den Papierkorb verschieben möchten?');
-                        setIsConfirmOpen(true);
-                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Löschen"><FaTrash /></button>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => navigate(`/customers/${c.id}`)}
+                        className="h-8 w-8"
+                    >
+                        <EyeOutlined className="text-slate-400" />
+                    </Button>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => { setEditingCustomer(c); setIsModalOpen(true); }}
+                        className="h-8 w-8"
+                    >
+                        <EditOutlined className="text-slate-400" />
+                    </Button>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                            setCustomerToDelete(c.id);
+                            setConfirmTitle('Kunde löschen');
+                            setConfirmMessage('Sind Sie sicher, dass Sie diesen Kunden in den Papierkorb verschieben möchten?');
+                            setIsConfirmOpen(true);
+                        }}
+                        className="h-8 w-8"
+                    >
+                        <DeleteOutlined className="text-red-400" />
+                    </Button>
                 </div>
             ),
             align: 'right' as const
         }
     ];
 
-    const actions = (
-        <div className="relative group z-50" ref={exportRef}>
-            <button
-                onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }}
-                className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition"
-            >
-                <FaDownload /> Export
-            </button>
-            {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)
-                    </button>
-                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)
-                    </button>
-                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition">
-                        <FaFilePdf className="text-red-600 text-sm" /> PDF Report
-                    </button>
-                </div>
-            )}
-        </div>
+    const exportItems: MenuProps['items'] = [
+        { key: 'xlsx', label: 'Excel (.xlsx)', icon: <FileExcelOutlined className="text-emerald-600" />, onClick: () => handleExport('xlsx') },
+        { key: 'csv', label: 'CSV (.csv)', icon: <FileTextOutlined className="text-blue-600" />, onClick: () => handleExport('csv') },
+        { key: 'pdf', label: 'PDF Report', icon: <FilePdfOutlined className="text-red-600" />, onClick: () => handleExport('pdf') },
+    ];
+
+    const actions_export = (
+        <Dropdown menu={{ items: exportItems }} placement="bottomRight">
+            <Button className="h-9 px-4">
+                <FaDownload className="mr-2" />
+                Export <DownOutlined style={{ fontSize: '10px' }} />
+            </Button>
+        </Dropdown>
     );
 
-    const tabs = (
-        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
-            <button
-                onClick={() => setTypeFilter('all')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Alle
-            </button>
-            <button
-                onClick={() => setTypeFilter('Privat')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Privat' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Privat
-            </button>
-            <button
-                onClick={() => setTypeFilter('Firma')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Firma' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Firmen
-            </button>
-            <button
-                onClick={() => setTypeFilter('Behörde')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Behörde' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Behörden
-            </button>
-
-            {(showTrash || typeFilter === 'trash') && (
-                <button
-                    onClick={() => setTypeFilter('trash')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                >
-                    Papierkorb
-                </button>
-            )}
-
-            {(showArchive || typeFilter === 'archive') && (
-                <button
-                    onClick={() => setTypeFilter('archive')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                >
-                    Archiv
-                </button>
-            )}
-        </div>
-    );
+    const views = [
+        { label: 'Alle Kunden', value: 'all' },
+        { label: 'Privatkunden', value: 'Privat' },
+        { label: 'Firmenkunden', value: 'Firma' },
+        { label: 'Behörden', value: 'Behörde' },
+        ...(showTrash || typeFilter === 'trash' ? [{ label: 'Papierkorb', value: 'trash' }] : []),
+        ...(showArchive || typeFilter === 'archive' ? [{ label: 'Archiv', value: 'archive' }] : [])
+    ];
 
     const extraControls = (
-        <div className="relative" ref={viewSettingsRef}>
-            <button
-                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
-                title="Ansichtseinstellungen"
-            >
-                <FaFilter className="text-sm" />
-            </button>
-            {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
+        <Dropdown
+            dropdownRender={() => (
+                <Card size="small" className="w-64">
+                    <Text strong type="secondary" className="block mb-2 uppercase tracking-wider text-[10px]">Ansicht anpassen</Text>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Text>Papierkorb anzeigen</Text>
                             <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
                         </div>
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
+                        <div className="flex items-center justify-between">
+                            <Text>Archiv anzeigen</Text>
                             <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
                         </div>
                     </div>
-                </div>
+                </Card>
             )}
-        </div>
+            trigger={['click']}
+        >
+            <Button size="icon">
+                <FilterOutlined />
+            </Button>
+        </Dropdown>
     );
 
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
+        <div className="flex flex-col gap-6 fade-in pb-10">
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Kundenstamm</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Auftraggeber und Rechnungsadressen.</p>
+                    <Title level={4} style={{ margin: 0 }}>Kundenstamm</Title>
+                    <Text type="secondary">Zentralverwaltung aller Auftraggeber und Rechnungsadressen.</Text>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                    <button
+                <Space>
+                    <Button
+                        variant="primary"
                         onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
-                        className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition"
+                        className="h-9 px-6 font-bold"
                     >
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neuer Kunde</span><span className="inline sm:hidden">Neu</span>
-                    </button>
-                </div>
+                        <PlusOutlined className="mr-2" />
+                        Neuer Kunde
+                    </Button>
+                </Space>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Gesamtkunden" value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
-                <KPICard label="Neuzugänge" value={newCustomersCount} icon={<FaUserPlus />} iconColor="text-indigo-600" subValue="Letzte 30 Tage" />
-                <KPICard label="Top Auftraggeber" value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" subValue="Höchster Umsatz YTD" />
+                <KPICard label="Neuzugänge" value={newCustomersCount} icon={<FaUserPlus />} subValue="Letzte 30 Tage" />
+                <KPICard label="Top Auftraggeber" value={stats?.top_customer || '-'} icon={<FaBriefcase />} subValue="Höchster Umsatz YTD" />
                 <KPICard
                     label="Umsatz YTD"
                     value={formatCurrency(stats?.total_revenue_ytd || 0)}
                     icon={<FaChartLine />}
-                    iconColor="text-green-600"
                     trend={stats?.revenue_trend !== undefined ? {
                         value: `${stats.revenue_trend > 0 ? '+' : ''}${stats.revenue_trend}%`,
                         label: 'vs. Vorjahr',
@@ -561,10 +522,11 @@ const Customers = () => {
                     pageSize={10}
                     searchPlaceholder="Kunden nach Name, Kontakt oder E-Mail suchen..."
                     searchFields={['company_name', 'contact_person', 'email']}
-                    actions={actions}
-                    tabs={tabs}
+                    actions={actions_export}
+                    onViewChange={(v) => setTypeFilter(v)}
+                    views={views}
+                    currentView={typeFilter}
                     extraControls={extraControls}
-                    onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
                 />
             </div>
 

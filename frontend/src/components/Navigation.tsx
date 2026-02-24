@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
+import type { UserRole } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService, notificationService } from '../api/services';
 import { formatDistanceToNow } from 'date-fns';
@@ -101,10 +102,10 @@ const Navigation = () => {
     const isActive = (path: string) => location.pathname === path;
 
     const navLinkClass = (path: string) => clsx(
-        "px-2 sm:px-3 py-4 text-sm font-medium border-b-2 transition h-full flex items-center gap-2",
+        "px-2 sm:px-3 py-4 text-sm font-bold border-b-2 transition-all h-full flex items-center gap-2",
         isActive(path)
-            ? "border-white text-white"
-            : "border-transparent text-slate-400 hover:text-white"
+            ? "border-teal-400 text-white bg-white/5"
+            : "border-transparent text-slate-400 hover:text-white hover:bg-white/5"
     );
 
     const NavBadge = ({ count, label, activeColor = "bg-rose-500", isPriority = false }: { count: number | undefined, label: string, activeColor?: string, isPriority?: boolean }) => {
@@ -112,17 +113,17 @@ const Navigation = () => {
         return (
             <div className="relative group ml-1.5 flex items-center">
                 <span className={clsx(
-                    "text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm transition-all duration-300",
+                    "text-white text-[10px] w-4.5 h-4.5 flex items-center justify-center rounded-full font-bold shadow-sm transition-all duration-300",
                     displayCount === 0 ? "bg-slate-700/50 text-slate-400 group-hover:bg-slate-600" : activeColor,
                     isPriority && displayCount > 0 && "animate-pulse ring-2 ring-rose-500/20"
                 )}>
                     {displayCount}
                 </span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-slate-900/95 text-white text-sm rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm border border-slate-700/50 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0">
-                    <div className="font-semibold">{label}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{displayCount} insgesamt</div>
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-slate-900/95"></span>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-slate-900 text-white text-[10px] rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm border border-slate-700/50 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0 uppercase tracking-wider">
+                    <div className="font-bold">{label}</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5 font-medium">{displayCount} insgesamt</div>
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-slate-900"></span>
                 </div>
             </div>
         );
@@ -138,15 +139,15 @@ const Navigation = () => {
     };
 
     return (
-        <nav ref={navRef} className="bg-slate-900 text-white shadow-sm z-30 flex-none relative">
+        <nav ref={navRef} className="bg-[hsl(174,100%,8%)] text-white shadow-lg z-30 flex-none relative">
             <div className="w-full px-4 sm:px-6">
                 <div className="flex items-center justify-between h-12">
                     {/* Left Side: Logo + Main Menu */}
                     <div className="flex items-center h-full gap-4 lg:gap-6">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
-                            <div className="bg-slate-700 w-8 h-8 rounded-sm flex items-center justify-center font-semibold text-white">TO</div>
-                            <span className="font-semibold text-lg tracking-tight hidden lg:inline">Translator Office</span>
+                            <div className="bg-white/10 w-8 h-8 rounded-sm flex items-center justify-center font-bold text-white border border-white/20">TO</div>
+                            <span className="font-bold text-base tracking-tighter hidden lg:inline uppercase">Translator Office</span>
                         </Link>
 
                         {/* Main Menu - Only Desktop */}
@@ -465,8 +466,8 @@ const Navigation = () => {
                             },
                             { path: '/inbox', label: 'Email', icon: <FaEnvelope />, role: 'manager', count: unreadEmails, badgeLabel: "Ungelesene E-Mails" },
                             { path: '/reports', label: 'Auswertung', icon: <FaChartBar />, role: 'manager' },
-                        ].map((item) => {
-                            if (item.role && !hasMinRole(item.role)) return null;
+                        ].map((item: any) => {
+                            if (item.role && !hasMinRole(item.role as UserRole)) return null;
                             const active = isActive(item.path);
                             return (
                                 <Link
