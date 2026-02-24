@@ -40,7 +40,7 @@ const Settings: React.FC = () => {
                                     className={clsx(
                                         'flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 group shrink-0 whitespace-nowrap lg:w-full',
                                         activeTab === tab.id
-                                            ? 'bg-slate-900 text-white shadow-sm font-medium rounded'
+                                            ? 'bg-brand-primary text-white shadow-sm font-medium rounded'
                                             : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium rounded'
                                     )}
                                 >

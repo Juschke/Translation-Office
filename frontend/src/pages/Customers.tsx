@@ -13,6 +13,7 @@ import Checkbox from '../components/common/Checkbox';
 import Switch from '../components/common/Switch';
 import KPICard from '../components/common/KPICard';
 import DataTable from '../components/common/DataTable';
+import { Button } from '../components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
@@ -375,25 +376,25 @@ const Customers = () => {
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
             <button
                 onClick={() => setTypeFilter('all')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Alle
             </button>
             <button
                 onClick={() => setTypeFilter('Privat')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Privat' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Privat' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Privat
             </button>
             <button
                 onClick={() => setTypeFilter('Firma')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Firma' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Firma' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Firmen
             </button>
             <button
                 onClick={() => setTypeFilter('Behörde')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Behörde' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Behörde' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Behörden
             </button>
@@ -455,12 +456,12 @@ const Customers = () => {
                     <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Auftraggeber und Rechnungsadressen.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                    <button
+                    <Button
                         onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
-                        className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition"
+                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neuer Kunde</span><span className="inline sm:hidden">Neu</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 

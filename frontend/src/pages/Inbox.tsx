@@ -52,6 +52,7 @@ const ALL_VARIABLES: { key: string; label: string; desc: string; group: string }
     { key: 'project_status', label: 'Status', desc: 'Aktueller Projektstatus', group: 'Projekt' },
     { key: 'source_language', label: 'Ausgangssprache', desc: 'Ausgangssprache des Dokuments', group: 'Projekt' },
     { key: 'target_language', label: 'Zielsprache', desc: 'Zielsprache des Dokuments', group: 'Projekt' },
+    { key: 'project_languages', label: 'Sprachpaar', desc: 'Ausgangs- und Zielsprache kombiniert', group: 'Projekt' },
     { key: 'deadline', label: 'Deadline', desc: 'Abgabetermin des Projekts', group: 'Projekt' },
     { key: 'document_type', label: 'Dokumentenart', desc: 'Art des zu übersetzenden Dokuments', group: 'Projekt' },
     { key: 'priority', label: 'Priorität', desc: 'Projektpriorität (Standard / Express)', group: 'Projekt' },
@@ -59,16 +60,31 @@ const ALL_VARIABLES: { key: string; label: string; desc: string; group: string }
     { key: 'price_net', label: 'Betrag (Netto)', desc: 'Netto-Projektbetrag', group: 'Finanzen' },
     { key: 'price_gross', label: 'Betrag (Brutto)', desc: 'Brutto-Betrag inkl. MwSt.', group: 'Finanzen' },
     { key: 'payment_terms', label: 'Zahlungsziel', desc: 'Zahlungsfrist in Tagen', group: 'Finanzen' },
+    { key: 'invoice_number', label: 'Rechnungsnummer', desc: 'Nummer der Projektrechnung', group: 'Finanzen' },
+    { key: 'invoice_date', label: 'Rechnungsdatum', desc: 'Datum der Rechnungstellung', group: 'Finanzen' },
+    { key: 'due_date', label: 'Fälligkeitsdatum', desc: 'Fälligkeitsdatum der Rechnung', group: 'Finanzen' },
     // Partner
     { key: 'partner_name', label: 'Partnername', desc: 'Name des Übersetzers / Partners', group: 'Partner' },
     { key: 'partner_email', label: 'Partner-E-Mail', desc: 'E-Mail-Adresse des Partners', group: 'Partner' },
+    // Unternehmen
+    { key: 'company_name', label: 'Firmenname', desc: 'Name Ihres Unternehmens', group: 'Unternehmen' },
+    { key: 'company_address', label: 'Firmenadresse', desc: 'Adresse Ihres Unternehmens', group: 'Unternehmen' },
+    { key: 'company_phone', label: 'Telefon (Firma)', desc: 'Telefonnummer Ihres Unternehmens', group: 'Unternehmen' },
+    { key: 'company_email', label: 'E-Mail (Firma)', desc: 'E-Mail-Adresse Ihres Unternehmens', group: 'Unternehmen' },
+    { key: 'company_website', label: 'Website', desc: 'Website Ihres Unternehmens', group: 'Unternehmen' },
+    { key: 'managing_director', label: 'Geschäftsleitung', desc: 'Name der Geschäftsführung', group: 'Unternehmen' },
+    { key: 'vat_id', label: 'USt-IdNr.', desc: 'Umsatzsteuer-Identifikationsnummer', group: 'Unternehmen' },
+    { key: 'tax_id', label: 'Steuernummer', desc: 'Steuernummer des Unternehmens', group: 'Unternehmen' },
+    { key: 'bank_name', label: 'Bankname', desc: 'Name Ihrer Bank', group: 'Unternehmen' },
+    { key: 'bank_iban', label: 'IBAN', desc: 'IBAN Ihres Bankkontos', group: 'Unternehmen' },
+    { key: 'bank_bic', label: 'BIC', desc: 'BIC Ihrer Bank', group: 'Unternehmen' },
+    { key: 'bank_holder', label: 'Kontoinhaber', desc: 'Name des Kontoinhabers', group: 'Unternehmen' },
     // Allgemein
     { key: 'date', label: 'Aktuelles Datum', desc: 'Heutiges Datum', group: 'Allgemein' },
     { key: 'sender_name', label: 'Absender', desc: 'Name des Sachbearbeiters', group: 'Allgemein' },
-    { key: 'company_name', label: 'Firmenname', desc: 'Name Ihres Unternehmens', group: 'Allgemein' },
 ];
 
-const VAR_GROUPS = ['Kunde', 'Projekt', 'Finanzen', 'Partner', 'Allgemein'];
+const VAR_GROUPS = ['Kunde', 'Projekt', 'Finanzen', 'Partner', 'Unternehmen', 'Allgemein'];
 
 const CommunicationHub = () => {
     const queryClient = useQueryClient();
@@ -103,7 +119,7 @@ const CommunicationHub = () => {
         composeAttachments, setComposeAttachments,
         isComposePreview, setIsComposePreview,
         selectedProjectId, setSelectedProjectId,
-        selectedCustomerId, setSelectedCustomerId,
+        selectedCustomerId,
         isDragOver, setIsDragOver,
         isProjectFilesModalOpen, setIsProjectFilesModalOpen,
         showToSuggestions, setShowToSuggestions,
@@ -301,31 +317,129 @@ const CommunicationHub = () => {
 
         const data = projectDetails || (customerDetails ? {
             customer: {
+                company_name: customerDetails.company_name || '',
+                first_name: customerDetails.first_name || '',
+                last_name: customerDetails.last_name || '',
                 name: customerDetails.company_name || `${customerDetails.first_name || ''} ${customerDetails.last_name || ''}`.trim(),
-                contact_person: customerDetails.contact_person || `${customerDetails.first_name || ''} ${customerDetails.last_name || ''}`.trim()
+                contact_person: customerDetails.contact_person || `${customerDetails.first_name || ''} ${customerDetails.last_name || ''}`.trim(),
+                email: customerDetails.email || '',
+                phone: customerDetails.phone || '',
+                address_street: customerDetails.address_street || '',
+                address_house_no: customerDetails.address_house_no || '',
+                address_zip: customerDetails.address_zip || '',
+                address_city: customerDetails.address_city || '',
+                payment_terms_days: customerDetails.payment_terms_days || 14
             },
             project_number: 'N/A',
-            name: 'Kein Projekt ausgewählt',
+            project_name: 'Kein Projekt ausgewählt',
+            status: 'N/A',
+            source_language: { name: 'N/A' },
+            target_language: { name: 'N/A' },
             deadline: null,
-            total_amount: '0,00'
+            document_type: { name: 'N/A' },
+            priority: 'N/A',
+            price_total: '0.00'
         } : {
-            customer: { name: 'Musterfirma GmbH', contact_person: 'Max Mustermann' },
+            customer: {
+                name: 'Musterfirma GmbH',
+                contact_person: 'Max Mustermann',
+                email: 'kunde@beispiel.de',
+                phone: '+49 123 456789',
+                address_street: 'Musterstraße',
+                address_house_no: '1',
+                address_zip: '12345',
+                address_city: 'Musterstadt',
+                payment_terms_days: 14
+            },
             project_number: 'PRJ-XXXX-XXXX',
-            name: 'Beispiel Projekt',
+            project_name: 'Beispiel Projekt',
+            status: 'draft',
+            source_language: { name: 'Deutsch' },
+            target_language: { name: 'Englisch' },
             deadline: 'DD.MM.YYYY',
-            total_amount: '0,00 €'
+            document_type: { name: 'Urkunde' },
+            priority: 'medium',
+            price_total: '0.00',
+            partner: {
+                company: 'Partner Übersetzungen',
+                name: 'Paul Partner',
+                email: 'partner@beispiel.de'
+            }
         });
 
-        const custName = data.customer?.name || data.customer?.company_name || 'Musterfirma GmbH';
-        const contact = data.customer?.contact_person || 'Max Mustermann';
+        const statusLabels: { [key: string]: string } = {
+            'draft': 'Entwurf',
+            'offer': 'Angebot',
+            'pending': 'Angebot',
+            'in_progress': 'Bearbeitung',
+            'review': 'Bearbeitung',
+            'ready_for_pickup': 'Abholbereit',
+            'delivered': 'Geliefert',
+            'invoiced': 'Rechnung',
+            'completed': 'Abgeschlossen',
+            'cancelled': 'Storniert'
+        };
+
+        const priorityLabels: { [key: string]: string } = {
+            'low': 'Niedrig',
+            'medium': 'Normal',
+            'high': 'Hoch'
+        };
+
+        const custName = data.customer?.company_name || data.customer?.name || 'Musterfirma GmbH';
+        const contact = data.customer?.contact_person || (data.customer?.first_name ? `${data.customer.first_name} ${data.customer.last_name}` : 'Max Mustermann');
+
+        const netAmount = parseFloat(data.price_total || data.total_amount || '0');
+        const grossAmount = netAmount * 1.19;
 
         return html
+            // Kunde
             .replace(/{{customer_name}}|{customer_name}/g, custName)
             .replace(/{{contact_person}}|{contact_person}/g, contact)
+            .replace(/{{customer_email}}|{customer_email}/g, data.customer?.email || '')
+            .replace(/{{customer_phone}}|{customer_phone}/g, data.customer?.phone || '')
+            .replace(/{{customer_address}}|{customer_address}/g, `${data.customer?.address_street || ''} ${data.customer?.address_house_no || ''}`.trim() || 'Musterstraße 1')
+            .replace(/{{customer_zip}}|{customer_zip}/g, data.customer?.address_zip || '')
+            .replace(/{{customer_city}}|{customer_city}/g, data.customer?.address_city || '')
+
+            // Projekt
             .replace(/{{project_number}}|{project_number}/g, data.project_number || 'PRJ-XXXX-XXXX')
-            .replace(/{{project_name}}|{project_name}/g, data.name || data.project_name || 'Beispiel Projekt')
+            .replace(/{{project_name}}|{project_name}/g, data.project_name || data.name || 'Beispiel Projekt')
+            .replace(/{{project_status}}|{project_status}/g, statusLabels[data.status] || data.status || 'Entwurf')
+            .replace(/{{source_language}}|{source_language}/g, data.source_language?.name || 'Deutsch')
+            .replace(/{{target_language}}|{target_language}/g, data.target_language?.name || 'Englisch')
+            .replace(/{{project_languages}}|{project_languages}/g, data.source_language?.name && data.target_language?.name ? `${data.source_language.name} → ${data.target_language.name}` : 'Deutsch → Englisch')
             .replace(/{{deadline}}|{deadline}/g, data.deadline ? new Date(data.deadline).toLocaleDateString('de-DE') : 'DD.MM.YYYY')
-            .replace(/{{price_net}}|{price_net}/g, data.total_amount || data.price_total ? `${parseFloat(data.total_amount || data.price_total).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €` : '0,00 €')
+            .replace(/{{document_type}}|{document_type}/g, data.document_type?.name || data.doc_type || 'Übersetzung')
+            .replace(/{{priority}}|{priority}/g, priorityLabels[data.priority] || data.priority || 'Normal')
+
+            // Finanzen
+            .replace(/{{price_net}}|{price_net}/g, `${netAmount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`)
+            .replace(/{{price_gross}}|{price_gross}/g, `${grossAmount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`)
+            .replace(/{{payment_terms}}|{payment_terms}/g, `${data.customer?.payment_terms_days || 14} Tage`)
+            .replace(/{{invoice_number}}|{invoice_number}/g, data.invoices?.[0]?.invoice_number || 'RE-2024-001')
+            .replace(/{{invoice_date}}|{invoice_date}/g, data.invoices?.[0]?.date ? new Date(data.invoices[0].date).toLocaleDateString('de-DE') : new Date().toLocaleDateString('de-DE'))
+            .replace(/{{due_date}}|{due_date}/g, data.invoices?.[0]?.due_date ? new Date(data.invoices[0].due_date).toLocaleDateString('de-DE') : new Date(Date.now() + 14 * 86400000).toLocaleDateString('de-DE'))
+
+            // Partner
+            .replace(/{{partner_name}}|{partner_name}/g, data.partner?.company || data.partner?.name || 'Partner GmbH')
+            .replace(/{{partner_email}}|{partner_email}/g, data.partner?.email || '')
+
+            // Unternehmen
+            .replace(/{{company_name}}|{company_name}/g, 'Translation Office')
+            .replace(/{{company_address}}|{company_address}/g, 'Musterstraße 123, 12345 Musterstadt')
+            .replace(/{{company_phone}}|{company_phone}/g, '+49 123 456789-0')
+            .replace(/{{company_email}}|{company_email}/g, 'info@translation-office.de')
+            .replace(/{{company_website}}|{company_website}/g, 'www.translation-office.de')
+            .replace(/{{managing_director}}|{managing_director}/g, 'Jane Doe')
+            .replace(/{{vat_id}}|{vat_id}/g, 'DE 123 456 789')
+            .replace(/{{tax_id}}|{tax_id}/g, '12/345/67890')
+            .replace(/{{bank_name}}|{bank_name}/g, 'Musterbank AG')
+            .replace(/{{bank_iban}}|{bank_iban}/g, 'DE12 3456 7890 1234 5678 90')
+            .replace(/{{bank_bic}}|{bank_bic}/g, 'MUSBDEFFXXX')
+            .replace(/{{bank_holder}}|{bank_holder}/g, 'Translation Office GmbH')
+
+            // Allgemein
             .replace(/{{date}}|{date}/g, new Date().toLocaleDateString('de-DE'))
             .replace(/{{sender_name}}|{sender_name}/g, 'Ihre Administration');
     };
@@ -404,16 +518,16 @@ const CommunicationHub = () => {
                     <button
                         onClick={() => syncMutation.mutate()}
                         disabled={syncMutation.isPending}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 sm:px-6 py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50"
+                        className="bg-emerald-50 text-brand-primary hover:bg-emerald-100 px-3 sm:px-4 py-1.5 text-xs font-bold flex items-center justify-center gap-2 transition disabled:opacity-50 border border-emerald-100 rounded-full"
                     >
-                        <span className="hidden xs:inline">{syncMutation.isPending ? 'Synchronisiert...' : 'Postfach abrufen'}</span>
+                        <span className="hidden xs:inline">{syncMutation.isPending ? 'Synchronisiert...' : 'E-Mails abrufen'}</span>
                         <span className="xs:hidden">{syncMutation.isPending ? 'Sync...' : 'Abrufen'}</span>
                     </button>
                     <button
                         onClick={() => setIsComposeOpen(true)}
-                        className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition"
+                        className="bg-brand-primary hover:bg-brand-primary/90 text-white px-3 sm:px-4 py-1.5 text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm rounded-full"
                     >
-                        <FaPlus /> <span className="hidden xs:inline">Neue Email</span><span className="xs:hidden">Mail</span>
+                        <FaPlus className="text-[10px]" /> <span className="hidden xs:inline">E-Mail schreiben</span><span className="xs:hidden">E-Mail</span>
                     </button>
                 </div>
             </div>
@@ -547,6 +661,7 @@ const CommunicationHub = () => {
                                 title="E-Mail Vorlagen"
                                 items={templates}
                                 headers={['Name', 'Betreff', 'Kategorie']}
+                                addLabel="Vorlage erstellen"
                                 onAdd={() => {
                                     setTemplateToEdit(null);
                                     setIsTemplateModalOpen(true);
@@ -579,6 +694,7 @@ const CommunicationHub = () => {
                                 title="E-Mail Konten"
                                 items={accounts}
                                 headers={['Bezeichnung', 'Email', 'Server', 'Status']}
+                                addLabel="Konto hinzufügen"
                                 onAdd={() => {
                                     setAccountToEdit(null);
                                     setIsAccountModalOpen(true);
@@ -1057,7 +1173,7 @@ const CommunicationHub = () => {
                                     <Button
                                         onClick={() => sendMutation.mutate(selectedAccount?.id)}
                                         disabled={sendMutation.isPending || !composeTo || !composeSubject}
-                                        className="h-10 px-10 bg-slate-900 border-none hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10 gap-3 transition-all rounded-sm disabled:opacity-20"
+                                        className="h-10 px-10 bg-brand-primary border-none hover:bg-brand-primary/90 text-white font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-brand-primary/10 gap-3 transition-all rounded-sm disabled:opacity-20"
                                     >
                                         {sendMutation.isPending ? 'Sende...' : 'NACHRICHT SENDEN'} <FaPaperPlane size={10} />
                                     </Button>

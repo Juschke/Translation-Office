@@ -225,32 +225,32 @@ class MasterDataSeeder extends Seeder
             [
                 'name' => 'Angebot Standard',
                 'type' => 'Angebot',
-                'subject' => 'Ihr Übersetzungsangebot {offer_number}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage und das damit verbundene Interesse an unseren Dienstleistungen.\n\nAnbei erhalten Sie unser unverbindliches Angebot für das Projekt '{project_name}'. Wir würden uns sehr freuen, diesen Auftrag für Sie ausführen zu dürfen.\n\nFür Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n\n{sender_name}\n\n{company_name}\n{company_address}\nTel: {company_phone}\nEmail: {company_email}\nWeb: {company_website}\n\nGeschäftsführung: {managing_director}\nUSt-IdNr.: {vat_id}"
+                'subject' => 'Ihr Übersetzungsangebot {{project_number}}',
+                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage und das damit verbundene Interesse an unseren Dienstleistungen.\n\nAnbei erhalten Sie unser unverbindliches Angebot für das Projekt '{{project_name}}'. Wir würden uns sehr freuen, diesen Auftrag für Sie ausführen zu dürfen.\n\nFür Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n\n{{sender_name}}\n\n{{company_name}}\n{{company_address}}\nTel: {{company_phone}}\nEmail: {{company_email}}\nWeb: {{company_website}}\n\nGeschäftsführung: {{managing_director}}\nUSt-IdNr.: {{vat_id}}"
             ],
             [
                 'name' => 'Rechnung Standard',
                 'type' => 'Rechnung',
-                'subject' => 'Rechnung {invoice_number} - {project_name}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nin der Anlage erhalten Sie die Rechnung zu Ihrem Projekt '{project_name}' als PDF-Dokument.\n\nWir bitten um Begleichung des Rechnungsbetrages bis zum {due_date}. Sollten Sie den Betrag bereits überwiesen haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.\n\nVielen Dank für die angenehme Zusammenarbeit und Ihr Vertrauen in unsere Arbeit.\n\nMit freundlichen Grüßen,\n\n{sender_name}\n\n{company_name}\n{company_address}\nTel: {company_phone}\nEmail: {company_email}\nWeb: {company_website}\n\nBankverbindung:\n{bank_name}\nIBAN: {bank_iban}\nBIC: {bank_bic}\nKontoinhaber: {bank_holder}\n\nUSt-IdNr.: {vat_id} | Steuernummer: {tax_number}"
+                'subject' => 'Rechnung {{invoice_number}} - {{project_name}}',
+                'body' => "Sehr geehrte Damen und Herren,\n\nin der Anlage erhalten Sie die Rechnung zu Ihrem Projekt '{{project_name}}' als PDF-Dokument.\n\nWir bitten um Begleichung des Rechnungsbetrages bis zum {{due_date}}. Sollten Sie den Betrag bereits überwiesen haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.\n\nVielen Dank für die angenehme Zusammenarbeit und Ihr Vertrauen in unsere Arbeit.\n\nMit freundlichen Grüßen,\n\n{{sender_name}}\n\n{{company_name}}\n{{company_address}}\nTel: {{company_phone}}\nEmail: {{company_email}}\nWeb: {{company_website}}\n\nBankverbindung:\n{{bank_name}}\nIBAN: {{bank_iban}}\nBIC: {{bank_bic}}\nKontoinhaber: {{bank_holder}}\n\nUSt-IdNr.: {{vat_id}} | Steuernummer: {{tax_id}}"
             ],
             [
                 'name' => 'Auftragsbestätigung',
                 'type' => 'Auftragsbestätigung',
-                'subject' => 'Auftragsbestätigung: Projekt {project_number}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihren Auftrag. Hiermit bestätigen wir Ihnen die Annahme und den Beginn der Bearbeitung Ihres Projektes '{project_name}'.\n\nDie geplante Fertigstellung erfolgt bis zum {deadline}.\n\nSollten Sie noch Ergänzungen oder Fragen haben, lassen Sie es uns bitte wissen.\n\nMit freundlichen Grüßen,\n\n{sender_name}\n\n{company_name}\n{company_address}\nTel: {company_phone}"
+                'subject' => 'Auftragsbestätigung: Projekt {{project_number}}',
+                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihren Auftrag. Hiermit bestätigen wir Ihnen die Annahme und den Beginn der Bearbeitung Ihres Projektes '{{project_name}}'.\n\nDie geplante Fertigstellung erfolgt bis zum {{deadline}}.\n\nSollten Sie noch Ergänzungen oder Fragen haben, lassen Sie es uns bitte wissen.\n\nMit freundlichen Grüßen,\n\n{{sender_name}}\n\n{{company_name}}\n{{company_address}}\nTel: {{company_phone}}"
             ],
             [
                 'name' => 'Partner-Anfrage (Übersetzung)',
                 'type' => 'Partner-Anfrage',
-                'subject' => 'Verfügbarkeitsanfrage: Projekt {project_name} ({source} > {target})',
-                'body' => "Guten Tag,\n\nwir haben ein neues Projekt im Bereich {source} > {target} erhalten und möchten anfragen, ob Sie hierfür aktuell Kapazitäten frei haben.\n\nEckdaten des Projekts:\n- Volumen: {volume}\n- Liefertermin: {deadline}\n\nBitte geben Sie uns kurz Bescheid, ob Sie diesen Auftrag übernehmen können. Wir freuen uns auf eine mögliche Zusammenarbeit.\n\nBeste Grüße,\n\n{sender_name}\nProjektmanagement | {company_name}"
+                'subject' => 'Verfügbarkeitsanfrage: Projekt {{project_name}} ({{source_language}} > {{target_language}})',
+                'body' => "Guten Tag,\n\nwir haben ein neues Projekt im Bereich {{source_language}} > {{target_language}} erhalten und möchten anfragen, ob Sie hierfür aktuell Kapazitäten frei haben.\n\nEckdaten des Projekts:\n- Volumen: {{price_net}}\n- Liefertermin: {{deadline}}\n\nBitte geben Sie uns kurz Bescheid, ob Sie diesen Auftrag übernehmen können. Wir freuen uns auf eine mögliche Zusammenarbeit.\n\nBeste Grüße,\n\n{{sender_name}}\nProjektmanagement | {{company_name}}"
             ],
             [
                 'name' => 'Abholbestätigung',
                 'type' => 'Abholbestätigung',
-                'subject' => 'Abholbestätigung für Ihren Auftrag {project_number}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nwir freuen uns, Ihnen mitteilen zu können, dass Ihr Auftrag '{project_name}' fertiggestellt wurde und zur Abholung bereitliegt.\n\nSie können Ihre Unterlagen zu unseren Öffnungszeiten in unserem Büro abholen.\n\nWir danken für die gute Zusammenarbeit.\n\nMit freundlichen Grüßen,\n\n{sender_name}\n\n{company_name}\n{company_address}\nTel: {company_phone}"
+                'subject' => 'Abholbestätigung für Ihren Auftrag {{project_number}}',
+                'body' => "Sehr geehrte Damen und Herren,\n\nwir freuen uns, Ihnen mitteilen zu können, dass Ihr Auftrag '{{project_name}}' fertiggestellt wurde und zur Abholung bereitliegt.\n\nSie können Ihre Unterlagen zu unseren Öffnungszeiten in unserem Büro abholen.\n\nWir danken für die gute Zusammenarbeit.\n\nMit freundlichen Grüßen,\n\n{{sender_name}}\n\n{{company_name}}\n{{company_address}}\nTel: {{company_phone}}"
             ],
         ];
 

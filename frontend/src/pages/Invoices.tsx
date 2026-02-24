@@ -9,6 +9,7 @@ import {
     FaFileInvoiceDollar, FaTrashRestore, FaFilter, FaPaperPlane,
 } from 'react-icons/fa';
 import { buildInvoiceColumns } from './invoiceColumns';
+import { Button } from '../components/ui/button';
 
 import Switch from '../components/common/Switch';
 import DataTable from '../components/common/DataTable';
@@ -374,12 +375,12 @@ const Invoices = () => {
 
     const tabs = (
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
-            <button onClick={() => setStatusFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Alle</button>
-            <button onClick={() => setStatusFilter('pending')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Offen</button>
-            <button onClick={() => setStatusFilter('paid')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'paid' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bezahlt</button>
-            <button onClick={() => setStatusFilter('overdue')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Überfällig</button>
+            <button onClick={() => setStatusFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Alle</button>
+            <button onClick={() => setStatusFilter('pending')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Offen</button>
+            <button onClick={() => setStatusFilter('paid')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'paid' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bezahlt</button>
+            <button onClick={() => setStatusFilter('overdue')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Überfällig</button>
             <button onClick={() => setStatusFilter('reminders')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Mahnungen</button>
-            <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
+            <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
             <button onClick={() => setStatusFilter('credit_notes')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Gutschriften</button>
 
             {(showTrash || statusFilter === 'trash') && (
@@ -473,11 +474,11 @@ const Invoices = () => {
                     <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                    <button
+                    <Button
                         onClick={() => setIsNewInvoiceOpen(true)}
                         className={clsx(
-                            "text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition",
-                            statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-slate-900 hover:bg-slate-800"
+                            "text-white font-bold shadow-sm flex items-center justify-center gap-2 transition px-4 py-2",
+                            statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-brand-primary hover:bg-brand-primary/90"
                         )}
                     >
                         <FaPlus className="text-xs" />
@@ -487,7 +488,7 @@ const Invoices = () => {
                         <span className="inline sm:hidden">
                             Neu
                         </span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 

@@ -33,8 +33,9 @@ class MailTemplateService
             $variables['bank_iban'] = $tenant->bank_iban ?? '';
             $variables['bank_bic'] = $tenant->bank_bic ?? '';
             $variables['bank_holder'] = $tenant->bank_account_holder ?? '';
-            $variables['tax_number'] = $tenant->tax_number ?? '';
             $variables['vat_id'] = $tenant->vat_id ?? '';
+            $variables['tax_id'] = $tenant->tax_number ?? '';
+            $variables['tax_number'] = $tenant->tax_number ?? '';
             $variables['tax_office'] = $tenant->tax_office ?? '';
         }
 
@@ -70,65 +71,68 @@ class MailTemplateService
     public function getProjectVariables(\App\Models\Project $project): array
     {
         $customer = $project->customer;
-        $partner  = $project->partner;
+        $partner = $project->partner;
 
-        $customerName  = $customer
+        $customerName = $customer
             ? ($customer->company_name ?: trim($customer->first_name . ' ' . $customer->last_name))
             : '';
         $contactPerson = $customer
             ? ($customer->contact_person ?: trim($customer->first_name . ' ' . $customer->last_name))
             : '';
 
-        $partnerName  = $partner
+        $partnerName = $partner
             ? ($partner->company ?: trim(($partner->first_name ?? '') . ' ' . ($partner->last_name ?? '')))
             : '';
 
         $sourceLang = $project->sourceLanguage?->name ?? $project->source_language ?? '';
         $targetLang = $project->targetLanguage?->name ?? $project->target_language ?? '';
-        $docType    = $project->documentType?->name ?? '';
+        $docType = $project->documentType?->name ?? '';
 
-        $priceNet   = (float) ($project->price_total ?? 0);
-        $vatRate    = (float) ($project->tenant?->vat_rate ?? 19);
+        $priceNet = (float) ($project->price_total ?? 0);
+        $vatRate = (float) ($project->tenant?->vat_rate ?? 19);
         $priceGross = $priceNet * (1 + $vatRate / 100);
 
         $paymentTerms = $customer?->payment_terms_days ?? $project->payment_terms_days ?? '';
-        $priorityMap  = [
-            'low'     => 'Standard',
-            'medium'  => 'Normal',
-            'high'    => 'Hohe Priorität',
+        $priorityMap = [
+            'low' => 'Standard',
+            'medium' => 'Normal',
+            'high' => 'Hohe Priorität',
             'express' => 'Express',
         ];
 
         return [
             // Kunde
-            'customer_name'    => $this->formatValue($customerName),
-            'contact_person'   => $this->formatValue($contactPerson),
-            'customer_email'   => $this->formatValue($customer?->email),
-            'customer_phone'   => $this->formatValue($customer?->phone),
+            'customer_name' => $this->formatValue($customerName),
+            'contact_person' => $this->formatValue($contactPerson),
+            'customer_email' => $this->formatValue($customer?->email),
+            'customer_phone' => $this->formatValue($customer?->phone),
             'customer_address' => $this->formatValue(
                 trim(($customer?->address_street ?? '') . ' ' . ($customer?->address_house_no ?? ''))
             ),
-            'customer_city'    => $this->formatValue($customer?->address_city),
-            'customer_zip'     => $this->formatValue($customer?->address_zip),
+            'customer_city' => $this->formatValue($customer?->address_city),
+            'customer_zip' => $this->formatValue($customer?->address_zip),
             // Projekt
-            'project_number'   => $this->formatValue($project->project_number ?? 'PRJ-' . $project->id),
-            'project_name'     => $this->formatValue($project->project_name ?? $project->name),
-            'project_status'   => $this->formatValue($project->status),
-            'source_language'  => $this->formatValue($sourceLang),
-            'target_language'  => $this->formatValue($targetLang),
-            'project_languages'=> $this->formatValue($sourceLang && $targetLang ? "$sourceLang → $targetLang" : ''),
-            'deadline'         => $project->deadline
+            'project_number' => $this->formatValue($project->project_number ?? 'PRJ-' . $project->id),
+            'project_name' => $this->formatValue($project->project_name ?? $project->name),
+            'project_status' => $this->formatValue($project->status),
+            'source_language' => $this->formatValue($sourceLang),
+            'target_language' => $this->formatValue($targetLang),
+            'project_languages' => $this->formatValue($sourceLang && $targetLang ? "$sourceLang → $targetLang" : ''),
+            'deadline' => $project->deadline
                 ? \Carbon\Carbon::parse($project->deadline)->format('d.m.Y H:i')
                 : 'Keine Angabe',
-            'document_type'    => $this->formatValue($docType),
-            'priority'         => $this->formatValue($priorityMap[$project->priority ?? ''] ?? $project->priority),
+            'document_type' => $this->formatValue($docType),
+            'priority' => $this->formatValue($priorityMap[$project->priority ?? ''] ?? $project->priority),
             // Finanzen
-            'price_net'        => number_format($priceNet, 2, ',', '.') . ' €',
-            'price_gross'      => number_format($priceGross, 2, ',', '.') . ' €',
-            'payment_terms'    => $paymentTerms ? $paymentTerms . ' Tage' : 'Keine Angabe',
+            'price_net' => number_format($priceNet, 2, ',', '.') . ' €',
+            'price_gross' => number_format($priceGross, 2, ',', '.') . ' €',
+            'payment_terms' => $paymentTerms ? $paymentTerms . ' Tage' : 'Keine Angabe',
+            'invoice_number' => $project->invoices->first()?->invoice_number ?? 'N/A',
+            'invoice_date' => $project->invoices->first() ? \Carbon\Carbon::parse($project->invoices->first()->date)->format('d.m.Y') : 'N/A',
+            'due_date' => $project->invoices->first() ? \Carbon\Carbon::parse($project->invoices->first()->due_date)->format('d.m.Y') : 'N/A',
             // Partner
-            'partner_name'     => $this->formatValue($partnerName),
-            'partner_email'    => $this->formatValue($partner?->email),
+            'partner_name' => $this->formatValue($partnerName),
+            'partner_email' => $this->formatValue($partner?->email),
         ];
     }
 

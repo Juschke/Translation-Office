@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
-import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { Button } from '../ui/button';
 import PartnerForm from '../forms/PartnerForm';
 
 interface NewPartnerModalProps {
@@ -81,22 +81,20 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
 
                 {/* Footer */}
                 <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
-                    <button
+                    <Button
+                        variant="outline"
                         onClick={onClose}
-                        className="px-5 py-2 rounded border border-slate-300 text-slate-600 text-xs font-semibold hover:bg-white transition-all"
+                        className="px-5 transition-all shadow-sm"
                     >
                         Abbrechen
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={handleSubmit}
                         disabled={isLoading}
-                        className={clsx(
-                            "px-8 py-2 bg-slate-900 text-white rounded text-xs font-semibold shadow-sm hover:bg-slate-800 transition-all",
-                            isLoading && "opacity-50 cursor-not-allowed"
-                        )}
+                        className="px-8 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all font-bold shadow-sm"
                     >
                         {isLoading ? 'Verarbeitet...' : (initialData ? 'Änderungen speichern' : 'Partner anlegen')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

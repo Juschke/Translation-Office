@@ -154,11 +154,11 @@ const Profile = () => {
                 {/* Left Column */}
                 <div className="space-y-6">
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="h-20 bg-slate-900"></div>
+                        <div className="h-20 bg-[#003333]"></div>
                         <div className="px-6 pb-6 text-center">
                             <div className="relative -mt-10 mb-4 inline-block">
                                 <div className="w-20 h-20 rounded-sm bg-white p-1 shadow-sm mx-auto">
-                                    <div className="w-full h-full rounded bg-slate-100 flex items-center justify-center text-2xl font-medium text-slate-900 border border-slate-100">
+                                    <div className="w-full h-full rounded bg-slate-100 flex items-center justify-center text-2xl font-bold text-brand-primary border border-slate-100">
                                         {formData.firstName || formData.lastName ? getInitials(`${formData.firstName} ${formData.lastName}`) : 'JD'}
                                     </div>
                                 </div>
@@ -185,7 +185,7 @@ const Profile = () => {
                     {/* Personal Info Form */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 p-8">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center border border-slate-100 shadow-sm"><FaUser className="text-sm" /></div>
+                            <div className="w-10 h-10 rounded-sm bg-slate-50 text-brand-primary flex items-center justify-center border border-slate-100 shadow-sm font-bold"><FaUser className="text-sm" /></div>
                             <div>
                                 <h3 className="text-sm font-semibold text-slate-800">Persönliche Daten</h3>
                                 <p className="text-xs text-slate-400 font-medium mt-0.5">Ihre Grundinformationen</p>
@@ -229,7 +229,7 @@ const Profile = () => {
                             <button
                                 onClick={handleUpdateProfile}
                                 disabled={isLoading}
-                                className="px-8 py-2.5 bg-slate-900 text-white rounded text-sm font-medium hover:bg-slate-800 transition-all shadow-sm shadow-brand-500/10 disabled:opacity-50"
+                                className="px-8 py-2.5 bg-brand-primary text-white rounded text-sm font-bold hover:bg-brand-primary/90 transition-all shadow-sm disabled:opacity-50"
                             >
                                 Profil speichern
                             </button>
@@ -239,7 +239,7 @@ const Profile = () => {
                     {/* Security */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 p-8">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center border border-slate-100 shadow-sm"><FaShieldAlt className="text-sm" /></div>
+                            <div className="w-10 h-10 rounded-sm bg-slate-50 text-brand-primary flex items-center justify-center border border-slate-100 shadow-sm font-bold"><FaShieldAlt className="text-sm" /></div>
                             <div>
                                 <h3 className="text-sm font-semibold text-slate-800">Sicherheit & Zugang</h3>
                                 <p className="text-xs text-slate-400 font-medium mt-0.5">Passwort & Authentifizierung</p>
@@ -256,8 +256,8 @@ const Profile = () => {
                                 <button
                                     onClick={() => setShowPasswordForm(!showPasswordForm)}
                                     className={clsx(
-                                        "px-4 py-2 rounded text-xs font-semibold transition-all",
-                                        showPasswordForm ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-slate-50 text-slate-900 hover:bg-slate-100"
+                                        "px-4 py-2 rounded text-xs font-bold transition-all",
+                                        showPasswordForm ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-sm"
                                     )}
                                 >
                                     {showPasswordForm ? 'Abbrechen' : 'Passwort ändern'}
@@ -318,7 +318,7 @@ const Profile = () => {
                                         <button
                                             onClick={handleChangePassword}
                                             disabled={isLoading}
-                                            className="px-8 py-2.5 bg-slate-900 text-white rounded text-xs font-semibold hover:bg-black transition-all shadow-sm disabled:opacity-70"
+                                            className="px-8 py-2.5 bg-brand-primary text-white rounded text-xs font-bold hover:bg-brand-primary/90 transition-all shadow-sm disabled:opacity-70"
                                         >
                                             Sicherheitsupdate bestätigen
                                         </button>
@@ -350,8 +350,8 @@ const Profile = () => {
                                     </button>
                                 ) : (
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setShowRecoveryCodesInline(!showRecoveryCodesInline); if (!showRecoveryCodesInline) showRecoveryCodes(); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-xs font-semibold hover:bg-slate-200">Codes</button>
-                                        <button onClick={() => setShowDisableConfirmInline(!showDisableConfirmInline)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded text-xs font-semibold hover:bg-red-100">Deaktivieren</button>
+                                        <button onClick={() => { setShowRecoveryCodesInline(!showRecoveryCodesInline); if (!showRecoveryCodesInline) showRecoveryCodes(); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-xs font-bold hover:bg-slate-200">Codes</button>
+                                        <button onClick={() => setShowDisableConfirmInline(!showDisableConfirmInline)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded text-xs font-bold hover:bg-red-100">Deaktivieren</button>
                                     </div>
                                 )}
                             </div>
@@ -382,7 +382,7 @@ const Profile = () => {
                                                     <button
                                                         onClick={handleConfirm2FA}
                                                         disabled={twoFactorCode.length < 6 || isLoading}
-                                                        className="px-6 bg-slate-900 text-white font-semibold text-xs rounded-sm hover:bg-slate-800 disabled:opacity-50 transition-all shadow-sm shadow-brand-500/10"
+                                                        className="px-6 bg-brand-primary text-white font-bold text-xs rounded-sm hover:bg-brand-primary/90 disabled:opacity-50 transition-all shadow-sm"
                                                     >
                                                         Bestätigen
                                                     </button>
@@ -407,8 +407,8 @@ const Profile = () => {
                                         ))}
                                     </div>
                                     <div className="flex gap-3">
-                                        <button onClick={handleRegenerateRecoveryCodes} disabled={isLoading} className="flex-1 py-2 bg-slate-50 text-slate-900 font-semibold text-xs rounded hover:bg-slate-100 transition-all border border-slate-200">Neue Codes generieren</button>
-                                        <button onClick={() => setShowRecoveryCodesInline(false)} className="flex-1 py-2 bg-slate-800 text-white font-semibold text-xs rounded hover:bg-black transition-all">Verstanden</button>
+                                        <button onClick={handleRegenerateRecoveryCodes} disabled={isLoading} className="flex-1 py-2 bg-slate-50 text-slate-900 font-bold text-xs rounded hover:bg-slate-100 transition-all border border-slate-200">Neue Codes generieren</button>
+                                        <button onClick={() => setShowRecoveryCodesInline(false)} className="flex-1 py-2 bg-slate-800 text-white font-bold text-xs rounded hover:bg-black transition-all">Verstanden</button>
                                     </div>
                                 </div>
                             )}

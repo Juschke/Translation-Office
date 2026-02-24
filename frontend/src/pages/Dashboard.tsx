@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/button';
 import {
     FaLayerGroup, FaClock, FaEuroSign, FaEnvelope
 } from 'react-icons/fa';
@@ -119,24 +120,26 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                    <button
+                    <Button
                         onClick={() => navigate('/projects', { state: { openNewModal: true } })}
-                        className="bg-slate-900 text-white px-4 h-9 rounded-sm text-sm font-medium hover:bg-slate-800 transition"
+                        className="bg-brand-primary text-white hover:bg-brand-primary/90 transition font-bold"
                     >
                         Neues Projekt
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="outline"
                         onClick={() => navigate('/customers', { state: { openNewModal: true } })}
-                        className="bg-white border border-slate-200 text-slate-700 px-4 h-9 rounded-sm text-sm font-medium hover:bg-slate-50 transition"
+                        className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition font-bold"
                     >
                         Kunde anlegen
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="outline"
                         onClick={() => navigate('/partners', { state: { openNewModal: true } })}
-                        className="bg-white border border-slate-200 text-slate-700 px-4 h-9 rounded-sm text-sm font-medium hover:bg-slate-50 transition"
+                        className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition font-bold"
                     >
                         Partner anlegen
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -212,7 +215,7 @@ const Dashboard = () => {
                                                 <td className="px-6 py-4">
                                                     <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
                                                         <div
-                                                            className="bg-slate-900 h-full transition-all duration-700"
+                                                            className="bg-brand-primary h-full transition-all duration-700"
                                                             style={{ width: `${Math.min(100, share)}%` }}
                                                         ></div>
                                                     </div>

@@ -247,7 +247,7 @@ const Reports = () => {
                     </div>
                     <button
                         onClick={() => setAppliedDateRange(dateRange)}
-                        className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition shrink-0"
+                        className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition shrink-0"
                     >
                         <FaFilter className="text-xs" /> <span className="hidden xs:inline">Anzeigen</span><span className="xs:hidden">Anzeigen</span>
                     </button>

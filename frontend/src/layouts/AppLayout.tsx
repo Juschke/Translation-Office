@@ -7,7 +7,7 @@ const AppLayout = () => {
     const isFetching = useIsFetching();
 
     return (
-        <div className="h-screen flex flex-col bg-white overflow-hidden font-sans text-slate-900">
+        <div className="h-screen flex flex-col bg-brand-bg overflow-hidden font-sans text-brand-text">
             <Navigation />
 
             {/* Global Loading Indicator */}

@@ -14,6 +14,7 @@ import NewPartnerModal from '../components/modals/NewPartnerModal';
 import Switch from '../components/common/Switch';
 import KPICard from '../components/common/KPICard';
 import DataTable from '../components/common/DataTable';
+import { Button } from '../components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { partnerService, projectService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
@@ -401,31 +402,31 @@ const Partners = () => {
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
             <button
                 onClick={() => setTypeFilter('all')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Alle
             </button>
             <button
                 onClick={() => setTypeFilter('service_providers')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'service_providers' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'service_providers' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Übersetzer & Dolmetscher
             </button>
             <button
                 onClick={() => setTypeFilter('Übersetzer')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Übersetzer' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Übersetzer' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Übersetzer
             </button>
             <button
                 onClick={() => setTypeFilter('Dolmetscher')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Dolmetscher' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Dolmetscher' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Dolmetscher
             </button>
             <button
                 onClick={() => setTypeFilter('Agentur')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Agentur' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Agentur' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 Agenturen
             </button>
@@ -487,9 +488,12 @@ const Partners = () => {
                     <p className="text-slate-500 text-sm hidden sm:block">Verwaltung externer Übersetzer, Dolmetscher und Agenturen.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                    <button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }} className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition">
+                    <Button
+                        onClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
+                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
+                    >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neuer Partner</span><span className="inline sm:hidden">Neu</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 

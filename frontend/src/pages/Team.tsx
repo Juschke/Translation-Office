@@ -136,7 +136,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                 <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 text-sm bg-slate-900 text-white rounded-sm hover:bg-slate-900 disabled:opacity-50"
+                    className="px-4 py-2 text-sm bg-brand-primary text-white font-bold rounded-sm hover:bg-brand-primary/90 disabled:opacity-50 transition shadow-sm"
                 >
                     {loading ? 'Speichern…' : isEdit ? 'Speichern' : 'Hinzufügen'}
                 </button>
@@ -201,9 +201,9 @@ const Team: React.FC = () => {
                 <div className="shrink-0">
                     <button
                         onClick={() => setModal({ type: 'add' })}
-                        className="flex items-center justify-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-sm text-sm font-medium hover:bg-slate-900"
+                        className="flex items-center justify-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-sm text-sm font-bold hover:bg-brand-primary/90 shadow-sm transition"
                     >
-                        <FaPlus className="text-xs" /> <span className="hidden xs:inline">Mitarbeiter hinzufügen</span><span className="xs:hidden">Neu+</span>
+                        <FaPlus className="text-xs" /> <span className="hidden xs:inline">Mitarbeiter hinzufügen</span><span className="xs:hidden">Hinzufügen</span>
                     </button>
                 </div>
             </div>

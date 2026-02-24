@@ -32,7 +32,7 @@ const KPICard: React.FC<KPICardProps> = ({
     return (
         <div
             onClick={onClick}
-            className={`bg-white p-4 sm:p-5 rounded-sm border border-slate-200 transition-colors ${onClick ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+            className={`bg-white p-4 sm:p-5 rounded-[var(--radius-lg)] border border-brand-border transition-all ${onClick ? 'cursor-pointer hover:bg-slate-50' : ''}`}
         >
             <div className="flex justify-between items-start mb-2 sm:mb-3 gap-2">
                 <p className="text-xs sm:text-sm font-medium text-slate-500 line-clamp-2">{label}</p>

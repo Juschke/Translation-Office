@@ -6,6 +6,7 @@ interface MailResourceTableProps {
     headers: string[];
     renderRow: (item: any) => React.ReactNode;
     onAdd: () => void;
+    addLabel?: string;
     onEdit?: (item: any) => void;
     onDelete?: (item: any) => void;
 }
@@ -16,6 +17,7 @@ const MailResourceTable = ({
     headers,
     renderRow,
     onAdd,
+    addLabel = 'Neu+',
     onEdit,
     onDelete,
 }: MailResourceTableProps) => (
@@ -24,9 +26,9 @@ const MailResourceTable = ({
             <h2 className="text-xs font-semibold text-slate-800">{title}</h2>
             <button
                 onClick={onAdd}
-                className="text-xs font-semibold bg-slate-900 text-white px-3 py-1.5 transition hover:bg-slate-900"
+                className="text-xs font-bold bg-brand-primary text-white px-3 py-1.5 transition hover:bg-brand-primary/90 shadow-sm rounded-full"
             >
-                Neu+
+                {addLabel}
             </button>
         </div>
         <table className="w-full text-left border-collapse">

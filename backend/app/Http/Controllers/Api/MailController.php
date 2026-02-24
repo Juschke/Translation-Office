@@ -59,7 +59,7 @@ class MailController extends Controller
         $mailTemplateService = app(\App\Services\MailTemplateService::class);
         $variables = [];
         if (!empty($validated['project_id'])) {
-            $project = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType'])->find($validated['project_id']);
+            $project = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'invoices'])->find($validated['project_id']);
             if ($project) {
                 $variables = $mailTemplateService->getProjectVariables($project);
             }
@@ -184,6 +184,7 @@ class MailController extends Controller
 
                 // Connect to the server
                 $client->connect();
+                \Log::info("IMAP connected for {$account->email}");
 
                 // Get INBOX folder
                 $folder = $client->getFolder('INBOX');
@@ -205,7 +206,7 @@ class MailController extends Controller
                 }
 
                 foreach ($messages as $message) {
-                    $messageId = $message->getMessageId()->get()[0] ?? $message->getUid();
+                    $messageId = (string) ($message->getMessageId()->first() ?? $message->getUid());
 
                     if (Mail::withTrashed()->where('tenant_id', $tenantId)->where('mail_account_id', $account->id)->where('message_id', $messageId)->exists()) {
                         continue;

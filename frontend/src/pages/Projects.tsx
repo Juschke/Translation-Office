@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fa';
 import { buildProjectColumns } from './projectColumns';
 import clsx from 'clsx';
+import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
 import NewProjectModal from '../components/modals/NewProjectModal';
 import Switch from '../components/common/Switch';
@@ -231,16 +232,16 @@ const Projects = () => {
 
     const tabs = (
         <div className="flex items-center gap-2 whitespace-nowrap px-1">
-            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'all' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Übersicht</button>
-            <button onClick={() => setFilter('offer')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'offer' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Neu</button>
-            <button onClick={() => setFilter('in_progress')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'in_progress' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bearbeitung</button>
-            <button onClick={() => setFilter('delivered')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'delivered' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Geliefert</button>
-            <button onClick={() => setFilter('invoiced')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'invoiced' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Rechnung</button>
-            <button onClick={() => setFilter('ready_for_pickup')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'ready_for_pickup' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abholbereit</button>
-            <button onClick={() => setFilter('completed')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'completed' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abgeschlossen</button>
+            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Übersicht</button>
+            <button onClick={() => setFilter('offer')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'offer' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Neu</button>
+            <button onClick={() => setFilter('in_progress')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'in_progress' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bearbeitung</button>
+            <button onClick={() => setFilter('delivered')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'delivered' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Geliefert</button>
+            <button onClick={() => setFilter('invoiced')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'invoiced' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Rechnung</button>
+            <button onClick={() => setFilter('ready_for_pickup')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'ready_for_pickup' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abholbereit</button>
+            <button onClick={() => setFilter('completed')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'completed' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abgeschlossen</button>
 
             {(showTrash || filter === 'trash') && (
-                <button onClick={() => setFilter('trash')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'trash' ? 'bg-slate-900 border-slate-900 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
+                <button onClick={() => setFilter('trash')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'trash' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
             )}
             {(showArchive || filter === 'archive') && (
                 <button onClick={() => setFilter('archive')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
@@ -301,9 +302,12 @@ const Projects = () => {
                     <p className="text-slate-500 text-sm hidden sm:block">Verwalten und überwachen Sie alle Übersetzungsaufträge.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                    <button onClick={() => { setEditingProject(null); setIsModalOpen(true); }} className="bg-slate-900 hover:bg-slate-800 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-sm text-sm sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition">
+                    <Button
+                        onClick={() => { setEditingProject(null); setIsModalOpen(true); }}
+                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
+                    >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neues Projekt</span><span className="inline sm:hidden">Neu</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 

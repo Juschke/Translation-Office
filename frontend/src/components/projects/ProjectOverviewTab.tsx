@@ -1,4 +1,5 @@
 import { FaArrowRight, FaCheck, FaCheckCircle, FaClock, FaBolt, FaFlag, FaAt, FaPhone, FaExternalLinkAlt, FaFileInvoiceDollar, FaUserPlus, FaCopy, FaPaperPlane, FaStar } from 'react-icons/fa';
+import { Button } from '../ui/button';
 import clsx from 'clsx';
 import { toast } from 'react-hot-toast';
 import { getCountryName } from '../../utils/countries';
@@ -113,14 +114,16 @@ const ProjectOverviewTab = ({
                             <h4 className="text-xs font-semibold text-slate-400">Kunde / Auftraggeber</h4>
                             <div className="flex gap-4">
                                 {projectData.customer_id && (
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="sm"
                                         onClick={() => navigate(`/customers/${projectData.customer_id}`, { state: { from: locationPathname } })}
-                                        className="text-xs text-slate-400 font-medium hover:text-slate-700 flex items-center gap-1.5 transition-colors"
+                                        className="h-auto p-0 text-slate-400 font-medium hover:text-brand-primary flex items-center gap-1.5 transition-colors"
                                     >
                                         <FaExternalLinkAlt className="text-xs" /> Akte öffnen
-                                    </button>
+                                    </Button>
                                 )}
-                                <button onClick={() => setIsCustomerSearchOpen(true)} className="text-xs text-slate-700 font-semibold hover:underline">Ändern</button>
+                                <Button variant="link" size="sm" onClick={() => setIsCustomerSearchOpen(true)} className="h-auto p-0 text-brand-primary font-bold hover:underline">Ändern</Button>
                             </div>
                         </div>
 
@@ -222,14 +225,16 @@ const ProjectOverviewTab = ({
                             <h4 className="text-xs font-semibold text-slate-400">Ausführender Partner</h4>
                             <div className="flex gap-4">
                                 {projectData.translator?.id && (
-                                    <button
+                                    <Button
+                                        variant="link"
+                                        size="sm"
                                         onClick={() => navigate(`/partners/${projectData.translator.id}`, { state: { from: locationPathname } })}
-                                        className="text-xs text-slate-400 font-medium hover:text-slate-700 flex items-center gap-1.5 transition-colors"
+                                        className="h-auto p-0 text-slate-400 font-medium hover:text-brand-primary flex items-center gap-1.5 transition-colors"
                                     >
                                         <FaExternalLinkAlt className="text-xs" /> Akte öffnen
-                                    </button>
+                                    </Button>
                                 )}
-                                <button onClick={() => setIsPartnerModalOpen(true)} className="text-xs text-slate-700 font-semibold hover:underline">Ändern</button>
+                                <Button variant="link" size="sm" onClick={() => setIsPartnerModalOpen(true)} className="h-auto p-0 text-brand-primary font-bold hover:underline">Ändern</Button>
                             </div>
                         </div>
 
@@ -301,16 +306,20 @@ const ProjectOverviewTab = ({
                                     <FaUserPlus className="text-2xl" />
                                 </div>
                                 <p className="text-slate-400 font-medium text-xs">Kein Partner zugewiesen</p>
-                                <button onClick={() => setIsPartnerModalOpen(true)} className="mt-4 px-4 py-2 bg-white text-slate-700 text-xs font-semibold rounded-sm border border-slate-200 hover:bg-slate-50 transition shadow-sm">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsPartnerModalOpen(true)}
+                                    className="mt-4 text-brand-text hover:text-brand-primary font-bold shadow-sm"
+                                >
                                     Partner auswählen
-                                </button>
+                                </Button>
                             </div>
                         )}
 
                         <div className="mt-8 flex gap-3 justify-end">
                             {!projectData.documentsSent ? (
-                                <button
-                                    className="px-5 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-sm hover:bg-slate-900 transition shadow-sm flex items-center gap-2"
+                                <Button
+                                    className="px-5 py-2.5 bg-brand-primary text-white text-xs font-bold hover:bg-brand-primary/90 transition shadow-sm flex items-center gap-2"
                                     onClick={() => {
                                         const hasFiles = projectData.files && projectData.files.length > 0;
                                         if (!hasFiles) {
@@ -321,7 +330,7 @@ const ProjectOverviewTab = ({
                                     }}
                                 >
                                     <FaPaperPlane className="text-xs" /> Dokumente senden
-                                </button>
+                                </Button>
                             ) : (
                                 <div className="px-5 py-2.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-sm flex items-center gap-2 border border-emerald-100 shadow-sm">
                                     <FaCheckCircle /> Versand bestätigt

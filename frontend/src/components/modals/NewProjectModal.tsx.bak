@@ -295,7 +295,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     });
 
     const creationDate = initialData?.createdAt || new Date().toLocaleDateString('de-DE');
-    const projectManager = initialData?.pm || 'Admin';
 
     useEffect(() => {
         const updatedPositions = positions.map(pos => {
@@ -645,10 +644,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     };
 
     return (
-        <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto">
             <div className="bg-white rounded-sm shadow-sm w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] animate-fadeInUp">
                 {/* Header */}
-                <div className="bg-emerald-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
                         <h3 className="font-medium text-slate-800 text-lg">{initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}</h3>
                     </div>
@@ -673,7 +672,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* 01: Basis-Daten */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-emerald-50 text-brand-primary flex items-center justify-center text-xs font-bold">01</div>
+                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium">01</div>
                                 <h4 className="text-sm font-medium text-slate-800">Basis-Daten</h4>
                             </div>
 
@@ -771,7 +770,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* 02: Sprachen & Kunde */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-emerald-50 text-brand-primary flex items-center justify-center text-xs font-bold">02</div>
+                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium">02</div>
                                 <h4 className="text-sm font-medium text-slate-800">Sprachen & Kunde</h4>
                             </div>
 

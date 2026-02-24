@@ -3,7 +3,7 @@ import {
     FaTimes, FaFileInvoiceDollar, FaPlus, FaTrash, FaCheckCircle, FaInfoCircle
 } from 'react-icons/fa';
 import Input from '../common/Input';
-import { Button } from '../common/Button';
+import { Button } from '../ui/button';
 import SearchableSelect from '../common/SearchableSelect';
 import { useQuery } from '@tanstack/react-query';
 import { projectService, settingsService, invoiceService } from '../../api/services';
@@ -302,7 +302,6 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
     const companyPhone = co.phone || co.contact_phone || '–';
 
     // Layout design settings
-    const invoiceLayout = co.invoice_layout || 'din5008';
     const invoiceFontFamily = co.invoice_font_family || "'Inter', 'Arial', sans-serif";
     const invoiceFontSize = co.invoice_font_size || '9pt';
     const invoicePrimaryColor = co.invoice_primary_color || '#000000';
@@ -529,12 +528,14 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                             <section>
                                 <div className="flex justify-between items-center mb-3">
                                     <h4 className="text-xs font-semibold text-slate-400">Positionen</h4>
-                                    <button
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
                                         onClick={addItem}
-                                        className="px-3 py-1.5 bg-slate-50 text-slate-600 border border-slate-200 rounded text-xs font-medium hover:bg-slate-100 hover:text-slate-800 transition shadow-sm flex items-center gap-1.5"
+                                        className="bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800 transition shadow-sm flex items-center gap-1.5 font-bold"
                                     >
                                         <FaPlus className="mb-0.5" /> Neu
-                                    </button>
+                                    </Button>
                                 </div>
 
                                 <div className="mb-4">
@@ -738,22 +739,17 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                         {/* ── Actions Footer ── */}
                         <div className="p-6 border-t border-slate-50 flex justify-end gap-4 shrink-0 bg-white">
-                            <button onClick={onClose} className="px-6 py-2 text-xs font-semibold text-slate-400 hover:text-slate-900 transition-colors">Abbrechen</button>
+                            <Button variant="ghost" onClick={onClose} className="px-6 text-slate-400 hover:text-slate-900 transition-colors">Abbrechen</Button>
                             <Button
-                                variant="primary"
                                 onClick={() => {
-                                    // GoBD: Backend generates the final number for new invoices.
-                                    // For drafts being updated, we can send it, but backend store() ignores it anyway.
-                                    // We omit it here for new invoices to avoid sending placeholders to the server.
                                     const { invoice_number, ...submitData } = formData;
                                     const payload = invoice ? { ...formData, ...computedFinancials, items } : { ...submitData, ...computedFinancials, items };
                                     onSubmit(payload);
                                 }}
-                                isLoading={isLoading}
-                                disabled={!selectedProjectId || items.length === 0 || invoice?.status === 'cancelled'}
-                                className="h-12 px-6 md:px-10 rounded-none text-xs font-semibold shadow-sm shadow-slate-100 italic"
+                                disabled={!selectedProjectId || items.length === 0 || invoice?.status === 'cancelled' || isLoading}
+                                className="h-12 px-10 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all font-bold shadow-lg shadow-brand-primary/20"
                             >
-                                Beleg Jetzt Finalisieren
+                                {isLoading ? 'Wird verarbeitet...' : 'Beleg Jetzt Finalisieren'}
                             </Button>
                         </div>
                     </div>

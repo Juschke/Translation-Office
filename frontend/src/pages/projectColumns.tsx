@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
 import { FaArrowRight, FaEdit, FaTrash, FaEye, FaEnvelope, FaTrashRestore } from 'react-icons/fa';

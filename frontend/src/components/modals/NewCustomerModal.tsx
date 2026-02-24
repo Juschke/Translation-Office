@@ -9,6 +9,7 @@ import PhoneInput from '../common/PhoneInput';
 import { IMaskInput } from 'react-imask';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { Button } from '../ui/button';
 
 const legalFormOptions = [
     { value: 'Einzelunternehmen', label: 'Einzelunternehmen' },
@@ -794,19 +795,19 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
                     {/* Footer */}
                     <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
-                        <button
-                            type="button"
+                        <Button
+                            variant="outline"
                             onClick={onClose}
-                            className="px-5 py-2 rounded border border-slate-300 text-slate-600 text-xs font-semibold hover:bg-white transition-all shadow-sm"
+                            className="px-5 transition-all shadow-sm"
                         >
                             Abbrechen
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            className="px-8 py-2 bg-slate-900 text-white rounded text-xs font-semibold shadow-sm hover:bg-slate-800 transition-all"
+                            className="px-8 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all font-bold shadow-sm"
                         >
                             {initialData ? 'Änderungen speichern' : 'Kunde anlegen'}
-                        </button>
+                        </Button>
                     </div>
                 </form >
             </div >

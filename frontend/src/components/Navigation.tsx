@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar } from 'react-icons/fa';
 import clsx from 'clsx';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, type UserRole } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService, notificationService } from '../api/services';
 import { formatDistanceToNow } from 'date-fns';
@@ -101,10 +101,10 @@ const Navigation = () => {
     const isActive = (path: string) => location.pathname === path;
 
     const navLinkClass = (path: string) => clsx(
-        "px-2 sm:px-3 py-4 text-sm font-medium border-b-2 transition h-full flex items-center gap-2",
+        "px-2 sm:px-3 py-4 text-sm font-semibold border-b-2 transition h-full flex items-center gap-2",
         isActive(path)
             ? "border-white text-white"
-            : "border-transparent text-slate-400 hover:text-white"
+            : "border-transparent text-emerald-100/60 hover:text-white"
     );
 
     const NavBadge = ({ count, label, activeColor = "bg-rose-500", isPriority = false }: { count: number | undefined, label: string, activeColor?: string, isPriority?: boolean }) => {
@@ -119,10 +119,10 @@ const Navigation = () => {
                     {displayCount}
                 </span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-slate-900/95 text-white text-sm rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm border border-slate-700/50 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-brand-primary text-white text-sm rounded-[var(--radius-sm)] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg border border-white/10 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0">
                     <div className="font-semibold">{label}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{displayCount} insgesamt</div>
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-slate-900/95"></span>
+                    <div className="text-xs text-white/70 mt-0.5">{displayCount} insgesamt</div>
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-brand-primary"></span>
                 </div>
             </div>
         );
@@ -138,15 +138,15 @@ const Navigation = () => {
     };
 
     return (
-        <nav ref={navRef} className="bg-slate-900 text-white shadow-sm z-30 flex-none relative">
+        <nav ref={navRef} className="bg-[#003333] text-white border-b border-white/10 flex-none sticky top-0 z-30 transition-all shadow-md">
             <div className="w-full px-4 sm:px-6">
                 <div className="flex items-center justify-between h-12">
                     {/* Left Side: Logo + Main Menu */}
                     <div className="flex items-center h-full gap-4 lg:gap-6">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
-                            <div className="bg-slate-700 w-8 h-8 rounded-sm flex items-center justify-center font-semibold text-white">TO</div>
-                            <span className="font-semibold text-lg tracking-tight hidden lg:inline">Translator Office</span>
+                            <div className="bg-white w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center font-bold text-[#003333] shadow-sm">TO</div>
+                            <span className="font-bold text-lg tracking-tight hidden lg:inline text-white">Translator Office</span>
                         </Link>
 
                         {/* Main Menu - Only Desktop */}
@@ -309,7 +309,7 @@ const Navigation = () => {
                         {/* Notification Bell */}
                         <div className="relative" ref={notifRef}>
                             <button
-                                className="text-slate-300 hover:text-white focus:outline-none cursor-pointer flex items-center"
+                                className="text-emerald-100/60 hover:text-white focus:outline-none cursor-pointer flex items-center transition-colors"
                                 onClick={(e) => { e.stopPropagation(); setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
                             >
                                 <FaBell className="w-5 h-5" />
@@ -320,7 +320,7 @@ const Navigation = () => {
 
                             {/* Notification Dropdown */}
                             {isNotifOpen && (
-                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-sm shadow-sm border border-slate-200 z-50 text-slate-800 origin-top-right animate-slideUp">
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-[var(--radius-md)] shadow-sm border border-brand-border z-50 text-brand-text origin-top-right animate-slideUp">
                                     <div className="p-3 border-b border-slate-100 font-semibold text-sm flex justify-between">
                                         <span>Benachrichtigungen</span>
                                         <button
@@ -369,13 +369,13 @@ const Navigation = () => {
                         {/* Profile Menu */}
                         <div className="relative" ref={profileRef}>
                             <div
-                                className="flex items-center gap-2 cursor-pointer focus:outline-none"
+                                className="flex items-center gap-2 cursor-pointer focus:outline-none group"
                                 onClick={(e) => { e.stopPropagation(); setIsProfileOpen(!isProfileOpen); setIsNotifOpen(false); }}
                             >
-                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[11px] border border-slate-700 text-white font-bold uppercase shadow-sm">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[11px] border border-white/10 text-white font-bold uppercase shadow-sm group-hover:bg-emerald-400 group-hover:text-emerald-950 transition-all">
                                     {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
                                 </div>
-                                <FaChevronDown className={clsx("text-xs text-slate-500 transition-transform", isProfileOpen && "rotate-180")} />
+                                <FaChevronDown className={clsx("text-xs text-emerald-100/40 transition-transform", isProfileOpen && "rotate-180")} />
                             </div>
 
                             {/* Profile Dropdown */}
@@ -433,7 +433,7 @@ const Navigation = () => {
                         {/* Mobile Menu Button — right side */}
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 lg:hidden text-slate-400 hover:text-white"
+                            className="p-2 lg:hidden text-white hover:text-emerald-400"
                         >
                             <div className="w-5 h-4 flex flex-col justify-between">
                                 <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "rotate-45 translate-y-1.5" : "")}></span>
@@ -447,7 +447,7 @@ const Navigation = () => {
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
-                <div className="lg:hidden bg-slate-900 border-t border-slate-800 animate-slideDown">
+                <div className="lg:hidden bg-white border-t border-brand-border animate-slideDown shadow-lg">
                     <div className="px-4 py-3 space-y-1">
                         {[
                             { path: '/', label: 'Dashboard', icon: <FaHome />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute" },
@@ -466,22 +466,22 @@ const Navigation = () => {
                             { path: '/inbox', label: 'Email', icon: <FaEnvelope />, role: 'manager', count: unreadEmails, badgeLabel: "Ungelesene E-Mails" },
                             { path: '/reports', label: 'Auswertung', icon: <FaChartBar />, role: 'manager' },
                         ].map((item) => {
-                            if (item.role && !hasMinRole(item.role)) return null;
+                            if (item.role && !hasMinRole(item.role as UserRole)) return null;
                             const active = isActive(item.path);
                             return (
                                 <Link
                                     key={item.path}
                                     to={item.path}
                                     className={clsx(
-                                        "px-3 py-2.5 rounded-sm text-base font-medium flex items-center justify-between transition-colors",
+                                        "px-3 py-2.5 rounded-[var(--radius-sm)] text-base font-semibold flex items-center justify-between transition-colors",
                                         active
-                                            ? "bg-slate-800 text-white border-l-2 border-white pl-2.5"
-                                            : "text-slate-400 hover:bg-slate-800/50 hover:text-white border-l-2 border-transparent"
+                                            ? "bg-brand-primary/5 text-brand-primary border-l-4 border-brand-primary pl-2.5"
+                                            : "text-brand-muted hover:bg-brand-bg hover:text-brand-primary border-l-4 border-transparent"
                                     )}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <span className={clsx("text-lg", active ? "text-white" : "text-slate-500")}>
+                                        <span className={clsx("text-lg", active ? "text-brand-primary" : "text-brand-muted")}>
                                             {item.icon}
                                         </span>
                                         {item.label}

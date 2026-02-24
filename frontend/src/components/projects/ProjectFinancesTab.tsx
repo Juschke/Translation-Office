@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { FaPlus, FaCheckCircle, FaFileInvoiceDollar, FaTrashAlt, FaClock, FaInfoCircle } from 'react-icons/fa';
 import clsx from 'clsx';
+import { Button } from '../ui/button';
 
 interface ProjectPosition {
     id: string;
@@ -203,20 +204,22 @@ const ProjectFinancesTab = ({
                             </div>
                             <div className="flex items-center gap-2">
                                 {!isLocked && (
-                                    <button
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
                                         onClick={addPosition}
-                                        className="px-3 py-1.5 bg-slate-50 text-slate-600 border border-slate-200 rounded text-xs font-medium hover:bg-slate-100 hover:text-slate-800 transition shadow-sm flex items-center gap-1.5"
+                                        className="h-8 bg-white text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white transition shadow-sm flex items-center gap-1.5 font-bold"
                                     >
                                         <FaPlus className="mb-0.5" /> Neu
-                                    </button>
+                                    </Button>
                                 )}
-                                <button
+                                <Button
                                     onClick={handleSave}
                                     disabled={isPendingSave || isLocked}
-                                    className="px-3 py-1.5 bg-slate-900 text-white rounded text-xs font-semibold hover:bg-slate-900 transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                                    className="h-8 bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm disabled:opacity-50 flex items-center gap-1.5 font-bold"
                                 >
                                     <FaCheckCircle /> {isLocked ? 'Gesperrt' : 'Speichern'}
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
@@ -302,7 +305,7 @@ const ProjectFinancesTab = ({
                                                 {!isLocked && (
                                                     <button
                                                         onClick={() => deletePosition(pos.id)}
-                                                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                        className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                                                         title="Position löschen"
                                                     >
                                                         <FaTrashAlt className="text-xs" />
@@ -430,12 +433,14 @@ const ProjectFinancesTab = ({
                                     <p className="text-xs text-slate-400 font-medium">Eingänge & Gutschriften</p>
                                 </div>
                             </div>
-                            <button
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={onRecordPayment}
-                                className="px-3 py-1.5 bg-white text-slate-600 border border-slate-200 rounded text-xs font-medium hover:bg-slate-50 hover:text-slate-700 transition shadow-sm flex items-center gap-1.5"
+                                className="h-8 bg-white text-slate-600 border-slate-200 font-semibold hover:bg-slate-50 hover:text-brand-primary transition shadow-sm flex items-center gap-2"
                             >
                                 <FaPlus className="mb-0.5" /> Zahlung erfassen
-                            </button>
+                            </Button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
@@ -462,7 +467,7 @@ const ProjectFinancesTab = ({
                                                     + {parseFloat(payment.amount).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <button className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                                                    <button className="text-red-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
                                                         <FaTrashAlt className="text-xs" />
                                                     </button>
                                                 </td>
@@ -576,20 +581,20 @@ const ProjectFinancesTab = ({
                                                 {activeInvoice.due_date ? `Fällig ${new Date(activeInvoice.due_date).toLocaleDateString('de-DE')}` : ''}
                                             </div>
                                         </div>
-                                        <button
+                                        <Button
                                             onClick={onGoToInvoice}
-                                            className="w-full py-2.5 bg-slate-900 text-white rounded-sm text-[10px] font-black hover:bg-slate-800 transition-all flex items-center justify-center gap-2 uppercase tracking-[0.1em] shadow-lg shadow-slate-900/10"
+                                            className="w-full py-4 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-2 font-bold uppercase tracking-widest shadow-lg shadow-brand-primary/10"
                                         >
                                             <FaFileInvoiceDollar size={12} /> ZUR RECHNUNG
-                                        </button>
+                                        </Button>
                                     </div>
                                 ) : (
-                                    <button
+                                    <Button
                                         onClick={onCreateInvoice}
-                                        className="w-full py-2.5 bg-slate-900 text-white rounded-sm text-sm font-medium hover:bg-slate-900 transition shadow-sm flex items-center justify-center gap-2"
+                                        className="w-full py-2.5 bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm flex items-center justify-center gap-2 font-bold"
                                     >
                                         <FaFileInvoiceDollar /> Rechnung erstellen
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         </div>

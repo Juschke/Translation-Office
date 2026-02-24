@@ -22,6 +22,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, invoiceService, customerService, partnerService } from '../api/services';
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
+import { Button } from '../components/ui/button';
 
 
 import TableSkeleton from '../components/common/TableSkeleton';
@@ -626,12 +627,14 @@ const ProjectDetail = () => {
                     <div className="px-3 sm:px-4 md:px-8 py-4">
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-4">
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => navigate('/projects')}
-                                    className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
+                                    className="rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
                                 >
                                     <FaArrowLeft />
-                                </button>
+                                </Button>
 
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <div className="w-12 h-12 rounded-sm bg-slate-50 text-slate-700 flex items-center justify-center text-xl font-semibold border border-slate-100 shadow-sm shrink-0">
@@ -659,36 +662,39 @@ const ProjectDetail = () => {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end mt-4 md:mt-0">
-                                <button
+                                <Button
+                                    variant="outline"
                                     onClick={() => setIsEditModalOpen(true)}
-                                    className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEdit /> Bearbeiten
-                                </button>
+                                </Button>
 
-                                <button
+                                <Button
+                                    variant="outline"
                                     onClick={() => setIsProjectDeleteConfirmOpen(true)}
-                                    className="bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    className="text-brand-muted hover:text-red-600 hover:border-red-200 px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaTrashAlt /> Löschen
-                                </button>
+                                </Button>
 
                                 {/* Email senden */}
-                                <button
+                                <Button
                                     onClick={() => navigate('/inbox', { state: { openCompose: true, projectId: String(projectData.id) } })}
-                                    className="bg-slate-900 text-white hover:bg-slate-800 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    className="bg-brand-primary text-white hover:bg-brand-primary/90 px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEnvelope /> E-Mail senden
-                                </button>
+                                </Button>
 
                                 {/* Mehr Aktionen Dropdown */}
                                 <div className="relative flex-1 sm:flex-none" ref={actionsRef}>
-                                    <button
+                                    <Button
+                                        variant="outline"
                                         onClick={() => setIsActionsOpen(v => !v)}
-                                        className="w-full bg-white border border-slate-200 text-slate-600 hover:text-slate-700 px-3 py-2 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-medium flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
+                                        className="w-full text-brand-text hover:text-brand-primary px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
                                     >
                                         Mehr Aktionen <FaChevronDown className={clsx('text-[10px] transition-transform', isActionsOpen && 'rotate-180')} />
-                                    </button>
+                                    </Button>
 
                                     {isActionsOpen && (
                                         <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-sm shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-1">
