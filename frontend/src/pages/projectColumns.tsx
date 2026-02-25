@@ -1,10 +1,10 @@
 import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
-import { FaArrowRight, FaEdit, FaTrash, FaEye, FaEnvelope, FaTrashRestore } from 'react-icons/fa';
-import Checkbox from '../components/common/Checkbox';
+import { FaArrowRight, FaEdit, FaTrash, FaEye, FaEnvelope, FaTrashRestore, FaTimes } from 'react-icons/fa';
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
+import SearchableSelect from '../components/common/SearchableSelect';
 
 export function getStatusBadge(status: string): ReactNode {
     const labels: Record<string, string> = {
@@ -48,10 +48,6 @@ function getInitials(name: string): string {
 }
 
 export interface BuildProjectColumnsParams {
-    selectedProjects: string[];
-    filteredProjects: any[];
-    toggleSelection: (id: string) => void;
-    toggleSelectAll: () => void;
     navigate: NavigateFunction;
     bulkUpdateMutation: any;
     setEditingProject: (p: any) => void;
@@ -60,13 +56,16 @@ export interface BuildProjectColumnsParams {
     setConfirmTitle: (t: string) => void;
     setConfirmMessage: (m: string) => void;
     setIsConfirmOpen: (v: boolean) => void;
+    // Extra options for inline filtering
+    customers?: any[];
+    partners?: any[];
+    languages?: any[];
+    projects?: any[];
+    advancedFilters?: any;
+    setAdvancedFilters?: (update: React.SetStateAction<any>) => void;
 }
 
 export function buildProjectColumns({
-    selectedProjects,
-    filteredProjects,
-    toggleSelection,
-    toggleSelectAll,
     navigate,
     bulkUpdateMutation,
     setEditingProject,
@@ -75,43 +74,77 @@ export function buildProjectColumns({
     setConfirmTitle,
     setConfirmMessage,
     setIsConfirmOpen,
+    customers = [],
+    partners = [],
+    languages = [],
+    projects = [],
+    advancedFilters = {},
+    setAdvancedFilters,
 }: BuildProjectColumnsParams) {
+    const uniqueDeadlines = Array.from(new Set(
+        projects
+            .filter((p: any) => p.deadline)
+            .map((p: any) => p.deadline.split('T')[0].split(' ')[0]) // Handles both ISO and DB format like 2026-02-25 14:00:00
+    )).sort();
+
     return [
         {
-            id: 'selection',
+            id: 'project_number',
             header: (
-                <Checkbox
-                    checked={selectedProjects.length === filteredProjects.length && filteredProjects.length > 0}
-                    onChange={toggleSelectAll}
-                />
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">Nr.</span>
+                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
+                </div>
             ),
             accessor: (p: any) => (
-                <Checkbox
-                    checked={selectedProjects.includes(p.id)}
-                    onChange={() => toggleSelection(p.id)}
-                />
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">{p.project_number || p.display_id}</span>
             ),
-            className: 'w-10',
-            hidden: filteredProjects.length === 0,
+            sortable: true,
+            sortKey: 'project_number',
+            className: 'w-[90px]',
         },
         {
-            id: 'id',
-            header: 'Projekt',
-            accessor: (p: any) => (
-                <div className="flex flex-col max-w-[150px]">
-                    <span className="font-semibold text-slate-800 truncate" title={p.project_name}>{p.project_name}</span>
-                    <span className="text-xs font-semibold text-slate-400">{p.project_number || `P-${p.id}`}</span>
+            id: 'project_name',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">Bezeichnung</span>
+                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
                 </div>
+            ),
+            accessor: (p: any) => (
+                <span className="font-semibold text-slate-800 truncate block max-w-[180px]" title={p.project_name}>{p.project_name}</span>
             ),
             sortable: true,
             sortKey: 'project_name',
-            className: 'w-[150px]',
+            className: 'w-[180px]',
         },
         {
             id: 'customer',
-            header: 'Kunde',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">Kunde</span>
+                    {setAdvancedFilters ? (
+                        <div onClick={(e) => e.stopPropagation()} className="font-normal w-full mt-1">
+                            <SearchableSelect
+                                value={advancedFilters.customerId || ''}
+                                onChange={(val) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: val }))}
+                                options={customers.map((c: any) => {
+                                    const name = c.company_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || `Kunde ${c.id}`;
+                                    return {
+                                        value: c.id.toString(),
+                                        label: `${name} ${c.email ? `(${c.email})` : ''}`.trim()
+                                    };
+                                })}
+                                placeholder="Kunde..."
+                                className="!h-7 text-[11px] min-w-[120px]"
+                            />
+                        </div>
+                    ) : null}
+                </div>
+            ),
             accessor: (p: any) => {
-                const name = p.customer?.company_name || `${p.customer?.first_name} ${p.customer?.last_name}` || 'Unbekannt';
+                const salutation = p.customer?.salutation ? `${p.customer.salutation} ` : '';
+                const name = p.customer?.company_name || `${salutation}${p.customer?.first_name} ${p.customer?.last_name}` || 'Unbekannt';
                 return (
                     <div className="flex items-center gap-3 max-w-[240px]">
                         <div className="w-9 h-9 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm rounded-sm">
@@ -138,10 +171,32 @@ export function buildProjectColumns({
         },
         {
             id: 'partner',
-            header: 'Übersetzer',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">Übersetzer</span>
+                    {setAdvancedFilters ? (
+                        <div onClick={(e) => e.stopPropagation()} className="font-normal w-full mt-1">
+                            <SearchableSelect
+                                value={advancedFilters.partnerId || ''}
+                                onChange={(val) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: val }))}
+                                options={partners.map((p: any) => {
+                                    const name = p.company || `${p.first_name || ''} ${p.last_name || ''}`.trim() || `Partner ${p.id}`;
+                                    return {
+                                        value: p.id.toString(),
+                                        label: `${name} ${p.email ? `(${p.email})` : ''}`.trim()
+                                    };
+                                })}
+                                placeholder="Partner..."
+                                className="!h-7 text-[11px] min-w-[120px]"
+                            />
+                        </div>
+                    ) : null}
+                </div>
+            ),
             accessor: (p: any) => {
                 if (!p.partner) return <span className="text-slate-300 italic text-xs">-</span>;
-                const name = p.partner.company || `${p.partner.first_name} ${p.partner.last_name}`;
+                const salutation = p.partner.salutation ? `${p.partner.salutation} ` : '';
+                const name = p.partner.company || `${salutation}${p.partner.first_name} ${p.partner.last_name}`;
                 return (
                     <div className="flex items-center gap-3 max-w-[240px]">
                         <div className="w-9 h-9 bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm rounded-sm">
@@ -166,14 +221,44 @@ export function buildProjectColumns({
         },
         {
             id: 'languages',
-            header: 'Sprachpaar',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">Sprachpaar</span>
+                    {setAdvancedFilters ? (
+                        <div onClick={(e) => e.stopPropagation()} className="font-normal flex gap-1 w-full mt-1">
+                            <SearchableSelect
+                                value={advancedFilters.sourceLanguageId || ''}
+                                onChange={(val) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: val }))}
+                                options={languages.map((l: any) => ({
+                                    value: l.id.toString(),
+                                    label: (l.iso_code || '').substring(0, 2).toUpperCase(),
+                                    icon: getFlagUrl(l.iso_code)
+                                }))}
+                                placeholder="Quelle"
+                                className="!h-7 text-[10px] w-full min-w-[70px]"
+                            />
+                            <SearchableSelect
+                                value={advancedFilters.targetLanguageId || ''}
+                                onChange={(val) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: val }))}
+                                options={languages.map((l: any) => ({
+                                    value: l.id.toString(),
+                                    label: (l.iso_code || '').substring(0, 2).toUpperCase(),
+                                    icon: getFlagUrl(l.iso_code)
+                                }))}
+                                placeholder="Ziel"
+                                className="!h-7 text-[10px] w-full min-w-[70px]"
+                            />
+                        </div>
+                    ) : null}
+                </div>
+            ),
             accessor: (p: any) => {
                 const sourceCode = p.source_language?.iso_code || p.source || 'de';
-                const sCode = sourceCode.split('-')[0].toLowerCase();
+                const sCode = sourceCode.substring(0, 2).toUpperCase();
                 const sourceName = p.source_language?.name_internal || p.source_language?.name || getLanguageLabel(sCode);
 
                 const targetCode = p.target_language?.iso_code || p.target || 'en';
-                const tCode = targetCode.split('-')[0].toLowerCase();
+                const tCode = targetCode.substring(0, 2).toUpperCase();
                 const targetName = p.target_language?.name_internal || p.target_language?.name || getLanguageLabel(tCode);
 
                 return (
@@ -181,7 +266,7 @@ export function buildProjectColumns({
                         <div className="flex flex-col gap-0.5 min-w-[60px]">
                             <div className="flex items-center gap-1.5" title={`Quelle: ${sourceName}`}>
                                 <img src={getFlagUrl(sourceCode)} className="w-4 h-3 object-cover shadow-[0_1px_2px_rgba(0,0,0,0.1)] border border-slate-200 rounded-[1px]" alt={sourceName} />
-                                <span className="text-xs font-medium text-slate-700">{sCode}</span>
+                                <span className="text-xs font-bold text-slate-700">{sCode}</span>
                             </div>
                             <span className="text-xs text-slate-400 font-medium truncate max-w-[80px] leading-tight" title={sourceName}>{sourceName}</span>
                         </div>
@@ -191,7 +276,7 @@ export function buildProjectColumns({
                         <div className="flex flex-col gap-0.5 min-w-[60px]">
                             <div className="flex items-center gap-1.5" title={`Ziel: ${targetName}`}>
                                 <img src={getFlagUrl(targetCode)} className="w-4 h-3 object-cover shadow-[0_1px_2px_rgba(0,0,0,0.1)] border border-slate-200 rounded-[1px]" alt={targetName} />
-                                <span className="text-xs font-medium text-slate-700">{tCode}</span>
+                                <span className="text-xs font-bold text-slate-700">{tCode}</span>
                             </div>
                             <span className="text-xs text-slate-400 font-medium truncate max-w-[80px] leading-tight" title={targetName}>{targetName}</span>
                         </div>
@@ -201,7 +286,12 @@ export function buildProjectColumns({
         },
         {
             id: 'down_payment',
-            header: 'Anzahlung',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-right">
+                    <span className="text-xs">Anzahlung</span>
+                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
+                </div>
+            ),
             accessor: (p: any) => (
                 <span className={clsx('text-xs', parseFloat(p.down_payment) > 0 ? 'text-slate-600 font-medium' : 'text-slate-300')}>
                     {parseFloat(p.down_payment || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
@@ -211,7 +301,12 @@ export function buildProjectColumns({
         },
         {
             id: 'price_total',
-            header: 'Gesamtpreis',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-right">
+                    <span className="text-xs">Gesamtpreis</span>
+                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
+                </div>
+            ),
             accessor: (p: any) => (
                 <span className="font-semibold text-slate-800 text-xs">
                     {parseFloat(p.price_total || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
@@ -221,7 +316,35 @@ export function buildProjectColumns({
         },
         {
             id: 'deadline',
-            header: 'Deadline',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">Deadline</span>
+                    {setAdvancedFilters ? (
+                        <div onClick={(e) => e.stopPropagation()} className="font-normal w-full mt-1 relative">
+                            <select
+                                className="w-full h-7 text-[11px] border border-slate-300 rounded-[3px] bg-white pl-1 pr-6 shadow-sm text-slate-600 focus:outline-none focus:border-brand-primary appearance-none"
+                                value={advancedFilters.deadlineDate || ''}
+                                onChange={(e) => setAdvancedFilters((prev: any) => ({ ...prev, deadlineDate: e.target.value }))}
+                            >
+                                <option value="">Alle</option>
+                                {uniqueDeadlines.map((d: any) => (
+                                    <option key={d} value={d}>
+                                        {new Date(d).toLocaleDateString('de-DE')}
+                                    </option>
+                                ))}
+                            </select>
+                            {advancedFilters.deadlineDate && (
+                                <button
+                                    onClick={() => setAdvancedFilters((prev: any) => ({ ...prev, deadlineDate: '' }))}
+                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 transition-colors"
+                                >
+                                    <FaTimes size={10} />
+                                </button>
+                            )}
+                        </div>
+                    ) : null}
+                </div>
+            ),
             accessor: (p: any) => {
                 if (!p.deadline) return <span className="text-slate-300">-</span>;
                 const date = new Date(p.deadline);
@@ -255,14 +378,38 @@ export function buildProjectColumns({
         },
         {
             id: 'status',
-            header: 'Status',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">Status</span>
+                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
+                </div>
+            ),
             accessor: (p: any) => getStatusBadge(p.status),
             sortable: true,
             sortKey: 'status',
         },
         {
             id: 'actions',
-            header: '',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-right items-end">
+                    <span className="text-xs">&nbsp;</span>
+                    {setAdvancedFilters ? (
+                        <div className="h-7 mt-1 flex items-center justify-end">
+                            {Object.values(advancedFilters).some(v => v && v !== 'all') && (
+                                <button
+                                    onClick={() => setAdvancedFilters({
+                                        customerId: '', partnerId: '', sourceLanguageId: '', targetLanguageId: '', dateRange: 'all', projectSearch: '', deadlineDate: ''
+                                    })}
+                                    className="px-2 py-1 text-[10px] font-medium border border-slate-200 text-slate-500 rounded-sm hover:bg-slate-50 hover:text-slate-700 transition"
+                                    title="Filter zurücksetzen"
+                                >
+                                    Zurücksetzen
+                                </button>
+                            )}
+                        </div>
+                    ) : null}
+                </div>
+            ),
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1 relative" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => navigate(`/projects/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye /></button>

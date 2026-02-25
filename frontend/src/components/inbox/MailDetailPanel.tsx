@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
 import { FaTimes, FaReply, FaForward, FaTrashAlt, FaPaperclip, FaFileAlt } from 'react-icons/fa';
-import { Button, ScrollArea, Separator } from '../ui';
+import { ScrollArea, Separator } from '../ui';
 
 interface MailDetailPanelProps {
     mail: any;
@@ -24,23 +24,19 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                     >
                         <FaTimes size={16} />
                     </button>
-                    <div className="flex items-center gap-1">
-                        <Button
-                            variant="ghost"
-                            size="sm"
+                    <div className="flex items-center gap-1.5">
+                        <button
                             onClick={() => onReply(mail)}
-                            className="h-8 text-[10px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 gap-2 uppercase tracking-tight"
+                            className="h-8 px-3 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-[#1B4D4F] active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
                         >
                             <FaReply size={10} /> Antworten
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
+                        </button>
+                        <button
                             onClick={() => onForward(mail)}
-                            className="h-8 text-[10px] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 gap-2 uppercase tracking-tight"
+                            className="h-8 px-3 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-[#1B4D4F] active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
                         >
                             <FaForward size={10} /> Weiterleiten
-                        </Button>
+                        </button>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -71,7 +67,7 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                         </h2>
 
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-1 shadow-sm">
+                            <div className="w-10 h-10 rounded-sm bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white flex items-center justify-center font-bold text-sm shrink-0 mt-1 shadow-sm border border-[#123a3c]">
                                 {mail.from.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">

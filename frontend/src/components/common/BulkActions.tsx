@@ -26,15 +26,15 @@ export const BulkActions = ({ selectedCount, onClearSelection, actions, classNam
 
  return (
  <div className={clsx(
- "mb-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-sm flex justify-between items-center animate-fadeIn shadow-sm z-10 relative",
+ "px-4 py-2 bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8] border border-[#d0d0d0] border-b-2 border-b-[#c0c0c0] flex justify-between items-center animate-fadeIn z-10 relative shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]",
  className
  )}>
- <div className="flex items-center gap-4">
+ <div className="flex items-center gap-3">
  <span className="text-slate-600 text-xs font-semibold shrink-0">
  {selectedCount} ausgewählt
  </span>
  <div className="h-4 w-px bg-slate-300"></div>
- <div className="flex items-center gap-2 flex-wrap">
+ <div className="flex items-center gap-1.5 flex-wrap">
  {visibleActions.map((action, index) => (
  <BulkActionButton key={index} {...action} />
  ))}
@@ -42,7 +42,7 @@ export const BulkActions = ({ selectedCount, onClearSelection, actions, classNam
  </div>
  <button
  onClick={onClearSelection}
- className="text-slate-400 hover:text-slate-600 transition p-1 hover:bg-slate-200 rounded"
+ className="text-slate-400 hover:text-slate-600 transition p-1 hover:bg-white/60 rounded-[3px]"
  title="Auswahl aufheben"
  >
  <FaTimes />
@@ -52,23 +52,24 @@ export const BulkActions = ({ selectedCount, onClearSelection, actions, classNam
 };
 
 const BulkActionButton = ({ label, icon, onClick, variant = 'default' }: BulkActionItem) => {
- const baseStyles = "px-3 py-1.5 rounded-sm text-xs font-semibold transition flex items-center gap-2 shadow-sm border";
-
- // Define variant styles
- // Note: We use border-transparent for solid buttons to maintain size consistency if others have borders
  const variants: Record<BulkActionVariant, string> = {
- default: "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800",
- primary: "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-200",
- danger: "bg-white border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200",
- dangerSolid: "bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 shadow-sm",
- success: "bg-white border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200",
- warning: "bg-white border-slate-200 text-slate-600 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200"
+ default:     'bg-gradient-to-b from-white to-[#ebebeb] text-[#444] border-[#ccc] hover:border-[#adadad] hover:text-[#1B4D4F]',
+ primary:     'bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#2a7073] hover:to-[#235e62]',
+ danger:      'bg-gradient-to-b from-white to-[#ebebeb] text-red-600 border-[#ccc] hover:border-red-300',
+ dangerSolid: 'bg-gradient-to-b from-[#e05050] to-[#c9302c] text-white border-[#9c2320] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#e85555]',
+ success:     'bg-gradient-to-b from-[#62bb62] to-[#449d44] text-white border-[#398439] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#6ec86e]',
+ warning:     'bg-gradient-to-b from-[#f5b85a] to-[#ec971f] text-white border-[#d58512] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#f7c168]',
  };
 
  return (
  <button
  onClick={onClick}
- className={clsx(baseStyles, variants[variant])}
+ className={clsx(
+  'px-2.5 py-1 rounded-[3px] text-xs font-semibold transition flex items-center gap-1.5 border',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_1px_rgba(0,0,0,0.09)]',
+  'active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)]',
+  variants[variant]
+ )}
  >
  {icon} {label}
  </button>

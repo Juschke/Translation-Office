@@ -10,7 +10,7 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -35,10 +35,10 @@ const ConfirmModal = ({
     type = 'danger',
     isLoading = false
 }: ConfirmModalProps) => {
-    const variantStyles = {
-        danger: 'bg-red-600 hover:bg-red-700 text-white',
-        warning: 'bg-orange-600 hover:bg-orange-700 text-white',
-        info: 'bg-brand-primary hover:bg-brand-primary/90 text-white',
+    const variantStyles: Record<string, any> = {
+        danger: 'destructive',
+        warning: 'warning',
+        info: 'default',
     };
 
     return (
@@ -49,22 +49,32 @@ const ConfirmModal = ({
                     <AlertDialogDescription>{message}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={onClose} disabled={isLoading}>
-                        {cancelText}
+                    <AlertDialogCancel asChild>
+                        <Button
+                            variant="secondary"
+                            onClick={onClose}
+                            disabled={isLoading}
+                            className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
+                        >
+                            {cancelText}
+                        </Button>
                     </AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={onConfirm}
-                        disabled={isLoading}
-                        className={cn(variantStyles[type])}
-                    >
-                        {isLoading ? (
-                            <>
-                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                Wird verarbeitet...
-                            </>
-                        ) : (
-                            confirmText
-                        )}
+                    <AlertDialogAction asChild>
+                        <Button
+                            onClick={(e: React.MouseEvent) => { e.preventDefault(); onConfirm(); }}
+                            disabled={isLoading}
+                            variant={variantStyles[type]}
+                            className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                    Wird verarbeitet...
+                                </>
+                            ) : (
+                                confirmText
+                            )}
+                        </Button>
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

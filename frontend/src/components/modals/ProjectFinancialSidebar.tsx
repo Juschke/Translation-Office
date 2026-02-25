@@ -40,7 +40,7 @@ const ProjectFinancialSidebar = ({
     copies,
     copyPrice,
 }: ProjectFinancialSidebarProps) => (
-    <div className="w-full lg:w-80 bg-slate-50 shrink-0 h-auto lg:h-full lg:overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
+    <div className="w-full lg:w-80 bg-white shrink-0 h-auto lg:h-full lg:overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
         <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
                 <FaInfoCircle className="text-slate-400 text-xs" />
@@ -114,7 +114,7 @@ const ProjectFinancialSidebar = ({
                         <span>-{totalPaid.toFixed(2)} €</span>
                     </div>
                 )}
-                <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center bg-slate-50 -mx-4 -mb-4 p-4 rounded-b">
+                <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center bg-white -mx-4 -mb-4 p-4 rounded-b">
                     <span className="text-sm font-medium text-slate-600 tracking-wider">Restbetrag</span>
                     <span className={clsx('text-lg font-medium', remainingBalance <= 0.01 ? 'text-emerald-600' : 'text-slate-900')}>
                         {remainingBalance <= 0.01 ? 'BEZAHLT' : `${remainingBalance.toFixed(2)} €`}
@@ -122,14 +122,14 @@ const ProjectFinancialSidebar = ({
                 </div>
             </div>
 
-            <div className="bg-slate-100 p-4 rounded-sm border border-slate-200">
+            <div className="bg-white p-4 rounded-sm border border-slate-200">
                 <div className="flex justify-between items-center mb-1.5">
                     <span className="text-xs font-medium text-slate-500 tracking-tight">Voraussichtl. Gewinn</span>
                     <span className={clsx('text-xs font-medium', profit >= 0 ? 'text-slate-800' : 'text-red-600')}>
                         {profit.toFixed(2)} €
                     </span>
                 </div>
-                <div className="w-full bg-slate-300 rounded-full h-2 overflow-hidden shadow-inner">
+                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                         className={clsx(
                             'h-full transition-all duration-500',

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { FaTimes, FaPlus, FaTrash, FaEnvelope, FaExclamationTriangle, FaExternalLinkAlt } from 'react-icons/fa';
-import { customerService } from '../../api/services';
+import { customerService, settingsService } from '../../api/services';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Input from '../common/Input';
 import SearchableSelect from '../common/SearchableSelect';
@@ -62,6 +63,7 @@ interface NewCustomerModalProps {
     onClose: () => void;
     onSubmit: (data: CustomerFormData) => void;
     initialData?: Partial<CustomerFormData>;
+    isLoading?: boolean;
 }
 
 const EMPTY_CUSTOMER: CustomerFormData = {
@@ -92,11 +94,25 @@ const EMPTY_CUSTOMER: CustomerFormData = {
     leitweg_id: '',
 };
 
-const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
+const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
     const [formData, setFormData] = useState<CustomerFormData>({ ...EMPTY_CUSTOMER });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+    const { data: companyData } = useQuery({
+        queryKey: ['companySettings'],
+        queryFn: settingsService.getCompany
+    });
+
+    const displayNr = useMemo(() => {
+        if (formData.id) {
+            const prefix = companyData?.customer_id_prefix || 'K';
+            return `${prefix}${formData.id.toString().padStart(4, '0')}`;
+        }
+        const prefix = companyData?.customer_id_prefix || 'K';
+        return `${prefix}xxxx`;
+    }, [formData.id, companyData]);
     const [isValidatingIban, setIsValidatingIban] = useState(false);
     const [duplicates, setDuplicates] = useState<any[]>([]);
     const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
@@ -365,15 +381,29 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
     return (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
-            <div className="bg-white rounded-sm shadow-sm w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden animate-fade-in-up transform transition-all">
+            <div className="bg-white rounded-sm shadow-sm w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden animate-fade-in-up transform transition-all relative">
+                {isLoading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-[110] flex items-center justify-center transition-all duration-300">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="relative">
+                                <div className="w-12 h-12 border-4 border-slate-100 rounded-full"></div>
+                                <div className="w-12 h-12 border-4 border border-slate-900 border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                                <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
+                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <form onSubmit={handleSave} className="flex flex-col h-full overflow-hidden">
                     {/* Header */}
                     <div className="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                         <div>
                             <h3 className="font-semibold text-base text-slate-800 flex items-center gap-3">
                                 {initialData ? 'Kunde bearbeiten' : 'Neuen Kunden anlegen'}
-                                <span className="text-xs font-medium text-slate-900 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                                    CRM Stammdaten
+                                <span className="text-xs font-medium text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm">
+                                    Nr: {displayNr}
                                 </span>
                             </h3>
                             <p className="text-xs text-slate-400 font-medium mt-0.5">Zentrale Verwaltung der Kundenprofile</p>
@@ -437,7 +467,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Section 1: Classification */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">01</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">01</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Klassifizierung & Name</h4>
                             </div>
 
@@ -493,7 +523,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         name="salutation"
                                         value={formData.salutation}
                                         onChange={handleChange}
-                                        helperText="Formelle Anrede"
+                                        helperText="Anrede"
                                     >
                                         <option value="Herr">Herr</option>
                                         <option value="Frau">Frau</option>
@@ -508,7 +538,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         onChange={handleChange}
                                         required
                                         placeholder="Max"
-                                        helperText={getError('first_name') || 'Vorname des Ansprechpartners'}
+                                        helperText={getError('first_name') || 'Vorname'}
                                         error={!!getError('first_name') || duplicates.some(d => d.first_name === formData.first_name && d.last_name === formData.last_name && formData.first_name !== '')}
                                     />
                                 </div>
@@ -520,7 +550,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         onChange={handleChange}
                                         required
                                         placeholder="Mustermann"
-                                        helperText={getError('last_name') || 'Pflichtfeld: Nachname der Person'}
+                                        helperText={getError('last_name') || 'Nachname'}
                                         error={!!getError('last_name') || duplicates.some(d => d.last_name === formData.last_name && formData.last_name !== '')}
                                     />
                                 </div>
@@ -530,7 +560,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Section 2: Contact */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">02</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">02</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Kontaktdaten</h4>
                             </div>
 
@@ -615,7 +645,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">03</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">03</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Standort & Adresse</h4>
                             </div>
 
@@ -647,7 +677,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Section 4: Bookkeeping */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">04</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">04</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Buchhaltung & Zahlungsdaten</h4>
                             </div>
 
@@ -690,7 +720,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
                         <div className="space-y-6">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">05</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">05</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Bankverbindung</h4>
                             </div>
 
@@ -778,7 +808,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Section 6: Notes */}
                         <div className="space-y-6 pb-10">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">06</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">06</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Interne Akte</h4>
                             </div>
                             <Input
@@ -794,17 +824,17 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                     </div>
 
                     {/* Footer */}
-                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+                    <div className="bg-white px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
                         <Button
-                            variant="outline"
+                            variant="secondary"
                             onClick={onClose}
-                            className="px-5 transition-all shadow-sm"
+                            className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
                         >
                             Abbrechen
                         </Button>
                         <Button
                             type="submit"
-                            className="px-8 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all font-bold shadow-sm"
+                            className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
                         >
                             {initialData ? 'Änderungen speichern' : 'Kunde anlegen'}
                         </Button>

@@ -28,13 +28,12 @@ const InvoiceSettingsTab = () => {
 
     const [formData, setFormData] = useState<any>({
         // Nummernkreise
-        invoice_prefix: 'RE',
-        invoice_start_number: '00001',
-        invoice_next_preview: '',
+        project_id_prefix: 'P',
+        project_start_number: '00001',
+        project_next_preview: '',
         credit_note_prefix: 'GS',
-        offer_prefix: 'AN',
-        offer_start_number: '00001',
-        customer_number_prefix: 'KD',
+        customer_id_prefix: 'KD',
+        partner_id_prefix: 'PR',
         customer_number_auto: true,
 
         // Zahlungsbedingungen
@@ -82,9 +81,10 @@ const InvoiceSettingsTab = () => {
                 invoice_prefix: companyData.invoice_prefix || prev.invoice_prefix,
                 invoice_start_number: companyData.invoice_start_number || prev.invoice_start_number,
                 credit_note_prefix: companyData.credit_note_prefix || prev.credit_note_prefix,
-                offer_prefix: companyData.offer_prefix || prev.offer_prefix,
-                offer_start_number: companyData.offer_start_number || prev.offer_start_number,
-                customer_number_prefix: companyData.customer_number_prefix || prev.customer_number_prefix,
+                project_id_prefix: companyData.project_id_prefix || companyData.offer_prefix || prev.project_id_prefix,
+                project_start_number: companyData.project_start_number || companyData.offer_start_number || prev.project_start_number,
+                customer_id_prefix: companyData.customer_id_prefix || companyData.customer_number_prefix || prev.customer_id_prefix,
+                partner_id_prefix: companyData.partner_id_prefix || prev.partner_id_prefix,
                 customer_number_auto: companyData.customer_number_auto ?? prev.customer_number_auto,
                 default_payment_days: companyData.default_payment_days || prev.default_payment_days,
                 default_payment_text: companyData.default_payment_text || prev.default_payment_text,
@@ -129,12 +129,12 @@ const InvoiceSettingsTab = () => {
         return `${prefix}-${year}-${num}`;
     }, [formData.invoice_prefix, formData.invoice_start_number]);
 
-    const offerPreview = useMemo(() => {
-        const year = new Date().getFullYear();
-        const prefix = formData.offer_prefix || 'AN';
-        const num = formData.offer_start_number || '00001';
+    const projectPreview = useMemo(() => {
+        const year = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
+        const prefix = formData.project_id_prefix || 'P';
+        const num = formData.project_start_number || '0001';
         return `${prefix}-${year}-${num}`;
-    }, [formData.offer_prefix, formData.offer_start_number]);
+    }, [formData.project_id_prefix, formData.project_start_number]);
 
     const paymentTextPreview = useMemo(() => {
         return (formData.default_payment_text || '').replace('{days}', formData.default_payment_days || '14');
@@ -247,28 +247,28 @@ const InvoiceSettingsTab = () => {
                         </SettingRow>
 
                         <SettingRow
-                            label="Angebotsnummer"
-                            description="Format für Angebotsnummern. Wird beim Fertigstellen eines Angebots automatisch vergeben."
+                            label="Projektnummer"
+                            description="Format für Projektnummern. Wird beim Erstellen eines Projekts automatisch vergeben."
                         >
                             <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <Input
                                         label="Präfix"
-                                        placeholder="AN"
-                                        value={formData.offer_prefix}
-                                        onChange={(e) => handleChange('offer_prefix', e.target.value)}
+                                        placeholder="P"
+                                        value={formData.project_id_prefix}
+                                        onChange={(e) => handleChange('project_id_prefix', e.target.value)}
                                     />
                                     <Input
                                         label="Beginnt bei"
-                                        placeholder="00001"
-                                        value={formData.offer_start_number}
-                                        onChange={(e) => handleChange('offer_start_number', e.target.value)}
+                                        placeholder="0001"
+                                        value={formData.project_start_number}
+                                        onChange={(e) => handleChange('project_start_number', e.target.value)}
                                     />
                                 </div>
                                 <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-sm border border-slate-200">
                                     <FaEye className="text-slate-400 text-xs shrink-0" />
-                                    <span className="text-sm text-slate-500">Nächste Angebotsnummer:</span>
-                                    <span className="text-sm font-semibold text-slate-900">{offerPreview}</span>
+                                    <span className="text-sm text-slate-500">Nächste Projektnummer (Beispiel):</span>
+                                    <span className="text-sm font-semibold text-slate-900">{projectPreview}</span>
                                 </div>
                             </div>
                         </SettingRow>
@@ -280,10 +280,10 @@ const InvoiceSettingsTab = () => {
                             <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <Input
-                                        label="Präfix"
-                                        placeholder="KD"
-                                        value={formData.customer_number_prefix}
-                                        onChange={(e) => handleChange('customer_number_prefix', e.target.value)}
+                                        label="Kunden-Präfix"
+                                        placeholder="K"
+                                        value={formData.customer_id_prefix}
+                                        onChange={(e) => handleChange('customer_id_prefix', e.target.value)}
                                     />
                                     <div className="flex flex-col">
                                         <label className="block text-sm font-medium text-slate-500 mb-1">Automatisch vergeben</label>
@@ -300,6 +300,20 @@ const InvoiceSettingsTab = () => {
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        </SettingRow>
+
+                        <SettingRow
+                            label="Partnernummer"
+                            description="Präfix für die Anzeige von Partnern (Übersetzer, Dolmetscher)."
+                        >
+                            <div className="grid grid-cols-2">
+                                <Input
+                                    label="Partner-Präfix"
+                                    placeholder="PR"
+                                    value={formData.partner_id_prefix}
+                                    onChange={(e) => handleChange('partner_id_prefix', e.target.value)}
+                                />
                             </div>
                         </SettingRow>
                     </div>

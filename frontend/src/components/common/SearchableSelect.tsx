@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } fr
 import { createPortal } from 'react-dom';
 import { FaChevronDown, FaSearch, FaCheck, FaTimes, FaPlus } from 'react-icons/fa';
 import clsx from 'clsx';
+import { Button } from '../ui/button';
 
 interface SearchableSelectProps {
     options: { value: string; label: string; icon?: string; group?: string }[];
@@ -42,7 +43,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
     const filteredOptions = useMemo(() => {
         return options.filter(opt =>
-            opt.label.toLowerCase().includes(search.toLowerCase()) ||
+            (opt.label && opt.label.toLowerCase().includes(search.toLowerCase())) ||
             (opt.group && opt.group.toLowerCase().includes(search.toLowerCase()))
         );
     }, [options, search]);
@@ -62,12 +63,12 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
         const sortedGroups = Object.keys(groups).sort().map(groupName => ({
             name: groupName,
-            items: preserveOrder ? groups[groupName] : groups[groupName].sort((a, b) => a.label.localeCompare(b.label))
+            items: preserveOrder ? groups[groupName] : groups[groupName].sort((a, b) => (a.label || '').localeCompare(b.label || ''))
         }));
 
         return {
             sortedGroups,
-            noGroup: preserveOrder ? noGroup : noGroup.sort((a, b) => a.label.localeCompare(b.label))
+            noGroup: preserveOrder ? noGroup : noGroup.sort((a, b) => (a.label || '').localeCompare(b.label || ''))
         };
     }, [filteredOptions, preserveOrder]);
 
@@ -203,7 +204,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     <>
                         {groupedOptions.sortedGroups.map(group => (
                             <div key={group.name}>
-                                <div className="px-4 py-1.5 bg-slate-50 text-xs font-semibold text-slate-400 tracking-[0.15em] border-y border-slate-100/50">
+                                <div className="px-4 py-1.5 bg-white text-xs font-semibold text-slate-400 tracking-[0.15em] border-y border-slate-100/50">
                                     {group.name}
                                 </div>
                                 {group.items.map((opt) => {
@@ -241,7 +242,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         {groupedOptions.noGroup.length > 0 && (
                             <div>
                                 {groupedOptions.sortedGroups.length > 0 && (
-                                    <div className="px-4 py-1.5 bg-slate-50 text-xs font-semibold text-slate-400 tracking-[0.15em] border-y border-slate-100/50">
+                                    <div className="px-4 py-1.5 bg-white text-xs font-semibold text-slate-400 tracking-[0.15em] border-y border-slate-100/50">
                                         Sonstiges
                                     </div>
                                 )}
@@ -284,18 +285,20 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
             </div>
             {onAddNew && (
                 <div
-                    className="p-2 border-t border-slate-100 bg-slate-50 shrink-0"
+                    className="p-2 border-t border-slate-100 bg-white shrink-0"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <button
+                    <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => {
                             onAddNew();
                             setIsOpen(false);
                         }}
-                        className="w-full py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-sm text-xs font-semibold text-slate-900 flex items-center justify-center gap-2 transition"
+                        className="w-full"
                     >
                         <FaPlus className="text-xs" /> {addNewLabel}
-                    </button>
+                    </Button>
                 </div>
             )}
         </div>
@@ -307,7 +310,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
             <div
                 id={id}
                 className={clsx(
-                    "w-full border px-3 py-1 text-sm bg-white flex justify-between items-center cursor-pointer transition min-h-[40px]",
+                    "w-full border px-3 py-1 text-sm bg-white flex justify-between items-center cursor-pointer transition h-9",
                     error ? "border-red-700 ring-2 ring-red-700/10" : "border-slate-300 hover:border-slate-400",
                     isOpen ? "border-slate-900 ring-2 ring-slate-950/10 shadow-sm" : "shadow-sm",
                     className

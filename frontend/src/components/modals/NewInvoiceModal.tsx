@@ -529,10 +529,10 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                 <div className="flex justify-between items-center mb-3">
                                     <h4 className="text-xs font-semibold text-slate-400">Positionen</h4>
                                     <Button
-                                        variant="outline"
+                                        variant="secondary"
                                         size="sm"
                                         onClick={addItem}
-                                        className="bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800 transition shadow-sm flex items-center gap-1.5 font-bold"
+                                        className="px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
                                     >
                                         <FaPlus className="mb-0.5" /> Neu
                                     </Button>
@@ -738,8 +738,14 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                         </div>
 
                         {/* ── Actions Footer ── */}
-                        <div className="p-6 border-t border-slate-50 flex justify-end gap-4 shrink-0 bg-white">
-                            <Button variant="ghost" onClick={onClose} className="px-6 text-slate-400 hover:text-slate-900 transition-colors">Abbrechen</Button>
+                        <div className="p-6 border-t border-slate-50 flex justify-end gap-3 shrink-0 bg-white">
+                            <Button
+                                variant="secondary"
+                                onClick={onClose}
+                                className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
+                            >
+                                Abbrechen
+                            </Button>
                             <Button
                                 onClick={() => {
                                     const { invoice_number, ...submitData } = formData;
@@ -747,7 +753,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                     onSubmit(payload);
                                 }}
                                 disabled={!selectedProjectId || items.length === 0 || invoice?.status === 'cancelled' || isLoading}
-                                className="h-12 px-10 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all font-bold shadow-lg shadow-brand-primary/20"
+                                className="px-4 py-2 md:px-8 md:py-2.5 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
                             >
                                 {isLoading ? 'Wird verarbeitet...' : 'Beleg Jetzt Finalisieren'}
                             </Button>

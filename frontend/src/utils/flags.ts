@@ -2,7 +2,7 @@ export const getFlagUrl = (code: string) => {
  if (!code) return '';
 
  const original = code.toLowerCase().trim();
- let c = original;
+ const c = original;
 
  // Special cases for language codes that don't match country codes
  const map: Record<string, string> = {

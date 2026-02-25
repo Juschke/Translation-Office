@@ -68,7 +68,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  };
 
  const processedCustomers = useMemo(() => {
- let result = customers.filter(c => {
+ const result = customers.filter(c => {
  const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
  (c.company && c.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
  (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()));

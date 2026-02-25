@@ -173,13 +173,13 @@ const ProjectFinancesTab = ({
     return (
         <div className="flex flex-col gap-6 mb-10 animate-fadeIn">
             {isLocked && (
-                <div className="bg-amber-50 border border-amber-200 rounded-sm p-4 flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                <div className="bg-slate-50 border border-slate-200 rounded-sm p-4 flex items-start gap-4 shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
                         <FaInfoCircle />
                     </div>
                     <div>
-                        <h4 className="text-sm font-bold text-amber-900">Kalkulation gesperrt</h4>
-                        <p className="text-xs text-amber-700 mt-1">
+                        <h4 className="text-sm font-bold text-slate-800">Kalkulation gesperrt</h4>
+                        <p className="text-xs text-slate-500 mt-1">
                             Da bereits eine aktive Rechnung ({activeInvoice.invoice_number}) existiert, kann die Kalkulation nicht mehr geändert werden.
                             Stornieren Sie die Rechnung, um Bearbeitungen vorzunehmen.
                         </p>
@@ -208,15 +208,17 @@ const ProjectFinancesTab = ({
                                         variant="outline"
                                         size="sm"
                                         onClick={addPosition}
-                                        className="h-8 bg-white text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white transition shadow-sm flex items-center gap-1.5 font-bold"
+                                        className="h-8 bg-white text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white transition shadow-sm flex items-center gap-1.5"
                                     >
                                         <FaPlus className="mb-0.5" /> Neu
                                     </Button>
                                 )}
                                 <Button
+                                    variant="default"
+                                    size="sm"
                                     onClick={handleSave}
                                     disabled={isPendingSave || isLocked}
-                                    className="h-8 bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm disabled:opacity-50 flex items-center gap-1.5 font-bold"
+                                    className="h-8 flex items-center gap-1.5"
                                 >
                                     <FaCheckCircle /> {isLocked ? 'Gesperrt' : 'Speichern'}
                                 </Button>
@@ -303,13 +305,15 @@ const ProjectFinancesTab = ({
                                             </td>
                                             <td className="px-2 py-3 text-center">
                                                 {!isLocked && (
-                                                    <button
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
                                                         onClick={() => deletePosition(pos.id)}
-                                                        className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                        className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                                                         title="Position löschen"
                                                     >
                                                         <FaTrashAlt className="text-xs" />
-                                                    </button>
+                                                    </Button>
                                                 )}
                                             </td>
                                         </tr>
@@ -434,10 +438,10 @@ const ProjectFinancesTab = ({
                                 </div>
                             </div>
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={onRecordPayment}
-                                className="h-8 bg-white text-slate-600 border-slate-200 font-semibold hover:bg-slate-50 hover:text-brand-primary transition shadow-sm flex items-center gap-2"
+                                className="h-8 flex items-center gap-2"
                             >
                                 <FaPlus className="mb-0.5" /> Zahlung erfassen
                             </Button>
@@ -467,9 +471,13 @@ const ProjectFinancesTab = ({
                                                     + {parseFloat(payment.amount).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <button className="text-red-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-red-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                                                    >
                                                         <FaTrashAlt className="text-xs" />
-                                                    </button>
+                                                    </Button>
                                                 </td>
                                             </tr>
                                         ))
@@ -582,16 +590,18 @@ const ProjectFinancesTab = ({
                                             </div>
                                         </div>
                                         <Button
+                                            variant="default"
                                             onClick={onGoToInvoice}
-                                            className="w-full py-4 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-2 font-bold uppercase tracking-widest shadow-lg shadow-brand-primary/10"
+                                            className="w-full py-4 flex items-center justify-center gap-2 font-bold uppercase tracking-widest shadow-lg shadow-brand-primary/10"
                                         >
                                             <FaFileInvoiceDollar size={12} /> ZUR RECHNUNG
                                         </Button>
                                     </div>
                                 ) : (
                                     <Button
+                                        variant="default"
                                         onClick={onCreateInvoice}
-                                        className="w-full py-2.5 bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm flex items-center justify-center gap-2 font-bold"
+                                        className="w-full py-2.5 flex items-center justify-center gap-2"
                                     >
                                         <FaFileInvoiceDollar /> Rechnung erstellen
                                     </Button>

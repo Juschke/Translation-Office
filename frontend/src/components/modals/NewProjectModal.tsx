@@ -136,6 +136,20 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         enabled: isOpen && !initialData
     });
 
+    const { data: companyData } = useQuery({
+        queryKey: ['companySettings'],
+        queryFn: settingsService.getCompany,
+        enabled: isOpen
+    });
+
+    const displayNr = useMemo(() => {
+        if (initialData?.project_number) return initialData.project_number;
+        const prefix = companyData?.project_id_prefix || 'P';
+        const datePart = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
+        const nextNum = companyData?.project_start_number || '0001';
+        return `${prefix}-${datePart}-${nextNum}`;
+    }, [initialData?.project_number, companyData]);
+
     const custOptions = useMemo(() => {
         return Array.isArray(customersData) ? customersData.map((c: any) => ({
             value: c.id.toString(),
@@ -303,8 +317,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             const qty = parseFloat(pos.quantity) || 0;
             const totalUnits = amount * qty;
 
-            let pRate = parseFloat(pos.partnerRate) || 0;
-            let pTotal = pos.partnerMode === 'unit' ? totalUnits * pRate : pRate;
+            const pRate = parseFloat(pos.partnerRate) || 0;
+            const pTotal = pos.partnerMode === 'unit' ? totalUnits * pRate : pRate;
 
             let cTotal = 0;
             let cRate = 0;
@@ -646,11 +660,31 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
     return (
         <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto">
-            <div className="bg-white rounded-sm shadow-sm w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] animate-fadeInUp">
+            <div className="bg-white rounded-sm shadow-sm w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] relative animate-fadeInUp">
+                {/* Loading Overlay */}
+                {isLoading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-[110] flex items-center justify-center transition-all duration-300">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="relative">
+                                <div className="w-12 h-12 border-4 border-slate-100 rounded-full"></div>
+                                <div className="w-12 h-12 border-4 border border-slate-900 border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                                <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
+                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Header */}
-                <div className="bg-emerald-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <div className="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
-                        <h3 className="font-medium text-slate-800 text-lg">{initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}</h3>
+                        <h3 className="font-medium text-slate-800 text-lg flex items-center gap-3">
+                            {initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}
+                            <span className="text-xs font-medium text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm">
+                                Nr: {displayNr}
+                            </span>
+                        </h3>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="flex bg-slate-200/50 rounded-sm p-0.5 border border-slate-300/50 h-9">
@@ -673,7 +707,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* 01: Basis-Daten */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-emerald-50 text-brand-primary flex items-center justify-center text-xs font-bold">01</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">01</div>
                                 <h4 className="text-sm font-medium text-slate-800">Basis-Daten</h4>
                             </div>
 
@@ -717,7 +751,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
                                         <Button
                                             onClick={() => setShowDocTypeModal(true)}
-                                            className="h-10 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
+                                            className="h-9 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
                                         >
                                             <FaPlus className="text-xs" /> <span className="text-xs tracking-wide">NEU</span>
                                         </Button>
@@ -734,7 +768,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                     />
                                 </div>
 
-                                <div className="col-span-12 md:col-span-6" id="field-container-deadline">
+                                <div className="col-span-12 md:col-span-6 " id="field-container-deadline">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Liefertermin</Label>
                                     <div className="relative">
                                         <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
@@ -758,7 +792,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             dateFormat="dd.MM.yyyy HH:mm"
                                             locale="de"
                                             className={clsx(
-                                                "w-full pl-10 pr-4 py-2 border rounded-sm text-sm focus:ring-2 focus:ring-slate-950/10 outline-none h-10 bg-white transition-all",
+                                                "h-10 w-full pl-10 pr-4 py-2 border rounded-sm text-sm focus:ring-2 focus:ring-slate-950/10 outline-none h-9 bg-white transition-all",
                                                 validationErrors.has('deadline') ? "border-red-500 ring-4 ring-red-50" : "border-slate-200"
                                             )}
                                             placeholderText="Datum & Zeit wählen"
@@ -771,7 +805,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* 02: Sprachen & Kunde */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-emerald-50 text-brand-primary flex items-center justify-center text-xs font-bold">02</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">02</div>
                                 <h4 className="text-sm font-medium text-slate-800">Sprachen & Kunde</h4>
                             </div>
 
@@ -783,7 +817,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
                                         <Button
                                             onClick={() => setShowCustomerModal(true)}
-                                            className="h-10 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
+                                            className="h-9 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
                                         >
                                             <FaPlus className="text-xs" /> <span className="text-xs tracking-wide">NEU</span>
                                         </Button>
@@ -802,7 +836,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* 03: Partner Auswahl */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium">03</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">03</div>
                                 <h4 className="text-sm font-medium text-slate-800">Partner & Beteiligte</h4>
                             </div>
 
@@ -814,7 +848,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
                                         <Button
                                             onClick={() => setShowPartnerModal(true)}
-                                            className="h-10 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
+                                            className="h-9 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
                                         >
                                             <FaPlus className="text-xs" /> <span className="text-xs tracking-wide">NEU</span>
                                         </Button>
@@ -850,11 +884,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             </thead>
                                             <tbody className="divide-y divide-slate-50">
                                                 {/* Matching Partners Header */}
-                                                <tr className="bg-slate-50/30">
+                                                <tr className="bg-white">
                                                     <td colSpan={3} className="px-2 py-1.5">
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-xs font-semibold text-slate-600">Passende Übersetzer</span>
-                                                            <span className="bg-emerald-100 text-emerald-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">{matchingPartners.length}</span>
+                                                            <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{matchingPartners.length}</span>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -862,14 +896,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                     <tr
                                                         key={p.id}
                                                         className={clsx(
-                                                            "group transition-colors cursor-pointer hover:bg-emerald-50/30",
-                                                            translator === p.id.toString() ? "bg-slate-50/30" : ""
+                                                            "group transition-colors cursor-pointer hover:bg-slate-50/50",
+                                                            translator === p.id.toString() ? "bg-white" : ""
                                                         )}
                                                         onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
                                                     >
                                                         <td className="px-2 py-2">
                                                             <div className="flex items-center gap-2">
-                                                                <div className="w-6 h-6 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center text-xs font-semibold shrink-0">
+                                                                <div className="w-6 h-6 rounded bg-white text-slate-500 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
                                                                     {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
                                                                 </div>
                                                                 <div className="flex flex-col min-w-0">
@@ -886,7 +920,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                     return (
                                                                         <span key={l} className={clsx(
                                                                             "px-1 py-0 rounded text-[7px] font-semibolder border",
-                                                                            isSourceMatch || isTargetMatch ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-white text-slate-400 border-slate-100"
+                                                                            isSourceMatch || isTargetMatch ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white text-slate-400 border-slate-100"
                                                                         )}>{l}</span>
                                                                     );
                                                                 })}
@@ -904,11 +938,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 ))}
 
                                                 {/* Other Partners Header */}
-                                                <tr className="bg-slate-50/10">
+                                                <tr className="bg-white">
                                                     <td colSpan={3} className="px-2 py-1.5">
                                                         <div className="flex items-center gap-2 mt-2">
                                                             <span className="text-xs font-semibold text-slate-400">Sonstige</span>
-                                                            <span className="bg-slate-100 text-slate-500 text-xs font-semibold px-1.5 py-0.5 rounded-full">{otherPartners.length}</span>
+                                                            <span className="bg-white border border-slate-200 text-slate-500 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{otherPartners.length}</span>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -917,13 +951,13 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                         key={p.id}
                                                         className={clsx(
                                                             "group transition-colors cursor-pointer hover:bg-transparent",
-                                                            translator === p.id.toString() ? "bg-slate-50/30" : ""
+                                                            translator === p.id.toString() ? "bg-white" : ""
                                                         )}
                                                         onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
                                                     >
                                                         <td className="px-2 py-2">
                                                             <div className="flex items-center gap-2">
-                                                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-400 border border-slate-100 flex items-center justify-center text-xs font-semibold shrink-0">
+                                                                <div className="w-6 h-6 rounded bg-white text-slate-400 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
                                                                     {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
                                                                 </div>
                                                                 <div className="flex flex-col min-w-0">
@@ -979,7 +1013,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* Leistungen */}
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium">04</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">04</div>
                                 <h4 className="text-sm font-medium text-slate-800">Leistungen & Optionen</h4>
                             </div>
 
@@ -1066,7 +1100,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         {/* Kalkulation */}
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium">05</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">05</div>
                                 <h4 className="text-sm font-medium text-slate-800">Kalkulation Positionen</h4>
                             </div>
 
@@ -1083,7 +1117,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium">07</div>
+                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">07</div>
                                 <h4 className="text-sm font-medium text-slate-800">Anmerkungen</h4>
                             </div>
                             <Input isTextArea label="Interne Anmerkungen" placeholder="Wichtige Hinweise zum Projekt..." value={notes} onChange={e => setNotes(e.target.value)} />
@@ -1113,18 +1147,30 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 {/* Footer */}
-                <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-between items-center shrink-0">
+                <div className="bg-white px-6 py-3 border-t border-slate-200 flex justify-between items-center shrink-0">
                     <div>
                         {initialData && (
-                            <button onClick={handleDelete} className="text-red-500 text-xs font-medium flex items-center gap-2 hover:bg-red-50 px-3 py-2 rounded transition-colors"><FaTrash /> Projekt Löschen</button>
+                            <Button
+                                variant="destructive"
+                                onClick={handleDelete}
+                                className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                            >
+                                <FaTrash className="text-[10px]" /> Projekt Löschen
+                            </Button>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={onClose} className="px-5 transition">Abbrechen</Button>
+                        <Button
+                            variant="secondary"
+                            onClick={onClose}
+                            className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                        >
+                            Abbrechen
+                        </Button>
                         <Button
                             onClick={handleSubmit}
                             disabled={isLoading || createCustomerMutation.isPending}
-                            className="px-8 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all font-bold shadow-sm"
+                            className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                         >
                             {isLoading ? 'Speichere...' : initialData ? 'Projekt Aktualisieren' : 'Projekt Anlegen'}
                         </Button>

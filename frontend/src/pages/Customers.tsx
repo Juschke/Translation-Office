@@ -4,13 +4,11 @@ import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
-    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter, FaUserPlus
+    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaUserPlus, FaUserCheck, FaArchive
 } from 'react-icons/fa';
 
 
 import NewCustomerModal from '../components/modals/NewCustomerModal';
-import Checkbox from '../components/common/Checkbox';
-import Switch from '../components/common/Switch';
 import KPICard from '../components/common/KPICard';
 import DataTable from '../components/common/DataTable';
 import { Button } from '../components/ui/button';
@@ -18,31 +16,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { BulkActions } from '../components/common/BulkActions';
+import type { BulkActionItem } from '../components/common/BulkActions';
+import StatusTabButton from '../components/common/StatusTabButton';
+import { TooltipProvider } from '../components/ui/tooltip';
 
 
 const Customers = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [typeFilter, setTypeFilter] = useState('Privat');
+    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
+    const [typeFilter, setTypeFilter] = useState('all');
     const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<any>(null);
-    const [showTrash, setShowTrash] = useState(false);
-    const [showArchive, setShowArchive] = useState(false);
-    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
+    const [isDetailLoading, setIsDetailLoading] = useState(false);
 
     const exportRef = useRef<HTMLDivElement>(null);
-    const viewSettingsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
                 setIsExportOpen(false);
-            }
-            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
-                setIsViewSettingsOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -163,33 +158,30 @@ const Customers = () => {
         return customers.filter((c: any) => {
             const status = c.status?.toLowerCase();
 
-            if (typeFilter === 'trash') return status === 'deleted' || status === 'gelöscht';
-            if (typeFilter === 'archive') return status === 'archived' || status === 'archiviert';
+            // Priority 1: Filter by status view (active/archive/trash)
+            if (statusView === 'trash') {
+                if (status !== 'deleted' && status !== 'gelöscht') return false;
+            } else if (statusView === 'archive') {
+                if (status !== 'archived' && status !== 'archiviert') return false;
+            } else {
+                // Active view: exclude deleted and archived
+                if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
+            }
 
-            // For all other tabs, exclude deleted and archived
-            if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
+            // Priority 2: Type filter (only for active view)
+            if (statusView === 'active') {
+                if (typeFilter === 'all') return true;
 
-            if (typeFilter === 'all') return true;
+                const mappedType = c.type === 'company' ? 'Firma' : c.type === 'private' ? 'Privat' : c.type === 'authority' ? 'Behörde' : c.type;
+                return mappedType === typeFilter;
+            }
 
-            const mappedType = c.type === 'company' ? 'Firma' : c.type === 'private' ? 'Privat' : c.type === 'authority' ? 'Behörde' : c.type;
-            return mappedType === typeFilter;
+            return true;
         });
-    }, [customers, typeFilter]);
+    }, [customers, statusView, typeFilter]);
 
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(val);
-    };
-
-    const toggleSelection = (id: number) => {
-        setSelectedCustomers(prev => prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]);
-    };
-
-    const toggleSelectAll = () => {
-        if (selectedCustomers.length === filteredCustomers.length) {
-            setSelectedCustomers([]);
-        } else {
-            setSelectedCustomers(filteredCustomers.map(c => c.id));
-        }
     };
 
     const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
@@ -213,22 +205,6 @@ const Customers = () => {
 
     const columns = [
         {
-            id: 'selection',
-            header: (
-                <Checkbox
-                    checked={selectedCustomers.length === filteredCustomers.length && filteredCustomers.length > 0}
-                    onChange={toggleSelectAll}
-                />
-            ),
-            accessor: (c: any) => (
-                <Checkbox
-                    checked={selectedCustomers.includes(c.id)}
-                    onChange={() => toggleSelection(c.id)}
-                />
-            ),
-            className: 'w-10'
-        },
-        {
             id: 'company',
             header: 'Unternehmen',
             accessor: (c: any) => (
@@ -239,7 +215,7 @@ const Customers = () => {
                     <div className="flex flex-col min-w-0">
                         <span className="font-semibold text-slate-800 truncate">{c.company_name || `${c.first_name} ${c.last_name}`}</span>
                         <div className="flex gap-2">
-                            <span className="text-xs text-slate-400 font-medium">ID: {c.id.toString().padStart(4, '0')}</span>
+                            <span className="text-xs text-slate-400 font-medium">ID: {c.display_id}</span>
                             <span className="text-xs text-slate-300">•</span>
                             <span className="text-xs text-slate-500 font-medium">{c.type}</span>
                         </div>
@@ -335,7 +311,19 @@ const Customers = () => {
             accessor: (c: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye /></button>
-                    <button onClick={() => { setEditingCustomer(c); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
+                    <button onClick={async () => {
+                        setEditingCustomer(c);
+                        setIsModalOpen(true);
+                        setIsDetailLoading(true);
+                        try {
+                            const fullData = await customerService.getById(c.id);
+                            setEditingCustomer(fullData);
+                        } catch (err) {
+                            console.error("Failed to load customer details", err);
+                        } finally {
+                            setIsDetailLoading(false);
+                        }
+                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
                     <button onClick={() => {
                         setCustomerToDelete(c.id);
                         setConfirmTitle('Kunde löschen');
@@ -348,31 +336,49 @@ const Customers = () => {
         }
     ];
 
-    const actions = (
-        <div className="relative group z-50" ref={exportRef}>
-            <button
-                onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }}
-                className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition"
-            >
-                <FaDownload /> Export
-            </button>
-            {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)
-                    </button>
-                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)
-                    </button>
-                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition">
-                        <FaFilePdf className="text-red-600 text-sm" /> PDF Report
-                    </button>
-                </div>
-            )}
-        </div>
+    // Count customers by status for badges
+    const activeCount = useMemo(() => customers.filter((c: any) => {
+        const s = c.status?.toLowerCase();
+        return s !== 'deleted' && s !== 'gelöscht' && s !== 'archived' && s !== 'archiviert';
+    }).length, [customers]);
+    const archivedCount = useMemo(() => customers.filter((c: any) => {
+        const s = c.status?.toLowerCase();
+        return s === 'archived' || s === 'archiviert';
+    }).length, [customers]);
+    const trashedCount = useMemo(() => customers.filter((c: any) => {
+        const s = c.status?.toLowerCase();
+        return s === 'deleted' || s === 'gelöscht';
+    }).length, [customers]);
+
+    const statusTabs = (
+        <TooltipProvider>
+            <div className="flex items-center gap-2 mb-4">
+                <StatusTabButton
+                    active={statusView === 'active'}
+                    onClick={() => { setStatusView('active'); setTypeFilter('all'); }}
+                    icon={<FaUserCheck />}
+                    label="Aktiv"
+                    count={activeCount}
+                />
+                <StatusTabButton
+                    active={statusView === 'archive'}
+                    onClick={() => setStatusView('archive')}
+                    icon={<FaArchive />}
+                    label="Archiv"
+                    count={archivedCount}
+                />
+                <StatusTabButton
+                    active={statusView === 'trash'}
+                    onClick={() => setStatusView('trash')}
+                    icon={<FaTrash />}
+                    label="Papierkorb"
+                    count={trashedCount}
+                />
+            </div>
+        </TooltipProvider>
     );
 
-    const tabs = (
+    const tabs = statusView === 'active' ? (
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
             <button
                 onClick={() => setTypeFilter('all')}
@@ -398,49 +404,28 @@ const Customers = () => {
             >
                 Behörden
             </button>
-
-            {(showTrash || typeFilter === 'trash') && (
-                <button
-                    onClick={() => setTypeFilter('trash')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                >
-                    Papierkorb
-                </button>
-            )}
-
-            {(showArchive || typeFilter === 'archive') && (
-                <button
-                    onClick={() => setTypeFilter('archive')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                >
-                    Archiv
-                </button>
-            )}
         </div>
-    );
+    ) : null;
 
-    const extraControls = (
-        <div className="relative" ref={viewSettingsRef}>
+    const actions = (
+        <div className="relative group z-50" ref={exportRef}>
             <button
-                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
-                title="Ansichtseinstellungen"
+                onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }}
+                className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition"
             >
-                <FaFilter className="text-sm" />
+                <FaDownload /> Export
             </button>
-            {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
-                            <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
-                        </div>
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
-                            <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
-                        </div>
-                    </div>
+            {isExportOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
+                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
+                        <FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)
+                    </button>
+                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
+                        <FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)
+                    </button>
+                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition">
+                        <FaFilePdf className="text-red-600 text-sm" /> PDF Report
+                    </button>
                 </div>
             )}
         </div>
@@ -482,62 +467,73 @@ const Customers = () => {
                 />
             </div>
 
+            {statusTabs}
+
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
-                <BulkActions
-                    selectedCount={selectedCustomers.length}
-                    onClearSelection={() => setSelectedCustomers([])}
-                    actions={[
+                <DataTable
+                    data={filteredCustomers}
+                    columns={columns as any}
+                    onRowClick={(c) => navigate(`/customers/${c.id}`)}
+                    pageSize={10}
+                    searchPlaceholder="Kunden nach Name, Kontakt oder E-Mail suchen..."
+                    searchFields={['company_name', 'contact_person', 'email']}
+                    actions={actions}
+                    tabs={tabs}
+                    onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
+                    selectable
+                    selectedIds={selectedCustomers}
+                    onSelectionChange={(ids) => setSelectedCustomers(ids as number[])}
+                    bulkActions={[
                         {
                             label: 'Aktivieren',
                             icon: <FaCheck className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Aktiv' } }),
                             variant: 'success',
-                            show: typeFilter !== 'trash'
+                            show: statusView === 'active'
                         },
                         {
                             label: 'E-Mail senden',
                             icon: <FaEnvelope className="text-xs" />,
                             onClick: () => {
-                                // Get emails from selected customers
                                 const selectedEmails = customers
                                     .filter((c: any) => selectedCustomers.includes(c.id))
                                     .map((c: any) => c.email)
                                     .filter(Boolean)
                                     .join(', ');
-
                                 if (selectedEmails) {
-                                    navigate('/inbox', {
-                                        state: {
-                                            compose: true,
-                                            to: selectedEmails,
-                                            subject: 'Nachricht an Kunden'
-                                        }
-                                    });
+                                    navigate('/inbox', { state: { compose: true, to: selectedEmails, subject: 'Nachricht an Kunden' } });
                                 }
                             },
                             variant: 'primary',
-                            show: typeFilter !== 'trash'
+                            show: statusView === 'active'
                         },
                         {
                             label: 'Deaktivieren',
                             icon: <FaBan className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Inaktiv' } }),
                             variant: 'danger',
-                            show: typeFilter !== 'trash'
+                            show: statusView === 'active'
                         },
                         {
-                            label: 'Wiederherstellen',
-                            icon: <FaTrashRestore className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Aktiv' } }),
-                            variant: 'success',
-                            show: typeFilter === 'trash'
+                            label: 'Archivieren',
+                            icon: <FaArchive className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Archiviert' } }),
+                            variant: 'default',
+                            show: statusView === 'active'
                         },
                         {
                             label: 'Löschen',
                             icon: <FaTrash className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Gelöscht' } }),
                             variant: 'danger',
-                            show: typeFilter !== 'trash'
+                            show: statusView === 'active'
+                        },
+                        {
+                            label: 'Wiederherstellen',
+                            icon: <FaTrashRestore className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Aktiv' } }),
+                            variant: 'success',
+                            show: statusView === 'trash' || statusView === 'archive'
                         },
                         {
                             label: 'Endgültig löschen',
@@ -549,23 +545,9 @@ const Customers = () => {
                                 setIsConfirmOpen(true);
                             },
                             variant: 'dangerSolid',
-                            show: typeFilter === 'trash'
+                            show: statusView === 'trash'
                         }
-                    ]}
-                />
-
-
-                <DataTable
-                    data={filteredCustomers}
-                    columns={columns as any}
-                    onRowClick={(c) => navigate(`/customers/${c.id}`)}
-                    pageSize={10}
-                    searchPlaceholder="Kunden nach Name, Kontakt oder E-Mail suchen..."
-                    searchFields={['company_name', 'contact_person', 'email']}
-                    actions={actions}
-                    tabs={tabs}
-                    extraControls={extraControls}
-                    onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
+                    ] as BulkActionItem[]}
                 />
             </div>
 
@@ -585,6 +567,7 @@ const Customers = () => {
                             typeFilter === 'Behörde' ? { type: 'authority' } as any :
                                 undefined
                 )}
+                isLoading={isDetailLoading || updateMutation.isPending}
             />
 
             <ConfirmModal

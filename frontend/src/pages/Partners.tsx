@@ -4,14 +4,12 @@ import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUserTie, FaPlus, FaEye, FaEdit, FaTrash, FaStar, FaHandshake,
-    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaFilter,
-    FaEuroSign
+    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore,
+    FaEuroSign, FaArchive
 } from 'react-icons/fa';
 import clsx from 'clsx';
 
-import Checkbox from '../components/common/Checkbox';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
-import Switch from '../components/common/Switch';
 import KPICard from '../components/common/KPICard';
 import DataTable from '../components/common/DataTable';
 import { Button } from '../components/ui/button';
@@ -20,31 +18,28 @@ import { partnerService, projectService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { BulkActions } from '../components/common/BulkActions';
+import type { BulkActionItem } from '../components/common/BulkActions';
+import StatusTabButton from '../components/common/StatusTabButton';
+import { TooltipProvider } from '../components/ui/tooltip';
 
 
 const Partners = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
     const [typeFilter, setTypeFilter] = useState('service_providers');
     const [selectedPartners, setSelectedPartners] = useState<number[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingPartner, setEditingPartner] = useState<any>(null);
-    const [showTrash, setShowTrash] = useState(false);
-    const [showArchive, setShowArchive] = useState(false);
-    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
+    const [isDetailLoading, setIsDetailLoading] = useState(false);
 
     const exportRef = useRef<HTMLDivElement>(null);
-    const viewSettingsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
                 setIsExportOpen(false);
-            }
-            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
-                setIsViewSettingsOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -158,40 +153,51 @@ const Partners = () => {
 
     const activePartnersCount = activePartnersList.length;
 
+    // Count partners by status for badges
+    const activeCount = useMemo(() => partners.filter((p: any) => {
+        const s = p.status?.toLowerCase();
+        return s !== 'deleted' && s !== 'gelöscht' && s !== 'archived' && s !== 'archiviert';
+    }).length, [partners]);
+    const archivedCount = useMemo(() => partners.filter((p: any) => {
+        const s = p.status?.toLowerCase();
+        return s === 'archived' || s === 'archiviert';
+    }).length, [partners]);
+    const trashedCount = useMemo(() => partners.filter((p: any) => {
+        const s = p.status?.toLowerCase();
+        return s === 'deleted' || s === 'gelöscht';
+    }).length, [partners]);
+
     const filteredPartners = useMemo(() => {
         if (!Array.isArray(partners)) return [];
         return partners.filter((p: any) => {
             const status = p.status?.toLowerCase();
 
-            if (typeFilter === 'trash') return status === 'deleted' || status === 'gelöscht';
-            if (typeFilter === 'archive') return status === 'archived' || status === 'archiviert';
-
-            // For all other tabs, exclude deleted and archived
-            if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
-
-            if (typeFilter === 'all') return true;
-
-            if (typeFilter === 'service_providers') {
-                return p.type === 'translator' || p.type === 'interpreter' || p.type === 'trans_interp';
+            // Priority 1: Filter by status view (active/archive/trash)
+            if (statusView === 'trash') {
+                if (status !== 'deleted' && status !== 'gelöscht') return false;
+            } else if (statusView === 'archive') {
+                if (status !== 'archived' && status !== 'archiviert') return false;
+            } else {
+                // Active view: exclude deleted and archived
+                if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
             }
 
-            // Map German filter names to English type values
-            const mappedType = p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type;
-            return mappedType === typeFilter;
+            // Priority 2: Type filter (only for active view)
+            if (statusView === 'active') {
+                if (typeFilter === 'all') return true;
+
+                if (typeFilter === 'service_providers') {
+                    return p.type === 'translator' || p.type === 'interpreter' || p.type === 'trans_interp';
+                }
+
+                // Map German filter names to English type values
+                const mappedType = p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type;
+                return mappedType === typeFilter;
+            }
+
+            return true;
         });
-    }, [partners, typeFilter]);
-
-    const toggleSelection = (id: number) => {
-        setSelectedPartners(prev => prev.includes(id) ? prev.filter(pId => pId !== id) : [...prev, id]);
-    };
-
-    const toggleSelectAll = () => {
-        if (selectedPartners.length === filteredPartners.length) {
-            setSelectedPartners([]);
-        } else {
-            setSelectedPartners(filteredPartners.map(p => p.id));
-        }
-    };
+    }, [partners, statusView, typeFilter]);
 
     const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
         if (filteredPartners.length === 0) return;
@@ -207,16 +213,6 @@ const Partners = () => {
 
     const columns = [
         {
-            id: 'selection',
-            header: (
-                <Checkbox checked={selectedPartners.length === filteredPartners.length && filteredPartners.length > 0} onChange={toggleSelectAll} />
-            ),
-            accessor: (p: any) => (
-                <Checkbox checked={selectedPartners.includes(p.id)} onChange={() => toggleSelection(p.id)} />
-            ),
-            className: 'w-10'
-        },
-        {
             id: 'partner',
             header: 'Partner / Dienstleister',
             accessor: (p: any) => (
@@ -227,7 +223,7 @@ const Partners = () => {
                     <div className="flex flex-col min-w-0">
                         <span className="font-medium text-slate-800 truncate" title={p.company || `${p.first_name} ${p.last_name}`}>{p.company || `${p.first_name} ${p.last_name}`}</span>
                         <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-xs text-slate-400 font-medium shrink-0">{p.id.toString().padStart(4, '0')}</span>
+                            <span className="text-xs text-slate-400 font-medium shrink-0">{p.display_id}</span>
                             <span className="text-xs text-slate-300 shrink-0">•</span>
                             <span
                                 className="text-xs text-slate-500 font-medium truncate shrink"
@@ -375,7 +371,19 @@ const Partners = () => {
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye /></button>
-                    <button onClick={() => { setEditingPartner(p); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
+                    <button onClick={async () => {
+                        setEditingPartner(p);
+                        setIsModalOpen(true);
+                        setIsDetailLoading(true);
+                        try {
+                            const fullData = await partnerService.getById(p.id);
+                            setEditingPartner(fullData);
+                        } catch (err) {
+                            console.error("Failed to load partner details", err);
+                        } finally {
+                            setIsDetailLoading(false);
+                        }
+                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
                     <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Löschen"><FaTrash /></button>
                 </div>
             ),
@@ -398,19 +406,41 @@ const Partners = () => {
         </div>
     );
 
-    const tabs = (
+    const statusTabs = (
+        <TooltipProvider>
+            <div className="flex items-center gap-2 mb-4">
+                <StatusTabButton
+                    active={statusView === 'active'}
+                    onClick={() => { setStatusView('active'); setTypeFilter('service_providers'); }}
+                    icon={<FaHandshake />}
+                    label="Aktiv"
+                    count={activeCount}
+                />
+                <StatusTabButton
+                    active={statusView === 'archive'}
+                    onClick={() => setStatusView('archive')}
+                    icon={<FaArchive />}
+                    label="Archiv"
+                    count={archivedCount}
+                />
+                <StatusTabButton
+                    active={statusView === 'trash'}
+                    onClick={() => setStatusView('trash')}
+                    icon={<FaTrash />}
+                    label="Papierkorb"
+                    count={trashedCount}
+                />
+            </div>
+        </TooltipProvider>
+    );
+
+    const tabs = statusView === 'active' ? (
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
-            <button
-                onClick={() => setTypeFilter('all')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Alle
-            </button>
             <button
                 onClick={() => setTypeFilter('service_providers')}
                 className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'service_providers' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Übersetzer & Dolmetscher
+                Alle
             </button>
             <button
                 onClick={() => setTypeFilter('Übersetzer')}
@@ -430,53 +460,8 @@ const Partners = () => {
             >
                 Agenturen
             </button>
-
-            {(showTrash || typeFilter === 'trash') && (
-                <button
-                    onClick={() => setTypeFilter('trash')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'trash' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                >
-                    Papierkorb
-                </button>
-            )}
-
-            {(showArchive || typeFilter === 'archive') && (
-                <button
-                    onClick={() => setTypeFilter('archive')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                >
-                    Archiv
-                </button>
-            )}
         </div>
-    );
-
-    const extraControls = (
-        <div className="relative" ref={viewSettingsRef}>
-            <button
-                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
-                title="Ansichtseinstellungen"
-            >
-                <FaFilter className="text-sm" />
-            </button>
-            {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
-                            <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
-                        </div>
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
-                            <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+    ) : null;
 
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
@@ -516,75 +501,9 @@ const Partners = () => {
                 <KPICard label="Zusammenarbeit" value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" subValue="Projekte diesen Monat" />
             </div>
 
+            {statusTabs}
+
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
-                <BulkActions
-                    selectedCount={selectedPartners.length}
-                    onClearSelection={() => setSelectedPartners([])}
-                    actions={[
-                        {
-                            label: 'Aktivieren',
-                            icon: <FaCheck className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
-                            variant: 'success',
-                            show: typeFilter !== 'trash'
-                        },
-                        {
-                            label: 'E-Mail senden',
-                            icon: <FaEnvelope className="text-xs" />,
-                            onClick: () => {
-                                // Get emails from selected partners
-                                const selectedEmails = partners
-                                    .filter((p: any) => selectedPartners.includes(p.id))
-                                    .map((p: any) => p.email)
-                                    .filter(Boolean)
-                                    .join(', ');
-
-                                if (selectedEmails) {
-                                    navigate('/inbox', {
-                                        state: {
-                                            compose: true,
-                                            to: selectedEmails,
-                                            subject: 'Nachricht an Partner'
-                                        }
-                                    });
-                                }
-                            },
-                            variant: 'primary',
-                            show: typeFilter !== 'trash'
-                        },
-                        {
-                            label: 'Sperren',
-                            icon: <FaBan className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'blacklisted' } }),
-                            variant: 'danger',
-                            show: typeFilter !== 'trash'
-                        },
-                        {
-                            label: 'Wiederherstellen',
-                            icon: <FaTrashRestore className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
-                            variant: 'success',
-                            show: typeFilter === 'trash'
-                        },
-                        {
-                            label: 'Löschen',
-                            icon: <FaTrash className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'deleted' } }),
-                            variant: 'danger',
-                            show: typeFilter !== 'trash'
-                        },
-                        {
-                            label: 'Endgültig löschen',
-                            icon: <FaTrash className="text-xs" />,
-                            onClick: () => {
-                                // Bulk permanent delete not implemented in frontend yet
-                            },
-                            variant: 'dangerSolid',
-                            show: false
-                        }
-                    ]}
-                />
-
                 <DataTable
                     data={filteredPartners}
                     columns={columns as any}
@@ -594,8 +513,63 @@ const Partners = () => {
                     searchFields={['first_name', 'last_name', 'company', 'email']}
                     actions={actions}
                     tabs={tabs}
-                    extraControls={extraControls}
                     onAddClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
+                    selectable
+                    selectedIds={selectedPartners}
+                    onSelectionChange={(ids) => setSelectedPartners(ids as number[])}
+                    bulkActions={[
+                        {
+                            label: 'Aktivieren',
+                            icon: <FaCheck className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
+                            variant: 'success',
+                            show: statusView === 'active'
+                        },
+                        {
+                            label: 'E-Mail senden',
+                            icon: <FaEnvelope className="text-xs" />,
+                            onClick: () => {
+                                const selectedEmails = partners
+                                    .filter((p: any) => selectedPartners.includes(p.id))
+                                    .map((p: any) => p.email)
+                                    .filter(Boolean)
+                                    .join(', ');
+                                if (selectedEmails) {
+                                    navigate('/inbox', { state: { compose: true, to: selectedEmails, subject: 'Nachricht an Partner' } });
+                                }
+                            },
+                            variant: 'primary',
+                            show: statusView === 'active'
+                        },
+                        {
+                            label: 'Sperren',
+                            icon: <FaBan className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'blacklisted' } }),
+                            variant: 'danger',
+                            show: statusView === 'active'
+                        },
+                        {
+                            label: 'Archivieren',
+                            icon: <FaArchive className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'archived' } }),
+                            variant: 'default',
+                            show: statusView === 'active'
+                        },
+                        {
+                            label: 'Löschen',
+                            icon: <FaTrash className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'deleted' } }),
+                            variant: 'danger',
+                            show: statusView === 'active'
+                        },
+                        {
+                            label: 'Wiederherstellen',
+                            icon: <FaTrashRestore className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
+                            variant: 'success',
+                            show: statusView === 'trash' || statusView === 'archive'
+                        }
+                    ] as BulkActionItem[]}
                 />
             </div>
 
@@ -614,7 +588,7 @@ const Partners = () => {
                         ? { type: typeFilter === 'Übersetzer' ? 'translator' : typeFilter === 'Dolmetscher' ? 'interpreter' : typeFilter === 'service_providers' ? 'trans_interp' : 'agency' }
                         : undefined
                 )}
-                isLoading={createMutation.isPending || updateMutation.isPending}
+                isLoading={isDetailLoading || createMutation.isPending || updateMutation.isPending}
             />
 
             <ConfirmModal

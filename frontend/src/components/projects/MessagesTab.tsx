@@ -4,6 +4,7 @@ import { FaComments, FaCopy, FaPaperclip, FaCamera, FaPaperPlane } from 'react-i
 import clsx from 'clsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { projectService } from '../../api/services';
+import { Button } from '../ui/button';
 
 interface MessagesTabProps {
  projectData: any;
@@ -66,33 +67,37 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
  </div>
  <div className="flex items-center gap-3">
  {!projectData.access_token ? (
- <button
+ <Button
+ variant="default"
+ size="sm"
  onClick={() => {
  projectService.generateToken(projectId).then(() => {
  queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
  toast.success('Gast-Link generiert');
  });
  }}
- className="px-3 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-sm hover:bg-slate-900 transition shadow-sm"
+ className="h-auto px-3 py-1.5"
  >
  Gast-Zugang aktivieren
- </button>
+ </Button>
  ) : (
  <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-sm px-2 py-1">
  <span className="text-xs text-slate-500 font-mono select-all truncate max-w-[150px]">
  {window.location.origin}/guest/project/{projectData.access_token}
  </span>
  <div className="h-3 w-px bg-slate-200 mx-1"></div>
- <button
+ <Button
+ variant="ghost"
+ size="icon"
  onClick={() => {
  navigator.clipboard.writeText(`${window.location.origin}/guest/project/${projectData.access_token}`);
  toast.success('Link kopiert');
  }}
- className="text-slate-400 hover:text-slate-700 transition p-1"
+ className="h-auto w-auto p-1 text-slate-400 hover:text-slate-700"
  title="Link kopieren"
  >
  <FaCopy />
- </button>
+ </Button>
  </div>
  )}
  </div>
@@ -127,18 +132,22 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
  <div className="flex gap-2 items-center">
  <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
 
- <button
+ <Button
+ variant="ghost"
+ size="icon"
  onClick={() => fileInputRef.current?.click()}
- className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 transition shadow-sm"
+ className="w-8 h-8 flex-shrink-0 rounded-full bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-100 shadow-sm"
  >
  <FaPaperclip />
- </button>
- <button
- className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 transition shadow-sm"
+ </Button>
+ <Button
+ variant="ghost"
+ size="icon"
+ className="w-8 h-8 flex-shrink-0 rounded-full bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-100 shadow-sm"
  onClick={() => toast.success('Kamera-Funktion (Demo)')}
  >
  <FaCamera />
- </button>
+ </Button>
 
  <div className="flex-1 relative">
  <input
@@ -151,13 +160,15 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
  if (e.key === 'Enter') handleSendMessage();
  }}
  />
- <button
+ <Button
+ variant="default"
+ size="icon"
  onClick={handleSendMessage}
  disabled={!newMessage.trim()}
- className="absolute right-1 top-1 w-7 h-7 bg-slate-900 text-white rounded-full flex items-center justify-center hover:bg-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+ className="absolute right-1 top-1 w-7 h-7 rounded-full shadow-sm"
  >
  <FaPaperPlane className="text-xs" />
- </button>
+ </Button>
  </div>
  </div>
  </div>

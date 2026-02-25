@@ -319,7 +319,7 @@ const ProjectOverviewTab = ({
                         <div className="mt-8 flex gap-3 justify-end">
                             {!projectData.documentsSent ? (
                                 <Button
-                                    className="px-5 py-2.5 bg-brand-primary text-white text-xs font-bold hover:bg-brand-primary/90 transition shadow-sm flex items-center gap-2"
+                                    variant="default"
                                     onClick={() => {
                                         const hasFiles = projectData.files && projectData.files.length > 0;
                                         if (!hasFiles) {
@@ -328,6 +328,7 @@ const ProjectOverviewTab = ({
                                         }
                                         updateProjectMutation.mutate({ documents_sent: true });
                                     }}
+                                    className="flex items-center gap-2"
                                 >
                                     <FaPaperPlane className="text-xs" /> Dokumente senden
                                 </Button>

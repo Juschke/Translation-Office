@@ -158,6 +158,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('projects/{project}/confirmation/{type}', [\App\Http\Controllers\Api\ProjectController::class, 'downloadConfirmation']);
     Route::post('projects/{project}/message', [\App\Http\Controllers\Api\ProjectController::class, 'postMessage']);
 
+    // Calendar & Appointments
+    Route::get('calendar/events', [\App\Http\Controllers\Api\CalendarController::class, 'index']);
+    Route::apiResource('appointments', \App\Http\Controllers\Api\CalendarController::class)->except(['index']);
+
     // Notifications
     Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
     Route::post('notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);

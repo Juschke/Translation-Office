@@ -11,6 +11,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import AddressForm from '../common/AddressForm';
+import { Button } from '../ui/button';
 
 registerLocale('de', de);
 
@@ -411,12 +412,19 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
 
                         {/* Footer */}
                         <div className="border-t border-slate-100 px-6 py-4 flex justify-end gap-3 bg-white shrink-0">
-                            <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 rounded-sm hover:bg-slate-50 transition">
+                            <Button
+                                variant="secondary"
+                                onClick={onClose}
+                                className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                            >
                                 Abbrechen
-                            </button>
-                            <button onClick={handleDownload} className="px-5 py-2.5 text-sm font-medium text-white bg-slate-900 rounded-sm hover:bg-slate-800 transition flex items-center gap-2 shadow-lg">
+                            </Button>
+                            <Button
+                                onClick={handleDownload}
+                                className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                            >
                                 <FaFilePdf size={14} /> Dokument erstellen & speichern
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

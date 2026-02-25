@@ -6,12 +6,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaPlus, FaCheck, FaCheckCircle, FaHistory,
     FaFileExcel, FaFileCsv, FaFilePdf, FaDownload,
-    FaFileInvoiceDollar, FaTrashRestore, FaFilter, FaPaperPlane,
+    FaFileInvoiceDollar, FaTrashRestore, FaPaperPlane, FaFileInvoice, FaArchive, FaTrash,
 } from 'react-icons/fa';
 import { buildInvoiceColumns } from './invoiceColumns';
 import { Button } from '../components/ui/button';
 
-import Switch from '../components/common/Switch';
 import DataTable from '../components/common/DataTable';
 import KPICard from '../components/common/KPICard';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
@@ -20,13 +19,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { BulkActions } from '../components/common/BulkActions';
+import type { BulkActionItem } from '../components/common/BulkActions';
+import StatusTabButton from '../components/common/StatusTabButton';
+import { TooltipProvider } from '../components/ui/tooltip';
 
 
 
 const Invoices = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
     const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'pending');
     useEffect(() => {
         setSelectedInvoices([]);
@@ -36,20 +38,13 @@ const Invoices = () => {
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
     const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
     const [downloadDropdownOpen, setDownloadDropdownOpen] = useState<number | null>(null);
-    const [showTrash, setShowTrash] = useState(false);
-    const [showArchive, setShowArchive] = useState(false);
-    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
 
     const exportRef = useRef<HTMLDivElement>(null);
-    const viewSettingsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
                 setIsExportOpen(false);
-            }
-            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
-                setIsViewSettingsOpen(false);
             }
             if (!(event.target as Element).closest('.invoice-download-dropdown')) {
                 setDownloadDropdownOpen(null);
@@ -180,42 +175,38 @@ const Invoices = () => {
             const dueDate = new Date(inv.due_date);
             const isOverdue = dueDate < today && status !== 'paid' && status !== 'cancelled' && status !== 'deleted' && status !== 'archived' && status !== 'draft';
 
-            // Trash and Archive are explicit states
-            if (statusFilter === 'trash') return status === 'deleted' || status === 'gelöscht';
-            if (statusFilter === 'archive') return status === 'archived' || status === 'archiviert';
-
-            // Exclude Trash/Archive from main tabs
-            if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
-
-            if (statusFilter === 'credit_notes') return inv.type === 'credit_note';
-
-            // Main tabs (exclude credit notes by default to avoid confusion)
-            if (statusFilter !== 'all' && inv.type === 'credit_note') return false;
-
-            if (statusFilter === 'paid') return status === 'paid' || status === 'bezahlt';
-            if (statusFilter === 'cancelled') return status === 'cancelled' || status === 'storniert';
-            if (statusFilter === 'overdue') return isOverdue;
-            if (statusFilter === 'reminders') return (inv.reminder_level > 0 || isOverdue) && status !== 'paid' && status !== 'cancelled';
-            if (statusFilter === 'pending') {
-                return (status === 'pending' || status === 'draft' || status === 'issued') && !isOverdue;
+            // Priority 1: Filter by status view (active/archive/trash)
+            if (statusView === 'trash') {
+                if (status !== 'deleted' && status !== 'gelöscht') return false;
+            } else if (statusView === 'archive') {
+                if (status !== 'archived' && status !== 'archiviert') return false;
+            } else {
+                // Active view: exclude deleted and archived
+                if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
             }
-            if (statusFilter === 'all') return true;
 
-            return status === statusFilter;
+            // Priority 2: Status filter (only for active view)
+            if (statusView === 'active') {
+                if (statusFilter === 'credit_notes') return inv.type === 'credit_note';
+
+                // Main tabs (exclude credit notes by default to avoid confusion)
+                if (statusFilter !== 'all' && inv.type === 'credit_note') return false;
+
+                if (statusFilter === 'paid') return status === 'paid' || status === 'bezahlt';
+                if (statusFilter === 'cancelled') return status === 'cancelled' || status === 'storniert';
+                if (statusFilter === 'overdue') return isOverdue;
+                if (statusFilter === 'reminders') return (inv.reminder_level > 0 || isOverdue) && status !== 'paid' && status !== 'cancelled';
+                if (statusFilter === 'pending') {
+                    return (status === 'pending' || status === 'draft' || status === 'issued') && !isOverdue;
+                }
+                if (statusFilter === 'all') return true;
+
+                return status === statusFilter;
+            }
+
+            return true;
         });
-    }, [invoices, statusFilter]);
-
-    const toggleSelection = (id: number) => {
-        setSelectedInvoices(prev => prev.includes(id) ? prev.filter(pId => pId !== id) : [...prev, id]);
-    };
-
-    const toggleSelectAll = () => {
-        if (selectedInvoices.length === filteredInvoices.length) {
-            setSelectedInvoices([]);
-        } else {
-            setSelectedInvoices(filteredInvoices.map((p: any) => p.id));
-        }
-    };
+    }, [invoices, statusView, statusFilter]);
 
     const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
         const ids = selectedInvoices.length > 0
@@ -346,10 +337,6 @@ const Invoices = () => {
     };
 
     const columns = buildInvoiceColumns({
-        selectedInvoices,
-        filteredInvoices,
-        toggleSelection,
-        toggleSelectAll,
         downloadDropdownOpen,
         setDownloadDropdownOpen,
         setPreviewInvoice,
@@ -373,7 +360,7 @@ const Invoices = () => {
         setIsConfirmOpen,
     });
 
-    const tabs = (
+    const tabs = statusView === 'active' ? (
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
             <button onClick={() => setStatusFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Alle</button>
             <button onClick={() => setStatusFilter('pending')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Offen</button>
@@ -382,15 +369,8 @@ const Invoices = () => {
             <button onClick={() => setStatusFilter('reminders')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Mahnungen</button>
             <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
             <button onClick={() => setStatusFilter('credit_notes')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Gutschriften</button>
-
-            {(showTrash || statusFilter === 'trash') && (
-                <button onClick={() => setStatusFilter('trash')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'trash' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
-            )}
-            {(showArchive || statusFilter === 'archive') && (
-                <button onClick={() => setStatusFilter('archive')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'archive' ? 'bg-slate-600 border-slate-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
-            )}
         </div>
-    );
+    ) : null;
 
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
@@ -407,32 +387,6 @@ const Invoices = () => {
         </div>
     );
 
-    const extraControls = (
-        <div className="relative" ref={viewSettingsRef}>
-            <button
-                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
-                title="Ansichtseinstellungen"
-            >
-                <FaFilter className="text-sm" />
-            </button>
-            {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
-                            <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
-                        </div>
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
-                            <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
 
 
 
@@ -442,6 +396,20 @@ const Invoices = () => {
             return s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht';
         });
     }, [invoices]);
+
+    // Count invoices by status for badges
+    const activeCount = useMemo(() => invoices.filter((inv: any) => {
+        const s = inv.status?.toLowerCase();
+        return s !== 'deleted' && s !== 'gelöscht' && s !== 'archived' && s !== 'archiviert';
+    }).length, [invoices]);
+    const archivedCount = useMemo(() => invoices.filter((inv: any) => {
+        const s = inv.status?.toLowerCase();
+        return s === 'archived' || s === 'archiviert';
+    }).length, [invoices]);
+    const trashedCount = useMemo(() => invoices.filter((inv: any) => {
+        const s = inv.status?.toLowerCase();
+        return s === 'deleted' || s === 'gelöscht';
+    }).length, [invoices]);
 
     const totalOpenAmount = activeInvoices
         .filter((i: any) => i.status !== 'paid' && i.status !== 'cancelled' && i.type !== 'credit_note')
@@ -463,6 +431,34 @@ const Invoices = () => {
     }).length;
 
     const paidCount = activeInvoices.filter((i: any) => i.status === 'paid').length;
+
+    const statusTabs = (
+        <TooltipProvider>
+            <div className="flex items-center gap-2 mb-4">
+                <StatusTabButton
+                    active={statusView === 'active'}
+                    onClick={() => { setStatusView('active'); setStatusFilter('pending'); }}
+                    icon={<FaFileInvoice />}
+                    label="Aktiv"
+                    count={activeCount}
+                />
+                <StatusTabButton
+                    active={statusView === 'archive'}
+                    onClick={() => setStatusView('archive')}
+                    icon={<FaArchive />}
+                    label="Archiv"
+                    count={archivedCount}
+                />
+                <StatusTabButton
+                    active={statusView === 'trash'}
+                    onClick={() => setStatusView('trash')}
+                    icon={<FaTrash />}
+                    label="Papierkorb"
+                    count={trashedCount}
+                />
+            </div>
+        </TooltipProvider>
+    );
 
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
@@ -499,17 +495,28 @@ const Invoices = () => {
                 <KPICard label="Fremdkosten" value="0,00 €" icon={<FaHistory />} subValue="Diesen Monat" />
             </div>
 
+            {statusTabs}
+
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
-                <BulkActions
-                    selectedCount={selectedInvoices.length}
-                    onClearSelection={() => setSelectedInvoices([])}
-                    actions={[
+                <DataTable
+                    data={filteredInvoices}
+                    columns={columns as any}
+                    pageSize={10}
+                    searchPlaceholder="Suchen nach Nr., Kunde oder Projekt..."
+                    searchFields={['invoice_number', 'customer.company_name', 'project.project_name']}
+                    actions={actions}
+                    tabs={tabs}
+                    onRowClick={(inv: any) => setPreviewInvoice(inv)}
+                    selectable
+                    selectedIds={selectedInvoices}
+                    onSelectionChange={(ids) => setSelectedInvoices(ids as number[])}
+                    bulkActions={[
                         {
                             label: 'Bezahlt',
                             icon: <FaCheck className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }),
                             variant: 'success',
-                            show: statusFilter !== 'trash' && statusFilter !== 'cancelled' && statusFilter !== 'paid'
+                            show: statusView === 'active' && statusFilter !== 'cancelled' && statusFilter !== 'paid'
                         },
                         {
                             label: 'Mahnung senden',
@@ -526,46 +533,30 @@ const Invoices = () => {
                                         const nextLevel = (inv?.reminder_level || 0) + 1;
                                         bulkUpdateMutation.mutate({
                                             ids: [id],
-                                            data: {
-                                                reminder_level: nextLevel,
-                                                last_reminder_date: new Date().toISOString().split('T')[0]
-                                            }
+                                            data: { reminder_level: nextLevel, last_reminder_date: new Date().toISOString().split('T')[0] }
                                         });
                                     });
                                 });
                                 setIsConfirmOpen(true);
                             },
                             variant: 'primary',
-                            show: statusFilter === 'reminders' || statusFilter === 'overdue'
+                            show: statusView === 'active' && (statusFilter === 'reminders' || statusFilter === 'overdue')
                         },
-
+                        {
+                            label: 'Archivieren',
+                            icon: <FaArchive className="text-xs" />,
+                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'archived' } }),
+                            variant: 'default',
+                            show: statusView === 'active' && statusFilter === 'paid'
+                        },
                         {
                             label: 'Wiederherstellen',
                             icon: <FaTrashRestore className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'draft' } }),
                             variant: 'success',
-                            show: statusFilter === 'trash'
-                        },
-                        {
-                            label: 'Archivieren',
-                            icon: <FaHistory className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'archived' } }),
-                            variant: 'primary',
-                            show: statusFilter === 'paid'
+                            show: statusView === 'trash' || statusView === 'archive'
                         }
-                    ]}
-                />
-
-                <DataTable
-                    data={filteredInvoices}
-                    columns={columns as any}
-                    pageSize={10}
-                    searchPlaceholder="Suchen nach Nr., Kunde oder Projekt..."
-                    searchFields={['invoice_number', 'customer.company_name', 'project.project_name']}
-                    actions={actions}
-                    tabs={tabs}
-                    extraControls={extraControls}
-                    onRowClick={(inv: any) => setPreviewInvoice(inv)}
+                    ] as BulkActionItem[]}
                 />
             </div>
 

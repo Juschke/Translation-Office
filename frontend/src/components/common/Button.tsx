@@ -4,7 +4,7 @@ import React from 'react';
 import { Button as ShadcnButton, type ButtonProps as ShadcnButtonProps } from '@/components/ui/button';
 
 interface LegacyButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'ref'> {
- variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
+ variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'ghost' | 'outline';
  size?: 'sm' | 'md' | 'lg';
  isLoading?: boolean;
 }
@@ -13,6 +13,8 @@ const variantMap: Record<string, ShadcnButtonProps['variant']> = {
  primary: 'default',
  secondary: 'secondary',
  danger: 'destructive',
+ warning: 'warning',
+ success: 'success',
  ghost: 'ghost',
  outline: 'outline',
 };

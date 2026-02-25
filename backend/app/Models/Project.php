@@ -9,7 +9,9 @@ use App\Traits\LogsAllActivity;
 
 class Project extends Model
 {
-    use HasFactory, BelongsToTenant, LogsAllActivity;
+    use HasFactory, BelongsToTenant, LogsAllActivity, \App\Traits\HasDisplayId;
+
+    protected $appends = ['display_id'];
 
     protected $fillable = [
         'project_number',

@@ -412,6 +412,45 @@ const CompanySettingsTab = () => {
                     </SettingRow>
                 </div>
 
+                {/* ID-Präfixe */}
+                <div className="mb-8">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">ID-Präfixe</h4>
+                    <SettingRow label="Formatierung" description="Bestimmen Sie die Präfixe für IDs in Ihrem System.">
+                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                            <Input
+                                label="Kunde (K)"
+                                placeholder="K"
+                                value={companyData.customer_id_prefix || ''}
+                                onChange={(e) => handleInputMetaChange('customer_id_prefix', e.target.value)}
+                            />
+                            <Input
+                                label="Partner (PR)"
+                                placeholder="PR"
+                                value={companyData.partner_id_prefix || ''}
+                                onChange={(e) => handleInputMetaChange('partner_id_prefix', e.target.value)}
+                            />
+                            <Input
+                                label="Projekt (P)"
+                                placeholder="P"
+                                value={companyData.project_id_prefix || ''}
+                                onChange={(e) => handleInputMetaChange('project_id_prefix', e.target.value)}
+                            />
+                            <Input
+                                label="Termin (A)"
+                                placeholder="A"
+                                value={companyData.appointment_id_prefix || ''}
+                                onChange={(e) => handleInputMetaChange('appointment_id_prefix', e.target.value)}
+                            />
+                            <Input
+                                label="Angebot (A)"
+                                placeholder="A"
+                                value={companyData.offer_id_prefix || ''}
+                                onChange={(e) => handleInputMetaChange('offer_id_prefix', e.target.value)}
+                            />
+                        </div>
+                    </SettingRow>
+                </div>
+
                 {/* Steuern & Identifikation */}
                 <div className="mb-8">
                     <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Steuern & Identifikation</h4>

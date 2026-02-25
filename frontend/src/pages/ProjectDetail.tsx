@@ -152,6 +152,7 @@ interface ProjectData {
     appointment_location?: string;
     customer_reference?: string;
     customer_date?: string | null;
+    project_number?: string;
 }
 
 
@@ -654,8 +655,13 @@ const ProjectDetail = () => {
                                         </div>
                                         <div className="flex items-center gap-2 md:gap-4 text-sm text-slate-400 font-medium mt-1 flex-wrap">
                                             {getStatusBadge(projectData.status)}
+                                            {projectData.project_number && (
+                                                <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                                    {projectData.project_number}
+                                                </span>
+                                            )}
                                             <span className="text-slate-200 hidden sm:inline">|</span>
-                                            <span>ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
+                                            <span>System-ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
                                         </div>
                                     </div>
                                 </div>
@@ -663,7 +669,7 @@ const ProjectDetail = () => {
 
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end mt-4 md:mt-0">
                                 <Button
-                                    variant="outline"
+                                    variant="secondary"
                                     onClick={() => setIsEditModalOpen(true)}
                                     className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
@@ -671,17 +677,18 @@ const ProjectDetail = () => {
                                 </Button>
 
                                 <Button
-                                    variant="outline"
+                                    variant="destructive"
                                     onClick={() => setIsProjectDeleteConfirmOpen(true)}
-                                    className="text-brand-muted hover:text-red-600 hover:border-red-200 px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaTrashAlt /> Löschen
                                 </Button>
 
                                 {/* Email senden */}
                                 <Button
+                                    variant="default"
                                     onClick={() => navigate('/inbox', { state: { openCompose: true, projectId: String(projectData.id) } })}
-                                    className="bg-brand-primary text-white hover:bg-brand-primary/90 px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEnvelope /> E-Mail senden
                                 </Button>
@@ -689,9 +696,9 @@ const ProjectDetail = () => {
                                 {/* Mehr Aktionen Dropdown */}
                                 <div className="relative flex-1 sm:flex-none" ref={actionsRef}>
                                     <Button
-                                        variant="outline"
+                                        variant="secondary"
                                         onClick={() => setIsActionsOpen(v => !v)}
-                                        className="w-full text-brand-text hover:text-brand-primary px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
+                                        className="w-full px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
                                     >
                                         Mehr Aktionen <FaChevronDown className={clsx('text-[10px] transition-transform', isActionsOpen && 'rotate-180')} />
                                     </Button>
@@ -701,19 +708,19 @@ const ProjectDetail = () => {
                                             <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
                                             <button
                                                 onClick={() => { handleDownloadConfirmation('order_confirmation'); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
                                             >
                                                 <FaFilePdf className="text-red-400 shrink-0" /> Auftragsbestätigung
                                             </button>
                                             <button
                                                 onClick={() => { handleDownloadConfirmation('pickup_confirmation'); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
                                             >
                                                 <FaFilePdf className="text-red-400 shrink-0" /> Abholbestätigung
                                             </button>
                                             <button
                                                 onClick={() => { setIsInterpreterModalOpen(true); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
                                             >
                                                 <FaFilePdf className="text-red-400 shrink-0" /> Dolmetscherbestätigung
                                             </button>
@@ -724,14 +731,14 @@ const ProjectDetail = () => {
                                                 return activeInvoice ? (
                                                     <button
                                                         onClick={() => { setPreviewInvoice(activeInvoice); setIsActionsOpen(false); }}
-                                                        className="w-full text-left px-4 py-2.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 flex items-center gap-3 transition"
+                                                        className="w-full text-left px-4 py-2.5 text-xs font-medium text-emerald-700 hover:bg-gradient-to-b hover:from-emerald-50 hover:to-emerald-100 flex items-center gap-3 transition rounded-sm"
                                                     >
                                                         <FaFileInvoiceDollar className="text-emerald-500 shrink-0" /> {activeInvoice.invoice_number} öffnen
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => { setIsInvoiceModalOpen(true); setIsActionsOpen(false); }}
-                                                        className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                                        className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
                                                     >
                                                         <FaFileInvoiceDollar className="text-slate-400 shrink-0" /> Rechnung erstellen
                                                     </button>
@@ -758,7 +765,7 @@ const ProjectDetail = () => {
                     </div>
 
                     {/* Tabs Navigation */}
-                    <div className="px-3 sm:px-4 md:px-8 border-t border-slate-100 flex items-center justify-between md:justify-start">
+                    <div className="px-3 sm:px-4 md:px-8 border-b border-slate-200 flex items-center justify-between md:justify-start">
                         {/* Mobile Tab Menu Button */}
                         <div className="md:hidden flex-1 py-3">
                             <button
@@ -798,17 +805,17 @@ const ProjectDetail = () => {
                                             setIsTabMenuOpen(false);
                                         }}
                                         className={clsx(
-                                            "py-4 text-sm font-medium border-b-2 transition-all relative flex items-center gap-2.5 -mb-[1px]",
+                                            "py-4 px-1 text-sm font-medium transition-all relative flex items-center gap-2.5 border-b-2 -mb-[1px]",
                                             isActive
-                                                ? 'border-slate-900 text-slate-900'
-                                                : 'border-transparent text-slate-400 hover:text-slate-600'
+                                                ? 'border-[#1B4D4F] text-[#1B4D4F] font-bold'
+                                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200'
                                         )}
                                     >
-                                        {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-                                        {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-                                        {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-                                        {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
-                                        {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-slate-600" : "text-slate-300")} />}
+                                        {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                        {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                        {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                        {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                        {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
 
                                         {tab === 'overview' ? 'Stammdaten' :
                                             tab === 'files' ? 'Dateien' :
@@ -817,8 +824,8 @@ const ProjectDetail = () => {
 
                                         {tab !== 'overview' && tab !== 'history' && (
                                             <span className={clsx(
-                                                "px-2 py-0.5 rounded-full text-xs font-medium transition-colors",
-                                                isActive ? "bg-slate-100 text-slate-900" : "bg-slate-100 text-slate-500"
+                                                "px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors",
+                                                isActive ? "bg-[#1B4D4F] text-white" : "bg-slate-100 text-slate-500"
                                             )}>
                                                 {badgeCount}
                                             </span>
@@ -849,10 +856,10 @@ const ProjectDetail = () => {
                                                 setIsTabMenuOpen(false);
                                             }}
                                             className={clsx(
-                                                "px-6 py-4 text-sm font-medium flex items-center gap-4 border-l-4 transition-all",
+                                                "px-6 py-4 text-sm font-medium flex items-center gap-4 transition-all rounded-sm mx-2 my-1",
                                                 isActive
-                                                    ? 'border-slate-900 bg-slate-50 text-slate-900'
-                                                    : 'border-transparent text-slate-500 hover:bg-slate-50'
+                                                    ? 'bg-slate-50 text-[#1B4D4F] font-bold border-l-4 border-[#1B4D4F]'
+                                                    : 'text-slate-500 hover:bg-slate-50/50 hover:text-slate-700'
                                             )}
                                         >
                                             {tab === 'overview' && <FaInfoCircle className="text-base" />}
@@ -984,7 +991,13 @@ const ProjectDetail = () => {
             />
 
             <PartnerSelectionModal isOpen={isPartnerModalOpen} onClose={() => setIsPartnerModalOpen(false)} onSelect={handlePartnerSelect} />
-            <NewProjectModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSubmit={handleEditSubmit} initialData={projectData} />
+            <NewProjectModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                onSubmit={handleEditSubmit}
+                initialData={projectData}
+                isLoading={updateProjectMutation.isPending}
+            />
             <FileUploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleFileUpload} />
             <NewInvoiceModal isOpen={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} onSubmit={(data) => invoiceMutation.mutate(data)} project={{ ...projectData, financials }} isLoading={invoiceMutation.isPending} />
             <PaymentModal
@@ -1006,6 +1019,7 @@ const ProjectDetail = () => {
                 onClose={() => setIsCustomerEditModalOpen(false)}
                 onSubmit={(data) => updateCustomerMutation.mutate(data)}
                 initialData={projectResponse?.customer}
+                isLoading={updateCustomerMutation.isPending}
             />
 
             {/* Partner-Bearbeitungsmodal */}

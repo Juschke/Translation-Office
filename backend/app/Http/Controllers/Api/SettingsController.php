@@ -22,6 +22,11 @@ class SettingsController extends Controller
         // Merge: Settings overwrite tenant model defaults
         $response = array_merge($tenantData, $settings);
 
+        // Decode JSON fields
+        if (isset($response['tax_rates']) && is_string($response['tax_rates'])) {
+            $response['tax_rates'] = json_decode($response['tax_rates'], true);
+        }
+
         return response()->json($response);
     }
 
@@ -60,6 +65,31 @@ class SettingsController extends Controller
             'invoice_font_family' => 'nullable|string',
             'invoice_font_size' => 'nullable|string',
             'invoice_primary_color' => 'nullable|string',
+            'customer_id_prefix' => 'nullable|string|max:10',
+            'project_id_prefix' => 'nullable|string|max:10',
+            'partner_id_prefix' => 'nullable|string|max:10',
+            'appointment_id_prefix' => 'nullable|string|max:10',
+            'offer_id_prefix' => 'nullable|string|max:10',
+            'invoice_prefix' => 'nullable|string',
+            'invoice_start_number' => 'nullable|string',
+            'credit_note_prefix' => 'nullable|string',
+            'offer_prefix' => 'nullable|string',
+            'offer_start_number' => 'nullable|string',
+            'customer_number_prefix' => 'nullable|string',
+            'customer_number_auto' => 'nullable',
+            'default_payment_days' => 'nullable|string',
+            'default_payment_text' => 'nullable|string',
+            'tax_rates' => 'nullable|array',
+            'invoice_intro_text' => 'nullable|string',
+            'invoice_closing_text' => 'nullable|string',
+            'credit_note_intro_text' => 'nullable|string',
+            'offer_intro_text' => 'nullable|string',
+            'offer_closing_text' => 'nullable|string',
+            'footer_style' => 'nullable|string',
+            'footer_columns' => 'nullable',
+            'show_footer' => 'nullable',
+            'show_sender_line' => 'nullable',
+            'show_labor_cost_hint' => 'nullable',
         ]);
 
         // Fields that exist in the Tenant model and should be synced
@@ -93,7 +123,7 @@ class SettingsController extends Controller
             // Update settings table (primary EAV storage)
             \App\Models\TenantSetting::updateOrCreate(
                 ['tenant_id' => $tenantId, 'key' => $key],
-                ['value' => $value]
+                ['value' => is_array($value) ? json_encode($value) : $value]
             );
 
             // If it's a field in the tenant model, prepare for sync

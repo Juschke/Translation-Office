@@ -118,7 +118,7 @@ const PartnerDetail = () => {
                     {/* Meta Info Bar */}
                     <div className="flex items-center gap-6 text-xs text-slate-400 flex-wrap border-t border-slate-100 pt-3 mt-1">
                         <div className="flex items-center gap-2">
-                            <span>ID: <span className="text-slate-600 font-medium">{partner.id}</span></span>
+                            <span>ID: <span className="text-slate-600 font-medium">{partner.display_id}</span></span>
                         </div>
                         <span className="text-slate-200">•</span>
                         <div className="flex items-center gap-2">

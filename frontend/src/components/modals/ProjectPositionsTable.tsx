@@ -34,15 +34,15 @@ const ProjectPositionsTable = ({ positions, setPositions }: ProjectPositionsTabl
     return (
         <div className="overflow-x-auto border border-slate-200 rounded-sm shadow-sm bg-white">
             <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead className="bg-slate-50/80 text-slate-500 text-xs font-semibold border-b border-slate-200">
+                <thead className="bg-white text-slate-500 text-xs font-semibold border-b border-slate-200">
                     <tr>
                         <th className="px-4 py-3 w-10 text-center">#</th>
                         <th className="px-4 py-3">Beschreibung</th>
                         <th className="px-4 py-3 w-32 text-right">Menge</th>
                         <th className="px-4 py-3 w-24 text-right">Einh.</th>
-                        <th className="px-4 py-3 w-32 text-right bg-red-50/30 text-red-400 border-l border-slate-100">EK (Stk)</th>
-                        <th className="px-4 py-3 w-32 text-right bg-emerald-50/30 text-emerald-600 border-l border-slate-100">VK (Stk)</th>
-                        <th className="px-4 py-3 w-28 text-right font-semibold text-slate-700 bg-emerald-50/30 border-l border-slate-100">Gesamt</th>
+                        <th className="px-4 py-3 w-32 text-right text-red-500/80 border-l border-slate-100">EK (Stk)</th>
+                        <th className="px-4 py-3 w-32 text-right text-emerald-600/80 border-l border-slate-100">VK (Stk)</th>
+                        <th className="px-4 py-3 w-28 text-right font-semibold text-slate-700 border-l border-slate-100">Gesamt</th>
                         <th className="px-2 py-3 w-10 text-center"></th>
                     </tr>
                 </thead>
@@ -83,7 +83,7 @@ const ProjectPositionsTable = ({ positions, setPositions }: ProjectPositionsTabl
                                     <option value="Pauschal">Pauschal</option>
                                 </select>
                             </td>
-                            <td className="px-4 py-3 text-right border-l border-slate-100 bg-red-50/5 group-hover:bg-red-50/20 transition-colors">
+                            <td className="px-4 py-3 text-right border-l border-slate-100 bg-white group-hover:bg-slate-50 transition-colors">
                                 <div className="flex items-center justify-end gap-1">
                                     <input
                                         type="number"
@@ -105,7 +105,7 @@ const ProjectPositionsTable = ({ positions, setPositions }: ProjectPositionsTabl
                                     </select>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-right border-l border-slate-100 bg-emerald-50/5 group-hover:bg-emerald-50/20 transition-colors">
+                            <td className="px-4 py-3 text-right border-l border-slate-100 bg-white group-hover:bg-slate-50 transition-colors">
                                 <div className="flex items-center justify-end gap-1">
                                     {pos.customerMode === 'flat' || pos.customerMode === 'rate' ? (
                                         <input
@@ -144,7 +144,7 @@ const ProjectPositionsTable = ({ positions, setPositions }: ProjectPositionsTabl
                                     </select>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-emerald-50/10 group-hover:bg-emerald-50/30 transition-colors">
+                            <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-white group-hover:bg-slate-50 transition-colors">
                                 {pos.customerTotal} €
                             </td>
                             <td className="px-2 py-3 text-center">
@@ -166,7 +166,7 @@ const ProjectPositionsTable = ({ positions, setPositions }: ProjectPositionsTabl
                     ))}
                 </tbody>
             </table>
-            <div className="p-2 border-t border-slate-100 bg-slate-50 flex justify-center">
+            <div className="p-2 border-t border-slate-100 bg-white flex justify-center">
                 <button
                     onClick={() => setPositions([...positions, EMPTY_POSITION()])}
                     className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-200 rounded text-xs font-medium hover:bg-slate-50 hover:text-slate-700 transition-all shadow-sm"

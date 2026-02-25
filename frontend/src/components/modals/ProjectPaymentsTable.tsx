@@ -1,4 +1,5 @@
 import { FaCalendarAlt, FaInfoCircle, FaPlus, FaTrash } from 'react-icons/fa';
+import { Button } from '../ui/button';
 
 interface ProjectPaymentsTableProps {
     payments: any[];
@@ -11,15 +12,16 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
     <div className="space-y-6 pt-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs font-medium">06</div>
+                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-emerald-700 flex items-center justify-center text-xs font-medium shadow-sm">06</div>
                 <h4 className="text-xs font-medium text-slate-800">Teilzahlungen / Anzahlungen</h4>
             </div>
-            <button
+            <Button
+                variant="success"
+                size="sm"
                 onClick={onAddPayment}
-                className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-xs font-semibold flex items-center gap-1.5 hover:bg-emerald-100 transition-all shadow-sm"
             >
                 <FaPlus /> Zahlung erfassen
-            </button>
+            </Button>
         </div>
 
         {payments.length === 0 ? (
@@ -30,7 +32,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
             <div className="border border-slate-200 rounded-sm overflow-hidden bg-white shadow-sm">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-200">
+                        <tr className="bg-white border-b border-slate-200">
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-44">Datum & Uhrzeit</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-32 text-right">Betrag (Brutto)</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-40">Zahlmittel</th>
@@ -57,18 +59,22 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                                     {p.note || '-'}
                                 </td>
                                 <td className="px-4 py-2 text-center flex justify-center gap-2">
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         onClick={() => onEditPayment(p)}
-                                        className="text-slate-300 hover:text-slate-700 transition p-1 hover:bg-slate-50 rounded"
+                                        className="h-7 w-7 text-slate-400 hover:text-slate-700"
                                     >
                                         <FaInfoCircle className="text-xs" />
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         onClick={() => onDeletePayment(p.id)}
-                                        className="text-slate-300 hover:text-red-700 transition p-1 hover:bg-red-50 rounded"
+                                        className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
                                     >
                                         <FaTrash className="text-xs" />
-                                    </button>
+                                    </Button>
                                 </td>
                             </tr>
                         ))}

@@ -34,29 +34,36 @@ const ProjectFilesTab = ({
                         <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs font-medium">{projectData.files.length}</span>
                     </div>
                     <div className="flex bg-slate-50 p-1 rounded-sm w-fit">
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setFileFilterTab('all')}
-                            className={clsx("px-3 py-1 text-xs font-medium rounded-sm transition", fileFilterTab === 'all' ? "bg-white text-brand-primary shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={clsx("h-auto px-3 py-1 text-xs font-medium rounded-sm", fileFilterTab === 'all' ? "bg-white text-brand-primary shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-transparent")}
                         >
                             Alle
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setFileFilterTab('source')}
-                            className={clsx("px-3 py-1 text-xs font-medium rounded-sm transition", fileFilterTab === 'source' ? "bg-white text-brand-primary shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={clsx("h-auto px-3 py-1 text-xs font-medium rounded-sm", fileFilterTab === 'source' ? "bg-white text-brand-primary shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-transparent")}
                         >
                             Quelle
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setFileFilterTab('target')}
-                            className={clsx("px-3 py-1 text-xs font-medium rounded-sm transition", fileFilterTab === 'target' ? "bg-white text-brand-primary shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={clsx("h-auto px-3 py-1 text-xs font-medium rounded-sm", fileFilterTab === 'target' ? "bg-white text-brand-primary shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-transparent")}
                         >
                             Ziel
-                        </button>
+                        </Button>
                     </div>
                 </div>
                 <Button
+                    variant="default"
                     onClick={() => setIsUploadModalOpen(true)}
-                    className="bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm flex items-center gap-2 font-bold"
+                    className="flex items-center gap-2"
                 >
                     <FaCloudUploadAlt className="text-sm" /> Datei hochladen
                 </Button>
@@ -118,20 +125,22 @@ const ProjectFilesTab = ({
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <button
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         toggleFileType(file);
                                                     }}
                                                     title="Klicken zum Wechseln des Typs"
                                                     className={clsx(
-                                                        "px-2 py-0.5 rounded text-xs font-semibold border hover:opacity-80 transition cursor-pointer",
-                                                        file.type === 'source' ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
-                                                            file.type === 'target' ? "bg-blue-50 text-blue-700 border-blue-100" :
-                                                                "bg-slate-50 text-slate-600 border-slate-100"
+                                                        "h-auto px-2 py-0.5 rounded text-xs font-semibold border hover:opacity-80 transition cursor-pointer",
+                                                        file.type === 'source' ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-50" :
+                                                            file.type === 'target' ? "bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-50" :
+                                                                "bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-50"
                                                     )}>
                                                     {file.type === 'source' ? 'Quelle' : file.type === 'target' ? 'Ziel' : file.type}
-                                                </button>
+                                                </Button>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-xs font-medium">V{file.version || '1.0'}</span>

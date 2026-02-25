@@ -16,12 +16,12 @@ interface MailListPanelProps {
 const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMails, onSelectMail, onSelectAll }: MailListPanelProps) => (
     <div className="flex-1 flex flex-col min-h-0 bg-white">
         {mails.length > 0 && (
-            <div className="px-3 py-2 border-b border-slate-100 flex items-center bg-slate-50 shrink-0">
+            <div className="px-3 py-2 border-b border-[#c8c8c8] border-b-2 flex items-center bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] shrink-0">
                 <Checkbox
                     checked={selectedMails.length === mails.length && mails.length > 0}
                     onChange={onSelectAll}
                 />
-                <span className="text-[10px] font-bold text-slate-500 uppercase ml-2">Alle auswählen</span>
+                <span className="text-[10px] font-semibold text-slate-500 [text-shadow:0_1px_0_rgba(255,255,255,0.8)] uppercase ml-2">Alle auswählen</span>
             </div>
         )}
         <div className="flex-1 overflow-auto divide-y divide-slate-100 custom-scrollbar-minimal">
@@ -45,7 +45,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                             )}
                         >
                             {selectedId === mail.id && (
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-900" />
+                                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#1B4D4F]" />
                             )}
                             <div className="flex items-start gap-3 min-w-0">
                                 <div className="pt-2 shrink-0" onClick={e => e.stopPropagation()}>
@@ -54,7 +54,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                         onChange={() => onSelectMail(mail.id)}
                                     />
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm">
+                                <div className="w-8 h-8 rounded-sm bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm border border-[#123a3c]">
                                     {initial}
                                 </div>
                                 <div className="flex-1 min-w-0 flex flex-col gap-1">

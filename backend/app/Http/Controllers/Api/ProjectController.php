@@ -171,7 +171,7 @@ class ProjectController extends Controller
             'source_lang_id' => 'sometimes|nullable|exists:languages,id',
             'target_lang_id' => 'sometimes|nullable|exists:languages,id',
             'document_type_id' => 'sometimes|nullable|exists:document_types,id',
-            'additional_doc_types' => 'nullable|string',
+            'additional_doc_types' => 'nullable|array',
             'project_name' => 'sometimes|string|max:255',
             'status' => 'sometimes|string',
             'priority' => 'sometimes|nullable|string',

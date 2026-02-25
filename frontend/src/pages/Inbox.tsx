@@ -514,18 +514,18 @@ const CommunicationHub = () => {
                     <h1 className="text-xl font-semibold text-slate-800er truncate">Email Management</h1>
                     <p className="text-slate-400 text-xs font-medium hidden sm:block">Zentrale Verwaltung</p>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={() => syncMutation.mutate()}
                         disabled={syncMutation.isPending}
-                        className="bg-emerald-50 text-brand-primary hover:bg-emerald-100 px-3 sm:px-4 py-1.5 text-xs font-bold flex items-center justify-center gap-2 transition disabled:opacity-50 border border-emerald-100 rounded-full"
+                        className="px-3 sm:px-4 py-1.5 text-xs font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-[#1B4D4F] active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition disabled:opacity-50 flex items-center gap-2"
                     >
                         <span className="hidden xs:inline">{syncMutation.isPending ? 'Synchronisiert...' : 'E-Mails abrufen'}</span>
                         <span className="xs:hidden">{syncMutation.isPending ? 'Sync...' : 'Abrufen'}</span>
                     </button>
                     <button
                         onClick={() => setIsComposeOpen(true)}
-                        className="bg-brand-primary hover:bg-brand-primary/90 text-white px-3 sm:px-4 py-1.5 text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm rounded-full"
+                        className="px-3 sm:px-4 py-1.5 text-xs font-semibold rounded-[3px] border border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_1px_rgba(0,0,0,0.12)] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#2a7073] hover:to-[#235e62] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.15)] transition flex items-center gap-2"
                     >
                         <FaPlus className="text-[10px]" /> <span className="hidden xs:inline">E-Mail schreiben</span><span className="xs:hidden">E-Mail</span>
                     </button>
@@ -759,12 +759,12 @@ const CommunicationHub = () => {
                             <ScrollArea className="flex-1">
                                 <div className="p-8 pb-32 space-y-1">
                                     {/* Sender Field */}
-                                    <div className="flex items-center gap-4 py-2 border-b border-slate-50 group">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-slate-900 transition-colors">VON</span>
+                                    <div className="flex items-center gap-4 py-2 border-b border-slate-100 group focus-within:border-[#1B4D4F]/30 transition-colors">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-[#1B4D4F] transition-colors">VON</span>
                                         <select
                                             value={selectedAccount?.id}
                                             onChange={(e) => setSelectedAccount(accounts.find((a: any) => a.id === parseInt(e.target.value)))}
-                                            className="flex-1 bg-transparent border-none outline-none text-sm font-medium text-slate-700 cursor-pointer appearance-none py-1"
+                                            className="flex-1 bg-transparent border-none outline-none text-sm font-medium text-slate-700 cursor-pointer appearance-none py-1 focus:outline-none"
                                         >
                                             {accounts.map((acc: any) => (
                                                 <option key={acc.id} value={acc.id}>{acc.name} ({acc.email})</option>
@@ -773,8 +773,8 @@ const CommunicationHub = () => {
                                     </div>
 
                                     {/* Recipient Field */}
-                                    <div className="flex items-start gap-4 py-2 border-b border-slate-50 group z-50">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-slate-900 transition-colors pt-1.5 shrink-0">AN</span>
+                                    <div className="flex items-start gap-4 py-2 border-b border-slate-100 group focus-within:border-[#1B4D4F]/30 transition-colors z-50">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-[#1B4D4F] transition-colors pt-1.5 shrink-0">AN</span>
                                         <div className="flex-1 min-w-0">
                                             {/* Quick-fill chips when project is selected */}
                                             {projectDetails && (
@@ -784,10 +784,10 @@ const CommunicationHub = () => {
                                                             type="button"
                                                             onClick={() => setComposeTo(projectDetails.customer.email)}
                                                             className={clsx(
-                                                                "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                                                "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
                                                                 composeTo === projectDetails.customer.email
-                                                                    ? "bg-slate-900 text-white border-slate-900"
-                                                                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-900 hover:text-slate-900"
+                                                                    ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                                                                    : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                             )}
                                                         >
                                                             Kunde: {projectDetails.customer.company_name || projectDetails.customer.first_name + ' ' + projectDetails.customer.last_name}
@@ -803,10 +803,10 @@ const CommunicationHub = () => {
                                                                 type="button"
                                                                 onClick={() => setComposeTo(partnerEmail)}
                                                                 className={clsx(
-                                                                    "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                                                    "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
                                                                     composeTo === partnerEmail
-                                                                        ? "bg-slate-900 text-white border-slate-900"
-                                                                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-900 hover:text-slate-900"
+                                                                        ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                                                                        : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                                 )}
                                                             >
                                                                 Partner: {partnerName}
@@ -874,8 +874,8 @@ const CommunicationHub = () => {
                                     </div>
 
                                     {/* Subject Field */}
-                                    <div className="flex items-center gap-4 py-2 border-b border-slate-50 group">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-slate-900 transition-colors">BETREFF</span>
+                                    <div className="flex items-center gap-4 py-2 border-b border-slate-100 group focus-within:border-[#1B4D4F]/30 transition-colors">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-[#1B4D4F] transition-colors">BETREFF</span>
                                         <input
                                             value={composeSubject}
                                             onChange={(e) => setComposeSubject(e.target.value)}
@@ -958,10 +958,10 @@ const CommunicationHub = () => {
                                                 type="button"
                                                 onClick={() => { setIsVarPickerOpen(v => !v); setVarSearch(''); }}
                                                 className={clsx(
-                                                    "px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                                    "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
                                                     isVarPickerOpen
-                                                        ? "bg-slate-900 text-white border-slate-900"
-                                                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-900 hover:text-slate-900"
+                                                        ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                                                        : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                 )}
                                             >
                                                 <FaSearchPlus size={8} /> Variable wählen
@@ -971,7 +971,7 @@ const CommunicationHub = () => {
                                         {isVarPickerOpen && (
                                             <div className="border border-slate-200 rounded-sm bg-white shadow-lg overflow-hidden">
                                                 {/* Search */}
-                                                <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
+                                                <div className="px-3 py-2 border-b border-slate-200 flex items-center gap-2 bg-[#f9f9f9]">
                                                     <FaSearchPlus size={10} className="text-slate-400 shrink-0" />
                                                     <input
                                                         autoFocus
@@ -979,7 +979,7 @@ const CommunicationHub = () => {
                                                         value={varSearch}
                                                         onChange={e => setVarSearch(e.target.value)}
                                                         placeholder="Variable suchen..."
-                                                        className="flex-1 text-xs outline-none placeholder:text-slate-300 text-slate-700 font-medium"
+                                                        className="flex-1 text-xs outline-none placeholder:text-slate-300 text-slate-700 font-medium bg-transparent"
                                                     />
                                                     {varSearch && (
                                                         <button type="button" onClick={() => setVarSearch('')} className="text-slate-300 hover:text-slate-600">
@@ -1142,8 +1142,8 @@ const CommunicationHub = () => {
                                 </div>
                             </ScrollArea>
 
-                            {/* Modern Toolbar Footer */}
-                            <div className="px-8 py-5 border-t border-slate-100 bg-white flex justify-between items-center shrink-0">
+                            {/* Toolbar Footer */}
+                            <div className="px-8 py-4 border-t border-[#ddd] bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] flex justify-between items-center shrink-0">
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="file"
@@ -1152,31 +1152,27 @@ const CommunicationHub = () => {
                                         ref={fileInputRef}
                                         onChange={handleFileChange}
                                     />
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
+                                    <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="h-10 px-4 gap-2 border-slate-200 hover:bg-slate-50 font-bold text-[10px] uppercase tracking-wider transition-all"
+                                        className="h-9 px-4 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-[#1B4D4F] active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-2 uppercase tracking-wide"
                                     >
                                         <FaPaperclip size={12} /> Anhängen
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
+                                    </button>
+                                    <button
                                         onClick={resetCompose}
-                                        className="h-10 px-4 text-slate-400 hover:text-red-600 hover:bg-red-50 font-bold text-[10px] uppercase tracking-wider transition-all"
+                                        className="h-9 px-4 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-red-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-red-300 hover:text-red-600 active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition uppercase tracking-wide"
                                     >
-                                        VERWERFEN
-                                    </Button>
+                                        Verwerfen
+                                    </button>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Button
+                                    <button
                                         onClick={() => sendMutation.mutate(selectedAccount?.id)}
                                         disabled={sendMutation.isPending || !composeTo || !composeSubject}
-                                        className="h-10 px-10 bg-brand-primary border-none hover:bg-brand-primary/90 text-white font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-brand-primary/10 gap-3 transition-all rounded-sm disabled:opacity-20"
+                                        className="h-9 px-8 text-[10px] font-semibold rounded-[3px] border border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_2px_rgba(0,0,0,0.15)] [text-shadow:0_-1px_0_rgba(0,0,0,0.25)] hover:from-[#2a7073] hover:to-[#235e62] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] transition disabled:opacity-30 uppercase tracking-widest flex items-center gap-2"
                                     >
-                                        {sendMutation.isPending ? 'Sende...' : 'NACHRICHT SENDEN'} <FaPaperPlane size={10} />
-                                    </Button>
+                                        {sendMutation.isPending ? 'Sende...' : 'Nachricht senden'} <FaPaperPlane size={10} />
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -123,7 +123,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
     };
 
     const processedPartners = useMemo(() => {
-        let result = partners.filter(p => {
+        const result = partners.filter(p => {
             const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (p.company && p.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (p.tags && p.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase())));

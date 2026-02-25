@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar } from 'react-icons/fa';
+import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useAuth, type UserRole } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -191,6 +191,18 @@ const Navigation = () => {
                                                 </div>
                                             )}
                                         </div>
+                                    </TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link to="/calendar" className={navLinkClass("/calendar")}>
+                                            <FaCalendarAlt className="text-base lg:hidden" />
+                                            <span className="hidden lg:inline">Kalender</span>
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                        <span className="font-semibold text-sm">Kalender</span>
                                     </TooltipContent>
                                 </Tooltip>
 

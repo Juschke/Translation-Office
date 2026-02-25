@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Partner extends Model
 {
-    use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity;
+    use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity, \App\Traits\HasDisplayId;
+
+    protected $appends = ['display_id'];
 
     protected $fillable = [
         'type',

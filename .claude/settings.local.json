@@ -17,7 +17,11 @@
       "Bash(npx tsc:*)",
       "Bash(node:*)",
       "Bash(npm install:*)",
-      "Bash(php artisan make:migration:*)"
+      "Bash(php artisan make:migration:*)",
+      "Bash(php:*)",
+      "Bash(cd:*)",
+      "Bash(cd C:\\\\xampp\\\\htdocs\\\\Translation-Office\\\\frontend:*)",
+      "Bash(head:*)"
     ]
   }
 }

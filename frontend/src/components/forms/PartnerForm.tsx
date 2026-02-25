@@ -417,7 +417,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
               label="Anrede"
               value={formData.salutation}
               onChange={e => updateFormData({ salutation: e.target.value })}
-              helperText="Formelle Korrespondenz"
+              helperText="Anrede"
             >
               <option>Herr</option><option>Frau</option><option>Divers</option>
             </Input>
@@ -430,7 +430,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
               error={!!getError('firstName') || duplicates.some(d => d.first_name === formData.firstName && d.last_name === formData.lastName && formData.firstName !== '')}
               onChange={e => updateFormData({ firstName: e.target.value })}
               onBlur={() => markTouched('firstName')}
-              helperText={getError('firstName') || "Vorname des Partners"}
+              helperText={getError('firstName') || "Vorname"}
             />
           </div>
           <div className="col-span-12 md:col-span-5">
@@ -441,7 +441,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
               error={!!getError('lastName') || duplicates.some(d => d.last_name === formData.lastName && formData.lastName !== '')}
               onChange={e => updateFormData({ lastName: e.target.value })}
               onBlur={() => markTouched('lastName')}
-              helperText={getError('lastName') || "Familienname des Partners"}
+              helperText={getError('lastName') || "Nachname"}
             />
           </div>
 

@@ -38,8 +38,8 @@ class ProjectFileController extends Controller
             $safeBasename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $safeBasename);
             $filename = time() . '_' . $safeBasename . '.' . $extension;
 
-            // Store in storage/app/public/project_files/{project_id}
-            $path = $file->storeAs("project_files/{$project->id}", $filename, 'public');
+            // Store in storage/app/public/projects/{project_id}/files
+            $path = $file->storeAs("projects/{$project->id}/files", $filename, 'public');
 
             // Estimate word count (simplified, real implementation would use a service)
             $wordCount = 0;
@@ -158,11 +158,19 @@ class ProjectFileController extends Controller
 
         try {
             // Security: Prevent path traversal attacks
-            $realPath = Storage::disk('public')->path($file->path);
-            $basePath = Storage::disk('public')->path('project_files');
+            // Normalize paths to use forward slashes for cross-platform compatibility
+            $normalizedPath = str_replace('\\', '/', $file->path);
 
-            if (strpos(realpath($realPath), realpath($basePath)) !== 0) {
+            // Check that the path starts with 'projects/' (current) or 'project_files/' (legacy)
+            if (!str_starts_with($normalizedPath, 'projects/') && !str_starts_with($normalizedPath, 'project_files/')) {
+                \Log::warning('Invalid file path attempted', ['path' => $file->path, 'file_id' => $file->id]);
                 abort(403, 'Invalid file path');
+            }
+
+            // Additional check: ensure no parent directory traversal
+            if (str_contains($normalizedPath, '..')) {
+                \Log::warning('Path traversal detected', ['path' => $file->path, 'file_id' => $file->id]);
+                abort(403, 'Path traversal detected');
             }
 
             return Storage::disk('public')->download($file->path, $file->original_name);

@@ -2,27 +2,30 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth, subMonths, startOfYear, subYears, isWithinInterval } from 'date-fns';
 import {
     FaPlus, FaFileCsv,
     FaFilePdf, FaFileExcel, FaLayerGroup, FaChartLine, FaGlobe,
-    FaDownload, FaFilter,
+    FaDownload,
     FaListUl, FaColumns,
-    FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore
+    FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore, FaCheckCircle
 } from 'react-icons/fa';
 import { buildProjectColumns } from './projectColumns';
 import clsx from 'clsx';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
 import NewProjectModal from '../components/modals/NewProjectModal';
-import Switch from '../components/common/Switch';
 import KPICard from '../components/common/KPICard';
 import DataTable from '../components/common/DataTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectService } from '../api/services';
+import { projectService, customerService, partnerService, settingsService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import KanbanBoard from '../components/projects/KanbanBoard';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { BulkActions } from '../components/common/BulkActions';
+import type { BulkActionItem } from '../components/common/BulkActions';
+import StatusTabButton from '../components/common/StatusTabButton';
+import { TooltipProvider } from '../components/ui/tooltip';
+import echo from '../utils/echo';
 
 
 const Projects = () => {
@@ -30,25 +33,29 @@ const Projects = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
     const [filter, setFilter] = useState('all');
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<any>(null);
+    const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
-    const [showTrash, setShowTrash] = useState(false);
-    const [showArchive, setShowArchive] = useState(false);
-    const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
+    const [advancedFilters, setAdvancedFilters] = useState({
+        customerId: '',
+        partnerId: '',
+        sourceLanguageId: '',
+        targetLanguageId: '',
+        dateRange: 'all',
+        projectSearch: '',
+        deadlineDate: '',
+    });
 
     const exportRef = useRef<HTMLDivElement>(null);
-    const viewSettingsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
                 setIsExportOpen(false);
-            }
-            if (viewSettingsRef.current && !viewSettingsRef.current.contains(event.target as Node)) {
-                setIsViewSettingsOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -62,6 +69,7 @@ const Projects = () => {
             navigate(location.pathname, { replace: true, state: {} });
         }
     }, [location.state, navigate, location.pathname]);
+
     // deleted/archived states removed in favor of filter
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -69,9 +77,45 @@ const Projects = () => {
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
     const queryClient = useQueryClient();
+
+    // Listen to real-time project updates
+    useEffect(() => {
+        const channel = echo.channel('projects');
+        channel.listen('ProjectUpdated', () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+        });
+
+        return () => {
+            echo.leaveChannel('projects');
+        };
+    }, [queryClient]);
+
+    // Clear selection when changing tabs
+    useEffect(() => {
+        setSelectedProjects([]);
+    }, [statusView, filter]);
+
     const { data: projects = [], isLoading } = useQuery({
         queryKey: ['projects'],
-        queryFn: projectService.getAll
+        queryFn: projectService.getAll,
+        refetchInterval: 10000, // Aktualisiert die Tabelle automatisch alle 10 Sekunden im Hintergrund
+        refetchOnWindowFocus: true, // Aktualisiert SOFORT, wenn man wieder in das Browser-Fenster klickt
+    });
+
+    const { data: customers = [] } = useQuery({
+        queryKey: ['customers'],
+        queryFn: customerService.getAll
+    });
+
+    const { data: partners = [] } = useQuery({
+        queryKey: ['partners'],
+        queryFn: partnerService.getAll
+    });
+
+    const { data: languages = [] } = useQuery({
+        queryKey: ['languages'],
+        queryFn: settingsService.getLanguages
     });
 
     const createMutation = useMutation({
@@ -143,12 +187,55 @@ const Projects = () => {
         }
     });
 
-    const activeProjectsData = useMemo(() => {
+    const filteredProjectsByAdvanced = useMemo(() => {
+        if (!Array.isArray(projects)) return [];
         return projects.filter((p: any) => {
+            if (advancedFilters.projectSearch) {
+                const searchLow = advancedFilters.projectSearch.toLowerCase();
+                if (!(p.project_name?.toLowerCase().includes(searchLow) || p.project_number?.toLowerCase().includes(searchLow))) return false;
+            }
+            if (advancedFilters.customerId && p.customer_id?.toString() !== advancedFilters.customerId) return false;
+            if (advancedFilters.partnerId && p.partner_id?.toString() !== advancedFilters.partnerId) return false;
+            if (advancedFilters.sourceLanguageId && p.source_lang_id?.toString() !== advancedFilters.sourceLanguageId) return false;
+            if (advancedFilters.targetLanguageId && p.target_lang_id?.toString() !== advancedFilters.targetLanguageId) return false;
+
+            if (advancedFilters.deadlineDate) {
+                if (!p.deadline) return false;
+                const dDate = new Date(p.deadline).toISOString().split('T')[0];
+                if (dDate !== advancedFilters.deadlineDate) return false;
+            }
+
+            if (advancedFilters.dateRange && advancedFilters.dateRange !== 'all') {
+                const now = new Date();
+                let start: Date | null = null;
+                let end: Date = endOfDay(now);
+
+                switch (advancedFilters.dateRange) {
+                    case 'today': start = startOfDay(now); break;
+                    case 'yesterday': { const yest = subDays(now, 1); start = startOfDay(yest); end = endOfDay(yest); break; }
+                    case 'this_week': start = startOfWeek(now, { weekStartsOn: 1 }); break;
+                    case 'this_month': start = startOfMonth(now); break;
+                    case 'last_3_months': start = subMonths(now, 3); break;
+                    case 'last_6_months': start = subMonths(now, 6); break;
+                    case 'this_year': start = startOfYear(now); break;
+                    case 'last_year': { const ly = subYears(now, 1); start = startOfYear(ly); end = endOfDay(new Date(ly.getFullYear(), 11, 31)); break; }
+                }
+
+                if (start) {
+                    const pDate = new Date(p.created_at || p.createdAt || p.date);
+                    if (!isWithinInterval(pDate, { start, end })) return false;
+                }
+            }
+            return true;
+        });
+    }, [projects, advancedFilters]);
+
+    const activeProjectsData = useMemo(() => {
+        return filteredProjectsByAdvanced.filter((p: any) => {
             const s = p.status?.toLowerCase();
             return s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht';
         });
-    }, [projects]);
+    }, [filteredProjectsByAdvanced]);
 
     const totalProjectsCount = activeProjectsData.length;
     const activeProjectsCount = activeProjectsData.filter((p: any) => ['in_progress', 'review', 'ready_for_pickup'].includes(p.status)).length;
@@ -160,39 +247,72 @@ const Projects = () => {
     }, 0);
 
     const filteredProjects = useMemo(() => {
-        if (!Array.isArray(projects)) return [];
-        return projects.filter((p: any) => {
-            // Priority 1: Check for explicit Archive/Trash tabs
-            if (filter === 'trash') return p.status === 'deleted';
-            if (filter === 'archive') return p.status === 'archived';
+        let result = projects.filter((p: any) => {
+            // Priority 1: Filter by status view (active/archive/trash)
+            if (statusView === 'trash') {
+                if (p.status !== 'deleted') return false;
+            } else if (statusView === 'archive') {
+                if (p.status !== 'archived') return false;
+            } else {
+                // Active view: exclude deleted and archived
+                if (p.status === 'deleted' || p.status === 'archived') return false;
+            }
 
-            // For all other tabs, exclude deleted and archived
-            if (p.status === 'deleted' || p.status === 'archived') return false;
-
-            // Priority 2: Standard Tabs filtering
-            if (filter === 'all') return true;
-            if (filter === 'offer') return ['offer', 'pending', 'draft'].includes(p.status);
-            if (filter === 'in_progress') return ['in_progress', 'review'].includes(p.status);
-            if (filter === 'ready_for_pickup') return p.status === 'ready_for_pickup';
-            if (filter === 'invoiced') return p.status === 'invoiced';
-            if (filter === 'delivered') return p.status === 'delivered';
-            if (filter === 'completed') return p.status === 'completed';
+            // Priority 2: Standard filter tabs (only for active view)
+            if (statusView === 'active') {
+                if (filter === 'all') return true;
+                if (filter === 'offer') return ['offer', 'pending', 'draft'].includes(p.status);
+                if (filter === 'in_progress') return ['in_progress', 'review'].includes(p.status);
+                if (filter === 'ready_for_pickup') return p.status === 'ready_for_pickup';
+                if (filter === 'invoiced') return p.status === 'invoiced';
+                if (filter === 'delivered') return p.status === 'delivered';
+                if (filter === 'completed') return p.status === 'completed';
+            }
 
             return true;
         });
-    }, [projects, filter]);
 
-    const toggleSelection = (id: string) => {
-        setSelectedProjects(prev => prev.includes(id) ? prev.filter(pId => pId !== id) : [...prev, id]);
-    };
+        // Advanced Filters
+        return result.filter((p: any) => {
+            if (advancedFilters.projectSearch) {
+                const searchLow = advancedFilters.projectSearch.toLowerCase();
+                if (!(p.project_name?.toLowerCase().includes(searchLow) || p.project_number?.toLowerCase().includes(searchLow))) return false;
+            }
+            if (advancedFilters.customerId && p.customer_id?.toString() !== advancedFilters.customerId) return false;
+            if (advancedFilters.partnerId && p.partner_id?.toString() !== advancedFilters.partnerId) return false;
+            if (advancedFilters.sourceLanguageId && p.source_lang_id?.toString() !== advancedFilters.sourceLanguageId) return false;
+            if (advancedFilters.targetLanguageId && p.target_lang_id?.toString() !== advancedFilters.targetLanguageId) return false;
 
-    const toggleSelectAll = () => {
-        if (selectedProjects.length === filteredProjects.length) {
-            setSelectedProjects([]);
-        } else {
-            setSelectedProjects(filteredProjects.map((p: any) => p.id));
-        }
-    };
+            if (advancedFilters.deadlineDate) {
+                if (!p.deadline) return false;
+                const dDate = new Date(p.deadline).toISOString().split('T')[0];
+                if (dDate !== advancedFilters.deadlineDate) return false;
+            }
+
+            if (advancedFilters.dateRange && advancedFilters.dateRange !== 'all') {
+                const now = new Date();
+                let start: Date | null = null;
+                let end: Date = endOfDay(now);
+
+                switch (advancedFilters.dateRange) {
+                    case 'today': start = startOfDay(now); break;
+                    case 'yesterday': { const yest = subDays(now, 1); start = startOfDay(yest); end = endOfDay(yest); break; }
+                    case 'this_week': start = startOfWeek(now, { weekStartsOn: 1 }); break;
+                    case 'this_month': start = startOfMonth(now); break;
+                    case 'last_3_months': start = subMonths(now, 3); break;
+                    case 'last_6_months': start = subMonths(now, 6); break;
+                    case 'this_year': start = startOfYear(now); break;
+                    case 'last_year': { const ly = subYears(now, 1); start = startOfYear(ly); end = endOfDay(new Date(ly.getFullYear(), 11, 31)); break; }
+                }
+
+                if (start) {
+                    const pDate = new Date(p.created_at || p.createdAt || p.date);
+                    if (!isWithinInterval(pDate, { start, end })) return false;
+                }
+            }
+            return true;
+        });
+    }, [projects, statusView, filter, advancedFilters]);
 
     const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
         if (filteredProjects.length === 0) return;
@@ -215,22 +335,71 @@ const Projects = () => {
         setIsExportOpen(false);
     };
 
+    const handleEditProject = async (p: any) => {
+        setEditingProject(p);
+        setIsModalOpen(true);
+        setIsDetailLoading(true);
+        try {
+            const fullData = await projectService.getById(p.id);
+            setEditingProject(fullData);
+        } catch (err) {
+            console.error("Failed to load project details", err);
+        } finally {
+            setIsDetailLoading(false);
+        }
+    };
+
     const columns = buildProjectColumns({
-        selectedProjects,
-        filteredProjects,
-        toggleSelection,
-        toggleSelectAll,
         navigate,
         bulkUpdateMutation,
-        setEditingProject,
-        setIsModalOpen,
+        setEditingProject: handleEditProject,
+        setIsModalOpen: (val) => { if (!val) setIsModalOpen(false); },
         setProjectToDelete,
         setConfirmTitle,
         setConfirmMessage,
         setIsConfirmOpen,
+        advancedFilters,
+        setAdvancedFilters,
+        customers,
+        partners,
+        languages,
+        projects
     });
 
-    const tabs = (
+    // Count projects by status for badges
+    const activeCount = useMemo(() => filteredProjectsByAdvanced.filter((p: any) => p.status !== 'deleted' && p.status !== 'archived').length, [filteredProjectsByAdvanced]);
+    const archivedCount = useMemo(() => filteredProjectsByAdvanced.filter((p: any) => p.status === 'archived').length, [filteredProjectsByAdvanced]);
+    const trashedCount = useMemo(() => filteredProjectsByAdvanced.filter((p: any) => p.status === 'deleted').length, [filteredProjectsByAdvanced]);
+
+    const statusTabs = (
+        <TooltipProvider>
+            <div className="flex items-center gap-2 mb-4">
+                <StatusTabButton
+                    active={statusView === 'active'}
+                    onClick={() => { setStatusView('active'); setFilter('all'); }}
+                    icon={<FaCheckCircle />}
+                    label="Aktiv"
+                    count={activeCount}
+                />
+                <StatusTabButton
+                    active={statusView === 'archive'}
+                    onClick={() => { setStatusView('archive'); setFilter('all'); }}
+                    icon={<FaArchive />}
+                    label="Archiv"
+                    count={archivedCount}
+                />
+                <StatusTabButton
+                    active={statusView === 'trash'}
+                    onClick={() => { setStatusView('trash'); setFilter('all'); }}
+                    icon={<FaTrash />}
+                    label="Papierkorb"
+                    count={trashedCount}
+                />
+            </div>
+        </TooltipProvider>
+    );
+
+    const tabs = statusView === 'active' ? (
         <div className="flex items-center gap-2 whitespace-nowrap px-1">
             <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Übersicht</button>
             <button onClick={() => setFilter('offer')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'offer' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Neu</button>
@@ -239,15 +408,8 @@ const Projects = () => {
             <button onClick={() => setFilter('invoiced')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'invoiced' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Rechnung</button>
             <button onClick={() => setFilter('ready_for_pickup')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'ready_for_pickup' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abholbereit</button>
             <button onClick={() => setFilter('completed')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'completed' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abgeschlossen</button>
-
-            {(showTrash || filter === 'trash') && (
-                <button onClick={() => setFilter('trash')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'trash' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Papierkorb</button>
-            )}
-            {(showArchive || filter === 'archive') && (
-                <button onClick={() => setFilter('archive')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'archive' ? 'bg-slate-600 border-slate-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Archiv</button>
-            )}
         </div>
-    );
+    ) : null;
 
     const actions = (
         <div className="flex items-center gap-2">
@@ -263,32 +425,6 @@ const Projects = () => {
                     </div>
                 )}
             </div>
-        </div>
-    );
-    const extraControls = (
-        <div className="relative" ref={viewSettingsRef}>
-            <button
-                onClick={() => setIsViewSettingsOpen(!isViewSettingsOpen)}
-                className={`p-2 border border-slate-200 text-slate-500 hover:bg-slate-50 transition shadow-sm ${isViewSettingsOpen ? "bg-slate-50 border-slate-200 text-slate-700" : ""}`}
-                title="Ansichtseinstellungen"
-            >
-                <FaFilter className="text-sm" />
-            </button>
-            {isViewSettingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-sm border border-slate-100 z-[100] p-4 fade-in">
-                    <h4 className="text-xs font-medium text-slate-400 mb-3">Ansicht anpassen</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showTrash ? "text-slate-700" : "text-slate-400"}`}>Papierkorb anzeigen</span>
-                            <Switch checked={showTrash} onChange={() => setShowTrash(!showTrash)} />
-                        </div>
-                        <div className="flex items-center justify-between p-1">
-                            <span className={`text-xs font-medium ${showArchive ? "text-slate-700" : "text-slate-400"}`}>Archiv anzeigen</span>
-                            <Switch checked={showArchive} onChange={() => setShowArchive(!showArchive)} />
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 
@@ -347,97 +483,32 @@ const Projects = () => {
                 </div>
             </div>
 
+            {statusTabs}
+
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
-                <BulkActions
-                    selectedCount={selectedProjects.length}
-                    onClearSelection={() => setSelectedProjects([])}
-                    actions={[
-                        {
-                            label: 'Abschließen',
-                            icon: <FaCheck className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'completed', progress: 100 } }),
-                            variant: 'success',
-                            show: filter !== 'trash' && filter !== 'completed'
-                        },
-                        {
-                            label: 'Zurücksetzen',
-                            icon: <FaArrowRight className="text-xs rotate-180" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }),
-                            variant: 'default',
-                            show: filter === 'completed'
-                        },
-                        {
-                            label: 'E-Mail senden',
-                            icon: <FaEnvelope className="text-xs" />,
-                            onClick: () => {
-                                // Existing logic for single project email
-                                if (selectedProjects.length === 1) {
-                                    const p = projects.find((pro: any) => pro.id === selectedProjects[0]);
-                                    navigate('/inbox', {
-                                        state: {
-                                            compose: true,
-                                            to: p?.customer?.email,
-                                            subject: `Projekt: ${p?.project_name} (${p?.project_number || 'ID ' + p?.id})`,
-                                            body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p?.project_name}.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`,
-                                            attachments: p?.files || []
-                                        }
-                                    });
-                                }
-                            },
-                            variant: 'primary',
-                            show: selectedProjects.length === 1 && filter !== 'trash'
-                        },
-                        // Archive Action
-                        {
-                            label: 'Archivieren',
-                            icon: <FaArchive className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'archived' } }),
-                            variant: 'default',
-                            show: filter !== 'trash' && filter !== 'archive'
-                        },
-                        // Papierkorb Action (Soft delete)
-                        {
-                            label: 'Papierkorb',
-                            icon: <FaTrash className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'deleted' } }),
-                            variant: 'danger',
-                            show: filter !== 'trash' && filter !== 'deleted'
-                        },
-                        {
-                            label: 'Wiederherstellen',
-                            icon: <FaTrashRestore className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }),
-                            variant: 'success',
-                            show: filter === 'trash' || filter === 'deleted'
-                        },
-                        {
-                            label: 'Endgültig löschen',
-                            icon: <FaTrash className="text-xs" />,
-                            onClick: () => {
-                                setProjectToDelete(selectedProjects);
-                                setConfirmTitle('Projekte endgültig löschen');
-                                setConfirmMessage(`Sind Sie sicher, dass Sie ${selectedProjects.length} Projekte endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.`);
-                                setIsConfirmOpen(true);
-                            },
-                            variant: 'dangerSolid',
-                            show: filter === 'trash' || filter === 'deleted'
-                        }
-                    ]}
-                />
-
-
                 {viewMode === 'list' ? (
                     <DataTable
-                        data={filteredProjects}
+                        data={filteredProjects as any[]}
                         columns={columns as any}
                         onRowClick={(p) => navigate(`/projects/${p.id}`)}
                         pageSize={window.innerWidth < 768 ? 5 : 10}
                         searchPlaceholder="Suchen nach Projekten..."
-                        searchFields={['project_name', 'project_number']}
+                        searchFields={['project_name', 'project_number'] as any[]}
                         actions={actions}
                         tabs={tabs}
-                        extraControls={extraControls}
                         onAddClick={() => { setEditingProject(null); setIsModalOpen(true); }}
+                        selectable
+                        selectedIds={selectedProjects}
+                        onSelectionChange={(ids) => setSelectedProjects(ids as string[])}
+                        bulkActions={[
+                            { label: 'Abschließen', icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'completed', progress: 100 } }), variant: 'success', show: statusView === 'active' && filter !== 'completed' },
+                            { label: 'Zurücksetzen', icon: <FaArrowRight className="text-xs rotate-180" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'default', show: statusView === 'active' && filter === 'completed' },
+                            { label: 'E-Mail senden', icon: <FaEnvelope className="text-xs" />, onClick: () => { if (selectedProjects.length === 1) { const p = projects.find((pro: any) => pro.id === selectedProjects[0]); navigate('/inbox', { state: { compose: true, to: p?.customer?.email, subject: `Projekt: ${p?.project_name} (${p?.project_number || 'ID ' + p?.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p?.project_name}.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`, attachments: p?.files || [] } }); } }, variant: 'primary', show: selectedProjects.length === 1 && statusView === 'active' },
+                            { label: 'Archivieren', icon: <FaArchive className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'archived' } }), variant: 'default', show: statusView === 'active' },
+                            { label: 'Papierkorb', icon: <FaTrash className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'deleted' } }), variant: 'danger', show: statusView === 'active' },
+                            { label: 'Wiederherstellen', icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' },
+                            { label: 'Endgültig löschen', icon: <FaTrash className="text-xs" />, onClick: () => { setProjectToDelete(selectedProjects); setConfirmTitle('Projekte endgültig löschen'); setConfirmMessage(`Sind Sie sicher, dass Sie ${selectedProjects.length} Projekte endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.`); setIsConfirmOpen(true); }, variant: 'dangerSolid', show: statusView === 'trash' },
+                        ] as BulkActionItem[]}
                     />
                 ) : (
                     <div className="flex-1 min-h-0 flex flex-col pt-4 overflow-x-hidden">
@@ -451,10 +522,7 @@ const Projects = () => {
                                 onStatusChange={(projectId, newStatus) => {
                                     updateMutation.mutate({ id: projectId, status: newStatus });
                                 }}
-                                onEdit={(p) => {
-                                    setEditingProject(p);
-                                    setIsModalOpen(true);
-                                }}
+                                onEdit={handleEditProject}
                             />
                         </div>
                     </div >
@@ -472,7 +540,7 @@ const Projects = () => {
                     }
                 }}
                 initialData={editingProject}
-                isLoading={createMutation.isPending || updateMutation.isPending}
+                isLoading={isDetailLoading || createMutation.isPending || updateMutation.isPending}
             />
 
             <ConfirmModal
@@ -504,6 +572,7 @@ const Projects = () => {
                 message={confirmMessage}
                 isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
             />
+
         </div >
     );
 };

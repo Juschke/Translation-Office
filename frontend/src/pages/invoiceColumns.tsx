@@ -2,14 +2,9 @@ import {
     FaCheck, FaDownload, FaPrint, FaFilePdf, FaEye,
     FaStamp, FaBan, FaPen, FaFileCode, FaTrash, FaHistory,
 } from 'react-icons/fa';
-import Checkbox from '../components/common/Checkbox';
 import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 
 export interface BuildInvoiceColumnsParams {
-    selectedInvoices: number[];
-    filteredInvoices: any[];
-    toggleSelection: (id: number) => void;
-    toggleSelectAll: () => void;
     downloadDropdownOpen: number | null;
     setDownloadDropdownOpen: (id: number | null) => void;
     setPreviewInvoice: (inv: any) => void;
@@ -34,10 +29,6 @@ export interface BuildInvoiceColumnsParams {
 }
 
 export function buildInvoiceColumns({
-    selectedInvoices,
-    filteredInvoices,
-    toggleSelection,
-    toggleSelectAll,
     downloadDropdownOpen,
     setDownloadDropdownOpen,
     setPreviewInvoice,
@@ -60,19 +51,6 @@ export function buildInvoiceColumns({
     setIsConfirmOpen,
 }: BuildInvoiceColumnsParams) {
     return [
-        {
-            id: 'selection',
-            header: (
-                <Checkbox
-                    checked={selectedInvoices.length === filteredInvoices.length && filteredInvoices.length > 0}
-                    onChange={toggleSelectAll}
-                />
-            ),
-            accessor: (p: any) => (
-                <Checkbox checked={selectedInvoices.includes(p.id)} onChange={() => toggleSelection(p.id)} />
-            ),
-            className: 'w-10',
-        },
         {
             id: 'invoice_number',
             header: 'Rechnung #',
