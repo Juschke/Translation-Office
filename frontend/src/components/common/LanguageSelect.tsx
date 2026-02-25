@@ -251,7 +251,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                         {isMulti && (
                                             <div className={clsx(
                                                 "w-4 h-4 border rounded flex items-center justify-center transition-all shrink-0",
-                                                values.includes(opt.code) ? "bg-slate-900 border-slate-900" : "border-slate-300 bg-white"
+                                                values.includes(opt.code) ? "bg-brand-primary border-brand-primary" : "border-slate-300 bg-white"
                                             )}>
                                                 {values.includes(opt.code) && <FaCheck className="text-white text-xs" />}
                                             </div>

@@ -225,7 +225,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                                 {isMulti && (
                                                     <div className={clsx(
                                                         "w-3.5 h-3.5 rounded-sm border transition-colors flex items-center justify-center mr-1",
-                                                        isSelected ? "bg-slate-900 border-slate-900" : "bg-white border-slate-300"
+                                                        isSelected ? "bg-brand-primary border-brand-primary" : "bg-white border-slate-300"
                                                     )}>
                                                         {isSelected && <FaCheck className="text-white text-[7px]" />}
                                                     </div>
@@ -264,7 +264,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                                 {isMulti && (
                                                     <div className={clsx(
                                                         "w-3.5 h-3.5 rounded-sm border transition-colors flex items-center justify-center mr-1",
-                                                        isSelected ? "bg-slate-900 border-slate-900" : "bg-white border-slate-300"
+                                                        isSelected ? "bg-brand-primary border-brand-primary" : "bg-white border-slate-300"
                                                     )}>
                                                         {isSelected && <FaCheck className="text-white text-[7px]" />}
                                                     </div>

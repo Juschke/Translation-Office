@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaCalendarAlt, FaEuroSign } from 'react-icons/fa';
-import DatePicker from 'react-datepicker';
+import { FaTimes, FaEuroSign } from 'react-icons/fa';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import Input from '../common/Input';
 import { Button } from '../ui/button';
-import { registerLocale } from "react-datepicker";
-import { de } from 'date-fns/locale/de';
-
-registerLocale('de', de);
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -18,7 +15,6 @@ interface PaymentModalProps {
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, initialData, totalAmount }) => {
     const [amount, setAmount] = useState('');
-    // const [amountType, setAmountType] = useState<'flat' | 'percent'>('flat'); // Removed
     const [date, setDate] = useState<Date>(new Date());
     const [method, setMethod] = useState('Überweisung');
     const [note, setNote] = useState('');
@@ -27,13 +23,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
         if (isOpen) {
             if (initialData) {
                 setAmount(initialData.amount);
-                // setAmountType('flat'); 
                 setDate(initialData.payment_date ? new Date(initialData.payment_date) : new Date());
                 setMethod(initialData.payment_method || 'Überweisung');
                 setNote(initialData.note || '');
             } else {
                 setAmount('');
-                // setAmountType('flat');
                 setDate(new Date());
                 setMethod('Überweisung');
                 setNote('');
@@ -130,20 +124,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
                     {/* Date */}
                     <div>
                         <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Zahlungsdatum</label>
-                        <div className="relative h-9 border border-slate-200 rounded transition-all focus-within:border-slate-900 focus-within:ring-2 focus-within:ring-brand-500/10 bg-white">
-                            <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10" />
-                            <DatePicker
-                                selected={date}
-                                onChange={(d: Date | null) => d && setDate(d)}
-                                showTimeSelect
-                                timeFormat="HH:mm"
-                                timeIntervals={15}
-                                dateFormat="dd.MM.yyyy HH:mm"
-                                locale="de"
-                                className="w-full h-8 bg-transparent border-none pl-9 pr-3 py-1 text-sm font-medium text-slate-700 outline-none cursor-pointer"
-                                placeholderText="Datum wählen"
-                            />
-                        </div>
+                        <DatePicker
+                            showTime
+                            format="DD.MM.YYYY HH:mm"
+                            value={date ? dayjs(date) : null}
+                            onChange={(d) => d && setDate(d.toDate())}
+                            className="w-full h-9"
+                            placeholder="Datum wählen"
+                        />
                     </div>
 
                     <div className="space-y-2">

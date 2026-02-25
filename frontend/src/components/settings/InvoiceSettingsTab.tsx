@@ -176,7 +176,7 @@ const InvoiceSettingsTab = () => {
                 <button
                     onClick={handleSave}
                     disabled={updateMutation.isPending}
-                    className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white text-xs font-medium hover:bg-black transition disabled:opacity-50 rounded"
+                    className="flex items-center gap-2 px-6 py-2 bg-brand-primary text-white text-xs font-medium hover:bg-brand-primary/90 transition disabled:opacity-50 rounded"
                 >
                     <FaSave /> {updateMutation.isPending ? 'Speichert...' : 'Speichern'}
                 </button>
@@ -191,7 +191,7 @@ const InvoiceSettingsTab = () => {
                         className={clsx(
                             'px-3 py-2 text-sm font-medium rounded-sm transition whitespace-nowrap',
                             activeSection === s.id
-                                ? 'bg-slate-900 text-white'
+                                ? 'bg-brand-primary text-white'
                                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                         )}
                     >
@@ -292,7 +292,7 @@ const InvoiceSettingsTab = () => {
                                             className={clsx(
                                                 'h-9 px-4 rounded-sm text-sm font-medium border transition',
                                                 formData.customer_number_auto
-                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                    ? 'bg-brand-primary text-white border-brand-primary'
                                                     : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                             )}
                                         >
@@ -335,7 +335,7 @@ const InvoiceSettingsTab = () => {
                                             className={clsx(
                                                 'px-4 py-2 rounded-sm text-sm font-medium border transition',
                                                 formData.default_payment_days === d
-                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                    ? 'bg-brand-primary text-white border-brand-primary'
                                                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                                             )}
                                         >
@@ -420,7 +420,7 @@ const InvoiceSettingsTab = () => {
                                                             onClick={() => setDefaultTaxRate(t.id)}
                                                             className={clsx(
                                                                 'w-4 h-4 rounded-full border-2 transition',
-                                                                t.is_default ? 'bg-slate-900 border-slate-900' : 'border-slate-300 hover:border-slate-400'
+                                                                t.is_default ? 'bg-brand-primary border-brand-primary' : 'border-slate-300 hover:border-slate-400'
                                                             )}
                                                         />
                                                     </td>
@@ -563,7 +563,7 @@ const InvoiceSettingsTab = () => {
                                         className={clsx(
                                             'px-4 py-2 rounded-sm text-sm font-medium border transition',
                                             formData.show_footer
-                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                ? 'bg-brand-primary text-white border-brand-primary'
                                                 : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                         )}
                                     >
@@ -574,7 +574,7 @@ const InvoiceSettingsTab = () => {
                                         className={clsx(
                                             'px-4 py-2 rounded-sm text-sm font-medium border transition',
                                             !formData.show_footer
-                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                ? 'bg-brand-primary text-white border-brand-primary'
                                                 : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                         )}
                                     >
@@ -637,7 +637,7 @@ const InvoiceSettingsTab = () => {
                                                             className={clsx(
                                                                 'w-8 h-8 rounded-sm text-sm font-medium border transition',
                                                                 formData.footer_columns === n
-                                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                                    ? 'bg-brand-primary text-white border-brand-primary'
                                                                     : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                                             )}
                                                         >
@@ -731,7 +731,7 @@ const InvoiceSettingsTab = () => {
                                         className={clsx(
                                             'relative flex flex-col border rounded-sm p-4 transition-all text-left group',
                                             formData.invoice_layout === layout.id
-                                                ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
+                                                ? 'border-brand-primary bg-slate-50 ring-1 ring-brand-primary'
                                                 : 'border-slate-200 hover:border-slate-400 hover:bg-slate-50/50'
                                         )}
                                     >
@@ -746,7 +746,7 @@ const InvoiceSettingsTab = () => {
                                         </span>
                                         <span className="text-xs text-slate-400 mt-0.5 leading-snug">{layout.desc}</span>
                                         {formData.invoice_layout === layout.id && (
-                                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">✓</div>
+                                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-primary text-white flex items-center justify-center text-xs">✓</div>
                                         )}
                                     </button>
                                 ))}
@@ -758,7 +758,7 @@ const InvoiceSettingsTab = () => {
                             description="Die Schriftart für Ihre Rechnungs-PDFs. Bitte beachten Sie, dass nicht alle Schriften auf allen Systemen verfügbar sind."
                         >
                             <select
-                                className="w-full h-10 border border-slate-200 rounded-sm px-3 text-sm font-medium text-slate-800 focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 outline-none transition"
+                                className="w-full h-10 border border-slate-200 rounded-sm px-3 text-sm font-medium text-slate-800 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/10 outline-none transition"
                                 value={formData.invoice_font_family}
                                 onChange={(e) => handleChange('invoice_font_family', e.target.value)}
                             >
@@ -791,7 +791,7 @@ const InvoiceSettingsTab = () => {
                                         className={clsx(
                                             'px-5 py-2.5 rounded-sm text-sm font-medium border transition',
                                             formData.invoice_font_size === size
-                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                ? 'bg-brand-primary text-white border-brand-primary'
                                                 : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                         )}
                                     >
@@ -837,7 +837,7 @@ const InvoiceSettingsTab = () => {
                                             className={clsx(
                                                 'flex items-center gap-2 px-3 py-1.5 rounded-sm border text-xs font-medium transition',
                                                 formData.invoice_primary_color === preset.color
-                                                    ? 'border-slate-900 bg-slate-50'
+                                                    ? 'border-brand-primary bg-slate-50'
                                                     : 'border-slate-200 hover:border-slate-300'
                                             )}
                                             title={preset.label}

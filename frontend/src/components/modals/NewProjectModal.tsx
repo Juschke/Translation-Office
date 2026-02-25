@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    FaTimes, FaPlus, FaMinus, FaTrash,
-    FaCalendarAlt, FaFlag, FaClock, FaBolt,
-    FaSearch, FaCheck
+    FaPlus, FaMinus, FaTrash,
+    FaFlag, FaClock, FaBolt,
+    FaSearch, FaCheck, FaTimes
 } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
 import LanguageSelect from '../common/LanguageSelect';
@@ -13,8 +13,8 @@ import PartnerSelectionModal from './PartnerSelectionModal';
 import NewCustomerModal from './NewCustomerModal';
 import NewPartnerModal from './NewPartnerModal';
 import ConfirmDialog from '../common/ConfirmDialog';
-import DatePicker, { registerLocale } from "react-datepicker";
-import { de } from 'date-fns/locale/de';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { customerService, partnerService, settingsService, projectService } from '../../api/services';
 import PaymentModal from './PaymentModal';
@@ -27,9 +27,8 @@ import ProjectPaymentsTable from './ProjectPaymentsTable';
 import ProjectFinancialSidebar from './ProjectFinancialSidebar';
 import { Button } from '../ui/button';
 
-import "react-datepicker/dist/react-datepicker.css";
 
-registerLocale('de', de);
+// ... (rest of imports)
 
 interface NewProjectModalProps {
     isOpen: boolean;
@@ -165,7 +164,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     }, [partnersData]);
 
     const [partnerSearch, setPartnerSearch] = useState('');
-    const datePickerRef = useRef<any>(null);
 
     const { matchingPartners, otherPartners } = useMemo(() => {
         if (!Array.isArray(partnersData)) return { matchingPartners: [], otherPartners: [] };
@@ -667,7 +665,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         <div className="flex flex-col items-center gap-4">
                             <div className="relative">
                                 <div className="w-12 h-12 border-4 border-slate-100 rounded-full"></div>
-                                <div className="w-12 h-12 border-4 border border-slate-900 border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+                                <div className="w-12 h-12 border-4 border border-brand-primary border-t-transparent rounded-full animate-spin absolute inset-0"></div>
                             </div>
                             <div className="flex flex-col items-center gap-1">
                                 <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
@@ -770,34 +768,23 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                                 <div className="col-span-12 md:col-span-6 " id="field-container-deadline">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Liefertermin</Label>
-                                    <div className="relative">
-                                        <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
-                                        <DatePicker
-                                            ref={datePickerRef}
-                                            selected={deadline ? new Date(deadline) : null}
-                                            onChange={(date: Date | null) => {
-                                                if (date) {
-                                                    const newDate = new Date(date);
-                                                    if (newDate.getHours() === 0 && newDate.getMinutes() === 0) {
-                                                        newDate.setHours(12, 0, 0, 0);
-                                                    }
-                                                    setDeadline(newDate.toISOString());
-                                                } else {
-                                                    setDeadline('');
-                                                }
-                                            }}
-                                            showTimeSelect
-                                            timeFormat="HH:mm"
-                                            timeIntervals={15}
-                                            dateFormat="dd.MM.yyyy HH:mm"
-                                            locale="de"
-                                            className={clsx(
-                                                "h-10 w-full pl-10 pr-4 py-2 border rounded-sm text-sm focus:ring-2 focus:ring-slate-950/10 outline-none h-9 bg-white transition-all",
-                                                validationErrors.has('deadline') ? "border-red-500 ring-4 ring-red-50" : "border-slate-200"
-                                            )}
-                                            placeholderText="Datum & Zeit wählen"
-                                        />
-                                    </div>
+                                    <DatePicker
+                                        showTime
+                                        format="DD.MM.YYYY HH:mm"
+                                        value={deadline ? dayjs(deadline) : null}
+                                        onChange={(date) => {
+                                            if (date) {
+                                                setDeadline(date.toISOString());
+                                            } else {
+                                                setDeadline('');
+                                            }
+                                        }}
+                                        className={clsx(
+                                            "w-full h-9",
+                                            validationErrors.has('deadline') && "ant-picker-status-error"
+                                        )}
+                                        placeholder="Datum & Zeit wählen"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -929,7 +916,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                         <td className="px-2 py-2 text-right">
                                                             <div className={clsx(
                                                                 "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
-                                                                translator === p.id.toString() ? "bg-slate-900 border-slate-900 text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
+                                                                translator === p.id.toString() ? "bg-brand-primary border-brand-primary text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
                                                             )}>
                                                                 <FaCheck className="text-xs" />
                                                             </div>
@@ -976,7 +963,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                         <td className="px-2 py-2 text-right">
                                                             <div className={clsx(
                                                                 "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
-                                                                translator === p.id.toString() ? "bg-slate-900 border-slate-900 text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
+                                                                translator === p.id.toString() ? "bg-brand-primary border-brand-primary text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
                                                             )}>
                                                                 <FaCheck className="text-xs" />
                                                             </div>

@@ -37,7 +37,6 @@ const Invoices = () => {
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
     const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
-    const [downloadDropdownOpen, setDownloadDropdownOpen] = useState<number | null>(null);
 
     const exportRef = useRef<HTMLDivElement>(null);
 
@@ -46,9 +45,7 @@ const Invoices = () => {
             if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
                 setIsExportOpen(false);
             }
-            if (!(event.target as Element).closest('.invoice-download-dropdown')) {
-                setDownloadDropdownOpen(null);
-            }
+
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -337,8 +334,7 @@ const Invoices = () => {
     };
 
     const columns = buildInvoiceColumns({
-        downloadDropdownOpen,
-        setDownloadDropdownOpen,
+
         setPreviewInvoice,
         setInvoiceToEdit,
         setIsNewInvoiceOpen,

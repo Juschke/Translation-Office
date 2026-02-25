@@ -1,18 +1,19 @@
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import { FaCalendarAlt, FaChartLine, FaEuroSign, FaPercentage, FaLayerGroup, FaUserTie, FaTasks, FaTable, FaCalculator, FaFileInvoiceDollar, FaFilter } from 'react-icons/fa';
+import { FaChartLine, FaEuroSign, FaPercentage, FaLayerGroup, FaUserTie, FaTasks, FaTable, FaCalculator, FaFileInvoiceDollar, FaFilter } from 'react-icons/fa';
 import KPICard from '../components/common/KPICard';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { reportService } from '../api/services';
 import ReportsSkeleton from '../components/common/ReportsSkeleton';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
-import { de } from 'date-fns/locale';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
+import 'dayjs/locale/de';
 import { useState } from 'react';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
-registerLocale('de', de);
+dayjs.locale('de');
+
+const { RangePicker } = DatePicker;
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement);
 
@@ -24,17 +25,17 @@ const STATUS_COLORS = [
 ];
 
 const Reports = () => {
-    const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-        startOfMonth(subMonths(new Date(), 5)),
-        endOfMonth(new Date())
+    const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([
+        dayjs().subtract(5, 'month').startOf('month'),
+        dayjs().endOf('day')
     ]);
 
     const [appliedDateRange, setAppliedDateRange] = useState(dateRange);
     const [startDate, endDate] = appliedDateRange;
 
     const queryParams = {
-        startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
-        endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined
+        startDate: startDate ? startDate.format('YYYY-MM-DD') : undefined,
+        endDate: endDate ? endDate.format('YYYY-MM-DD') : undefined
     };
 
     const [activeTab, setActiveTab] = useState<'analytics' | 'finance'>('analytics');
@@ -230,24 +231,26 @@ const Reports = () => {
                     <p className="text-slate-500 text-sm hidden sm:block">Detaillierte Auswertung Ihrer Geschäftsdaten.</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                    <div className="relative z-20 flex-1 sm:flex-none">
-                        <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
-                        <DatePicker
-                            selectsRange
-                            startDate={dateRange[0]}
-                            endDate={dateRange[1]}
-                            onChange={(update) => setDateRange(update)}
-                            isClearable={false}
-                            locale="de"
-                            dateFormat="dd.MM.yyyy"
-                            className="pl-9 pr-3 py-2 border border-slate-300 rounded text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-[240px] cursor-pointer hover:border-brand-400 transition"
-                            placeholderText="Zeitraum wählen"
-                            maxDate={new Date()}
+                    <div className="flex-1 sm:flex-none">
+                        <RangePicker
+                            value={dateRange}
+                            onChange={(values) => setDateRange(values ? [values[0], values[1]] : [null, null])}
+                            format="DD.MM.YYYY"
+                            className="w-full sm:w-[280px] h-[38px] cursor-pointer"
+                            allowClear={false}
+                            disabledDate={(current) => current && current > dayjs().endOf('day')}
+                            presets={[
+                                { label: 'Letzte 7 Tage', value: [dayjs().subtract(7, 'day'), dayjs()] },
+                                { label: 'Letzte 30 Tage', value: [dayjs().subtract(30, 'day'), dayjs()] },
+                                { label: 'Letzte 3 Monate', value: [dayjs().subtract(3, 'month'), dayjs()] },
+                                { label: 'Letzte 6 Monate', value: [dayjs().subtract(6, 'month'), dayjs()] },
+                                { label: 'Dieses Jahr', value: [dayjs().startOf('year'), dayjs()] },
+                            ]}
                         />
                     </div>
                     <button
                         onClick={() => setAppliedDateRange(dateRange)}
-                        className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition shrink-0"
+                        className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition shrink-0 h-[38px]"
                     >
                         <FaFilter className="text-xs" /> <span className="hidden xs:inline">Anzeigen</span><span className="xs:hidden">Anzeigen</span>
                     </button>

@@ -7,6 +7,8 @@ import { Button } from '../ui/button';
 import SearchableSelect from '../common/SearchableSelect';
 import { useQuery } from '@tanstack/react-query';
 import { projectService, settingsService, invoiceService } from '../../api/services';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import clsx from 'clsx';
 
 interface NewInvoiceModalProps {
@@ -28,9 +30,9 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
     const [formData, setFormData] = useState({
         type: defaultType,
         invoice_number: '',
-        date: new Date().toISOString().split('T')[0],
-        due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        delivery_date: new Date().toISOString().split('T')[0],
+        date: dayjs().format('YYYY-MM-DD'),
+        due_date: dayjs().add(14, 'day').format('YYYY-MM-DD'),
+        delivery_date: dayjs().format('YYYY-MM-DD'),
         shipping: '0.00',
         discount: '0.00',
         paid_amount: '0.00',
@@ -517,10 +519,39 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                             <section>
                                 <h4 className="text-xs font-semibold text-slate-400 mb-4">Datum & Fristen</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Input label="Belegdatum" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
-                                    <Input label="Fälligkeit" type="date" value={formData.due_date} onChange={e => setFormData({ ...formData, due_date: e.target.value })} />
-                                    <Input label="Lieferdatum" type="date" value={formData.delivery_date} onChange={e => setFormData({ ...formData, delivery_date: e.target.value })} />
-                                    <Input label="Leistungszeitraum" value={formData.service_period} onChange={e => setFormData({ ...formData, service_period: e.target.value })} placeholder="Jan 2026" />
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-slate-500">Belegdatum</label>
+                                        <DatePicker
+                                            format="DD.MM.YYYY"
+                                            value={formData.date ? dayjs(formData.date) : null}
+                                            onChange={(val) => setFormData({ ...formData, date: val ? val.format('YYYY-MM-DD') : '' })}
+                                            className="w-full h-9"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-slate-500">Fälligkeit</label>
+                                        <DatePicker
+                                            format="DD.MM.YYYY"
+                                            value={formData.due_date ? dayjs(formData.due_date) : null}
+                                            onChange={(val) => setFormData({ ...formData, due_date: val ? val.format('YYYY-MM-DD') : '' })}
+                                            className="w-full h-9"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-slate-500">Lieferdatum</label>
+                                        <DatePicker
+                                            format="DD.MM.YYYY"
+                                            value={formData.delivery_date ? dayjs(formData.delivery_date) : null}
+                                            onChange={(val) => setFormData({ ...formData, delivery_date: val ? val.format('YYYY-MM-DD') : '' })}
+                                            className="w-full h-9"
+                                        />
+                                    </div>
+                                    <Input
+                                        label="Leistungszeitraum"
+                                        value={formData.service_period}
+                                        onChange={e => setFormData({ ...formData, service_period: e.target.value })}
+                                        placeholder="Jan 2026"
+                                    />
                                 </div>
                             </section>
 

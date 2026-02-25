@@ -1,12 +1,11 @@
 import {
-    FaCheck, FaDownload, FaPrint, FaFilePdf, FaEye,
-    FaStamp, FaBan, FaPen, FaFileCode, FaTrash, FaHistory,
+    FaCheck, FaPrint, FaFilePdf, FaEye,
+    FaStamp, FaBan, FaPen, FaFileCode, FaTrash, FaHistory, FaEllipsisV,
 } from 'react-icons/fa';
+import { Dropdown } from 'antd';
 import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 
 export interface BuildInvoiceColumnsParams {
-    downloadDropdownOpen: number | null;
-    setDownloadDropdownOpen: (id: number | null) => void;
     setPreviewInvoice: (inv: any) => void;
     setInvoiceToEdit: (inv: any) => void;
     setIsNewInvoiceOpen: (v: boolean) => void;
@@ -29,8 +28,6 @@ export interface BuildInvoiceColumnsParams {
 }
 
 export function buildInvoiceColumns({
-    downloadDropdownOpen,
-    setDownloadDropdownOpen,
     setPreviewInvoice,
     setInvoiceToEdit,
     setIsNewInvoiceOpen,
@@ -129,128 +126,159 @@ export function buildInvoiceColumns({
         {
             id: 'actions',
             header: '',
-            accessor: (inv: any) => (
-                <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => setPreviewInvoice(inv)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Ansehen">
-                        <FaEye />
-                    </button>
-                    {inv.status === 'draft' && (
-                        <button
-                            onClick={() => {
-                                setConfirmTitle('Rechnung ausstellen');
-                                setConfirmMessage('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform, keine Änderung mehr möglich)');
-                                setConfirmLabel('Jetzt ausstellen');
-                                setConfirmVariant('info');
-                                setConfirmAction(() => () => issueMutation.mutate(inv.id));
-                                setIsConfirmOpen(true);
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-sm transition"
-                            title="Ausstellen (GoBD)"
-                        >
-                            <FaStamp />
-                        </button>
-                    )}
-                    {inv.status === 'draft' && (
-                        <button
-                            onClick={() => { setInvoiceToEdit(inv); setIsNewInvoiceOpen(true); }}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-sm transition"
-                            title="Entwurf bearbeiten"
-                        >
-                            <FaPen />
-                        </button>
-                    )}
-                    {['issued', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note && (
-                        <button
-                            onClick={() => {
-                                setConfirmTitle('Rechnung stornieren');
-                                setConfirmMessage('Möchten Sie diese Rechnung wirklich stornieren? Es wird eine automatische Gutschrift erstellt.');
-                                setConfirmLabel('Stornieren');
-                                setConfirmVariant('warning');
-                                setConfirmAction(() => () => cancelMutation.mutate({ id: inv.id, reason: cancelReason || undefined }));
-                                setIsConfirmOpen(true);
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-sm transition"
-                            title="Stornieren (Gutschrift erstellen)"
-                        >
-                            <FaBan />
-                        </button>
-                    )}
-                    {inv.status === 'cancelled' && (
-                        <button
-                            onClick={() => {
-                                setConfirmTitle('Rechnung archivieren');
-                                setConfirmMessage('Möchten Sie diese stornierte Rechnung archivieren?');
-                                setConfirmLabel('Archivieren');
-                                setConfirmVariant('info');
-                                setConfirmAction(() => () => archiveMutation.mutate({ ids: [inv.id], data: { status: 'archived' } }));
-                                setIsConfirmOpen(true);
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-sm transition"
-                            title="Archivieren"
-                        >
-                            <FaHistory />
-                        </button>
-                    )}
-                    {['issued', 'overdue'].includes(inv.status) && (inv.amount_due_eur > 0) && (
-                        <button
-                            onClick={() => markAsPaidMutation.mutate(inv.id)}
-                            disabled={markAsPaidMutation.isPending}
-                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-sm transition disabled:opacity-40"
-                            title="Als bezahlt markieren"
-                        >
-                            <FaCheck />
-                        </button>
-                    )}
-                    <button onClick={() => handlePrint(inv)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-sm transition" title="Drucken"><FaPrint /></button>
+            accessor: (inv: any) => {
+                const actionMenuItems = [
+                    {
+                        key: 'mgmt_header',
+                        type: 'group' as const,
+                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">Verwaltung</span>,
+                        children: [
+                            {
+                                key: 'view',
+                                icon: <FaEye className="text-slate-400" />,
+                                label: <span className="text-xs">Ansehen (Vorschau)</span>,
+                                onClick: () => setPreviewInvoice(inv),
+                            },
+                            ...(inv.status === 'draft' ? [{
+                                key: 'edit',
+                                icon: <FaPen className="text-teal-500" />,
+                                label: <span className="text-xs">Bearbeiten</span>,
+                                onClick: () => { setInvoiceToEdit(inv); setIsNewInvoiceOpen(true); },
+                            }] : []),
+                        ]
+                    },
+                    {
+                        key: 'fin_header',
+                        type: 'group' as const,
+                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">Finanzen</span>,
+                        children: [
+                            ...(inv.status === 'cancelled' ? [{
+                                key: 'archive',
+                                icon: <FaHistory className="text-slate-500" />,
+                                label: <span className="text-xs">Archivieren</span>,
+                                onClick: () => {
+                                    setConfirmTitle('Rechnung archivieren');
+                                    setConfirmMessage('Möchten Sie diese stornierte Rechnung archivieren?');
+                                    setConfirmLabel('Archivieren');
+                                    setConfirmVariant('info');
+                                    setConfirmAction(() => () => archiveMutation.mutate({ ids: [inv.id], data: { status: 'archived' } }));
+                                    setIsConfirmOpen(true);
+                                },
+                            }] : []),
+                            ...(['issued', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note ? [{
+                                key: 'cancel',
+                                icon: <FaBan className="text-orange-500" />,
+                                label: <span className="text-xs">Stornieren (Gutschrift)</span>,
+                                onClick: () => {
+                                    setConfirmTitle('Rechnung stornieren');
+                                    setConfirmMessage('Möchten Sie diese Rechnung wirklich stornieren? Es wird eine automatische Gutschrift erstellt.');
+                                    setConfirmLabel('Stornieren');
+                                    setConfirmVariant('warning');
+                                    setConfirmAction(() => () => cancelMutation.mutate({ id: inv.id, reason: cancelReason || undefined }));
+                                    setIsConfirmOpen(true);
+                                },
+                            }] : []),
+                        ]
+                    },
+                    {
+                        key: 'docs_header',
+                        type: 'group' as const,
+                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">Dokumente</span>,
+                        children: [
+                            {
+                                key: 'print',
+                                icon: <FaPrint className="text-slate-500" />,
+                                label: <span className="text-xs">Drucken</span>,
+                                onClick: () => handlePrint(inv),
+                            },
+                            {
+                                key: 'pdf',
+                                icon: <FaFilePdf className="text-red-500" />,
+                                label: <span className="text-xs">PDF Herunterladen</span>,
+                                onClick: () => handleDownload(inv),
+                            },
+                            {
+                                key: 'xml',
+                                icon: <FaFileCode className="text-emerald-500" />,
+                                label: <span className="text-xs">E-Rechnung (XML)</span>,
+                                onClick: () => handleDownloadXml(inv),
+                            },
+                        ]
+                    },
+                    ...(inv.status === 'draft' ? [{
+                        key: 'danger_header',
+                        type: 'group' as const,
+                        label: <span className="text-[9px] font-bold text-red-500 uppercase tracking-widest pl-1">Gefahrenzone</span>,
+                        children: [
+                            {
+                                key: 'delete',
+                                icon: <FaTrash />,
+                                label: <span className="text-xs font-medium">Entwurf löschen</span>,
+                                danger: true,
+                                onClick: () => {
+                                    setConfirmTitle('Entwurf löschen');
+                                    setConfirmMessage('Sind Sie sicher, dass Sie diesen Rechnungsentwurf löschen möchten?');
+                                    setConfirmLabel('Löschen');
+                                    setConfirmVariant('danger');
+                                    setConfirmAction(() => () => deleteMutation.mutate(inv.id));
+                                    setIsConfirmOpen(true);
+                                },
+                            }
+                        ]
+                    }] : []),
+                ];
 
-                    <div className="relative invoice-download-dropdown">
-                        <button
-                            onClick={() => setDownloadDropdownOpen(downloadDropdownOpen === inv.id ? null : inv.id)}
-                            className={`p-1.5 rounded-sm transition ${downloadDropdownOpen === inv.id ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
-                            title="Download"
-                        >
-                            <FaDownload />
-                        </button>
-                        {downloadDropdownOpen === inv.id && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-white shadow-sm border border-slate-200 z-[100] rounded-sm overflow-hidden text-left origin-top-right ring-1 ring-black ring-opacity-5">
-                                <div className="py-1">
-                                    <div className="px-4 py-2 text-xs font-medium text-slate-400 bg-transparent border-b border-slate-100 mb-1">
-                                        Download Optionen
-                                    </div>
-                                    <button onClick={(e) => { e.stopPropagation(); handleDownload(inv); setDownloadDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-blue-50 flex items-center gap-3 text-slate-700 transition-colors group">
-                                        <div className="p-1.5 bg-red-50 rounded group-hover:bg-red-100 transition-colors">
-                                            <FaFilePdf className="text-red-500 text-sm" />
-                                        </div>
-                                        <div>
-                                            <div className="font-semibold">PDF (Druckansicht)</div>
-                                            <div className="text-xs text-slate-400">Standard Dokument</div>
-                                        </div>
-                                    </button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleDownloadXml(inv); setDownloadDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-xs hover:bg-emerald-50 flex items-center gap-3 text-slate-700 transition-colors group">
-                                        <div className="p-1.5 bg-emerald-50 rounded group-hover:bg-emerald-100 transition-colors">
-                                            <FaFileCode className="text-emerald-500 text-sm" />
-                                        </div>
-                                        <div>
-                                            <div className="font-semibold">E-Rechnung (XML)</div>
-                                            <div className="text-xs text-slate-400">XRechnung 3.0 / ZUGFeRD</div>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
+                return (
+                    <div className="flex justify-end gap-1.5 items-center" onClick={(e) => e.stopPropagation()}>
+                        {/* Primary Actions (Visible) */}
+                        {inv.status === 'draft' && (
+                            <button
+                                onClick={() => {
+                                    setConfirmTitle('Rechnung ausstellen');
+                                    setConfirmMessage('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform, keine Änderung mehr möglich)');
+                                    setConfirmLabel('Jetzt ausstellen');
+                                    setConfirmVariant('info');
+                                    setConfirmAction(() => () => issueMutation.mutate(inv.id));
+                                    setIsConfirmOpen(true);
+                                }}
+                                className="flex items-center gap-1.5 px-2 py-1 bg-[#1B4D4F]/5 text-[#1B4D4F] hover:bg-[#1B4D4F]/10 border border-[#1B4D4F]/20 rounded-sm text-[10px] font-bold uppercase tracking-tight transition-all shadow-sm"
+                                title="Ausstellen (GoBD)"
+                            >
+                                <FaStamp className="text-xs" />
+                                <span>Ausstellen</span>
+                            </button>
                         )}
+
+                        {['issued', 'overdue'].includes(inv.status) && (inv.amount_due_eur > 0) && (
+                            <button
+                                onClick={() => markAsPaidMutation.mutate(inv.id)}
+                                disabled={markAsPaidMutation.isPending}
+                                className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-sm text-[10px] font-bold uppercase tracking-tight transition-all shadow-sm disabled:opacity-40"
+                                title="Als bezahlt markieren"
+                            >
+                                <FaCheck className="text-xs" />
+                                <span>Bezahlt</span>
+                            </button>
+                        )}
+
+                        <Dropdown
+                            menu={{
+                                items: actionMenuItems,
+                                className: 'invoice-action-menu-dropdown',
+                            }}
+                            trigger={['click']}
+                            placement="bottomRight"
+                        >
+                            <button
+                                className="p-1 px-1.5 rounded-sm hover:bg-slate-100 text-slate-400 hover:text-[#1B4D4F] transition-all border border-transparent hover:border-slate-200"
+                                title="Weitere Aktionen"
+                            >
+                                <FaEllipsisV className="text-[10px]" />
+                            </button>
+                        </Dropdown>
                     </div>
-                    {inv.status === 'draft' && (
-                        <button onClick={() => {
-                            setConfirmTitle('Entwurf löschen');
-                            setConfirmMessage('Sind Sie sicher, dass Sie diesen Rechnungsentwurf löschen möchten?');
-                            setConfirmLabel('Löschen');
-                            setConfirmVariant('danger');
-                            setConfirmAction(() => () => deleteMutation.mutate(inv.id));
-                            setIsConfirmOpen(true);
-                        }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Entwurf löschen"><FaTrash /></button>
-                    )}
-                </div>
-            ),
+                );
+            },
             align: 'right' as const,
         },
     ];

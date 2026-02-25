@@ -113,7 +113,7 @@ const Navigation = () => {
             <div className="relative group ml-1.5 flex items-center">
                 <span className={clsx(
                     "text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm transition-all duration-300",
-                    displayCount === 0 ? "bg-slate-700/50 text-slate-400 group-hover:bg-slate-600" : activeColor,
+                    displayCount === 0 ? "bg-white/10 text-emerald-100/40 group-hover:bg-white/20" : activeColor,
                     isPriority && displayCount > 0 && "animate-pulse ring-2 ring-rose-500/20"
                 )}>
                     {displayCount}
@@ -151,7 +151,7 @@ const Navigation = () => {
 
                         {/* Main Menu - Only Desktop */}
                         <TooltipProvider delayDuration={0}>
-                            <div className="hidden lg:flex space-x-1 h-full">
+                            <div className="hidden space-x-1 h-full xl:flex">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Link to="/" className={navLinkClass("/")}>
@@ -160,7 +160,7 @@ const Navigation = () => {
                                             <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
                                         </Link>
                                     </TooltipTrigger>
-                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                                         <div className="flex flex-col gap-1">
                                             <span className="font-semibold text-sm">Dashboard</span>
                                             {dashboardData?.stats?.deadlines_today > 0 && (
@@ -181,7 +181,7 @@ const Navigation = () => {
                                             <NavBadge count={dashboardData?.stats?.open_projects} label="Offene Projekte" activeColor="bg-rose-500" />
                                         </Link>
                                     </TooltipTrigger>
-                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                                         <div className="flex flex-col gap-1">
                                             <span className="font-semibold text-sm">Projekte</span>
                                             {dashboardData?.stats?.open_projects > 0 && (
@@ -201,7 +201,7 @@ const Navigation = () => {
                                             <span className="hidden lg:inline">Kalender</span>
                                         </Link>
                                     </TooltipTrigger>
-                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                                         <span className="font-semibold text-sm">Kalender</span>
                                     </TooltipContent>
                                 </Tooltip>
@@ -214,7 +214,7 @@ const Navigation = () => {
                                             <NavBadge count={dashboardData?.stats?.active_customers} label="Aktive Kunden" activeColor="bg-slate-500" />
                                         </Link>
                                     </TooltipTrigger>
-                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                                         <div className="flex flex-col gap-1">
                                             <span className="font-semibold text-sm">Kunden</span>
                                             {dashboardData?.stats?.active_customers > 0 && (
@@ -235,7 +235,7 @@ const Navigation = () => {
                                             <NavBadge count={dashboardData?.stats?.active_partners} label="Aktive Partner" activeColor="bg-slate-500" />
                                         </Link>
                                     </TooltipTrigger>
-                                    <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                                         <div className="flex flex-col gap-1">
                                             <span className="font-semibold text-sm">Partner</span>
                                             {dashboardData?.stats?.active_partners > 0 && (
@@ -261,7 +261,7 @@ const Navigation = () => {
                                                 />
                                             </Link>
                                         </TooltipTrigger>
-                                        <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                        <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                                             <div className="flex flex-col gap-1">
                                                 <span className="font-semibold text-sm">Rechnungen</span>
                                                 {dashboardData?.stats?.unpaid_invoices > 0 && (
@@ -285,7 +285,7 @@ const Navigation = () => {
                                                 <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
                                             </Link>
                                         </TooltipTrigger>
-                                        <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                        <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                                             <div className="flex flex-col gap-1">
                                                 <span className="font-semibold text-sm">Email</span>
                                                 {unreadEmails > 0 && (
@@ -307,7 +307,7 @@ const Navigation = () => {
                                                 <span className="hidden lg:inline">Auswertung</span>
                                             </Link>
                                         </TooltipTrigger>
-                                        <TooltipContent className="z-[100] bg-slate-900 text-white border-slate-700 shadow-xl lg:hidden">
+                                        <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                                             <span className="font-semibold text-sm">Auswertung</span>
                                         </TooltipContent>
                                     </Tooltip>
@@ -332,7 +332,7 @@ const Navigation = () => {
 
                             {/* Notification Dropdown */}
                             {isNotifOpen && (
-                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-[var(--radius-md)] shadow-sm border border-brand-border z-50 text-brand-text origin-top-right animate-slideUp">
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-[var(--radius-md)] shadow-sm border border-brand-primary/10 z-50 text-brand-text origin-top-right animate-slideUp">
                                     <div className="p-3 border-b border-slate-100 font-semibold text-sm flex justify-between">
                                         <span>Benachrichtigungen</span>
                                         <button
@@ -357,7 +357,7 @@ const Navigation = () => {
                                                         <div className="text-xs text-slate-400">
                                                             {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: de })}
                                                         </div>
-                                                        {!n.read_at && <div className="w-2 h-2 rounded-full bg-slate-700"></div>}
+                                                        {!n.read_at && <div className="w-2 h-2 rounded-full bg-brand-primary"></div>}
                                                     </div>
                                                     <p className={clsx("text-sm", !n.read_at ? "font-semibold" : "font-medium")}>{n.data.title}</p>
                                                     <p className="text-xs text-slate-500 line-clamp-2">{n.data.message}</p>
@@ -394,7 +394,7 @@ const Navigation = () => {
                             {isProfileOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-200 z-50 text-slate-800 origin-top-right animate-slideUp">
                                     <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-[10px] text-white font-bold shrink-0 shadow-sm uppercase">
+                                        <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-[10px] text-white font-bold shrink-0 shadow-sm uppercase">
                                             {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
                                         </div>
                                         <div className="overflow-hidden text-left">
@@ -445,7 +445,7 @@ const Navigation = () => {
                         {/* Mobile Menu Button — right side */}
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 lg:hidden text-white hover:text-emerald-400"
+                            className="p-2 text-white hover:text-emerald-400 xl:hidden"
                         >
                             <div className="w-5 h-4 flex flex-col justify-between">
                                 <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "rotate-45 translate-y-1.5" : "")}></span>
@@ -459,7 +459,7 @@ const Navigation = () => {
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
-                <div className="lg:hidden bg-white border-t border-brand-border animate-slideDown shadow-lg">
+                <div className="bg-white border-t border-brand-border animate-slideDown shadow-lg">
                     <div className="px-4 py-3 space-y-1">
                         {[
                             { path: '/', label: 'Dashboard', icon: <FaHome />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute" },

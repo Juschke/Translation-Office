@@ -306,10 +306,12 @@ class AuthController extends Controller
             function ($user, $password) {
                 $user->forceFill([
                     'password' => Hash::make($password)
-                ])->setRememberToken(Str::random(60))->save();
+                ]);
+                $user->setRememberToken(Str::random(60));
+                $user->save();
 
                 event(new PasswordReset($user));
-                
+
                 // Revoke all tokens after reset
                 $user->tokens()->delete();
             }

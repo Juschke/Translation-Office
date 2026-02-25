@@ -3,11 +3,8 @@ import { FaTimes, FaCalendarAlt } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
 import Input from '../common/Input';
 import { Button } from '../ui/button';
-import DatePicker, { registerLocale } from "react-datepicker";
-import { de } from 'date-fns/locale/de';
-import "react-datepicker/dist/react-datepicker.css";
-
-registerLocale('de', de);
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
 
 interface NewAppointmentModalProps {
     isOpen: boolean;
@@ -127,27 +124,23 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Beginn *</label>
                             <DatePicker
-                                selected={startDate}
-                                onChange={(date: Date | null) => setStartDate(date)}
-                                showTimeSelect
-                                timeFormat="HH:mm"
-                                timeIntervals={15}
-                                dateFormat="dd.MM.yyyy HH:mm"
-                                locale="de"
-                                className="h-9 w-full px-3 py-2 border border-slate-200 rounded-sm text-sm focus:ring-2 focus:ring-slate-900/5 outline-none bg-white transition-all shadow-sm"
+                                showTime
+                                format="DD.MM.YYYY HH:mm"
+                                value={startDate ? dayjs(startDate) : null}
+                                onChange={(date) => setStartDate(date ? date.toDate() : null)}
+                                className="h-9 w-full shadow-sm"
+                                placeholder="Beginn wählen"
                             />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ende</label>
                             <DatePicker
-                                selected={endDate}
-                                onChange={(date: Date | null) => setEndDate(date)}
-                                showTimeSelect
-                                timeFormat="HH:mm"
-                                timeIntervals={15}
-                                dateFormat="dd.MM.yyyy HH:mm"
-                                locale="de"
-                                className="h-9 w-full px-3 py-2 border border-slate-200 rounded-sm text-sm focus:ring-2 focus:ring-slate-900/5 outline-none bg-white transition-all shadow-sm"
+                                showTime
+                                format="DD.MM.YYYY HH:mm"
+                                value={endDate ? dayjs(endDate) : null}
+                                onChange={(date) => setEndDate(date ? date.toDate() : null)}
+                                className="h-9 w-full shadow-sm"
+                                placeholder="Ende wählen"
                             />
                         </div>
                     </div>

@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './layouts/AppLayout';
-import AuthLayout from './layouts/AuthLayout';
 import Dashboard from './pages/Dashboard';
 
 import Projects from './pages/Projects';
@@ -18,8 +17,7 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Billing from './pages/Billing';
 
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
+import Auth from './pages/auth/Auth';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import Onboarding from './pages/auth/Onboarding';
@@ -48,12 +46,11 @@ function App() {
                         {/* Public Routes */}
                         <Route path="/guest/project/:token" element={<GuestProjectView />} />
                         <Route path="/verify-email" element={<VerifyEmail />} />
-                        <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/register" element={<Register />} />
-                            <Route path="/forgot-password" element={<ForgotPassword />} />
-                            <Route path="/reset-password" element={<ResetPassword />} />
-                        </Route>
+                        <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+                        <Route path="/login" element={<Navigate to="/auth" replace />} />
+                        <Route path="/register" element={<Navigate to="/auth" replace />} />
+                        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+                        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
                         {/* Onboarding (Authenticated but no Tenant) */}
                         <Route path="/onboarding" element={

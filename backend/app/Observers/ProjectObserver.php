@@ -42,11 +42,19 @@ class ProjectObserver
 
     public function saved(Project $project): void
     {
-        broadcast(new ProjectUpdated('saved'));
+        try {
+            broadcast(new ProjectUpdated('saved'));
+        } catch (\Exception $e) {
+            \Log::warning("Broadcasting failed in ProjectObserver: " . $e->getMessage());
+        }
     }
 
     public function deleted(Project $project): void
     {
-        broadcast(new ProjectUpdated('deleted'));
+        try {
+            broadcast(new ProjectUpdated('deleted'));
+        } catch (\Exception $e) {
+            \Log::warning("Broadcasting failed in ProjectObserver: " . $e->getMessage());
+        }
     }
 }

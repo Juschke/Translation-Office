@@ -77,10 +77,12 @@ class Invoice extends Model
         'snapshot_customer_city',
         'snapshot_customer_country',
         'snapshot_customer_vat_id',
+        'snapshot_customer_email',
         'snapshot_customer_leitweg_id',
 
         // --- Seller Snapshot ---
         'snapshot_seller_name',
+        'snapshot_seller_email',
         'snapshot_seller_address',
         'snapshot_seller_zip',
         'snapshot_seller_city',

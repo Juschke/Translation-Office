@@ -893,7 +893,7 @@ const ProjectDetail = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 max-w-[1600px] mx-auto w-full px-3 sm:px-4 md:px-8 py-4 sm:py-8 transition-all duration-300">
+            <div className="flex-1 max-w-[1600px] mx-auto w-full py-4 sm:py-8 transition-all duration-300">
                 {activeTab === 'overview' && (
                     <ProjectOverviewTab
                         projectData={projectData}
