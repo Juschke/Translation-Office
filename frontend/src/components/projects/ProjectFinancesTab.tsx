@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react';
-import { FaPlus, FaCheckCircle, FaFileInvoiceDollar, FaTrashAlt, FaClock, FaInfoCircle } from 'react-icons/fa';
+import { FaPlus, FaCheckCircle, FaFileInvoiceDollar, FaTrashAlt, FaInfoCircle, FaCalculator, FaEuroSign, FaEllipsisV, FaArrowRight } from 'react-icons/fa';
 import clsx from 'clsx';
 import { Button } from '../ui/button';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../ui/table';
+import DataTable from '../common/DataTable';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 
 interface ProjectPosition {
     id: string;
@@ -136,7 +139,7 @@ const ProjectFinancesTab = ({
                     autoFocus
                     type={type}
                     defaultValue={value}
-                    className={clsx("w-full bg-white border-2 border-slate-900 rounded px-2 py-1 outline-none text-xs font-medium shadow-sm", className)}
+                    className={clsx("w-full bg-white border-2 border-brand-primary rounded px-2 py-1 outline-none text-xs font-bold shadow-md ring-2 ring-brand-primary/10", className)}
                     onBlur={(e) => {
                         handleCellUpdate(id, field, e.target.value);
                         setEditingCell(null);
@@ -156,8 +159,8 @@ const ProjectFinancesTab = ({
             <div
                 onClick={() => !disabled && setEditingCell({ id, field })}
                 className={clsx(
-                    "px-2 py-1 rounded transition",
-                    !disabled ? "cursor-pointer hover:bg-slate-50 hover:text-slate-900" : "cursor-default text-slate-500",
+                    "px-2 py-1 rounded transition-all",
+                    !disabled ? "cursor-pointer hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-200" : "cursor-default text-slate-500",
                     className
                 )}
                 title={disabled ? undefined : "Klicken zum Bearbeiten"}
@@ -170,16 +173,73 @@ const ProjectFinancesTab = ({
     const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
     const isLocked = !!activeInvoice;
 
+    // DataTable columns for Payments
+    const paymentColumns = useMemo(() => [
+        {
+            id: 'date',
+            header: 'Datum',
+            accessor: (payment: any) => (
+                <span className="font-mono text-xs font-bold text-slate-500">
+                    {new Date(payment.created_at || payment.date || new Date()).toLocaleDateString('de-DE')}
+                </span>
+            ),
+            sortable: true,
+        },
+        {
+            id: 'note',
+            header: 'Beschreibung / Methode',
+            accessor: (payment: any) => (
+                <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-700 text-xs">{payment.note || 'Zahlungseingang'}</span>
+                    {payment.method && <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase border border-slate-200">{payment.method}</span>}
+                </div>
+            ),
+            sortable: true,
+        },
+        {
+            id: 'amount',
+            header: 'Betrag',
+            accessor: (payment: any) => (
+                <span className="font-black text-emerald-600 text-xs">
+                    + {parseFloat(payment.amount).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </span>
+            ),
+            align: 'right' as const,
+            sortable: true,
+        },
+        {
+            id: 'actions',
+            header: '',
+            accessor: (_payment: any) => (
+                <div className="flex justify-end">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400">
+                                <FaEllipsisV className="text-[10px]" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-32">
+                            <DropdownMenuItem className="text-red-500 font-bold text-[11px] gap-2">
+                                <FaTrashAlt /> Löschen
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            ),
+            align: 'right' as const,
+        }
+    ], []);
+
     return (
-        <div className="flex flex-col gap-6 mb-10 animate-fadeIn">
+        <div className="flex flex-col gap-8 mb-10 animate-fadeIn h-full">
             {isLocked && (
-                <div className="bg-slate-50 border border-slate-200 rounded-sm p-4 flex items-start gap-4 shadow-sm">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                <div className="bg-slate-50 border border-slate-200 rounded-sm p-4 flex items-start gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="w-10 h-10 rounded-full bg-white text-slate-400 flex items-center justify-center shrink-0 border border-slate-200 shadow-inner">
                         <FaInfoCircle />
                     </div>
                     <div>
                         <h4 className="text-sm font-bold text-slate-800">Kalkulation gesperrt</h4>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-500 mt-1 font-medium">
                             Da bereits eine aktive Rechnung ({activeInvoice.invoice_number}) existiert, kann die Kalkulation nicht mehr geändert werden.
                             Stornieren Sie die Rechnung, um Bearbeitungen vorzunehmen.
                         </p>
@@ -187,19 +247,19 @@ const ProjectFinancesTab = ({
                 </div>
             )}
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 flex-1">
                 {/* Left Column: Calculation Table */}
-                <div className="xl:col-span-8 space-y-6">
+                <div className="xl:col-span-8 space-y-8 flex flex-col">
                     {/* Positions Table */}
-                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-sm bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
-                                    <FaFileInvoiceDollar />
+                                <div className="w-8 h-8 rounded-sm bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                                    <FaCalculator className="text-slate-600 text-sm" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xs font-semibold text-slate-800">Kalkulation</h3>
-                                    <p className="text-xs text-slate-400 font-medium">Positionen & Preise</p>
+                                    <h3 className="text-xs font-semibold text-slate-800">Positions-Kalkulation</h3>
+                                    <p className="text-[10px] text-slate-400 font-medium tracking-tight">Leistungen & Preise festlegen</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -208,9 +268,9 @@ const ProjectFinancesTab = ({
                                         variant="outline"
                                         size="sm"
                                         onClick={addPosition}
-                                        className="h-8 bg-white text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white transition shadow-sm flex items-center gap-1.5"
+                                        className="h-8 bg-white text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white transition shadow-sm font-bold flex items-center gap-1.5"
                                     >
-                                        <FaPlus className="mb-0.5" /> Neu
+                                        <FaPlus className="text-[10px]" /> NEU
                                     </Button>
                                 )}
                                 <Button
@@ -218,44 +278,44 @@ const ProjectFinancesTab = ({
                                     size="sm"
                                     onClick={handleSave}
                                     disabled={isPendingSave || isLocked}
-                                    className="h-8 flex items-center gap-1.5"
+                                    className="h-8 font-bold flex items-center gap-1.5 shadow-md shadow-brand-primary/10"
                                 >
-                                    <FaCheckCircle /> {isLocked ? 'Gesperrt' : 'Speichern'}
+                                    <FaCheckCircle className="text-[10px]" /> {isLocked ? 'GESPERRT' : 'SPEICHERN'}
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse min-w-[600px]">
-                                <thead className="bg-slate-50/80 text-slate-500 text-xs font-semibold border-b border-slate-200">
-                                    <tr>
-                                        <th className="px-4 py-3 w-10 text-center">#</th>
-                                        <th className="px-4 py-3">Beschreibung</th>
-                                        <th className="px-4 py-3 w-28 text-right">Menge</th>
-                                        <th className="px-4 py-3 w-24 text-right">Einh.</th>
-                                        <th className="px-4 py-3 w-32 text-right bg-red-50/30 text-red-400 border-l border-slate-100">EK</th>
-                                        <th className="px-4 py-3 w-32 text-right bg-emerald-50/30 text-emerald-600 border-l border-slate-100">VK</th>
-                                        <th className="px-4 py-3 w-28 text-right font-semibold text-slate-700 bg-emerald-50/30 border-l border-slate-100">Gesamt</th>
-                                        <th className="px-2 py-3 w-10 text-center"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 text-xs">
+                        <div className="px-6 py-4 flex-1">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-10 text-center px-2">#</TableHead>
+                                        <TableHead className="px-4">Beschreibung</TableHead>
+                                        <TableHead className="w-24 text-right px-4">Menge</TableHead>
+                                        <TableHead className="w-24 text-right px-4">Einh.</TableHead>
+                                        <TableHead className="w-28 text-right px-4 bg-red-50/20 text-red-700/70 border-l border-slate-100 uppercase tracking-tighter text-[9px] font-black">EK (Partner)</TableHead>
+                                        <TableHead className="w-28 text-right px-4 bg-emerald-50/20 text-emerald-700/70 border-l border-slate-100 uppercase tracking-tighter text-[9px] font-black">VK (Kunde)</TableHead>
+                                        <TableHead className="w-32 text-right px-4 font-black uppercase text-[9px] tracking-tighter bg-emerald-50/30 border-l border-slate-100">Gesamt</TableHead>
+                                        <TableHead className="w-10 text-center px-2"></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     {positions.map((pos: any, idx: number) => (
-                                        <tr key={pos.id} className="group hover:bg-slate-50 transition-colors">
-                                            <td className="px-4 py-3 text-center text-slate-400 font-medium">{idx + 1}</td>
-                                            <td className="px-4 py-3">
-                                                {renderEditableCell(pos.id, 'description', pos.description, 'text', 'font-medium text-slate-700 w-full bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-brand-100 rounded px-1 -mx-1', isLocked)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {renderEditableCell(pos.id, 'amount', pos.amount, 'number', 'text-right font-mono text-slate-600 bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-brand-100 rounded px-1 -mx-1', isLocked)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
+                                        <TableRow key={pos.id} className="group hover:bg-slate-50/50">
+                                            <TableCell className="text-center text-slate-400 font-bold text-[10px] px-2">{idx + 1}</TableCell>
+                                            <TableCell className="px-4">
+                                                {renderEditableCell(pos.id, 'description', pos.description, 'text', 'font-bold text-slate-700 w-full', isLocked)}
+                                            </TableCell>
+                                            <TableCell className="text-right px-4">
+                                                {renderEditableCell(pos.id, 'amount', pos.amount, 'number', 'text-right font-mono text-xs font-bold text-slate-600', isLocked)}
+                                            </TableCell>
+                                            <TableCell className="text-right px-4">
                                                 <select
                                                     value={pos.unit}
                                                     disabled={isLocked}
                                                     onChange={(e) => handleCellUpdate(pos.id, 'unit', e.target.value)}
                                                     className={clsx(
-                                                        "text-right text-xs font-medium bg-transparent outline-none w-full appearance-none",
+                                                        "text-right text-[11px] font-bold bg-transparent outline-none w-full appearance-none",
                                                         !isLocked ? "text-slate-400 cursor-pointer hover:text-slate-700 transition-colors" : "text-slate-500 cursor-default"
                                                     )}
                                                 >
@@ -265,16 +325,16 @@ const ProjectFinancesTab = ({
                                                     <option value="Stunden">Stunden</option>
                                                     <option value="Pauschal">Pauschal</option>
                                                 </select>
-                                            </td>
-                                            <td className="px-4 py-3 text-right text-red-400 font-medium border-l border-slate-100 bg-red-50/5 group-hover:bg-red-50/20 transition-colors">
+                                            </TableCell>
+                                            <TableCell className="text-right px-4 border-l border-slate-100 bg-red-50/5 group-hover:bg-red-50/10 transition-colors">
                                                 <div className="flex flex-col gap-0.5 items-end">
-                                                    {renderEditableCell(pos.id, 'partnerRate', pos.partnerRate, 'number', 'text-right font-mono bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-red-100 rounded px-1 -mx-1', isLocked)}
+                                                    {renderEditableCell(pos.id, 'partnerRate', pos.partnerRate, 'number', 'text-right font-mono text-xs font-bold text-red-500', isLocked)}
                                                     <select
                                                         value={pos.partnerMode || 'unit'}
                                                         disabled={isLocked}
                                                         onChange={(e) => handleCellUpdate(pos.id, 'partnerMode', e.target.value)}
                                                         className={clsx(
-                                                            "text-right text-xs font-medium bg-transparent outline-none appearance-none",
+                                                            "text-right text-[9px] font-black uppercase tracking-tighter bg-transparent outline-none appearance-none",
                                                             !isLocked ? "text-red-300 cursor-pointer hover:text-red-500 transition-colors" : "text-red-400/50 cursor-default"
                                                         )}
                                                     >
@@ -282,16 +342,16 @@ const ProjectFinancesTab = ({
                                                         <option value="fixed">Pauschal</option>
                                                     </select>
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-right text-emerald-600 font-medium border-l border-slate-100 bg-emerald-50/5 group-hover:bg-emerald-50/20 transition-colors">
+                                            </TableCell>
+                                            <TableCell className="text-right px-4 border-l border-slate-100 bg-emerald-50/5 group-hover:bg-emerald-50/10 transition-colors">
                                                 <div className="flex flex-col gap-0.5 items-end">
-                                                    {renderEditableCell(pos.id, 'customerRate', pos.customerRate, 'number', 'text-right font-mono bg-transparent outline-none focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded px-1 -mx-1', isLocked)}
+                                                    {renderEditableCell(pos.id, 'customerRate', pos.customerRate, 'number', 'text-right font-mono text-xs font-bold text-emerald-600', isLocked)}
                                                     <select
                                                         value={pos.customerMode || 'unit'}
                                                         disabled={isLocked}
                                                         onChange={(e) => handleCellUpdate(pos.id, 'customerMode', e.target.value)}
                                                         className={clsx(
-                                                            "text-right text-xs font-medium bg-transparent outline-none appearance-none",
+                                                            "text-right text-[9px] font-black uppercase tracking-tighter bg-transparent outline-none appearance-none",
                                                             !isLocked ? "text-emerald-400 cursor-pointer hover:text-emerald-600 transition-colors" : "text-emerald-500/50 cursor-default"
                                                         )}
                                                     >
@@ -299,312 +359,286 @@ const ProjectFinancesTab = ({
                                                         <option value="fixed">Pauschal</option>
                                                     </select>
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-emerald-50/10 group-hover:bg-emerald-50/30 transition-colors">
+                                            </TableCell>
+                                            <TableCell className="text-right px-4 font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 group-hover:bg-emerald-50/20 transition-colors text-xs whitespace-nowrap">
                                                 {parseFloat(pos.customerTotal).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                                            </td>
-                                            <td className="px-2 py-3 text-center">
+                                            </TableCell>
+                                            <TableCell className="text-center px-2">
                                                 {!isLocked && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         onClick={() => deletePosition(pos.id)}
-                                                        className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                        className="h-7 w-7 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all opacity-0 group-hover:opacity-100"
                                                         title="Position löschen"
                                                     >
                                                         <FaTrashAlt className="text-xs" />
                                                     </Button>
                                                 )}
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
                                     {positions.length === 0 && (
-                                        <tr>
-                                            <td colSpan={8} className="px-6 py-12 text-center text-slate-400 italic bg-slate-50/30">
-                                                Keine Positionen vorhanden. Starten Sie mit "Neu".
-                                            </td>
-                                        </tr>
+                                        <TableRow>
+                                            <TableCell colSpan={8} className="px-6 py-12 text-center text-slate-400 italic font-medium bg-slate-50/30">
+                                                Keine Positionen vorhanden. Starten Sie mit "NEU".
+                                            </TableCell>
+                                        </TableRow>
                                     )}
-                                </tbody>
-                                {/* Extra Costs Section */}
-                                {(projectData.isCertified || projectData.hasApostille || projectData.isExpress || projectData.classification === 'ja' || projectData.copies > 0) && (
-                                    <tbody className="divide-y divide-slate-100 text-xs border-t-2 border-slate-100">
-                                        {projectData.isCertified && (
-                                            <tr className="bg-transparent">
-                                                <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
-                                                <td className="px-4 py-3 font-medium text-slate-600">Beglaubigung</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">1</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">Pauschal</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-emerald-50/10">5,00 €</td>
-                                                <td className="px-2 py-3"></td>
-                                            </tr>
-                                        )}
-                                        {projectData.hasApostille && (
-                                            <tr className="bg-transparent">
-                                                <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
-                                                <td className="px-4 py-3 font-medium text-slate-600">Apostille</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">1</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">Pauschal</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-emerald-50/10">15,00 €</td>
-                                                <td className="px-2 py-3"></td>
-                                            </tr>
-                                        )}
-                                        {projectData.isExpress && (
-                                            <tr className="bg-transparent">
-                                                <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
-                                                <td className="px-4 py-3 font-medium text-slate-600">Express-Zuschlag</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">1</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">Pauschal</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-emerald-50/10">15,00 €</td>
-                                                <td className="px-2 py-3"></td>
-                                            </tr>
-                                        )}
-                                        {projectData.classification === 'ja' && (
-                                            <tr className="bg-transparent">
-                                                <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
-                                                <td className="px-4 py-3 font-medium text-slate-600">Klassifizierung</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">1</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">Pauschal</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-emerald-50/10">15,00 €</td>
-                                                <td className="px-2 py-3"></td>
-                                            </tr>
-                                        )}
-                                        {projectData.copies > 0 && (
-                                            <tr className="bg-transparent">
-                                                <td className="px-4 py-3 text-center text-slate-400 font-medium">-</td>
-                                                <td className="px-4 py-3 font-medium text-slate-600">Kopien</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">{projectData.copies}</td>
-                                                <td className="px-4 py-3 text-right text-slate-500">Stk</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right text-slate-400 border-l border-slate-100">-</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-emerald-50/10">
-                                                    {(projectData.copies * (projectData.copyPrice || 5)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                                                </td>
-                                                <td className="px-2 py-3"></td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                )}
-                                <tfoot className="bg-slate-50/80 font-bold text-slate-900 border-t-2 border-slate-200">
-                                    <tr>
-                                        <td colSpan={2} className="px-4 py-4 text-right uppercase tracking-[0.1em] text-[10px] text-slate-500">Gesamt Netto (EK & VK)</td>
-                                        <td colSpan={2} className="px-4 py-4"></td>
-                                        <td className="px-4 py-4 text-right text-red-500 border-l border-slate-100 bg-red-50/30">
-                                            {financials.partnerTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                                        </td>
-                                        <td className="px-4 py-4 border-l border-slate-100 bg-emerald-50/10"></td>
-                                        <td className="px-4 py-4 text-right text-slate-900 bg-emerald-50/30 border-l border-slate-100">
-                                            {financials.netTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                                        </td>
-                                        <td className="px-2 py-4"></td>
-                                    </tr>
-                                    <tr className="border-t border-slate-200">
-                                        <td colSpan={2} className="px-4 py-3 text-right uppercase tracking-[0.1em] text-[10px] text-slate-500">Marge (Gewinn)</td>
-                                        <td colSpan={4} className="px-4 py-3 border-l border-slate-100"></td>
-                                        <td className="px-4 py-3 text-right text-emerald-600 border-l border-slate-100 bg-emerald-50/20">
-                                            <div className="flex flex-col">
-                                                <span>{financials.margin.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
-                                                <span className="text-[9px] opacity-70">({financials.marginPercent.toFixed(1)}%)</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-2 py-3"></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+
+                                    {/* Extra Costs Footer Body */}
+                                    {(projectData.isCertified || projectData.hasApostille || projectData.isExpress || projectData.classification === 'ja' || projectData.copies > 0) && (
+                                        <>
+                                            <TableRow className="bg-slate-50/30">
+                                                <TableCell colSpan={8} className="px-4 py-2 text-[9px] font-black uppercase text-slate-400 bg-slate-50/80 border-y border-slate-100 tracking-widest">Zusatzleistungen (Fixkosten)</TableCell>
+                                            </TableRow>
+                                            {projectData.isCertified && (
+                                                <TableRow>
+                                                    <TableCell className="px-2 text-center">-</TableCell>
+                                                    <TableCell className="px-4 font-bold text-slate-600 text-[11px]">Beglaubigung</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 font-mono text-xs">1</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 text-[11px] font-bold">Fix</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 text-xs text-nowrap">5,00 €</TableCell>
+                                                    <TableCell className="px-2"></TableCell>
+                                                </TableRow>
+                                            )}
+                                            {projectData.hasApostille && (
+                                                <TableRow>
+                                                    <TableCell className="px-2 text-center">-</TableCell>
+                                                    <TableCell className="px-4 font-bold text-slate-600 text-[11px]">Apostille</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 font-mono text-xs">1</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 text-[11px] font-bold">Fix</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 text-xs text-nowrap">15,00 €</TableCell>
+                                                    <TableCell className="px-2"></TableCell>
+                                                </TableRow>
+                                            )}
+                                            {projectData.isExpress && (
+                                                <TableRow>
+                                                    <TableCell className="px-2 text-center">-</TableCell>
+                                                    <TableCell className="px-4 font-bold text-slate-600 text-[11px]">Express-Zuschlag</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 font-mono text-xs">1</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 text-[11px] font-bold">Fix</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 text-xs text-nowrap">15,00 €</TableCell>
+                                                    <TableCell className="px-2"></TableCell>
+                                                </TableRow>
+                                            )}
+                                            {projectData.classification === 'ja' && (
+                                                <TableRow>
+                                                    <TableCell className="px-2 text-center">-</TableCell>
+                                                    <TableCell className="px-4 font-bold text-slate-600 text-[11px]">Klassifizierung</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 font-mono text-xs">1</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 text-[11px] font-bold">Fix</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 text-xs text-nowrap">15,00 €</TableCell>
+                                                    <TableCell className="px-2"></TableCell>
+                                                </TableRow>
+                                            )}
+                                            {projectData.copies > 0 && (
+                                                <TableRow>
+                                                    <TableCell className="px-2 text-center">-</TableCell>
+                                                    <TableCell className="px-4 font-bold text-slate-600 text-[11px]">Kopien</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 font-mono text-xs">{projectData.copies}</TableCell>
+                                                    <TableCell className="px-4 text-right text-slate-400 text-[11px] font-bold">Stk</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 border-l border-slate-100 text-right text-slate-300">-</TableCell>
+                                                    <TableCell className="px-4 text-right font-black text-slate-800 border-l border-slate-100 bg-emerald-50/10 text-xs text-nowrap">
+                                                        {(projectData.copies * (projectData.copyPrice || 5)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                                    </TableCell>
+                                                    <TableCell className="px-2"></TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
+                                    )}
+                                </TableBody>
+                            </Table>
                         </div>
-                        <div className="bg-slate-50 p-3 border-t border-slate-200 text-center">
-                            <p className="text-xs text-slate-400 italic">Alle Preise in Euro inkl. gesetzlicher MwSt. falls nicht anders angegeben.</p>
+
+                        {/* Summary Footer Inlined */}
+                        <div className="bg-slate-50 border-t border-slate-200 p-6">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                                <div className="flex gap-10">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Partner EK Netto</span>
+                                        <span className="text-sm font-bold text-red-500">{financials.partnerTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Kunden VK Netto</span>
+                                        <span className="text-sm font-bold text-slate-800">{financials.netTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                    </div>
+                                </div>
+                                <div className="bg-emerald-100/50 border border-emerald-200 rounded px-6 py-3 flex items-center gap-6 shadow-inner">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-black text-emerald-600/70 uppercase tracking-widest mb-0.5" title="Gewinn vor Steuern">Projekt-Marge (Netto)</span>
+                                        <span className="text-base font-black text-emerald-700">{financials.margin.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                    </div>
+                                    <div className="w-px h-8 bg-emerald-200/50"></div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[18px] font-black text-emerald-700 leading-none">{financials.marginPercent.toFixed(1)}%</span>
+                                        <span className="text-[8px] font-black text-emerald-600/50 uppercase tracking-tighter">Gewinnspanne</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Payments Section */}
-                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-sm bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm">
-                                    <FaFileInvoiceDollar />
-                                </div>
-                                <div>
-                                    <h3 className="text-xs font-semibold text-slate-800">Zahlungen</h3>
-                                    <p className="text-xs text-slate-400 font-medium">Eingänge & Gutschriften</p>
-                                </div>
-                            </div>
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={onRecordPayment}
-                                className="h-8 flex items-center gap-2"
-                            >
-                                <FaPlus className="mb-0.5" /> Zahlung erfassen
-                            </Button>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50/80 text-slate-500 text-xs font-semibold border-b border-slate-200">
-                                    <tr>
-                                        <th className="px-6 py-3 w-32">Datum</th>
-                                        <th className="px-6 py-3">Beschreibung / Methode</th>
-                                        <th className="px-6 py-3 text-right">Betrag</th>
-                                        <th className="px-4 py-3 w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 text-xs">
-                                    {(projectData.payments || []).length > 0 ? (
-                                        projectData.payments.map((payment: any, idx: number) => (
-                                            <tr key={idx} className="hover:bg-slate-50 transition-colors group">
-                                                <td className="px-6 py-3 font-mono text-slate-600">
-                                                    {new Date(payment.created_at || payment.date || new Date()).toLocaleDateString('de-DE')}
-                                                </td>
-                                                <td className="px-6 py-3 font-medium text-slate-700">
-                                                    {payment.note || 'Zahlungseingang'}
-                                                    {payment.method && <span className="ml-2 px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-xs">{payment.method}</span>}
-                                                </td>
-                                                <td className="px-6 py-3 text-right font-medium text-emerald-600">
-                                                    + {parseFloat(payment.amount).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-red-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                                                    >
-                                                        <FaTrashAlt className="text-xs" />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={4} className="px-6 py-8 text-center text-slate-400 italic bg-slate-50/30">
-                                                Noch keine Zahlungen verbucht.
-                                            </td>
-                                        </tr>
+                    {/* Payments section with DataTable */}
+                    <div className="flex flex-col gap-4">
+                        <DataTable
+                            data={projectData.payments || []}
+                            columns={paymentColumns as any}
+                            pageSize={10}
+                            searchPlaceholder="Zahlungen durchsuchen..."
+                            extraControls={
+                                <div className="flex items-center gap-2">
+                                    {!activeInvoice && (
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-[3px] text-amber-600 text-[10px] font-bold uppercase tracking-tight animate-in fade-in slide-in-from-right-2">
+                                            <FaInfoCircle className="text-[10px]" /> Rechnung erforderlich
+                                        </div>
                                     )}
-                                </tbody>
-                            </table>
-                        </div>
+                                    {activeInvoice && financials.open > 0 && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={onRecordPayment}
+                                            className="h-8 md:h-9 px-4 font-bold shadow-sm flex items-center gap-2 text-[10px] tracking-widest"
+                                        >
+                                            <FaPlus /> ZAHLUNG ERFASSEN
+                                        </Button>
+                                    )}
+                                    {activeInvoice && financials.open <= 0 && (
+                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-[3px] text-emerald-600 text-[10px] font-black uppercase tracking-widest animate-in zoom-in-95 duration-300">
+                                            <FaCheckCircle className="text-emerald-500" /> VOLLSTÄNDIG BEZAHLT
+                                        </div>
+                                    )}
+                                </div>
+                            }
+                            tabs={
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-[3px] shadow-sm shrink-0">
+                                    <FaEuroSign className="text-slate-400 text-xs" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Zahlungseingänge</span>
+                                </div>
+                            }
+                        />
                     </div>
                 </div>
 
                 {/* Right Column: Financial Summary Sidebar */}
-                <div className="xl:col-span-4 space-y-6">
-                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden sticky top-24">
-                        <div className="p-5 border-b border-slate-100 bg-transparent">
-                            <h3 className="text-xs font-semibold text-slate-800 flex items-center gap-2">
-                                <FaClock className="text-slate-600" /> Finanz-Status
-                            </h3>
+                <div className="xl:col-span-4 flex flex-col gap-6">
+                    <div className="bg-[#1B4D4F] rounded-sm p-6 text-white shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                            <FaFileInvoiceDollar size={120} />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-1">Abrechnungs-Saldo</p>
+                        <div className="flex items-baseline gap-2 mb-4">
+                            <span className="text-4xl font-black tracking-tighter">{financials.grossTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="text-xl font-bold opacity-70">€</span>
                         </div>
 
+                        <div className="space-y-4 relative z-10">
+                            <div className="flex justify-between items-center bg-black/10 rounded p-3 border border-white/5">
+                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">Status</span>
+                                <span className={clsx(
+                                    "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tight",
+                                    financials.open <= 0 ? "bg-emerald-500 text-white" : "bg-amber-500 text-white"
+                                )}>
+                                    {financials.open <= 0 ? 'Bezahlt' : 'Zahlung fällig'}
+                                </span>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-xs">
+                                    <span className="opacity-60 font-medium">Bereits bezahlt</span>
+                                    <span className="font-bold">{financials.paid.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                                </div>
+                                <div className="flex justify-between text-sm pt-2 border-t border-white/10 mt-2">
+                                    <span className="opacity-80 font-bold uppercase tracking-tighter text-[10px]">Noch offen (Brutto)</span>
+                                    <span className={clsx("font-black", financials.open > 0 ? "text-amber-300" : "text-emerald-400")}>
+                                        {financials.open.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex-1">
+                        <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+                            <div className="w-7 h-7 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500">
+                                <FaEuroSign className="text-xs" />
+                            </div>
+                            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Abrechnungs-Info</h3>
+                        </div>
                         <div className="p-6 space-y-6">
-                            {/* Main Total Display */}
-                            <div className="text-center pb-6 border-b border-slate-100 border-dashed">
-                                <p className="text-xs font-medium text-slate-400 mb-1">Gesamtbetrag (Brutto)</p>
-                                <div className="text-4xl font-semibold text-slate-800 tracking-tight">
-                                    {financials.grossTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xl text-slate-400 font-medium">€</span>
+                            <div className="space-y-4">
+                                <div className="flex justify-between text-xs font-medium">
+                                    <span className="text-slate-500">Netto-Summe (VK)</span>
+                                    <span className="text-slate-800">{financials.netTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                                 </div>
-                                <div className="mt-2 flex justify-center gap-2">
-                                    <span className={clsx(
-                                        "px-2 py-0.5 rounded text-xs font-medium border",
-                                        financials.open <= 0 ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"
-                                    )}>
-                                        {financials.open <= 0 ? 'Bezahlt' : 'Offen'}
-                                    </span>
+                                <div className="flex justify-between text-xs font-medium">
+                                    <span className="text-slate-500">MwSt. (19%)</span>
+                                    <span className="text-slate-800">{financials.taxTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                                 </div>
-                            </div>
-
-                            {/* Breakdown */}
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-500 font-medium">Gesamt Netto VK Kunde</span>
-                                    <span className="font-medium text-slate-700">{financials.netTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
-                                </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                                        MwSt. (19%)
-                                        <FaInfoCircle className="text-slate-300 text-xs" title="Standardsteuersatz Deutschland" />
-                                    </span>
-                                    <span className="font-medium text-slate-700">{financials.taxTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
-                                </div>
-                                <div className="flex justify-between items-center text-sm mb-2">
-                                    <span className="font-medium text-slate-800">Gesamtbetrag (Brutto)</span>
-                                    <span className="font-medium text-slate-800">{financials.grossTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
-                                </div>
-                                <div className="h-px bg-slate-100 my-2"></div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-500 font-medium">Gesamt Netto EK Partner</span>
-                                    <span className="font-medium text-red-400">- {financials.partnerTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
-                                </div>
-                                <div className="bg-slate-50/50 rounded-sm p-3 border border-slate-100 mt-4">
-                                    <div className="flex justify-between items-end mb-1">
-                                        <span className="text-xs font-medium text-slate-500">Marge (Gewinn)</span>
-                                        <span className="text-lg font-semibold text-slate-800">{financials.margin.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
-                                    </div>
-                                    <div className="w-full bg-emerald-200/50 rounded-full h-1.5 mb-1">
-                                        <div
-                                            className={clsx("h-1.5 rounded-full transition-all duration-500",
-                                                financials.marginPercent > 30 ? "bg-emerald-500" :
-                                                    financials.marginPercent > 10 ? "bg-amber-500" : "bg-red-500"
-                                            )}
-                                            style={{ width: `${Math.min(100, Math.max(0, financials.marginPercent))}%` }}
-                                        ></div>
-                                    </div>
-                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-tight text-slate-400">
-                                        <span>{financials.marginPercent.toFixed(1)}% Marge</span>
-                                        <span>Ziel: {'>'}30%</span>
-                                    </div>
+                                <div className="h-px bg-slate-100"></div>
+                                <div className="flex justify-between text-sm font-black">
+                                    <span className="text-slate-900">BRUTTO-GESAMT</span>
+                                    <span className="text-[#1B4D4F]">{financials.grossTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                                 </div>
                             </div>
 
-                            {/* Actions */}
-                            <div className="pt-4 border-t border-slate-100 space-y-3">
+                            <div className="pt-6 border-t border-slate-100 mt-6">
                                 {activeInvoice ? (
-                                    <div className="rounded-sm border border-slate-200 bg-white p-4 space-y-3 shadow-sm relative overflow-hidden text-slate-800">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                <FaCheckCircle className="text-emerald-500" /> Rechnung verknüpft
+                                    <div className="rounded-sm border-2 border-slate-100 bg-white p-4 space-y-4 shadow-sm relative overflow-hidden">
+                                        <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                <FaCheckCircle className="text-emerald-500" /> RECHNUNG AKTIV
                                             </span>
-                                            <span className={clsx('text-[10px] font-black uppercase tracking-tight px-2 py-0.5 rounded-sm border', {
+                                            <span className={clsx('text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-sm border', {
                                                 'bg-slate-50 text-slate-500 border-slate-200': activeInvoice.status === 'draft',
-                                                'bg-indigo-50 text-indigo-700 border-indigo-100': activeInvoice.status === 'issued',
-                                                'bg-blue-50 text-blue-700 border-blue-100': activeInvoice.status === 'sent',
-                                                'bg-emerald-50 text-emerald-700 border-emerald-100': activeInvoice.status === 'paid',
-                                                'bg-red-50 text-red-700 border-red-100': activeInvoice.status === 'overdue',
+                                                'bg-indigo-50 text-indigo-700 border-indigo-200': activeInvoice.status === 'issued',
+                                                'bg-blue-50 text-blue-700 border-blue-200': activeInvoice.status === 'sent',
+                                                'bg-emerald-50 text-emerald-700 border-emerald-200': activeInvoice.status === 'paid',
+                                                'bg-red-50 text-red-700 border-red-200': activeInvoice.status === 'overdue',
                                             })}>
                                                 {{ draft: 'Entwurf', issued: 'Ausgestellt', sent: 'Versendet', paid: 'Bezahlt', overdue: 'Überfällig' }[activeInvoice.status as string] ?? activeInvoice.status}
                                             </span>
                                         </div>
-                                        <div>
-                                            <div className="text-sm font-bold text-slate-900 tracking-tight">{activeInvoice.invoice_number}</div>
-                                            <div className="text-[10px] font-medium text-slate-500 mt-0.5">
+                                        <div className="py-1">
+                                            <div className="text-sm font-black text-slate-900 tracking-tight">{activeInvoice.invoice_number}</div>
+                                            <div className="text-[10px] font-bold text-slate-400 mt-1">
                                                 {(activeInvoice.amount_gross / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                                                 {' · '}
-                                                {activeInvoice.due_date ? `Fällig ${new Date(activeInvoice.due_date).toLocaleDateString('de-DE')}` : ''}
+                                                {activeInvoice.due_date ? `Fällig bis ${new Date(activeInvoice.due_date).toLocaleDateString('de-DE')}` : ''}
                                             </div>
                                         </div>
                                         <Button
                                             variant="default"
                                             onClick={onGoToInvoice}
-                                            className="w-full py-4 flex items-center justify-center gap-2 font-bold uppercase tracking-widest shadow-lg shadow-brand-primary/10"
+                                            className="w-full py-5 flex items-center justify-center gap-2 font-black uppercase tracking-[0.15em] shadow-lg shadow-brand-primary/10 text-[10px]"
                                         >
-                                            <FaFileInvoiceDollar size={12} /> ZUR RECHNUNG
+                                            <FaArrowRight size={10} className="mb-0.5" /> DETAILS ANSEHEN
                                         </Button>
                                     </div>
                                 ) : (
-                                    <Button
-                                        variant="default"
-                                        onClick={onCreateInvoice}
-                                        className="w-full py-2.5 flex items-center justify-center gap-2"
-                                    >
-                                        <FaFileInvoiceDollar /> Rechnung erstellen
-                                    </Button>
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-amber-50 rounded-sm border border-amber-100">
+                                            <p className="text-[10px] font-bold text-amber-700 leading-relaxed uppercase tracking-tighter">
+                                                Noch keine Rechnung erstellt. Sie können die Kalkulation abschließen und dann die Rechnung generieren.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="default"
+                                            onClick={onCreateInvoice}
+                                            className="w-full py-5 flex items-center justify-center gap-2 font-black uppercase tracking-[0.1em] text-[11px]"
+                                        >
+                                            <FaFileInvoiceDollar /> RECHNUNG ERSTELLEN
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
                         </div>

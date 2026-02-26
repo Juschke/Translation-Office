@@ -66,8 +66,8 @@ export const projectService = {
         const response = await api.post(`/projects/${projectId}/generate-token`);
         return response.data;
     },
-    postMessage: async (projectId: string, content: string) => {
-        const response = await api.post(`/projects/${projectId}/message`, { content });
+    postMessage: async (projectId: string, content: string, type: 'customer' | 'partner' = 'customer') => {
+        const response = await api.post(`/projects/${projectId}/message`, { content, type });
         return response.data;
     },
     downloadConfirmation: async (

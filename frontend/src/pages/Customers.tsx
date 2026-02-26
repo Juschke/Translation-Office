@@ -352,7 +352,7 @@ const Customers = () => {
 
     const statusTabs = (
         <TooltipProvider>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
                 <StatusTabButton
                     active={statusView === 'active'}
                     onClick={() => { setStatusView('active'); setTypeFilter('all'); }}
@@ -379,7 +379,7 @@ const Customers = () => {
     );
 
     const tabs = statusView === 'active' ? (
-        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1">
+        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1 overflow-x-auto no-scrollbar">
             <button
                 onClick={() => setTypeFilter('all')}
                 className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
@@ -450,7 +450,7 @@ const Customers = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label="Gesamtkunden" value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
                 <KPICard label="Neuzugänge" value={newCustomersCount} icon={<FaUserPlus />} iconColor="text-indigo-600" subValue="Letzte 30 Tage" />
                 <KPICard label="Top Auftraggeber" value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" subValue="Höchster Umsatz YTD" />

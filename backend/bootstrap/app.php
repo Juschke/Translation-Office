@@ -18,7 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.role' => \App\Http\Middleware\EnsureTenantRole::class,
         ]);
         $middleware->appendToGroup('api', \App\Http\Middleware\SetLocaleMiddleware::class);
-        
+        $middleware->appendToGroup('api', \App\Http\Middleware\LogApiRequests::class);
+
     })->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

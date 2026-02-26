@@ -27,6 +27,10 @@ class SettingsController extends Controller
             $response['tax_rates'] = json_decode($response['tax_rates'], true);
         }
 
+        if (isset($response['opening_hours']) && is_string($response['opening_hours'])) {
+            $response['opening_hours'] = json_decode($response['opening_hours'], true);
+        }
+
         return response()->json($response);
     }
 
@@ -47,7 +51,7 @@ class SettingsController extends Controller
             'address_country' => 'nullable|string',
             'phone' => 'nullable|string',
             'email' => 'nullable|string',
-            'opening_hours' => 'nullable|string',
+            'opening_hours' => 'nullable',
             'tax_id' => 'nullable|string',
             'tax_number' => 'nullable|string',
             'vat_id' => 'nullable|string',
@@ -68,14 +72,19 @@ class SettingsController extends Controller
             'customer_id_prefix' => 'nullable|string|max:10',
             'project_id_prefix' => 'nullable|string|max:10',
             'partner_id_prefix' => 'nullable|string|max:10',
+            'translator_id_prefix' => 'nullable|string|max:10',
+            'interpreter_id_prefix' => 'nullable|string|max:10',
+            'agency_id_prefix' => 'nullable|string|max:10',
             'appointment_id_prefix' => 'nullable|string|max:10',
             'offer_id_prefix' => 'nullable|string|max:10',
             'invoice_prefix' => 'nullable|string',
             'invoice_start_number' => 'nullable|string',
             'credit_note_prefix' => 'nullable|string',
+            'credit_note_start_number' => 'nullable|string',
             'offer_prefix' => 'nullable|string',
             'offer_start_number' => 'nullable|string',
             'customer_number_prefix' => 'nullable|string',
+            'customer_start_number' => 'nullable|string',
             'customer_number_auto' => 'nullable',
             'default_payment_days' => 'nullable|string',
             'default_payment_text' => 'nullable|string',

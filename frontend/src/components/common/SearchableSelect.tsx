@@ -17,11 +17,13 @@ interface SearchableSelectProps {
     addNewLabel?: string;
     id?: string;
     preserveOrder?: boolean;
+    maxVisibleItems?: number;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
-    isMulti = false, onAddNew, addNewLabel = "Neu hinzufügen", id, preserveOrder = false
+    isMulti = false, onAddNew, addNewLabel = "Neu hinzufügen", id, preserveOrder = false,
+    maxVisibleItems = 2
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -169,6 +171,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 maxHeight: '400px',
                 pointerEvents: 'auto'
             }}
+            onWheel={(e) => e.stopPropagation()}
         >
             <div className="border-b border-slate-100 bg-white relative shrink-0">
                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
@@ -306,7 +309,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
     return (
         <div className="relative w-full" ref={wrapperRef} data-error={error}>
-            {label && <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">{label}</label>}
+            {label && <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">{label}</label>}
             <div
                 id={id}
                 className={clsx(
@@ -319,27 +322,34 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 onKeyDown={handleKeyDown}
                 tabIndex={0}
             >
-                <div className="flex flex-wrap items-center gap-1.5 overflow-hidden py-1">
+                <div className="flex flex-wrap items-center gap-1.5 overflow-hidden py-1 max-w-[calc(100%-40px)]">
                     {values.length > 0 ? (
-                        values.map(v => {
-                            const opt = options.find(o => o.value === v);
-                            if (!opt) return null;
-                            return (
-                                <div key={v} className={clsx(
-                                    "flex items-center gap-1",
-                                    isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-slate-700" : "font-semibold text-slate-800"
-                                )}>
-                                    {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
-                                    <span>{opt.label}</span>
-                                    {isMulti && (
-                                        <FaTimes
-                                            className="ml-1 text-slate-400 hover:text-red-500 transition-colors"
-                                            onClick={(e) => { e.stopPropagation(); handleSelect(v); }}
-                                        />
-                                    )}
+                        <>
+                            {values.slice(0, maxVisibleItems).map(v => {
+                                const opt = options.find(o => o.value === v);
+                                if (!opt) return null;
+                                return (
+                                    <div key={v} className={clsx(
+                                        "flex items-center gap-1",
+                                        isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-slate-700 whitespace-nowrap" : "font-semibold text-slate-800"
+                                    )}>
+                                        {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
+                                        <span className="truncate max-w-[120px]">{opt.label}</span>
+                                        {isMulti && (
+                                            <FaTimes
+                                                className="ml-1 text-slate-400 hover:text-red-500 transition-colors shrink-0"
+                                                onClick={(e) => { e.stopPropagation(); handleSelect(v); }}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            {isMulti && values.length > maxVisibleItems && (
+                                <div className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-sm text-xs font-bold text-slate-500 whitespace-nowrap">
+                                    + {values.length - maxVisibleItems} weitere
                                 </div>
-                            );
-                        })
+                            )}
+                        </>
                     ) : (
                         <span className="text-slate-400">{placeholder}</span>
                     )}

@@ -31,20 +31,21 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => '#1B4D4F',
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
             ])
-            ->plugin(FilamentSpatieLaravelHealthPlugin::make())
+            ->topNavigation()
+            ->plugin(
+                FilamentSpatieLaravelHealthPlugin::make()
+                    ->navigationLabel('Health Check')
+                    ->navigationIcon('heroicon-o-cpu-chip')
+                    ->navigationSort(5)
+            )
             ->navigationItems([
-                NavigationItem::make('Pulse Dashboard')
-                    ->url('/pulse', shouldOpenInNewTab: true)
-                    ->icon('heroicon-o-chart-bar-square')
-                    ->group('System')
-                    ->sort(100),
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([

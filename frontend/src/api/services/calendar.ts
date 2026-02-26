@@ -23,7 +23,12 @@ export const calendarService = {
         return response.data;
     },
 
+    getAll: async (params?: { type?: string; search?: string }) => {
+        const response = await axios.get('/appointments', { params });
+        return response.data;
+    },
     deleteAppointment: async (id: number | string) => {
+
         const response = await axios.delete(`/appointments/${id}`);
         return response.data;
     }

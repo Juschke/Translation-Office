@@ -5,13 +5,14 @@ import SearchableSelect from '../common/SearchableSelect';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { de } from 'date-fns/locale/de';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { partnerService, projectService, settingsService } from '../../api/services';
+import { partnerService, projectService, settingsService, calendarService } from '../../api/services';
 import toast from 'react-hot-toast';
 import "react-datepicker/dist/react-datepicker.css";
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import AddressForm from '../common/AddressForm';
 import { Button } from '../ui/button';
+import { isAfter } from 'date-fns';
 
 registerLocale('de', de);
 
@@ -78,6 +79,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
 
     const handleDownload = async () => {
         try {
+            // 1. Update Project Data
             await updateProjectMutation.mutateAsync({
                 partner_id: interpreterId ? parseInt(interpreterId) : null,
                 deadline: appointmentDate ? appointmentDate.toISOString() : null,
@@ -92,16 +94,42 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                 address_country: addressCountry
             });
 
+            // 2. Synchronize with Calendar (Appointment)
+            // Search for existing appointment for this project
+            const existingAppointments = await calendarService.getAll({ type: 'interpreting' });
+            const existing = existingAppointments.find((a: any) => a.project_id === project.id);
+
+            const appointmentData = {
+                title: `Dolmetschereinsatz: ${lang}`,
+                description: `Bestätigter Einsatz für Projekt ${projectNumber}`,
+                start_date: appointmentDate ? appointmentDate.toISOString() : null,
+                end_date: appointmentDate ? new Date(appointmentDate.getTime() + 2 * 60 * 60 * 1000).toISOString() : null, // Default 2h duration
+                type: 'interpreting',
+                location: `${location}, ${addressStreet} ${addressHouseNo}, ${addressZip} ${addressCity}`.trim(),
+                project_id: project.id,
+                customer_id: project.customer_id,
+                partner_id: interpreterId ? parseInt(interpreterId) : null,
+                status: 'confirmed'
+            };
+
+            if (existing) {
+                await calendarService.updateAppointment(existing.id, appointmentData);
+            } else if (appointmentDate) {
+                await calendarService.createAppointment(appointmentData);
+            }
+            queryClient.invalidateQueries({ queryKey: ['appointments'] });
+
+            // 3. Download Document
             const toastId = toast.loading('Dokument wird erstellt...');
             const response = await projectService.downloadConfirmation(project.id, 'interpreter_confirmation');
             const blob = new Blob([response.data], { type: 'application/pdf' });
             openBlobInNewTab(blob);
             toast.dismiss(toastId);
-            toast.success('Dolmetscherbestätigung wurde erstellt');
+            toast.success('Dolmetscherbestätigung & Kalendereintrag erstellt');
             onClose();
         } catch (error) {
             console.error('Download error:', error);
-            toast.error('Fehler beim Erstellen des Dokuments');
+            toast.error('Fehler beim Erstellen des Dokuments oder Kalendereintrags');
         }
     };
 

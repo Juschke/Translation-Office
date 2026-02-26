@@ -49,10 +49,26 @@ trait HasDisplayId
             $key = $mapping[$class];
         }
 
+        // Special handling for Partner types
+        if ($class === 'Partner') {
+            $type = $this->type ?? 'translator';
+            if ($type === 'translator')
+                $key = 'translator_id_prefix';
+            elseif ($type === 'interpreter')
+                $key = 'interpreter_id_prefix';
+            elseif ($type === 'agency')
+                $key = 'agency_id_prefix';
+            elseif ($type === 'trans_interp')
+                $key = 'translator_id_prefix'; // Default for mixed
+        }
+
         $defaultPrefixes = [
             'customer_id_prefix' => 'K',
             'project_id_prefix' => 'P',
             'partner_id_prefix' => 'PR',
+            'translator_id_prefix' => 'TR',
+            'interpreter_id_prefix' => 'IN',
+            'agency_id_prefix' => 'AG',
             'appointment_id_prefix' => 'A',
             'invoice_id_prefix' => 'RE',
         ];
@@ -60,6 +76,13 @@ trait HasDisplayId
         $prefix = TenantSetting::where('tenant_id', $tenantId)
             ->where('key', $key)
             ->value('value');
+
+        // Fallback for partners if specific prefix not set
+        if (!$prefix && $class === 'Partner') {
+            $prefix = TenantSetting::where('tenant_id', $tenantId)
+                ->where('key', 'partner_id_prefix')
+                ->value('value');
+        }
 
         return $prefix ?? ($defaultPrefixes[$key] ?? '');
     }

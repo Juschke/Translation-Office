@@ -90,7 +90,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
     return (
         <div className="grid grid-cols-12 gap-x-4 gap-y-4">
             <div className="col-span-12 md:col-span-9 relative">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Straße *</Label>
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Straße *</label>
                 <Input
                     name="address_street"
                     value={street}
@@ -119,7 +119,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 )}
             </div>
             <div className="col-span-12 md:col-span-3">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Hausnr. *</Label>
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Hausnr. *</label>
                 <Input
                     name="address_house_no"
                     value={houseNo}
@@ -131,7 +131,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 />
             </div>
             <div className="col-span-12 md:col-span-4">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">PLZ *</Label>
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">PLZ *</label>
                 <Input
                     name="address_zip"
                     value={zip}
@@ -143,7 +143,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 />
             </div>
             <div className="col-span-12 md:col-span-8">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Stadt *</Label>
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Stadt *</label>
                 <Input
                     name="address_city"
                     value={city}

@@ -657,8 +657,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     };
 
     return (
-        <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto">
-            <div className="bg-white rounded-sm shadow-sm w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] relative animate-fadeInUp">
+        <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto" onClick={onClose}>
+            <div className="bg-white rounded-sm shadow-sm w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] relative animate-fadeInUp" onClick={e => e.stopPropagation()}>
                 {/* Loading Overlay */}
                 {isLoading && (
                     <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-[110] flex items-center justify-center transition-all duration-300">
@@ -675,27 +675,27 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                     </div>
                 )}
                 {/* Header */}
-                <div className="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-4">
-                        <h3 className="font-medium text-slate-800 text-lg flex items-center gap-3">
+                <div className="bg-white px-4 sm:px-6 py-3 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
+                    <div className="flex flex-col gap-1">
+                        <h3 className="font-medium text-slate-800 text-base sm:text-lg flex flex-wrap items-center gap-2 sm:gap-3">
                             {initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}
-                            <span className="text-xs font-medium text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm">
-                                Nr: {displayNr}
-                            </span>
                         </h3>
+                        <span className="text-[10px] sm:text-xs font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 w-fit">
+                            Nr: {displayNr}
+                        </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="flex bg-slate-200/50 rounded-sm p-0.5 border border-slate-300/50 h-9">
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+                        <div className="flex bg-slate-200/50 rounded-sm p-0.5 border border-slate-300/50 h-8 sm:h-9">
                             {['low', 'medium', 'high'].map(p => (
-                                <button key={p} onClick={() => setPriority(p as any)} className={clsx("px-3 h-full text-xs font-medium rounded-sm transition-all flex items-center gap-2", priority === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}>
-                                    {p === 'low' && <FaClock className="text-xs" />}
-                                    {p === 'medium' && <FaFlag className="text-xs" />}
-                                    {p === 'high' && <FaBolt className="text-xs" />}
-                                    {p === 'low' ? 'Standard' : p === 'medium' ? 'Dringend' : 'Express'}
+                                <button key={p} onClick={() => setPriority(p as any)} className={clsx("px-2 sm:px-3 h-full text-[10px] sm:text-xs font-medium rounded-sm transition-all flex items-center gap-1 sm:gap-2", priority === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}>
+                                    {p === 'low' && <FaClock className="text-[10px] sm:text-xs" />}
+                                    {p === 'medium' && <FaFlag className="text-[10px] sm:text-xs" />}
+                                    {p === 'high' && <FaBolt className="text-[10px] sm:text-xs" />}
+                                    <span className="hidden xs:inline">{p === 'low' ? 'Standard' : p === 'medium' ? 'Dringend' : 'Express'}</span>
                                 </button>
                             ))}
                         </div>
-                        <button onClick={onClose} className="w-8 h-9 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
+                        <button onClick={onClose} className="w-8 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
                     </div>
                 </div>
 
@@ -721,14 +721,15 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 </div>
 
                                 <div className="col-span-12" id="field-container-docType">
-                                    <div className="flex items-end">
-                                        <div className="flex-1">
+                                    <div className="flex items-end gap-0">
+                                        <div className="flex-1 min-w-0">
                                             <SearchableSelect
                                                 id="docType"
                                                 label="Dokumentenart *"
                                                 isMulti={true}
                                                 value={docType}
                                                 onChange={setDocType}
+                                                maxVisibleItems={window.innerWidth >= 1024 ? 4 : 2}
                                                 error={validationErrors.has('docType')}
                                                 options={docTypes
                                                     .sort((a: any, b: any) => {
@@ -749,9 +750,9 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
                                         <Button
                                             onClick={() => setShowDocTypeModal(true)}
-                                            className="h-9 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
+                                            className="h-9 px-3 sm:px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-1.5 sm:gap-2 shadow-sm font-bold shrink-0"
                                         >
-                                            <FaPlus className="text-xs" /> <span className="text-xs tracking-wide">NEU</span>
+                                            <FaPlus className="text-[10px] sm:text-xs" /> <span className="text-[10px] sm:text-xs tracking-wide">NEU</span>
                                         </Button>
                                     </div>
                                 </div>
@@ -798,23 +799,23 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                             <div className="grid grid-cols-12 gap-x-4 gap-y-3">
                                 <div className="col-span-12" id="field-container-customer">
-                                    <div className="flex items-end">
-                                        <div className="flex-1">
+                                    <div className="flex items-end gap-0">
+                                        <div className="flex-1 min-w-0">
                                             <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
                                         </div>
                                         <Button
                                             onClick={() => setShowCustomerModal(true)}
-                                            className="h-9 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
+                                            className="h-9 px-3 sm:px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-1.5 sm:gap-2 shadow-sm font-bold shrink-0"
                                         >
-                                            <FaPlus className="text-xs" /> <span className="text-xs tracking-wide">NEU</span>
+                                            <FaPlus className="text-[10px] sm:text-xs" /> <span className="text-[10px] sm:text-xs tracking-wide">NEU</span>
                                         </Button>
                                     </div>
                                 </div>
 
-                                <div className="col-span-12 md:col-span-6" id="field-container-source">
+                                <div className="col-span-6" id="field-container-source">
                                     <LanguageSelect id="source" label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
                                 </div>
-                                <div className="col-span-12 md:col-span-6" id="field-container-target">
+                                <div className="col-span-6" id="field-container-target">
                                     <LanguageSelect id="target" label="Nach *" value={target} onChange={setTarget} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
                                 </div>
                             </div>
@@ -845,16 +846,16 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                             {/* Partner Selection Table */}
                             <div className="space-y-4">
-                                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                                    <h4 className="text-xs font-medium text-slate-400 ml-1">Partner Auswahl</h4>
-                                    <div className="relative w-40">
-                                        <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-xs" />
+                                <div className="flex items-center justify-between pb-1 border-b border-slate-100 gap-2">
+                                    <h4 className="text-[10px] sm:text-xs font-medium text-slate-400 ml-1 truncate">Partner Auswahl</h4>
+                                    <div className="relative w-32 sm:w-40">
+                                        <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[10px] sm:text-xs" />
                                         <input
                                             type="text"
                                             placeholder="Suchen..."
                                             value={partnerSearch}
                                             onChange={(e) => setPartnerSearch(e.target.value)}
-                                            className="w-full pl-7 pr-2 py-1 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:border-brand-300 transition-all"
+                                            className="w-full pl-7 pr-2 py-1 bg-white border border-slate-200 rounded text-[10px] sm:text-xs focus:outline-none focus:border-brand-300 transition-all"
                                         />
                                     </div>
                                 </div>
@@ -1004,16 +1005,28 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 <h4 className="text-sm font-medium text-slate-800">Leistungen & Optionen</h4>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                                <Input label="Beglaubigung (5€)" isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')} containerClassName="h-9"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="Express (15€)" isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')} containerClassName="h-9"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="Apostille (15€)" isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')} containerClassName="h-9"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                <Input label="FS-Klass. (15€)" isSelect value={classification} onChange={(e) => setClassification(e.target.value)} containerClassName="h-9"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-y-4 gap-x-3 sm:gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Beglaubigung (5€)</label>
+                                    <Input isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Express (15€)</label>
+                                    <Input isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Apostille (15€)</label>
+                                    <Input isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">FS-Klass. (15€)</label>
+                                    <Input isSelect value={classification} onChange={(e) => setClassification(e.target.value)} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                </div>
 
-                                <div className="flex flex-col gap-1 justify-center">
-                                    <label className="block text-sm font-medium text-slate-500 ml-1">MwSt. (19%)</label>
+                                <div className="flex flex-col gap-1.5 justify-start">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">MwSt. (19%)</label>
                                     <div
-                                        className="h-9 flex items-center gap-2 cursor-pointer transition-all"
+                                        className="h-8 sm:h-9 flex items-center gap-2 cursor-pointer transition-all"
                                         onClick={() => setWithTax(!withTax)}
                                     >
                                         <div className={clsx(
@@ -1025,51 +1038,58 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 withTax ? "left-4" : "left-0.5"
                                             )} />
                                         </div>
-                                        <span className={clsx("text-xs font-medium", withTax ? "text-slate-700" : "text-slate-400")}>
-                                            {withTax ? "AKTIVIERT" : "DEAKTIVIERT"}
+                                        <span className={clsx("text-[10px] font-bold tracking-tight", withTax ? "text-emerald-600" : "text-slate-400")}>
+                                            {withTax ? "AKTIV" : "AUS"}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-4 pt-2 border-t border-slate-50">
-                                <div className="col-span-12 md:col-span-6 lg:col-span-4">
+                            <div className="grid grid-cols-12 gap-x-3 sm:gap-x-4 gap-y-3 pt-2 border-t border-slate-50">
+                                <div className="col-span-6 lg:col-span-4">
                                     <div className="space-y-1.5">
-                                        <label className="block text-sm font-medium text-slate-500 ml-1">Anzahl Kopien</label>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Anzahl Kopien</label>
                                         <div className="flex items-center h-9 border border-slate-200 rounded-sm overflow-hidden bg-white shadow-sm transition-all focus-within:border-slate-900/50 focus-within:ring-2 focus-within:ring-brand-500/5">
                                             <button
                                                 onClick={() => setCopies(Math.max(0, copies - 1))}
-                                                className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-r border-slate-100"
+                                                className="h-full px-2 sm:px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-r border-slate-100"
                                             >
-                                                <FaMinus className="text-xs" />
+                                                <FaMinus className="text-[10px] sm:text-xs" />
                                             </button>
                                             <input
                                                 type="number"
                                                 value={copies}
                                                 onChange={(e) => setCopies(Math.max(0, parseInt(e.target.value) || 0))}
-                                                className="flex-1 h-full text-center text-sm font-medium text-slate-700 outline-none"
+                                                className="flex-1 w-full h-full text-center text-xs sm:text-sm font-medium text-slate-700 outline-none"
                                             />
                                             <button
                                                 onClick={() => setCopies(copies + 1)}
-                                                className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-l border-slate-100"
+                                                className="h-full px-2 sm:px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-l border-slate-100"
                                             >
-                                                <FaPlus className="text-xs" />
+                                                <FaPlus className="text-[10px] sm:text-xs" />
                                             </button>
                                         </div>
                                     </div>
+                                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-1 ml-1 lg:hidden">
+                                        <span>Summe:</span>
+                                        <span className="text-slate-700">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span>
+                                    </div>
                                 </div>
-                                <div className="col-span-12 md:col-span-6 lg:col-span-4">
-                                    <Input
-                                        label="Preis pro Kopie (€)"
-                                        type="number"
-                                        step="0.01"
-                                        value={copyPrice}
-                                        onChange={(e) => setCopyPrice(e.target.value)}
-                                        onBlur={() => setCopyPrice(parseFloat(copyPrice).toFixed(2))}
-                                        containerClassName="h-9"
-                                    />
+                                <div className="col-span-6 lg:col-span-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Preis / Kopie</label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            value={copyPrice}
+                                            onChange={(e) => setCopyPrice(e.target.value)}
+                                            onBlur={() => setCopyPrice(parseFloat(copyPrice).toFixed(2))}
+                                            containerClassName="h-9"
+                                            className="text-xs sm:text-sm"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="col-span-12 lg:col-span-4 flex items-end pb-1.5 px-1">
+                                <div className="hidden lg:flex col-span-4 items-end pb-1.5 px-1">
                                     <div className="flex items-center gap-2 text-xs font-medium text-slate-400 italic">
                                         <span>Summe Kopien:</span>
                                         <span className="text-slate-800">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span>

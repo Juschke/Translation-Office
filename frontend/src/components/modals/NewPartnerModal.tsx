@@ -103,7 +103,7 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto bg-white p-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto bg-white p-5 custom-scrollbar">
                     <PartnerForm
                         initialData={initialData}
                         onChange={setFormData}

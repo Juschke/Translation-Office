@@ -133,6 +133,22 @@ const Projects = () => {
 
     const updateMutation = useMutation({
         mutationFn: (data: any) => projectService.update(data.id, data),
+        onMutate: async (updatedProject) => {
+            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+            await queryClient.cancelQueries({ queryKey: ['projects'] });
+
+            // Snapshot the previous value
+            const previousProjects = queryClient.getQueryData(['projects']);
+
+            // Optimistically update to the new value
+            queryClient.setQueryData(['projects'], (old: any[] | undefined) => {
+                if (!old) return [];
+                return old.map(p => p.id === updatedProject.id ? { ...p, ...updatedProject } : p);
+            });
+
+            // Return a context object with the snapshotted value
+            return { previousProjects };
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
@@ -140,9 +156,17 @@ const Projects = () => {
             setEditingProject(null);
             toast.success('Projekt erfolgreich aktualisiert');
         },
-        onError: () => {
+        onError: (err, updatedProject, context: any) => {
+            // If the mutation fails, use the context returned from onMutate to roll back
+            if (context?.previousProjects) {
+                queryClient.setQueryData(['projects'], context.previousProjects);
+            }
             toast.error('Fehler beim Aktualisieren des Projekts');
-        }
+        },
+        onSettled: () => {
+            // Always refetch after error or success to ensure we are in sync with the server
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+        },
     });
 
     const deleteMutation = useMutation({
@@ -373,7 +397,7 @@ const Projects = () => {
 
     const statusTabs = (
         <TooltipProvider>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
                 <StatusTabButton
                     active={statusView === 'active'}
                     onClick={() => { setStatusView('active'); setFilter('all'); }}
@@ -400,7 +424,7 @@ const Projects = () => {
     );
 
     const tabs = statusView === 'active' ? (
-        <div className="flex items-center gap-2 whitespace-nowrap px-1">
+        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1 overflow-x-auto no-scrollbar">
             <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Übersicht</button>
             <button onClick={() => setFilter('offer')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'offer' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Neu</button>
             <button onClick={() => setFilter('in_progress')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'in_progress' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bearbeitung</button>

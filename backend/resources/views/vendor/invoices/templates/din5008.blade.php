@@ -531,16 +531,16 @@
                     <td>Rechnungsbetrag:</td>
                     <td class="text-right">{{ number_format($invoice->total_amount, 2, ',', '.') }} €</td>
                 </tr>
-                @if($paidAmount > 0)
+                @if($paidAmount > 0 && $dueAmount > 0)
                     <tr>
                         <td class="text-muted">Bereits bezahlt:</td>
                         <td class="text-right text-muted">- {{ number_format($paidAmount, 2, ',', '.') }} €</td>
                     </tr>
                     <tr class="total-due">
-                        <td class="font-bold {{ $dueAmount <= 0 ? 'text-green' : 'text-red' }}">
-                            {{ $dueAmount <= 0 ? 'Betrag beglichen' : 'Noch zu zahlen:' }}
+                        <td class="font-bold text-red">
+                            Noch zu zahlen:
                         </td>
-                        <td class="text-right font-bold {{ $dueAmount <= 0 ? 'text-green' : 'text-red' }}">
+                        <td class="text-right font-bold text-red">
                             {{ number_format($dueAmount, 2, ',', '.') }} €
                         </td>
                     </tr>
@@ -563,10 +563,6 @@
                         innerhalb von 14 Tagen ab Rechnungseingang.
                     @endif
                     <br>Verwendungszweck: <strong>{{ $invoice->name }}</strong>
-                </p>
-            @else
-                <p class="font-bold text-green" style="font-style: italic;">
-                    Betrag dankend erhalten. Es ist keine weitere Zahlung erforderlich.
                 </p>
             @endif
 

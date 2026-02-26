@@ -15,7 +15,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ({ className, type, label, error, helperText, startIcon, endIcon, onEndIconClick, containerClassName, ...props }, ref) => {
         return (
             <div className={cn("w-full", containerClassName)}>
-                {label && <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>}
+                {label && <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">{label}</label>}
                 <div className="relative group">
                     {startIcon && (
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-600 transition-colors z-10 text-sm">
@@ -52,7 +52,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     )}
                 </div>
                 {helperText && (
-                    <p className={cn("mt-1.5 text-xs", error ? "text-red-500" : "text-slate-500")}>
+                    <p className={cn("mt-1 text-xs", error ? "text-red-500" : "text-slate-500")}>
                         {helperText}
                     </p>
                 )}

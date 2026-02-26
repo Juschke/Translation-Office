@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FaBuilding, FaSave, FaImage, FaTrash, FaUpload } from 'react-icons/fa';
+import { FaBuilding, FaSave, FaImage, FaTrash, FaUpload, FaClock, FaTimes } from 'react-icons/fa';
 import clsx from 'clsx';
 import { settingsService } from '../../api/services';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,9 @@ import Input from '../common/Input';
 import CountrySelect from '../common/CountrySelect';
 import SearchableSelect from '../common/SearchableSelect';
 import { IMaskInput } from 'react-imask';
+import { Switch } from '../ui/switch';
+import { TimePicker } from 'antd';
+import dayjs from 'dayjs';
 // @ts-ignore
 import finanzamt from 'finanzamt';
 // @ts-ignore
@@ -157,6 +160,16 @@ const CompanySettingsTab = () => {
     const [isValidatingZip, setIsValidatingZip] = useState(false);
     const [isValidatingIban, setIsValidatingIban] = useState(false);
     const [streetSuggestions, setStreetSuggestions] = useState<string[]>([]);
+    const [isOpeningHoursModalOpen, setIsOpeningHoursModalOpen] = useState(false);
+    const [openingHours, setOpeningHours] = useState<any>({
+        monday: { enabled: true, start: '09:00', end: '18:00' },
+        tuesday: { enabled: true, start: '09:00', end: '18:00' },
+        wednesday: { enabled: true, start: '09:00', end: '18:00' },
+        thursday: { enabled: true, start: '09:00', end: '18:00' },
+        friday: { enabled: true, start: '09:00', end: '18:00' },
+        saturday: { enabled: false, start: '10:00', end: '14:00' },
+        sunday: { enabled: false, start: '10:00', end: '14:00' }
+    });
 
     const { data: serverCompanyData } = useQuery({
         queryKey: ['companySettings'],
@@ -180,6 +193,19 @@ const CompanySettingsTab = () => {
                 ...serverCompanyData,
                 address_country: serverCompanyData.address_country || 'Deutschland'
             });
+
+            if (serverCompanyData.opening_hours) {
+                if (typeof serverCompanyData.opening_hours === 'object') {
+                    setOpeningHours(serverCompanyData.opening_hours);
+                } else {
+                    try {
+                        const parsed = JSON.parse(serverCompanyData.opening_hours);
+                        setOpeningHours(parsed);
+                    } catch (e) {
+                        // fallback to string if it's just a text
+                    }
+                }
+            }
         }
     }, [serverCompanyData]);
 
@@ -211,7 +237,11 @@ const CompanySettingsTab = () => {
 
     const handleSaveCompany = () => {
         if (validateCompanyData()) {
-            updateCompanyMutation.mutate(companyData);
+            const dataToSave = {
+                ...companyData,
+                opening_hours: openingHours
+            };
+            updateCompanyMutation.mutate(dataToSave);
         } else {
             toast.error('Bitte füllen Sie alle Pflichtfelder aus.');
         }
@@ -585,12 +615,19 @@ const CompanySettingsTab = () => {
                                 onChange={(e) => handleInputMetaChange('email', e.target.value)}
                             />
                             <div className="col-span-1 md:col-span-2">
-                                <Input
-                                    label="Öffnungszeiten"
-                                    placeholder="Mo-Fr 08:00 - 17:00 Uhr"
-                                    value={companyData.opening_hours || ''}
-                                    onChange={(e) => handleInputMetaChange('opening_hours', e.target.value)}
-                                />
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Öffnungszeiten</label>
+                                    <button
+                                        onClick={() => setIsOpeningHoursModalOpen(true)}
+                                        className="w-full flex items-center justify-between px-4 py-2 bg-white border border-slate-200 rounded-sm hover:border-slate-900 transition-all text-sm font-medium text-slate-700"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <FaClock className="text-slate-400" />
+                                            <span>Öffnungszeiten konfigurieren</span>
+                                        </div>
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bearbeiten</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </SettingRow>
@@ -674,6 +711,98 @@ const CompanySettingsTab = () => {
                     </SettingRow>
                 </div>
             </div>
+            {/* Opening Hours Modal */}
+            {isOpeningHoursModalOpen && (
+                <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center backdrop-blur-sm p-4 overflow-y-auto">
+                    <div className="bg-white rounded-sm shadow-xl w-full max-w-2xl overflow-hidden relative animate-fadeInUp">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                                <FaClock className="text-brand-primary" />
+                                Öffnungszeiten bearbeiten
+                            </h3>
+                            <button
+                                onClick={() => setIsOpeningHoursModalOpen(false)}
+                                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-3">
+                            {Object.entries(openingHours).map(([day, hours]: [string, any]) => {
+                                const dayLabels: Record<string, string> = {
+                                    monday: 'Montag',
+                                    tuesday: 'Dienstag',
+                                    wednesday: 'Mittwoch',
+                                    thursday: 'Donnerstag',
+                                    friday: 'Freitag',
+                                    saturday: 'Samstag',
+                                    sunday: 'Sonntag'
+                                };
+                                return (
+                                    <div key={day} className="flex items-center gap-4 p-4 bg-slate-50 rounded-sm border border-slate-200 hover:border-slate-300 transition-colors">
+                                        <div className="w-36 flex items-center gap-3">
+                                            <Switch
+                                                checked={hours.enabled}
+                                                onCheckedChange={(checked) => setOpeningHours((prev: any) => ({
+                                                    ...prev,
+                                                    [day]: { ...prev[day], enabled: checked }
+                                                }))}
+                                            />
+                                            <span className="text-sm font-semibold text-slate-700">{dayLabels[day]}</span>
+                                        </div>
+                                        {hours.enabled ? (
+                                            <div className="flex items-center gap-2 flex-1">
+                                                <TimePicker
+                                                    format="HH:mm"
+                                                    value={dayjs(hours.start, 'HH:mm')}
+                                                    onChange={(time) => {
+                                                        if (time) {
+                                                            setOpeningHours((prev: any) => ({
+                                                                ...prev,
+                                                                [day]: { ...prev[day], start: time.format('HH:mm') }
+                                                            }));
+                                                        }
+                                                    }}
+                                                    className="flex-1"
+                                                    placeholder="Beginn"
+                                                />
+                                                <span className="text-slate-400 font-bold">—</span>
+                                                <TimePicker
+                                                    format="HH:mm"
+                                                    value={dayjs(hours.end, 'HH:mm')}
+                                                    onChange={(time) => {
+                                                        if (time) {
+                                                            setOpeningHours((prev: any) => ({
+                                                                ...prev,
+                                                                [day]: { ...prev[day], end: time.format('HH:mm') }
+                                                            }));
+                                                        }
+                                                    }}
+                                                    className="flex-1"
+                                                    placeholder="Ende"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <span className="text-sm text-slate-400 italic flex-1">Geschlossen</span>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-3 sticky bottom-0 z-10">
+                            <button
+                                onClick={() => setIsOpeningHoursModalOpen(false)}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                            >
+                                Schließen
+                            </button>
+                            <p className="text-[10px] text-slate-400 self-center">* Änderungen werden beim Speichern der Firmeneinstellungen übernommen</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

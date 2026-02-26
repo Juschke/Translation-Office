@@ -359,7 +359,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
   const getError = (field: string) => (touched[field] || externalValidationErrors.has(field)) ? errors[field] : '';
 
   return (
-    <div className={clsx(isCompact ? "space-y-6" : "space-y-12 pb-10")}>
+    <div className={clsx(isCompact ? "space-y-4" : "space-y-6 pb-6")}>
       {/* Duplication Warning */}
       <PartnerDuplicateWarning
         duplicates={duplicates}
@@ -368,7 +368,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
       />
 
       {/* Section: Typ & Basis */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {!isCompact && (
           <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
             <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">01</div>
@@ -376,9 +376,9 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+        <div className="grid grid-cols-12 gap-x-8 gap-y-3">
           <div className="col-span-12">
-            <label className="block text-xs font-medium text-slate-400 mb-2.5 ml-1">Partner-Typ</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Partner-Typ</label>
             <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 w-fit">
               {partnerTypes.map(pt => (
                 <button
@@ -447,7 +447,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
 
           {formData.id && (
             <div className="col-span-12 md:col-span-12">
-              <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Partner-ID</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Partner-ID</label>
               <div className="text-sm font-medium text-slate-700 px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm">
                 {formData.id}
               </div>
@@ -455,7 +455,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           )}
 
           <div className="col-span-12 space-y-2 animate-fadeIn">
-            <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Sprachen *</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Sprachen *</label>
             <LanguageSelect
               isMulti={true}
               value={formData.languages}
@@ -470,7 +470,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
       </div>
 
       {/* Section: Kontaktdaten */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {!isCompact && (
           <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
             <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">02</div>
@@ -478,8 +478,8 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-12 gap-x-8 gap-y-6">
-          <div className="col-span-12 md:col-span-6 space-y-6">
+        <div className="grid grid-cols-12 gap-x-8 gap-y-3">
+          <div className="col-span-12 md:col-span-6 space-y-4">
             <div className="space-y-4">
               {formData.emails.map((email, i) => (
                 <div key={i} className="flex gap-2 group animate-fadeIn items-end">
@@ -514,7 +514,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-6 space-y-6">
+          <div className="col-span-12 md:col-span-6 space-y-4">
             <div className="space-y-4">
               {formData.phones.map((phone, i) => (
                 <div key={i} className="flex gap-2 group animate-fadeIn items-end">
@@ -554,7 +554,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
       </div>
 
       {/* Section: Standort & Adresse */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {!isCompact && (
           <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
             <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">03</div>
@@ -562,7 +562,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+        <div className="grid grid-cols-12 gap-x-8 gap-y-3">
           {!isCompact && (
             <div className="col-span-12">
               <AddressForm
@@ -593,13 +593,13 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
       {!isCompact && (
         <>
           {/* Section: Kompetenzen */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
               <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">04</div>
               <h4 className="text-xs font-semibold text-slate-800">Kompetenzen & IT</h4>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="col-span-1 md:col-span-2">
                 <MultiSelect
                   label="Fachgebiete / Spezialisierung"

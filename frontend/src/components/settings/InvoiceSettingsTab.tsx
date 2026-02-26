@@ -32,8 +32,12 @@ const InvoiceSettingsTab = () => {
         project_start_number: '00001',
         project_next_preview: '',
         credit_note_prefix: 'GS',
+        credit_note_start_number: '0001',
         customer_id_prefix: 'KD',
-        partner_id_prefix: 'PR',
+        customer_start_number: '10000',
+        translator_id_prefix: 'TR',
+        interpreter_id_prefix: 'IN',
+        agency_id_prefix: 'AG',
         customer_number_auto: true,
 
         // Zahlungsbedingungen
@@ -81,10 +85,14 @@ const InvoiceSettingsTab = () => {
                 invoice_prefix: companyData.invoice_prefix || prev.invoice_prefix,
                 invoice_start_number: companyData.invoice_start_number || prev.invoice_start_number,
                 credit_note_prefix: companyData.credit_note_prefix || prev.credit_note_prefix,
+                credit_note_start_number: companyData.credit_note_start_number || prev.credit_note_start_number,
                 project_id_prefix: companyData.project_id_prefix || companyData.offer_prefix || prev.project_id_prefix,
                 project_start_number: companyData.project_start_number || companyData.offer_start_number || prev.project_start_number,
                 customer_id_prefix: companyData.customer_id_prefix || companyData.customer_number_prefix || prev.customer_id_prefix,
-                partner_id_prefix: companyData.partner_id_prefix || prev.partner_id_prefix,
+                customer_start_number: companyData.customer_start_number || prev.customer_start_number,
+                translator_id_prefix: companyData.translator_id_prefix || prev.translator_id_prefix,
+                interpreter_id_prefix: companyData.interpreter_id_prefix || prev.interpreter_id_prefix,
+                agency_id_prefix: companyData.agency_id_prefix || prev.agency_id_prefix,
                 customer_number_auto: companyData.customer_number_auto ?? prev.customer_number_auto,
                 default_payment_days: companyData.default_payment_days || prev.default_payment_days,
                 default_payment_text: companyData.default_payment_text || prev.default_payment_text,
@@ -225,7 +233,7 @@ const InvoiceSettingsTab = () => {
                                         helperText="Numerisch, beliebig viele Stellen"
                                     />
                                 </div>
-                                <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-sm border border-slate-200">
+                                <div className="flex items-center gap-2 p-3 rounded-sm border-0">
                                     <FaEye className="text-slate-400 text-xs shrink-0" />
                                     <span className="text-sm text-slate-500">Nächste Rechnungsnummer:</span>
                                     <span className="text-sm font-semibold text-slate-900">{invoicePreview}</span>
@@ -237,13 +245,21 @@ const InvoiceSettingsTab = () => {
                             label="Gutschriften-Nummer"
                             description="Präfix für automatisch erstellte Gutschriften (Stornos)."
                         >
-                            <Input
-                                label="Präfix"
-                                placeholder="GS"
-                                value={formData.credit_note_prefix}
-                                onChange={(e) => handleChange('credit_note_prefix', e.target.value)}
-                                helperText="z.B. GS, G- oder ST-"
-                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    label="Präfix"
+                                    placeholder="GS"
+                                    value={formData.credit_note_prefix}
+                                    onChange={(e) => handleChange('credit_note_prefix', e.target.value)}
+                                    helperText="z.B. GS, G- oder ST-"
+                                />
+                                <Input
+                                    label="Beginnt bei"
+                                    placeholder="0001"
+                                    value={formData.credit_note_start_number}
+                                    onChange={(e) => handleChange('credit_note_start_number', e.target.value)}
+                                />
+                            </div>
                         </SettingRow>
 
                         <SettingRow
@@ -265,7 +281,7 @@ const InvoiceSettingsTab = () => {
                                         onChange={(e) => handleChange('project_start_number', e.target.value)}
                                     />
                                 </div>
-                                <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-sm border border-slate-200">
+                                <div className="flex items-center gap-2 p-3 rounded-sm border-0">
                                     <FaEye className="text-slate-400 text-xs shrink-0" />
                                     <span className="text-sm text-slate-500">Nächste Projektnummer (Beispiel):</span>
                                     <span className="text-sm font-semibold text-slate-900">{projectPreview}</span>
@@ -275,44 +291,46 @@ const InvoiceSettingsTab = () => {
 
                         <SettingRow
                             label="Kundennummer"
-                            description="Die automatische Kundennummernvergabe kann ein- oder ausgeschaltet werden."
+                            description="Die Kundennummer wird automatisch vergeben. Hier können Sie das Präfix anpassen."
                         >
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input
-                                        label="Kunden-Präfix"
-                                        placeholder="K"
-                                        value={formData.customer_id_prefix}
-                                        onChange={(e) => handleChange('customer_id_prefix', e.target.value)}
-                                    />
-                                    <div className="flex flex-col">
-                                        <label className="block text-sm font-medium text-slate-500 mb-1">Automatisch vergeben</label>
-                                        <button
-                                            onClick={() => handleChange('customer_number_auto', !formData.customer_number_auto)}
-                                            className={clsx(
-                                                'h-9 px-4 rounded-sm text-sm font-medium border transition',
-                                                formData.customer_number_auto
-                                                    ? 'bg-brand-primary text-white border-brand-primary'
-                                                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                                            )}
-                                        >
-                                            {formData.customer_number_auto ? 'Aktiviert' : 'Deaktiviert'}
-                                        </button>
-                                    </div>
-                                </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    label="Präfix"
+                                    placeholder="K"
+                                    value={formData.customer_id_prefix}
+                                    onChange={(e) => handleChange('customer_id_prefix', e.target.value)}
+                                />
+                                <Input
+                                    label="Beginnt bei"
+                                    placeholder="10000"
+                                    value={formData.customer_start_number}
+                                    onChange={(e) => handleChange('customer_start_number', e.target.value)}
+                                />
                             </div>
                         </SettingRow>
 
                         <SettingRow
-                            label="Partnernummer"
-                            description="Präfix für die Anzeige von Partnern (Übersetzer, Dolmetscher)."
+                            label="Partnernummern"
+                            description="Präfixe für verschiedene Partner-Typen."
                         >
-                            <div className="grid grid-cols-2">
+                            <div className="grid grid-cols-3 gap-4">
                                 <Input
-                                    label="Partner-Präfix"
-                                    placeholder="PR"
-                                    value={formData.partner_id_prefix}
-                                    onChange={(e) => handleChange('partner_id_prefix', e.target.value)}
+                                    label="Übersetzer"
+                                    placeholder="TR"
+                                    value={formData.translator_id_prefix}
+                                    onChange={(e) => handleChange('translator_id_prefix', e.target.value)}
+                                />
+                                <Input
+                                    label="Dolmetscher"
+                                    placeholder="IN"
+                                    value={formData.interpreter_id_prefix}
+                                    onChange={(e) => handleChange('interpreter_id_prefix', e.target.value)}
+                                />
+                                <Input
+                                    label="Agentur"
+                                    placeholder="AG"
+                                    value={formData.agency_id_prefix}
+                                    onChange={(e) => handleChange('agency_id_prefix', e.target.value)}
                                 />
                             </div>
                         </SettingRow>
@@ -363,7 +381,7 @@ const InvoiceSettingsTab = () => {
                                     value={formData.default_payment_text}
                                     onChange={(e) => handleChange('default_payment_text', e.target.value)}
                                 />
-                                <div className="bg-slate-50 p-3 rounded-sm border border-slate-200">
+                                <div className="p-3 rounded-sm border-0">
                                     <span className="text-xs text-slate-400 block mb-1">Vorschau:</span>
                                     <span className="text-sm text-slate-700">{paymentTextPreview}</span>
                                 </div>
@@ -771,7 +789,7 @@ const InvoiceSettingsTab = () => {
                                 <option value="Palatino, Book Antiqua, serif">Palatino</option>
                                 <option value="Courier New, monospace">Courier New (Monospace)</option>
                             </select>
-                            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-sm">
+                            <div className="mt-3 p-3 border-0 rounded-sm">
                                 <span className="text-xs text-slate-400 block mb-1">Vorschau:</span>
                                 <span className="text-sm text-slate-700" style={{ fontFamily: formData.invoice_font_family }}>
                                     Rechnung Nr. RE-2026-00001 — Nettobetrag: 1.250,00 €
@@ -850,7 +868,7 @@ const InvoiceSettingsTab = () => {
                                         </button>
                                     ))}
                                 </div>
-                                <div className="bg-slate-50 p-3 rounded-sm border border-slate-200">
+                                <div className="p-3 rounded-sm border-0">
                                     <span className="text-xs text-slate-400 block mb-2">Vorschau:</span>
                                     <div className="flex items-center gap-3">
                                         <div className="h-6 w-24 rounded-sm" style={{ background: formData.invoice_primary_color }} />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaUser, FaCalendar, FaGlobe, FaArrowRight, FaFileInvoice, FaTools, FaBoxOpen, FaFlagCheckered, FaEdit } from 'react-icons/fa';
+import { FaUser, FaCalendar, FaGlobe, FaArrowRight, FaFileInvoice, FaTools, FaBoxOpen, FaFlagCheckered, FaEdit, FaChevronDown, FaChevronUp, FaArrowDown } from 'react-icons/fa';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -7,226 +7,252 @@ import { getFlagUrl } from '../../utils/flags';
 import { Link } from 'react-router-dom';
 
 interface Project {
- id: number;
- project_number: string;
- project_name: string;
- status: string;
- customer?: {
- id: number;
- company_name?: string;
- first_name?: string;
- last_name?: string;
- };
- partner?: {
- id: number;
- company_name?: string;
- first_name?: string;
- last_name?: string;
- };
- source_language?: { iso_code: string; name: string };
- target_language?: { iso_code: string; name: string };
- deadline?: string;
- price_total?: string | number;
- priority?: string;
+    id: number;
+    project_number: string;
+    project_name: string;
+    status: string;
+    customer?: {
+        id: number;
+        company_name?: string;
+        first_name?: string;
+        last_name?: string;
+    };
+    partner?: {
+        id: number;
+        company_name?: string;
+        first_name?: string;
+        last_name?: string;
+    };
+    source_language?: { iso_code: string; name: string };
+    target_language?: { iso_code: string; name: string };
+    deadline?: string;
+    price_total?: string | number;
+    priority?: string;
 }
 
 interface KanbanBoardProps {
- projects: Project[];
- onProjectClick: (project: Project) => void;
- onStatusChange?: (projectId: number, newStatus: string) => void;
- onEdit?: (project: Project) => void;
+    projects: Project[];
+    onProjectClick: (project: Project) => void;
+    onStatusChange?: (projectId: number, newStatus: string) => void;
+    onEdit?: (project: Project) => void;
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onStatusChange, onEdit }) => {
- const [draggedProjectId, setDraggedProjectId] = useState<number | null>(null);
- const [dropTargetStatus, setDropTargetStatus] = useState<string | null>(null);
+    const [draggedProjectId, setDraggedProjectId] = useState<number | null>(null);
+    const [dropTargetStatus, setDropTargetStatus] = useState<string | null>(null);
+    const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['completed']));
 
- const columns = [
- { id: 'offer', title: 'Neu', icon: <FaFileInvoice className="text-slate-500" />, bg: 'bg-transparent' },
- { id: 'in_progress', title: 'Bearbeitung', icon: <FaTools className="text-slate-500" />, bg: 'bg-transparent' },
- { id: 'delivered', title: 'Geliefert', icon: <FaFlagCheckered className="text-slate-500" />, bg: 'bg-transparent' },
- { id: 'invoiced', title: 'Rechnung', icon: <FaFileInvoice className="text-slate-500" />, bg: 'bg-transparent' },
- { id: 'ready_for_pickup', title: 'Abholbereit', icon: <FaBoxOpen className="text-slate-500" />, bg: 'bg-transparent' },
- { id: 'completed', title: 'Abgeschlossen', icon: <FaFlagCheckered className="text-slate-500" />, bg: 'bg-transparent' },
- ];
+    const sections = [
+        { id: 'offer', title: 'Neu / Angebot', icon: <FaFileInvoice />, color: 'emerald' },
+        { id: 'in_progress', title: 'In Bearbeitung', icon: <FaTools />, color: 'blue' },
+        { id: 'ready_for_pickup', title: 'Abholbereit', icon: <FaBoxOpen />, color: 'orange' },
+        { id: 'delivered', title: 'Geliefert', icon: <FaFlagCheckered />, color: 'indigo' },
+        { id: 'invoiced', title: 'Abgerechnet', icon: <FaFileInvoice />, color: 'purple' },
+        { id: 'completed', title: 'Archiv / Abgeschlossen', icon: <FaFlagCheckered />, color: 'slate' },
+    ];
 
- const getColumnProjects = (columnId: string) => {
- return projects.filter(p => {
- const s = p.status?.toLowerCase();
- if (columnId === 'offer') return s === 'offer' || s === 'pending' || s === 'draft';
- if (columnId === 'in_progress') return s === 'in_progress' || s === 'review';
- if (columnId === 'ready_for_pickup') return s === 'ready_for_pickup';
- if (columnId === 'invoiced') return s === 'invoiced';
- if (columnId === 'delivered') return s === 'delivered';
- if (columnId === 'completed') return s === 'completed';
- return false;
- });
- };
+    const toggleSection = (id: string) => {
+        const next = new Set(collapsedSections);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setCollapsedSections(next);
+    };
 
- const handleDragStart = (e: React.DragEvent, projectId: number) => {
- setDraggedProjectId(projectId);
- e.dataTransfer.setData('projectId', projectId.toString());
- e.dataTransfer.effectAllowed = 'move';
- };
+    const getSectionProjects = (id: string) => {
+        return projects.filter(p => {
+            const s = p.status?.toLowerCase();
+            if (id === 'offer') return s === 'offer' || s === 'pending' || s === 'draft';
+            if (id === 'in_progress') return s === 'in_progress' || s === 'review';
+            if (id === 'ready_for_pickup') return s === 'ready_for_pickup';
+            if (id === 'invoiced') return s === 'invoiced';
+            if (id === 'delivered') return s === 'delivered';
+            if (id === 'completed') return s === 'completed';
+            return false;
+        });
+    };
 
- const handleDragOver = (e: React.DragEvent, status: string) => {
- e.preventDefault();
- setDropTargetStatus(status);
- };
+    const handleDragStart = (e: React.DragEvent, projectId: number) => {
+        setDraggedProjectId(projectId);
+        e.dataTransfer.setData('projectId', projectId.toString());
+        e.dataTransfer.effectAllowed = 'move';
+    };
 
- const handleDrop = (e: React.DragEvent, newStatus: string) => {
- e.preventDefault();
- const projectId = parseInt(e.dataTransfer.getData('projectId'));
- if (onStatusChange && projectId) {
- onStatusChange(projectId, newStatus);
- }
- setDraggedProjectId(null);
- setDropTargetStatus(null);
- };
+    const handleDragOver = (e: React.DragEvent, status: string) => {
+        e.preventDefault();
+        setDropTargetStatus(status);
+    };
 
- const renderCard = (project: Project) => {
- const sourceCode = project.source_language?.iso_code || 'de';
- const targetCode = project.target_language?.iso_code || 'en';
- const customerName = project.customer?.company_name || `${project.customer?.first_name} ${project.customer?.last_name}` || 'Kein Kunde';
- const partnerName = project.partner ? (project.partner.company_name || `${project.partner.first_name} ${project.partner.last_name}`) : null;
+    const handleDrop = (e: React.DragEvent, newStatus: string) => {
+        e.preventDefault();
+        const projectId = parseInt(e.dataTransfer.getData('projectId'));
+        if (onStatusChange && projectId) {
+            onStatusChange(projectId, newStatus);
+        }
+        setDraggedProjectId(null);
+        setDropTargetStatus(null);
+    };
 
- return (
- <div
- key={project.id}
- draggable
- onDragStart={(e) => handleDragStart(e, project.id)}
- onDragEnd={() => setDraggedProjectId(null)}
- onClick={() => onProjectClick(project)}
- className={clsx(
- "bg-white p-2.5 border shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing group select-none rounded-sm",
- draggedProjectId === project.id
- ? "opacity-20 scale-95 border-emerald-200 shadow-none"
- : "border-slate-200 hover:border-emerald-300 hover:shadow-sm hover:-translate-y-0.5"
- )}
- >
- {/* Header: Project Number & Price & Edit Icon */}
- <div className="flex justify-between items-start mb-1.5">
- <div className="flex flex-col">
- <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-sm w-fit border border-emerald-100/50">
- {project.project_number || `P-${project.id}`}
- </span>
- <span className="text-xs font-medium text-slate-700 mt-0.5">
- {parseFloat(project.price_total as any || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
- </span>
- </div>
- {onEdit && (
- <button
- onClick={(e) => {
- e.stopPropagation();
- onEdit(project);
- }}
- className="p-1 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-sm transition-colors"
- title="Bearbeiten"
- >
- <FaEdit className="text-xs" />
- </button>
- )}
- </div>
+    const moveDown = (e: React.MouseEvent, project: Project) => {
+        e.stopPropagation();
+        const currentIndex = sections.findIndex(s => {
+            const projStatus = project.status.toLowerCase();
+            if (s.id === 'offer') return projStatus === 'offer' || projStatus === 'pending' || projStatus === 'draft';
+            if (s.id === 'in_progress') return projStatus === 'in_progress' || projStatus === 'review';
+            return s.id === projStatus;
+        });
+        if (currentIndex < sections.length - 1 && onStatusChange) {
+            onStatusChange(project.id, sections[currentIndex + 1].id);
+        }
+    };
 
- {/* Project Name */}
- <h4 className="font-medium text-slate-800 text-sm mb-2 group-hover:text-emerald-700 transition line-clamp-2 leading-tight">
- {project.project_name}
- </h4>
+    const renderCard = (project: Project) => {
+        const sourceCode = project.source_language?.iso_code || 'de';
+        const targetCode = project.target_language?.iso_code || 'en';
 
- {/* Languages */}
- <div className="flex items-center gap-1.5 mb-2 bg-slate-50 p-1 border border-slate-100 rounded-sm">
- <div className="flex items-center gap-1">
- <img src={getFlagUrl(sourceCode)} className="w-3 h-2 object-cover border border-slate-200" alt="" />
- <span className="text-xs font-medium text-slate-500">{sourceCode.split('-')[0]}</span>
- </div>
- <FaArrowRight className="text-[7px] text-slate-300" />
- <div className="flex items-center gap-1">
- <img src={getFlagUrl(targetCode)} className="w-3 h-2 object-cover border border-slate-200" alt="" />
- <span className="text-xs font-medium text-slate-500">{targetCode.split('-')[0]}</span>
- </div>
- </div>
+        return (
+            <div
+                key={project.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, project.id)}
+                onDragEnd={() => setDraggedProjectId(null)}
+                onClick={() => onProjectClick(project)}
+                className={clsx(
+                    "flex bg-white border-l-4 border-slate-200 transition-all duration-200 cursor-grab active:cursor-grabbing select-none",
+                    "hover:shadow-md hover:border-l-brand-primary group h-20 overflow-hidden mb-px",
+                    draggedProjectId === project.id ? "opacity-30" : ""
+                )}
+            >
+                <div className="flex-1 flex items-center px-4 gap-4">
+                    <div className="flex flex-col gap-0.5 min-w-[80px]">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                            {project.project_number || `P-${project.id}`}
+                        </span>
+                        <span className="text-xs font-bold text-slate-800">
+                            {parseFloat(project.price_total as any || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                        </span>
+                    </div>
 
- {/* Customer & Partner Links */}
- <div className="space-y-1 mb-2">
- <Link
- to={`/customers/${project.customer?.id}`}
- onClick={(e) => e.stopPropagation()}
- className="flex items-center gap-1.5 text-xs text-slate-600 font-medium hover:text-emerald-600 transition truncate group/link"
- >
- <div className="w-3.5 h-3.5 bg-emerald-50 rounded flex items-center justify-center text-[7px] text-emerald-500 group-hover/link:bg-emerald-600 group-hover/link:text-white transition-colors">
- <FaUser />
- </div>
- <span className="truncate flex-1">{customerName}</span>
- </Link>
+                    <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-slate-800 text-sm truncate">
+                            {project.project_name}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-1 shrink-0">
+                                <img src={getFlagUrl(sourceCode)} className="w-3 h-2 object-cover rounded-[1px]" alt="" />
+                                <FaArrowRight className="text-[7px] text-slate-300" />
+                                <img src={getFlagUrl(targetCode)} className="w-3 h-2 object-cover rounded-[1px]" alt="" />
+                            </div>
+                            <span className="text-[10px] text-slate-400 truncate flex-1">
+                                {project.customer?.company_name || `${project.customer?.first_name} ${project.customer?.last_name}`}
+                            </span>
+                        </div>
+                    </div>
 
- {partnerName && (
- <Link
- to={`/partners/${project.partner?.id}`}
- onClick={(e) => e.stopPropagation()}
- className="flex items-center gap-1.5 text-xs text-slate-600 font-medium hover:text-emerald-600 transition truncate group/link"
- >
- <div className="w-3.5 h-3.5 bg-slate-50 rounded flex items-center justify-center text-[7px] text-slate-400 group-hover/link:bg-emerald-600 group-hover/link:text-white transition-colors">
- <FaGlobe />
- </div>
- <span className="truncate flex-1">{partnerName}</span>
- </Link>
- )}
- </div>
+                    <div className="flex flex-col items-center gap-1 pr-2">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase whitespace-nowrap">
+                            <FaCalendar size={10} className="opacity-50" />
+                            <span>{project.deadline ? format(new Date(project.deadline), 'dd.MM', { locale: de }) : '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {onEdit && (
+                                <button onClick={(e) => { e.stopPropagation(); onEdit(project); }} className="p-1.5 text-slate-300 hover:text-brand-primary">
+                                    <FaEdit size={12} />
+                                </button>
+                            )}
+                            <button onClick={(e) => moveDown(e, project)} className="p-1.5 text-slate-300 hover:text-brand-accent bg-slate-50 rounded" title="In nächste Phase">
+                                <FaArrowDown size={12} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
- {/* Footer: Date */}
- <div className="pt-1.5 border-t border-slate-50 flex items-center justify-between">
- <div className="flex items-center gap-1 text-xs text-slate-400 font-medium">
- <FaCalendar className="text-[7px] opacity-60" />
- <span>{project.deadline ? format(new Date(project.deadline), 'dd.MM.yy', { locale: de }) : '-'}</span>
- </div>
- {project.priority === 'high' && (
- <div className="w-1 h-1 bg-red-500 animate-pulse"></div>
- )}
- </div>
- </div>
- );
- };
+    return (
+        <div className="flex flex-col h-full w-full bg-[#f1f4f4] overflow-hidden custom-scrollbar">
+            <div className="flex flex-col min-h-full overflow-y-auto no-scrollbar scroll-smooth">
+                {sections.map((section, idx) => {
+                    const isCollapsed = collapsedSections.has(section.id);
+                    const sectionProjects = getSectionProjects(section.id);
+                    const isTarget = dropTargetStatus === section.id;
 
- return (
-  <div className="grid grid-cols-3 gap-3 lg:flex lg:gap-4 lg:overflow-x-auto pb-6 custom-scrollbar h-full">
-  {columns.map(col => (
-  <div
-  key={col.id}
-  onDragOver={(e) => handleDragOver(e, col.id)}
-  onDragLeave={() => setDropTargetStatus(null)}
-  onDrop={(e) => handleDrop(e, col.id)}
-  className={clsx(
-  "flex flex-col border transition-all duration-300 overflow-hidden min-h-[220px] lg:min-h-[400px] lg:min-w-[280px] lg:flex-1 lg:h-[calc(100vh-450px)] rounded-sm",
-  dropTargetStatus === col.id
-  ? "bg-emerald-50/50 border-emerald-300 ring-2 ring-emerald-100 scale-[1.005] shadow-sm"
-  : "bg-white border-slate-200 shadow-sm"
-  )}
-  >
-  <div className="px-2 py-2 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-  <div className="flex items-center gap-1.5">
-  <div className="w-6 h-6 bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400 text-xs rounded-sm">
-  {col.icon}
-  </div>
-  <h3 className="font-medium text-slate-800 text-xs truncate">{col.title}</h3>
-  </div>
-  <div className="min-w-[18px] px-1 h-5 bg-slate-900 text-white flex items-center justify-center text-xs font-semibold rounded-sm shrink-0">
-  {getColumnProjects(col.id).length}
-  </div>
-  </div>
+                    return (
+                        <div
+                            key={section.id}
+                            onDragOver={(e) => handleDragOver(e, section.id)}
+                            onDragLeave={() => setDropTargetStatus(null)}
+                            onDrop={(e) => handleDrop(e, section.id)}
+                            className={clsx(
+                                "flex flex-col border-b border-[#D1D9D8] transition-all bg-white relative last:border-b-0",
+                                isCollapsed ? "h-14 shrink-0" : "flex-none",
+                                isTarget && "bg-brand-primary/[0.03]"
+                            )}
+                        >
+                            {/* Process Step Header - Vertical Process Flow */}
+                            <div
+                                onClick={() => toggleSection(section.id)}
+                                className={clsx(
+                                    "px-4 py-3 flex items-center justify-between cursor-pointer select-none sticky top-0 z-20 transition-colors",
+                                    isCollapsed ? "bg-slate-50/80" : "bg-gradient-to-r from-white to-slate-50/30"
+                                )}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={clsx(
+                                        "w-8 h-8 flex items-center justify-center rounded-[3px] text-xs shadow-inner border border-[#D1D9D8]",
+                                        isCollapsed ? "bg-white text-slate-400" : "bg-brand-primary text-white"
+                                    )}>
+                                        {section.icon}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-bold text-slate-800 text-[12px] uppercase tracking-wider">{section.title}</h3>
+                                            <span className={clsx(
+                                                "px-1.5 py-0.5 rounded-full text-[10px] font-black",
+                                                isCollapsed ? "bg-slate-200 text-slate-500" : "bg-brand-primary/10 text-brand-primary"
+                                            )}>
+                                                {sectionProjects.length}
+                                            </span>
+                                        </div>
+                                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none">
+                                            Schritt {idx + 1} des Prozesses
+                                        </span>
+                                    </div>
+                                </div>
 
-  <div className="p-1.5 flex flex-col gap-1.5 overflow-y-auto flex-1 custom-scrollbar bg-slate-50/20">
-  {getColumnProjects(col.id).length > 0 ? (
-  getColumnProjects(col.id).map(renderCard)
-  ) : (
-  <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 opacity-30 py-6 bg-white">
-  <div className="text-xs font-semibold text-slate-400">Leer</div>
-  </div>
-  )}
-  </div>
-  </div>
-  ))}
-  </div>
- );
+                                <div className="flex items-center gap-4">
+                                    {/* Arrow showing the flow to next step */}
+                                    {idx < sections.length - 1 && !isCollapsed && (
+                                        <div className="hidden md:flex flex-col items-center opacity-20">
+                                            <FaArrowDown size={10} />
+                                        </div>
+                                    )}
+                                    <div className="p-1.5 text-slate-300">
+                                        {isCollapsed ? <FaChevronDown size={14} /> : <FaChevronUp size={14} />}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Cards Section - Horizontal row inside vertical step if open */}
+                            {!isCollapsed && (
+                                <div className="bg-[#fcfcfc] border-t border-[#f1f5f9] min-h-[80px]">
+                                    {sectionProjects.length > 0 ? (
+                                        <div className="flex flex-col divide-y divide-[#f1f5f9]">
+                                            {sectionProjects.map(renderCard)}
+                                        </div>
+                                    ) : (
+                                        <div className="h-20 flex items-center justify-center border-dashed border-2 border-slate-100 m-2 rounded-[2px] opacity-40">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">Bereit für Aufträge</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
 };
 
 export default KanbanBoard;

@@ -38,7 +38,9 @@ class DashboardController extends Controller
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->count();
 
-            $deadlinesTodayCount = Project::whereDate('deadline', $today)->count();
+            $deadlinesTodayCount = Project::whereDate('deadline', $today)
+                ->whereIn('status', ['offer', 'pending', 'draft', 'in_progress', 'review', 'ready_for_pickup'])
+                ->count();
 
             // 2. Revenue
             $monthlyRevenue = Project::whereBetween('created_at', [$startDate, $endDate])

@@ -416,10 +416,14 @@ class ProjectController extends Controller
     public function postMessage(Request $request, $id)
     {
         $project = \App\Models\Project::findOrFail($id);
-        $request->validate(['content' => 'required|string']);
+        $request->validate([
+            'content' => 'required|string',
+            'type' => 'nullable|string|in:customer,partner'
+        ]);
 
         $message = $project->messages()->create([
             'content' => $request->input('content'),
+            'type' => $request->input('type', 'customer'),
             'user_id' => $request->user()->id,
             'sender_name' => $request->user()->name,
             'is_read' => true,

@@ -737,15 +737,15 @@ const CommunicationHub = () => {
                 <DialogContent hideClose className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden border-none shadow-2xl rounded-sm">
                     {/* Minimal Header */}
                     <div className="px-6 py-4 flex items-center justify-between bg-white border-b border-slate-100">
-                        <div className="flex flex-col">
-                            <h3 className="text-sm font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                        <DialogTitle className="flex flex-col">
+                            <div className="text-sm font-bold tracking-tight text-slate-900 flex items-center gap-2">
                                 <FaPaperPlane className="text-slate-400 text-xs" />
                                 NEUE NACHRICHT
-                            </h3>
+                            </div>
                             <span className="text-[10px] text-slate-400 font-medium uppercase tracking-widest leading-none mt-1">
                                 Gesendet via: <span className="font-bold text-slate-600">{selectedAccount?.email}</span>
                             </span>
-                        </div>
+                        </DialogTitle>
                         <DialogClose asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-colors">
                                 <FaTimes />

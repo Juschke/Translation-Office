@@ -24,6 +24,7 @@ class Appointment extends Model
         'project_id',
         'customer_id',
         'partner_id',
+        'user_id',
         'status',
         'color',
     ];
@@ -46,5 +47,10 @@ class Appointment extends Model
     public function partner()
     {
         return $this->belongsTo(Partner::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

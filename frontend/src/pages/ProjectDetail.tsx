@@ -165,9 +165,6 @@ const ProjectDetail = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
     const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
-    const [historySearch, setHistorySearch] = useState('');
-    const [historySortKey, setHistorySortKey] = useState<'date' | 'user' | 'action'>('date');
-    const [historySortDir, setHistorySortDir] = useState<'asc' | 'desc'>('asc');
 
     const {
         isPartnerModalOpen, setIsPartnerModalOpen,
@@ -180,6 +177,7 @@ const ProjectDetail = () => {
         isPartnerEditModalOpen, setIsPartnerEditModalOpen,
         isProjectDeleteConfirmOpen, setIsProjectDeleteConfirmOpen,
         isInviteModalOpen, setIsInviteModalOpen,
+        isInviteModalOpen: _isInviteModalOpen, // duplicate removal if needed? no, from useProjectModals
         isInterpreterModalOpen, setIsInterpreterModalOpen,
         previewFile, setPreviewFile,
         deleteFileConfirm, setDeleteFileConfirm,
@@ -949,12 +947,6 @@ const ProjectDetail = () => {
                     activeTab === 'history' && (
                         <HistoryTab
                             projectId={id!}
-                            historySearch={historySearch}
-                            setHistorySearch={setHistorySearch}
-                            historySortKey={historySortKey}
-                            setHistorySortKey={setHistorySortKey}
-                            historySortDir={historySortDir}
-                            setHistorySortDir={setHistorySortDir}
                         />
                     )
                 }
@@ -1005,9 +997,26 @@ const ProjectDetail = () => {
                 onClose={() => setIsPaymentModalOpen(false)}
                 onSave={(payment) => {
                     const newPayments = [...(projectData?.payments || []), payment];
+                    const totalPaid = newPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                    const isFullyPaid = (financials.grossTotal - totalPaid) <= 0.01;
+
                     if (projectData) {
-                        setProjectData({ ...projectData, payments: newPayments });
-                        updateProjectMutation.mutate({ payments: newPayments });
+                        const updateData: any = { payments: newPayments };
+
+                        // If fully paid, set status to completed / paid
+                        if (isFullyPaid && projectData.status !== 'completed' && projectData.status !== 'archived') {
+                            updateData.status = 'completed';
+                            updateData.progress = 100;
+                            toast.success('Vollständige Zahlung erfasst. Projekt als abgeschlossen markiert.');
+                        }
+
+                        // Optimistic local update
+                        setProjectData({
+                            ...projectData,
+                            ...updateData
+                        });
+
+                        updateProjectMutation.mutate(updateData);
                     }
                 }}
                 totalAmount={financials.grossTotal}

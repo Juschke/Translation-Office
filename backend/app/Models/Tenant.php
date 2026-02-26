@@ -39,6 +39,7 @@ class Tenant extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'settings' => 'array',
+        'opening_hours' => 'array',
     ];
 
     public function users()
@@ -64,5 +65,22 @@ class Tenant extends Model
     public function settings()
     {
         return $this->hasMany(TenantSetting::class);
+    }
+
+    /**
+     * Current subscription for this tenant.
+     * Only managed by software owner/admin.
+     */
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class)->latestOfMany();
+    }
+
+    /**
+     * All subscriptions (history) for this tenant.
+     */
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class)->orderBy('created_at', 'desc');
     }
 }

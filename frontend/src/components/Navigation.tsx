@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt } from 'react-icons/fa';
+import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt, FaCommentDots, FaCrown } from 'react-icons/fa';
+
 import clsx from 'clsx';
-import { useAuth, type UserRole } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService, notificationService } from '../api/services';
 import { formatDistanceToNow } from 'date-fns';
@@ -25,16 +27,21 @@ const Navigation = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const [isContactsOpen, setIsContactsOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    const contactsRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
     const navRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
+            if (contactsRef.current && !contactsRef.current.contains(event.target as Node)) {
+                setIsContactsOpen(false);
+            }
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
             }
@@ -55,6 +62,7 @@ const Navigation = () => {
         setIsMobileMenuOpen(false);
         setIsProfileOpen(false);
         setIsNotifOpen(false);
+        setIsContactsOpen(false);
     }, [location]);
 
     const { data: dashboardData } = useQuery({
@@ -100,9 +108,9 @@ const Navigation = () => {
 
     const isActive = (path: string) => location.pathname === path;
 
-    const navLinkClass = (path: string) => clsx(
-        "px-2 sm:px-3 py-4 text-sm font-semibold border-b-2 transition h-full flex items-center gap-2",
-        isActive(path)
+    const navLinkClass = (path: string, activeOverride?: boolean) => clsx(
+        "px-2 sm:px-3 py-4 text-sm font-semibold border-b-2 transition h-full flex items-center gap-1.5",
+        (activeOverride !== undefined ? activeOverride : isActive(path))
             ? "border-white text-white"
             : "border-transparent text-emerald-100/60 hover:text-white"
     );
@@ -194,59 +202,75 @@ const Navigation = () => {
                                     </TooltipContent>
                                 </Tooltip>
 
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Link to="/calendar" className={navLinkClass("/calendar")}>
-                                            <FaCalendarAlt className="text-base lg:hidden" />
-                                            <span className="hidden lg:inline">Kalender</span>
-                                        </Link>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                                        <span className="font-semibold text-sm">Kalender</span>
-                                    </TooltipContent>
-                                </Tooltip>
+                                <div className="relative h-full" ref={contactsRef}>
+                                    <button
+                                        onClick={() => {
+                                            setIsContactsOpen(!isContactsOpen);
+                                            setIsProfileOpen(false);
+                                            setIsNotifOpen(false);
+                                        }}
+                                        className={navLinkClass("", isContactsOpen || location.pathname.startsWith('/customers') || location.pathname.startsWith('/partners') || location.pathname.startsWith('/interpreting'))}
+                                    >
+                                        <FaUsers className="text-base lg:hidden" />
+                                        <span className="hidden lg:inline">Kontakte</span>
+                                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isContactsOpen && "rotate-180")} />
+                                    </button>
 
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Link to="/customers" className={navLinkClass("/customers")}>
-                                            <FaUsers className="text-base lg:hidden" />
-                                            <span className="hidden lg:inline">Kunden</span>
-                                            <NavBadge count={dashboardData?.stats?.active_customers} label="Aktive Kunden" activeColor="bg-slate-500" />
-                                        </Link>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="font-semibold text-sm">Kunden</span>
-                                            {dashboardData?.stats?.active_customers > 0 && (
-                                                <div className="flex items-center gap-2 text-xs text-slate-400">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
-                                                    {dashboardData?.stats?.active_customers} aktive Kunden
-                                                </div>
-                                            )}
-                                        </div>
-                                    </TooltipContent>
-                                </Tooltip>
+                                    {isContactsOpen && (
+                                        <div className="absolute left-0 mt-0 w-48 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 animate-slideUp overflow-hidden">
+                                            <div className="py-1">
+                                                <Link
+                                                    to="/customers"
+                                                    className={clsx(
+                                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
+                                                        location.pathname === '/customers' ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <FaUsers className="text-slate-400 w-3.5 h-3.5" />
+                                                        <span>Kunden</span>
+                                                    </div>
+                                                    {dashboardData?.stats?.active_customers > 0 && (
+                                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                                            {dashboardData.stats.active_customers}
+                                                        </span>
+                                                    )}
+                                                </Link>
 
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Link to="/partners" className={navLinkClass("/partners")}>
-                                            <FaUserTie className="text-base lg:hidden" />
-                                            <span className="hidden lg:inline">Partner</span>
-                                            <NavBadge count={dashboardData?.stats?.active_partners} label="Aktive Partner" activeColor="bg-slate-500" />
-                                        </Link>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="font-semibold text-sm">Partner</span>
-                                            {dashboardData?.stats?.active_partners > 0 && (
-                                                <div className="flex items-center gap-2 text-xs text-slate-400">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
-                                                    {dashboardData?.stats?.active_partners} aktive Partner
-                                                </div>
-                                            )}
+                                                <Link
+                                                    to="/partners"
+                                                    className={clsx(
+                                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
+                                                        location.pathname === '/partners' ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <FaUserTie className="text-slate-400 w-3.5 h-3.5" />
+                                                        <span>Partner</span>
+                                                    </div>
+                                                    {dashboardData?.stats?.active_partners > 0 && (
+                                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                                            {dashboardData.stats.active_partners}
+                                                        </span>
+                                                    )}
+                                                </Link>
+
+                                                <Link
+                                                    to="/interpreting"
+                                                    className={clsx(
+                                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                                        location.pathname === '/interpreting' ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <FaCommentDots className="text-slate-400 w-3.5 h-3.5" />
+                                                        <span>Dolmetscher</span>
+                                                    </div>
+                                                </Link>
+                                            </div>
                                         </div>
-                                    </TooltipContent>
-                                </Tooltip>
+                                    )}
+                                </div>
 
                                 {hasMinRole('manager') && (
                                     <Tooltip>
@@ -298,6 +322,18 @@ const Navigation = () => {
                                         </TooltipContent>
                                     </Tooltip>
                                 )}
+
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link to="/calendar" className={navLinkClass("/calendar")}>
+                                            <FaCalendarAlt className="text-base lg:hidden" />
+                                            <span className="hidden lg:inline">Kalender</span>
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
+                                        <span className="font-semibold text-sm">Kalender</span>
+                                    </TooltipContent>
+                                </Tooltip>
 
                                 {hasMinRole('manager') && (
                                     <Tooltip>
@@ -398,13 +434,9 @@ const Navigation = () => {
                                             {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
                                         </div>
                                         <div className="overflow-hidden text-left">
-                                            <p className="text-sm font-bold text-slate-900 truncate">{user?.name || 'Benutzer'}</p>
-                                            <div className="flex items-center gap-1.5 mt-0.5">
-                                                <FaEnvelope className="text-[10px] text-slate-400 shrink-0" />
-                                                <p className="text-[10px] text-slate-500 truncate leading-tight">{user?.email || 'admin@translator.office'}</p>
-                                            </div>
+                                            <p className="text-xs font-semibold text-slate-900 truncate">{user?.name || 'Benutzer'}</p>
                                             {user?.role && (
-                                                <span className="inline-block px-1.5 py-0 px-1.5 py-0 bg-slate-200 text-slate-700 text-[9px] font-bold rounded-full mt-1.5 uppercase tracking-wider">
+                                                <span className="inline-block px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-full mt-1 uppercase tracking-wider">
                                                     {ROLE_LABELS[user.role] ?? user.role}
                                                 </span>
                                             )}
@@ -428,6 +460,11 @@ const Navigation = () => {
                                             <Link to="/settings" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center border-t border-slate-50 mt-1" onClick={() => setIsProfileOpen(false)}>
                                                 <FaCog className="mr-3 text-slate-400 w-3.5 h-3.5" /> Einstellungen
                                             </Link>
+                                        )}
+                                        {user?.is_admin && (
+                                            <a href="/admin" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm hover:bg-amber-50 text-amber-700 flex items-center border-t border-slate-50 mt-1" onClick={() => setIsProfileOpen(false)}>
+                                                <FaCrown className="mr-3 text-amber-500 w-3.5 h-3.5" /> Backend: Filament
+                                            </a>
                                         )}
                                     </div>
                                     <div className="border-t border-slate-100 py-1 font-normal text-left">
@@ -466,6 +503,7 @@ const Navigation = () => {
                             { path: '/projects', label: 'Projekte', icon: <FaLayerGroup />, count: dashboardData?.stats?.open_projects, badgeLabel: "Offene Projekte" },
                             { path: '/customers', label: 'Kunden', icon: <FaUsers />, count: dashboardData?.stats?.active_customers, badgeLabel: "Aktive Kunden", color: "bg-slate-500" },
                             { path: '/partners', label: 'Partner', icon: <FaUserTie />, count: dashboardData?.stats?.active_partners, badgeLabel: "Aktive Partner", color: "bg-slate-500" },
+                            { path: '/interpreting', label: 'Dolmetscher', icon: <FaCommentDots /> },
                             {
                                 path: '/invoices',
                                 label: 'Rechnungen',
@@ -476,9 +514,10 @@ const Navigation = () => {
                                 color: dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"
                             },
                             { path: '/inbox', label: 'Email', icon: <FaEnvelope />, role: 'manager', count: unreadEmails, badgeLabel: "Ungelesene E-Mails" },
+                            { path: '/calendar', label: 'Kalender', icon: <FaCalendarAlt /> },
                             { path: '/reports', label: 'Auswertung', icon: <FaChartBar />, role: 'manager' },
-                        ].map((item) => {
-                            if (item.role && !hasMinRole(item.role as UserRole)) return null;
+                        ].map((item: any) => {
+                            if (item.role && !hasMinRole(item.role)) return null;
                             const active = isActive(item.path);
                             return (
                                 <Link
@@ -508,6 +547,7 @@ const Navigation = () => {
                 </div>
             )}
         </nav>
+
     );
 };
 

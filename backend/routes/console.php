@@ -19,3 +19,11 @@ Artisan::command('invoices:check-overdue', function () {
 
     $this->info("Processed {$count} invoices.");
 })->purpose('Check and update status for overdue invoices')->daily();
+
+use Illuminate\Support\Facades\Schedule;
+
+// Monitor API errors every 15 minutes and send alerts
+Schedule::command('monitor:api-errors --threshold=10')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

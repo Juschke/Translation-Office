@@ -26,6 +26,9 @@ import VerifyEmail from './pages/VerifyEmail';
 import Notifications from './pages/Notifications';
 import Team from './pages/Team';
 import Calendar from './pages/Calendar';
+import Interpreting from './pages/Interpreting';
+
+
 
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute, PublicRoute, RoleGuard } from './components/auth/AuthGuard';
@@ -65,6 +68,8 @@ function App() {
                             <Route path="/projects" element={<Projects />} />
                             <Route path="/projects/:id" element={<ProjectDetail />} />
                             <Route path="/calendar" element={<Calendar />} />
+                            <Route path="/interpreting" element={<Interpreting />} />
+
                             <Route path="/customers" element={<Customers />} />
                             <Route path="/customers/:id" element={<CustomerDetail />} />
                             <Route path="/partners" element={<Partners />} />
@@ -77,6 +82,7 @@ function App() {
                             <Route path="/settings/*" element={<RoleGuard minRole="manager"><Settings /></RoleGuard>} />
                             <Route path="/billing" element={<RoleGuard minRole="owner"><Billing /></RoleGuard>} />
                             <Route path="/team" element={<RoleGuard minRole="owner"><Team /></RoleGuard>} />
+
                         </Route>
 
                         {/* Catch all */}

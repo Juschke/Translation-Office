@@ -19,7 +19,8 @@ class TenantsTable
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('company_name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('legal_form')
                     ->searchable(),
                 TextColumn::make('address_street')

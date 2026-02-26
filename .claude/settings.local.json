@@ -21,7 +21,11 @@
       "Bash(php:*)",
       "Bash(cd:*)",
       "Bash(cd C:\\\\xampp\\\\htdocs\\\\Translation-Office\\\\frontend:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(cd /c/xampp/htdocs/Translation-Office/backend && composer dump-autoload 2>&1)",
+      "Bash(mv:*)",
+      "Bash(composer show:*)",
+      "Bash(mysql:*)"
     ]
   }
 }

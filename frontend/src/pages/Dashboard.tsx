@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import {
-    FaLayerGroup, FaClock, FaEuroSign, FaEnvelope
+    FaLayerGroup, FaClock, FaEuroSign, FaEnvelope, FaPlus, FaUserPlus, FaHandshake
 } from 'react-icons/fa';
 import NewProjectModal from '../components/modals/NewProjectModal';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
@@ -113,7 +113,7 @@ const Dashboard = () => {
     return (
         <div className="flex flex-col gap-6 fade-in pb-10">
             {/* Minimalist Professional Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-end gap-6 pb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pb-6">
                 <div>
                     <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight">Dashboard</h1>
                     <p className="text-slate-500 text-sm mt-0.5 hidden sm:block">Übersicht & Operative Steuerung</p>
@@ -124,6 +124,7 @@ const Dashboard = () => {
                         onClick={() => navigate('/projects', { state: { openNewModal: true } })}
                         className="bg-brand-primary text-white hover:bg-brand-primary/90 transition font-bold"
                     >
+                        <FaPlus className="mr-2 h-4 w-4" />
                         Neues Projekt
                     </Button>
                     <Button
@@ -131,6 +132,7 @@ const Dashboard = () => {
                         onClick={() => navigate('/customers', { state: { openNewModal: true } })}
                         className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition font-bold"
                     >
+                        <FaUserPlus className="mr-2 h-4 w-4" />
                         Kunde anlegen
                     </Button>
                     <Button
@@ -138,6 +140,7 @@ const Dashboard = () => {
                         onClick={() => navigate('/partners', { state: { openNewModal: true } })}
                         className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition font-bold"
                     >
+                        <FaHandshake className="mr-2 h-4 w-4" />
                         Partner anlegen
                     </Button>
                 </div>

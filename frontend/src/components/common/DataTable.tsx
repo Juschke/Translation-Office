@@ -17,6 +17,7 @@ interface Column<T> {
     className?: string;
     align?: 'left' | 'right' | 'center';
     defaultVisible?: boolean;
+    width?: number;
 }
 
 interface DataTableProps<T> {
@@ -44,12 +45,12 @@ const ALL_SENTINEL = 9_999_999;
 
 // ── Inline BulkAction button with Bootstrap Skeuomorphism ──
 const variantStyles: Record<BulkActionVariant, string> = {
-    default:     'bg-gradient-to-b from-white to-[#ebebeb] text-[#444] border-[#ccc] hover:border-[#adadad] hover:text-[#1B4D4F]',
-    primary:     'bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#2a7073] hover:to-[#235e62]',
-    danger:      'bg-gradient-to-b from-white to-[#ebebeb] text-red-600 border-[#ccc] hover:border-red-300 hover:bg-red-50',
+    default: 'bg-gradient-to-b from-white to-[#ebebeb] text-[#444] border-[#ccc] hover:border-[#adadad] hover:text-[#1B4D4F]',
+    primary: 'bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#2a7073] hover:to-[#235e62]',
+    danger: 'bg-gradient-to-b from-white to-[#ebebeb] text-red-600 border-[#ccc] hover:border-red-300 hover:bg-red-50',
     dangerSolid: 'bg-gradient-to-b from-[#e05050] to-[#c9302c] text-white border-[#9c2320] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#e85555]',
-    success:     'bg-gradient-to-b from-[#62bb62] to-[#449d44] text-white border-[#398439] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#6ec86e]',
-    warning:     'bg-gradient-to-b from-[#f5b85a] to-[#ec971f] text-white border-[#d58512] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#f7c168]',
+    success: 'bg-gradient-to-b from-[#62bb62] to-[#449d44] text-white border-[#398439] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#6ec86e]',
+    warning: 'bg-gradient-to-b from-[#f5b85a] to-[#ec971f] text-white border-[#d58512] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#f7c168]',
 };
 
 const BulkActionBtn = ({ label, icon, onClick, variant = 'default' }: BulkActionItem) => (
@@ -85,10 +86,10 @@ const DataTable = <T extends { id: string | number }>({
     onSelectionChange,
     bulkActions,
 }: DataTableProps<T>) => {
-    const [currentPage, setCurrentPage]       = useState(1);
-    const [sortConfig, setSortConfig]         = useState<{ key: string; direction: 'ascend' | 'descend' } | null>(null);
-    const [searchTerm, setSearchTerm]         = useState('');
-    const [pageSize, setPageSize]             = useState(pageSizeProp);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascend' | 'descend' } | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [pageSize, setPageSize] = useState(pageSizeProp);
     const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
         new Set(columns.filter(c => c.defaultVisible !== false).map(c => c.id))
     );
@@ -96,8 +97,45 @@ const DataTable = <T extends { id: string | number }>({
     const [selectedRowKey, setSelectedRowKey] = useState<string | number | null>(null);
 
     const settingsBtnRef = useRef<HTMLButtonElement>(null);
-    const settingsRef    = useRef<HTMLDivElement>(null);
+    const settingsRef = useRef<HTMLDivElement>(null);
     const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
+
+    // ── Resizing Logic ──
+    const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+        const widths: Record<string, number> = {};
+        columns.forEach(col => {
+            if (col.width) widths[col.id] = col.width;
+        });
+        return widths;
+    });
+
+    const resizingCol = useRef<{ id: string; startX: number; startWidth: number } | null>(null);
+
+    const handleResize = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const startX = e.pageX;
+        const startWidth = columnWidths[id] || 150; // Default width if not set
+
+        resizingCol.current = { id, startX, startWidth };
+        document.body.classList.add('dt-column-resizing');
+
+        const onMouseMove = (moveEvent: MouseEvent) => {
+            if (!resizingCol.current) return;
+            const diff = moveEvent.pageX - resizingCol.current.startX;
+            const newWidth = Math.max(50, resizingCol.current.startWidth + diff);
+            setColumnWidths(prev => ({ ...prev, [resizingCol.current!.id]: newWidth }));
+        };
+
+        const onMouseUp = () => {
+            resizingCol.current = null;
+            document.body.classList.remove('dt-column-resizing');
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
 
     const activeColumns = useMemo(
         () => columns.filter(col => visibleColumns.has(col.id)),
@@ -117,7 +155,11 @@ const DataTable = <T extends { id: string | number }>({
     const openSettings = () => {
         if (settingsBtnRef.current) {
             const rect = settingsBtnRef.current.getBoundingClientRect();
-            setDropdownPos({ top: rect.bottom + window.scrollY + 4, right: window.innerWidth - rect.right });
+            // Using viewport coordinates for fixed positioning
+            setDropdownPos({
+                top: rect.bottom + 5,
+                right: window.innerWidth - rect.right
+            });
         }
         setIsSettingsOpen(v => !v);
     };
@@ -162,8 +204,8 @@ const DataTable = <T extends { id: string | number }>({
 
     // 3. Paginate
     const effectivePageSize = pageSize === ALL_SENTINEL ? (sortedData.length || 1) : pageSize;
-    const totalPages        = Math.ceil(sortedData.length / effectivePageSize);
-    const paginatedData     = sortedData.slice(
+    const totalPages = Math.ceil(sortedData.length / effectivePageSize);
+    const paginatedData = sortedData.slice(
         (currentPage - 1) * effectivePageSize,
         currentPage * effectivePageSize
     );
@@ -173,12 +215,11 @@ const DataTable = <T extends { id: string | number }>({
     // ── Build antd columns — skip sort on first + last data column ──
     const antdColumns: ColumnsType<T> = activeColumns.map((col, index) => {
         const isFirst = index === 0;
-        const isLast  = index === activeColumns.length - 1;
+        const isLast = index === activeColumns.length - 1;
         const sortKey = col.sortKey || (typeof col.accessor === 'string' ? String(col.accessor) : col.id);
 
         return {
             key: col.id,
-            title: col.header,
             dataIndex: typeof col.accessor === 'string' ? (col.accessor as string) : undefined,
             render:
                 typeof col.accessor === 'function'
@@ -198,6 +239,17 @@ const DataTable = <T extends { id: string | number }>({
             align: col.align ?? 'left',
             className: col.className,
             showSorterTooltip: false,
+            width: columnWidths[col.id],
+            title: (
+                <div className="relative flex items-center justify-between w-full group/header">
+                    <span className="truncate flex-1">{col.header}</span>
+                    <div
+                        className="dt-column-resizer"
+                        onMouseDown={(e) => handleResize(col.id, e)}
+                        onClick={e => e.stopPropagation()}
+                    />
+                </div>
+            ),
         };
     });
 
@@ -247,12 +299,12 @@ const DataTable = <T extends { id: string | number }>({
     );
 
     return (
-        <div className="dt-skeuomorphic flex flex-col h-full bg-white border border-[#D1D9D8] rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.1)] fade-in">
+        <div className="dt-skeuomorphic flex flex-col h-full bg-white border border-[#D1D9D8] rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.1)] fade-in overflow-hidden max-h-[calc(100vh-250px)] sm:max-h-none">
 
             {/* ── Controls Bar ── */}
             <div className="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-[#D1D9D8] flex flex-col md:flex-row gap-3 items-center justify-between bg-gradient-to-b from-white to-[#f0f0f0] shadow-[0_1px_0_rgba(255,255,255,0.8)]">
-                <div className="flex gap-2 sm:gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0">
-                    {tabs ?? <div className="flex items-center gap-2">{actions}</div>}
+                <div className="flex gap-2 sm:gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0 scroll-smooth">
+                    {tabs ?? (actions && <div className="flex items-center gap-2">{actions}</div>)}
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64">
@@ -311,7 +363,7 @@ const DataTable = <T extends { id: string | number }>({
             )}
 
             {/* ── Ant Design Table ── */}
-            <div className="flex-1 overflow-x-auto overflow-y-auto">
+            <div className="flex-1 overflow-x-auto min-h-0 relative">
                 <Table<T>
                     columns={antdColumns}
                     dataSource={paginatedData}
@@ -322,6 +374,11 @@ const DataTable = <T extends { id: string | number }>({
                     showSorterTooltip={false}
                     onChange={handleTableChange}
                     rowSelection={rowSelection}
+                    sticky
+                    scroll={{
+                        x: 'max-content',
+                        y: window.innerWidth < 768 ? 400 : 'calc(100vh - 420px)'
+                    }}
                     onRow={record => ({
                         onClick: () => {
                             setSelectedRowKey(record.id);
@@ -412,24 +469,43 @@ const DataTable = <T extends { id: string | number }>({
             {isSettingsOpen && createPortal(
                 <div
                     ref={settingsRef}
-                    style={{ top: dropdownPos.top, right: dropdownPos.right }}
-                    className="fixed z-[9999] w-60 bg-white border border-[#D1D9D8] rounded-[3px] shadow-[0_6px_16px_rgba(0,0,0,0.15)] p-3 fade-in"
+                    style={{
+                        top: dropdownPos.top,
+                        right: dropdownPos.right
+                    }}
+                    className="fixed z-[1000] w-64 bg-white border border-slate-200 rounded-sm shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] overflow-hidden animate-slideUp"
                 >
-                    <h4 className="text-[10px] font-bold text-[#1B4D4F] uppercase tracking-wider mb-2.5 border-b border-slate-100 pb-2">
-                        Spalten anzeigen
-                    </h4>
-                    <div className="space-y-1">
-                        {columns.map(col => (
-                            <div key={col.id} className="flex items-center justify-between py-1 px-1 rounded hover:bg-slate-50">
+
+                    <div className="p-1 max-h-[350px] overflow-y-auto custom-scrollbar">
+                        {columns.map((col, index) => (
+                            <div
+                                key={col.id}
+                                onClick={() => toggleColumn(col.id)}
+                                className={clsx(
+                                    "flex items-center justify-between py-2.5 px-3 transition-colors hover:bg-slate-50 cursor-pointer select-none",
+                                    index !== columns.length - 1 && "border-b border-slate-100"
+                                )}
+                            >
                                 <span className={clsx(
-                                    "text-xs font-medium",
+                                    "text-xs font-bold transition-all",
                                     visibleColumns.has(col.id) ? "text-slate-700" : "text-slate-400"
                                 )}>
                                     {typeof col.header === 'string' ? col.header : col.id}
                                 </span>
-                                <Switch checked={visibleColumns.has(col.id)} onChange={() => toggleColumn(col.id)} />
+                                <div className="scale-90 pointer-events-none">
+                                    <Switch checked={visibleColumns.has(col.id)} onChange={() => { }} />
+                                </div>
                             </div>
                         ))}
+                    </div>
+                    <div className="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{visibleColumns.size} Aktiv</span>
+                        <button
+                            onClick={() => setIsSettingsOpen(false)}
+                            className="text-[9px] font-bold text-brand-primary uppercase tracking-widest hover:underline"
+                        >
+                            Schließen
+                        </button>
                     </div>
                 </div>,
                 document.body

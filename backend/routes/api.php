@@ -58,9 +58,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::delete('/settings/company/logo', [\App\Http\Controllers\Api\SettingsController::class, 'deleteLogo']);
         Route::post('/settings/mail/test', [\App\Http\Controllers\Api\SettingsController::class, 'testMailConnection']);
 
-        // Subscription & Billing
-        Route::put('/subscription/plan', [\App\Http\Controllers\Api\SubscriptionController::class, 'updatePlan']);
-        Route::put('/subscription/payment-method', [\App\Http\Controllers\Api\SubscriptionController::class, 'updatePaymentMethod']);
+        // Subscription & Billing (Owner can view + request upgrades)
+        Route::get('/subscription', [\App\Http\Controllers\Api\SubscriptionController::class, 'show']);
+        Route::get('/subscription/history', [\App\Http\Controllers\Api\SubscriptionController::class, 'history']);
+        Route::post('/subscription/request-upgrade', [\App\Http\Controllers\Api\SubscriptionController::class, 'requestUpgrade']);
+        Route::get('/subscription/payment-method', [\App\Http\Controllers\Api\SubscriptionController::class, 'paymentMethod']);
         Route::get('/subscription/invoices', [\App\Http\Controllers\Api\SubscriptionController::class, 'invoices']);
 
         // Bulk delete operations
@@ -160,7 +162,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // Calendar & Appointments
     Route::get('calendar/events', [\App\Http\Controllers\Api\CalendarController::class, 'index']);
+    Route::get('appointments', [\App\Http\Controllers\Api\CalendarController::class, 'list']);
     Route::apiResource('appointments', \App\Http\Controllers\Api\CalendarController::class)->except(['index']);
+
 
     // Notifications
     Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
@@ -179,4 +183,16 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureUserIsAdmin::class
     Route::put('/tenants/{id}', [\App\Http\Controllers\Admin\AdminController::class, 'updateTenant']);
     Route::post('/tenants/{id}/toggle-status', [\App\Http\Controllers\Admin\AdminController::class, 'toggleTenantStatus']);
     Route::get('/logs', [\App\Http\Controllers\Admin\AdminController::class, 'logs']);
+
+    // API Request Logs
+    Route::get('/api-logs', [\App\Http\Controllers\Admin\AdminController::class, 'apiLogs']);
+    Route::get('/api-logs/stats', [\App\Http\Controllers\Admin\AdminController::class, 'apiLogsStats']);
+    Route::get('/api-logs/{id}', [\App\Http\Controllers\Admin\AdminController::class, 'apiLogDetails']);
+    Route::delete('/api-logs/clear', [\App\Http\Controllers\Admin\AdminController::class, 'clearApiLogs']);
+
+    // Subscription Management (Software Owner only)
+    Route::get('/subscriptions/stats', [\App\Http\Controllers\Api\Admin\SubscriptionController::class, 'stats']);
+    Route::post('/subscriptions/{subscription}/cancel', [\App\Http\Controllers\Api\Admin\SubscriptionController::class, 'cancel']);
+    Route::post('/subscriptions/{subscription}/resume', [\App\Http\Controllers\Api\Admin\SubscriptionController::class, 'resume']);
+    Route::apiResource('subscriptions', \App\Http\Controllers\Api\Admin\SubscriptionController::class);
 });

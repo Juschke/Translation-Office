@@ -113,6 +113,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         const prefix = companyData?.customer_id_prefix || 'K';
         return `${prefix}xxxx`;
     }, [formData.id, companyData]);
+
     const [isValidatingIban, setIsValidatingIban] = useState(false);
     const [duplicates, setDuplicates] = useState<any[]>([]);
     const [ignoreDuplicates, setIgnoreDuplicates] = useState(false);
@@ -202,40 +203,28 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
     const validate = useCallback((data: typeof formData) => {
         const newErrors: Record<string, string> = {};
 
-        // Name Validation
         if (!data.last_name) newErrors.last_name = 'Nachname ist ein Pflichtfeld';
-        else if (data.last_name.length < 2) newErrors.last_name = 'Nachname muss mindestens 2 Zeichen lang sein';
-
         if (!data.first_name) newErrors.first_name = 'Vorname ist ein Pflichtfeld';
-        else if (data.first_name.length < 2) newErrors.first_name = 'Vorname muss mindestens 2 Zeichen lang sein';
 
-        // Company Validation
         if ((data.type === 'company' || data.type === 'authority') && !data.company_name) {
             newErrors.company_name = data.type === 'authority' ? 'Name der Behörde ist erforderlich' : 'Firmenname ist erforderlich';
         }
 
-        // Address Validation
         if (!data.address_street) newErrors.address_street = 'Straße ist erforderlich';
         if (!data.address_house_no) newErrors.address_house_no = 'Nr. ist erforderlich';
         if (!data.address_zip) newErrors.address_zip = 'PLZ ist erforderlich';
         else if (data.address_country === 'Deutschland' && !/^\d{5}$/.test(data.address_zip)) {
-            newErrors.address_zip = 'PLZ muss exakt 5 Ziffern enthalten';
+            newErrors.address_zip = 'PLZ muss 5-stellig sein';
         }
         if (!data.address_city) newErrors.address_city = 'Stadt ist erforderlich';
 
-        // Email Validation
         if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
             newErrors.email = 'Ungültiges E-Mail-Format';
         }
 
-        // Phone Validation (basic check if provided)
-        if (data.phone && data.phone.length < 5) newErrors.phone = 'Telefonnummer ist zu kurz';
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }, []);
-
-
 
     useEffect(() => {
         if (initialData) {
@@ -247,20 +236,16 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                 type: ((initialData.type as any) === 'Firma' || initialData.type === 'company') ? 'company' :
                     ((initialData.type as any) === 'Privat' || initialData.type === 'private') ? 'private' : 'authority',
             });
-            setSavedGroupData({});
             setTouched({});
             setErrors({});
             setDuplicates([]);
             setIgnoreDuplicates(false);
-            setIsValidatingIban(false);
         } else if (isOpen) {
             setFormData({ ...EMPTY_CUSTOMER });
-            setSavedGroupData({});
             setTouched({});
             setErrors({});
             setDuplicates([]);
             setIgnoreDuplicates(false);
-            setIsValidatingIban(false);
         }
     }, [initialData, isOpen]);
 
@@ -290,8 +275,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
     const addField = (field: 'additional_emails' | 'additional_phones') => {
         if (formData[field].length < 3) {
             setFormData((prev: CustomerFormData) => ({ ...prev, [field]: [...prev[field], ''] }));
-        } else {
-            // Optional: Toast notification or shaking effect could be added here
         }
     };
 
@@ -307,7 +290,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
             return;
         }
 
-        // Mark all as touched to show errors
         const allTouched: Record<string, boolean> = {};
         Object.keys(formData).forEach(key => allTouched[key] = true);
         setTouched(allTouched);
@@ -414,7 +396,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-8 bg-white">
+                    <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-5 bg-white text-slate-900">
                         {/* Duplication Warning */}
                         {duplicates.length > 0 && (
                             <div className="bg-amber-50 border border-amber-200 p-4 rounded-sm mb-6 flex gap-4 relative overflow-hidden">
@@ -465,15 +447,15 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         )}
 
                         {/* Section 1: Classification */}
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">01</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Klassifizierung & Name</h4>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-x-6 gap-y-4">
+                            <div className="grid grid-cols-12 gap-x-6 gap-y-3">
                                 <div className="col-span-12">
-                                    <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Kunden-Typ</label>
+                                    <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Kunden-Typ</label>
                                     <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 w-fit">
                                         <button type="button" onClick={() => handleTypeChange('private')} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'private' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Privat</button>
                                         <button type="button" onClick={() => handleTypeChange('company')} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
@@ -558,7 +540,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         </div>
 
                         {/* Section 2: Contact */}
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">02</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Kontaktdaten</h4>
@@ -606,7 +588,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                     </div>
                                 </div>
 
-                                <div className="col-span-12 md:col-span-6 space-y-6">
+                                <div className="col-span-12 md:col-span-6 space-y-4">
                                     <PhoneInput
                                         label="Telefon / Mobil"
                                         value={formData.phone}
@@ -643,7 +625,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             </div>
                         </div>
 
-                        <div className="space-y-6">
+                        {/* Section 3: Address */}
+                        <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">03</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Standort & Adresse</h4>
@@ -675,13 +658,13 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         </div>
 
                         {/* Section 4: Bookkeeping */}
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">04</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Buchhaltung & Zahlungsdaten</h4>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-x-6 gap-y-4">
+                            <div className="grid grid-cols-12 gap-x-6 gap-y-3">
                                 <div className="col-span-12 md:col-span-4">
                                     <Input
                                         label="Zahlungsziel (Tage)"
@@ -694,37 +677,38 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                     />
                                 </div>
                                 {formData.type !== 'private' && (
-                                    <div className="col-span-12 md:col-span-4">
-                                        <Input
-                                            label="USt-IdNr."
-                                            name="vat_id"
-                                            value={formData.vat_id}
-                                            onChange={handleChange}
-                                            placeholder="DE123456789"
-                                        />
-                                    </div>
-                                )}
-                                {formData.type !== 'private' && (
-                                    <div className="col-span-12 md:col-span-4">
-                                        <Input
-                                            label="Steuernummer"
-                                            name="tax_id"
-                                            value={formData.tax_id}
-                                            onChange={handleChange}
-                                            placeholder="026 333 44444"
-                                        />
-                                    </div>
+                                    <>
+                                        <div className="col-span-12 md:col-span-4">
+                                            <Input
+                                                label="USt-IdNr."
+                                                name="vat_id"
+                                                value={formData.vat_id}
+                                                onChange={handleChange}
+                                                placeholder="DE123456789"
+                                            />
+                                        </div>
+                                        <div className="col-span-12 md:col-span-4">
+                                            <Input
+                                                label="Steuernummer"
+                                                name="tax_id"
+                                                value={formData.tax_id}
+                                                onChange={handleChange}
+                                                placeholder="026 333 44444"
+                                            />
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         </div>
 
-                        <div className="space-y-6">
+                        {/* Section 5: Bank */}
+                        <div className="space-y-4">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">05</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Bankverbindung</h4>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-x-6 gap-y-4">
+                            <div className="grid grid-cols-12 gap-x-6 gap-y-3">
                                 <div className="col-span-12">
                                     <Input
                                         label="Kontoinhaber"
@@ -737,7 +721,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 </div>
                                 <div className="col-span-12">
                                     <div className="flex flex-col">
-                                        <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">IBAN</label>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">IBAN</label>
                                         <div className="relative">
                                             <IMaskInput
                                                 mask="aa00 0000 0000 0000 0000 00"
@@ -750,8 +734,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 }}
                                                 onBlur={handleIbanBlur}
                                                 className={clsx(
-                                                    'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                                    'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
+                                                    'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm text-brand-text shadow-sm transition-all border outline-none',
+                                                    'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary',
                                                     errors.iban && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
                                                 )}
                                             />
@@ -764,7 +748,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         {errors.iban && <span className="text-xs text-red-500 font-medium block mt-1">{errors.iban}</span>}
                                     </div>
                                 </div>
-                                <div className="col-span-12 sm:col-span-4">
+                                <div className="col-span-12 md:col-span-4">
                                     <Input
                                         label="Bankname"
                                         name="bank_name"
@@ -773,7 +757,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         placeholder="Musterbank AG"
                                     />
                                 </div>
-                                <div className="col-span-12 sm:col-span-4">
+                                <div className="col-span-12 md:col-span-4">
                                     <Input
                                         label="BLZ"
                                         name="bank_code"
@@ -782,9 +766,9 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         placeholder="000 000 00"
                                     />
                                 </div>
-                                <div className="col-span-12 sm:col-span-4">
+                                <div className="col-span-12 md:col-span-4">
                                     <div className="flex flex-col">
-                                        <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">BIC</label>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">BIC</label>
                                         <IMaskInput
                                             mask="aaaaaa aa [aaa]"
                                             definitions={{ 'a': /[a-zA-Z0-9]/ }}
@@ -796,8 +780,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                             }}
                                             onBlur={handleBicBlur}
                                             className={clsx(
-                                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900'
+                                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm text-brand-text shadow-sm transition-all border outline-none',
+                                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary'
                                             )}
                                         />
                                     </div>
@@ -806,20 +790,22 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         </div>
 
                         {/* Section 6: Notes */}
-                        <div className="space-y-6 pb-10">
+                        <div className="space-y-4 pb-10">
                             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                 <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">06</div>
                                 <h4 className="text-xs font-semibold text-slate-800">Interne Akte</h4>
                             </div>
-                            <Input
-                                isTextArea
-                                label="Interne Notizen"
-                                name="notes"
-                                value={formData.notes}
-                                onChange={handleChange}
-                                placeholder="Interne Bemerkungen, Besonderheiten des Kunden, Historie..."
-                                helperText="Informationen sind nur für Mitarbeiter sichtbar"
-                            />
+                            <div className="flex flex-col">
+                                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Interne Notizen</label>
+                                <Input
+                                    isTextArea
+                                    name="notes"
+                                    value={formData.notes}
+                                    onChange={handleChange}
+                                    placeholder="Interne Bemerkungen, Besonderheiten des Kunden, Historie..."
+                                    helperText="Informationen sind nur für Mitarbeiter sichtbar"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -839,9 +825,9 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             {initialData ? 'Änderungen speichern' : 'Kunde anlegen'}
                         </Button>
                     </div>
-                </form >
-            </div >
-        </div >
+                </form>
+            </div>
+        </div>
     );
 };
 

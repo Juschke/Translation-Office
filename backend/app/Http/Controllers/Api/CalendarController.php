@@ -97,7 +97,7 @@ class CalendarController extends Controller
             $query->whereBetween('start_date', [$start, $end])
                 ->orWhereBetween('end_date', [$start, $end]);
         })
-            ->with(['customer', 'partner', 'project.sourceLanguage', 'project.targetLanguage', 'project.customer'])
+            ->with(['customer', 'partner', 'user', 'project.sourceLanguage', 'project.targetLanguage', 'project.customer'])
             ->get();
 
         foreach ($appointments as $appointment) {
@@ -166,6 +166,7 @@ class CalendarController extends Controller
             'project_id' => 'nullable|exists:projects,id',
             'customer_id' => 'nullable|exists:customers,id',
             'partner_id' => 'nullable|exists:partners,id',
+            'user_id' => 'nullable|exists:users,id',
             'color' => 'nullable|string',
         ]);
 
@@ -175,7 +176,7 @@ class CalendarController extends Controller
 
     public function show($id)
     {
-        return response()->json(Appointment::with(['customer', 'partner', 'project'])->findOrFail($id));
+        return response()->json(Appointment::with(['customer', 'partner', 'user', 'project'])->findOrFail($id));
     }
 
     public function update(Request $request, $id)
@@ -192,12 +193,33 @@ class CalendarController extends Controller
             'project_id' => 'nullable|exists:projects,id',
             'customer_id' => 'nullable|exists:customers,id',
             'partner_id' => 'nullable|exists:partners,id',
+            'user_id' => 'nullable|exists:users,id',
             'color' => 'nullable|string',
             'status' => 'string',
         ]);
 
         $appointment->update($validated);
         return response()->json($appointment);
+    }
+
+    public function list(Request $request)
+    {
+        $query = Appointment::with(['customer', 'partner', 'user', 'project.sourceLanguage', 'project.targetLanguage', 'project.customer']);
+
+        if ($request->has('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        return response()->json($query->orderBy('start_date', 'desc')->get());
     }
 
     public function destroy($id)
