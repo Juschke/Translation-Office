@@ -289,6 +289,14 @@
                     <td class="text-right">{{ $project->customer->contact_person ?: $project->customer->company_name }}
                     </td>
                 </tr>
+                @isset($isPaid)
+                    @if($isPaid)
+                        <tr>
+                            <td>Zahlungsstatus</td>
+                            <td class="text-right" style="color: #2e7d32; font-weight: bold;">Betrag beglichen</td>
+                        </tr>
+                    @endif
+                @endisset
             </table>
         </div>
     </div>

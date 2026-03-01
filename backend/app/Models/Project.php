@@ -13,6 +13,20 @@ class Project extends Model
 
     protected $appends = ['display_id'];
 
+    protected static function booted()
+    {
+        static::creating(function ($project) {
+            if (empty($project->access_token)) {
+                $project->access_token = \Illuminate\Support\Str::random(32);
+            }
+        });
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
     protected $fillable = [
         'project_number',
         'customer_id',
@@ -24,6 +38,7 @@ class Project extends Model
         'project_name',
         'status',
         'access_token',
+        'partner_access_token',
         'priority',
         'word_count',
         'line_count',

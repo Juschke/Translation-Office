@@ -233,7 +233,7 @@ const ProjectFinancesTab = ({
     return (
         <div className="flex flex-col gap-8 mb-10 animate-fadeIn h-full">
             {isLocked && (
-                <div className="bg-slate-50 border border-slate-200 rounded-sm p-4 flex items-start gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                <div className="bg-white border border-slate-200 rounded-sm p-4 flex items-start gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
                     <div className="w-10 h-10 rounded-full bg-white text-slate-400 flex items-center justify-center shrink-0 border border-slate-200 shadow-inner">
                         <FaInfoCircle />
                     </div>
@@ -461,7 +461,7 @@ const ProjectFinancesTab = ({
                         </div>
 
                         {/* Summary Footer Inlined */}
-                        <div className="bg-slate-50 border-t border-slate-200 p-6">
+                        <div className="bg-white border-t border-slate-200 p-6">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                                 <div className="flex gap-10">
                                     <div className="flex flex-col">

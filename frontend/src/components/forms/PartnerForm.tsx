@@ -398,7 +398,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           </div>
 
           {formData.type === 'agency' && (
-            <div className="col-span-12 animate-fadeIn">
+            <div className="col-span-12 animate-fadeIn" data-field="company">
               <Input
                 label="Firma / Agenturname *"
                 placeholder="z.B. Übersetzungsbüro Kassel"
@@ -422,7 +422,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
               <option>Herr</option><option>Frau</option><option>Divers</option>
             </Input>
           </div>
-          <div className="col-span-12 md:col-span-5">
+          <div className="col-span-12 md:col-span-5" data-field="firstName">
             <Input
               label="Vorname *"
               placeholder="z.B. Maria"
@@ -430,10 +430,10 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
               error={!!getError('firstName') || duplicates.some(d => d.first_name === formData.firstName && d.last_name === formData.lastName && formData.firstName !== '')}
               onChange={e => updateFormData({ firstName: e.target.value })}
               onBlur={() => markTouched('firstName')}
-              helperText={getError('firstName') || "Vorname"}
+              helperText={getError('firstName') || "Vorname ist erforderlich"}
             />
           </div>
-          <div className="col-span-12 md:col-span-5">
+          <div className="col-span-12 md:col-span-5" data-field="lastName">
             <Input
               label="Nachname *"
               placeholder="z.B. Musterfrau"
@@ -441,31 +441,23 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
               error={!!getError('lastName') || duplicates.some(d => d.last_name === formData.lastName && formData.lastName !== '')}
               onChange={e => updateFormData({ lastName: e.target.value })}
               onBlur={() => markTouched('lastName')}
-              helperText={getError('lastName') || "Nachname"}
+              helperText={getError('lastName') || "Nachname ist erforderlich"}
             />
           </div>
 
-          {formData.id && (
-            <div className="col-span-12 md:col-span-12">
-              <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Partner-ID</label>
-              <div className="text-sm font-medium text-slate-700 px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm">
-                {formData.id}
-              </div>
-            </div>
-          )}
-
-          <div className="col-span-12 space-y-2 animate-fadeIn">
-            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Sprachen *</label>
+          <div className="col-span-12 space-y-2 animate-fadeIn" data-field="languages">
+            <label className={clsx("block text-xs font-medium mb-1 ml-1", (getError('languages') || externalValidationErrors.has('languages')) ? "text-red-500" : "text-slate-400")}>
+              Sprachen *
+            </label>
             <LanguageSelect
               isMulti={true}
               value={formData.languages}
               onChange={v => updateFormData({ languages: v })}
               placeholder="Sprachen auswählen..."
+              className={clsx((getError('languages') || externalValidationErrors.has('languages')) && "border-red-500 rounded-[var(--radius-sm)]")}
             />
-            <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Präferenz für Projektzuweisungen</p>
+            {(getError('languages') || externalValidationErrors.has('languages')) && <p className="text-[10px] text-red-500 font-medium ml-1">Bitte mindestens eine Sprache wählen.</p>}
           </div>
-
-
         </div>
       </div>
 
@@ -482,7 +474,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           <div className="col-span-12 md:col-span-6 space-y-4">
             <div className="space-y-4">
               {formData.emails.map((email, i) => (
-                <div key={i} className="flex gap-2 group animate-fadeIn items-end">
+                <div key={i} className="flex gap-2 group animate-fadeIn items-end" data-field={i === 0 ? "email" : undefined}>
                   <Input
                     containerClassName="flex-1"
                     label={i === 0 ? "E-Mail (Primär) *" : undefined}
@@ -492,7 +484,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     value={email}
                     error={(i === 0 && !!getError('email')) || (i === 0 && duplicates.some(d => d.email === email && email !== ''))}
                     onChange={e => updateEmail(i, e.target.value)}
-                    helperText={i === 0 ? (getError('email') || "Hauptkontakt für alle Projektanfragen") : undefined}
+                    helperText={i === 0 ? (getError('email') || "Hauptkontakt ist erforderlich") : undefined}
                   />
                   <button
                     type="button"
@@ -517,7 +509,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           <div className="col-span-12 md:col-span-6 space-y-4">
             <div className="space-y-4">
               {formData.phones.map((phone, i) => (
-                <div key={i} className="flex gap-2 group animate-fadeIn items-end">
+                <div key={i} className="flex gap-2 group animate-fadeIn items-end" data-field={i === 0 ? "phone" : undefined}>
                   <div className="flex-1">
                     <PhoneInput
                       label={i === 0 ? "Telefon (Primär) *" : undefined}
@@ -528,7 +520,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                         newPhones[i] = val;
                         updateFormData({ phones: newPhones });
                       }}
-                      helperText={i === 0 ? "Direkte Erreichbarkeit" : undefined}
+                      helperText={i === 0 ? "Telefonnummer ist erforderlich" : undefined}
                     />
                   </div>
                   <button
@@ -583,6 +575,9 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                 }}
                 errors={{
                   address_zip: getError('zip'),
+                  address_street: (getError('street') || externalValidationErrors.has('street')) ? 'Erforderlich' : '',
+                  address_city: (getError('city') || externalValidationErrors.has('city')) ? 'Erforderlich' : '',
+                  address_house_no: (getError('houseNo') || externalValidationErrors.has('houseNo')) ? 'Erforderlich' : '',
                 }}
               />
             </div>
@@ -608,7 +603,6 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                   onChange={v => updateFormData({ domains: v })}
                   placeholder="Fachgebiete auswählen..."
                 />
-                <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Thematische Schwerpunkte und Expertise des Partners</p>
               </div>
               <div className="col-span-1 md:col-span-2">
                 <Input
@@ -616,7 +610,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                   placeholder="z.B. SDL Trados, Memsource, memoQ..."
                   value={formData.software}
                   onChange={e => updateFormData({ software: e.target.value })}
-                  helperText="Verfügbare CAT-Tools und andere relevante Fachsoftware"
+                  helperText="Verfügbare CAT-Tools"
                 />
               </div>
             </div>

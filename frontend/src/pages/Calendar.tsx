@@ -6,7 +6,7 @@ import interactionPlugin, { Draggable } from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calendarService, projectService, userService } from '../api/services';
-import { FaPlus, FaSearch, FaUmbrellaBeach, FaMicrophone } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaUmbrellaBeach, FaMicrophone, FaRegCalendarAlt, FaProjectDiagram, FaFileInvoiceDollar, FaUserTie } from 'react-icons/fa';
 import { Button } from '../components/ui/button';
 import toast from 'react-hot-toast';
 import NewAppointmentModal from '../components/modals/NewAppointmentModal';
@@ -38,7 +38,7 @@ const Calendar = () => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [editingAppointment, setEditingAppointment] = useState<any>(null);
     const [view, setView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'>('dayGridMonth');
-    const [calendarTab, setCalendarTab] = useState<'all' | 'staff'>('all');
+    const [calendarTab] = useState<'all' | 'staff'>('all');
     const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
     const [userSearch, setUserSearch] = useState('');
     const [projectSearch, setProjectSearch] = useState('');
@@ -221,26 +221,38 @@ const Calendar = () => {
         const time = extendedProps.deadline || (eventInfo.timeText);
         const type = extendedProps.type || 'appointment';
 
+        let Icon = FaRegCalendarAlt;
+        let iconColor = 'text-green-500';
+        if (type === 'project') { Icon = FaProjectDiagram; iconColor = 'text-blue-500'; }
+        else if (type === 'interpreting') { Icon = FaMicrophone; iconColor = 'text-sky-500'; }
+        else if (type === 'staff') { Icon = FaUserTie; iconColor = 'text-purple-500'; }
+        else if (type === 'vacation') { Icon = FaUmbrellaBeach; iconColor = 'text-orange-500'; }
+        else if (type === 'invoice') { Icon = FaFileInvoiceDollar; iconColor = 'text-red-500'; }
+
         return (
-            <div className="flex flex-col w-full h-full p-1 overflow-hidden transition-all group/event">
-                <div className="flex items-start justify-between gap-1 mb-0.5">
-                    <span className="font-bold text-[10px] truncate leading-tight">
-                        {title}
-                    </span>
+            <div className="flex flex-col w-full h-full p-2 overflow-hidden transition-all group/event">
+                <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <Icon className={`text-[10px] shrink-0 ${iconColor}`} />
+                        <span className="font-bold text-[11px] truncate leading-tight tracking-tight text-slate-800">
+                            {title}
+                        </span>
+                    </div>
                     {time && (
-                        <span className="text-[9px] font-medium opacity-80 whitespace-nowrap">
+                        <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded-sm">
                             {time}
                         </span>
                     )}
                 </div>
-                <div className="flex flex-col gap-0.5 mt-auto">
+                <div className="flex flex-col gap-1.5 mt-auto">
                     {customer && (
-                        <div className="text-[9px] opacity-90 truncate italic">
+                        <div className="text-[10px] text-slate-500 font-medium truncate flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                             {customer}
                         </div>
                     )}
                     {langPair && (
-                        <div className="flex items-center gap-1 text-[9px] opacity-90 font-bold bg-white/20 px-1 rounded-[2px] transition-all">
+                        <div className="inline-flex items-center gap-1.5 text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-sm transition-all w-fit">
                             <span>{langPair}</span>
                         </div>
                     )}
@@ -257,121 +269,32 @@ const Calendar = () => {
                     <p className="text-slate-500 text-sm hidden sm:block">Übersicht über alle Projekte, Rechnungen und Einsätze.</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    {calendarTab === 'staff' ? (
-                        <>
-                            <Button
-                                onClick={() => { setEditingAppointment({ type: 'vacation' }); setSelectedDate(new Date()); setIsModalOpen(true); }}
-                                className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
-                            >
-                                <FaPlus className="text-xs" /> Urlaub
-                            </Button>
-                            <Button
-                                onClick={() => { setEditingAppointment({ type: 'interpreting' }); setSelectedDate(new Date()); setIsModalOpen(true); }}
-                                className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
-                            >
-                                <FaPlus className="text-xs" /> Dolmetscher
-                            </Button>
-                        </>
-                    ) : (
-                        <Button
-                            onClick={() => { setEditingAppointment(null); setSelectedDate(new Date()); setIsModalOpen(true); }}
-                            className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
-                        >
-                            <FaPlus className="text-xs" /> Termin
-                        </Button>
-                    )}
-                </div>
-            </div>
-
-            {/* Calendar Tabs - Mobile: before calendar, Desktop: stays here */}
-            <div className="hidden lg:flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-2">
-                    {[
-                        { id: 'all', label: 'Allgemein' },
-                        { id: 'staff', label: 'Personalplanung' }
-                    ].map((tab: any) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setCalendarTab(tab.id as any)}
-                            className={clsx(
-                                "px-4 py-2 text-xs font-bold transition-all rounded-sm flex items-center gap-2 whitespace-nowrap",
-                                calendarTab === tab.id
-                                    ? "bg-brand-primary text-white shadow-sm"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                            )}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => { setView('dayGridMonth'); calendarRef.current?.getApi().changeView('dayGridMonth'); }}
-                        className={clsx(
-                            "px-3 py-2 text-xs font-bold transition-all rounded-sm whitespace-nowrap",
-                            view === 'dayGridMonth'
-                                ? "bg-slate-300 text-slate-800 shadow-sm"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        )}
+                    <Button
+                        onClick={() => { setEditingAppointment({ type: 'interpreting' }); setSelectedDate(new Date()); setIsModalOpen(true); }}
+                        className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
                     >
-                        Monat
-                    </button>
-                    <button
-                        onClick={() => { setView('timeGridWeek'); calendarRef.current?.getApi().changeView('timeGridWeek'); }}
-                        className={clsx(
-                            "px-3 py-2 text-xs font-bold transition-all rounded-sm whitespace-nowrap",
-                            view === 'timeGridWeek'
-                                ? "bg-slate-300 text-slate-800 shadow-sm"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        )}
+                        <FaPlus className="text-xs text-brand-primary" /> Neuer Dolmetschereinsatz
+                    </Button>
+                    <Button
+                        onClick={() => { setEditingAppointment(null); setSelectedDate(new Date()); setIsModalOpen(true); }}
+                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
                     >
-                        Woche
-                    </button>
-                    <button
-                        onClick={() => { setView('timeGridDay'); calendarRef.current?.getApi().changeView('timeGridDay'); }}
-                        className={clsx(
-                            "px-3 py-2 text-xs font-bold transition-all rounded-sm whitespace-nowrap",
-                            view === 'timeGridDay'
-                                ? "bg-slate-300 text-slate-800 shadow-sm"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        )}
-                    >
-                        Tag
-                    </button>
+                        <FaPlus className="text-xs" /> Neuer Termin
+                    </Button>
                 </div>
             </div>
 
             {/* Main Content Area with Sidebar */}
             <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
-                {/* Mobile Tabs - Only visible on mobile */}
-                <div className="lg:hidden flex flex-col gap-2">
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                        {[
-                            { id: 'all', label: 'Allgemein' },
-                            { id: 'staff', label: 'Personalplanung' }
-                        ].map((tab: any) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setCalendarTab(tab.id as any)}
-                                className={clsx(
-                                    "px-4 py-2 text-xs font-bold transition-all rounded-sm flex items-center gap-2 whitespace-nowrap",
-                                    calendarTab === tab.id
-                                        ? "bg-brand-primary text-white shadow-sm"
-                                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                )}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                <div className="flex-1 bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col p-4 relative z-0 min-h-[600px] lg:min-h-0">
+                    <div className="absolute top-4 right-4 z-10 flex bg-slate-100 p-1 rounded-md border border-slate-200 shadow-sm">
                         <button
                             onClick={() => { setView('dayGridMonth'); calendarRef.current?.getApi().changeView('dayGridMonth'); }}
                             className={clsx(
-                                "px-3 py-2 text-xs font-bold transition-all rounded-sm whitespace-nowrap",
+                                "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
                                 view === 'dayGridMonth'
-                                    ? "bg-slate-300 text-slate-800 shadow-sm"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                    ? "bg-white text-slate-800 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                             )}
                         >
                             Monat
@@ -379,10 +302,10 @@ const Calendar = () => {
                         <button
                             onClick={() => { setView('timeGridWeek'); calendarRef.current?.getApi().changeView('timeGridWeek'); }}
                             className={clsx(
-                                "px-3 py-2 text-xs font-bold transition-all rounded-sm whitespace-nowrap",
+                                "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
                                 view === 'timeGridWeek'
-                                    ? "bg-slate-300 text-slate-800 shadow-sm"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                    ? "bg-white text-slate-800 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                             )}
                         >
                             Woche
@@ -390,18 +313,15 @@ const Calendar = () => {
                         <button
                             onClick={() => { setView('timeGridDay'); calendarRef.current?.getApi().changeView('timeGridDay'); }}
                             className={clsx(
-                                "px-3 py-2 text-xs font-bold transition-all rounded-sm whitespace-nowrap",
+                                "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
                                 view === 'timeGridDay'
-                                    ? "bg-slate-300 text-slate-800 shadow-sm"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                    ? "bg-white text-slate-800 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                             )}
                         >
                             Tag
                         </button>
                     </div>
-                </div>
-
-                <div className="flex-1 bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col p-4 relative z-0 min-h-[600px] lg:min-h-0">
                     {isLoading && (
                         <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
@@ -699,15 +619,20 @@ const Calendar = () => {
                     color: #334155;
                 }
                 .fc .fc-event {
-                    border-radius: 4px;
+                    border-radius: 6px;
                     padding: 0;
                     font-size: 0.75rem;
                     border: none;
                     cursor: pointer;
                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
                     overflow: hidden;
-                    min-height: 42px;
+                    min-height: 58px;
+                }
+                .fc .fc-event:hover {
+                    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+                    transform: translateY(-1px);
+                    z-index: 10;
                 }
                 .fc-event-main {
                     padding: 4px 6px !important;
@@ -757,40 +682,40 @@ const Calendar = () => {
 
                 /* Type-based Event Coloring */
                 .event-type-project {
-                    background-color: #eff6ff !important;
-                    border-left: 3px solid #3b82f6 !important;
-                    color: #1e40af !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-left: 4px solid #3b82f6 !important;
+                    color: #1e293b !important;
                 }
                 .event-type-appointment, .event-type-meeting {
-                    background-color: #f0fdf4 !important;
-                    border-left: 3px solid #22c55e !important;
-                    color: #166534 !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-left: 4px solid #22c55e !important;
+                    color: #1e293b !important;
                 }
                 .event-type-interpreting {
-                    background-color: #f0f9ff !important;
-                    border-left: 3px solid #0ea5e9 !important;
-                    color: #075985 !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-left: 4px solid #0ea5e9 !important;
+                    color: #1e293b !important;
                 }
                 .event-type-staff {
-                    background-color: #faf5ff !important;
-                    border-left: 3px solid #a855f7 !important;
-                    color: #6b21a8 !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-left: 4px solid #a855f7 !important;
+                    color: #1e293b !important;
                 }
                 .event-type-vacation {
-                    background-color: #fff7ed !important;
-                    border-left: 3px solid #f97316 !important;
-                    color: #9a3412 !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-left: 4px solid #f97316 !important;
+                    color: #1e293b !important;
                 }
                 .event-type-invoice {
-                    background-color: #fef2f2 !important;
-                    border-left: 3px solid #ef4444 !important;
-                    color: #991b1b !important;
-                }
-                .fc-v-event {
-                    border: none !important;
-                }
-                .fc-daygrid-event {
-                    border: none !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
+                    border-left: 4px solid #ef4444 !important;
+                    color: #1e293b !important;
                 }
             `}</style>
 

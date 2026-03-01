@@ -367,7 +367,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             const datePart = yy + mm + dd;
 
             // Format: source-target-YYMMDD
-            const basePrefix = `${cleanSource} -${cleanTarget} -${datePart} `.toUpperCase();
+            const basePrefix = `${cleanSource}_${cleanTarget}_${datePart}`.toUpperCase();
 
             const list = Array.isArray(projectsData) ? projectsData : ((projectsData as any).data || []);
             const todayProjectsCount = list.filter((p: any) => {
@@ -376,7 +376,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             }).length;
 
             const sequence = String(todayProjectsCount + 1).padStart(2, '0');
-            const generatedName = `${basePrefix} -${sequence} `;
+            const generatedName = `${basePrefix}_${sequence}`;
 
             setName(generatedName);
         }
@@ -558,7 +558,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             const yyyy = String(now.getFullYear());
             const mm = String(now.getMonth() + 1).padStart(2, '0');
             const dd = String(now.getDate()).padStart(2, '0');
-            finalName = `${customerName}_${source.toUpperCase()} -${target.toUpperCase()}_${yyyy}${mm}${dd} `;
+            finalName = `${customerName}_${source.toUpperCase()}_${target.toUpperCase()}_${yyyy}${mm}${dd}`.replace(/\s+/g, '_');
         }
 
         const sourceLangId = languages.find((l: any) => l.iso_code.startsWith(source))?.id || 1;
@@ -657,7 +657,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     };
 
     return (
-        <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto" onClick={onClose}>
+        <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto">
             <div className="bg-white rounded-sm shadow-sm w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] relative animate-fadeInUp" onClick={e => e.stopPropagation()}>
                 {/* Loading Overlay */}
                 {isLoading && (
@@ -715,7 +715,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         label="Projektname"
                                         placeholder="Projektname eingeben..."
                                         value={name}
-                                        onChange={e => setName(e.target.value)}
+                                        onChange={e => setName(e.target.value.replace(/\s+/g, '_'))}
+                                        helperText="Projektname darf keine Leerzeichen enthalten (Leerzeichen werden automatisch durch Unterstriche ersetzt)."
                                         className="bg-white"
                                     />
                                 </div>

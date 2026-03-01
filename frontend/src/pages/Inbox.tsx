@@ -1143,7 +1143,7 @@ const CommunicationHub = () => {
                             </ScrollArea>
 
                             {/* Toolbar Footer */}
-                            <div className="px-8 py-4 border-t border-[#ddd] bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] flex justify-between items-center shrink-0">
+                            <div className="px-8 py-4 border-t border-slate-100 bg-white flex justify-between items-center shrink-0">
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="file"

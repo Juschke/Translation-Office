@@ -29,9 +29,27 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(\App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'positions', 'files.uploader', 'payments'])->get());
+        $query = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'positions', 'files.uploader', 'payments']);
+
+        if ($request->has('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->has('partner_id')) {
+            $query->where('partner_id', $request->partner_id);
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('limit')) {
+            $query->limit($request->limit);
+        }
+
+        return response()->json($query->latest()->get());
     }
 
     public function store(Request $request)
@@ -101,12 +119,25 @@ class ProjectController extends Controller
         // Send notification to the user who created the project
         $request->user()->notify(new \App\Notifications\ProjectCreatedNotification($project));
 
-        return response()->json($project->load(['positions', 'payments']), 201);
+        // Automatically send invitation to customer if email is available
+        if ($project->customer && $project->customer->email) {
+            $baseUrl = config('app.frontend_url', 'http://localhost:5173');
+            $inviteUrl = $baseUrl . "/guest/project/" . $project->access_token;
+
+            try {
+                \Illuminate\Support\Facades\Mail::to($project->customer->email)
+                    ->send(new \App\Mail\ProjectInvitationMail($project, $inviteUrl, "Ihre Projekt-Übersicht wurde erstellt."));
+            } catch (\Exception $e) {
+                \Log::error("Automatic invitation failed: " . $e->getMessage());
+            }
+        }
+
+        return response()->json($project->load(['positions', 'payments', 'customer', 'tenant']), 201);
     }
 
     public function show($id)
     {
-        $project = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'files.uploader', 'positions', 'payments', 'messages.user', 'invoices'])->findOrFail($id);
+        $project = \App\Models\Project::with(['customer', 'partner', 'sourceLanguage', 'targetLanguage', 'documentType', 'files.uploader', 'positions', 'payments', 'messages.user', 'messages.file', 'invoices'])->findOrFail($id);
 
         // Fetch creator and editor from activities
         $creationActivity = \Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Project::class)
@@ -277,7 +308,7 @@ class ProjectController extends Controller
 
     public function inviteParticipant(Request $request, $id)
     {
-        $project = \App\Models\Project::findOrFail($id);
+        $project = \App\Models\Project::with('tenant')->findOrFail($id);
 
         $validated = $request->validate([
             'email' => 'required|email',
@@ -285,15 +316,32 @@ class ProjectController extends Controller
             'message' => 'nullable|string'
         ]);
 
-        // Logic to send invitation email would go here
-        // For now, we simulate success
+        // Ensure token exists
+        if (!$project->access_token) {
+            $project->access_token = \Illuminate\Support\Str::random(32);
+            $project->save();
+        }
 
-        \Log::info("Invitation sent for Project #{$id} to {$validated['email']} as {$validated['role']}");
+        $baseUrl = config('app.frontend_url', 'http://localhost:5173');
+        $inviteUrl = $baseUrl . "/guest/project/" . $project->access_token;
 
-        return response()->json([
-            'message' => 'Einladung erfolgreich versendet.',
-            'email' => $validated['email']
-        ]);
+        try {
+            \Illuminate\Support\Facades\Mail::to($validated['email'])
+                ->send(new \App\Mail\ProjectInvitationMail($project, $inviteUrl, $validated['message']));
+
+            \Log::info("Invitation sent for Project #{$id} to {$validated['email']} as {$validated['role']}");
+
+            return response()->json([
+                'message' => 'Einladung erfolgreich versendet.',
+                'email' => $validated['email']
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Failed to send invitation: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Fehler beim Versenden der Einladung.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function generateDocument(Request $request, $id)
@@ -375,11 +423,19 @@ class ProjectController extends Controller
             return response()->json(['error' => 'Dokument konnte nicht erstellt werden: ' . $e->getMessage()], 500);
         }
     }
-    public function generateToken(\App\Models\Project $project)
+    public function generateToken(Request $request, \App\Models\Project $project)
     {
-        $project->access_token = \Illuminate\Support\Str::random(32);
+        $type = $request->input('type', 'customer');
+        $token = \Illuminate\Support\Str::random(32);
+
+        if ($type === 'partner') {
+            $project->partner_access_token = $token;
+        } else {
+            $project->access_token = $token;
+        }
+
         $project->save();
-        return response()->json(['access_token' => $project->access_token]);
+        return response()->json(['access_token' => $token]);
     }
 
     public function downloadConfirmation(Request $request, \App\Models\Project $project, $type)
@@ -403,7 +459,13 @@ class ProjectController extends Controller
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.order_confirmation', compact('project'));
             $filename = 'Auftragsbestaetigung_' . ($project->project_number ?? $project->id) . '.pdf';
         } elseif ($type === 'pickup_confirmation') {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.pickup_confirmation', compact('project'));
+            $project->load(['payments', 'invoices']);
+            $isPaid = false;
+            if ($project->invoices->isNotEmpty()) {
+                $latestInvoice = $project->invoices->first();
+                $isPaid = $latestInvoice->status === \App\Models\Invoice::STATUS_PAID;
+            }
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.pickup_confirmation', compact('project', 'isPaid'));
             $filename = 'Abholbestaetigung_' . ($project->project_number ?? $project->id) . '.pdf';
         } else {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.interpreter_confirmation', compact('project'));
@@ -418,17 +480,19 @@ class ProjectController extends Controller
         $project = \App\Models\Project::findOrFail($id);
         $request->validate([
             'content' => 'required|string',
-            'type' => 'nullable|string|in:customer,partner'
+            'type' => 'nullable|string|in:customer,partner',
+            'project_file_id' => 'nullable|exists:project_files,id'
         ]);
 
         $message = $project->messages()->create([
             'content' => $request->input('content'),
             'type' => $request->input('type', 'customer'),
+            'project_file_id' => $request->input('project_file_id'),
             'user_id' => $request->user()->id,
             'sender_name' => $request->user()->name,
             'is_read' => true,
         ]);
 
-        return response()->json($message, 201);
+        return response()->json($message->load('file'), 201);
     }
 }

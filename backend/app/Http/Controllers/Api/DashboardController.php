@@ -66,7 +66,10 @@ class DashboardController extends Controller
             // 5. Invoice stats
             $unpaidInvoicesCount = \App\Models\Invoice::whereIn('status', ['pending', 'overdue'])->count();
             $overdueInvoicesCount = \App\Models\Invoice::where('status', 'overdue')->count();
-
+            // 6. Interpreting counts (upcoming assignments)
+            $activeInterpretingCount = \App\Models\Appointment::where('type', 'interpreting')
+                ->where('start_date', '>=', $today)
+                ->count();
             // 4. Recent Projects
             $recentProjects = Project::with(['customer', 'sourceLanguage', 'targetLanguage'])
                 ->latest()
@@ -94,6 +97,7 @@ class DashboardController extends Controller
                     'unpaid_invoices' => $unpaidInvoicesCount,
                     'overdue_invoices' => $overdueInvoicesCount,
                     'unread_emails' => \App\Models\Mail::where('folder', 'inbox')->where('is_read', false)->count(),
+                    'active_interpreting' => $activeInterpretingCount,
                 ],
                 'recent_projects' => $recentProjects,
                 'language_revenue' => $languageStats

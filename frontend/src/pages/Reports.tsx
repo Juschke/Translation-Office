@@ -39,7 +39,7 @@ const Reports = () => {
     };
 
     const [activeTab, setActiveTab] = useState<'analytics' | 'finance'>('analytics');
-    const [financeSubTab, setFinanceSubTab] = useState<'tax' | 'profitability'>('tax');
+    const [financeSubTab, setFinanceSubTab] = useState<'tax' | 'profitability' | 'opos' | 'bwa'>('tax');
 
     const { data: summary, isLoading: isSummaryLoading } = useQuery({
         queryKey: ['reports', 'summary', queryParams],
@@ -62,9 +62,25 @@ const Reports = () => {
         staleTime: 5 * 60 * 1000,
     });
 
+    const { data: oposData, isLoading: isOposLoading } = useQuery({
+        queryKey: ['reports', 'opos', queryParams],
+        queryFn: () => reportService.getOposReport(queryParams),
+        enabled: activeTab === 'finance' && financeSubTab === 'opos',
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: bwaData, isLoading: isBwaLoading } = useQuery({
+        queryKey: ['reports', 'bwa', queryParams],
+        queryFn: () => reportService.getBwaReport(queryParams),
+        enabled: activeTab === 'finance' && financeSubTab === 'bwa',
+        staleTime: 5 * 60 * 1000,
+    });
+
     const isLoading = activeTab === 'analytics'
         ? isSummaryLoading
-        : (financeSubTab === 'tax' ? isTaxLoading : isProfitabilityLoading);
+        : (financeSubTab === 'tax' ? isTaxLoading :
+            financeSubTab === 'profitability' ? isProfitabilityLoading :
+                financeSubTab === 'opos' ? isOposLoading : isBwaLoading);
 
     const kpis = summary?.kpis;
     const revenueDataPoints = summary?.revenue;
@@ -401,6 +417,24 @@ const Reports = () => {
                                     >
                                         Rentabilitäts-Analyse
                                     </button>
+                                    <button
+                                        onClick={() => setFinanceSubTab('opos')}
+                                        className={clsx(
+                                            "text-xs font-semibold pb-1 border-b-2 transition-all",
+                                            financeSubTab === 'opos' ? "text-slate-700 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"
+                                        )}
+                                    >
+                                        OPOS
+                                    </button>
+                                    <button
+                                        onClick={() => setFinanceSubTab('bwa')}
+                                        className={clsx(
+                                            "text-xs font-semibold pb-1 border-b-2 transition-all",
+                                            financeSubTab === 'bwa' ? "text-slate-700 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"
+                                        )}
+                                    >
+                                        BWA
+                                    </button>
                                 </div>
                             </div>
                             <button className="text-xs font-semibold text-slate-700 hover:underline flex items-center gap-2">
@@ -408,7 +442,7 @@ const Reports = () => {
                             </button>
                         </div>
                         <div className="overflow-x-auto">
-                            {financeSubTab === 'tax' ? (
+                            {financeSubTab === 'tax' && (
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
@@ -463,7 +497,9 @@ const Reports = () => {
                                         </tfoot>
                                     )}
                                 </table>
-                            ) : (
+                            )}
+
+                            {financeSubTab === 'profitability' && (
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
@@ -531,6 +567,113 @@ const Reports = () => {
                                                     <td className="px-5 py-3 text-right bg-slate-900">{fmtNum(totalProfit)}</td>
                                                     <td className="px-5 py-3 text-right">{avgMargin} %</td>
                                                     <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        );
+                                    })()}
+                                </table>
+                            )}
+
+                            {financeSubTab === 'opos' && (
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                                            <th className="px-5 py-3">Rechnungs-Nr.</th>
+                                            <th className="px-5 py-3">Kunde</th>
+                                            <th className="px-5 py-3">Datum</th>
+                                            <th className="px-5 py-3">Fällig am</th>
+                                            <th className="px-5 py-3 text-right">Betrag (Brutto)</th>
+                                            <th className="px-5 py-3 text-right">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {oposData?.map((row: any) => (
+                                            <tr key={row.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-5 py-3 text-xs font-semibold text-slate-900">{row.invoice_number}</td>
+                                                <td className="px-5 py-3 text-xs font-medium text-slate-700">{row.customer}</td>
+                                                <td className="px-5 py-3 text-xs text-slate-500">{row.date}</td>
+                                                <td className="px-5 py-3 text-xs text-slate-500">
+                                                    <span className={clsx(row.overdue && "text-red-500 font-bold")}>{row.due_date}</span>
+                                                    {row.overdue && <span className="ml-2 text-[10px] text-red-500">({row.days_overdue} Tage drüber)</span>}
+                                                </td>
+                                                <td className="px-5 py-3 text-xs font-semibold text-slate-900 text-right tabular-nums">{fmtNum(row.amount_gross)}</td>
+                                                <td className="px-5 py-3 text-right">
+                                                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-sm bg-slate-100 text-slate-500">
+                                                        {row.status === 'issued' ? 'Ausgestellt' : row.status === 'overdue' ? 'Überfällig' : row.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {(!oposData || oposData.length === 0) && (
+                                            <tr>
+                                                <td colSpan={6} className="px-5 py-10 text-center text-slate-400 text-sm">Keine offenen Posten gefunden.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                    {oposData && oposData.length > 0 && (() => {
+                                        const total = oposData.reduce((a: number, r: any) => a + (r.amount_gross ?? 0), 0);
+                                        return (
+                                            <tfoot className="bg-slate-900 text-white font-semibold text-xs">
+                                                <tr>
+                                                    <td colSpan={4} className="px-5 py-3">Gesamt ausstehend</td>
+                                                    <td className="px-5 py-3 text-right bg-slate-900">{fmtNum(total)}</td>
+                                                    <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        );
+                                    })()}
+                                </table>
+                            )}
+
+                            {financeSubTab === 'bwa' && (
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                                            <th className="px-5 py-3">Monat</th>
+                                            <th className="px-5 py-3 text-right">Umsatzerlöse</th>
+                                            <th className="px-5 py-3 text-right">Materialaufwand (Fremdleistungen)</th>
+                                            <th className="px-5 py-3 text-right">Rohertrag</th>
+                                            <th className="px-5 py-3 text-right">Rohertragsquote</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {bwaData?.map((row: any, i: number) => (
+                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-5 py-3 text-xs font-semibold text-slate-900">{row.label}</td>
+                                                <td className="px-5 py-3 text-xs font-medium text-slate-700 text-right tabular-nums">{fmtNum(row.revenue)}</td>
+                                                <td className="px-5 py-3 text-xs font-medium text-red-500/70 text-right tabular-nums">-{fmtNum(row.cost)}</td>
+                                                <td className="px-5 py-3 text-xs font-semibold text-emerald-600 text-right tabular-nums">{fmtNum(row.gross_profit)}</td>
+                                                <td className="px-5 py-3 text-right tabular-nums">
+                                                    <span className={clsx(
+                                                        "text-[10px] font-bold tracking-widest px-2 py-0.5 rounded-full",
+                                                        (row.margin ?? 0) >= 30 ? "bg-emerald-100 text-emerald-700"
+                                                            : (row.margin ?? 0) >= 15 ? "bg-blue-100 text-blue-700"
+                                                                : "bg-amber-100 text-amber-700"
+                                                    )}>
+                                                        {row.margin ?? 0} %
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {(!bwaData || bwaData.length === 0) && (
+                                            <tr>
+                                                <td colSpan={5} className="px-5 py-10 text-center text-slate-400 text-sm">Keine BWA-Daten gefunden.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                    {bwaData && bwaData.length > 0 && (() => {
+                                        const totalRev = bwaData.reduce((a: number, r: any) => a + (r.revenue ?? 0), 0);
+                                        const totalCost = bwaData.reduce((a: number, r: any) => a + (r.cost ?? 0), 0);
+                                        const totalProfit = bwaData.reduce((a: number, r: any) => a + (r.gross_profit ?? 0), 0);
+                                        const avgMargin = totalRev > 0 ? (totalProfit / totalRev) * 100 : 0;
+                                        return (
+                                            <tfoot className="bg-slate-900 text-white font-semibold text-xs">
+                                                <tr>
+                                                    <td className="px-5 py-3">Gesamt</td>
+                                                    <td className="px-5 py-3 text-right">{fmtNum(totalRev)}</td>
+                                                    <td className="px-5 py-3 text-right">-{fmtNum(totalCost)}</td>
+                                                    <td className="px-5 py-3 text-right bg-slate-900">{fmtNum(totalProfit)}</td>
+                                                    <td className="px-5 py-3 text-right">{fmtNum(avgMargin).replace(' €', '')} %</td>
                                                 </tr>
                                             </tfoot>
                                         );

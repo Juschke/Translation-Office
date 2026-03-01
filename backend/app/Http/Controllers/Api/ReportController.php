@@ -367,5 +367,97 @@ class ReportController extends Controller
         ];
         return $map[$status] ?? ucfirst($status ?? '-');
     }
+
+    public function oposReport(Request $request)
+    {
+        [$startDate, $endDate] = $this->getDateRange($request);
+
+        $invoices = \App\Models\Invoice::whereBetween('date', [$startDate, $endDate])
+            ->whereNotIn('status', ['paid', 'cancelled', 'deleted', 'draft'])
+            ->with(['project.customer'])
+            ->orderBy('due_date', 'asc')
+            ->get();
+
+        $data = $invoices->map(function ($inv) {
+            $customerName = 'N/A';
+            if ($inv->project && $inv->project->customer) {
+                $c = $inv->project->customer;
+                $customerName = $c->company_name ?: ($c->first_name . ' ' . $c->last_name);
+            }
+
+            $amountGross = $inv->amount_gross / 100;
+            $overdue = false;
+            $daysOverdue = 0;
+            if ($inv->due_date && Carbon::parse($inv->due_date)->isPast()) {
+                $overdue = true;
+                $daysOverdue = Carbon::parse($inv->due_date)->diffInDays(Carbon::now());
+            }
+
+            return [
+                'id' => $inv->id,
+                'invoice_number' => $inv->invoice_number,
+                'date' => Carbon::parse($inv->date)->format('d.m.Y'),
+                'due_date' => $inv->due_date ? Carbon::parse($inv->due_date)->format('d.m.Y') : '-',
+                'customer' => $customerName,
+                'amount_gross' => $amountGross,
+                'status' => $inv->status,
+                'overdue' => $overdue,
+                'days_overdue' => $daysOverdue
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+    public function bwaReport(Request $request)
+    {
+        Carbon::setLocale('de');
+        [$startDate, $endDate] = $this->getDateRange($request);
+
+        // Get revenue from non-cancelled invoices
+        $invoices = \App\Models\Invoice::whereBetween('date', [$startDate, $endDate])
+            ->whereNotIn('status', ['cancelled', 'deleted'])
+            ->select(
+                DB::raw('DATE_FORMAT(date, "%Y-%m") as month'),
+                DB::raw('SUM(amount_net) as revenue')
+            )
+            ->groupBy(DB::raw('DATE_FORMAT(date, "%Y-%m")'))
+            ->get();
+
+        // Get partner costs from projects
+        $costs = \App\Models\Project::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', '!=', 'deleted')
+            ->select(
+                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+                DB::raw('SUM(partner_cost_net) as cost')
+            )
+            ->groupBy(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'))
+            ->get();
+
+        $months = $invoices->pluck('month')->merge($costs->pluck('month'))->unique()->sort()->values();
+
+        $data = $months->map(function ($month) use ($invoices, $costs) {
+            $rev = $invoices->where('month', $month)->first();
+            $revenueAmount = $rev ? ($rev->revenue / 100) : 0; // Convert cents to eur
+
+            $cst = $costs->where('month', $month)->first();
+            // project partner_cost_net is stored in Euros, not cents!
+            $costAmount = $cst ? (float) $cst->cost : 0;
+
+            $grossProfit = $revenueAmount - $costAmount;
+            $margin = $revenueAmount > 0 ? ($grossProfit / $revenueAmount) * 100 : 0;
+
+            return [
+                'month' => $month,
+                'label' => Carbon::parse($month . '-01')->translatedFormat('F Y'),
+                'revenue' => round($revenueAmount, 2),
+                'cost' => round($costAmount, 2),
+                'gross_profit' => round($grossProfit, 2),
+                'margin' => round($margin, 1)
+            ];
+        });
+
+        return response()->json($data);
+    }
 }
 

@@ -17,6 +17,7 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
 import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
+import EmailComposeModal from '../components/modals/EmailComposeModal';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, invoiceService, customerService, partnerService } from '../api/services';
@@ -184,6 +185,12 @@ const ProjectDetail = () => {
     } = useProjectModals();
 
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
+    const [isEmailComposeOpen, setIsEmailComposeOpen] = useState(false);
+    const [emailComposeData, setEmailComposeData] = useState<{
+        to: string;
+        subject: string;
+        recipientType: 'customer' | 'partner' | 'none';
+    }>({ to: '', subject: '', recipientType: 'none' });
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -636,7 +643,7 @@ const ProjectDetail = () => {
                                 </Button>
 
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <div className="w-12 h-12 rounded-sm bg-slate-50 text-slate-700 flex items-center justify-center text-xl font-semibold border border-slate-100 shadow-sm shrink-0">
+                                    <div className="w-12 h-12 rounded-sm bg-white text-slate-700 flex items-center justify-center text-xl font-semibold border border-slate-200 shadow-sm shrink-0">
                                         {projectData.name.substring(0, 2).toUpperCase()}
                                     </div>
                                     <div className="min-w-0">
@@ -654,7 +661,7 @@ const ProjectDetail = () => {
                                         <div className="flex items-center gap-2 md:gap-4 text-sm text-slate-400 font-medium mt-1 flex-wrap">
                                             {getStatusBadge(projectData.status)}
                                             {projectData.project_number && (
-                                                <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                                <span className="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">
                                                     {projectData.project_number}
                                                 </span>
                                             )}
@@ -685,7 +692,14 @@ const ProjectDetail = () => {
                                 {/* Email senden */}
                                 <Button
                                     variant="default"
-                                    onClick={() => navigate('/inbox', { state: { openCompose: true, projectId: String(projectData.id) } })}
+                                    onClick={() => {
+                                        setEmailComposeData({
+                                            to: projectData.customer?.email || '',
+                                            subject: projectData.name ? `Projekt: ${projectData.project_number || 'ID ' + projectData.id} — ${projectData.name}` : `Projekt ${projectData.id}`,
+                                            recipientType: 'customer'
+                                        });
+                                        setIsEmailComposeOpen(true);
+                                    }}
                                     className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEnvelope /> E-Mail senden
@@ -836,7 +850,7 @@ const ProjectDetail = () => {
 
                     {/* Mobile Tab Menu Overlay */}
                     {isTabMenuOpen && (
-                        <div className="md:hidden border-t border-slate-100 bg-white animate-slideUp">
+                        <div className="md:hidden border-t border-slate-100 bg-white animate-fadeIn">
                             <div className="flex flex-col">
                                 {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
                                     let badgeCount = 0;
@@ -898,12 +912,25 @@ const ProjectDetail = () => {
                         sourceLang={sourceLang}
                         targetLang={targetLang}
                         deadlineStatus={deadlineStatus}
-                        getStatusBadge={getStatusBadge}
                         navigate={navigate}
                         locationPathname={location.pathname}
                         setIsCustomerSearchOpen={setIsCustomerSearchOpen}
                         setIsPartnerModalOpen={setIsPartnerModalOpen}
                         updateProjectMutation={updateProjectMutation}
+                        handlePreviewFile={handlePreviewFile}
+                        setPreviewInvoice={setPreviewInvoice}
+                        onSendEmail={(recipientType) => {
+                            const to = recipientType === 'partner'
+                                ? (projectData.translator?.email || '')
+                                : (projectData.customer?.email || '');
+
+                            setEmailComposeData({
+                                to,
+                                subject: projectData.name ? `Projekt: ${projectData.project_number || 'ID ' + projectData.id} — ${projectData.name}` : `Projekt ${projectData.id}`,
+                                recipientType
+                            });
+                            setIsEmailComposeOpen(true);
+                        }}
                     />
                 )}
 
@@ -1090,6 +1117,15 @@ const ProjectDetail = () => {
                 isOpen={!!previewInvoice}
                 onClose={() => setPreviewInvoice(null)}
                 invoice={previewInvoice}
+            />
+
+            <EmailComposeModal
+                isOpen={isEmailComposeOpen}
+                onClose={() => setIsEmailComposeOpen(false)}
+                projectId={id}
+                to={emailComposeData.to}
+                subject={emailComposeData.subject}
+                recipientType={emailComposeData.recipientType}
             />
         </div >
     );

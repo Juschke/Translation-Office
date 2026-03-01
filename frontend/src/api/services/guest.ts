@@ -5,10 +5,11 @@ export const guestService = {
         const response = await api.get(`/guest/project/${token}`);
         return response.data;
     },
-    postMessage: async (token: string, content: string, senderName?: string) => {
+    postMessage: async (token: string, content: string, senderName?: string, projectFileId?: string) => {
         const response = await api.post(`/guest/project/${token}/message`, {
             content,
             sender_name: senderName,
+            project_file_id: projectFileId
         });
         return response.data;
     },

@@ -14,11 +14,15 @@ class GuestProjectController extends Controller
 {
     public function show(string $token)
     {
-        $project = Project::with(['messages.user', 'files', 'sourceLanguage', 'targetLanguage', 'customer', 'partner', 'tenant', 'positions'])
+        $project = Project::with(['messages.user', 'messages.file', 'files', 'sourceLanguage', 'targetLanguage', 'customer', 'partner', 'tenant', 'positions'])
             ->where('access_token', $token)
+            ->orWhere('partner_access_token', $token)
             ->firstOrFail();
 
+        $role = $project->partner_access_token === $token ? 'partner' : 'customer';
+
         return response()->json([
+            'role' => $role,
             'id' => $project->id,
             'project_name' => $project->project_name,
             'project_number' => $project->project_number,
@@ -56,7 +60,14 @@ class GuestProjectController extends Controller
                     'created_at' => $msg->created_at,
                     'sender_name' => $msg->user ? $msg->user->name : ($msg->sender_name ?: 'Guest'),
                     'user_id' => $msg->user_id, // Pass user_id to distinguish sender
-                    'is_me' => false
+                    'is_me' => false,
+                    'file' => $msg->file ? [
+                        'id' => $msg->file->id,
+                        'original_name' => $msg->file->original_name,
+                        'file_size' => $msg->file->file_size,
+                        'extension' => $msg->file->extension,
+                        'mime_type' => $msg->file->mime_type,
+                    ] : null,
                 ];
             })
         ]);
@@ -64,25 +75,30 @@ class GuestProjectController extends Controller
 
     public function message(Request $request, string $token)
     {
-        $project = Project::where('access_token', $token)->firstOrFail();
+        $project = $this->findByToken($token);
 
         $request->validate([
             'content' => 'required|string|max:5000',
-            'sender_name' => 'nullable|string|max:255'
+            'sender_name' => 'nullable|string|max:255',
+            'project_file_id' => 'nullable|exists:project_files,id'
         ]);
+
+        $role = $project->partner_access_token === $token ? 'partner' : 'customer';
 
         $message = $project->messages()->create([
             'content' => $request->input('content'),
+            'type' => $role, // Set message type based on guest role
             'sender_name' => $request->sender_name ?: 'Guest',
+            'project_file_id' => $request->input('project_file_id'),
             'user_id' => null
         ]);
 
-        return response()->json($message, 201);
+        return response()->json($message->load('file'), 201);
     }
 
     public function upload(Request $request, string $token)
     {
-        $project = Project::where('access_token', $token)->firstOrFail();
+        $project = $this->findByToken($token);
 
         $request->validate([
             'file' => 'required|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,rtf,odt,ods,csv,jpg,jpeg,png,gif,zip',
@@ -110,7 +126,7 @@ class GuestProjectController extends Controller
     }
     public function update(Request $request, string $token)
     {
-        $project = Project::with('customer')->where('access_token', $token)->firstOrFail();
+        $project = $this->findByToken($token);
 
         $validated = $request->validate([
             'customer' => 'required|array',
@@ -133,8 +149,15 @@ class GuestProjectController extends Controller
     }
     public function downloadAvv($token)
     {
-        $project = Project::with(['tenant', 'customer'])->where('access_token', $token)->firstOrFail();
+        $project = $this->findByToken($token);
         $pdf = Pdf::loadView('pdf.avv', compact('project'));
         return $pdf->download('AVV-Vertrag.pdf');
+    }
+
+    private function findByToken(string $token)
+    {
+        return Project::where('access_token', $token)
+            ->orWhere('partner_access_token', $token)
+            ->firstOrFail();
     }
 }

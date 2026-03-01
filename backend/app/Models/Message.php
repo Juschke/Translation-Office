@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
-    protected $fillable = ['project_id', 'user_id', 'content', 'sender_name', 'is_read', 'type'];
+    protected $fillable = ['project_id', 'user_id', 'content', 'sender_name', 'is_read', 'type', 'project_file_id'];
 
     public function project()
     {
@@ -16,5 +16,10 @@ class Message extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function file()
+    {
+        return $this->belongsTo(ProjectFile::class, 'project_file_id');
     }
 }

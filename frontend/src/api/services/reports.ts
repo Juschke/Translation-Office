@@ -37,4 +37,12 @@ export const reportService = {
         const response = await api.get('/reports/profitability', { params });
         return response.data;
     },
+    getOposReport: async (params?: any) => {
+        const response = await api.get('/reports/opos', { params });
+        return response.data;
+    },
+    getBwaReport: async (params?: any) => {
+        const response = await api.get('/reports/bwa', { params });
+        return response.data;
+    },
 };

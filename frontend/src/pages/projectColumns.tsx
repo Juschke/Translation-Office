@@ -112,7 +112,9 @@ export function buildProjectColumns({
                 </div>
             ),
             accessor: (p: any) => (
-                <span className="font-semibold text-slate-800 truncate block max-w-[180px]" title={p.project_name}>{p.project_name}</span>
+                <span className="font-semibold text-slate-800 truncate block max-w-[180px]" title={p.project_name || `Projekt #${p.id}`}>
+                    {p.project_name || <span className="text-slate-400 italic font-normal">Unbenannt (ID: {p.id})</span>}
+                </span>
             ),
             sortable: true,
             sortKey: 'project_name',

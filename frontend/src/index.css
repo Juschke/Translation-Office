@@ -553,19 +553,23 @@ body,
 /* ── RESIZABLE COLUMNS ── */
 .dt-column-resizer {
   position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 10px;
+  right: -22px;
+  /* Pull to the border, compensating for th padding */
+  top: -10px;
+  /* Pull to top border, compensating for th padding */
+  bottom: -10px;
+  /* Pull to bottom border */
+  width: 30px;
+  /* Catch area */
   cursor: col-resize;
-  z-index: 10;
+  z-index: 50;
   background: transparent;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .dt-column-resizer:hover,
 .dt-column-resizer.is-resizing {
-  background: rgba(27, 77, 79, 0.3) !important;
+  background: rgba(27, 77, 79, 0.1) !important;
   border-right: 2px solid #1B4D4F;
 }
 

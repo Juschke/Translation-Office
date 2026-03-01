@@ -3,7 +3,10 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { guestService } from '../api/services';
 import clsx from 'clsx';
-import { FaPaperPlane, FaPaperclip, FaFile, FaFilePdf, FaFileWord, FaFileExcel, FaDownload, FaTimes, FaCheck, FaUniversity, FaFileContract, FaCamera, FaEdit } from 'react-icons/fa';
+import {
+    FaPaperPlane, FaPaperclip, FaFile, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
+    FaDownload, FaTimes, FaCheck, FaUniversity, FaFileContract, FaCamera, FaEdit, FaEye
+} from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { Button } from '../components/ui/button';
 import { getFlagUrl } from '../utils/flags';
@@ -19,12 +22,23 @@ const formatDate = (dateStr: string) => {
     return `${weekday}, ${day} ${month} ${year}`;
 };
 
-const getFileIcon = (filename: string) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
-    if (ext === 'pdf') return <FaFilePdf className="text-red-500" />;
-    if (['doc', 'docx'].includes(ext || '')) return <FaFileWord className="text-blue-500" />;
-    if (['xls', 'xlsx'].includes(ext || '')) return <FaFileExcel className="text-green-500" />;
-    return <FaFile className="text-slate-400" />;
+const getFileIcon = (extension: string = '') => {
+    const ext = extension.toLowerCase();
+    if (['pdf'].includes(ext)) return { icon: FaFilePdf, color: 'text-red-500' };
+    if (['doc', 'docx'].includes(ext)) return { icon: FaFileWord, color: 'text-blue-500' };
+    if (['xls', 'xlsx'].includes(ext)) return { icon: FaFileExcel, color: 'text-green-600' };
+    if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(ext)) return { icon: FaFileImage, color: 'text-purple-500' };
+    if (['zip', 'rar', '7z'].includes(ext)) return { icon: FaFileArchive, color: 'text-orange-500' };
+    return { icon: FaFile, color: 'text-slate-400' };
+};
+
+const formatBytes = (bytes: number, decimals = 1) => {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
 const STEPS = [
@@ -67,44 +81,65 @@ const GuestProjectView = () => {
     useEffect(() => {
         if (project) {
             let name = 'Gast';
-            if (project.customer) {
-                name = project.customer.company_name || `${project.customer.first_name || ''} ${project.customer.last_name || ''}`.trim();
+            const person = project.role === 'partner' ? project.partner : project.customer;
+
+            if (person) {
+                name = person.company_name || `${person.first_name || ''} ${person.last_name || ''}`.trim();
 
                 // Initialize form data
                 setCustomerForm({
-                    company_name: project.customer.company_name || '',
-                    first_name: project.customer.first_name || '',
-                    last_name: project.customer.last_name || '',
-                    address_street: project.customer.address_street || '',
-                    address_house_no: project.customer.address_house_no || '',
-                    address_zip: project.customer.address_zip || '',
-                    address_city: project.customer.address_city || '',
-                    email: project.customer.email || '',
-                    phone: project.customer.phone || ''
+                    company_name: person.company_name || '',
+                    first_name: person.first_name || '',
+                    last_name: person.last_name || '',
+                    address_street: person.address_street || '',
+                    address_house_no: person.address_house_no || '',
+                    address_zip: person.address_zip || '',
+                    address_city: person.address_city || '',
+                    email: person.email || '',
+                    phone: person.phone || ''
                 });
             }
-            if (name === 'Gast') {
+            if (name === 'Gast' || !name) {
                 const stored = localStorage.getItem(`guest_name_${token}`);
                 if (stored) name = stored;
             }
-            setSenderName(name);
+            setSenderName(name || 'Gast');
         }
     }, [project, token]);
 
     const sendMessageMutation = useMutation({
-        mutationFn: (data: { content: string, sender: string }) => guestService.postMessage(token!, data.content, data.sender),
+        mutationFn: (data: { content: string, sender: string, fileId?: string }) => guestService.postMessage(token!, data.content, data.sender, data.fileId),
         onSuccess: () => {
             setNewMessage('');
             queryClient.invalidateQueries({ queryKey: ['guest_project', token] });
         }
     });
 
+    const handleFilePreview = async (file: any) => {
+        try {
+            await guestService.getProject(token!); // In a real app, use a dedicated download endpoint
+            // For now, let's assume projectService logic or guest-friendly download
+            // Since we don't have a direct guest download yet for files, we'll wait for user feedback if this fails
+            window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/projects/${project.id}/files/${file.id}/download`, '_blank');
+        } catch (error) {
+            toast.error('Vorschau nicht möglich');
+        }
+    };
+
+    const handleFileDownload = async (file: any) => {
+        try {
+            window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/projects/${project.id}/files/${file.id}/download`;
+        } catch (error) {
+            toast.error('Download fehlgeschlagen');
+        }
+    };
+
     const uploadFileMutation = useMutation({
         mutationFn: (file: File) => guestService.uploadFile(token!, file),
         onSuccess: (data) => {
             toast.success('Datei gesendet');
-            const content = `[Datei hochgeladen: ${data.file_name || 'Anhang'}]`;
-            sendMessageMutation.mutate({ content, sender: senderName });
+            const content = `[Datei hochgeladen: ${data.original_name || 'Anhang'}]`;
+            sendMessageMutation.mutate({ content, sender: senderName, fileId: data.id });
             queryClient.invalidateQueries({ queryKey: ['guest_project', token] });
         },
         onError: () => {
@@ -126,7 +161,10 @@ const GuestProjectView = () => {
 
     const handleSendMessage = () => {
         if (!newMessage.trim()) return;
-        sendMessageMutation.mutate({ content: newMessage, sender: senderName });
+        const sender = project.role === 'partner'
+            ? (project.partner?.company_name || `${project.partner?.first_name || ''} ${project.partner?.last_name || ''}`.trim() || 'Partner')
+            : senderName;
+        sendMessageMutation.mutate({ content: newMessage, sender });
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,8 +180,8 @@ const GuestProjectView = () => {
                 .then((data) => {
                     toast.dismiss();
                     toast.success('Foto hochgeladen');
-                    const content = `[Foto aufgenommen: ${data.file_name}]`;
-                    sendMessageMutation.mutate({ content, sender: senderName });
+                    const content = `[Foto aufgenommen: ${data.original_name}]`;
+                    sendMessageMutation.mutate({ content, sender: senderName, fileId: data.id });
                 })
                 .catch(() => {
                     toast.dismiss();
@@ -189,10 +227,13 @@ const GuestProjectView = () => {
             <div className="bg-white border-b border-slate-200 flex-none z-20 shadow-sm">
                 <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center text-white font-semibold text-xs">P</div>
+                        <div className={clsx(
+                            "w-8 h-8 rounded flex items-center justify-center text-white font-semibold text-xs transition-colors",
+                            project.role === 'partner' ? "bg-blue-600" : "bg-slate-900"
+                        )}>{project.role === 'partner' ? 'P' : 'C'}</div>
                         <div>
                             <h1 className="text-sm font-semibold text-slate-800">{project.project_name}</h1>
-                            <p className="text-xs text-slate-400 font-medium">Ref: {project.project_number}</p>
+                            <p className="text-xs text-slate-400 font-medium">{project.role === 'partner' ? 'Partner-Portal' : 'Kunden-Portal'} | Ref: {project.project_number}</p>
                         </div>
                     </div>
                 </div>
@@ -202,41 +243,43 @@ const GuestProjectView = () => {
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="max-w-3xl mx-auto px-4 py-6 space-y-4 pb-10">
 
-                    {/* 1. Status Timeline */}
-                    <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm">
-                        <h2 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-50 pb-2">Projektstatus</h2>
-                        <div className="relative flex justify-between items-center px-2">
-                            <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-100 -z-10 mx-4"></div>
-                            <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-100 -z-10 mx-4 transition-all duration-1000" style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%` }}></div>
+                    {/* 1. Status Timeline (Only for Customer) */}
+                    {project.role === 'customer' && (
+                        <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm">
+                            <h2 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-50 pb-2">Projektstatus</h2>
+                            <div className="relative flex justify-between items-center px-2">
+                                <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-100 -z-10 mx-4"></div>
+                                <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-100 -z-10 mx-4 transition-all duration-1000" style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%` }}></div>
 
-                            {STEPS.map((step, idx) => {
-                                const isActive = idx <= currentStepIndex;
-                                const isCurrent = idx === currentStepIndex;
-                                return (
-                                    <div key={idx} className="flex flex-col items-center gap-1 bg-white px-2">
-                                        <div className={clsx(
-                                            "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ring-4 ring-white transition-all duration-500",
-                                            isActive ? "bg-slate-900 text-white shadow-sm shadow-brand-500/30" : "bg-slate-100 text-slate-400"
-                                        )}>
-                                            {isActive ? <FaCheck /> : idx + 1}
+                                {STEPS.map((step, idx) => {
+                                    const isActive = idx <= currentStepIndex;
+                                    const isCurrent = idx === currentStepIndex;
+                                    return (
+                                        <div key={idx} className="flex flex-col items-center gap-1 bg-white px-2">
+                                            <div className={clsx(
+                                                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ring-4 ring-white transition-all duration-500",
+                                                isActive ? "bg-slate-900 text-white shadow-sm shadow-brand-500/30" : "bg-slate-100 text-slate-400"
+                                            )}>
+                                                {isActive ? <FaCheck /> : idx + 1}
+                                            </div>
+                                            <span className={clsx(
+                                                "text-xs font-medium transition-colors",
+                                                isCurrent ? "text-slate-900" : isActive ? "text-slate-700/70" : "text-slate-300"
+                                            )}>{step.label}</span>
                                         </div>
-                                        <span className={clsx(
-                                            "text-xs font-medium transition-colors",
-                                            isCurrent ? "text-slate-900" : isActive ? "text-slate-700/70" : "text-slate-300"
-                                        )}>{step.label}</span>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* 2. Customer & Project Compact */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Customer */}
-                        {project.customer && (
+                        {/* Customer / Partner Data */}
+                        {(project.role === 'customer' ? project.customer : project.partner) && (
                             <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm h-full">
                                 <div className="flex justify-between items-center mb-3 border-b border-slate-50 pb-2">
-                                    <h2 className="text-xs font-semibold text-slate-400">Ihre Daten</h2>
+                                    <h2 className="text-xs font-semibold text-slate-400">{project.role === 'partner' ? 'Ihre Partnerdaten' : 'Ihre Kunden-Daten'}</h2>
                                     {!isEditingCustomer ? (
                                         <button onClick={() => setIsEditingCustomer(true)} className="text-slate-300 hover:text-slate-700 transition"><FaEdit /></button>
                                     ) : (
@@ -326,87 +369,124 @@ const GuestProjectView = () => {
                         </p>
                     </div>
 
-                    {/* 4. Calculation & Payment (Compact) */}
-                    <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h2 className="text-xs font-semibold text-slate-400 mb-3 border-b border-slate-50 pb-2">Kostenaufstellung</h2>
-                                <table className="w-full text-sm">
-                                    <tbody className="text-slate-600">
-                                        {project.positions && project.positions.map((pos: any, idx: number) => (
-                                            <tr key={pos.id || idx} className="border-b border-slate-50 last:border-0">
-                                                <td className="py-1.5">{pos.name || 'Dienstleistung'}</td>
-                                                <td className="py-1.5 text-right font-medium">{formatCurrency(pos.total_price)}</td>
-                                            </tr>
-                                        ))}
-                                        {!project.positions?.length && (
+                    {/* 4. Calculation & Payment (ONLY for Customer) */}
+                    {project.role === 'customer' && (
+                        <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h2 className="text-xs font-semibold text-slate-400 mb-3 border-b border-slate-50 pb-2">Kostenaufstellung</h2>
+                                    <table className="w-full text-sm">
+                                        <tbody className="text-slate-600">
+                                            {project.positions && project.positions.map((pos: any, idx: number) => (
+                                                <tr key={pos.id || idx} className="border-b border-slate-50 last:border-0">
+                                                    <td className="py-1.5">{pos.name || 'Dienstleistung'}</td>
+                                                    <td className="py-1.5 text-right font-medium">{formatCurrency(pos.total_price)}</td>
+                                                </tr>
+                                            ))}
+                                            {!project.positions?.length && (
+                                                <tr>
+                                                    <td className="py-1.5 italic text-slate-400">Pauschalpreis</td>
+                                                    <td className="py-1.5 text-right">{formatCurrency(project.price_total)}</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                        <tfoot className="border-t border-slate-100 font-medium text-slate-800">
                                             <tr>
-                                                <td className="py-1.5 italic text-slate-400">Pauschalpreis</td>
-                                                <td className="py-1.5 text-right">{formatCurrency(project.price_total)}</td>
+                                                <td className="pt-2">Gesamtbetrag (Netto)</td>
+                                                <td className="pt-2 text-right">{formatCurrency(project.price_total)}</td>
                                             </tr>
-                                        )}
-                                    </tbody>
-                                    <tfoot className="border-t border-slate-100 font-medium text-slate-800">
-                                        <tr>
-                                            <td className="pt-2">Gesamtbetrag (Netto)</td>
-                                            <td className="pt-2 text-right">{formatCurrency(project.price_total)}</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                            <div className="bg-slate-50 p-3 rounded-sm self-start">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <FaUniversity className="text-slate-400" />
-                                    <h3 className="text-xs font-semibold text-slate-700">Bankverbindung</h3>
+                                        </tfoot>
+                                    </table>
                                 </div>
-                                {project.tenant ? (
-                                    <div className="space-y-1 text-xs text-slate-600">
-                                        <div className="flex justify-between border-b border-slate-200 pb-1">
-                                            <span className="text-slate-400">Empfänger</span>
-                                            <span className="font-medium">{project.tenant.company_name}</span>
+                                <div className="bg-slate-50 p-3 rounded-sm self-start">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <FaUniversity className="text-slate-400" />
+                                        <h3 className="text-xs font-semibold text-slate-700">Bankverbindung</h3>
+                                    </div>
+                                    {project.tenant ? (
+                                        <div className="space-y-1 text-xs text-slate-600">
+                                            <div className="flex justify-between border-b border-slate-200 pb-1">
+                                                <span className="text-slate-400">Empfänger</span>
+                                                <span className="font-medium">{project.tenant.company_name}</span>
+                                            </div>
+                                            <div className="flex justify-between border-b border-slate-200 pb-1">
+                                                <span className="text-slate-400">Bank</span>
+                                                <span className="font-medium">{project.tenant.bank_name || '-'}</span>
+                                            </div>
+                                            <div className="flex justify-between border-b border-slate-200 pb-1">
+                                                <span className="text-slate-400">IBAN</span>
+                                                <span className="font-mono font-medium select-all">{project.tenant.bank_iban || '-'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">BIC</span>
+                                                <span className="font-mono font-medium select-all">{project.tenant.bank_bic || '-'}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between border-b border-slate-200 pb-1">
-                                            <span className="text-slate-400">Bank</span>
-                                            <span className="font-medium">{project.tenant.bank_name || '-'}</span>
+                                    ) : (
+                                        <div className="text-xs text-slate-400 italic">Bitte kontaktieren Sie uns für Bankdaten.</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 5. Files / Results (Role Based) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Source Files for Partner / Reference Files for Customer */}
+                        <div className="bg-white p-4 rounded-sm border border-slate-100 shadow-sm">
+                            <h2 className="text-xs font-semibold text-slate-400 mb-3 flex items-center gap-2 uppercase tracking-widest">
+                                <FaFileContract /> {project.role === 'partner' ? 'Quell-Dateien' : 'Ihre Dateien'}
+                            </h2>
+                            <div className="space-y-2">
+                                {(project.files || []).filter((f: any) => f.type === 'original' || f.type === 'reference' || !f.type).map((file: any) => (
+                                    <div key={file.id} className="flex items-center justify-between p-2 bg-slate-50/50 rounded-sm border border-slate-100 hover:border-slate-200 transition group">
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className={clsx("text-lg", getFileIcon(file.extension).color)}>
+                                                {(() => { const { icon: Icon } = getFileIcon(file.extension); return <Icon />; })()}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <div className="font-medium text-[11px] text-slate-700 truncate" title={file.original_name}>{file.original_name}</div>
+                                                <div className="text-[9px] text-slate-400">{formatBytes(file.file_size)}</div>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between border-b border-slate-200 pb-1">
-                                            <span className="text-slate-400">IBAN</span>
-                                            <span className="font-mono font-medium select-all">{project.tenant.bank_iban || '-'}</span>
+                                        <button onClick={() => handleFileDownload(file)} className="text-slate-300 hover:text-slate-600 p-1 group-hover:bg-white rounded transition"><FaDownload size={10} /></button>
+                                    </div>
+                                ))}
+                                {!(project.files || []).filter((f: any) => f.type === 'original' || f.type === 'reference' || !f.type).length && (
+                                    <div className="text-[10px] text-slate-300 italic py-2 text-center">Keine Dateien vorhanden.</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Delivered Results */}
+                        <div className={clsx("bg-white p-4 rounded-sm border shadow-sm", project.role === 'partner' ? 'border-blue-100 bg-blue-50/10' : 'border-slate-100')}>
+                            <h2 className={clsx("text-xs font-semibold mb-3 flex items-center gap-2 uppercase tracking-widest", project.role === 'partner' ? 'text-blue-500' : 'text-slate-400')}>
+                                <FaCheck /> {project.role === 'partner' ? 'Ihre Uploads / Ergebnisse' : 'Ergebnisse / Lieferungen'}
+                            </h2>
+                            <div className="space-y-2">
+                                {(project.files || []).filter((f: any) => ['translation', 'target', 'final', 'proofread'].includes(f.type)).map((file: any) => (
+                                    <div key={file.id} className="flex items-center justify-between p-2 bg-white rounded-sm border border-slate-100 hover:border-brand-200 shadow-sm transition group">
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className={clsx("text-lg", getFileIcon(file.extension).color)}>
+                                                {(() => { const { icon: Icon } = getFileIcon(file.extension); return <Icon />; })()}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <div className="font-medium text-[11px] text-slate-700 truncate" title={file.original_name}>{file.original_name}</div>
+                                                <div className="text-[9px] text-slate-400">{formatBytes(file.file_size)}</div>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-400">BIC</span>
-                                            <span className="font-mono font-medium select-all">{project.tenant.bank_bic || '-'}</span>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => handleFilePreview(file)} title="Vorschau" className="text-slate-300 hover:text-brand-primary p-1 rounded transition"><FaEye size={10} /></button>
+                                            <button onClick={() => handleFileDownload(file)} title="Download" className="text-slate-300 hover:text-slate-600 p-1 rounded transition"><FaDownload size={10} /></button>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="text-xs text-slate-400 italic">Bitte kontaktieren Sie uns für Bankdaten.</div>
+                                ))}
+                                {!targetFiles.length && (
+                                    <div className="text-[10px] text-slate-300 italic py-2 text-center">Noch keine Lieferungen vorhanden.</div>
                                 )}
                             </div>
                         </div>
                     </div>
-
-                    {/* 5. Results (Compact) */}
-                    {targetFiles.length > 0 && (
-                        <div className="bg-gradient-to-br from-white to-brand-50/30 p-4 rounded-sm border border-slate-100 shadow-sm">
-                            <h2 className="text-xs font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                                <FaDownload /> Ergebnisse
-                            </h2>
-                            <div className="space-y-2">
-                                {targetFiles.map((file: any) => (
-                                    <div key={file.id} className="flex items-center justify-between p-2 bg-white rounded-sm border border-brand-50 shadow-sm hover:shadow-sm transition cursor-pointer">
-                                        <div className="flex items-center gap-3">
-                                            {getFileIcon(file.file_name)}
-                                            <div>
-                                                <div className="font-medium text-sm text-slate-700">{file.file_name}</div>
-                                                <div className="text-xs text-slate-400">{(file.file_size / 1024).toFixed(1)} KB</div>
-                                            </div>
-                                        </div>
-                                        <button className="text-slate-700 hover:text-slate-800"><FaDownload /></button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
 
                     {/* 6. Communication (Compact) */}
                     <div className="bg-white rounded-sm border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[400px]">
@@ -415,20 +495,58 @@ const GuestProjectView = () => {
                             <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">{project.messages?.length || 0}</span>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-white flex flex-col-reverse">
-                            {(!project.messages || project.messages.length === 0) && (
+                            {(!(project.messages || []).filter((msg: any) => msg.type === project.role).length) && (
                                 <div className="text-center text-slate-300 italic py-10 self-center">Haben Sie Fragen? Schreiben Sie uns!</div>
                             )}
-                            {[...(project.messages || [])].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((msg: any) => (
-                                <div key={msg.id} className={clsx("flex flex-col max-w-[85%]", !msg.user_id ? "self-end items-end" : "self-start items-start")}>
-                                    <div className={clsx("px-3 py-2 rounded-sm text-xs shadow-sm", !msg.user_id ? "bg-slate-900 text-white rounded-br-none" : "bg-slate-100 text-slate-700 rounded-bl-none")}>
-                                        {msg.content}
+                            {[...(project.messages || [])]
+                                .filter((msg: any) => msg.type === project.role)
+                                .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                                .map((msg: any) => (
+                                    <div key={msg.id} className={clsx("flex flex-col max-w-[85%]", !msg.user_id ? "self-end items-end" : "self-start items-start")}>
+                                        <div className={clsx("px-3 py-2 rounded-sm text-xs shadow-sm", !msg.user_id ? "bg-slate-900 text-white rounded-br-none" : "bg-slate-100 text-slate-700 rounded-bl-none")}>
+                                            {msg.file ? (
+                                                <div className="flex flex-col gap-2 min-w-[200px]">
+                                                    <div className="flex items-center gap-3 p-2 bg-white/10 rounded-sm">
+                                                        <div className={clsx("text-2xl", msg.user_id ? getFileIcon(msg.file.extension).color : 'text-white/80')}>
+                                                            {(() => {
+                                                                const { icon: Icon } = getFileIcon(msg.file.extension);
+                                                                return <Icon />;
+                                                            })()}
+                                                        </div>
+                                                        <div className="flex flex-col overflow-hidden">
+                                                            <span className="font-bold truncate text-[11px] leading-tight" title={msg.file.original_name}>
+                                                                {msg.file.original_name}
+                                                            </span>
+                                                            <span className={clsx("text-[9px] font-medium", !msg.user_id ? 'text-white/60' : 'text-slate-500')}>
+                                                                {formatBytes(msg.file.file_size)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            className={clsx("h-7 px-3 text-[10px] rounded-sm border flex items-center gap-1.5 font-bold transition", !msg.user_id ? 'bg-white/10 border-white/10 text-white hover:bg-white/20' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')}
+                                                            onClick={() => handleFilePreview(msg.file)}
+                                                        >
+                                                            <FaEye className="text-[10px]" /> Vorschau
+                                                        </button>
+                                                        <button
+                                                            className={clsx("h-7 px-3 text-[10px] rounded-sm border flex items-center gap-1.5 font-bold transition", !msg.user_id ? 'bg-white/10 border-white/10 text-white hover:bg-white/20' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')}
+                                                            onClick={() => handleFileDownload(msg.file)}
+                                                        >
+                                                            <FaDownload className="text-[10px]" /> Download
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                msg.content
+                                            )}
+                                        </div>
+                                        <div className="text-xs text-slate-300 mt-0.5 flex gap-2 font-medium px-1">
+                                            <span>{msg.user_id ? (tInfos.name || 'Übersetzungsbüro') : 'Du'}</span>
+                                            <span>{new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
                                     </div>
-                                    <div className="text-xs text-slate-300 mt-0.5 flex gap-2 font-medium px-1">
-                                        <span>{msg.user_id ? (tInfos.name || 'Übersetzungsbüro') : 'Du'}</span>
-                                        <span>{new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
                         </div>
                         <div className="p-3 border-t border-slate-100 bg-transparent">
                             <div className="flex gap-2">

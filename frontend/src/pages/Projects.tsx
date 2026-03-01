@@ -452,7 +452,7 @@ const Projects = () => {
         </div>
     );
 
-    if (isLoading) return <TableSkeleton rows={8} columns={6} />;
+    if (isLoading && viewMode === 'kanban') return <TableSkeleton rows={8} columns={6} />;
 
     return (
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>

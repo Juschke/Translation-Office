@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import Switch from './Switch';
 import { Button } from './Button';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
+import TableSkeleton from './TableSkeleton';
 
 interface Column<T> {
     id: string;
@@ -241,8 +242,8 @@ const DataTable = <T extends { id: string | number }>({
             showSorterTooltip: false,
             width: columnWidths[col.id],
             title: (
-                <div className="relative flex items-center justify-between w-full group/header">
-                    <span className="truncate flex-1">{col.header}</span>
+                <div className="relative w-full group/header">
+                    <div className="w-full">{col.header}</div>
                     <div
                         className="dt-column-resizer"
                         onMouseDown={(e) => handleResize(col.id, e)}
@@ -364,35 +365,39 @@ const DataTable = <T extends { id: string | number }>({
 
             {/* ── Ant Design Table ── */}
             <div className="flex-1 overflow-x-auto min-h-0 relative">
-                <Table<T>
-                    columns={antdColumns}
-                    dataSource={paginatedData}
-                    rowKey="id"
-                    pagination={false}
-                    loading={isLoading}
-                    size="small"
-                    showSorterTooltip={false}
-                    onChange={handleTableChange}
-                    rowSelection={rowSelection}
-                    sticky
-                    scroll={{
-                        x: 'max-content',
-                        y: window.innerWidth < 768 ? 400 : 'calc(100vh - 420px)'
-                    }}
-                    onRow={record => ({
-                        onClick: () => {
-                            setSelectedRowKey(record.id);
-                            onRowClick?.(record);
-                        },
-                        className: clsx(
-                            onRowClick && 'cursor-pointer',
-                            record.id === selectedRowKey && 'dt-row-selected'
-                        ),
-                    })}
-                    rowClassName={(_, index) => index % 2 !== 0 ? 'dt-row-odd' : 'dt-row-even'}
-                    locale={{ emptyText: emptyNode }}
-                    className="dt-antd-table"
-                />
+                {isLoading ? (
+                    <TableSkeleton rows={pageSize} columns={activeColumns.length + (selectable ? 1 : 0)} />
+                ) : (
+                    <Table<T>
+                        columns={antdColumns}
+                        dataSource={paginatedData}
+                        rowKey="id"
+                        pagination={false}
+                        loading={false}
+                        size="small"
+                        showSorterTooltip={false}
+                        onChange={handleTableChange}
+                        rowSelection={rowSelection}
+                        sticky
+                        scroll={{
+                            x: 'max-content',
+                            y: window.innerWidth < 768 ? 400 : 'calc(100vh - 420px)'
+                        }}
+                        onRow={record => ({
+                            onClick: () => {
+                                setSelectedRowKey(record.id);
+                                onRowClick?.(record);
+                            },
+                            className: clsx(
+                                onRowClick && 'cursor-pointer',
+                                record.id === selectedRowKey && 'dt-row-selected'
+                            ),
+                        })}
+                        rowClassName={(_, index) => index % 2 !== 0 ? 'dt-row-odd' : 'dt-row-even'}
+                        locale={{ emptyText: emptyNode }}
+                        className="dt-antd-table"
+                    />
+                )}
             </div>
 
             {/* ── Footer ── */}

@@ -62,12 +62,16 @@ export const projectService = {
         const response = await api.get(`/projects/${projectId}/activities`);
         return response.data;
     },
-    generateToken: async (projectId: string) => {
-        const response = await api.post(`/projects/${projectId}/generate-token`);
+    generateToken: async (projectId: string, type: 'customer' | 'partner' = 'customer') => {
+        const response = await api.post(`/projects/${projectId}/generate-token`, { type });
         return response.data;
     },
-    postMessage: async (projectId: string, content: string, type: 'customer' | 'partner' = 'customer') => {
-        const response = await api.post(`/projects/${projectId}/message`, { content, type });
+    postMessage: async (projectId: string, content: string, type: 'customer' | 'partner' = 'customer', projectFileId?: string) => {
+        const response = await api.post(`/projects/${projectId}/message`, {
+            content,
+            type,
+            project_file_id: projectFileId
+        });
         return response.data;
     },
     downloadConfirmation: async (
