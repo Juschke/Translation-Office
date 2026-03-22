@@ -190,8 +190,8 @@ const Dashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Source Language Table */}
                         <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
-                            <div className="px-5 py-4 border-b border-slate-200 flex justify-between items-center">
-                                <h3 className="text-sm font-medium text-slate-900">
+                            <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                <h3 className="text-xs font-medium text-slate-900">
                                     Performance: Ausgangssprache (Source)
                                 </h3>
                                 <span className="text-xs text-slate-500 tabular-nums">
@@ -200,23 +200,23 @@ const Dashboard = () => {
                             </div>
                             <div className="p-0 overflow-x-auto">
                                 <table className="w-full text-left min-w-[300px]">
-                                    <thead className="text-sm font-medium text-slate-500">
+                                    <thead className="text-xs font-medium text-slate-500">
                                         <tr>
-                                            <th className="px-5 py-3 border-b border-slate-200">Sprache</th>
-                                            <th className="px-5 py-3 border-b border-slate-200 text-right">Umsatz (€)</th>
-                                            <th className="px-5 py-3 border-b border-slate-200 text-right">Anteil (%)</th>
+                                            <th className="px-3 py-2 border-b border-slate-200">Sprache</th>
+                                            <th className="px-3 py-2 border-b border-slate-200 text-right">Umsatz (€)</th>
+                                            <th className="px-3 py-2 border-b border-slate-200 text-right">Anteil (%)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
                                         {sourceLanguageRevenue.map((item: any, i: number) => {
                                             const share = stats.monthly_revenue > 0 ? (item.value / stats.monthly_revenue) * 100 : 0;
                                             return (
-                                                <tr key={i} className="hover:bg-transparent transition-colors">
-                                                    <td className="px-5 py-3 text-sm font-medium text-slate-900">{item.label}</td>
-                                                    <td className="px-5 py-3 text-sm text-slate-900 text-right tabular-nums">
+                                                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-3 py-2 text-xs font-medium text-slate-900">{item.label}</td>
+                                                    <td className="px-3 py-2 text-xs text-slate-900 text-right tabular-nums">
                                                         {item.value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                     </td>
-                                                    <td className="px-5 py-3 text-sm text-slate-500 text-right tabular-nums">
+                                                    <td className="px-3 py-2 text-xs text-slate-500 text-right tabular-nums">
                                                         {share.toFixed(1)}%
                                                     </td>
                                                 </tr>
@@ -224,7 +224,7 @@ const Dashboard = () => {
                                         })}
                                         {sourceLanguageRevenue.length === 0 && (
                                             <tr>
-                                                <td colSpan={3} className="px-5 py-8 text-center text-slate-500 text-sm">Keine Daten</td>
+                                                <td colSpan={3} className="px-3 py-6 text-center text-slate-500 text-xs">Keine Daten</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -234,8 +234,8 @@ const Dashboard = () => {
 
                         {/* Target Language Table */}
                         <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
-                            <div className="px-5 py-4 border-b border-slate-200 flex justify-between items-center">
-                                <h3 className="text-sm font-medium text-slate-900">
+                            <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                <h3 className="text-xs font-medium text-slate-900">
                                     Performance: Zielsprache (Target)
                                 </h3>
                                 <span className="text-xs text-slate-500 tabular-nums">
@@ -244,23 +244,23 @@ const Dashboard = () => {
                             </div>
                             <div className="p-0 overflow-x-auto">
                                 <table className="w-full text-left min-w-[300px]">
-                                    <thead className="text-sm font-medium text-slate-500">
+                                    <thead className="text-xs font-medium text-slate-500">
                                         <tr>
-                                            <th className="px-5 py-3 border-b border-slate-200">Sprache</th>
-                                            <th className="px-5 py-3 border-b border-slate-200 text-right">Umsatz (€)</th>
-                                            <th className="px-5 py-3 border-b border-slate-200 text-right">Anteil (%)</th>
+                                            <th className="px-3 py-2 border-b border-slate-200">Sprache</th>
+                                            <th className="px-3 py-2 border-b border-slate-200 text-right">Umsatz (€)</th>
+                                            <th className="px-3 py-2 border-b border-slate-200 text-right">Anteil (%)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
                                         {targetLanguageRevenue.map((item: any, i: number) => {
                                             const share = stats.monthly_revenue > 0 ? (item.value / stats.monthly_revenue) * 100 : 0;
                                             return (
-                                                <tr key={i} className="hover:bg-transparent transition-colors">
-                                                    <td className="px-5 py-3 text-sm font-medium text-slate-900">{item.label}</td>
-                                                    <td className="px-5 py-3 text-sm text-slate-900 text-right tabular-nums">
+                                                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-3 py-2 text-xs font-medium text-slate-900">{item.label}</td>
+                                                    <td className="px-3 py-2 text-xs text-slate-900 text-right tabular-nums">
                                                         {item.value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                     </td>
-                                                    <td className="px-5 py-3 text-sm text-slate-500 text-right tabular-nums">
+                                                    <td className="px-3 py-2 text-xs text-slate-500 text-right tabular-nums">
                                                         {share.toFixed(1)}%
                                                     </td>
                                                 </tr>
@@ -268,7 +268,7 @@ const Dashboard = () => {
                                         })}
                                         {targetLanguageRevenue.length === 0 && (
                                             <tr>
-                                                <td colSpan={3} className="px-5 py-8 text-center text-slate-500 text-sm">Keine Daten</td>
+                                                <td colSpan={3} className="px-3 py-6 text-center text-slate-500 text-xs">Keine Daten</td>
                                             </tr>
                                         )}
                                     </tbody>

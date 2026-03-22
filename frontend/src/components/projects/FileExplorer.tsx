@@ -22,12 +22,13 @@ interface FileExplorerProps {
     onRenameFile: (file: any, newName: string) => Promise<void>;
     onMoveFile: (file: any, newType: string) => Promise<void>;
     formatFileSize: (bytes: any) => string;
+    onUpload: (files: any[], onProgress: (id: string, progress: number) => void) => Promise<void>;
 }
 
 const FOLDERS = [
-    { id: 'source', name: 'Eingangsdokumente', icon: <FaFolder className="text-amber-500" />, openIcon: <FaFolderOpen className="text-amber-500" /> },
-    { id: 'target', name: 'Ausgangsdokumente', icon: <FaFolder className="text-blue-500" />, openIcon: <FaFolderOpen className="text-blue-500" /> },
-    { id: 'reference', name: 'Referenzen', icon: <FaFolder className="text-slate-500" />, openIcon: <FaFolderOpen className="text-slate-500" /> },
+    { id: 'source', name: 'Eingangsdokumente', icon: <FaFolder className="text-brand-primary" />, openIcon: <FaFolderOpen className="text-brand-primary" /> },
+    { id: 'target', name: 'Ausgangsdokumente', icon: <FaFolder className="text-brand-primary" />, openIcon: <FaFolderOpen className="text-brand-primary" /> },
+    { id: 'reference', name: 'Referenzen', icon: <FaFolder className="text-brand-primary" />, openIcon: <FaFolderOpen className="text-brand-primary" /> },
 ];
 
 const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -39,6 +40,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     onRenameFile,
     onMoveFile,
     formatFileSize,
+    onUpload,
 }) => {
     const [selectedFolderId, setSelectedFolderId] = useState<string>('source');
     const [searchQuery, setSearchQuery] = useState('');
@@ -47,11 +49,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     const [clipboard, setClipboard] = useState<{ action: 'copy' | 'cut', files: any[] } | null>(null);
     const [renamingFileId, setRenamingFileId] = useState<string | null>(null);
     const [renameValue, setRenameValue] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
+    const [uploadQueue, setUploadQueue] = useState<any[]>([]);
 
     const files = projectData.files || [];
 
     const getFileIcon = (fileName: string) => {
-        const lowerName = fileName.toLowerCase();
+        const lowerName = (fileName || '').toLowerCase();
         if (lowerName.endsWith('.pdf')) return <FaFilePdf className="text-red-500" />;
         if (lowerName.endsWith('.doc') || lowerName.endsWith('.docx')) return <FaFileWord className="text-blue-500" />;
         if (lowerName.endsWith('.xls') || lowerName.endsWith('.xlsx')) return <FaFileExcel className="text-emerald-500" />;
@@ -120,8 +124,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 setClipboard(null);
                 toast.success('Dateien erfolgreich verschoben');
             } else {
-                // For "copy", we'd need a backend endpoint to clone files. 
-                // Since moving is more common in this workflow, we'll suggest that or skip if not supported.
                 toast.error('Kopieren wird aktuell nicht unterstützt, nur Verschieben (Ausschneiden)');
             }
         } catch (error) {
@@ -134,6 +136,58 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             setSelectedFileIds(currentFolderFiles.map((f: any) => f.id));
         } else {
             setSelectedFileIds([]);
+        }
+    };
+
+    const handleFilesUpload = async (filesToUpload: FileList | File[]) => {
+        const newFiles = Array.from(filesToUpload).map(file => ({
+            id: Math.random().toString(36).substring(7),
+            file,
+            name: file.name,
+            size: file.size,
+            progress: 0,
+            status: 'uploading' as const,
+            type: selectedFolderId
+        }));
+
+        setUploadQueue(prev => [...prev, ...newFiles]);
+
+        try {
+            await onUpload(newFiles, (id, progress) => {
+                setUploadQueue(prev => prev.map(f =>
+                    f.id === id ? { ...f, progress, status: progress === 100 ? 'saving' : 'uploading' } : f
+                ));
+            });
+
+            setUploadQueue(prev => prev.map(f =>
+                newFiles.some(nf => nf.id === f.id) ? { ...f, status: 'saved' as const } : f
+            ));
+
+            setTimeout(() => {
+                setUploadQueue(prev => prev.filter(f => !newFiles.some(nf => nf.id === f.id)));
+            }, 3000);
+        } catch (error) {
+            setUploadQueue(prev => prev.map(f =>
+                newFiles.some(nf => nf.id === f.id) ? { ...f, status: 'error' as const } : f
+            ));
+            toast.error('Hochladen fehlgeschlagen');
+        }
+    };
+
+    const onDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const onDragLeave = () => {
+        setIsDragging(false);
+    };
+
+    const onDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleFilesUpload(e.dataTransfer.files);
         }
     };
 
@@ -177,7 +231,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                 className="h-8 px-2 text-slate-600 disabled:opacity-30"
                                 disabled={selectedFileIds.length === 0}
                             >
-                                <FaFolder className="mr-1.5 text-xs text-blue-400" /> Verschieben...
+                                <FaFolder className="mr-1.5 text-xs text-brand-primary" /> Verschieben...
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-48">
@@ -246,7 +300,23 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 </div>
             </div>
 
-            <div className="flex flex-1 min-h-0">
+            <div className="flex flex-1 min-h-0 relative">
+                {/* Drag Overlay */}
+                {isDragging && (
+                    <div
+                        className="absolute inset-0 bg-brand-primary/10 border-2 border-dashed border-brand-primary z-50 flex flex-col items-center justify-center backdrop-blur-[2px] pointer-events-none animate-in fade-in duration-200"
+                        onDragOver={onDragOver}
+                        onDragLeave={onDragLeave}
+                        onDrop={onDrop}
+                    >
+                        <div className="bg-white p-6 rounded-full shadow-lg border border-brand-primary/20 mb-4 scale-110">
+                            <FaCloudUploadAlt className="text-5xl text-brand-primary" />
+                        </div>
+                        <div className="text-lg font-bold text-brand-primary uppercase tracking-widest">Dateien hier ablegen</div>
+                        <div className="text-xs text-brand-primary/60 mt-1">Upload in "{FOLDERS.find(f => f.id === selectedFolderId)?.name}"</div>
+                    </div>
+                )}
+
                 {/* Sidebar */}
                 <div className="w-64 bg-slate-50 border-right border-slate-200 p-2 border-r">
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 pt-2">Projektordner</div>
@@ -283,10 +353,15 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 flex flex-col bg-white overflow-y-auto">
+                <div
+                    className="flex-1 flex flex-col bg-white overflow-y-auto"
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                >
                     {currentFolderFiles.length === 0 ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-300 gap-4 opacity-50">
-                            <FaFolderOpen className="text-6xl" />
+                            <FaFolderOpen className="text-6xl text-brand-primary/20" />
                             <div className="text-sm font-medium">Dieser Ordner ist leer</div>
                             <Button variant="outline" size="sm" onClick={() => setIsUploadModalOpen(true)}>
                                 Datei hochladen
@@ -457,21 +532,68 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                         </div>
                     )}
                 </div>
+
+                {/* Upload Queue Progress Bars */}
+                {uploadQueue.length > 0 && (
+                    <div className="absolute bottom-6 right-6 w-80 bg-white border border-slate-200 shadow-2xl rounded-md overflow-hidden z-[60] animate-in slide-in-from-bottom-5 duration-300">
+                        <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Uploads ({uploadQueue.length})</span>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                            {uploadQueue.map(f => (
+                                <div key={f.id} className="p-3 border-b border-slate-50 last:border-none">
+                                    <div className="flex items-center gap-3 mb-1.5">
+                                        <div className="shrink-0 text-base">
+                                            {getFileIcon(f.name)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-center mb-0.5">
+                                                <span className="text-[11px] font-bold text-slate-700 truncate block">{f.name}</span>
+                                                <span className={clsx(
+                                                    "text-[9px] font-bold uppercase",
+                                                    f.status === 'saving' ? "text-amber-500" :
+                                                        f.status === 'saved' ? "text-emerald-500" :
+                                                            f.status === 'error' ? "text-red-500" : "text-slate-400"
+                                                )}>
+                                                    {f.status === 'uploading' ? `${f.progress}%` :
+                                                        f.status === 'saving' ? 'Speichern...' :
+                                                            f.status === 'saved' ? 'Bereit' : 'Fehler'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-[9px] text-slate-400 font-mono">{formatFileSize(f.size)}</span>
+                                            </div>
+                                            <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                                                <div
+                                                    className={clsx(
+                                                        "h-full transition-all duration-300",
+                                                        f.status === 'error' ? "bg-red-500" :
+                                                            f.status === 'saved' ? "bg-emerald-500" : "bg-brand-primary"
+                                                    )}
+                                                    style={{ width: `${f.progress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Footer / Status Bar */}
-            <div className="px-4 py-1.5 bg-slate-600 text-white text-[10px] flex items-center justify-between font-medium">
+            <div className="px-4 py-2 bg-slate-100/40 backdrop-blur-xs border-t border-slate-200 text-slate-400 text-[10px] flex items-center justify-between font-medium">
                 <div className="flex items-center gap-4">
-                    <span className="opacity-90">{files.length} Elemente insgesamt</span>
+                    <span className="opacity-80">{files.length} Elemente insgesamt</span>
                     {selectedFileIds.length > 0 && (
-                        <span className=" text-[9px] text-white px-1.5 py-1.5 rounded-[2px] font-black uppercase tracking-tighter  animate-in fade-in zoom-in duration-200">
+                        <span className="text-[9px] bg-brand-primary/10 text-brand-primary px-2 py-0.5 rounded-[2px] font-bold uppercase tracking-tighter animate-in fade-in zoom-in duration-200 border border-brand-primary/10">
                             {selectedFileIds.length} ausgewählt
                         </span>
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-
-                    <span className="bg-white/20 px-2 py-1.5 rounded-[2px]">{FOLDERS.find(f => f.id === selectedFolderId)?.name}</span>
+                    <span className="bg-slate-200/50 text-slate-500 px-2 py-0.5 rounded-[2px] border border-slate-200/50">{FOLDERS.find(f => f.id === selectedFolderId)?.name}</span>
                 </div>
             </div>
         </div>

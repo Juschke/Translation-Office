@@ -275,7 +275,7 @@ const Interpreting = () => {
                     value={stats.thisMonth}
                     icon={<FaHandshake />}
                     iconColor="text-amber-600"
-                    subValue="Assignments"
+                    subValue="Einsätze"
                 />
             </div>
 

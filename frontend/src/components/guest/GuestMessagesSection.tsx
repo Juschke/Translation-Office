@@ -8,14 +8,12 @@ import clsx from 'clsx';
 
 interface GuestMessagesSectionProps {
     messages: any[];
-    projectId: number;
     token: string;
     tenantName?: string;
 }
 
 export const GuestMessagesSection: React.FC<GuestMessagesSectionProps> = ({
     messages,
-    projectId,
     token,
     tenantName = 'Übersetzungsbüro',
 }) => {
@@ -40,7 +38,7 @@ export const GuestMessagesSection: React.FC<GuestMessagesSectionProps> = ({
 
     const uploadFileMutation = useMutation({
         mutationFn: (file: File) => guestService.uploadFile(token, file),
-        onSuccess: (data) => {
+        onSuccess: () => {
             toast.success('Datei gesendet');
             queryClient.invalidateQueries({ queryKey: ['guestProject', token] });
         },

@@ -18,3 +18,4 @@ export { subscriptionService, adminSubscriptionService } from './services/subscr
 export { guestService } from './services/guest';
 export { userService, dashboardService } from './services/users';
 export { calendarService } from './services/calendar';
+export { externalCostService } from './services/externalCosts';

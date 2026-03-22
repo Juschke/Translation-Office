@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { FaDownload, FaFile, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive } from 'react-icons/fa';
+import React, { useState, useRef } from 'react';
+import { FaDownload, FaFile, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaUpload } from 'react-icons/fa';
 import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
 interface GuestFilesListProps {
     files: any[];
-    token: string;
     onDownload: (file: any) => Promise<void>;
+    onUpload?: (file: File) => Promise<void>;
+    canUpload?: boolean;
 }
 
 const getFileIcon = (extension: string = '') => {
@@ -29,8 +30,10 @@ const formatBytes = (bytes: number, decimals = 1) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
-export const GuestFilesList: React.FC<GuestFilesListProps> = ({ files, token, onDownload }) => {
+export const GuestFilesList: React.FC<GuestFilesListProps> = ({ files, onDownload, onUpload, canUpload = true }) => {
     const [downloading, setDownloading] = useState<number | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleDownload = async (file: any) => {
         setDownloading(file.id);
@@ -38,10 +41,34 @@ export const GuestFilesList: React.FC<GuestFilesListProps> = ({ files, token, on
             await onDownload(file);
             toast.success('Download gestartet');
         } catch (error) {
-            console.error('Download error:', error);
             toast.error('Download fehlgeschlagen');
         } finally {
             setDownloading(null);
+        }
+    };
+
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !onUpload) return;
+
+        // Validate file size (20MB)
+        if (file.size > 20 * 1024 * 1024) {
+            toast.error('Datei ist zu groß. Maximal 20MB erlaubt.');
+            return;
+        }
+
+        setUploading(true);
+        try {
+            await onUpload(file);
+            toast.success('Datei erfolgreich hochgeladen');
+            // Reset input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } catch (error) {
+            toast.error('Upload fehlgeschlagen');
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -61,10 +88,39 @@ export const GuestFilesList: React.FC<GuestFilesListProps> = ({ files, token, on
 
     return (
         <div className="rounded-sm border border-slate-200 shadow-sm bg-white overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 bg-slate-50 border-b border-slate-200">
+            <div className="px-4 sm:px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-slate-900">
                     Dateien <span className="text-slate-500 font-normal">({files.length})</span>
                 </h2>
+                {canUpload && onUpload && (
+                    <>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            className="hidden"
+                            onChange={handleFileSelect}
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.odt,.ods,.csv,.jpg,.jpeg,.png,.gif,.zip"
+                        />
+                        <Button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            variant="default"
+                            size="sm"
+                        >
+                            {uploading ? (
+                                <>
+                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                    Lädt hoch...
+                                </>
+                            ) : (
+                                <>
+                                    <FaUpload className="mr-2" />
+                                    Hochladen
+                                </>
+                            )}
+                        </Button>
+                    </>
+                )}
             </div>
             <div className="p-4 sm:p-6 space-y-3">
                 {files.map((file) => {

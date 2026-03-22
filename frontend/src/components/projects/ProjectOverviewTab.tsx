@@ -1,7 +1,6 @@
 import { FaArrowRight, FaCheck, FaCheckCircle, FaClock, FaBolt, FaFlag, FaAt, FaPhone, FaExternalLinkAlt, FaFileInvoiceDollar, FaCopy, FaStar, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEnvelope } from 'react-icons/fa';
 import { Button } from '../ui/button';
 import clsx from 'clsx';
-import { toast } from 'react-hot-toast';
 
 interface ProjectOverviewTabProps {
     projectData: any;
@@ -12,7 +11,6 @@ interface ProjectOverviewTabProps {
     locationPathname: string;
     setIsCustomerSearchOpen: (open: boolean) => void;
     setIsPartnerModalOpen: (open: boolean) => void;
-    updateProjectMutation: any;
     handlePreviewFile: (file: any) => Promise<void>;
     setPreviewInvoice: (invoice: any) => void;
     onSendEmail?: (recipientType: 'customer' | 'partner') => void;
@@ -27,7 +25,6 @@ const ProjectOverviewTab = ({
     locationPathname,
     setIsCustomerSearchOpen,
     setIsPartnerModalOpen,
-    updateProjectMutation,
     handlePreviewFile,
     setPreviewInvoice,
     onSendEmail,
@@ -397,44 +394,6 @@ const ProjectOverviewTab = ({
                                             </div>
                                         )}
                                     </div>
-                                    {!projectData.documentsSent ? (
-                                        <div className="flex flex-col gap-2">
-                                            <Button
-                                                variant="default"
-                                                size="sm"
-                                                onClick={() => {
-                                                    const hasFiles = projectData.files && projectData.files.length > 0;
-                                                    if (!hasFiles) {
-                                                        toast.error('Bitte laden Sie zuerst die Zieldateien hoch, bevor Sie diese versenden.');
-                                                        return;
-                                                    }
-                                                    updateProjectMutation.mutate({ documents_sent: true });
-                                                }}
-                                                className="h-8 px-4 font-bold text-[11px] bg-brand-primary border-none shadow-none"
-                                            >
-                                                VERSENDEN
-                                            </Button>
-                                            {onSendEmail && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => onSendEmail('customer')}
-                                                    className="h-8 px-3 font-bold text-[11px] flex items-center gap-2"
-                                                >
-                                                    <FaEnvelope className="text-[10px]" /> E-Mail senden
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <Button
-                                            variant="link"
-                                            size="sm"
-                                            onClick={() => updateProjectMutation.mutate({ documents_sent: false })}
-                                            className="h-auto p-0 text-slate-400 hover:text-slate-600 font-bold text-[10px]"
-                                        >
-                                            Rückgängig
-                                        </Button>
-                                    )}
                                 </div>
 
                                 <div className="space-y-1.5">

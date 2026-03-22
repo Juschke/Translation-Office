@@ -70,6 +70,10 @@ class DashboardController extends Controller
             $activeInterpretingCount = \App\Models\Appointment::where('type', 'interpreting')
                 ->where('start_date', '>=', $today)
                 ->count();
+
+            // 7. External Costs (Fremdkosten) for current period
+            $externalCosts = \App\Models\ExternalCost::whereBetween('date', [$startDate, $endDate])
+                ->sum('amount_cents') / 100;
             // 4. Recent Projects
             $recentProjects = Project::with(['customer', 'sourceLanguage', 'targetLanguage'])
                 ->latest()
@@ -107,6 +111,7 @@ class DashboardController extends Controller
                     'overdue_invoices' => $overdueInvoicesCount,
                     'unread_emails' => \App\Models\Mail::where('folder', 'inbox')->where('is_read', false)->count(),
                     'active_interpreting' => $activeInterpretingCount,
+                    'external_costs' => (float) $externalCosts,
                 ],
                 'period' => [
                     'start' => $startDate->toDateString(),

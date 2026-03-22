@@ -137,6 +137,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Partner management
         Route::apiResource('partners', App\Http\Controllers\Api\PartnerController::class);
         Route::get('/partners/stats', [App\Http\Controllers\Api\PartnerController::class, 'stats']);
+
+        // External Costs
+        Route::get('external-costs/stats', [\App\Http\Controllers\Api\ExternalCostController::class, 'stats']);
+        Route::apiResource('external-costs', \App\Http\Controllers\Api\ExternalCostController::class);
     });
 
     // ── Employee+ routes (all authenticated users) ──

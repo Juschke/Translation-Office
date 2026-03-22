@@ -10,6 +10,7 @@ interface ProjectFilesTabProps {
     onRenameFile: (file: any, newName: string) => Promise<void>;
     onMoveFile: (file: any, newType: string) => Promise<void>;
     formatFileSize: (bytes: any) => string;
+    onUpload: (files: any[], onProgress: (id: string, progress: number) => void) => Promise<void>;
 }
 
 const ProjectFilesTab = ({
@@ -22,6 +23,7 @@ const ProjectFilesTab = ({
     onRenameFile,
     onMoveFile,
     formatFileSize,
+    onUpload,
 }: ProjectFilesTabProps) => {
     return (
         <div className="flex flex-col gap-4 animate-fadeIn pb-10">
@@ -35,6 +37,7 @@ const ProjectFilesTab = ({
                 onRenameFile={onRenameFile}
                 onMoveFile={onMoveFile}
                 formatFileSize={formatFileSize}
+                onUpload={onUpload}
             />
         </div>
     );

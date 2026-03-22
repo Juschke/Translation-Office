@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FaUser, FaCalendar, FaGlobe, FaArrowRight, FaFileInvoice, FaTools, FaBoxOpen, FaFlagCheckered, FaEdit, FaChevronDown, FaChevronUp, FaArrowDown } from 'react-icons/fa';
+import { FaCalendar, FaArrowRight, FaFileInvoice, FaTools, FaBoxOpen, FaFlagCheckered, FaEdit, FaChevronDown, FaChevronUp, FaArrowDown } from 'react-icons/fa';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { getFlagUrl } from '../../utils/flags';
-import { Link } from 'react-router-dom';
+
 
 interface Project {
     id: number;

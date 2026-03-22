@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
-import { FaArrowRight, FaEdit, FaTrash, FaEye, FaEnvelope, FaTrashRestore, FaTimes, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaArrowRight, FaEdit, FaTrash, FaEye, FaTrashRestore, FaTimes, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
 import SearchableSelect from '../components/common/SearchableSelect';

@@ -380,7 +380,6 @@ const ProjectDetail = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Download failed:', error);
             toast.error('Fehler beim Herunterladen der Datei.');
         }
     };
@@ -414,7 +413,6 @@ const ProjectDetail = () => {
             });
         } catch (error) {
             toast.dismiss();
-            console.error('Preview error:', error);
             toast.error('Vorschau konnte nicht geladen werden.');
         }
     };
@@ -426,7 +424,6 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             toast.success(`Dateityp zu "${newType === 'source' ? 'Quelle' : 'Ziel'}" geändert`);
         } catch (error) {
-            console.error('File update failed:', error);
             toast.error('Dateityp konnte nicht geändert werden');
         }
     };
@@ -449,7 +446,6 @@ const ProjectDetail = () => {
             await projectService.updateFile(id!, file.id, { file_name: newName });
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
         } catch (error) {
-            console.error('Rename failed:', error);
             throw error;
         }
     };
@@ -459,7 +455,6 @@ const ProjectDetail = () => {
             await projectService.updateFile(id!, file.id, { type: newType });
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
         } catch (error) {
-            console.error('Move failed:', error);
             throw error;
         }
     };
@@ -551,7 +546,6 @@ const ProjectDetail = () => {
             toast.dismiss(toastId);
             toast.success('Dokument geöffnet');
         } catch (error) {
-            console.error('Download error:', error);
             toast.dismiss();
             toast.error('Dokument konnte nicht geladen werden.');
         }
@@ -599,9 +593,8 @@ const ProjectDetail = () => {
 
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end mt-4 md:mt-0">
                                 <Button
-                                    variant="secondary"
                                     onClick={() => setIsEditModalOpen(true)}
-                                    className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    className="bg-brand-primary hover:bg-brand-primary/90 text-white px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEdit /> Bearbeiten
                                 </Button>
@@ -618,9 +611,9 @@ const ProjectDetail = () => {
                                     variant="default"
                                     onClick={() => {
                                         setEmailComposeData({
-                                            to: projectData.customer?.email || '',
-                                            subject: projectData.name ? `Projekt: ${projectData.project_number || 'ID ' + projectData.id} — ${projectData.name}` : `Projekt ${projectData.id}`,
-                                            recipientType: 'customer'
+                                            to: projectData.translator?.email || '',
+                                            subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
+                                            recipientType: 'partner'
                                         });
                                         setIsEmailComposeOpen(true);
                                     }}
@@ -835,7 +828,6 @@ const ProjectDetail = () => {
                         locationPathname={location.pathname}
                         setIsCustomerSearchOpen={setIsCustomerSearchOpen}
                         setIsPartnerModalOpen={setIsPartnerModalOpen}
-                        updateProjectMutation={updateProjectMutation}
                         handlePreviewFile={handlePreviewFile}
                         setPreviewInvoice={setPreviewInvoice}
                         onSendEmail={(recipientType) => {
@@ -845,7 +837,7 @@ const ProjectDetail = () => {
 
                             setEmailComposeData({
                                 to,
-                                subject: projectData.name ? `Projekt: ${projectData.project_number || 'ID ' + projectData.id} — ${projectData.name}` : `Projekt ${projectData.id}`,
+                                subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
                                 recipientType
                             });
                             setIsEmailComposeOpen(true);
@@ -864,6 +856,7 @@ const ProjectDetail = () => {
                         onRenameFile={handleRenameFile}
                         onMoveFile={handleMoveFile}
                         formatFileSize={formatFileSize}
+                        onUpload={handleFileUpload}
                     />
                 )}
 

@@ -1,8 +1,7 @@
-import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { guestService } from '@/api/services';
-import toast from 'react-hot-toast';
+
 
 import { GuestProjectHeader } from '@/components/guest/GuestProjectHeader';
 import { GuestProjectDetails } from '@/components/guest/GuestProjectDetails';
@@ -37,7 +36,17 @@ const GuestProjectView = () => {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Download error:', error);
+            throw error;
+        }
+    };
+
+    // File Upload Handler
+    const handleFileUpload = async (file: File) => {
+        try {
+            await guestService.uploadFile(token!, file);
+            // Refresh project data to show new file
+            queryClient.invalidateQueries({ queryKey: ['guestProject', token] });
+        } catch (error) {
             throw error;
         }
     };
@@ -81,12 +90,12 @@ const GuestProjectView = () => {
                         <GuestProjectDetails project={project} />
                         <GuestFilesList
                             files={project.files || []}
-                            token={token!}
                             onDownload={handleFileDownload}
+                            onUpload={handleFileUpload}
+                            canUpload={true}
                         />
                         <GuestMessagesSection
                             messages={project.messages || []}
-                            projectId={project.id}
                             token={token!}
                             tenantName={project.tenant?.company_name}
                         />

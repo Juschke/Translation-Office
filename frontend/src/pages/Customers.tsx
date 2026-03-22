@@ -319,7 +319,7 @@ const Customers = () => {
                             const fullData = await customerService.getById(c.id);
                             setEditingCustomer(fullData);
                         } catch (err) {
-                            console.error("Failed to load customer details", err);
+                            // Error already handled by axios interceptor
                         } finally {
                             setIsDetailLoading(false);
                         }

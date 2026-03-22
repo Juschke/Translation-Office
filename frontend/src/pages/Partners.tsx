@@ -379,7 +379,7 @@ const Partners = () => {
                             const fullData = await partnerService.getById(p.id);
                             setEditingPartner(fullData);
                         } catch (err) {
-                            console.error("Failed to load partner details", err);
+                            // Error already handled by axios interceptor
                         } finally {
                             setIsDetailLoading(false);
                         }

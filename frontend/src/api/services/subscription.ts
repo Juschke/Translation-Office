@@ -48,6 +48,22 @@ export const subscriptionService = {
         const response = await api.get('/subscription/invoices');
         return response.data;
     },
+
+    /**
+     * Plan aktualisieren.
+     */
+    updatePlan: async (plan: string) => {
+        const response = await api.post('/subscription/update-plan', { plan });
+        return response.data;
+    },
+
+    /**
+     * Zahlungsmethode aktualisieren.
+     */
+    updatePaymentMethod: async (data: any) => {
+        const response = await api.post('/subscription/payment-method', data);
+        return response.data;
+    },
 };
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -156,7 +156,7 @@ const Projects = () => {
             setEditingProject(null);
             toast.success('Projekt erfolgreich aktualisiert');
         },
-        onError: (err, updatedProject, context: any) => {
+        onError: (_err, _updatedProject, context: any) => {
             // If the mutation fails, use the context returned from onMutate to roll back
             if (context?.previousProjects) {
                 queryClient.setQueryData(['projects'], context.previousProjects);
@@ -367,7 +367,7 @@ const Projects = () => {
             const fullData = await projectService.getById(p.id);
             setEditingProject(fullData);
         } catch (err) {
-            console.error("Failed to load project details", err);
+            // Error already handled by axios interceptor
         } finally {
             setIsDetailLoading(false);
         }

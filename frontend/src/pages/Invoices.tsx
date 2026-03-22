@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { parseISO, startOfDay, isValid } from 'date-fns';
 import {
     FaPlus, FaCheck, FaCheckCircle, FaHistory,
     FaFileExcel, FaFileCsv, FaFilePdf, FaDownload,
@@ -16,7 +17,7 @@ import KPICard from '../components/common/KPICard';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invoiceService } from '../api/services';
+import { invoiceService, externalCostService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
@@ -69,6 +70,19 @@ const Invoices = () => {
     const { data: invoices = [], isLoading } = useQuery({
         queryKey: ['invoices'],
         queryFn: invoiceService.getAll
+    });
+
+    // Query for external costs (this month)
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const { data: externalCostsStats } = useQuery({
+        queryKey: ['external-costs', 'stats', startOfMonth.toISOString(), endOfMonth.toISOString()],
+        queryFn: () => externalCostService.getStats({
+            start_date: startOfMonth.toISOString().split('T')[0],
+            end_date: endOfMonth.toISOString().split('T')[0],
+        }),
     });
 
     const createMutation = useMutation({
@@ -164,14 +178,18 @@ const Invoices = () => {
 
     const filteredInvoices = useMemo(() => {
         if (!Array.isArray(invoices)) return [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = startOfDay(new Date());
 
         return invoices.filter((inv: any) => {
             const status = inv.status?.toLowerCase() || 'pending';
-            const dueDateRaw = inv.due_date ? new Date(inv.due_date) : null;
-            // Normalize to local midnight to avoid timezone issues with ISO strings
-            const dueDate = dueDateRaw ? new Date(dueDateRaw.getFullYear(), dueDateRaw.getMonth(), dueDateRaw.getDate()) : null;
+
+            // Parse due_date safely with date-fns
+            let dueDate: Date | null = null;
+            if (inv.due_date) {
+                const parsed = typeof inv.due_date === 'string' ? parseISO(inv.due_date) : new Date(inv.due_date);
+                dueDate = isValid(parsed) ? startOfDay(parsed) : null;
+            }
+
             const isOverdue = dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'deleted', 'gelöscht', 'archived', 'archiviert', 'draft'].includes(status);
 
             // Priority 1: Filter by status view (active/archive/trash)
@@ -228,7 +246,6 @@ const Invoices = () => {
                 setIsExportOpen(false);
                 toast.success('DATEV Export erfolgreich erstellt.');
             } catch (error) {
-                console.error('DATEV Export failure:', error);
                 toast.error('Fehler beim DATEV Export.');
             }
             return;
@@ -291,7 +308,6 @@ const Invoices = () => {
                 }, 2000);
             };
         } catch (error) {
-            console.error('Print error:', error);
             toast.error('Fehler beim Öffnen der PDF-Datei zum Drucken.');
         }
     };
@@ -312,7 +328,6 @@ const Invoices = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Download error:', error);
             toast.error('Fehler beim Herunterladen der PDF-Datei.');
         }
     };
@@ -330,7 +345,6 @@ const Invoices = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('XML Download error:', error);
             toast.error('Fehler beim Herunterladen der XML-Datei.');
         }
     };
@@ -576,7 +590,12 @@ const Invoices = () => {
                 <KPICard label="Offener Betrag" value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={`${overdueCount} überfällig`} />
                 <KPICard label="Bezahlt (Gesamt)" value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={`${paidCount} Transaktionen`} />
                 <KPICard label="Mahnungen" value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue="Fällig / Aktiv" />
-                <KPICard label="Fremdkosten" value="0,00 €" icon={<FaHistory />} subValue="Diesen Monat" />
+                <KPICard
+                    label="Fremdkosten"
+                    value={(externalCostsStats?.total_costs ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                    icon={<FaHistory />}
+                    subValue="Diesen Monat"
+                />
             </div>
 
             {statusTabs}

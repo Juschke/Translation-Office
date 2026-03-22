@@ -64,16 +64,16 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
 
     return (
         <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden flex flex-col">
-            <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-transparent">
+            <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-transparent">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-sm font-medium text-slate-800">
+                    <h2 className="text-xs font-medium text-slate-800">
                         Aktuelle Projekte
                     </h2>
                     <div className="flex bg-slate-100 rounded-sm p-1 border border-slate-200">
                         <button
                             onClick={() => { setFilter('all'); setPage(1); }}
                             className={clsx(
-                                "px-3 py-1.5 text-xs font-medium rounded-sm transition",
+                                "px-2.5 py-1 text-xs font-medium rounded-sm transition",
                                 filter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                             )}
                         >
@@ -82,7 +82,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                         <button
                             onClick={() => { setFilter('urgent'); setPage(1); }}
                             className={clsx(
-                                "px-3 py-1.5 text-xs font-medium rounded-sm transition",
+                                "px-2.5 py-1 text-xs font-medium rounded-sm transition",
                                 filter === 'urgent' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-red-600'
                             )}
                         >
@@ -102,11 +102,11 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 text-slate-500 text-xs font-medium">
                         <tr>
-                            <th className="px-6 py-3 border-b border-slate-100">Projekt</th>
-                            <th className="px-6 py-3 border-b border-slate-100">Kunde</th>
-                            <th className="px-6 py-3 border-b border-slate-100">Sprachen</th>
-                            <th className="px-6 py-3 border-b border-slate-100 text-right">Deadline</th>
-                            <th className="px-6 py-3 border-b border-slate-100 text-right">Status</th>
+                            <th className="px-3 py-2 border-b border-slate-100">Projekt</th>
+                            <th className="px-3 py-2 border-b border-slate-100">Kunde</th>
+                            <th className="px-3 py-2 border-b border-slate-100">Sprachen</th>
+                            <th className="px-3 py-2 border-b border-slate-100 text-right">Deadline</th>
+                            <th className="px-3 py-2 border-b border-slate-100 text-right">Status</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -116,13 +116,13 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                 onClick={() => navigate(`/projects/${p.id}`)}
                                 className="hover:bg-slate-50 transition cursor-pointer group"
                             >
-                                <td className="px-6 py-4">
+                                <td className="px-3 py-2">
                                     <div className="flex flex-col">
                                         <span className="text-xs font-medium text-slate-800 group-hover:text-slate-900 transition">{p.project_name || p.name}</span>
                                         <span className="text-xs text-slate-400 font-semibold">{p.project_number || p.id}</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-3 py-2">
                                     <span className="text-xs font-medium text-slate-700">
                                         {p.customer?.company_name ||
                                             p.customer?.name ||
@@ -130,7 +130,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                             'Unbekannt'}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-3 py-2">
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1">
                                             <img
@@ -155,19 +155,19 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 text-right">
+                                <td className="px-3 py-2 text-right">
                                     <span className="text-xs font-semibold text-slate-800 tabular-nums">
                                         {p.deadline ? new Date(p.deadline).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-'}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 text-right">
+                                <td className="px-3 py-2 text-right">
                                     {getStatusBadge(p.status)}
                                 </td>
                             </tr>
                         ))}
                         {paginatedProjects.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic text-xs">Keine Projekte in diesem Filter gefunden.</td>
+                                <td colSpan={5} className="px-3 py-8 text-center text-slate-400 italic text-xs">Keine Projekte in diesem Filter gefunden.</td>
                             </tr>
                         )}
                     </tbody>
@@ -176,7 +176,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-                <div className="px-6 py-3 border-t border-slate-100 flex justify-between items-center bg-transparent">
+                <div className="px-3 py-2 border-t border-slate-100 flex justify-between items-center bg-transparent">
                     <span className="text-xs font-medium text-slate-400">Seite {page} von {totalPages}</span>
                     <div className="flex gap-1.5">
                         <button

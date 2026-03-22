@@ -92,7 +92,7 @@ const CustomerDetail = () => {
                         </button>
                         <button
                             onClick={() => setIsEditModalOpen(true)}
-                            className="bg-slate-900 border border-slate-900 text-white hover:bg-slate-900 px-3 py-2 rounded text-xs font-medium flex items-center gap-2 shadow-sm transition"
+                            className="bg-brand-primary border border-brand-primary text-white hover:bg-brand-primary/90 px-3 py-2 rounded text-xs font-medium flex items-center gap-2 shadow-sm transition"
                         >
                             <FaEdit /> Bearbeiten
                         </button>

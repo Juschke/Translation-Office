@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { FaCheck, FaClock, FaCircle } from 'react-icons/fa';
+import { FaClock, FaCircle } from 'react-icons/fa';
 
 interface GuestProjectHeaderProps {
     project: any;
