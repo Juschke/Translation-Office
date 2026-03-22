@@ -539,13 +539,15 @@ body,
   border-bottom: 2px solid #c8c8c8 !important;
   border-right: 1px solid #ddd !important;
   color: #1B4D4F !important;
-  font-size: 11px !important;
+  font-size: 10px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
+  letter-spacing: 0.05em !important;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) !important;
-  padding: 10px 12px !important;
+  padding: 6px 10px !important;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   position: relative !important;
   transition: background 0.15s ease !important;
 }
@@ -554,17 +556,13 @@ body,
 .dt-column-resizer {
   position: absolute;
   right: -22px;
-  /* Pull to the border, compensating for th padding */
   top: -10px;
-  /* Pull to top border, compensating for th padding */
   bottom: -10px;
-  /* Pull to bottom border */
-  width: 30px;
-  /* Catch area */
+  width: 5px;
   cursor: col-resize;
   z-index: 50;
   background: transparent;
-  transition: all 0.2s;
+  transition: all 0.1s;
 }
 
 .dt-column-resizer:hover,
@@ -641,9 +639,13 @@ body,
 .ant-table-wrapper .ant-table-tbody>tr>td {
   border-bottom: 1px solid #e8e8e8 !important;
   border-right: 1px solid #f2f2f2 !important;
-  padding: 9px 12px !important;
+  padding: 6px 10px !important;
   vertical-align: middle !important;
   color: #333 !important;
+  font-size: 12px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ant-table-wrapper .ant-table-tbody>tr>td:last-child {

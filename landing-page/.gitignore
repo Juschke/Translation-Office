@@ -1,0 +1,65 @@
+# Landing Page - Git Ignore
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Node modules (if npm is used later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build output
+dist/
+build/
+*.min.css
+*.min.js
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Cache
+.cache/
+*.cache
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Large image originals (keep optimized versions only)
+images/originals/
+*.psd
+*.ai
+*.sketch
+
+# Analytics & tracking config (keep in separate secure repo)
+# analytics-config.js
+
+# SSL certificates (never commit!)
+*.pem
+*.key
+*.crt
+*.csr

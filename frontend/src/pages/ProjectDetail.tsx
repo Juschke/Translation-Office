@@ -4,7 +4,7 @@ import { mapProjectResponse } from '../utils/projectDataMapper';
 import { useProjectModals } from '../hooks/useProjectModals';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaCheckCircle, FaFlag, FaPaperPlane, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaArchive, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaFlag, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -83,6 +83,10 @@ interface ProjectData {
         address_zip?: string;
         address_city?: string;
         address_country?: string;
+        // Extra for NewCustomerModal compatibility
+        company_name?: string;
+        first_name?: string;
+        last_name?: string;
     };
     source: string;
     target: string;
@@ -120,6 +124,7 @@ interface ProjectData {
         unit_rates?: any[];
         flat_rates?: any[];
     };
+    partner?: any; // Added for modal compatibility
     documentsSent: boolean;
     pm: string;
     createdAt: string;
@@ -128,6 +133,7 @@ interface ProjectData {
     editor?: { name: string };
     positions: ProjectPosition[];
     access_token?: string | null;
+    partner_access_token?: string | null;
     messages?: Array<{
         id: string;
         content: string;
@@ -157,7 +163,6 @@ interface ProjectData {
 }
 
 
-
 const ProjectDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -165,7 +170,6 @@ const ProjectDetail = () => {
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('overview');
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
-    const [fileFilterTab, setFileFilterTab] = useState<'all' | 'source' | 'target'>('all');
 
     const {
         isPartnerModalOpen, setIsPartnerModalOpen,
@@ -178,7 +182,6 @@ const ProjectDetail = () => {
         isPartnerEditModalOpen, setIsPartnerEditModalOpen,
         isProjectDeleteConfirmOpen, setIsProjectDeleteConfirmOpen,
         isInviteModalOpen, setIsInviteModalOpen,
-        isInviteModalOpen: _isInviteModalOpen, // duplicate removal if needed? no, from useProjectModals
         isInterpreterModalOpen, setIsInterpreterModalOpen,
         previewFile, setPreviewFile,
         deleteFileConfirm, setDeleteFileConfirm,
@@ -186,6 +189,7 @@ const ProjectDetail = () => {
 
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
     const [isEmailComposeOpen, setIsEmailComposeOpen] = useState(false);
+    const [editingPayment, setEditingPayment] = useState<any>(null);
     const [emailComposeData, setEmailComposeData] = useState<{
         to: string;
         subject: string;
@@ -214,17 +218,12 @@ const ProjectDetail = () => {
         enabled: !!id
     });
 
-
-
     useEffect(() => {
         if (projectResponse) {
             const mapped = mapProjectResponse(projectResponse) as ProjectData;
             setProjectData(mapped);
         }
     }, [projectResponse]);
-
-
-
 
     const getDeadlineStatus = () => {
         if (!projectData?.due) return { label: 'Kein Datum', color: 'bg-slate-50 text-slate-400 border-slate-100', icon: <FaClock /> };
@@ -241,18 +240,6 @@ const ProjectDetail = () => {
             return { label: `in ${diffDays} Tagen`, color: 'bg-emerald-100 text-emerald-600 border-emerald-200', icon: <FaClock /> };
         }
     };
-
-    // addWorkingDays kept for future use
-    // const addWorkingDays = (days: number) => {
-    // if (!projectData) return;
-    // let date = new Date();
-    // let added = 0;
-    // while (added < days) {
-    // date.setDate(date.getDate() + 1);
-    // if (date.getDay() !== 0 && date.getDay() !== 6) added++;
-    // }
-    // updateProjectMutation.mutate({ deadline: date.toISOString().split('T')[0] });
-    // };
 
     const getLanguageInfo = (code: string) => {
         if (!code) return { flagUrl: '', name: '-' };
@@ -299,7 +286,6 @@ const ProjectDetail = () => {
         setIsPartnerModalOpen(false);
     };
 
-    // Mutation für Kunden-Update
     const updateCustomerMutation = useMutation({
         mutationFn: (data: any) => {
             const customerId = projectData?.customer_id;
@@ -317,7 +303,6 @@ const ProjectDetail = () => {
         }
     });
 
-    // Mutation für Partner-Update
     const updatePartnerMutation = useMutation({
         mutationFn: (data: any) => {
             const partnerId = projectData?.translator?.id;
@@ -338,60 +323,6 @@ const ProjectDetail = () => {
     const handleEditSubmit = (updatedData: any) => {
         updateProjectMutation.mutate(updatedData);
     };
-
-
-    const getStatusBadge = (status: string) => {
-        const labels: { [key: string]: string } = {
-            'draft': 'Entwurf',
-            'offer': 'Angebot',
-            'pending': 'Angebot',
-            'in_progress': 'Bearbeitung',
-            'review': 'Bearbeitung',
-            'ready_for_pickup': 'Abholbereit',
-            'delivered': 'Geliefert',
-            'invoiced': 'Rechnung',
-            'completed': 'Abgeschlossen',
-            'cancelled': 'Storniert',
-            'archived': 'Archiviert',
-            'deleted': 'Gelöscht'
-        };
-        const icons: { [key: string]: React.ReactNode } = {
-            'draft': <FaEdit className="text-slate-400" />,
-            'offer': <FaClock className="text-orange-500" />,
-            'pending': <FaClock className="text-orange-500" />,
-            'in_progress': <FaClock className="text-blue-500" />,
-            'review': <FaClock className="text-blue-500" />,
-            'ready_for_pickup': <FaPaperPlane className="text-indigo-500" />,
-            'delivered': <FaCheckCircle className="text-emerald-500" />,
-            'invoiced': <FaFileInvoiceDollar className="text-purple-500" />,
-            'completed': <FaCheckCircle className="text-emerald-600" />,
-            'cancelled': <FaExclamationTriangle className="text-slate-400" />,
-            'archived': <FaArchive className="text-slate-400" />,
-            'deleted': <FaTrashAlt className="text-red-400" />
-        };
-        const colors: { [key: string]: string } = {
-            'draft': 'text-slate-600',
-            'offer': 'text-orange-600',
-            'pending': 'text-orange-600',
-            'in_progress': 'text-blue-600',
-            'review': 'text-blue-600',
-            'ready_for_pickup': 'text-indigo-600',
-            'delivered': 'text-emerald-600',
-            'invoiced': 'text-purple-600',
-            'completed': 'text-emerald-700',
-            'cancelled': 'text-slate-500',
-            'archived': 'text-slate-500',
-            'deleted': 'text-red-600'
-        };
-
-        return (
-            <div className={clsx("flex items-center gap-2 text-xs font-medium", colors[status] || 'text-slate-600')}>
-                {icons[status] || <FaClock />}
-                <span>{labels[status] || status}</span>
-            </div>
-        );
-    }
-
 
 
     const uploadFileMutation = useMutation({
@@ -427,18 +358,12 @@ const ProjectDetail = () => {
 
     const handleDownloadFile = async (file: any) => {
         try {
-            // Robust filename fallback, ensuring extension
             let fileName = file.name || file.fileName || file.original_name || 'download_file';
             const fileExt = file.extension || fileName.split('.').pop();
-
             if (!fileName.includes('.') && fileExt) {
-                fileName = `${fileName}.${fileExt} `;
+                fileName = `${fileName}.${fileExt}`;
             }
-
-            // Assuming downloadFile returns a response with blob data
             const response = await projectService.downloadFile(id!, file.id);
-
-            // Basic mime checking if extension is still missing
             if (!fileName.includes('.')) {
                 const mime = response.headers['content-type'];
                 if (mime === 'application/pdf') fileName += '.pdf';
@@ -446,8 +371,6 @@ const ProjectDetail = () => {
                 else if (mime === 'image/png') fileName += '.png';
                 else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') fileName += '.docx';
             }
-
-
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -466,16 +389,11 @@ const ProjectDetail = () => {
         try {
             const toastId = toast.loading('Lade Vorschau...');
             const response = await projectService.downloadFile(id!, file.id);
-
-            // Guess mime type from header or fallback
             const mimeType = response.headers['content-type'];
-
             const blob = new Blob([response.data], { type: mimeType });
             const url = window.URL.createObjectURL(blob);
-
             let fileName = file.name || file.fileName || 'file';
 
-            // Ensure extension exists for modal detection logic
             if (!fileName.includes('.')) {
                 if (mimeType === 'application/pdf') fileName += '.pdf';
                 else if (mimeType?.startsWith('image/jpeg')) fileName += '.jpg';
@@ -505,7 +423,6 @@ const ProjectDetail = () => {
         try {
             const newType = file.type === 'source' ? 'target' : 'source';
             await projectService.updateFile(id!, file.id, { type: newType });
-
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             toast.success(`Dateityp zu "${newType === 'source' ? 'Quelle' : 'Ziel'}" geändert`);
         } catch (error) {
@@ -526,6 +443,26 @@ const ProjectDetail = () => {
             toast.error('Fehler beim Löschen der Datei.');
         }
     });
+
+    const handleRenameFile = async (file: any, newName: string) => {
+        try {
+            await projectService.updateFile(id!, file.id, { file_name: newName });
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+        } catch (error) {
+            console.error('Rename failed:', error);
+            throw error;
+        }
+    };
+
+    const handleMoveFile = async (file: any, newType: string) => {
+        try {
+            await projectService.updateFile(id!, file.id, { type: newType });
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+        } catch (error) {
+            console.error('Move failed:', error);
+            throw error;
+        }
+    };
 
     const handleFileUpload = async (newFiles: any[], onProgress: (id: string, p: number) => void) => {
         await uploadFileMutation.mutateAsync({ files: newFiles, onProgress });
@@ -562,31 +499,26 @@ const ProjectDetail = () => {
         const positions = projectData.positions || [];
         const payments = projectData.payments || [];
 
-        // Extras Calculation
         const extraNet = (projectData.isCertified ? 5 : 0) +
             (projectData.hasApostille ? 15 : 0) +
             (projectData.isExpress ? 15 : 0) +
-            (projectData.classification === 'ja' ? 15 : 0) +
+            (projectData.classification === 'ja' || projectData.classification === (true as any) ? 15 : 0) +
             ((projectData.copies || 0) * (Number(projectData.copyPrice) || 5));
 
-        // Positions Sum (Assuming Net from NewProjectModal logic)
         const positionsNet = positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.customerTotal) || 0), 0);
-
         const netTotal = positionsNet + extraNet;
         const taxTotal = netTotal * 0.19;
         const grossTotal = netTotal + taxTotal;
 
-        // Calculate Partner Costs
         const partnerTotal = positions.reduce((sum: number, pos: any) => {
             const amount = parseFloat(pos.amount) || 0;
             const rate = parseFloat(pos.partnerRate) || 0;
-            // If unit is Pauschal, amount is usually 1, so rate * amount works.
-            return sum + (amount * rate);
+            const qty = parseFloat(pos.quantity) || 1;
+            return sum + (amount * rate * qty);
         }, 0);
 
         const margin = netTotal - partnerTotal;
         const marginPercent = netTotal > 0 ? (margin / netTotal) * 100 : 0;
-
         const paid = payments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
         const open = grossTotal - paid;
 
@@ -629,9 +561,9 @@ const ProjectDetail = () => {
         <div className="flex flex-col fade-in min-h-screen bg-slate-50/30">
             {/* Project Header Container */}
             <div className="bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-[1600px] mx-auto">
-                    <div className="px-3 sm:px-4 md:px-8 py-4">
-                        <div className="flex flex-col gap-4">
+                <div className="max-w-[1800px] mx-auto">
+                    <div className="px-3 sm:px-4  py-4">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div className="flex items-center gap-4">
                                 <Button
                                     variant="ghost"
@@ -658,14 +590,7 @@ const ProjectDetail = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2 md:gap-4 text-sm text-slate-400 font-medium mt-1 flex-wrap">
-                                            {getStatusBadge(projectData.status)}
-                                            {projectData.project_number && (
-                                                <span className="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">
-                                                    {projectData.project_number}
-                                                </span>
-                                            )}
-                                            <span className="text-slate-200 hidden sm:inline">|</span>
+                                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
                                             <span>System-ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
                                         </div>
                                     </div>
@@ -689,7 +614,6 @@ const ProjectDetail = () => {
                                     <FaTrashAlt /> Löschen
                                 </Button>
 
-                                {/* Email senden */}
                                 <Button
                                     variant="default"
                                     onClick={() => {
@@ -705,7 +629,6 @@ const ProjectDetail = () => {
                                     <FaEnvelope /> E-Mail senden
                                 </Button>
 
-                                {/* Mehr Aktionen Dropdown */}
                                 <div className="relative flex-1 sm:flex-none" ref={actionsRef}>
                                     <Button
                                         variant="secondary"
@@ -762,51 +685,99 @@ const ProjectDetail = () => {
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Meta Info Bar */}
-                    <div className="px-3 sm:px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-4 sm:gap-6 text-xs text-slate-400 flex-wrap">
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            <span>Erstellt am <span className="text-slate-600">{projectData.createdAt}</span> {projectData.creator && `von ${projectData.creator.name}`}</span>
-                        </div>
-                        <span className="text-slate-200">•</span>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                            <span>Zuletzt geändert: <span className="text-slate-600">{projectData.updatedAt}</span></span>
-                        </div>
+                {/* Meta Info Bar */}
+                <div className="px-3 sm:px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-4 sm:gap-6 text-xs text-slate-400 flex-wrap">
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span>Erstellt am <span className="text-slate-600">{projectData.createdAt}</span> {projectData.creator && `von ${projectData.creator.name}`}</span>
+                    </div>
+                    <span className="text-slate-200">•</span>
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                        <span>Zuletzt geändert: <span className="text-slate-600">{projectData.updatedAt}</span></span>
+                    </div>
+                </div>
+
+                {/* Tabs Navigation */}
+                <div className="px-3 sm:px-4 md:px-8 border-b border-slate-200 flex items-center justify-between md:justify-start">
+                    <div className="md:hidden flex-1 py-3">
+                        <button
+                            onClick={() => setIsTabMenuOpen(!isTabMenuOpen)}
+                            className="flex items-center gap-3 text-slate-600 font-semibold text-sm hover:text-slate-700 transition-colors w-full"
+                        >
+                            <div className="w-4 h-3 flex flex-col justify-between">
+                                <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "rotate-45 translate-y-1" : "")}></span>
+                                <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "opacity-0" : "")}></span>
+                                <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "-rotate-45 -translate-y-1.5" : "")}></span>
+                            </div>
+                            <span>Menü: {
+                                activeTab === 'overview' ? 'Stammdaten' :
+                                    activeTab === 'files' ? 'Dateien' :
+                                        activeTab === 'finances' ? 'Kalkulation & Marge' :
+                                            activeTab === 'history' ? 'Historie' : 'Kommunikation'
+                            }</span>
+                            <FaChevronDown className={clsx("ml-auto transition-transform", isTabMenuOpen && "rotate-180")} />
+                        </button>
                     </div>
 
-                    {/* Tabs Navigation */}
-                    <div className="px-3 sm:px-4 md:px-8 border-b border-slate-200 flex items-center justify-between md:justify-start">
-                        {/* Mobile Tab Menu Button */}
-                        <div className="md:hidden flex-1 py-3">
-                            <button
-                                onClick={() => setIsTabMenuOpen(!isTabMenuOpen)}
-                                className="flex items-center gap-3 text-slate-600 font-semibold text-sm hover:text-slate-700 transition-colors w-full"
-                            >
-                                <div className="w-4 h-3 flex flex-col justify-between">
-                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "rotate-45 translate-y-1" : "")}></span>
-                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "opacity-0" : "")}></span>
-                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "-rotate-45 -translate-y-1.5" : "")}></span>
-                                </div>
-                                <span>Menü: {
-                                    activeTab === 'overview' ? 'Stammdaten' :
-                                        activeTab === 'files' ? 'Dateien' :
-                                            activeTab === 'finances' ? 'Kalkulation & Marge' :
-                                                activeTab === 'history' ? 'Historie' : 'Kommunikation'
-                                }</span>
-                                <FaChevronDown className={clsx("ml-auto transition-transform", isTabMenuOpen && "rotate-180")} />
-                            </button>
-                        </div>
+                    <div className="hidden md:flex gap-8">
+                        {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
+                            let badgeCount = 0;
+                            if (tab === 'files') badgeCount = projectData?.files?.length || 0;
+                            if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                            if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
+                            const isActive = activeTab === tab;
 
-                        {/* Desktop Tabs */}
-                        <div className="hidden md:flex gap-8">
+                            return (
+                                <button
+                                    key={tab}
+                                    onClick={() => {
+                                        setActiveTab(tab);
+                                        setIsTabMenuOpen(false);
+                                    }}
+                                    className={clsx(
+                                        "py-4 px-1 text-sm font-medium transition-all relative flex items-center gap-2.5 border-b-2 -mb-[1px]",
+                                        isActive
+                                            ? 'border-[#1B4D4F] text-[#1B4D4F] font-bold'
+                                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200'
+                                    )}
+                                >
+                                    {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                    {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                    {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                    {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                    {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+
+                                    {tab === 'overview' ? 'Stammdaten' :
+                                        tab === 'files' ? 'Dokumente' :
+                                            tab === 'finances' ? 'Kalkulation' :
+                                                tab === 'history' ? 'Historie' : 'Kommunikation'}
+
+                                    {tab !== 'overview' && tab !== 'history' && (
+                                        <span className={clsx(
+                                            "px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors",
+                                            isActive ? "bg-[#1B4D4F] text-white" : "bg-slate-100 text-slate-500"
+                                        )}>
+                                            {badgeCount}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Mobile Tab Menu Overlay */}
+                {isTabMenuOpen && (
+                    <div className="md:hidden border-t border-slate-100 bg-white animate-fadeIn">
+                        <div className="flex flex-col">
                             {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
                                 let badgeCount = 0;
                                 if (tab === 'files') badgeCount = projectData?.files?.length || 0;
                                 if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
                                 if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
-
                                 const isActive = activeTab === tab;
 
                                 return (
@@ -817,27 +788,29 @@ const ProjectDetail = () => {
                                             setIsTabMenuOpen(false);
                                         }}
                                         className={clsx(
-                                            "py-4 px-1 text-sm font-medium transition-all relative flex items-center gap-2.5 border-b-2 -mb-[1px]",
+                                            "px-6 py-4 text-sm font-medium flex items-center gap-4 transition-all rounded-sm mx-2 my-1",
                                             isActive
-                                                ? 'border-[#1B4D4F] text-[#1B4D4F] font-bold'
-                                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200'
+                                                ? 'bg-slate-50 text-[#1B4D4F] font-bold  border-[#1B4D4F]'
+                                                : 'text-slate-500 hover:bg-slate-50/50 hover:text-slate-700'
                                         )}
                                     >
-                                        {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
-                                        {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
-                                        {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
-                                        {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
-                                        {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                        {tab === 'overview' && <FaInfoCircle className="text-base" />}
+                                        {tab === 'files' && <FaFileAlt className="text-base" />}
+                                        {tab === 'finances' && <FaFileInvoiceDollar className="text-base" />}
+                                        {tab === 'messages' && <FaComments className="text-base" />}
+                                        {tab === 'history' && <FaClock className="text-base" />}
 
-                                        {tab === 'overview' ? 'Stammdaten' :
-                                            tab === 'files' ? 'Dateien' :
-                                                tab === 'finances' ? 'Kalkulation & Marge' :
-                                                    tab === 'history' ? 'Historie' : 'Kommunikation'}
+                                        <span className="flex-1 text-left">
+                                            {tab === 'overview' ? 'Stammdaten' :
+                                                tab === 'files' ? 'Dateien' :
+                                                    tab === 'finances' ? 'Kalkulation & Marge' :
+                                                        tab === 'history' ? 'Historie' : 'Kommunikation'}
+                                        </span>
 
                                         {tab !== 'overview' && tab !== 'history' && (
                                             <span className={clsx(
-                                                "px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors",
-                                                isActive ? "bg-[#1B4D4F] text-white" : "bg-slate-100 text-slate-500"
+                                                "px-2 py-0.5 rounded-full text-xs font-medium",
+                                                isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
                                             )}>
                                                 {badgeCount}
                                             </span>
@@ -847,65 +820,11 @@ const ProjectDetail = () => {
                             })}
                         </div>
                     </div>
-
-                    {/* Mobile Tab Menu Overlay */}
-                    {isTabMenuOpen && (
-                        <div className="md:hidden border-t border-slate-100 bg-white animate-fadeIn">
-                            <div className="flex flex-col">
-                                {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
-                                    let badgeCount = 0;
-                                    if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                                    if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
-
-                                    const isActive = activeTab === tab;
-
-                                    return (
-                                        <button
-                                            key={tab}
-                                            onClick={() => {
-                                                setActiveTab(tab);
-                                                setIsTabMenuOpen(false);
-                                            }}
-                                            className={clsx(
-                                                "px-6 py-4 text-sm font-medium flex items-center gap-4 transition-all rounded-sm mx-2 my-1",
-                                                isActive
-                                                    ? 'bg-slate-50 text-[#1B4D4F] font-bold border-l-4 border-[#1B4D4F]'
-                                                    : 'text-slate-500 hover:bg-slate-50/50 hover:text-slate-700'
-                                            )}
-                                        >
-                                            {tab === 'overview' && <FaInfoCircle className="text-base" />}
-                                            {tab === 'files' && <FaFileAlt className="text-base" />}
-                                            {tab === 'finances' && <FaFileInvoiceDollar className="text-base" />}
-                                            {tab === 'messages' && <FaComments className="text-base" />}
-                                            {tab === 'history' && <FaClock className="text-base" />}
-
-                                            <span className="flex-1 text-left">
-                                                {tab === 'overview' ? 'Stammdaten' :
-                                                    tab === 'files' ? 'Dateien' :
-                                                        tab === 'finances' ? 'Kalkulation & Marge' :
-                                                            tab === 'history' ? 'Historie' : 'Kommunikation'}
-                                            </span>
-
-                                            {tab !== 'overview' && tab !== 'history' && (
-                                                <span className={clsx(
-                                                    "px-2 py-0.5 rounded-full text-xs font-medium",
-                                                    isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
-                                                )}>
-                                                    {badgeCount}
-                                                </span>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 max-w-[1600px] mx-auto w-full py-4 sm:py-8 transition-all duration-300">
+            <div className="flex-1 max-w-[1800px] mx-auto w-full py-4 sm:py-8 transition-all duration-300">
                 {activeTab === 'overview' && (
                     <ProjectOverviewTab
                         projectData={projectData}
@@ -937,22 +856,34 @@ const ProjectDetail = () => {
                 {activeTab === 'files' && (
                     <ProjectFilesTab
                         projectData={projectData}
-                        fileFilterTab={fileFilterTab}
-                        setFileFilterTab={setFileFilterTab}
                         setIsUploadModalOpen={setIsUploadModalOpen}
                         handlePreviewFile={handlePreviewFile}
                         handleDownloadFile={handleDownloadFile}
                         setDeleteFileConfirm={setDeleteFileConfirm}
                         toggleFileType={toggleFileType}
+                        onRenameFile={handleRenameFile}
+                        onMoveFile={handleMoveFile}
                         formatFileSize={formatFileSize}
                     />
                 )}
 
-                {activeTab === 'finances' && (
+                {activeTab === 'finances' && projectData && (
                     <ProjectFinancesTab
                         projectData={projectData}
                         onSavePositions={(positions) => updateProjectMutation.mutate({ positions })}
-                        onRecordPayment={() => setIsPaymentModalOpen(true)}
+                        onRecordPayment={() => {
+                            setEditingPayment(null);
+                            setIsPaymentModalOpen(true);
+                        }}
+                        onEditPayment={(payment) => {
+                            setEditingPayment(payment);
+                            setIsPaymentModalOpen(true);
+                        }}
+                        onDeletePayment={(paymentId) => {
+                            if (!window.confirm('Möchten Sie diese Zahlung wirklich löschen?')) return;
+                            const newPayments = (projectData.payments || []).filter((p: any) => p.id !== paymentId);
+                            updateProjectMutation.mutate({ payments: newPayments });
+                        }}
                         onCreateInvoice={() => setIsInvoiceModalOpen(true)}
                         onGoToInvoice={() => {
                             const activeInvoice = projectData.invoices?.find(inv => !['cancelled'].includes(inv.status));
@@ -962,23 +893,15 @@ const ProjectDetail = () => {
                     />
                 )}
 
-                {
-                    activeTab === 'messages' && (
-                        <div className="mb-10 animate-fadeIn">
-                            <MessagesTab projectData={projectData} projectId={id!} />
-                        </div>
-                    )
-                }
+                {activeTab === 'messages' && (
+                    <div className="mb-10 animate-fadeIn">
+                        <MessagesTab projectData={projectData} projectId={id!} />
+                    </div>
+                )}
 
-                {
-                    activeTab === 'history' && (
-                        <HistoryTab
-                            projectId={id!}
-                        />
-                    )
-                }
-
-
+                {activeTab === 'history' && (
+                    <HistoryTab projectId={id!} />
+                )}
             </div>
 
             <CustomerSelectionModal
@@ -986,7 +909,6 @@ const ProjectDetail = () => {
                 onClose={() => setIsCustomerSearchOpen(false)}
                 onSelect={(customer) => {
                     updateProjectMutation.mutate({ customer_id: customer.id });
-                    // Optimistically update local state to reflect the change immediately
                     if (projectData) {
                         setProjectData({
                             ...projectData,
@@ -1004,7 +926,6 @@ const ProjectDetail = () => {
                             client: customer.company || customer.name
                         });
                     }
-
                     setIsCustomerSearchOpen(false);
                 }}
             />
@@ -1021,35 +942,38 @@ const ProjectDetail = () => {
             <NewInvoiceModal isOpen={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} onSubmit={(data) => invoiceMutation.mutate(data)} project={{ ...projectData, financials }} isLoading={invoiceMutation.isPending} />
             <PaymentModal
                 isOpen={isPaymentModalOpen}
-                onClose={() => setIsPaymentModalOpen(false)}
+                initialData={editingPayment}
+                onClose={() => {
+                    setIsPaymentModalOpen(false);
+                    setEditingPayment(null);
+                }}
                 onSave={(payment) => {
-                    const newPayments = [...(projectData?.payments || []), payment];
-                    const totalPaid = newPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                    const isFullyPaid = (financials.grossTotal - totalPaid) <= 0.01;
+                    let newPayments;
+                    if (editingPayment) {
+                        newPayments = (projectData?.payments || []).map((p: any) =>
+                            p.id === editingPayment.id ? { ...p, ...payment } : p
+                        );
+                    } else {
+                        newPayments = [...(projectData?.payments || []), { ...payment, id: Date.now().toString() }];
+                    }
+
+                    const totalPaid = newPayments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
+                    const isFullyPaid = financials.grossTotal > 0 && (financials.grossTotal - totalPaid) <= 0.01;
 
                     if (projectData) {
                         const updateData: any = { payments: newPayments };
-
-                        // If fully paid, set status to completed / paid
                         if (isFullyPaid && projectData.status !== 'completed' && projectData.status !== 'archived') {
                             updateData.status = 'completed';
                             updateData.progress = 100;
                             toast.success('Vollständige Zahlung erfasst. Projekt als abgeschlossen markiert.');
                         }
-
-                        // Optimistic local update
-                        setProjectData({
-                            ...projectData,
-                            ...updateData
-                        });
-
                         updateProjectMutation.mutate(updateData);
                     }
+                    setEditingPayment(null);
                 }}
                 totalAmount={financials.grossTotal}
             />
 
-            {/* Kunden-Bearbeitungsmodal */}
             <NewCustomerModal
                 isOpen={isCustomerEditModalOpen}
                 onClose={() => setIsCustomerEditModalOpen(false)}
@@ -1058,7 +982,6 @@ const ProjectDetail = () => {
                 isLoading={updateCustomerMutation.isPending}
             />
 
-            {/* Partner-Bearbeitungsmodal */}
             <NewPartnerModal
                 isOpen={isPartnerEditModalOpen}
                 onClose={() => setIsPartnerEditModalOpen(false)}
@@ -1085,7 +1008,7 @@ const ProjectDetail = () => {
                     }
                 }}
                 title="Datei löschen"
-                message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen ? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
                 confirmText="Löschen"
                 cancelText="Abbrechen"
                 isLoading={deleteFileMutation.isPending}
@@ -1095,7 +1018,7 @@ const ProjectDetail = () => {
                 onClose={() => setIsProjectDeleteConfirmOpen(false)}
                 onConfirm={() => deleteProjectMutation.mutate(id!)}
                 title="Projekt löschen"
-                message={`Möchten Sie das Projekt "${projectData.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                message={`Möchten Sie das Projekt "${projectData?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
                 confirmText="Löschen"
                 cancelText="Abbrechen"
                 type="danger"
@@ -1125,9 +1048,8 @@ const ProjectDetail = () => {
                 projectId={id}
                 to={emailComposeData.to}
                 subject={emailComposeData.subject}
-                recipientType={emailComposeData.recipientType}
             />
-        </div >
+        </div>
     );
 };
 

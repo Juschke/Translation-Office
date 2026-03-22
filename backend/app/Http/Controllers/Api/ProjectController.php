@@ -106,6 +106,22 @@ class ProjectController extends Controller
             foreach ($request->positions as $posData) {
                 $project->positions()->create($posData);
             }
+
+            // Sync root price totals
+            $positionsNet = (float) $project->positions()->sum('customer_total');
+            $partnerNet = (float) $project->positions()->sum('partner_total');
+
+            // Include extra services in the root price_total
+            $extraNet = ($project->is_certified ? 5 : 0) +
+                ($project->has_apostille ? 15 : 0) +
+                ($project->is_express ? 15 : 0) +
+                ($project->classification ? 15 : 0) +
+                ((($project->copies_count && $project->copies_count > 0) ? $project->copies_count : 0) * (float) ($project->copy_price && $project->copy_price > 0 ? $project->copy_price : 5));
+
+            $project->update([
+                'price_total' => $positionsNet + $extraNet,
+                'partner_cost_net' => $partnerNet
+            ]);
         }
 
         if ($request->has('payments')) {
@@ -252,6 +268,22 @@ class ProjectController extends Controller
             foreach ($validated['positions'] as $posData) {
                 $project->positions()->create($posData);
             }
+
+            // Sync root price totals
+            $positionsNet = (float) $project->positions()->sum('customer_total');
+            $partnerNet = (float) $project->positions()->sum('partner_total');
+
+            // Include extra services in the root price_total
+            $extraNet = ($project->is_certified ? 5 : 0) +
+                ($project->has_apostille ? 15 : 0) +
+                ($project->is_express ? 15 : 0) +
+                ($project->classification ? 15 : 0) +
+                ((($project->copies_count && $project->copies_count > 0) ? $project->copies_count : 0) * (float) ($project->copy_price && $project->copy_price > 0 ? $project->copy_price : 5));
+
+            $project->update([
+                'price_total' => $positionsNet + $extraNet,
+                'partner_cost_net' => $partnerNet
+            ]);
         }
 
         if ($request->has('payments')) {

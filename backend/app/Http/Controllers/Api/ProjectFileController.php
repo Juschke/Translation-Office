@@ -195,13 +195,15 @@ class ProjectFileController extends Controller
 
         // Validate request
         $validated = $request->validate([
-            'type' => 'required|in:source,target,reference,delivery',
+            'type' => 'sometimes|string|in:source,target,reference,delivery',
+            'file_name' => 'sometimes|string|max:255',
         ]);
 
         try {
-            $file->update([
-                'type' => $validated['type']
-            ]);
+            $file->update(array_filter([
+                'type' => $validated['type'] ?? null,
+                'file_name' => $validated['file_name'] ?? null,
+            ]));
 
             return response()->json($file);
         } catch (\Exception $e) {

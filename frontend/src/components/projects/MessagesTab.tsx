@@ -149,7 +149,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
     const initials = (personName || 'K').substring(0, 1).toUpperCase();
 
     return (
-        <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[700px] mb-10 animate-fadeIn">
+        <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[605px] mb-10 animate-fadeIn">
             {/* Contact Info Header */}
             <div className="bg-white p-3 border-b border-slate-200 flex justify-between items-center shadow-sm z-20">
                 <div className="flex items-center gap-3">

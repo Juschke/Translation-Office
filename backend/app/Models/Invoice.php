@@ -321,7 +321,7 @@ class Invoice extends Model
         // 2. Check for overdue (only for non-drafts)
         if ($this->status !== self::STATUS_DRAFT && $this->due_date) {
             $dueDate = \Illuminate\Support\Carbon::parse($this->due_date);
-            if ($dueDate->isPast() && $this->status !== self::STATUS_PAID) {
+            if ($dueDate->lt(today()) && $this->status !== self::STATUS_PAID) {
                 $this->status = self::STATUS_OVERDUE;
             }
         }

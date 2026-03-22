@@ -1,0 +1,183 @@
+# Translation Office Landing Page - Apache Configuration
+
+# Enable Rewrite Engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /landing-page/
+
+    # Force HTTPS (Production only - uncomment when live)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Force WWW (or remove WWW - choose one)
+    # RewriteCond %{HTTP_HOST} !^www\.
+    # RewriteRule ^(.*)$ https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Remove trailing slash
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [R=301,L]
+
+    # Clean URLs - serve index.html without extension
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([^\.]+)$ $1.html [NC,L]
+</IfModule>
+
+# ========================================
+# Performance & Caching
+# ========================================
+
+# Enable Gzip Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Browser Caching
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Images
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+
+    # CSS and JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+
+    # Fonts
+    ExpiresByType font/ttf "access plus 1 year"
+    ExpiresByType font/otf "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+
+    # HTML
+    ExpiresByType text/html "access plus 0 seconds"
+
+    # Default
+    ExpiresDefault "access plus 1 month"
+</IfModule>
+
+# Cache-Control Headers
+<IfModule mod_headers.c>
+    # Images
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+
+    # CSS and JavaScript
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "max-age=2592000, public"
+    </FilesMatch>
+
+    # Fonts
+    <FilesMatch "\.(ttf|otf|woff|woff2|eot)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+
+    # HTML
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
+# ========================================
+# Security
+# ========================================
+
+# Disable Directory Browsing
+Options -Indexes
+
+# Hide Apache Version
+ServerSignature Off
+
+# Prevent Hotlinking
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_REFERER} !^$
+    RewriteCond %{HTTP_REFERER} !^https://(www\.)?translation-office\.de [NC]
+    RewriteRule \.(jpg|jpeg|png|gif|webp|svg)$ - [F,NC]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    # Prevent Clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # XSS Protection
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Prevent MIME Sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content Security Policy (adjust as needed)
+    # Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';"
+</IfModule>
+
+# Protect sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ========================================
+# Error Pages
+# ========================================
+
+ErrorDocument 404 /landing-page/404.html
+ErrorDocument 500 /landing-page/500.html
+
+# ========================================
+# MIME Types
+# ========================================
+
+<IfModule mod_mime.c>
+    # Web fonts
+    AddType application/font-woff2 .woff2
+    AddType application/font-woff .woff
+    AddType application/font-ttf .ttf
+    AddType application/font-otf .otf
+
+    # Images
+    AddType image/webp .webp
+    AddType image/svg+xml .svg .svgz
+
+    # JavaScript
+    AddType application/javascript .js
+    AddType application/json .json
+
+    # Video
+    AddType video/mp4 .mp4
+    AddType video/webm .webm
+</IfModule>
+
+# ========================================
+# PHP Settings (if needed)
+# ========================================
+
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>

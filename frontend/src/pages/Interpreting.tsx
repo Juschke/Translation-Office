@@ -10,7 +10,7 @@ import KPICard from '../components/common/KPICard';
 import toast from 'react-hot-toast';
 import { format, isAfter, isBefore, startOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { FaPlus, FaEdit, FaTrash, FaUser, FaBuilding, FaMapMarkerAlt, FaFilePdf, FaUserTie, FaCheckCircle, FaCalendarAlt, FaHandshake } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaMapMarkerAlt, FaFilePdf, FaUserTie, FaCheckCircle, FaCalendarAlt, FaHandshake, FaEnvelope } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import ProjectSelectionModal from '../components/modals/ProjectSelectionModal';
 
@@ -26,6 +26,11 @@ interface Appointment {
     customer?: any;
     partner?: any;
 }
+
+const getInitials = (name: string): string => {
+    if (!name) return '?';
+    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+};
 
 const Interpreting = () => {
     const navigate = useNavigate();
@@ -100,7 +105,7 @@ const Interpreting = () => {
             accessor: (item: Appointment) => (
                 <div className="flex flex-col">
                     <span className="font-bold text-slate-800">
-                        {format(new Date(item.start_date), 'dd.MM.yyyy', { locale: de })}
+                        {format(new Date(item.start_date), 'eeee, dd.MM.yyyy', { locale: de })}
                     </span>
                     <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
                         {format(new Date(item.start_date), 'HH:mm', { locale: de })}
@@ -135,14 +140,21 @@ const Interpreting = () => {
             accessor: (item: Appointment) => {
                 const customer = item.customer || item.project?.customer;
                 if (!customer) return <span className="text-slate-400">-</span>;
+                const salutation = customer.salutation ? `${customer.salutation} ` : '';
+                const name = customer.company_name || `${salutation}${customer.first_name} ${customer.last_name}` || 'Unbekannt';
                 return (
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 shrink-0">
-                            <FaBuilding />
+                    <div className="flex items-center gap-3 max-w-[240px]">
+                        <div className="w-8 h-8 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm">
+                            {getInitials(name)}
                         </div>
-                        <span className="text-xs font-medium text-slate-700 truncate max-w-[150px]">
-                            {customer.company_name || `${customer.first_name} ${customer.last_name}`}
-                        </span>
+                        <div className="flex flex-col text-[11px] leading-tight overflow-hidden">
+                            <span className="font-semibold text-slate-800 truncate mb-0.5" title={name}>{name}</span>
+                            {customer.email && (
+                                <span className="text-[10px] text-slate-500 truncate flex items-center gap-1.5 grayscale opacity-70">
+                                    <FaEnvelope size={8} /> {customer.email}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 );
             }
@@ -152,15 +164,21 @@ const Interpreting = () => {
             header: 'Dolmetscher',
             accessor: (item: Appointment) => {
                 const partner = item.partner;
-                if (!partner) return <span className="text-slate-400">Nicht zugewiesen</span>;
+                if (!partner) return <span className="text-slate-400 italic">Nicht zugewiesen</span>;
+                const name = partner.company_name || `${partner.first_name} ${partner.last_name}` || 'Dolmetscher';
                 return (
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-brand-primary/10 flex items-center justify-center text-[10px] text-brand-primary shrink-0">
-                            <FaUser />
+                    <div className="flex items-center gap-3 max-w-[240px]">
+                        <div className="w-8 h-8 bg-brand-primary/5 border border-brand-primary/10 text-brand-primary flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm">
+                            {getInitials(name)}
                         </div>
-                        <span className="text-xs font-medium text-slate-700 truncate max-w-[150px]">
-                            {partner.company_name || `${partner.first_name} ${partner.last_name}`}
-                        </span>
+                        <div className="flex flex-col text-[11px] leading-tight overflow-hidden">
+                            <span className="font-semibold text-slate-800 truncate mb-0.5" title={name}>{name}</span>
+                            {partner.email && (
+                                <span className="text-[10px] text-brand-primary/60 truncate flex items-center gap-1.5">
+                                    <FaEnvelope size={8} /> {partner.email}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 );
             }
@@ -169,9 +187,9 @@ const Interpreting = () => {
             id: 'location',
             header: 'Ort',
             accessor: (item: Appointment) => item.location ? (
-                <div className="flex items-center gap-1.5 text-slate-500">
-                    <FaMapMarkerAlt className="text-[10px]" />
-                    <span className="text-xs truncate max-w-[120px]">{item.location}</span>
+                <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+                    <FaMapMarkerAlt className="text-[10px] text-slate-400" />
+                    <span className="text-xs">{item.location}</span>
                 </div>
             ) : <span className="text-slate-400">-</span>
         },

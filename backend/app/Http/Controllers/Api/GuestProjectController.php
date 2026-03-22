@@ -14,12 +14,20 @@ class GuestProjectController extends Controller
 {
     public function show(string $token)
     {
-        $project = Project::with(['messages.user', 'messages.file', 'files', 'sourceLanguage', 'targetLanguage', 'customer', 'partner', 'tenant', 'positions'])
+        $project = Project::with(['messages.user', 'messages.file', 'files.uploader', 'sourceLanguage', 'targetLanguage', 'customer', 'partner', 'tenant', 'positions'])
             ->where('access_token', $token)
             ->orWhere('partner_access_token', $token)
             ->firstOrFail();
 
         $role = $project->partner_access_token === $token ? 'partner' : 'customer';
+
+        // Filter files based on sharing permissions
+        $filteredFiles = $project->files->filter(function ($file) use ($role) {
+            if ($role === 'customer') {
+                return $file->is_shared_with_customer;
+            }
+            return $file->is_shared_with_partner;
+        })->values();
 
         return response()->json([
             'role' => $role,
@@ -34,7 +42,7 @@ class GuestProjectController extends Controller
             'target_lang' => $project->targetLanguage,
             'customer' => $project->customer,
             'partner' => $project->partner,
-            'files' => $project->files,
+            'files' => $filteredFiles,
             'positions' => $project->positions,
             'price_total' => $project->price_total,
             'currency' => $project->currency,
@@ -69,7 +77,23 @@ class GuestProjectController extends Controller
                         'mime_type' => $msg->file->mime_type,
                     ] : null,
                 ];
-            })
+            }),
+            'project' => $project // Add full project object for status updates
+        ]);
+    }
+
+    public function markAsDone(Request $request, string $token)
+    {
+        $project = $this->findByToken($token);
+
+        // When a partner marks as done, we usually set to 'ready_for_pickup' OR 'delivered'
+        // For this workflow, let's use 'ready_for_pickup' so PM can review
+        $project->status = 'ready_for_pickup';
+        $project->save();
+
+        return response()->json([
+            'message' => 'Projekt als erledigt markiert',
+            'status' => $project->status
         ]);
     }
 
@@ -101,8 +125,16 @@ class GuestProjectController extends Controller
         $project = $this->findByToken($token);
 
         $request->validate([
-            'file' => 'required|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,rtf,odt,ods,csv,jpg,jpeg,png,gif,zip',
+            'file' => 'required|file|max:20480|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,rtf,odt,ods,csv,jpg,jpeg,png,gif,zip',
+            'type' => 'nullable|string|in:original,reference,target,translation,final,proofread'
         ]);
+
+        $role = $project->partner_access_token === $token ? 'partner' : 'customer';
+        $fileType = $request->input('type');
+
+        if (!$fileType) {
+            $fileType = $role === 'partner' ? 'target' : 'original';
+        }
 
         $file = $request->file('file');
         $fileName = $file->getClientOriginalName();
@@ -118,7 +150,7 @@ class GuestProjectController extends Controller
         $projectFile->file_size = $file->getSize(); // Bytes
         $projectFile->extension = $file->getClientOriginalExtension();
         $projectFile->mime_type = $file->getMimeType();
-        $projectFile->type = 'original';
+        $projectFile->type = $fileType;
         $projectFile->uploaded_by = null;
         $projectFile->save();
 
@@ -147,6 +179,63 @@ class GuestProjectController extends Controller
 
         return response()->json($project->load('customer'));
     }
+    public function downloadFile(string $token, ProjectFile $file)
+    {
+        $project = $this->findByToken($token);
+
+        // Validate file belongs to project
+        if ($file->project_id !== $project->id) {
+            abort(403, 'File does not belong to this project');
+        }
+
+        // Check sharing permission based on role
+        $role = $project->partner_access_token === $token ? 'partner' : 'customer';
+
+        if ($role === 'customer' && !$file->is_shared_with_customer) {
+            abort(403, 'File not shared with customer');
+        }
+
+        if ($role === 'partner' && !$file->is_shared_with_partner) {
+            abort(403, 'File not shared with partner');
+        }
+
+        // Check if file exists
+        if (!Storage::disk('public')->exists($file->path)) {
+            abort(404, 'File not found');
+        }
+
+        // Security: Path traversal protection
+        $normalizedPath = str_replace('\\', '/', $file->path);
+
+        if (!str_starts_with($normalizedPath, 'projects/') &&
+            !str_starts_with($normalizedPath, 'project_files/')) {
+            \Log::warning('Invalid file path attempted by guest', [
+                'path' => $file->path,
+                'file_id' => $file->id,
+                'token' => substr($token, 0, 10) . '...'
+            ]);
+            abort(403, 'Invalid file path');
+        }
+
+        if (str_contains($normalizedPath, '..')) {
+            \Log::warning('Path traversal detected by guest', [
+                'path' => $file->path,
+                'file_id' => $file->id
+            ]);
+            abort(403, 'Path traversal detected');
+        }
+
+        // Log successful download for audit trail
+        \Log::info('Guest file downloaded', [
+            'file_id' => $file->id,
+            'project_id' => $project->id,
+            'role' => $role,
+            'ip' => request()->ip()
+        ]);
+
+        return Storage::disk('public')->download($file->path, $file->original_name);
+    }
+
     public function downloadAvv($token)
     {
         $project = $this->findByToken($token);

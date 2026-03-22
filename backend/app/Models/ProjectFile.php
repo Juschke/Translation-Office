@@ -22,6 +22,13 @@ class ProjectFile extends Model
         'version',
         'status',
         'uploaded_by',
+        'is_shared_with_customer',
+        'is_shared_with_partner',
+    ];
+
+    protected $casts = [
+        'is_shared_with_customer' => 'boolean',
+        'is_shared_with_partner' => 'boolean',
     ];
 
     protected $appends = ['file_name'];

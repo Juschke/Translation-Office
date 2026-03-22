@@ -118,7 +118,7 @@ export function buildProjectColumns({
             ),
             sortable: true,
             sortKey: 'project_name',
-            width: 150,
+            width: 120,
         },
         {
             id: 'customer',
@@ -265,7 +265,7 @@ export function buildProjectColumns({
                     </div>
                 );
             },
-            width: 140,
+            width: 200,
         },
         {
             id: 'down_payment',
@@ -304,7 +304,7 @@ export function buildProjectColumns({
                 );
             },
             align: 'right' as const,
-            width: 100,
+            width: 90,
         },
         {
             id: 'price_total',
@@ -332,7 +332,7 @@ export function buildProjectColumns({
                 );
             },
             align: 'right' as const,
-            width: 110,
+            width: 90,
         },
         {
             id: 'deadline',
@@ -372,22 +372,22 @@ export function buildProjectColumns({
                 const diffDays = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
                 let badgeColor = 'bg-emerald-50 text-emerald-600 border-emerald-100';
-                let label = `${diffDays}d`;
+                let label = `${diffDays} Tage`;
                 if (diffDays < 0) {
                     badgeColor = 'bg-red-50 text-red-600 border-red-100';
-                    label = `${Math.abs(diffDays)}d overdue`;
+                    label = `${Math.abs(diffDays)} Tage überfällig`;
                 } else if (diffDays === 0) {
                     badgeColor = 'bg-orange-50 text-orange-600 border-orange-100';
-                    label = 'Heute';
+                    label = 'Heute fällig';
                 } else if (diffDays <= 2) {
                     badgeColor = 'bg-orange-50 text-orange-600 border-orange-100';
-                    label = `${diffDays}d`;
+                    label = `${diffDays} Tage`;
                 }
 
                 return (
                     <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
-                            <span>{date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</span>
+                            <span>{date.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span>
                             <span className="text-slate-400 text-[10px]">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                         <span className={`px-1 py-0 rounded-[2px] text-[9px] font-bold border w-fit uppercase ${badgeColor}`}>{label}</span>
@@ -396,7 +396,7 @@ export function buildProjectColumns({
             },
             sortable: true,
             sortKey: 'deadline',
-            width: 120,
+            width: 220,
         },
         {
             id: 'status',
@@ -466,7 +466,7 @@ export function buildProjectColumns({
                 </div>
             ),
             align: 'right' as const,
-            width: 100,
+            width: 60,
         },
     ];
 }

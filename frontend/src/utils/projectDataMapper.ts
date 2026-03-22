@@ -124,6 +124,7 @@ export function mapProjectResponse(projectResponse: any) {
         notes: projectResponse.notes || '',
         messages: projectResponse.messages || [],
         access_token: projectResponse.access_token,
+        partner_access_token: projectResponse.partner_access_token,
         invoices: (projectResponse.invoices || []).filter((inv: any) => inv.type !== 'credit_note'),
         files: (projectResponse.files || []).map((f: any) => ({
             id: f.id.toString(),

@@ -1,0 +1,315 @@
+/* Translation Office Landing Page - Custom Styles */
+
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Navbar shadow on scroll */
+#navbar.scrolled {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Floating animations */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes float-delayed {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+    animation: float-delayed 3s ease-in-out infinite 0.5s;
+}
+
+/* Gradient text */
+.gradient-text {
+    background: linear-gradient(135deg, #1B4D4F 0%, #2A6A6D 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1B4D4F;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #143A3C;
+}
+
+/* Focus states */
+button:focus,
+input:focus,
+textarea:focus,
+a:focus {
+    outline: 2px solid #1B4D4F;
+    outline-offset: 2px;
+}
+
+/* Form styling */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+textarea {
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+textarea:focus {
+    border-color: #1B4D4F;
+    box-shadow: 0 0 0 3px rgba(27, 77, 79, 0.1);
+}
+
+/* Link hover effects */
+a {
+    transition: all 0.2s ease;
+}
+
+/* Image loading placeholder */
+img {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+img[src] {
+    animation: none;
+}
+
+/* Card hover effects */
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Hero background pattern */
+#hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* Button animations */
+button,
+.btn {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+button:active,
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* Pricing card highlight */
+.pricing-card-popular {
+    box-shadow: 0 25px 50px -12px rgba(27, 77, 79, 0.25);
+}
+
+/* Stats counter animation */
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-number {
+    animation: countUp 0.8s ease-out;
+}
+
+/* Mobile menu transition */
+#mobile-menu {
+    transition: all 0.3s ease-in-out;
+    max-height: 0;
+    overflow: hidden;
+}
+
+#mobile-menu.show {
+    max-height: 500px;
+}
+
+/* Section reveal animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.reveal {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Testimonial card styling */
+.testimonial-card {
+    transition: all 0.3s ease;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+}
+
+/* Feature icon pulse */
+@keyframes pulse-subtle {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.feature-icon {
+    animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* Form success/error states */
+.form-success {
+    border-color: #10b981 !important;
+    background-color: #f0fdf4;
+}
+
+.form-error {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    width: 24px;
+    height: 24px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    h2 {
+        font-size: 1.75rem;
+    }
+
+    .hero-image {
+        margin-top: 2rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    #navbar,
+    #demo,
+    footer {
+        display: none;
+    }
+
+    section {
+        page-break-inside: avoid;
+    }
+}
+
+/* Accessibility improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus visible (modern browsers) */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+    outline: 2px solid #1B4D4F;
+    outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

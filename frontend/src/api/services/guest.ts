@@ -23,4 +23,14 @@ export const guestService = {
         const response = await api.put(`/guest/project/${token}`, data);
         return response.data;
     },
+    markAsDone: async (token: string) => {
+        const response = await api.post(`/guest/project/${token}/done`);
+        return response.data;
+    },
+    downloadFile: async (token: string, fileId: number) => {
+        const response = await api.get(`/guest/project/${token}/files/${fileId}/download`, {
+            responseType: 'blob',
+        });
+        return response.data;
+    },
 };

@@ -379,8 +379,9 @@ const DataTable = <T extends { id: string | number }>({
                         onChange={handleTableChange}
                         rowSelection={rowSelection}
                         sticky
+                        tableLayout="fixed"
                         scroll={{
-                            x: 'max-content',
+                            x: '100%',
                             y: window.innerWidth < 768 ? 400 : 'calc(100vh - 420px)'
                         }}
                         onRow={record => ({

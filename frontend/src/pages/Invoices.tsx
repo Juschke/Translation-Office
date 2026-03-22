@@ -169,8 +169,10 @@ const Invoices = () => {
 
         return invoices.filter((inv: any) => {
             const status = inv.status?.toLowerCase() || 'pending';
-            const dueDate = new Date(inv.due_date);
-            const isOverdue = dueDate < today && status !== 'paid' && status !== 'cancelled' && status !== 'deleted' && status !== 'archived' && status !== 'draft';
+            const dueDateRaw = inv.due_date ? new Date(inv.due_date) : null;
+            // Normalize to local midnight to avoid timezone issues with ISO strings
+            const dueDate = dueDateRaw ? new Date(dueDateRaw.getFullYear(), dueDateRaw.getMonth(), dueDateRaw.getDate()) : null;
+            const isOverdue = dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'deleted', 'gelöscht', 'archived', 'archiviert', 'draft'].includes(status);
 
             // Priority 1: Filter by status view (active/archive/trash)
             if (statusView === 'trash') {
@@ -191,8 +193,8 @@ const Invoices = () => {
 
                 if (statusFilter === 'paid') return status === 'paid' || status === 'bezahlt';
                 if (statusFilter === 'cancelled') return status === 'cancelled' || status === 'storniert';
-                if (statusFilter === 'overdue') return isOverdue;
-                if (statusFilter === 'reminders') return (inv.reminder_level > 0 || isOverdue) && status !== 'paid' && status !== 'cancelled';
+                if (statusFilter === 'overdue') return isOverdue || status === 'overdue' || status === 'überfällig';
+                if (statusFilter === 'reminders') return (inv.reminder_level > 0 || isOverdue) && !(status === 'paid' || status === 'bezahlt' || status === 'cancelled' || status === 'storniert');
                 if (statusFilter === 'pending') {
                     return (status === 'pending' || status === 'draft' || status === 'issued') && !isOverdue;
                 }
@@ -356,15 +358,110 @@ const Invoices = () => {
         setIsConfirmOpen,
     });
 
+    const subTabCounts = useMemo(() => {
+        const defaultCounts = {
+            all: 0,
+            pending: 0,
+            paid: 0,
+            overdue: 0,
+            reminders: 0,
+            cancelled: 0,
+            credit_notes: 0
+        };
+
+        if (!Array.isArray(invoices)) return defaultCounts;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const active = invoices.filter((inv: any) => {
+            const s = (inv.status || 'pending').toLowerCase();
+            return s !== 'deleted' && s !== 'gelöscht' && s !== 'archived' && s !== 'archiviert';
+        });
+
+        const overdueInvs = active.filter((inv: any) => {
+            const s = (inv.status || 'pending').toLowerCase();
+            const dueDateRaw = inv.due_date ? new Date(inv.due_date) : null;
+            const dueDate = dueDateRaw ? new Date(dueDateRaw.getFullYear(), dueDateRaw.getMonth(), dueDateRaw.getDate()) : null;
+            return (s === 'overdue' || s === 'überfällig') || (dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s));
+        });
+
+        return {
+            all: active.length,
+            pending: active.filter((inv: any) => {
+                const s = (inv.status || 'pending').toLowerCase();
+                const dueDateRaw = inv.due_date ? new Date(inv.due_date) : null;
+                const dueDate = dueDateRaw ? new Date(dueDateRaw.getFullYear(), dueDateRaw.getMonth(), dueDateRaw.getDate()) : null;
+                const isOverdue = dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s);
+                return (s === 'pending' || s === 'draft' || s === 'issued') && !isOverdue;
+            }).length,
+            paid: active.filter((inv: any) => {
+                const s = (inv.status || 'pending').toLowerCase();
+                return s === 'paid' || s === 'bezahlt';
+            }).length,
+            overdue: overdueInvs.length,
+            reminders: active.filter((inv: any) => {
+                const s = (inv.status || 'pending').toLowerCase();
+                const dueDateRaw = inv.due_date ? new Date(inv.due_date) : null;
+                const dueDate = dueDateRaw ? new Date(dueDateRaw.getFullYear(), dueDateRaw.getMonth(), dueDateRaw.getDate()) : null;
+                const isOverdue = dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s);
+                return (inv.reminder_level > 0 || isOverdue) && !['paid', 'bezahlt', 'cancelled', 'storniert'].includes(s);
+            }).length,
+            cancelled: active.filter((inv: any) => {
+                const s = (inv.status || 'pending').toLowerCase();
+                return s === 'cancelled' || s === 'storniert';
+            }).length,
+            credit_notes: active.filter((inv: any) => inv.type === 'credit_note').length,
+        };
+    }, [invoices]);
+
     const tabs = statusView === 'active' ? (
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1 overflow-x-auto no-scrollbar">
-            <button onClick={() => setStatusFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Alle</button>
-            <button onClick={() => setStatusFilter('pending')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Offen</button>
-            <button onClick={() => setStatusFilter('paid')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'paid' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bezahlt</button>
-            <button onClick={() => setStatusFilter('overdue')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Überfällig</button>
-            <button onClick={() => setStatusFilter('reminders')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Mahnungen</button>
-            <button onClick={() => setStatusFilter('cancelled')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Storniert</button>
-            <button onClick={() => setStatusFilter('credit_notes')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Gutschriften</button>
+            <button
+                onClick={() => setStatusFilter('all')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Alle
+            </button>
+            <button
+                onClick={() => setStatusFilter('pending')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Offen
+                {subTabCounts.pending > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'pending' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.pending}</span>}
+            </button>
+            <button
+                onClick={() => setStatusFilter('paid')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'paid' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Bezahlt
+            </button>
+            <button
+                onClick={() => setStatusFilter('overdue')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Überfällig
+                {subTabCounts.overdue > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'overdue' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.overdue}</span>}
+            </button>
+            <button
+                onClick={() => setStatusFilter('reminders')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Mahnungen
+                {subTabCounts.reminders > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'reminders' ? 'bg-white text-amber-600' : 'bg-amber-50 text-amber-600'}`}>{subTabCounts.reminders}</span>}
+            </button>
+            <button
+                onClick={() => setStatusFilter('cancelled')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Storniert
+            </button>
+            <button
+                onClick={() => setStatusFilter('credit_notes')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+                Gutschriften
+                {subTabCounts.credit_notes > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'credit_notes' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.credit_notes}</span>}
+            </button>
         </div>
     ) : null;
 
@@ -408,25 +505,16 @@ const Invoices = () => {
     }).length, [invoices]);
 
     const totalOpenAmount = activeInvoices
-        .filter((i: any) => i.status !== 'paid' && i.status !== 'cancelled' && i.type !== 'credit_note')
+        .filter((i: any) => i.status !== 'paid' && i.status !== 'bezahlt' && i.status !== 'cancelled' && i.status !== 'storniert' && i.type !== 'credit_note')
         .reduce((acc: number, curr: any) => acc + (curr.amount_gross_eur ?? (curr.amount_gross / 100)), 0);
 
     const totalPaidMonth = activeInvoices
-        .filter((i: any) => i.status === 'paid')
+        .filter((i: any) => i.status === 'paid' || i.status === 'bezahlt')
         .reduce((acc: number, curr: any) => acc + (curr.amount_gross_eur ?? (curr.amount_gross / 100)), 0);
 
-    const overdueCount = activeInvoices.filter((inv: any) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const dueDate = new Date(inv.due_date);
-        return dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft';
-    }).length;
-
-    const reminderCount = activeInvoices.filter((inv: any) => {
-        return (inv.reminder_level > 0 || (new Date(inv.due_date) < new Date() && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft'));
-    }).length;
-
-    const paidCount = activeInvoices.filter((i: any) => i.status === 'paid').length;
+    const overdueCount = subTabCounts.overdue || 0;
+    const reminderCount = subTabCounts.reminders || 0;
+    const paidCount = subTabCounts.paid || 0;
 
     const statusTabs = (
         <TooltipProvider>

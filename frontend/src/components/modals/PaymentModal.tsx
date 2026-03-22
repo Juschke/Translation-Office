@@ -49,7 +49,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
             return;
         }
 
-        if (val > totalAmount) {
+        // Round to 2 decimal places for comparison to avoid floating-point issues
+        const roundedVal = Math.round(val * 100);
+        const roundedTotal = Math.round(totalAmount * 100);
+
+        if (roundedVal > roundedTotal) {
             setError(`Betrag darf den Gesamtbetrag (${totalAmount.toFixed(2)} €) nicht überschreiten`);
             return;
         }

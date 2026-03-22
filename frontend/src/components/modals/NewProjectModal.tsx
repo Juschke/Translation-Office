@@ -312,7 +312,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     useEffect(() => {
         const updatedPositions = positions.map(pos => {
             const amount = parseFloat(pos.amount) || 0;
-            const qty = parseFloat(pos.quantity) || 0;
+            // Use 1 as default quantity if not set or 0 to avoid zeroing out prices
+            const qty = (parseFloat(pos.quantity) || 1);
             const totalUnits = amount * qty;
 
             const pRate = parseFloat(pos.partnerRate) || 0;
@@ -579,7 +580,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             classification: classification === 'ja',
             copies_count: copies,
             copy_price: parseFloat(copyPrice) || 0,
-            price_total: parseFloat(totalPrice) || 0,
+            price_total: calcNet,
             partner_cost_net: parseFloat(partnerPrice) || 0,
             document_type_id: docType.length > 0 ? parseInt(docType[0]) : null,
             additional_doc_types: docType.length > 1 ? docType.slice(1) : null,

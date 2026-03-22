@@ -19,6 +19,8 @@ Route::prefix('guest')->middleware(['throttle:30,1'])->group(function () {
     Route::put('project/{token}', [\App\Http\Controllers\Api\GuestProjectController::class, 'update']);
     Route::post('project/{token}/message', [\App\Http\Controllers\Api\GuestProjectController::class, 'message']);
     Route::post('project/{token}/files', [\App\Http\Controllers\Api\GuestProjectController::class, 'upload']);
+    Route::get('project/{token}/files/{file}/download', [\App\Http\Controllers\Api\GuestProjectController::class, 'downloadFile']);
+    Route::post('project/{token}/done', [\App\Http\Controllers\Api\GuestProjectController::class, 'markAsDone']);
     Route::get('project/{token}/avv', [\App\Http\Controllers\Api\GuestProjectController::class, 'downloadAvv']);
 });
 

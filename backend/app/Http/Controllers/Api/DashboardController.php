@@ -77,7 +77,16 @@ class DashboardController extends Controller
                 ->get();
 
             // 5. Language Stats (Aggregated for Dashboard)
-            $languageStats = Project::join('languages', 'projects.target_lang_id', '=', 'languages.id')
+            $targetLanguageStats = Project::join('languages', 'projects.target_lang_id', '=', 'languages.id')
+                ->select('languages.name_internal as label', DB::raw('SUM(projects.price_total) as value'))
+                ->whereBetween('projects.created_at', [$startDate, $endDate])
+                ->where('projects.tenant_id', $tenantId)
+                ->groupBy('languages.name_internal')
+                ->orderByDesc('value')
+                ->limit(5)
+                ->get();
+
+            $sourceLanguageStats = Project::join('languages', 'projects.source_lang_id', '=', 'languages.id')
                 ->select('languages.name_internal as label', DB::raw('SUM(projects.price_total) as value'))
                 ->whereBetween('projects.created_at', [$startDate, $endDate])
                 ->where('projects.tenant_id', $tenantId)
@@ -99,8 +108,14 @@ class DashboardController extends Controller
                     'unread_emails' => \App\Models\Mail::where('folder', 'inbox')->where('is_read', false)->count(),
                     'active_interpreting' => $activeInterpretingCount,
                 ],
+                'period' => [
+                    'start' => $startDate->toDateString(),
+                    'end' => $endDate->toDateString(),
+                    'label' => $startDate->translatedFormat('F Y')
+                ],
                 'recent_projects' => $recentProjects,
-                'language_revenue' => $languageStats
+                'source_language_revenue' => $sourceLanguageStats,
+                'target_language_revenue' => $targetLanguageStats
             ];
         });
 

@@ -114,8 +114,9 @@ export function buildInvoiceColumns({
             accessor: (inv: any) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                const dueDate = new Date(inv.due_date);
-                const isOverdue = dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'deleted' && inv.status !== 'archived' && inv.status !== 'draft';
+                const dRaw = new Date(inv.due_date);
+                const dueDate = new Date(dRaw.getFullYear(), dRaw.getMonth(), dRaw.getDate());
+                const isOverdue = dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'deleted', 'gelöscht', 'archived', 'archiviert', 'draft'].includes(inv.status?.toLowerCase());
                 const displayStatus = isOverdue ? 'overdue' : inv.status;
                 return <InvoiceStatusBadge status={displayStatus} reminderLevel={inv.reminder_level} type={inv.type} />;
             },

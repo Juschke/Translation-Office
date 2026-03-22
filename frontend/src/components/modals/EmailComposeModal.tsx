@@ -79,7 +79,6 @@ interface EmailComposeModalProps {
     to?: string;
     subject?: string;
     body?: string;
-    recipientType?: 'customer' | 'partner' | 'none';
 }
 
 const EmailComposeModal = ({
@@ -89,7 +88,6 @@ const EmailComposeModal = ({
     to: initialTo,
     subject: initialSubject,
     body: initialBody,
-    recipientType = 'none'
 }: EmailComposeModalProps) => {
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -294,7 +292,7 @@ const EmailComposeModal = ({
                                     <div className="flex items-start gap-4 py-2 border-b border-slate-100 group focus-within:border-[#1B4D4F]/30 transition-colors z-50">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-[#1B4D4F] transition-colors pt-1.5 shrink-0">AN</span>
                                         <div className="flex-1 min-w-0">
-                                            {projectDetails && recipientType !== 'partner' && (
+                                            {projectDetails && (
                                                 <div className="flex gap-1.5 mb-1.5 flex-wrap">
                                                     {projectDetails.customer?.email && (
                                                         <button
@@ -307,7 +305,25 @@ const EmailComposeModal = ({
                                                                     : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                             )}
                                                         >
-                                                            Kunde: {projectDetails.customer.company_name || projectDetails.customer.name}
+                                                            Kunde: {projectDetails.customer.company_name
+                                                                ? `${projectDetails.customer.company_name} (${projectDetails.customer.first_name} ${projectDetails.customer.last_name})`
+                                                                : projectDetails.customer.name}
+                                                        </button>
+                                                    )}
+                                                    {(projectDetails.partner?.email || projectDetails.translator?.email) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setComposeTo(projectDetails.partner?.email || projectDetails.translator?.email)}
+                                                            className={clsx(
+                                                                "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
+                                                                composeTo === (projectDetails.partner?.email || projectDetails.translator?.email)
+                                                                    ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                                                                    : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                                            )}
+                                                        >
+                                                            Partner: {projectDetails.partner?.company_name ||
+                                                                (projectDetails.partner ? (`${projectDetails.partner.first_name} ${projectDetails.partner.last_name}`) : '') ||
+                                                                projectDetails.translator?.name || 'Übersetzer'}
                                                         </button>
                                                     )}
                                                 </div>
@@ -408,8 +424,7 @@ const EmailComposeModal = ({
 
                                     <div className="mb-2">
                                         <div className="flex items-center justify-between mb-1.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Inhalt</span>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-1 justify-end">
                                                 <button
                                                     type="button"
                                                     onClick={() => { setIsHtmlMode(!isHtmlMode); }}
