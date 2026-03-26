@@ -591,6 +591,11 @@ body,
   display: none !important;
 }
 
+/* Fix: remove the scrollbar placeholder column in the header */
+.ant-table-thead > tr > th.ant-table-cell-scrollbar {
+  display: none !important;
+}
+
 /* Sort-active column header */
 .ant-table-wrapper .ant-table-column-sort {
   background: linear-gradient(to bottom, #e8e8e8 0%, #d8d8d8 100%) !important;

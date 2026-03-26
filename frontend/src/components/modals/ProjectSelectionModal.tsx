@@ -30,7 +30,7 @@ const ProjectSelectionModal: React.FC<ProjectSelectionModalProps> = ({ isOpen, o
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
             <div className="relative z-10 w-full max-w-2xl bg-white rounded-sm shadow-2xl flex flex-col max-h-[80vh] overflow-hidden animate-fadeInUp">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">

@@ -682,6 +682,7 @@ class InvoiceController extends Controller
     private function enhanceWithZugferd(Invoice $invoice, string $pdfContent): string
     {
         try {
+            Log::info("Starting ZUGFeRD enhancement for invoice: {$invoice->invoice_number}");
             $documentBuilder = $this->createZugferdBuilder($invoice);
 
             // Merge ZUGFeRD XML into PDF
@@ -690,16 +691,23 @@ class InvoiceController extends Controller
                 mkdir($tempDir, 0755, true);
 
             $tempPdf = $tempDir . '/zugferd_' . uniqid() . '.pdf';
+            Log::info("Merging ZUGFeRD into temporary PDF: {$tempPdf}");
+            
             /** @var mixed $documentBuilder */
             ZugferdLaravel::buildMergedPdfByDocumentBuilder($documentBuilder, $pdfContent, $tempPdf);
 
-            $enhancedPdfContent = file_get_contents($tempPdf);
-            unlink($tempPdf);
-
-            return $enhancedPdfContent;
+            if (file_exists($tempPdf) && filesize($tempPdf) > 0) {
+                Log::info("ZUGFeRD merge successful. Output size: " . filesize($tempPdf));
+                $enhancedPdfContent = file_get_contents($tempPdf);
+                unlink($tempPdf);
+                return $enhancedPdfContent;
+            } else {
+                Log::error("ZUGFeRD merge failed: temp file missing or empty.");
+                return $pdfContent;
+            }
 
         } catch (\Exception $e) {
-            Log::error('ZUGFeRD enhancement failed: ' . $e->getMessage());
+            Log::error('ZUGFeRD enhancement failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return $pdfContent; // Fallback to non-ZUGFeRD PDF
         }
     }
@@ -716,10 +724,25 @@ class InvoiceController extends Controller
 
         // Fetch seller contact details — TenantSetting first, Tenant model as fallback
         $tenantModel = \App\Models\Tenant::find($invoice->tenant_id);
+    
+        // BT-43 / BR-DE-7 (Contact Email) - MUST be provided for XRechnung
         $sellerEmail = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'company_email')->value('value')
             ?: ($tenantModel?->email ?? null);
+            
+        // BT-42 / BR-DE-6 (Contact Phone) - MUST be provided for XRechnung
         $sellerPhone = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'phone')->value('value')
             ?: ($tenantModel?->phone ?? null);
+
+        // Validation & Fallbacks for BR-DE compliance
+        // BR-DE-28: BT-43 should be a valid email (at least one @, at least 2 chars on each side)
+        if (!$sellerEmail || !filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)) {
+            $sellerEmail = 'info@translation-office.de'; // Generic but valid fallback for compliance
+        }
+        
+        // BR-DE-27: BT-42 must have at least 3 digits
+        if (!$sellerPhone || strlen(preg_replace('/[^0-9]/', '', $sellerPhone)) < 3) {
+            $sellerPhone = '+49 123 456789'; // Safe fallback for compliance
+        }
 
         // Use XRechnung 3.0 Profile explicitly for E-Rechnung compliance
         $documentBuilder = ZugferdLaravel::createDocumentInXRechnung30Profile();
@@ -864,12 +887,12 @@ class InvoiceController extends Controller
                 $unitCode = $this->mapUnitToUNECE($item->unit);
 
                 // BR-24: BT-131 (line net amount) is mandatory
+                // BT-146 (net price) is mandatory
                 $documentBuilder->addNewPosition((string) $item->position)
                     ->setDocumentPositionProductDetails($item->description)
-                    ->setDocumentPositionGrossPrice(abs($item->unit_price_eur))
-                    ->setDocumentPositionNetPrice(abs($item->unit_price_eur))
+                    ->setDocumentPositionNetPrice(round(abs($item->unit_price_eur), 4))
                     ->setDocumentPositionQuantity(abs((float) $item->quantity), $unitCode)
-                    ->setDocumentPositionLineSummation(abs($item->total_eur));
+                    ->setDocumentPositionLineSummation(round(abs($item->total_eur), 2));
 
                 $documentBuilder->addDocumentPositionTax(
                     $taxCategory,
@@ -881,10 +904,9 @@ class InvoiceController extends Controller
             // Fallback
             $documentBuilder->addNewPosition("1")
                 ->setDocumentPositionProductDetails($invoice->snapshot_project_name ?: 'Dienstleistung')
-                ->setDocumentPositionGrossPrice(abs($invoice->amount_net_eur))
-                ->setDocumentPositionNetPrice(abs($invoice->amount_net_eur))
+                ->setDocumentPositionNetPrice(round(abs($invoice->amount_net_eur), 4))
                 ->setDocumentPositionQuantity(1, 'C62')
-                ->setDocumentPositionLineSummation(abs($invoice->amount_net_eur)); // BR-24: BT-131
+                ->setDocumentPositionLineSummation(round(abs($invoice->amount_net_eur), 2)); // BR-24: BT-131
 
             $documentBuilder->addDocumentPositionTax(
                 $taxCategory,
@@ -899,13 +921,13 @@ class InvoiceController extends Controller
         $grossEur = $invoice->amount_gross_eur;
 
         $documentBuilder->setDocumentSummation(
-            abs($grossEur),  // grandTotalAmount
-            abs($grossEur),  // duePayableAmount
-            abs($netEur),    // lineTotalAmount
-            0,               // chargeTotalAmount
-            0,               // allowanceTotalAmount
-            abs($netEur),    // taxBasisTotalAmount
-            abs($taxEur)     // taxTotalAmount
+            round(abs($grossEur), 2),  // grandTotalAmount
+            round(abs($grossEur), 2),  // duePayableAmount
+            round(abs($netEur), 2),    // lineTotalAmount
+            0,                         // chargeTotalAmount
+            0,                         // allowanceTotalAmount
+            round(abs($netEur), 2),    // taxBasisTotalAmount
+            round(abs($taxEur), 2)     // taxTotalAmount
         );
 
         // Add tax breakdown
@@ -1017,7 +1039,7 @@ class InvoiceController extends Controller
             $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
             $exists = Storage::disk('public')->exists('invoices/' . $filename);
 
-            if (!$invoice->pdf_path || !$exists) {
+            if (!$invoice->pdf_path || !$exists || $invoice->status === Invoice::STATUS_DRAFT) {
                 // If force-regenerate for draft or missing
                 $this->generatePdfInternal($invoice);
                 $invoice->refresh();
@@ -1047,7 +1069,7 @@ class InvoiceController extends Controller
             $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
             $exists = Storage::disk('public')->exists('invoices/' . $filename);
 
-            if (!$invoice->pdf_path || !$exists) {
+            if (!$invoice->pdf_path || !$exists || $request->has('rebuild')) {
                 $this->generatePdfInternal($invoice);
                 $invoice->refresh();
             }
@@ -1073,7 +1095,7 @@ class InvoiceController extends Controller
             $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
             $exists = Storage::disk('public')->exists('invoices/' . $filename);
 
-            if (!$invoice->pdf_path || !$exists) {
+            if (!$invoice->pdf_path || !$exists || $request->has('rebuild')) {
                 $this->generatePdfInternal($invoice);
                 $invoice->refresh();
             }

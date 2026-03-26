@@ -62,6 +62,10 @@ class DashboardController extends Controller
             // 3. Customer & Partner stats
             $activeCustomersCount = Customer::count();
             $activePartnersCount = Partner::count();
+            
+            $upcomingInterpretingCount = \App\Models\Appointment::where('type', 'interpreting')
+                ->where('start_date', '>=', $today)
+                ->count();
 
             // 5. Invoice stats
             $unpaidInvoicesCount = \App\Models\Invoice::whereIn('status', ['pending', 'overdue'])->count();
@@ -109,6 +113,7 @@ class DashboardController extends Controller
                     'active_partners' => $activePartnersCount,
                     'unpaid_invoices' => $unpaidInvoicesCount,
                     'overdue_invoices' => $overdueInvoicesCount,
+                    'upcoming_interpreting' => $upcomingInterpretingCount,
                     'unread_emails' => \App\Models\Mail::where('folder', 'inbox')->where('is_read', false)->count(),
                     'active_interpreting' => $activeInterpretingCount,
                     'external_costs' => (float) $externalCosts,

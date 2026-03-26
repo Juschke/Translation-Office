@@ -8,19 +8,16 @@ import {
     FaEuroSign, FaArchive
 } from 'react-icons/fa';
 import clsx from 'clsx';
-
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import KPICard from '../components/common/KPICard';
-import DataTable from '../components/common/DataTable';
+import DataTable, { type FilterDef } from '../components/common/DataTable';
 import { Button } from '../components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { partnerService, projectService } from '../api/services';
-import TableSkeleton from '../components/common/TableSkeleton';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
 import ConfirmModal from '../components/common/ConfirmModal';
+import TableSkeleton from '../components/common/TableSkeleton';
 import type { BulkActionItem } from '../components/common/BulkActions';
-import StatusTabButton from '../components/common/StatusTabButton';
-import { TooltipProvider } from '../components/ui/tooltip';
 
 
 const Partners = () => {
@@ -152,20 +149,6 @@ const Partners = () => {
     }, [activePartnersList]);
 
     const activePartnersCount = activePartnersList.length;
-
-    // Count partners by status for badges
-    const activeCount = useMemo(() => partners.filter((p: any) => {
-        const s = p.status?.toLowerCase();
-        return s !== 'deleted' && s !== 'gelöscht' && s !== 'archived' && s !== 'archiviert';
-    }).length, [partners]);
-    const archivedCount = useMemo(() => partners.filter((p: any) => {
-        const s = p.status?.toLowerCase();
-        return s === 'archived' || s === 'archiviert';
-    }).length, [partners]);
-    const trashedCount = useMemo(() => partners.filter((p: any) => {
-        const s = p.status?.toLowerCase();
-        return s === 'deleted' || s === 'gelöscht';
-    }).length, [partners]);
 
     const filteredPartners = useMemo(() => {
         if (!Array.isArray(partners)) return [];
@@ -405,63 +388,27 @@ const Partners = () => {
             )}
         </div>
     );
+    const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (typeFilter !== 'service_providers' ? 1 : 0);
+    const resetFilters = () => {
+        setStatusView('active');
+        setTypeFilter('service_providers');
+    };
 
-    const statusTabs = (
-        <TooltipProvider>
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
-                <StatusTabButton
-                    active={statusView === 'active'}
-                    onClick={() => { setStatusView('active'); setTypeFilter('service_providers'); }}
-                    icon={<FaHandshake />}
-                    label="Aktiv"
-                    count={activeCount}
-                />
-                <StatusTabButton
-                    active={statusView === 'archive'}
-                    onClick={() => setStatusView('archive')}
-                    icon={<FaArchive />}
-                    label="Archiv"
-                    count={archivedCount}
-                />
-                <StatusTabButton
-                    active={statusView === 'trash'}
-                    onClick={() => setStatusView('trash')}
-                    icon={<FaTrash />}
-                    label="Papierkorb"
-                    count={trashedCount}
-                />
-            </div>
-        </TooltipProvider>
-    );
-
-    const tabs = statusView === 'active' ? (
-        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1 overflow-x-auto no-scrollbar">
-            <button
-                onClick={() => setTypeFilter('service_providers')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'service_providers' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Alle
-            </button>
-            <button
-                onClick={() => setTypeFilter('Übersetzer')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Übersetzer' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Übersetzer
-            </button>
-            <button
-                onClick={() => setTypeFilter('Dolmetscher')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Dolmetscher' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Dolmetscher
-            </button>
-            <button
-                onClick={() => setTypeFilter('Agentur')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Agentur' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Agenturen
-            </button>
-        </div>
-    ) : null;
+    const tableFilters: FilterDef[] = [
+        {
+            id: 'statusView', label: 'Aktiv / Archiv', type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('service_providers'); },
+            options: [{ value: 'active', label: 'Aktiv' }, { value: 'archive', label: 'Archiviert' }, { value: 'trash', label: 'Papierkorb' }]
+        },
+        ...(statusView === 'active' ? [{
+            id: 'type', label: 'Partnertyp', type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
+            options: [
+                { value: 'service_providers', label: 'Alle Partner' },
+                { value: 'translator', label: 'Übersetzer' },
+                { value: 'interpreter', label: 'Dolmetscher' },
+                { value: 'agency', label: 'Agenturen' }
+            ]
+        }] : [])
+    ];
 
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
@@ -501,8 +448,6 @@ const Partners = () => {
                 <KPICard label="Zusammenarbeit" value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" subValue="Projekte diesen Monat" />
             </div>
 
-            {statusTabs}
-
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <DataTable
                     data={filteredPartners}
@@ -512,7 +457,6 @@ const Partners = () => {
                     searchPlaceholder="Partner nach Name, Sprache oder E-Mail suchen..."
                     searchFields={['first_name', 'last_name', 'company', 'email']}
                     actions={actions}
-                    tabs={tabs}
                     onAddClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
                     selectable
                     selectedIds={selectedPartners}
@@ -570,6 +514,9 @@ const Partners = () => {
                             show: statusView === 'trash' || statusView === 'archive'
                         }
                     ] as BulkActionItem[]}
+                    filters={tableFilters}
+                    activeFilterCount={activeFilterCount}
+                    onResetFilters={resetFilters}
                 />
             </div>
 

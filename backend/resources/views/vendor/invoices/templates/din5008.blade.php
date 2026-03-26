@@ -330,6 +330,11 @@
         $companyAccountHolder = $tenant->bank_account_holder ?? $settings['bank_account_holder'] ?? $companyName;
         $companyTaxNr = $tenant->tax_number ?? $settings['tax_number'] ?? '';
         $companyVatId = $tenant->vat_id ?? $settings['vat_id'] ?? '';
+        
+        // Legal & Master Data
+        $managingDirector = $tenant->managing_director ?? $settings['managing_director'] ?? null;
+        $legalForm = $tenant->legal_form ?? $settings['legal_form'] ?? null;
+        $taxOffice = $tenant->tax_office ?? $settings['tax_office'] ?? null;
 
         // Layout settings
         $fontFamily = $settings['invoice_font_family'] ?? 'Inter, Helvetica, Arial, sans-serif';
@@ -360,12 +365,19 @@
     <div class="footer">
         <table class="footer-table">
             <tr>
-                <td style="width: 30%;">
-                    <span class="footer-label">Anschrift</span>
-                    {{ $companyName }}<br>
+                <td style="width: 32%;">
+                    <span class="footer-label">Anschrift & Sitz</span>
+                    <span style="font-weight: 600;">{{ $companyName }}</span><br>
                     {{ trim($companyStreet) }}<br>
                     {{ $companyZip }} {{ $companyCity }}<br>
-                    {{ $companyCountry }}
+                    <div style="margin-top: 2mm;">
+                        @if($managingDirector)
+                            Geschäftsführer: {{ $managingDirector }}<br>
+                        @endif
+                        @if($legalForm)
+                            Rechtsform: {{ $legalForm }}
+                        @endif
+                    </div>
                 </td>
                 <td style="width: 33%; text-align: left;">
                     <span class="footer-label">Kontakt</span>
@@ -376,24 +388,31 @@
                         Telefon: {{ $companyPhone }}<br>
                     @endif
                     @if($companyWebsite)
-                        Web: {{ $companyWebsite }}
+                        Web: {{ $companyWebsite }}<br>
+                    @endif
+                    @if($taxOffice)
+                        Finanzamt: {{ $taxOffice }}
                     @endif
                 </td>
-                <td style="width: 34%; text-align: left;">
-                    <span class="footer-label">Bank & Steuer</span>
+                <td style="width: 35%; text-align: left;">
+                    <span class="footer-label">Bankverbindung</span>
                     @if($companyBank)
-                        {{ $companyBank }}@if($companyBIC) | BIC: {{ $companyBIC }}@endif<br>
-                        @if($companyBankCode) BLZ: {{ $companyBankCode }}<br>@endif
+                        <span style="font-weight: 600;">{{ $companyBank }}</span><br>
                     @endif
                     @if($companyIBAN)
                         IBAN: {{ $companyIBAN }}<br>
                     @endif
-                    @if($companyVatId)
-                        USt-ID: {{ $companyVatId }}<br>
+                    @if($companyBIC)
+                        BIC: {{ $companyBIC }}<br>
                     @endif
-                    @if($companyTaxNr)
-                        St.-Nr: {{ $companyTaxNr }}
-                    @endif
+                    <div style="margin-top: 2mm;">
+                        @if($companyVatId)
+                            USt-ID: {{ $companyVatId }}<br>
+                        @endif
+                        @if($companyTaxNr)
+                            St.-Nr: {{ $companyTaxNr }}
+                        @endif
+                    </div>
                 </td>
             </tr>
         </table>
@@ -421,32 +440,38 @@
         </div>
 
         <div class="info-box">
-            @if($logoBase64)
-                <div style="text-align: right; margin-bottom: 4mm;">
+            @if($logoBase64 && extension_loaded('gd'))
+                <div style="text-align: right; margin-bottom: 6mm;">
                     <img src="{{ $logoBase64 }}" class="company-logo" alt="Logo">
                 </div>
             @endif
-            <table class="info-table">
-                <tr>
-                    <td>{{ $docTypeLabel }}-Nr.</td>
-                    <td class="text-right">{{ $invoice->name }}</td>
+            <table class="info-table" style="border: 0.5pt solid {{ $primaryColor }}; border-radius: 2mm; overflow: hidden;">
+                <tr style="background-color: {{ $primaryColor }}; color: #fff;">
+                    <td style="padding: 2mm; color: #fff;">{{ $docTypeLabel }}-Nr.</td>
+                    <td class="text-right" style="padding: 2mm; color: #fff; font-weight: bold;">{{ $invoice->name }}</td>
                 </tr>
                 <tr>
-                    <td>Datum</td>
-                    <td class="text-right">
+                    <td style="padding: 2mm;">Datum</td>
+                    <td class="text-right" style="padding: 2mm;">
                         {{ $invoice->date ? $invoice->date->format('d.m.Y') : now()->format('d.m.Y') }}
                     </td>
                 </tr>
                 @if(isset($invoice->buyer->custom_fields['due_date']))
-                    <tr>
-                        <td>Fällig am</td>
-                        <td class="text-right">{{ $invoice->buyer->custom_fields['due_date'] }}</td>
+                    <tr style="background-color: #f8fafc;">
+                        <td style="padding: 2mm;">Fällig am</td>
+                        <td class="text-right" style="padding: 2mm; font-weight: bold;">{{ $invoice->buyer->custom_fields['due_date'] }}</td>
                     </tr>
                 @endif
                 @if(isset($invoice->buyer->custom_fields['service_period']))
                     <tr>
-                        <td>Leistungszeitraum</td>
-                        <td class="text-right">{{ $invoice->buyer->custom_fields['service_period'] }}</td>
+                        <td style="padding: 2mm;">Leistungszeitraum</td>
+                        <td class="text-right" style="padding: 2mm;">{{ $invoice->buyer->custom_fields['service_period'] }}</td>
+                    </tr>
+                @endif
+                @if(isset($invoice->buyer->custom_fields['customer_id']))
+                    <tr style="background-color: #f8fafc;">
+                        <td style="padding: 2mm;">Kundennummer</td>
+                        <td class="text-right" style="padding: 2mm;">{{ $invoice->buyer->custom_fields['customer_id'] }}</td>
                     </tr>
                 @endif
             </table>
@@ -455,7 +480,9 @@
 
     {{-- Rechnungsinhalt --}}
     <div class="content-body">
-        <div class="title">{{ $docTypeLabel }} Nr. {{ $invoice->name }}</div>
+        <div class="title" style="font-size: 16pt; margin-bottom: 6mm; color: {{ $primaryColor }}; border-bottom: 1pt solid {{ $primaryColor }}; display: inline-block; padding-right: 10mm;">
+            {{ $docTypeLabel }} <span style="font-weight: 300;">Nr. {{ $invoice->name }}</span>
+        </div>
 
         <div class="intro-text">
             Sehr geehrte Damen und Herren,<br><br>
@@ -479,19 +506,19 @@
             </thead>
             <tbody>
                 @foreach($invoice->items as $index => $item)
-                    <tr>
-                        <td class="pos-nr">{{ $index + 1 }}</td>
+                    <tr @if($index % 2 !== 0) style="background-color: #fdfdfd;" @endif>
+                        <td class="pos-nr" style="color: #64748b; font-size: 8pt;">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
                         <td>
-                            <strong>{{ $item->title }}</strong>
+                            <strong style="color: #1e293b;">{{ $item->title }}</strong>
                             @if($item->description)
                                 <br><span class="text-small"
-                                    style="font-weight: normal;">{!! nl2br(e($item->description)) !!}</span>
+                                    style="font-weight: normal; color: #64748b; line-height: 1.3;">{!! nl2br(e($item->description)) !!}</span>
                             @endif
                         </td>
-                        <td class="text-right">{{ number_format($item->quantity, 2, ',', '.') }}</td>
-                        <td class="text-right">{{ $item->units ?? 'Stk' }}</td>
-                        <td class="text-right">{{ number_format($item->price_per_unit, 2, ',', '.') }} €</td>
-                        <td class="text-right">{{ number_format($item->sub_total_price, 2, ',', '.') }} €</td>
+                        <td class="text-right" style="white-space: nowrap;">{{ number_format($item->quantity, 2, ',', '.') }}</td>
+                        <td class="text-right text-muted">{{ $item->units ?? 'Stk' }}</td>
+                        <td class="text-right" style="white-space: nowrap;">{{ number_format($item->price_per_unit, 2, ',', '.') }} €</td>
+                        <td class="text-right" style="font-weight: 600; white-space: nowrap;">{{ number_format($item->sub_total_price, 2, ',', '.') }} €</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -500,47 +527,47 @@
         <div class="totals-wrapper">
             <table class="totals-table">
                 <tr>
-                    <td>Nettobetrag:</td>
+                    <td style="color: #64748b;">Nettobetrag:</td>
                     <td class="text-right">{{ number_format($invoice->taxable_amount, 2, ',', '.') }} €</td>
                 </tr>
                 @if($invoice->total_taxes > 0)
                     <tr>
-                        <td>Umsatzsteuer {{ number_format($invoice->tax_rate ?? 19, 0) }}%:</td>
+                        <td style="color: #64748b;">Umsatzsteuer {{ number_format($invoice->tax_rate ?? 19, 0) }}%:</td>
                         <td class="text-right">{{ number_format($invoice->total_taxes, 2, ',', '.') }} €</td>
                     </tr>
                 @elseif(isset($invoice->buyer->custom_fields['invoice_type']) && $invoice->buyer->custom_fields['invoice_type'] !== 'credit_note')
                     <tr>
-                        <td colspan="2" class="text-right text-small" style="font-style: italic;">
-                            Kein USt-Ausweis gem. § 19 UStG
+                        <td colspan="2" class="text-right text-small" style="font-style: italic; color: #64748b; padding-top: 2mm;">
+                            Umsatzsteuerbefreit gem. § 19 UStG (Kleinunternehmerregelung)
                         </td>
                     </tr>
                 @endif
                 @if(isset($invoice->total_shipping) && $invoice->total_shipping > 0)
                     <tr>
-                        <td>Versandkosten:</td>
+                        <td style="color: #64748b;">Versandkosten:</td>
                         <td class="text-right">{{ number_format($invoice->total_shipping, 2, ',', '.') }} €</td>
                     </tr>
                 @endif
                 @if(isset($invoice->total_discount) && $invoice->total_discount > 0)
-                    <tr>
+                    <tr style="color: #e11d48;">
                         <td>Rabatt:</td>
                         <td class="text-right">- {{ number_format($invoice->total_discount, 2, ',', '.') }} €</td>
                     </tr>
                 @endif
-                <tr class="total-brutto">
-                    <td>Rechnungsbetrag:</td>
-                    <td class="text-right">{{ number_format($invoice->total_amount, 2, ',', '.') }} €</td>
+                <tr class="total-brutto" style="background-color: {{ $primaryColor }}08;">
+                    <td style="color: {{ $primaryColor }}; border-top: 2pt solid {{ $primaryColor }}; font-size: 11pt; padding: 4mm 2mm;">Gesamtbetrag (Brutto):</td>
+                    <td class="text-right" style="color: {{ $primaryColor }}; border-top: 2pt solid {{ $primaryColor }}; font-size: 11pt; padding: 4mm 2mm;">{{ number_format($invoice->total_amount, 2, ',', '.') }} €</td>
                 </tr>
                 @if($paidAmount > 0 && $dueAmount > 0)
                     <tr>
-                        <td class="text-muted">Bereits bezahlt:</td>
-                        <td class="text-right text-muted">- {{ number_format($paidAmount, 2, ',', '.') }} €</td>
+                        <td class="text-muted" style="color: #64748b; padding-top: 3mm;">Bereits bezahlt:</td>
+                        <td class="text-right text-muted" style="padding-top: 3mm;">- {{ number_format($paidAmount, 2, ',', '.') }} €</td>
                     </tr>
                     <tr class="total-due">
-                        <td class="font-bold text-red">
-                            Noch zu zahlen:
+                        <td class="font-bold text-red" style="font-size: 11pt; color: #000; padding: 3mm 2mm; border-top: 1pt solid #e2e8f0;">
+                            Noch zu zahlender Betrag:
                         </td>
-                        <td class="text-right font-bold text-red">
+                        <td class="text-right font-bold text-red" style="font-size: 11pt; color: #000; padding: 3mm 2mm; border-top: 1pt solid #e2e8f0;">
                             {{ number_format($dueAmount, 2, ',', '.') }} €
                         </td>
                     </tr>
@@ -550,22 +577,38 @@
 
         <div class="payment-terms">
             @if($invoice->notes)
-                <p>{!! nl2br(e($invoice->notes)) !!}</p>
+                <div style="margin-bottom: 6mm; color: #334155; line-height: 1.6;">
+                    {!! nl2br(e($invoice->notes)) !!}
+                </div>
             @endif
 
             @if($dueAmount > 0)
-                <p>
-                    Bitte überweisen Sie den Betrag von
-                    <strong>{{ number_format($dueAmount, 2, ',', '.') }} €</strong>
-                    @if(isset($invoice->buyer->custom_fields['due_date']))
-                        bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong>.
-                    @else
-                        innerhalb von 14 Tagen ab Rechnungseingang.
-                    @endif
-                    <br>Verwendungszweck: <strong>{{ $invoice->name }}</strong>
-                </p>
+                <div style="background-color: #f8fafc; padding: 5mm; border-left: 3pt solid {{ $primaryColor }}; border-radius: 1mm;">
+                    <p style="margin-bottom: 1.5mm;">
+                        Bitte überweisen Sie den Betrag von
+                        <strong style="color: {{ $primaryColor }}; font-size: 10pt;">{{ number_format($dueAmount, 2, ',', '.') }} €</strong>
+                        @if(isset($invoice->buyer->custom_fields['due_date']))
+                            bis zum <strong>{{ $invoice->buyer->custom_fields['due_date'] }}</strong>.
+                        @else
+                            innerhalb von 14 Tagen nach Rechnungserhalt.
+                        @endif
+                    </p>
+                    <p style="margin: 0; font-size: 8.5pt; color: #64748b;">
+                        Verwendungszweck: <strong style="color: #000;">{{ $invoice->name }}</strong>
+                        @if($companyIBAN) | IBAN: <strong style="color: #000;">{{ $companyIBAN }}</strong>@endif
+                    </p>
+                </div>
+            @else
+                <div style="background-color: #f0fdf4; padding: 5mm; border-left: 3pt solid #16a34a; border-radius: 1mm; color: #166534; font-weight: 500;">
+                    Diese Rechnung wurde bereits vollständig beglichen. Vielen Dank!
+                </div>
             @endif
 
+            @if(!$isCreditNote)
+                <p style="margin-top: 8mm; color: #64748b; font-size: 8.5pt;">
+                    Vielen Dank für Ihren Auftrag! Wir freuen uns auf eine weiterhin gute Zusammenarbeit.
+                </p>
+            @endif
         </div>
     </div>
 

@@ -5,9 +5,23 @@ import type { ColumnsType } from 'antd/es/table/interface';
 import { FaSearch, FaColumns, FaPlus, FaChevronLeft, FaChevronRight, FaChevronDown, FaTimes } from 'react-icons/fa';
 import clsx from 'clsx';
 import Switch from './Switch';
-import { Button } from './Button';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
+<<<<<<< HEAD
 import TableSkeleton from './TableSkeleton';
+=======
+import { FaFilter, FaUndo } from 'react-icons/fa';
+
+export interface FilterDef {
+    id: string;
+    label: string;
+    type: 'select' | 'text' | 'date';
+    options?: { value: string | number; label: string }[];
+    value: any;
+    onChange: (val: any) => void;
+    placeholder?: string;
+}
+
+>>>>>>> bf57ed3 (updated Views)
 
 interface Column<T> {
     id: string;
@@ -39,6 +53,10 @@ interface DataTableProps<T> {
     selectedIds?: (string | number)[];
     onSelectionChange?: (ids: (string | number)[]) => void;
     bulkActions?: BulkActionItem[];
+    // ── Filters ──
+    filters?: FilterDef[];
+    activeFilterCount?: number;
+    onResetFilters?: () => void;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
@@ -86,10 +104,14 @@ const DataTable = <T extends { id: string | number }>({
     selectedIds = [],
     onSelectionChange,
     bulkActions,
+    filters,
+    activeFilterCount,
+    onResetFilters,
 }: DataTableProps<T>) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascend' | 'descend' } | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [pageSize, setPageSize] = useState(pageSizeProp);
     const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
         new Set(columns.filter(c => c.defaultVisible !== false).map(c => c.id))
@@ -283,18 +305,21 @@ const DataTable = <T extends { id: string | number }>({
     const hasSelection = selectable && selectedIds.length > 0;
 
     const emptyNode = (
-        <div className="flex flex-col items-center gap-4 py-12">
-            <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center shadow-inner">
-                <FaSearch className="text-xl text-slate-300" />
+        <div className="flex flex-col items-center justify-center gap-4 py-20 min-h-[400px]">
+            <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
+                <FaPlus className="text-2xl text-slate-300" />
             </div>
             <div className="space-y-1 text-center">
-                <p className="text-sm font-semibold text-slate-600">Keine Datensätze gefunden</p>
-                <p className="text-xs text-slate-400">Möchten Sie einen neuen Datensatz hinzufügen?</p>
+                <p className="text-base font-bold text-slate-600">Noch kein Eintrag</p>
+                <p className="text-xs text-slate-400">Klicken Sie auf den Button unten, um den ersten Eintrag zu erstellen.</p>
             </div>
             {onAddClick && (
-                <Button onClick={onAddClick} size="sm">
-                    <FaPlus className="mr-1.5" /> Hinzufügen
-                </Button>
+                <button
+                    onClick={onAddClick}
+                    className="mt-2 px-6 py-2.5 bg-brand-primary text-white rounded-[3px] font-bold shadow-sm hover:bg-brand-primary/90 transition flex items-center gap-2"
+                >
+                    <FaPlus className="text-xs" /> Neuer Eintrag
+                </button>
             )}
         </div>
     );
@@ -302,13 +327,67 @@ const DataTable = <T extends { id: string | number }>({
     return (
         <div className="dt-skeuomorphic flex flex-col h-full bg-white border border-[#D1D9D8] rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.1)] fade-in overflow-hidden max-h-[calc(100vh-250px)] sm:max-h-none">
 
+            {/* ── Filter Panel ── */}
+            {filters && filters.length > 0 && (
+                <div
+                    className={clsx(
+                        "overflow-hidden transition-all duration-300 ease-in-out bg-[#f6f8f8]",
+                        isFilterOpen ? "max-h-[800px] border-b border-[#D1D9D8]" : "max-h-0"
+                    )}
+                >
+                    <div className="p-4 flex flex-col gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            {filters.map(filter => (
+                                <div key={filter.id} className="space-y-1.5 flex flex-col">
+                                    <label className="text-xs font-semibold text-slate-700">{filter.label}</label>
+                                    {filter.type === 'select' ? (
+                                        <div className="relative">
+                                            <select
+                                                className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                                value={filter.value}
+                                                onChange={e => filter.onChange(e.target.value)}
+                                            >
+                                                {filter.options?.map(opt => (
+                                                    <option key={String(opt.value)} value={String(opt.value)}>
+                                                        {opt.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 pointer-events-none" />
+                                        </div>
+                                    ) : (
+                                        <input
+                                            type={filter.type}
+                                            value={filter.value}
+                                            onChange={e => filter.onChange(e.target.value)}
+                                            placeholder={filter.placeholder}
+                                            className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] focus:border-[#1B4D4F] outline-none transition"
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        {onResetFilters && (
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => { onResetFilters(); setIsFilterOpen(false); }}
+                                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center gap-1.5"
+                                >
+                                    <FaUndo className="text-[10px]" /> Filter zurücksetzen
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* ── Controls Bar ── */}
-            <div className="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-[#D1D9D8] flex flex-col md:flex-row gap-3 items-center justify-between bg-gradient-to-b from-white to-[#f0f0f0] shadow-[0_1px_0_rgba(255,255,255,0.8)]">
+            <div className="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-[#D1D9D8] flex flex-col md:flex-row gap-3 items-center justify-between bg-gradient-to-b from-white to-[#f0f0f0] shadow-[0_1px_0_rgba(255,255,255,0.8)] relative z-10">
                 <div className="flex gap-2 sm:gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0 scroll-smooth">
                     {tabs ?? (actions && <div className="flex items-center gap-2">{actions}</div>)}
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-64">
+                    <div className="relative flex-1 md:w-64 shrink-0">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
                         <input
                             type="search"
@@ -319,6 +398,30 @@ const DataTable = <T extends { id: string | number }>({
                         />
                     </div>
                     {extraControls}
+                    {filters && filters.length > 0 && (
+                        <button
+                            onClick={() => setIsFilterOpen(v => !v)}
+                            className={clsx(
+                                "p-2 border transition rounded-[3px] shadow-[0_1px_2px_rgba(0,0,0,0.08)] flex items-center justify-center relative",
+                                isFilterOpen || activeFilterCount
+                                    ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                                    : "text-slate-500 hover:text-[#1B4D4F] bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc]"
+                            )}
+                            title="Filter"
+                        >
+                            <FaFilter className="text-sm" />
+                            {activeFilterCount ? (
+                                <span className={clsx(
+                                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold flex items-center justify-center border",
+                                    isFilterOpen
+                                        ? "bg-white text-[#1B4D4F] border-transparent"
+                                        : "bg-rose-500 text-white border-rose-600 shadow-sm"
+                                )}>
+                                    {activeFilterCount}
+                                </span>
+                            ) : null}
+                        </button>
+                    )}
                     {showSettings && (
                         <button
                             ref={settingsBtnRef}

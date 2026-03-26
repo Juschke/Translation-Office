@@ -100,6 +100,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
   const [isValidatingIban, setIsValidatingIban] = useState(false);
   const [duplicates, setDuplicates] = useState<any[]>([]);
   const [savedGroupData, setSavedGroupData] = useState<Partial<PartnerFormData>>({});
+  const [activeTab, setActiveTab] = useState<'general' | 'skills' | 'banking' | 'rates' | 'internal'>('general');
 
   const handleTypeChange = (newType: string) => {
     if (newType === formData.type) return;
@@ -129,6 +130,17 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
   useEffect(() => {
     onDuplicatesChange?.(duplicates.length > 0);
   }, [duplicates.length, onDuplicatesChange]);
+
+  useEffect(() => {
+    if (externalValidationErrors.size > 0) {
+      if (externalValidationErrors.has('lastName') || externalValidationErrors.has('firstName') || externalValidationErrors.has('company') || externalValidationErrors.has('email')) {
+        setActiveTab('general');
+      } else if (externalValidationErrors.has('bankName') || externalValidationErrors.has('bic') || externalValidationErrors.has('iban')) {
+        setActiveTab('banking');
+        toast.error('Bitte vervollständigen Sie die Bankdaten.');
+      }
+    }
+  }, [externalValidationErrors]);
 
   // Debounced duplication check
   useEffect(() => {
@@ -359,7 +371,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
   const getError = (field: string) => (touched[field] || externalValidationErrors.has(field)) ? errors[field] : '';
 
   return (
-    <div className={clsx(isCompact ? "space-y-4" : "space-y-6 pb-6")}>
+    <div className={clsx(isCompact ? "space-y-4" : "flex flex-col h-full")}>
       {/* Duplication Warning */}
       <PartnerDuplicateWarning
         duplicates={duplicates}
@@ -367,6 +379,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
         onIgnoreDuplicatesChange={onIgnoreDuplicatesChange}
       />
 
+<<<<<<< HEAD
       {/* Section: Typ & Basis */}
       <div className="space-y-4">
         {!isCompact && (
@@ -585,15 +598,19 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
         </div>
       </div>
 
+=======
+>>>>>>> bf57ed3 (updated Views)
       {!isCompact && (
-        <>
-          {/* Section: Kompetenzen */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-              <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">04</div>
-              <h4 className="text-xs font-semibold text-slate-800">Kompetenzen & IT</h4>
-            </div>
+        <div className="flex space-x-1 border-b border-slate-200 mb-4 shrink-0 overflow-x-auto custom-scrollbar pb-1">
+          <button type="button" onClick={() => setActiveTab('general')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'general' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Allgemein</button>
+          <button type="button" onClick={() => setActiveTab('skills')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'skills' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Kompetenzen & IT</button>
+          <button type="button" onClick={() => setActiveTab('banking')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'banking' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Bankdaten</button>
+          <button type="button" onClick={() => setActiveTab('rates')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'rates' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Konditionen</button>
+          <button type="button" onClick={() => setActiveTab('internal')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'internal' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Internes</button>
+        </div>
+      )}
 
+<<<<<<< HEAD
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="col-span-1 md:col-span-2">
                 <MultiSelect
@@ -603,37 +620,299 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                   onChange={v => updateFormData({ domains: v })}
                   placeholder="Fachgebiete auswählen..."
                 />
+=======
+      <div className={clsx("flex-1 overflow-y-auto space-y-6 pb-6", !isCompact && "pr-1 custom-scrollbar")}>
+        <div className={clsx("space-y-6", !isCompact && activeTab !== 'general' && "hidden")}>
+          {/* Section: Typ & Basis */}
+          <div className="space-y-4">
+            {!isCompact && (
+              <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">01</div>
+                <h4 className="text-xs font-semibold text-slate-800">Klassifizierung & Name</h4>
+>>>>>>> bf57ed3 (updated Views)
               </div>
-              <div className="col-span-1 md:col-span-2">
+            )}
+
+            <div className="grid grid-cols-12 gap-x-8 gap-y-3">
+              <div className="col-span-12">
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Partner-Typ</label>
+                <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 w-fit">
+                  {partnerTypes.map(pt => (
+                    <button
+                      key={pt.value}
+                      type="button"
+                      onClick={() => handleTypeChange(pt.value)}
+                      className={clsx(
+                        "px-4 py-2 rounded-sm text-xs font-medium transition-all",
+                        formData.type === pt.value ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      {pt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-slate-400 font-medium ml-1">Definiert die Art der Zusammenarbeit und Vergütungsbasis</p>
+              </div>
+
+              {formData.type === 'agency' && (
+                <div className="col-span-12 animate-fadeIn">
+                  <Input
+                    label="Firma / Agenturname *"
+                    placeholder="z.B. Übersetzungsbüro Kassel"
+                    value={formData.company}
+                    error={!!getError('company') || duplicates.some(d => d.company === formData.company && formData.company !== '')}
+                    onChange={e => updateFormData({ company: e.target.value })}
+                    onBlur={() => markTouched('company')}
+                    helperText={getError('company') || "Vollständiger Name der Agentur laut Handelsregister"}
+                  />
+                </div>
+              )}
+
+              <div className="col-span-12 md:col-span-2">
                 <Input
+<<<<<<< HEAD
                   label="Software-Kenntnisse"
                   placeholder="z.B. SDL Trados, Memsource, memoQ..."
                   value={formData.software}
                   onChange={e => updateFormData({ software: e.target.value })}
                   helperText="Verfügbare CAT-Tools"
+=======
+                  isSelect
+                  label="Anrede"
+                  value={formData.salutation}
+                  onChange={e => updateFormData({ salutation: e.target.value })}
+                  helperText="Anrede"
+                >
+                  <option>Herr</option><option>Frau</option><option>Divers</option>
+                </Input>
+              </div>
+              <div className="col-span-12 md:col-span-5">
+                <Input
+                  label="Vorname *"
+                  placeholder="z.B. Maria"
+                  value={formData.firstName}
+                  error={!!getError('firstName') || duplicates.some(d => d.first_name === formData.firstName && d.last_name === formData.lastName && formData.firstName !== '')}
+                  onChange={e => updateFormData({ firstName: e.target.value })}
+                  onBlur={() => markTouched('firstName')}
+                  helperText={getError('firstName') || "Vorname"}
+>>>>>>> bf57ed3 (updated Views)
                 />
+              </div>
+              <div className="col-span-12 md:col-span-5">
+                <Input
+                  label="Nachname *"
+                  placeholder="z.B. Musterfrau"
+                  value={formData.lastName}
+                  error={!!getError('lastName') || duplicates.some(d => d.last_name === formData.lastName && formData.lastName !== '')}
+                  onChange={e => updateFormData({ lastName: e.target.value })}
+                  onBlur={() => markTouched('lastName')}
+                  helperText={getError('lastName') || "Nachname"}
+                />
+              </div>
+
+              {formData.id && (
+                <div className="col-span-12 md:col-span-12">
+                  <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Partner-ID</label>
+                  <div className="text-sm font-medium text-slate-700 px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm">
+                    {formData.id}
+                  </div>
+                </div>
+              )}
+
+              <div className="col-span-12 space-y-2 animate-fadeIn">
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Sprachen *</label>
+                <LanguageSelect
+                  isMulti={true}
+                  value={formData.languages}
+                  onChange={v => updateFormData({ languages: v })}
+                  placeholder="Sprachen auswählen..."
+                />
+                <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Präferenz für Projektzuweisungen</p>
+              </div>
+
+
+            </div>
+          </div>
+
+          {/* Section: Kontaktdaten */}
+          <div className="space-y-4">
+            {!isCompact && (
+              <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">02</div>
+                <h4 className="text-xs font-semibold text-slate-800">Kontaktdaten</h4>
+              </div>
+            )}
+
+            <div className="grid grid-cols-12 gap-x-8 gap-y-3">
+              <div className="col-span-12 md:col-span-6 space-y-4">
+                <div className="space-y-4">
+                  {formData.emails.map((email, i) => (
+                    <div key={i} className="flex gap-2 group animate-fadeIn items-end">
+                      <Input
+                        containerClassName="flex-1"
+                        label={i === 0 ? "E-Mail (Primär) *" : undefined}
+                        type="email"
+                        startIcon={<FaEnvelope />}
+                        placeholder={i === 0 ? "haupt.partner@beispiel.de" : "zusatz.partner@beispiel.de"}
+                        value={email}
+                        error={(i === 0 && !!getError('email')) || (i === 0 && duplicates.some(d => d.email === email && email !== ''))}
+                        onChange={e => updateEmail(i, e.target.value)}
+                        helperText={i === 0 ? (getError('email') || "Hauptkontakt für alle Projektanfragen") : undefined}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeEmail(i)}
+                        className={clsx(
+                          "h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-sm transition flex-shrink-0",
+                          i === 0 && formData.emails.length === 1 ? "hidden" : ""
+                        )}
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  {!isCompact && (
+                    <button type="button" onClick={addEmail} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-1 ml-1">
+                      <FaPlus className="text-xs" /> Weitere E-Mail hinzufügen
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="col-span-12 md:col-span-6 space-y-4">
+                <div className="space-y-4">
+                  {formData.phones.map((phone, i) => (
+                    <div key={i} className="flex gap-2 group animate-fadeIn items-end">
+                      <div className="flex-1">
+                        <PhoneInput
+                          label={i === 0 ? "Telefon (Primär) *" : undefined}
+                          value={phone}
+                          error={(i === 0 && duplicates.some(d => (d.phone === phone || d.phones?.[0] === phone) && phone !== ''))}
+                          onChange={val => {
+                            const newPhones = [...formData.phones];
+                            newPhones[i] = val;
+                            updateFormData({ phones: newPhones });
+                          }}
+                          helperText={i === 0 ? "Direkte Erreichbarkeit" : undefined}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePhone(i)}
+                        className={clsx(
+                          "h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-sm transition flex-shrink-0",
+                          i === 0 && formData.phones.length === 1 ? "hidden" : ""
+                        )}
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  {!isCompact && (
+                    <button type="button" onClick={addPhone} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-1 ml-1">
+                      <FaPlus className="text-xs" /> Weitere Nummer hinzufügen
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Section: Bankdaten */}
-          <PartnerBankingSection
-            formData={formData}
-            updateFormData={updateFormData}
-            markTouched={markTouched}
-            getError={getError}
-            handleIbanBlur={handleIbanBlur}
-            handleBicBlur={handleBicBlur}
-            isValidatingIban={isValidatingIban}
-          />
+          {/* Section: Standort & Adresse */}
+          <div className="space-y-4">
+            {!isCompact && (
+              <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">03</div>
+                <h4 className="text-xs font-semibold text-slate-800">Standort & Adresse</h4>
+              </div>
+            )}
 
-          {/* Section: Tarife */}
-          <PartnerRatesSection formData={formData} updateFormData={updateFormData} />
+            <div className="grid grid-cols-12 gap-x-8 gap-y-3">
+              {!isCompact && (
+                <div className="col-span-12">
+                  <AddressForm
+                    street={formData.street}
+                    houseNo={formData.houseNo}
+                    zip={formData.zip}
+                    city={formData.city}
+                    country={formData.country}
+                    onChange={(field, value) => {
+                      const fieldMap: Record<string, string> = {
+                        street: 'street',
+                        houseNo: 'houseNo',
+                        zip: 'zip',
+                        city: 'city',
+                        country: 'country'
+                      };
+                      updateFormData({ [fieldMap[field]]: value });
+                    }}
+                    errors={{
+                      address_zip: getError('zip'),
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-          {/* Section: Internes */}
-          <PartnerInternalSection formData={formData} updateFormData={updateFormData} />
-        </>
-      )}
+        {!isCompact && (
+          <>
+            {/* Section: Kompetenzen */}
+            <div className={clsx("space-y-4", activeTab !== 'skills' && "hidden")}>
+              <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">04</div>
+                <h4 className="text-xs font-semibold text-slate-800">Kompetenzen & IT</h4>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-1 md:col-span-2">
+                  <MultiSelect
+                    label="Fachgebiete / Spezialisierung"
+                    options={DOMAIN_OPTIONS}
+                    value={formData.domains}
+                    onChange={v => updateFormData({ domains: v })}
+                    placeholder="Fachgebiete auswählen..."
+                  />
+                  <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Thematische Schwerpunkte und Expertise des Partners</p>
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                  <Input
+                    label="Software-Kenntnisse"
+                    placeholder="z.B. SDL Trados, Memsource, memoQ..."
+                    value={formData.software}
+                    onChange={e => updateFormData({ software: e.target.value })}
+                    helperText="Verfügbare CAT-Tools und andere relevante Fachsoftware"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Bankdaten */}
+            <div className={clsx(activeTab !== 'banking' && "hidden")}>
+              <PartnerBankingSection
+                formData={formData}
+                updateFormData={updateFormData}
+                markTouched={markTouched}
+                getError={getError}
+                handleIbanBlur={handleIbanBlur}
+                handleBicBlur={handleBicBlur}
+                isValidatingIban={isValidatingIban}
+              />
+            </div>
+
+            {/* Section: Tarife */}
+            <div className={clsx(activeTab !== 'rates' && "hidden")}>
+              <PartnerRatesSection formData={formData} updateFormData={updateFormData} />
+            </div>
+
+            {/* Section: Internes */}
+            <div className={clsx(activeTab !== 'internal' && "hidden")}>
+              <PartnerInternalSection formData={formData} updateFormData={updateFormData} />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };

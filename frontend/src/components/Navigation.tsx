@@ -115,19 +115,21 @@ const Navigation = () => {
             : "border-transparent text-emerald-100/60 hover:text-white"
     );
 
-    const NavBadge = ({ count, label, activeColor = "bg-rose-500", isPriority = false }: { count: number | undefined, label: string, activeColor?: string, isPriority?: boolean }) => {
+    const NavBadge = ({ count, label, activeColor = "bg-rose-500", isPriority = false, isMobile = false }: { count: number | undefined, label: string, activeColor?: string, isPriority?: boolean, isMobile?: boolean }) => {
         const displayCount = count || 0;
         return (
             <div className="relative group ml-1.5 flex items-center">
                 <span className={clsx(
-                    "text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm transition-all duration-300",
-                    displayCount === 0 ? "bg-white/10 text-emerald-100/40 group-hover:bg-white/20" : activeColor,
+                    "text-xs w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm transition-all duration-300",
+                    displayCount === 0
+                        ? (isMobile ? "bg-brand-primary text-white" : "bg-white/10 text-white/50 group-hover:bg-white/20 text-white")
+                        : `${activeColor} text-white`,
                     isPriority && displayCount > 0 && "animate-pulse ring-2 ring-rose-500/20"
                 )}>
                     {displayCount}
                 </span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-brand-primary text-white text-sm rounded-[var(--radius-sm)] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg border border-white/10 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-brand-primary text-white text-sm rounded-[var(--radius-sm)] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg border border-white/10 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0 hidden sm:block">
                     <div className="font-semibold">{label}</div>
                     <div className="text-xs text-white/70 mt-0.5">{displayCount} insgesamt</div>
                     <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-brand-primary"></span>
@@ -529,21 +531,21 @@ const Navigation = () => {
                                     key={item.path}
                                     to={item.path}
                                     className={clsx(
-                                        "px-3 py-2.5 rounded-[var(--radius-sm)] text-base font-semibold flex items-center justify-between transition-colors",
+                                        "px-2.5 py-1.5 rounded-[var(--radius-sm)] text-sm font-semibold flex items-center justify-between transition-colors",
                                         active
-                                            ? "bg-brand-primary/5 text-brand-primary border-l-4 border-brand-primary pl-2.5"
-                                            : "text-brand-muted hover:bg-brand-bg hover:text-brand-primary border-l-4 border-transparent"
+                                            ? "bg-brand-primary/5 text-brand-primary"
+                                            : "text-brand-muted hover:bg-brand-bg hover:text-brand-primary"
                                     )}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <span className={clsx("text-lg", active ? "text-brand-primary" : "text-brand-muted")}>
+                                    <div className="flex items-center gap-2">
+                                        <span className={clsx("text-base", active ? "text-brand-primary" : "text-brand-muted")}>
                                             {item.icon}
                                         </span>
                                         {item.label}
                                     </div>
                                     {item.count !== undefined && (
-                                        <NavBadge count={item.count} label={item.badgeLabel || ""} activeColor={item.color} />
+                                        <NavBadge count={item.count} label={item.badgeLabel || ""} activeColor={item.color} isMobile={true} />
                                     )}
                                 </Link>
                             );

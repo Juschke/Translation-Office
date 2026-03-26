@@ -321,7 +321,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
             <div className="relative bg-white w-full max-w-[1240px] shadow-sm overflow-hidden flex flex-col h-full md:h-[94vh]">
 
                 {/* ── Header ── */}

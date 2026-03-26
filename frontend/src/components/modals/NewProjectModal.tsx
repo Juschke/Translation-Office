@@ -103,6 +103,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
     const [langTrigger, setLangTrigger] = useState<'source' | 'target' | null>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState<'general' | 'services' | 'details'>('general');
 
     // API Data
     const { data: customersData = [] } = useQuery({
@@ -545,10 +546,17 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             );
 
             const firstErrorField = Array.from(newErrorSet)[0];
-            const element = document.getElementById(`field - container - ${firstErrorField} `);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (['customer', 'source', 'target', 'docType', 'deadline', 'status', 'translator'].includes(firstErrorField)) {
+                setActiveTab('general');
             }
+
+            setTimeout(() => {
+                const element = document.getElementById(`field-container-${firstErrorField}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+
             return;
         }
 
@@ -702,14 +710,9 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                 <div className="flex-1 lg:overflow-hidden overflow-y-auto flex flex-col lg:flex-row">
                     {/* Left Column */}
-                    <div className="lg:flex-1 p-3 sm:p-5 space-y-6 custom-scrollbar border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:overflow-y-auto">
-                        {/* 01: Basis-Daten */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">01</div>
-                                <h4 className="text-sm font-medium text-slate-800">Basis-Daten</h4>
-                            </div>
+                    <div className="lg:flex-1 p-3 sm:p-5 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:overflow-hidden">
 
+<<<<<<< HEAD
                             <div className="grid grid-cols-12 gap-x-4 gap-y-3">
                                 <div className="col-span-12">
                                     <Input
@@ -721,415 +724,454 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         className="bg-white"
                                     />
                                 </div>
+=======
+                        {/* Tab Bar */}
+                        <div className="flex space-x-1 border-b border-slate-200 mb-4 shrink-0 overflow-x-auto custom-scrollbar pb-1">
+                            <button type="button" onClick={() => setActiveTab('general')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'general' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Allgemein</button>
+                            <button type="button" onClick={() => setActiveTab('services')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'services' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Leistungen & Finanzen</button>
+                            <button type="button" onClick={() => setActiveTab('details')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'details' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Erweitert</button>
+                        </div>
+>>>>>>> bf57ed3 (updated Views)
 
-                                <div className="col-span-12" id="field-container-docType">
-                                    <div className="flex items-end gap-0">
-                                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-1">
+
+                            {/* TAB: Allgemein */}
+                            <div className={clsx("space-y-6", activeTab !== 'general' && "hidden")}>
+                                {/* 01: Basis-Daten */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">01</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Basis-Daten</h4>
+                                    </div>
+
+                                    <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+                                        <div className="col-span-12">
+                                            <Input
+                                                label="Projektname"
+                                                placeholder="Projektname eingeben..."
+                                                value={name}
+                                                onChange={e => setName(e.target.value)}
+                                                className="bg-white"
+                                            />
+                                        </div>
+
+                                        <div className="col-span-12" id="field-container-docType">
+                                            <div className="flex items-end gap-0">
+                                                <div className="flex-1 min-w-0">
+                                                    <SearchableSelect
+                                                        id="docType"
+                                                        label="Dokumentenart *"
+                                                        isMulti={true}
+                                                        value={docType}
+                                                        onChange={setDocType}
+                                                        maxVisibleItems={window.innerWidth >= 1024 ? 4 : 2}
+                                                        error={validationErrors.has('docType')}
+                                                        options={docTypes
+                                                            .sort((a: any, b: any) => {
+                                                                const catA = a.category?.toLowerCase() || '';
+                                                                const catB = b.category?.toLowerCase() || '';
+                                                                const isTopA = catA.includes('personal') || catA.includes('identität');
+                                                                const isTopB = catB.includes('personal') || catB.includes('identität');
+                                                                if (isTopA && !isTopB) return -1;
+                                                                if (!isTopA && isTopB) return 1;
+                                                                return catA.localeCompare(catB);
+                                                            })
+                                                            .map((dt: any) => ({
+                                                                value: dt.id.toString(),
+                                                                label: dt.name,
+                                                                group: dt.category
+                                                            }))}
+                                                    />
+                                                </div>
+                                                <Button
+                                                    onClick={() => setShowDocTypeModal(true)}
+                                                    className="h-9 px-3 sm:px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-1.5 sm:gap-2 shadow-sm font-bold shrink-0"
+                                                >
+                                                    <FaPlus className="text-[10px] sm:text-xs" /> <span className="text-[10px] sm:text-xs tracking-wide">NEU</span>
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div className="col-span-12 md:col-span-6">
                                             <SearchableSelect
-                                                id="docType"
-                                                label="Dokumentenart *"
-                                                isMulti={true}
-                                                value={docType}
-                                                onChange={setDocType}
-                                                maxVisibleItems={window.innerWidth >= 1024 ? 4 : 2}
-                                                error={validationErrors.has('docType')}
-                                                options={docTypes
-                                                    .sort((a: any, b: any) => {
-                                                        const catA = a.category?.toLowerCase() || '';
-                                                        const catB = b.category?.toLowerCase() || '';
-                                                        const isTopA = catA.includes('personal') || catA.includes('identität');
-                                                        const isTopB = catB.includes('personal') || catB.includes('identität');
-                                                        if (isTopA && !isTopB) return -1;
-                                                        if (!isTopA && isTopB) return 1;
-                                                        return catA.localeCompare(catB);
-                                                    })
-                                                    .map((dt: any) => ({
-                                                        value: dt.id.toString(),
-                                                        label: dt.name,
-                                                        group: dt.category
-                                                    }))}
+                                                label="Status"
+                                                options={statusOptions}
+                                                value={status}
+                                                onChange={setStatus}
+                                                preserveOrder={true}
                                             />
                                         </div>
-                                        <Button
-                                            onClick={() => setShowDocTypeModal(true)}
-                                            className="h-9 px-3 sm:px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-1.5 sm:gap-2 shadow-sm font-bold shrink-0"
-                                        >
-                                            <FaPlus className="text-[10px] sm:text-xs" /> <span className="text-[10px] sm:text-xs tracking-wide">NEU</span>
-                                        </Button>
-                                    </div>
-                                </div>
 
-                                <div className="col-span-12 md:col-span-6">
-                                    <SearchableSelect
-                                        label="Status"
-                                        options={statusOptions}
-                                        value={status}
-                                        onChange={setStatus}
-                                        preserveOrder={true}
-                                    />
-                                </div>
-
-                                <div className="col-span-12 md:col-span-6 " id="field-container-deadline">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Liefertermin</Label>
-                                    <DatePicker
-                                        showTime
-                                        format="DD.MM.YYYY HH:mm"
-                                        value={deadline ? dayjs(deadline) : null}
-                                        onChange={(date) => {
-                                            if (date) {
-                                                setDeadline(date.toISOString());
-                                            } else {
-                                                setDeadline('');
-                                            }
-                                        }}
-                                        className={clsx(
-                                            "w-full h-9",
-                                            validationErrors.has('deadline') && "ant-picker-status-error"
-                                        )}
-                                        placeholder="Datum & Zeit wählen"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 02: Sprachen & Kunde */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">02</div>
-                                <h4 className="text-sm font-medium text-slate-800">Sprachen & Kunde</h4>
-                            </div>
-
-                            <div className="grid grid-cols-12 gap-x-4 gap-y-3">
-                                <div className="col-span-12" id="field-container-customer">
-                                    <div className="flex items-end gap-0">
-                                        <div className="flex-1 min-w-0">
-                                            <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
-                                        </div>
-                                        <Button
-                                            onClick={() => setShowCustomerModal(true)}
-                                            className="h-9 px-3 sm:px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-1.5 sm:gap-2 shadow-sm font-bold shrink-0"
-                                        >
-                                            <FaPlus className="text-[10px] sm:text-xs" /> <span className="text-[10px] sm:text-xs tracking-wide">NEU</span>
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <div className="col-span-6" id="field-container-source">
-                                    <LanguageSelect id="source" label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
-                                </div>
-                                <div className="col-span-6" id="field-container-target">
-                                    <LanguageSelect id="target" label="Nach *" value={target} onChange={setTarget} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 03: Partner Auswahl */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">03</div>
-                                <h4 className="text-sm font-medium text-slate-800">Partner & Beteiligte</h4>
-                            </div>
-
-                            <div className="grid grid-cols-12 gap-x-4 gap-y-3">
-                                <div className="col-span-12" id="field-container-translator">
-                                    <div className="flex items-end">
-                                        <div className="flex-1">
-                                            <SearchableSelect label="Übersetzer *" options={partnerOptions} value={translator} onChange={setTranslator} error={validationErrors.has('translator')} />
-                                        </div>
-                                        <Button
-                                            onClick={() => setShowPartnerModal(true)}
-                                            className="h-9 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
-                                        >
-                                            <FaPlus className="text-xs" /> <span className="text-xs tracking-wide">NEU</span>
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Partner Selection Table */}
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between pb-1 border-b border-slate-100 gap-2">
-                                    <h4 className="text-[10px] sm:text-xs font-medium text-slate-400 ml-1 truncate">Partner Auswahl</h4>
-                                    <div className="relative w-32 sm:w-40">
-                                        <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[10px] sm:text-xs" />
-                                        <input
-                                            type="text"
-                                            placeholder="Suchen..."
-                                            value={partnerSearch}
-                                            onChange={(e) => setPartnerSearch(e.target.value)}
-                                            className="w-full pl-7 pr-2 py-1 bg-white border border-slate-200 rounded text-[10px] sm:text-xs focus:outline-none focus:border-brand-300 transition-all"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="border border-slate-200 rounded bg-white overflow-hidden">
-                                    <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
-                                        <table className="w-full text-left border-collapse table-fixed">
-                                            <thead className="sticky top-0 bg-white z-10 border-b border-slate-100">
-                                                <tr>
-                                                    <th className="w-2/5 px-2 py-2 text-xs font-semibold text-slate-400">Partner / Email</th>
-                                                    <th className="w-2/5 px-2 py-2 text-xs font-semibold text-slate-400">Sprachpaar</th>
-                                                    <th className="w-1/5 px-2 py-2 text-xs font-semibold text-slate-400 text-right">Aktion</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
-                                                {/* Matching Partners Header */}
-                                                <tr className="bg-white">
-                                                    <td colSpan={3} className="px-2 py-1.5">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs font-semibold text-slate-600">Passende Übersetzer</span>
-                                                            <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{matchingPartners.length}</span>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                {matchingPartners.map((p: any) => (
-                                                    <tr
-                                                        key={p.id}
-                                                        className={clsx(
-                                                            "group transition-colors cursor-pointer hover:bg-slate-50/50",
-                                                            translator === p.id.toString() ? "bg-white" : ""
-                                                        )}
-                                                        onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
-                                                    >
-                                                        <td className="px-2 py-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-6 h-6 rounded bg-white text-slate-500 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
-                                                                    {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
-                                                                </div>
-                                                                <div className="flex flex-col min-w-0">
-                                                                    <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name} `}</span>
-                                                                    <span className="text-xs text-slate-400 truncate tracking-tight">{p.email}</span>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-2 py-2">
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {(p.languages || []).slice(0, 3).map((l: string) => {
-                                                                    const isSourceMatch = source && l.toLowerCase().includes(source.toLowerCase().split('-')[0]);
-                                                                    const isTargetMatch = target && l.toLowerCase().includes(target.toLowerCase().split('-')[0]);
-                                                                    return (
-                                                                        <span key={l} className={clsx(
-                                                                            "px-1 py-0 rounded text-[7px] font-semibolder border",
-                                                                            isSourceMatch || isTargetMatch ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white text-slate-400 border-slate-100"
-                                                                        )}>{l}</span>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-2 py-2 text-right">
-                                                            <div className={clsx(
-                                                                "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
-                                                                translator === p.id.toString() ? "bg-brand-primary border-brand-primary text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
-                                                            )}>
-                                                                <FaCheck className="text-xs" />
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-
-                                                {/* Other Partners Header */}
-                                                <tr className="bg-white">
-                                                    <td colSpan={3} className="px-2 py-1.5">
-                                                        <div className="flex items-center gap-2 mt-2">
-                                                            <span className="text-xs font-semibold text-slate-400">Sonstige</span>
-                                                            <span className="bg-white border border-slate-200 text-slate-500 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{otherPartners.length}</span>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                {otherPartners.map((p: any) => (
-                                                    <tr
-                                                        key={p.id}
-                                                        className={clsx(
-                                                            "group transition-colors cursor-pointer hover:bg-transparent",
-                                                            translator === p.id.toString() ? "bg-white" : ""
-                                                        )}
-                                                        onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
-                                                    >
-                                                        <td className="px-2 py-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-6 h-6 rounded bg-white text-slate-400 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
-                                                                    {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
-                                                                </div>
-                                                                <div className="flex flex-col min-w-0">
-                                                                    <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name} `}</span>
-                                                                    <span className="text-xs text-slate-400 truncate tracking-tight">{p.email}</span>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-2 py-2">
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {(p.languages || []).slice(0, 3).map((l: string) => (
-                                                                    <span key={l} className="px-1 py-0 rounded text-[7px] font-semibolder border bg-white text-slate-400 border-slate-100">{l}</span>
-                                                                ))}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-2 py-2 text-right">
-                                                            <div className={clsx(
-                                                                "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
-                                                                translator === p.id.toString() ? "bg-brand-primary border-brand-primary text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
-                                                            )}>
-                                                                <FaCheck className="text-xs" />
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-
-                                                {matchingPartners.length === 0 && otherPartners.length === 0 && (
-                                                    <tr>
-                                                        <td colSpan={3} className="px-4 py-8 text-center text-slate-400 italic text-xs">
-                                                            Keine Partner gefunden...
-                                                        </td>
-                                                    </tr>
+                                        <div className="col-span-12 md:col-span-6 " id="field-container-deadline">
+                                            <Label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Liefertermin</Label>
+                                            <DatePicker
+                                                showTime
+                                                format="DD.MM.YYYY HH:mm"
+                                                value={deadline ? dayjs(deadline) : null}
+                                                onChange={(date) => {
+                                                    if (date) {
+                                                        setDeadline(date.toISOString());
+                                                    } else {
+                                                        setDeadline('');
+                                                    }
+                                                }}
+                                                className={clsx(
+                                                    "w-full h-9",
+                                                    validationErrors.has('deadline') && "ant-picker-status-error"
                                                 )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <NewPartnerModal
-                                isOpen={showPartnerModal}
-                                onClose={() => setShowPartnerModal(false)}
-                                onSubmit={handleApplyPartner}
-                                isLoading={createPartnerMutation.isPending}
-                            />
-                            <NewCustomerModal
-                                isOpen={showCustomerModal}
-                                onClose={() => setShowCustomerModal(false)}
-                                onSubmit={handleApplyCustomer}
-                            />
-                        </div>
-
-                        {/* Leistungen */}
-                        <div className="space-y-6 pt-4">
-                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">04</div>
-                                <h4 className="text-sm font-medium text-slate-800">Leistungen & Optionen</h4>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-y-4 gap-x-3 sm:gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Beglaubigung (5€)</label>
-                                    <Input isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Express (15€)</label>
-                                    <Input isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Apostille (15€)</label>
-                                    <Input isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">FS-Klass. (15€)</label>
-                                    <Input isSelect value={classification} onChange={(e) => setClassification(e.target.value)} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
-                                </div>
-
-                                <div className="flex flex-col gap-1.5 justify-start">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">MwSt. (19%)</label>
-                                    <div
-                                        className="h-8 sm:h-9 flex items-center gap-2 cursor-pointer transition-all"
-                                        onClick={() => setWithTax(!withTax)}
-                                    >
-                                        <div className={clsx(
-                                            "w-7 h-3.5 rounded-full relative transition-colors",
-                                            withTax ? "bg-emerald-500" : "bg-slate-300"
-                                        )}>
-                                            <div className={clsx(
-                                                "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
-                                                withTax ? "left-4" : "left-0.5"
-                                            )} />
-                                        </div>
-                                        <span className={clsx("text-[10px] font-bold tracking-tight", withTax ? "text-emerald-600" : "text-slate-400")}>
-                                            {withTax ? "AKTIV" : "AUS"}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-12 gap-x-3 sm:gap-x-4 gap-y-3 pt-2 border-t border-slate-50">
-                                <div className="col-span-6 lg:col-span-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Anzahl Kopien</label>
-                                        <div className="flex items-center h-9 border border-slate-200 rounded-sm overflow-hidden bg-white shadow-sm transition-all focus-within:border-slate-900/50 focus-within:ring-2 focus-within:ring-brand-500/5">
-                                            <button
-                                                onClick={() => setCopies(Math.max(0, copies - 1))}
-                                                className="h-full px-2 sm:px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-r border-slate-100"
-                                            >
-                                                <FaMinus className="text-[10px] sm:text-xs" />
-                                            </button>
-                                            <input
-                                                type="number"
-                                                value={copies}
-                                                onChange={(e) => setCopies(Math.max(0, parseInt(e.target.value) || 0))}
-                                                className="flex-1 w-full h-full text-center text-xs sm:text-sm font-medium text-slate-700 outline-none"
+                                                placeholder="Datum & Zeit wählen"
                                             />
-                                            <button
-                                                onClick={() => setCopies(copies + 1)}
-                                                className="h-full px-2 sm:px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-l border-slate-100"
-                                            >
-                                                <FaPlus className="text-[10px] sm:text-xs" />
-                                            </button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-1 ml-1 lg:hidden">
-                                        <span>Summe:</span>
-                                        <span className="text-slate-700">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span>
+                                </div>
+
+                                {/* 02: Sprachen & Kunde */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">02</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Sprachen & Kunde</h4>
+                                    </div>
+
+                                    <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+                                        <div className="col-span-12" id="field-container-customer">
+                                            <div className="flex items-end gap-0">
+                                                <div className="flex-1 min-w-0">
+                                                    <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
+                                                </div>
+                                                <Button
+                                                    onClick={() => setShowCustomerModal(true)}
+                                                    className="h-9 px-3 sm:px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-1.5 sm:gap-2 shadow-sm font-bold shrink-0"
+                                                >
+                                                    <FaPlus className="text-[10px] sm:text-xs" /> <span className="text-[10px] sm:text-xs tracking-wide">NEU</span>
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div className="col-span-6" id="field-container-source">
+                                            <LanguageSelect id="source" label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
+                                        </div>
+                                        <div className="col-span-6" id="field-container-target">
+                                            <LanguageSelect id="target" label="Nach *" value={target} onChange={setTarget} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="col-span-6 lg:col-span-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 block">Preis / Kopie</label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={copyPrice}
-                                            onChange={(e) => setCopyPrice(e.target.value)}
-                                            onBlur={() => setCopyPrice(parseFloat(copyPrice).toFixed(2))}
-                                            containerClassName="h-9"
-                                            className="text-xs sm:text-sm"
-                                        />
+
+                                {/* 03: Partner Auswahl */}
+                                <div className="space-y-4 pt-2">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">03</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Partner & Beteiligte</h4>
                                     </div>
-                                </div>
-                                <div className="hidden lg:flex col-span-4 items-end pb-1.5 px-1">
-                                    <div className="flex items-center gap-2 text-xs font-medium text-slate-400 italic">
-                                        <span>Summe Kopien:</span>
-                                        <span className="text-slate-800">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span>
+
+                                    <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+                                        <div className="col-span-12" id="field-container-translator">
+                                            <div className="flex items-end">
+                                                <div className="flex-1">
+                                                    <SearchableSelect label="Übersetzer *" options={partnerOptions} value={translator} onChange={setTranslator} error={validationErrors.has('translator')} />
+                                                </div>
+                                                <Button
+                                                    onClick={() => setShowPartnerModal(true)}
+                                                    className="h-9 px-4 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 transition flex items-center gap-2 shadow-sm font-bold"
+                                                >
+                                                    <FaPlus className="text-xs" /> <span className="text-xs tracking-wide">NEU</span>
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    {/* Partner Selection Table */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between pb-1 border-b border-slate-100 gap-2">
+                                            <h4 className="text-[10px] sm:text-xs font-medium text-slate-400 ml-1 truncate">Partner Auswahl</h4>
+                                            <div className="relative w-32 sm:w-40">
+                                                <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[10px] sm:text-xs" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Suchen..."
+                                                    value={partnerSearch}
+                                                    onChange={(e) => setPartnerSearch(e.target.value)}
+                                                    className="w-full pl-7 pr-2 py-1 bg-white border border-slate-200 rounded text-[10px] sm:text-xs focus:outline-none focus:border-brand-300 transition-all"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="border border-slate-200 rounded bg-white overflow-hidden">
+                                            <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+                                                <table className="w-full text-left border-collapse table-fixed">
+                                                    <thead className="sticky top-0 bg-white z-10 border-b border-slate-100">
+                                                        <tr>
+                                                            <th className="w-2/5 px-2 py-2 text-xs font-semibold text-slate-400">Partner / Email</th>
+                                                            <th className="w-2/5 px-2 py-2 text-xs font-semibold text-slate-400">Sprachpaar</th>
+                                                            <th className="w-1/5 px-2 py-2 text-xs font-semibold text-slate-400 text-right">Aktion</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-50">
+                                                        {/* Matching Partners Header */}
+                                                        <tr className="bg-white">
+                                                            <td colSpan={3} className="px-2 py-1.5">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xs font-semibold text-slate-600">Passende Übersetzer</span>
+                                                                    <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{matchingPartners.length}</span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {matchingPartners.map((p: any) => (
+                                                            <tr
+                                                                key={p.id}
+                                                                className={clsx(
+                                                                    "group transition-colors cursor-pointer hover:bg-slate-50/50",
+                                                                    translator === p.id.toString() ? "bg-white" : ""
+                                                                )}
+                                                                onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
+                                                            >
+                                                                <td className="px-2 py-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-6 h-6 rounded bg-white text-slate-500 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
+                                                                            {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
+                                                                        </div>
+                                                                        <div className="flex flex-col min-w-0">
+                                                                            <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name} `}</span>
+                                                                            <span className="text-xs text-slate-400 truncate tracking-tight">{p.email}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-2 py-2">
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {(p.languages || []).slice(0, 3).map((l: string) => {
+                                                                            const isSourceMatch = source && l.toLowerCase().includes(source.toLowerCase().split('-')[0]);
+                                                                            const isTargetMatch = target && l.toLowerCase().includes(target.toLowerCase().split('-')[0]);
+                                                                            return (
+                                                                                <span key={l} className={clsx(
+                                                                                    "px-1 py-0 rounded text-[7px] font-semibolder border",
+                                                                                    isSourceMatch || isTargetMatch ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white text-slate-400 border-slate-100"
+                                                                                )}>{l}</span>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-2 py-2 text-right">
+                                                                    <div className={clsx(
+                                                                        "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
+                                                                        translator === p.id.toString() ? "bg-brand-primary border-brand-primary text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
+                                                                    )}>
+                                                                        <FaCheck className="text-xs" />
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+
+                                                        {/* Other Partners Header */}
+                                                        <tr className="bg-white">
+                                                            <td colSpan={3} className="px-2 py-1.5">
+                                                                <div className="flex items-center gap-2 mt-2">
+                                                                    <span className="text-xs font-semibold text-slate-400">Sonstige</span>
+                                                                    <span className="bg-white border border-slate-200 text-slate-500 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{otherPartners.length}</span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {otherPartners.map((p: any) => (
+                                                            <tr
+                                                                key={p.id}
+                                                                className={clsx(
+                                                                    "group transition-colors cursor-pointer hover:bg-transparent",
+                                                                    translator === p.id.toString() ? "bg-white" : ""
+                                                                )}
+                                                                onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
+                                                            >
+                                                                <td className="px-2 py-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-6 h-6 rounded bg-white text-slate-400 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
+                                                                            {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
+                                                                        </div>
+                                                                        <div className="flex flex-col min-w-0">
+                                                                            <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name} `}</span>
+                                                                            <span className="text-xs text-slate-400 truncate tracking-tight">{p.email}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-2 py-2">
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {(p.languages || []).slice(0, 3).map((l: string) => (
+                                                                            <span key={l} className="px-1 py-0 rounded text-[7px] font-semibolder border bg-white text-slate-400 border-slate-100">{l}</span>
+                                                                        ))}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-2 py-2 text-right">
+                                                                    <div className={clsx(
+                                                                        "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
+                                                                        translator === p.id.toString() ? "bg-brand-primary border-brand-primary text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
+                                                                    )}>
+                                                                        <FaCheck className="text-xs" />
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+
+                                                        {matchingPartners.length === 0 && otherPartners.length === 0 && (
+                                                            <tr>
+                                                                <td colSpan={3} className="px-4 py-8 text-center text-slate-400 italic text-xs">
+                                                                    Keine Partner gefunden...
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <NewPartnerModal
+                                        isOpen={showPartnerModal}
+                                        onClose={() => setShowPartnerModal(false)}
+                                        onSubmit={handleApplyPartner}
+                                        isLoading={createPartnerMutation.isPending}
+                                    />
+                                    <NewCustomerModal
+                                        isOpen={showCustomerModal}
+                                        onClose={() => setShowCustomerModal(false)}
+                                        onSubmit={handleApplyCustomer}
+                                    />
                                 </div>
                             </div>
-                            <NewDocTypeModal
-                                isOpen={showDocTypeModal}
-                                onClose={() => setShowDocTypeModal(false)}
-                                onSubmit={handleApplyDocType}
-                                isLoading={createDocTypeMutation.isPending}
-                            />
-                        </div>
 
-                        {/* Kalkulation */}
-                        <div className="space-y-6 pt-4">
-                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">05</div>
-                                <h4 className="text-sm font-medium text-slate-800">Kalkulation Positionen</h4>
+                            {/* TAB: Leistungen & Finanzen */}
+                            <div className={clsx("space-y-6", activeTab !== 'services' && "hidden")}>
+                                {/* Leistungen */}
+                                <div className="space-y-6 pt-4">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">04</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Leistungen & Optionen</h4>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-y-4 gap-x-3 sm:gap-4">
+                                        <div className="space-y-1">
+                                            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Beglaubigung (5€)</label>
+                                            <Input isSelect value={isCertified ? 'ja' : 'nein'} onChange={(e) => setIsCertified(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Express (15€)</label>
+                                            <Input isSelect value={isExpress ? 'ja' : 'nein'} onChange={(e) => setIsExpress(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Apostille (15€)</label>
+                                            <Input isSelect value={hasApostille ? 'ja' : 'nein'} onChange={(e) => setHasApostille(e.target.value === 'ja')} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Klassifizierung (15€)</label>
+                                            <Input isSelect value={classification} onChange={(e) => setClassification(e.target.value)} containerClassName="h-8 sm:h-9 text-xs sm:text-sm"><option value="nein">Nein</option><option value="ja">Ja</option></Input>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1.5 justify-start">
+                                            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">MwSt. (19%)</label>
+                                            <div
+                                                className="h-8 sm:h-9 flex items-center gap-2 cursor-pointer transition-all"
+                                                onClick={() => setWithTax(!withTax)}
+                                            >
+                                                <div className={clsx(
+                                                    "w-7 h-3.5 rounded-full relative transition-colors",
+                                                    withTax ? "bg-emerald-500" : "bg-slate-300"
+                                                )}>
+                                                    <div className={clsx(
+                                                        "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
+                                                        withTax ? "left-4" : "left-0.5"
+                                                    )} />
+                                                </div>
+                                                <span className={clsx("text-[10px] font-bold tracking-tight", withTax ? "text-emerald-600" : "text-slate-400")}>
+                                                    {withTax ? "AKTIV" : "AUS"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-12 gap-x-3 sm:gap-x-4 gap-y-3 pt-2 border-t border-slate-50">
+                                        <div className="col-span-6 lg:col-span-4">
+                                            <div className="space-y-1.5">
+                                                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Anzahl Kopien</label>
+                                                <div className="flex items-center h-9 border border-slate-200 rounded-sm overflow-hidden bg-white shadow-sm transition-all focus-within:border-slate-900/50 focus-within:ring-2 focus-within:ring-brand-500/5">
+                                                    <button
+                                                        onClick={() => setCopies(Math.max(0, copies - 1))}
+                                                        className="h-full px-2 sm:px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-r border-slate-100"
+                                                    >
+                                                        <FaMinus className="text-[10px] sm:text-xs" />
+                                                    </button>
+                                                    <input
+                                                        type="number"
+                                                        value={copies}
+                                                        onChange={(e) => setCopies(Math.max(0, parseInt(e.target.value) || 0))}
+                                                        className="flex-1 w-full h-full text-center text-xs sm:text-sm font-medium text-slate-700 outline-none"
+                                                    />
+                                                    <button
+                                                        onClick={() => setCopies(copies + 1)}
+                                                        className="h-full px-2 sm:px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-l border-slate-100"
+                                                    >
+                                                        <FaPlus className="text-[10px] sm:text-xs" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-1 ml-1 lg:hidden">
+                                                <span>Summe:</span>
+                                                <span className="text-slate-700">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span>
+                                            </div>
+                                        </div>
+                                        <div className="col-span-6 lg:col-span-4">
+                                            <div className="space-y-1.5">
+                                                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Preis / Kopie</label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={copyPrice}
+                                                    onChange={(e) => setCopyPrice(e.target.value)}
+                                                    onBlur={() => setCopyPrice(parseFloat(copyPrice).toFixed(2))}
+                                                    containerClassName="h-9"
+                                                    className="text-xs sm:text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="hidden lg:flex col-span-4 items-end pb-1.5 px-1">
+                                            <div className="flex items-center gap-2 text-xs font-medium text-slate-400 italic">
+                                                <span>Summe Kopien:</span>
+                                                <span className="text-slate-800">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <NewDocTypeModal
+                                        isOpen={showDocTypeModal}
+                                        onClose={() => setShowDocTypeModal(false)}
+                                        onSubmit={handleApplyDocType}
+                                        isLoading={createDocTypeMutation.isPending}
+                                    />
+                                </div>
+
+                                {/* Kalkulation */}
+                                <div className="space-y-6 pt-4">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">05</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Kalkulation Positionen</h4>
+                                    </div>
+
+                                    <ProjectPositionsTable positions={positions} setPositions={setPositions} />
+                                </div>
+
+                                {/* Teilzahlungen */}
+                                <ProjectPaymentsTable
+                                    payments={payments}
+                                    onAddPayment={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
+                                    onEditPayment={handleEditPayment}
+                                    onDeletePayment={handleDeletePayment}
+                                />
                             </div>
 
-                            <ProjectPositionsTable positions={positions} setPositions={setPositions} />
-                        </div>
-
-                        {/* Teilzahlungen */}
-                        <ProjectPaymentsTable
-                            payments={payments}
-                            onAddPayment={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
-                            onEditPayment={handleEditPayment}
-                            onDeletePayment={handleDeletePayment}
-                        />
-
-                        <div className="space-y-6 pt-4">
-                            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">07</div>
-                                <h4 className="text-sm font-medium text-slate-800">Anmerkungen</h4>
+                            {/* TAB: Erweitert */}
+                            <div className={clsx("space-y-6", activeTab !== 'details' && "hidden")}>
+                                <div className="space-y-6 pt-4">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">07</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Anmerkungen</h4>
+                                    </div>
+                                    <Input isTextArea label="Interne Anmerkungen" placeholder="Wichtige Hinweise zum Projekt..." value={notes} onChange={e => setNotes(e.target.value)} />
+                                </div>
                             </div>
-                            <Input isTextArea label="Interne Anmerkungen" placeholder="Wichtige Hinweise zum Projekt..." value={notes} onChange={e => setNotes(e.target.value)} />
+
                         </div>
                     </div>
 

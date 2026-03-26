@@ -188,7 +188,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
             <div className="relative z-10 w-full h-full md:h-[92vh] md:max-w-[1400px] bg-white md:rounded-sm shadow-2xl flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 bg-white shrink-0">
@@ -325,9 +325,15 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
 
                     {/* ── Right: Configuration Sidebar ── */}
                     <div className="w-full md:w-[420px] border-l border-slate-100 bg-white flex flex-col shrink-0 overflow-hidden min-h-0">
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
-                            <div className="grid grid-cols-1 gap-x-6 gap-y-4">
-                                <div className="col-span-2 space-y-1.5">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                            {/* Section 1: Einsatzdetails */}
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">1</div>
+                                    Einsatzdetails
+                                </h3>
+
+                                <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Dolmetscher / Partner</Label>
                                     <SearchableSelect
                                         value={interpreterId}
@@ -338,7 +344,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                     />
                                 </div>
 
-                                <div className="col-span-1 space-y-1.5">
+                                <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Termin - Datum & Uhrzeit</Label>
                                     <div className="relative">
                                         <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
@@ -359,10 +365,16 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                         />
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="col-span-1"></div>
+                            {/* Section 2: Einsatzort */}
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">2</div>
+                                    Einsatzort
+                                </h3>
 
-                                <div className="col-span-2 space-y-1.5">
+                                <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Einsatzort (Name der Einrichtung / Firma)</Label>
                                     <Input
                                         startIcon={<FaMapMarkerAlt className="text-slate-400" />}
@@ -373,59 +385,73 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                     />
                                 </div>
 
-                                <AddressForm
-                                    street={addressStreet}
-                                    houseNo={addressHouseNo}
-                                    zip={addressZip}
-                                    city={addressCity}
-                                    country={addressCountry}
-                                    onChange={(field: string, value: string) => {
-                                        if (field === 'street') setAddressStreet(value);
-                                        if (field === 'houseNo') setAddressHouseNo(value);
-                                        if (field === 'zip') setAddressZip(value);
-                                        if (field === 'city') setAddressCity(value);
-                                        if (field === 'country') setAddressCountry(value);
-                                    }}
-                                />
-
-                                <div className="col-span-1 space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Zeichen (Referenz)</Label>
-                                    <Input
-                                        startIcon={<FaUserEdit className="text-slate-400" />}
-                                        value={customerReference}
-                                        onChange={e => setCustomerReference(e.target.value)}
-                                        placeholder="Aktenzeichen / Ref-Nr"
-                                        className="h-10 border-slate-200"
+                                <div className="pt-2">
+                                    <AddressForm
+                                        street={addressStreet}
+                                        houseNo={addressHouseNo}
+                                        zip={addressZip}
+                                        city={addressCity}
+                                        country={addressCountry}
+                                        onChange={(field: string, value: string) => {
+                                            if (field === 'street') setAddressStreet(value);
+                                            if (field === 'houseNo') setAddressHouseNo(value);
+                                            if (field === 'zip') setAddressZip(value);
+                                            if (field === 'city') setAddressCity(value);
+                                            if (field === 'country') setAddressCountry(value);
+                                        }}
                                     />
                                 </div>
-                                <div className="col-span-1 space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Schreiben vom</Label>
-                                    <div className="relative">
-                                        <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
-                                        <DatePicker
-                                            selected={customerDate}
-                                            onChange={setCustomerDate}
-                                            dateFormat="dd.MM.yyyy"
-                                            locale="de"
-                                            calendarStartDay={1}
-                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-sm text-sm focus:ring-2 focus:ring-slate-950/10 outline-none h-10 bg-white"
-                                            placeholderText="Datum des Schreibens"
-                                            portalId="root-portal"
+                            </div>
+
+                            {/* Section 3: Referenzdaten */}
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">3</div>
+                                    Referenzdaten
+                                </h3>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Zeichen (Referenz)</Label>
+                                        <Input
+                                            startIcon={<FaUserEdit className="text-slate-400" />}
+                                            value={customerReference}
+                                            onChange={e => setCustomerReference(e.target.value)}
+                                            placeholder="Aktenzeichen"
+                                            className="h-10 border-slate-200 pl-10"
+                                            containerClassName="w-full"
                                         />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Schreiben vom</Label>
+                                        <div className="relative">
+                                            <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
+                                            <DatePicker
+                                                selected={customerDate}
+                                                onChange={setCustomerDate}
+                                                dateFormat="dd.MM.yyyy"
+                                                locale="de"
+                                                calendarStartDay={1}
+                                                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-sm text-sm focus:ring-2 focus:ring-slate-950/10 outline-none h-10 bg-white"
+                                                placeholderText="Schreiben vom"
+                                                portalId="root-portal"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="col-span-2 space-y-1.5 pt-2 border-t border-slate-100 mt-2">
+                                <div className="space-y-1.5 pt-2">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Unser Zeichen (Projekt-Nr)</Label>
                                     <Input
                                         startIcon={<FaInfoCircle className="text-slate-400" />}
                                         value={projectNumber}
                                         onChange={e => setProjectNumber(e.target.value)}
                                         placeholder="Wird automatisch gefüllt"
-                                        className="h-10 border-slate-200 bg-slate-50"
+                                        className="h-10 border-slate-200 bg-slate-50 pl-10"
                                     />
                                 </div>
                             </div>
+
 
                             <div className="bg-slate-50 p-4 rounded-sm border border-slate-100 flex gap-4 transition-all hover:bg-slate-100/50">
                                 <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-200 shrink-0">

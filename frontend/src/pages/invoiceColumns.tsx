@@ -14,8 +14,8 @@ export interface BuildInvoiceColumnsParams {
     markAsPaidMutation: any;
     archiveMutation: any;
     deleteMutation: any;
-    handlePrint: (inv: any) => void;
-    handleDownload: (inv: any) => void;
+    handlePrint: (inv: any, rebuild?: boolean) => void;
+    handleDownload: (inv: any, rebuild?: boolean) => void;
     handleDownloadXml: (inv: any) => void;
     cancelReason: string;
     setCancelReason: (r: string) => void;
@@ -203,6 +203,12 @@ export function buildInvoiceColumns({
                                 icon: <FaFileCode className="text-emerald-500" />,
                                 label: <span className="text-xs">E-Rechnung (XML)</span>,
                                 onClick: () => handleDownloadXml(inv),
+                            },
+                            {
+                                key: 'rebuild',
+                                icon: <FaHistory className="text-blue-500" />,
+                                label: <span className="text-xs">PDF (Neu generieren)</span>,
+                                onClick: () => handleDownload(inv, true),
                             },
                         ]
                     },

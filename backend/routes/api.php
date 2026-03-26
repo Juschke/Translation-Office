@@ -111,6 +111,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/reports/customers', [\App\Http\Controllers\Api\ReportController::class, 'customers']);
         Route::get('/reports/project-status', [\App\Http\Controllers\Api\ReportController::class, 'projectStatus']);
         Route::get('/reports/tax', [\App\Http\Controllers\Api\ReportController::class, 'taxReport']);
+        Route::get('/reports/tax/export', [\App\Http\Controllers\Api\FinanceExportController::class, 'exportTax']);
         Route::get('/reports/profitability', [\App\Http\Controllers\Api\ReportController::class, 'detailedProfitability']);
         Route::get('/reports/opos', [\App\Http\Controllers\Api\ReportController::class, 'oposReport']);
         Route::get('/reports/bwa', [\App\Http\Controllers\Api\ReportController::class, 'bwaReport']);

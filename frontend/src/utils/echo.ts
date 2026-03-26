@@ -1,6 +1,7 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
+<<<<<<< HEAD
 declare global {
     interface Window {
         Pusher: typeof Pusher;
@@ -8,6 +9,9 @@ declare global {
 }
 
 window.Pusher = Pusher;
+=======
+(window as any).Pusher = Pusher;
+>>>>>>> bf57ed3 (updated Views)
 
 const echo = new Echo({
     broadcaster: 'reverb',

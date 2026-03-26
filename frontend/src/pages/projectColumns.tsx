@@ -1,10 +1,13 @@
 import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
+<<<<<<< HEAD
 import { FaArrowRight, FaEdit, FaTrash, FaEye, FaTrashRestore, FaTimes, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+=======
+import { FaArrowRight, FaEdit, FaTrash, FaEye, FaEnvelope, FaTrashRestore } from 'react-icons/fa';
+>>>>>>> bf57ed3 (updated Views)
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
-import SearchableSelect from '../components/common/SearchableSelect';
 
 export function getStatusBadge(status: string): ReactNode {
     const labels: Record<string, string> = {
@@ -56,13 +59,6 @@ export interface BuildProjectColumnsParams {
     setConfirmTitle: (t: string) => void;
     setConfirmMessage: (m: string) => void;
     setIsConfirmOpen: (v: boolean) => void;
-    // Extra options for inline filtering
-    customers?: any[];
-    partners?: any[];
-    languages?: any[];
-    projects?: any[];
-    advancedFilters?: any;
-    setAdvancedFilters?: (update: React.SetStateAction<any>) => void;
 }
 
 export function buildProjectColumns({
@@ -74,18 +70,7 @@ export function buildProjectColumns({
     setConfirmTitle,
     setConfirmMessage,
     setIsConfirmOpen,
-    customers = [],
-    partners = [],
-    languages = [],
-    projects = [],
-    advancedFilters = {},
-    setAdvancedFilters,
 }: BuildProjectColumnsParams) {
-    const uniqueDeadlines = Array.from(new Set(
-        projects
-            .filter((p: any) => p.deadline)
-            .map((p: any) => p.deadline.split('T')[0].split(' ')[0]) // Handles both ISO and DB format like 2026-02-25 14:00:00
-    )).sort();
 
     return [
         {
@@ -93,7 +78,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
                     <span className="text-xs">Nr.</span>
-                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
                 </div>
             ),
             accessor: (p: any) => (
@@ -108,7 +92,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
                     <span className="text-xs">Bezeichnung</span>
-                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
                 </div>
             ),
             accessor: (p: any) => (
@@ -125,23 +108,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
                     <span className="text-xs">Kunde</span>
-                    {setAdvancedFilters ? (
-                        <div onClick={(e) => e.stopPropagation()} className="font-normal w-full mt-1">
-                            <SearchableSelect
-                                value={advancedFilters.customerId || ''}
-                                onChange={(val) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: val }))}
-                                options={customers.map((c: any) => {
-                                    const name = c.company_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || `Kunde ${c.id}`;
-                                    return {
-                                        value: c.id.toString(),
-                                        label: `${name} ${c.email ? `(${c.email})` : ''}`.trim()
-                                    };
-                                })}
-                                placeholder="Kunde..."
-                                className="!h-7 text-[11px] min-w-[120px]"
-                            />
-                        </div>
-                    ) : null}
                 </div>
             ),
             accessor: (p: any) => {
@@ -170,23 +136,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
                     <span className="text-xs">Übersetzer</span>
-                    {setAdvancedFilters ? (
-                        <div onClick={(e) => e.stopPropagation()} className="font-normal w-full mt-1">
-                            <SearchableSelect
-                                value={advancedFilters.partnerId || ''}
-                                onChange={(val) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: val }))}
-                                options={partners.map((p: any) => {
-                                    const name = p.company || `${p.first_name || ''} ${p.last_name || ''}`.trim() || `Partner ${p.id}`;
-                                    return {
-                                        value: p.id.toString(),
-                                        label: `${name} ${p.email ? `(${p.email})` : ''}`.trim()
-                                    };
-                                })}
-                                placeholder="Partner..."
-                                className="!h-7 text-[11px] min-w-[120px]"
-                            />
-                        </div>
-                    ) : null}
                 </div>
             ),
             accessor: (p: any) => {
@@ -214,32 +163,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
                     <span className="text-xs">Sprachpaar</span>
-                    {setAdvancedFilters ? (
-                        <div onClick={(e) => e.stopPropagation()} className="font-normal flex gap-1 w-full mt-1">
-                            <SearchableSelect
-                                value={advancedFilters.sourceLanguageId || ''}
-                                onChange={(val) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: val }))}
-                                options={languages.map((l: any) => ({
-                                    value: l.id.toString(),
-                                    label: (l.iso_code || '').substring(0, 2).toUpperCase(),
-                                    icon: getFlagUrl(l.iso_code)
-                                }))}
-                                placeholder="Quelle"
-                                className="!h-7 text-[10px] w-full min-w-[70px]"
-                            />
-                            <SearchableSelect
-                                value={advancedFilters.targetLanguageId || ''}
-                                onChange={(val) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: val }))}
-                                options={languages.map((l: any) => ({
-                                    value: l.id.toString(),
-                                    label: (l.iso_code || '').substring(0, 2).toUpperCase(),
-                                    icon: getFlagUrl(l.iso_code)
-                                }))}
-                                placeholder="Ziel"
-                                className="!h-7 text-[10px] w-full min-w-[70px]"
-                            />
-                        </div>
-                    ) : null}
                 </div>
             ),
             accessor: (p: any) => {
@@ -272,7 +195,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-right">
                     <span className="text-xs">Anzahlung</span>
-                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
                 </div>
             ),
             accessor: (p: any) => {
@@ -311,7 +233,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-right">
                     <span className="text-xs">Gesamtpreis</span>
-                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
                 </div>
             ),
             accessor: (p: any) => {
@@ -339,30 +260,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
                     <span className="text-xs">Deadline</span>
-                    {setAdvancedFilters ? (
-                        <div onClick={(e) => e.stopPropagation()} className="font-normal w-full mt-1 relative">
-                            <select
-                                className="w-full h-7 text-[11px] border border-slate-300 rounded-[3px] bg-white pl-1 pr-6 shadow-sm text-slate-600 focus:outline-none focus:border-brand-primary appearance-none"
-                                value={advancedFilters.deadlineDate || ''}
-                                onChange={(e) => setAdvancedFilters((prev: any) => ({ ...prev, deadlineDate: e.target.value }))}
-                            >
-                                <option value="">Alle</option>
-                                {uniqueDeadlines.map((d: any) => (
-                                    <option key={d} value={d}>
-                                        {new Date(d).toLocaleDateString('de-DE')}
-                                    </option>
-                                ))}
-                            </select>
-                            {advancedFilters.deadlineDate && (
-                                <button
-                                    onClick={() => setAdvancedFilters((prev: any) => ({ ...prev, deadlineDate: '' }))}
-                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 transition-colors"
-                                >
-                                    <FaTimes size={10} />
-                                </button>
-                            )}
-                        </div>
-                    ) : null}
                 </div>
             ),
             accessor: (p: any) => {
@@ -403,7 +300,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
                     <span className="text-xs">Status</span>
-                    {setAdvancedFilters ? <div className="h-7 mt-1" /> : null}
                 </div>
             ),
             accessor: (p: any) => getStatusBadge(p.status),
@@ -416,6 +312,7 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-right items-end">
                     <span className="text-xs">&nbsp;</span>
+<<<<<<< HEAD
                     {setAdvancedFilters ? (
                         <div className="h-7 mt-1 flex items-center justify-end">
                             {Object.values(advancedFilters).some(v => v && v !== 'all') && (
@@ -431,6 +328,8 @@ export function buildProjectColumns({
                             )}
                         </div>
                     ) : null}
+=======
+>>>>>>> bf57ed3 (updated Views)
                 </div>
             ),
             accessor: (p: any) => (

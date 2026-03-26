@@ -248,6 +248,7 @@ class ReportController extends Controller
     public function taxReport(Request $request)
     {
         [$startDate, $endDate] = $this->getDateRange($request);
+        Carbon::setLocale('de');
 
         // Group by month
         $data = \App\Models\Invoice::whereBetween('date', [$startDate, $endDate])
@@ -262,7 +263,6 @@ class ReportController extends Controller
                 DB::raw('SUM(amount_gross) as gross')
             )
             ->groupBy(DB::raw('DATE_FORMAT(date, "%Y-%m")'), 'tax_exemption', 'tax_rate')
-            ->orderBy('month', 'desc')
             ->get();
 
         // Also get partner costs for estimated input tax (Vorsteuer)
@@ -274,9 +274,13 @@ class ReportController extends Controller
             ->groupBy(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'))
             ->get();
 
-        $months = $data->pluck('month')->unique()->values();
+        $report = [];
+        $current = $startDate->copy()->startOfMonth();
+        $end = $endDate->copy()->endOfMonth();
 
-        $report = $months->map(function ($month) use ($data, $partnerCosts) {
+        while ($current <= $end) {
+            $month = $current->format('Y-m');
+            
             $monthData = $data->where('month', $month);
             $monthCost = $partnerCosts->where('month', $month)->first();
 
@@ -291,28 +295,30 @@ class ReportController extends Controller
             $tax7 = $monthData->where('tax_exemption', 'none')->where('tax_rate', 7.00)->sum('tax');
 
             // Estimation: Assume 19% input tax on partner costs if not specified otherwise
-            // in a real app, this would come from a 'Bills' table.
-            $basisVorsteuer = $monthCost ? $monthCost->cost : 0;
-            $vorsteuerEst = ($basisVorsteuer / 100) * 0.19 * 100; // in cents
+            $basisVorsteuer = $monthCost ? (float)$monthCost->cost : 0;
+            $vorsteuerEst = ($basisVorsteuer) * 0.19; // partner_cost_net is already in decimal format from DB, but we get sum as string/float
 
-            return [
+            $report[] = [
                 'month' => $month,
-                'label' => Carbon::parse($month . '-01')->translatedFormat('F Y'),
-                'revenue_19_net' => $net19 / 100,
-                'revenue_19_tax' => $tax19 / 100,
-                'revenue_7_net' => $net7 / 100,
-                'revenue_7_tax' => $tax7 / 100,
-                'revenue_reverse_charge' => $reverse / 100,
-                'revenue_small_business' => $small / 100,
-                'total_net' => $monthData->sum('net') / 100,
-                'total_tax' => $monthData->sum('tax') / 100,
-                'total_gross' => $monthData->sum('gross') / 100,
-                'input_tax_est' => $vorsteuerEst / 100,
-                'payable_tax' => ($monthData->sum('tax') - $vorsteuerEst) / 100
+                'label' => $current->translatedFormat('F Y'),
+                'revenue_19_net' => (float)$net19,
+                'revenue_19_tax' => (float)$tax19,
+                'revenue_7_net' => (float)$net7,
+                'revenue_7_tax' => (float)$tax7,
+                'revenue_reverse_charge' => (float)$reverse,
+                'revenue_small_business' => (float)$small,
+                'total_net' => (float)$monthData->sum('net'),
+                'total_tax' => (float)$monthData->sum('tax'),
+                'total_gross' => (float)$monthData->sum('gross'),
+                'input_tax_est' => $vorsteuerEst,
+                'payable_tax' => (float)$monthData->sum('tax') - $vorsteuerEst
             ];
-        });
 
-        return response()->json($report);
+            $current->addMonth();
+        }
+
+        // Return descending order (newest first)
+        return response()->json(array_reverse($report));
     }
 
     public function detailedProfitability(Request $request)

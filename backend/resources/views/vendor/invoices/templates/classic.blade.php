@@ -361,7 +361,7 @@
 
     {{-- Classic Centered Header --}}
     <div class="classic-header">
-        @if($logoBase64)
+        @if($logoBase64 && extension_loaded('gd'))
             <img src="{{ $logoBase64 }}" class="company-logo" alt="Logo"><br>
         @endif
         <div class="company-name">{{ $companyName }}</div>

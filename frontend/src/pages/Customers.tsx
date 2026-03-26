@@ -4,21 +4,19 @@ import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
-    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaUserPlus, FaUserCheck, FaArchive
+    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaUserPlus, FaArchive
 } from 'react-icons/fa';
 
 
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import KPICard from '../components/common/KPICard';
-import DataTable from '../components/common/DataTable';
+import DataTable, { type FilterDef } from '../components/common/DataTable';
 import { Button } from '../components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
-import StatusTabButton from '../components/common/StatusTabButton';
-import { TooltipProvider } from '../components/ui/tooltip';
 
 
 const Customers = () => {
@@ -336,76 +334,28 @@ const Customers = () => {
         }
     ];
 
-    // Count customers by status for badges
-    const activeCount = useMemo(() => customers.filter((c: any) => {
-        const s = c.status?.toLowerCase();
-        return s !== 'deleted' && s !== 'gelöscht' && s !== 'archived' && s !== 'archiviert';
-    }).length, [customers]);
-    const archivedCount = useMemo(() => customers.filter((c: any) => {
-        const s = c.status?.toLowerCase();
-        return s === 'archived' || s === 'archiviert';
-    }).length, [customers]);
-    const trashedCount = useMemo(() => customers.filter((c: any) => {
-        const s = c.status?.toLowerCase();
-        return s === 'deleted' || s === 'gelöscht';
-    }).length, [customers]);
 
-    const statusTabs = (
-        <TooltipProvider>
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
-                <StatusTabButton
-                    active={statusView === 'active'}
-                    onClick={() => { setStatusView('active'); setTypeFilter('all'); }}
-                    icon={<FaUserCheck />}
-                    label="Aktiv"
-                    count={activeCount}
-                />
-                <StatusTabButton
-                    active={statusView === 'archive'}
-                    onClick={() => setStatusView('archive')}
-                    icon={<FaArchive />}
-                    label="Archiv"
-                    count={archivedCount}
-                />
-                <StatusTabButton
-                    active={statusView === 'trash'}
-                    onClick={() => setStatusView('trash')}
-                    icon={<FaTrash />}
-                    label="Papierkorb"
-                    count={trashedCount}
-                />
-            </div>
-        </TooltipProvider>
-    );
+    const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0);
+    const resetFilters = () => {
+        setStatusView('active');
+        setTypeFilter('all');
+    };
 
-    const tabs = statusView === 'active' ? (
-        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1 overflow-x-auto no-scrollbar">
-            <button
-                onClick={() => setTypeFilter('all')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Alle
-            </button>
-            <button
-                onClick={() => setTypeFilter('Privat')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Privat' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Privat
-            </button>
-            <button
-                onClick={() => setTypeFilter('Firma')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Firma' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Firmen
-            </button>
-            <button
-                onClick={() => setTypeFilter('Behörde')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${typeFilter === 'Behörde' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                Behörden
-            </button>
-        </div>
-    ) : null;
+    const tableFilters: FilterDef[] = [
+        {
+            id: 'statusView', label: 'Aktiv / Archiv', type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('all'); },
+            options: [{ value: 'active', label: 'Aktiv' }, { value: 'archive', label: 'Archiviert' }, { value: 'trash', label: 'Papierkorb' }]
+        },
+        ...(statusView === 'active' ? [{
+            id: 'type', label: 'Kundentyp', type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
+            options: [
+                { value: 'all', label: 'Alle' },
+                { value: 'Firma', label: 'Firmen' },
+                { value: 'Privat', label: 'Privat' },
+                { value: 'Behörde', label: 'Behörden' }
+            ]
+        }] : [])
+    ];
 
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
@@ -467,8 +417,6 @@ const Customers = () => {
                 />
             </div>
 
-            {statusTabs}
-
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <DataTable
                     data={filteredCustomers}
@@ -478,7 +426,6 @@ const Customers = () => {
                     searchPlaceholder="Kunden nach Name, Kontakt oder E-Mail suchen..."
                     searchFields={['company_name', 'contact_person', 'email']}
                     actions={actions}
-                    tabs={tabs}
                     onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
                     selectable
                     selectedIds={selectedCustomers}
@@ -548,6 +495,9 @@ const Customers = () => {
                             show: statusView === 'trash'
                         }
                     ] as BulkActionItem[]}
+                    filters={tableFilters}
+                    activeFilterCount={activeFilterCount}
+                    onResetFilters={resetFilters}
                 />
             </div>
 

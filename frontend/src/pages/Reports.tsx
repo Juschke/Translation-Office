@@ -443,33 +443,44 @@ const Reports = () => {
                         </div>
                         <div className="overflow-x-auto">
                             {financeSubTab === 'tax' && (
+<<<<<<< HEAD
                                 <table className="w-full text-left">
+=======
+                                <table className="w-full text-left align-middle border-collapse">
+>>>>>>> bf57ed3 (updated Views)
                                     <thead>
-                                        <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
-                                            <th className="px-5 py-3">Monat</th>
-                                            <th className="px-5 py-3 text-right">Umsatz 19% (Netto)</th>
-                                            <th className="px-5 py-3 text-right">USt 19%</th>
-                                            <th className="px-5 py-3 text-right">Umsatz 7% (Netto)</th>
-                                            <th className="px-5 py-3 text-right">USt 7%</th>
-                                            <th className="px-5 py-3 text-right">Reverse Charge / EU</th>
-                                            <th className="px-5 py-3 text-right border-l border-slate-100 bg-emerald-50/30">Vorsteuer (Schätzung)</th>
-                                            <th className="px-5 py-3 text-right bg-slate-100/50">Zahllast</th>
+                                        <tr className="bg-slate-50 border-y border-slate-200 text-xs text-slate-500">
+                                            <th className="px-4 py-2 font-medium border-r border-slate-200" rowSpan={2}>Meldezeitraum</th>
+                                            <th className="px-4 py-1.5 font-medium text-center border-r border-slate-200 border-b border-slate-200" colSpan={3}>Umsätze (Netto)</th>
+                                            <th className="px-4 py-1.5 font-medium text-center border-r border-slate-200 border-b border-slate-200" colSpan={2}>Umsatzsteuer</th>
+                                            <th className="px-4 py-2 font-medium text-right border-r border-slate-200" rowSpan={2}>Vorsteuer <span className="opacity-60">(Schätzung)</span></th>
+                                            <th className="px-4 py-2 font-bold text-slate-800 text-right bg-slate-100/80" rowSpan={2}>Zahllast</th>
+                                        </tr>
+                                        <tr className="bg-slate-50 text-[10px] text-slate-500 border-b border-slate-200 uppercase tracking-wider">
+                                            <th className="px-3 py-1.5 text-right font-medium text-slate-600">19%</th>
+                                            <th className="px-3 py-1.5 text-right font-medium text-slate-600">7%</th>
+                                            <th className="px-3 py-1.5 text-right font-medium text-slate-600 border-r border-slate-200">Rev. Charge</th>
+                                            <th className="px-3 py-1.5 text-right font-medium text-indigo-700/80">19%</th>
+                                            <th className="px-3 py-1.5 text-right font-medium text-indigo-700/80 border-r border-slate-200">7%</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {taxData?.map((row: any, i: number) => (
-                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-5 py-3 text-xs font-semibold text-slate-900">{row.label}</td>
-                                                <td className="px-5 py-3 text-xs font-medium text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_19_net)}</td>
-                                                <td className="px-5 py-3 text-xs font-semibold text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_19_tax)}</td>
-                                                <td className="px-5 py-3 text-xs font-medium text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_7_net)}</td>
-                                                <td className="px-5 py-3 text-xs font-semibold text-slate-700 text-right tabular-nums">{fmtNum(row.revenue_7_tax)}</td>
-                                                <td className="px-5 py-3 text-xs font-medium text-slate-500 text-right tabular-nums">{fmtNum(row.revenue_reverse_charge)}</td>
-                                                <td className="px-5 py-3 text-xs font-semibold text-emerald-600 text-right tabular-nums border-l border-slate-100 bg-emerald-50/20">
+                                            <tr key={i} className="hover:bg-slate-50 transition-colors h-[46px]">
+                                                <td className="px-4 py-2 text-xs font-semibold text-slate-900 border-r border-slate-100 whitespace-nowrap">{row.label}</td>
+
+                                                <td className="px-3 py-2 text-xs font-medium text-slate-600 text-right tabular-nums whitespace-nowrap">{fmtNum(row.revenue_19_net)}</td>
+                                                <td className="px-3 py-2 text-xs font-medium text-slate-600 text-right tabular-nums whitespace-nowrap">{fmtNum(row.revenue_7_net)}</td>
+                                                <td className="px-3 py-2 text-xs font-medium text-slate-600 text-right tabular-nums whitespace-nowrap border-r border-slate-100">{fmtNum(row.revenue_reverse_charge)}</td>
+
+                                                <td className="px-3 py-2 text-xs font-medium text-indigo-700 text-right tabular-nums whitespace-nowrap">{fmtNum(row.revenue_19_tax)}</td>
+                                                <td className="px-3 py-2 text-xs font-medium text-indigo-700 text-right tabular-nums whitespace-nowrap border-r border-slate-100">{fmtNum(row.revenue_7_tax)}</td>
+
+                                                <td className="px-4 py-2 text-xs font-semibold text-emerald-600 text-right tabular-nums whitespace-nowrap border-r border-slate-100 bg-emerald-50/10">
                                                     -{fmtNum(row.input_tax_est)}
                                                 </td>
                                                 <td className={clsx(
-                                                    "px-5 py-3 text-xs font-semibold text-right tabular-nums bg-transparent",
+                                                    "px-4 py-2 text-xs font-bold text-right tabular-nums whitespace-nowrap bg-slate-50/30",
                                                     row.payable_tax >= 0 ? "text-slate-900" : "text-emerald-700"
                                                 )}>
                                                     {fmtNum(row.payable_tax)}
@@ -478,21 +489,24 @@ const Reports = () => {
                                         ))}
                                         {(!taxData || taxData.length === 0) && (
                                             <tr>
-                                                <td colSpan={8} className="px-5 py-10 text-center text-slate-400 text-sm">Keine Finanzdaten für diesen Zeitraum vorhanden.</td>
+                                                <td colSpan={8} className="px-4 py-10 text-center text-slate-400 text-sm">Keine Finanzdaten für diesen Zeitraum vorhanden.</td>
                                             </tr>
                                         )}
                                     </tbody>
                                     {taxData && taxData.length > 0 && (
-                                        <tfoot className="bg-slate-900 text-white font-semibold text-xs">
-                                            <tr>
-                                                <td className="px-5 py-3">Gesamt</td>
-                                                <td className="px-5 py-3 text-right">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_19_net, 0))}</td>
-                                                <td className="px-5 py-3 text-right">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_19_tax, 0))}</td>
-                                                <td className="px-5 py-3 text-right">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_7_net, 0))}</td>
-                                                <td className="px-5 py-3 text-right">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_7_tax, 0))}</td>
-                                                <td className="px-5 py-3 text-right">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_reverse_charge, 0))}</td>
-                                                <td className="px-5 py-3 text-right border-l border-slate-700">-{fmtNum(taxData.reduce((a: number, r: any) => a + r.input_tax_est, 0))}</td>
-                                                <td className="px-5 py-3 text-right bg-slate-900">{fmtNum(taxData.reduce((a: number, r: any) => a + r.payable_tax, 0))}</td>
+                                        <tfoot className="bg-brand-primary text-white font-semibold text-xs border-t-2 border-brand-primary">
+                                            <tr className="h-[46px]">
+                                                <td className="px-4 py-2 border-r border-white/20">Gesamt</td>
+
+                                                <td className="px-3 py-2 text-right tabular-nums">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_19_net, 0))}</td>
+                                                <td className="px-3 py-2 text-right tabular-nums">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_7_net, 0))}</td>
+                                                <td className="px-3 py-2 text-right tabular-nums border-r border-white/20">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_reverse_charge, 0))}</td>
+
+                                                <td className="px-3 py-2 text-right tabular-nums">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_19_tax, 0))}</td>
+                                                <td className="px-3 py-2 text-right tabular-nums border-r border-white/20">{fmtNum(taxData.reduce((a: number, r: any) => a + r.revenue_7_tax, 0))}</td>
+
+                                                <td className="px-4 py-2 text-right tabular-nums border-r border-white/20">-{fmtNum(taxData.reduce((a: number, r: any) => a + r.input_tax_est, 0))}</td>
+                                                <td className="px-4 py-2 text-right tabular-nums text-[13px] bg-black/10">{fmtNum(taxData.reduce((a: number, r: any) => a + r.payable_tax, 0))}</td>
                                             </tr>
                                         </tfoot>
                                     )}
@@ -500,47 +514,53 @@ const Reports = () => {
                             )}
 
                             {financeSubTab === 'profitability' && (
+<<<<<<< HEAD
                                 <table className="w-full text-left">
+=======
+                                <table className="w-full text-left align-middle border-collapse">
+>>>>>>> bf57ed3 (updated Views)
                                     <thead>
                                         <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
-                                            <th className="px-5 py-3">Projekt / Kunde</th>
-                                            <th className="px-5 py-3">Datum</th>
-                                            <th className="px-5 py-3 text-right">Umsatz (Netto)</th>
-                                            <th className="px-5 py-3 text-right">Kosten (Netto)</th>
-                                            <th className="px-5 py-3 text-right">Gewinn</th>
+                                            <th className="px-5 py-3 border-r border-slate-100">Projekt / Kunde</th>
+                                            <th className="px-5 py-3 border-r border-slate-100">Datum</th>
+                                            <th className="px-5 py-3 text-right bg-slate-50">Umsatz (Netto)</th>
+                                            <th className="px-5 py-3 text-right bg-slate-50">Kosten (Netto)</th>
+                                            <th className="px-5 py-3 text-right border-l border-slate-200">Gewinn</th>
                                             <th className="px-5 py-3 text-right">Marge</th>
-                                            <th className="px-5 py-3">Status</th>
+                                            <th className="px-5 py-3 border-l border-slate-100">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {profitabilityData?.map((row: any) => (
-                                            <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-5 py-3">
-                                                    <p className="text-xs font-semibold text-slate-900">{row.project_number}</p>
-                                                    <p className="text-xs font-medium text-slate-400 mt-0.5">{row.customer}</p>
+                                            <tr key={row.id} className="hover:bg-slate-50 transition-colors h-[46px]">
+                                                <td className="px-5 py-2 border-r border-slate-100">
+                                                    <div className="flex flex-col justify-center">
+                                                        <span className="text-xs font-semibold text-slate-900 leading-tight">{row.project_number}</span>
+                                                        <span className="text-[10px] font-medium text-slate-500 leading-tight truncate max-w-[150px]">{row.customer}</span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-5 py-3 text-xs text-slate-500 tabular-nums">{row.date}</td>
-                                                <td className="px-5 py-3 text-xs font-medium text-slate-700 text-right tabular-nums">{fmtNum(row.revenue ?? 0)}</td>
-                                                <td className="px-5 py-3 text-xs font-medium text-red-500/70 text-right tabular-nums">-{fmtNum(row.cost ?? 0)}</td>
-                                                <td className="px-5 py-3 text-xs font-semibold text-emerald-600 text-right tabular-nums">{fmtNum(row.profit ?? 0)}</td>
-                                                <td className="px-5 py-3 text-right tabular-nums">
+                                                <td className="px-5 py-2 text-xs text-slate-500 tabular-nums border-r border-slate-100 whitespace-nowrap">{row.date}</td>
+                                                <td className="px-5 py-2 text-xs font-medium text-slate-700 text-right tabular-nums whitespace-nowrap bg-slate-50/30">{fmtNum(row.revenue ?? 0)}</td>
+                                                <td className="px-5 py-2 text-xs font-medium text-red-500/80 text-right tabular-nums whitespace-nowrap bg-slate-50/30">-{fmtNum(row.cost ?? 0)}</td>
+                                                <td className="px-5 py-2 text-xs font-semibold text-emerald-600 text-right tabular-nums whitespace-nowrap border-l border-slate-100">{fmtNum(row.profit ?? 0)}</td>
+                                                <td className="px-5 py-2 text-right tabular-nums whitespace-nowrap">
                                                     <span className={clsx(
-                                                        "text-xs font-semibold px-2 py-0.5 rounded-full",
-                                                        (row.margin ?? 0) >= 30 ? "bg-emerald-100 text-emerald-700"
-                                                            : (row.margin ?? 0) >= 15 ? "bg-blue-100 text-blue-700"
-                                                                : "bg-amber-100 text-amber-700"
+                                                        "text-[10px] font-bold px-2 py-0.5 rounded-sm inline-block min-w-[48px] text-center",
+                                                        (row.margin ?? 0) >= 30 ? "bg-emerald-100/50 text-emerald-700"
+                                                            : (row.margin ?? 0) >= 15 ? "bg-blue-100/50 text-blue-700"
+                                                                : "bg-amber-100/50 text-amber-700"
                                                     )}>
                                                         {row.margin ?? 0} %
                                                     </span>
                                                 </td>
-                                                <td className="px-5 py-3">
+                                                <td className="px-5 py-2 whitespace-nowrap border-l border-slate-100">
                                                     <span className={clsx(
-                                                        "text-xs font-semibold px-2 py-0.5 rounded-sm",
+                                                        "text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider",
                                                         row.status === 'completed' || row.status === 'invoiced'
-                                                            ? "bg-emerald-100 text-emerald-700"
+                                                            ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
                                                             : row.status === 'delivery'
-                                                                ? "bg-blue-100 text-blue-700"
-                                                                : "bg-slate-100 text-slate-500"
+                                                                ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                                                : "bg-slate-50 text-slate-500 border border-slate-100"
                                                     )}>
                                                         {row.status_label ?? row.status}
                                                     </span>
@@ -559,14 +579,14 @@ const Reports = () => {
                                         const totalProfit = profitabilityData.reduce((a: number, r: any) => a + (r.profit ?? 0), 0);
                                         const avgMargin = totalRev > 0 ? Math.round((totalProfit / totalRev) * 100) : 0;
                                         return (
-                                            <tfoot className="bg-slate-900 text-white font-semibold text-xs">
-                                                <tr>
-                                                    <td colSpan={2} className="px-5 py-3">Gesamt ({profitabilityData.length} Projekte)</td>
-                                                    <td className="px-5 py-3 text-right">{fmtNum(totalRev)}</td>
-                                                    <td className="px-5 py-3 text-right">-{fmtNum(totalCost)}</td>
-                                                    <td className="px-5 py-3 text-right bg-slate-900">{fmtNum(totalProfit)}</td>
-                                                    <td className="px-5 py-3 text-right">{avgMargin} %</td>
-                                                    <td></td>
+                                            <tfoot className="bg-brand-primary text-white font-semibold text-xs border-t-2 border-brand-primary">
+                                                <tr className="h-[46px]">
+                                                    <td colSpan={2} className="px-5 py-2 border-r border-white/20">Gesamt ({profitabilityData.length} Projekte)</td>
+                                                    <td className="px-5 py-2 text-right tabular-nums bg-black/5">{fmtNum(totalRev)}</td>
+                                                    <td className="px-5 py-2 text-right tabular-nums bg-black/5">-{fmtNum(totalCost)}</td>
+                                                    <td className="px-5 py-2 text-right bg-slate-900 border-l border-white/20 tabular-nums">{fmtNum(totalProfit)}</td>
+                                                    <td className="px-5 py-2 text-right tabular-nums">{avgMargin} %</td>
+                                                    <td className="px-5 py-2 border-l border-white/20"></td>
                                                 </tr>
                                             </tfoot>
                                         );
@@ -705,11 +725,20 @@ const Reports = () => {
                             <div>
                                 <h4 className="text-sm font-medium text-sky-900 mb-2">Finanzamt Export</h4>
                                 <p className="text-xs text-sky-700 leading-relaxed">
-                                    Sie können diese Daten direkt für Ihre monatliche oder vierteljährliche Umsatzsteuer-Voranmeldung verwenden. Ein direkter Elster-Export ist in Vorbereitung.
+                                    Sie können diese Daten direkt für Ihre monatliche oder vierteljährliche Umsatzsteuer-Voranmeldung verwenden. Ein direkter Elster-Export ist in Vorbereitung. Alternativ können Sie die Datenstruktur zur Weitergabe an Ihren Steuerberater exportieren.
                                 </p>
                             </div>
-                            <button className="mt-5 w-full bg-sky-600 text-white py-2 rounded-sm text-sm font-medium hover:bg-sky-700 transition">
-                                PDF Finanzbericht erstellen
+                            <button
+                                onClick={() => {
+                                    const params = new URLSearchParams({
+                                        startDate: appliedDateRange[0]?.format('YYYY-MM-DD') ?? '',
+                                        endDate: appliedDateRange[1]?.format('YYYY-MM-DD') ?? ''
+                                    }).toString();
+                                    window.open(`${import.meta.env.VITE_API_BASE_URL}/api/reports/tax/export?${params}`, '_blank');
+                                }}
+                                className="mt-5 w-full bg-sky-600 text-white py-2 rounded-sm text-sm font-medium hover:bg-sky-700 transition"
+                            >
+                                CSV Finanzbericht (UStVA) exportieren
                             </button>
                         </div>
                     </div>

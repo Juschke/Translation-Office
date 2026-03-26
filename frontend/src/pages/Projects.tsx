@@ -8,7 +8,7 @@ import {
     FaFilePdf, FaFileExcel, FaLayerGroup, FaChartLine, FaGlobe,
     FaDownload,
     FaListUl, FaColumns,
-    FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore, FaCheckCircle
+    FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore
 } from 'react-icons/fa';
 import { buildProjectColumns } from './projectColumns';
 import clsx from 'clsx';
@@ -16,15 +16,13 @@ import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
 import NewProjectModal from '../components/modals/NewProjectModal';
 import KPICard from '../components/common/KPICard';
-import DataTable from '../components/common/DataTable';
+import DataTable, { type FilterDef } from '../components/common/DataTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, customerService, partnerService, settingsService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import KanbanBoard from '../components/projects/KanbanBoard';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
-import StatusTabButton from '../components/common/StatusTabButton';
-import { TooltipProvider } from '../components/ui/tooltip';
 import echo from '../utils/echo';
 
 
@@ -40,7 +38,7 @@ const Projects = () => {
     const [editingProject, setEditingProject] = useState<any>(null);
     const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
-    const [advancedFilters, setAdvancedFilters] = useState({
+    const [advancedFilters, setAdvancedFilters] = useState<any>({
         customerId: '',
         partnerId: '',
         sourceLanguageId: '',
@@ -48,6 +46,8 @@ const Projects = () => {
         dateRange: 'all',
         projectSearch: '',
         deadlineDate: '',
+        status: 'all',
+        progress: 'all'
     });
 
     const exportRef = useRef<HTMLDivElement>(null);
@@ -382,58 +382,72 @@ const Projects = () => {
         setConfirmTitle,
         setConfirmMessage,
         setIsConfirmOpen,
-        advancedFilters,
-        setAdvancedFilters,
-        customers,
-        partners,
-        languages,
-        projects
     });
 
     // Count projects by status for badges
-    const activeCount = useMemo(() => filteredProjectsByAdvanced.filter((p: any) => p.status !== 'deleted' && p.status !== 'archived').length, [filteredProjectsByAdvanced]);
-    const archivedCount = useMemo(() => filteredProjectsByAdvanced.filter((p: any) => p.status === 'archived').length, [filteredProjectsByAdvanced]);
-    const trashedCount = useMemo(() => filteredProjectsByAdvanced.filter((p: any) => p.status === 'deleted').length, [filteredProjectsByAdvanced]);
 
-    const statusTabs = (
-        <TooltipProvider>
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
-                <StatusTabButton
-                    active={statusView === 'active'}
-                    onClick={() => { setStatusView('active'); setFilter('all'); }}
-                    icon={<FaCheckCircle />}
-                    label="Aktiv"
-                    count={activeCount}
-                />
-                <StatusTabButton
-                    active={statusView === 'archive'}
-                    onClick={() => { setStatusView('archive'); setFilter('all'); }}
-                    icon={<FaArchive />}
-                    label="Archiv"
-                    count={archivedCount}
-                />
-                <StatusTabButton
-                    active={statusView === 'trash'}
-                    onClick={() => { setStatusView('trash'); setFilter('all'); }}
-                    icon={<FaTrash />}
-                    label="Papierkorb"
-                    count={trashedCount}
-                />
-            </div>
-        </TooltipProvider>
-    );
 
-    const tabs = statusView === 'active' ? (
-        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1 overflow-x-auto no-scrollbar">
-            <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Übersicht</button>
-            <button onClick={() => setFilter('offer')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'offer' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Neu</button>
-            <button onClick={() => setFilter('in_progress')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'in_progress' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Bearbeitung</button>
-            <button onClick={() => setFilter('delivered')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'delivered' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Geliefert</button>
-            <button onClick={() => setFilter('invoiced')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'invoiced' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Rechnung</button>
-            <button onClick={() => setFilter('ready_for_pickup')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'ready_for_pickup' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abholbereit</button>
-            <button onClick={() => setFilter('completed')} className={`px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${filter === 'completed' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>Abgeschlossen</button>
-        </div>
-    ) : null;
+    const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (filter !== 'all' ? 1 : 0) + Object.values(advancedFilters).filter(v => v && v !== 'all').length;
+    const resetFilters = () => {
+        setStatusView('active');
+        setFilter('all');
+        setAdvancedFilters({
+            customerId: '', partnerId: '', sourceLanguageId: '', targetLanguageId: '', dateRange: 'all', projectSearch: '', deadlineDate: '', status: 'all', progress: 'all'
+        });
+    };
+
+    const tableFilters = useMemo(() => {
+        const filters: FilterDef[] = [
+            {
+                id: 'statusView', label: 'Aktiv / Archiv', type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setFilter('all'); },
+                options: [{ value: 'active', label: 'Aktiv' }, { value: 'archive', label: 'Archiviert' }, { value: 'trash', label: 'Papierkorb' }]
+            }
+        ];
+
+        if (statusView === 'active') {
+            filters.push({
+                id: 'filter', label: 'Schnellfilter', type: 'select' as const, value: filter, onChange: (v: any) => setFilter(v),
+                options: [
+                    { value: 'all', label: 'Alle Projekte' },
+                    { value: 'offer', label: 'Neu' },
+                    { value: 'in_progress', label: 'In Bearbeitung' },
+                    { value: 'ready_for_pickup', label: 'Abholbereit' },
+                    { value: 'delivered', label: 'Geliefert' },
+                    { value: 'invoiced', label: 'Rechnung' },
+                    { value: 'completed', label: 'Abgeschlossen' }
+                ]
+            });
+        }
+
+        filters.push(
+            {
+                id: 'advStatus', label: 'Projekt-Status', type: 'select' as const, value: advancedFilters.status || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, status: v })),
+                options: [{ value: 'all', label: 'Alle' }, { value: 'pending', label: 'Ausstehend' }, { value: 'in_progress', label: 'In Bearbeitung' }, { value: 'completed', label: 'Abgeschlossen' }, { value: 'delivered', label: 'Geliefert' }, { value: 'cancelled', label: 'Storniert' }]
+            },
+            {
+                id: 'advProgress', label: 'Fortschritt', type: 'select' as const, value: advancedFilters.progress || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, progress: v })),
+                options: [{ value: 'all', label: 'Alle' }, { value: 'not_started', label: 'Nicht begonnen' }, { value: 'in_progress', label: 'In Arbeit' }, { value: 'almost_done', label: 'Fast fertig' }, { value: 'completed', label: 'Fertig' }]
+            },
+            {
+                id: 'customer', label: 'Kunde', type: 'select' as const, value: advancedFilters.customerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: v })),
+                options: [{ value: '', label: 'Alle Kunden' }, ...customers.map((c: any) => ({ value: c.id, label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]
+            },
+            {
+                id: 'partner', label: 'Partner / Übersetzer', type: 'select' as const, value: advancedFilters.partnerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: v })),
+                options: [{ value: '', label: 'Alle Partner' }, ...partners.map((p: any) => ({ value: p.id, label: (p.company || `${p.first_name || ''} ${p.last_name || ''}`).trim() }))]
+            },
+            {
+                id: 'sourceLang', label: 'Quellsprache', type: 'select' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
+                options: [{ value: '', label: 'Alle Sprachen' }, ...languages.map((l: any) => ({ value: l.id, label: (l.iso_code || '').substring(0, 2).toUpperCase() }))]
+            },
+            {
+                id: 'targetLang', label: 'Zielsprache', type: 'select' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
+                options: [{ value: '', label: 'Alle Sprachen' }, ...languages.map((l: any) => ({ value: l.id, label: (l.iso_code || '').substring(0, 2).toUpperCase() }))]
+            }
+        );
+
+        return filters;
+    }, [statusView, filter, advancedFilters, customers, partners, languages]);
 
     const actions = (
         <div className="flex items-center gap-2">
@@ -506,9 +520,6 @@ const Projects = () => {
                     </button>
                 </div>
             </div>
-
-            {statusTabs}
-
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 {viewMode === 'list' ? (
                     <DataTable
@@ -519,7 +530,6 @@ const Projects = () => {
                         searchPlaceholder="Suchen nach Projekten..."
                         searchFields={['project_name', 'project_number'] as any[]}
                         actions={actions}
-                        tabs={tabs}
                         onAddClick={() => { setEditingProject(null); setIsModalOpen(true); }}
                         selectable
                         selectedIds={selectedProjects}
@@ -533,6 +543,9 @@ const Projects = () => {
                             { label: 'Wiederherstellen', icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' },
                             { label: 'Endgültig löschen', icon: <FaTrash className="text-xs" />, onClick: () => { setProjectToDelete(selectedProjects); setConfirmTitle('Projekte endgültig löschen'); setConfirmMessage(`Sind Sie sicher, dass Sie ${selectedProjects.length} Projekte endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.`); setIsConfirmOpen(true); }, variant: 'dangerSolid', show: statusView === 'trash' },
                         ] as BulkActionItem[]}
+                        filters={tableFilters}
+                        activeFilterCount={activeFilterCount}
+                        onResetFilters={resetFilters}
                     />
                 ) : (
                     <div className="flex-1 min-h-0 flex flex-col pt-4 overflow-x-hidden">

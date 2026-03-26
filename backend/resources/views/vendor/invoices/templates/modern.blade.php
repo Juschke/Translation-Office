@@ -337,7 +337,7 @@
     {{-- Header Bar --}}
     <div class="header-bar">
         <div class="header-bar-inner">
-            @if($logoBase64)
+            @if($logoBase64 && extension_loaded('gd'))
                 <img src="{{ $logoBase64 }}" class="header-logo" alt="Logo">
             @endif
             <div class="company-name">{{ $companyName }}</div>

@@ -7,12 +7,12 @@ import { parseISO, startOfDay, isValid } from 'date-fns';
 import {
     FaPlus, FaCheck, FaCheckCircle, FaHistory,
     FaFileExcel, FaFileCsv, FaFilePdf, FaDownload,
-    FaFileInvoiceDollar, FaTrashRestore, FaPaperPlane, FaFileInvoice, FaArchive, FaTrash,
+    FaFileInvoiceDollar, FaTrashRestore, FaPaperPlane, FaArchive,
 } from 'react-icons/fa';
 import { buildInvoiceColumns } from './invoiceColumns';
 import { Button } from '../components/ui/button';
 
-import DataTable from '../components/common/DataTable';
+import DataTable, { type FilterDef } from '../components/common/DataTable';
 import KPICard from '../components/common/KPICard';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import NewInvoiceModal from '../components/modals/NewInvoiceModal';
@@ -21,9 +21,6 @@ import { invoiceService, externalCostService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
-import StatusTabButton from '../components/common/StatusTabButton';
-import { TooltipProvider } from '../components/ui/tooltip';
-
 
 
 const Invoices = () => {
@@ -268,10 +265,10 @@ const Invoices = () => {
         setIsExportOpen(false);
     };
 
-    const handlePrint = async (inv: any) => {
+    const handlePrint = async (inv: any, rebuild: boolean = false) => {
         try {
             // Show a small toast or indicator if possible, but the print dialog is the goal
-            const response = await invoiceService.print(inv.id);
+            const response = await invoiceService.print(inv.id, rebuild);
 
             // Create blob URL
             const blob = response.data;
@@ -312,10 +309,10 @@ const Invoices = () => {
         }
     };
 
-    const handleDownload = async (inv: any) => {
+    const handleDownload = async (inv: any, rebuild: boolean = false) => {
         try {
             // Use the authenticated download endpoint
-            const response = await invoiceService.download(inv.id);
+            const response = await invoiceService.download(inv.id, rebuild);
 
             // Create blob and trigger download
             const blob = response.data;
@@ -372,6 +369,7 @@ const Invoices = () => {
         setIsConfirmOpen,
     });
 
+<<<<<<< HEAD
     const subTabCounts = useMemo(() => {
         const defaultCounts = {
             all: 0,
@@ -479,6 +477,8 @@ const Invoices = () => {
         </div>
     ) : null;
 
+=======
+>>>>>>> bf57ed3 (updated Views)
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
             <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
@@ -505,18 +505,6 @@ const Invoices = () => {
     }, [invoices]);
 
     // Count invoices by status for badges
-    const activeCount = useMemo(() => invoices.filter((inv: any) => {
-        const s = inv.status?.toLowerCase();
-        return s !== 'deleted' && s !== 'gelöscht' && s !== 'archived' && s !== 'archiviert';
-    }).length, [invoices]);
-    const archivedCount = useMemo(() => invoices.filter((inv: any) => {
-        const s = inv.status?.toLowerCase();
-        return s === 'archived' || s === 'archiviert';
-    }).length, [invoices]);
-    const trashedCount = useMemo(() => invoices.filter((inv: any) => {
-        const s = inv.status?.toLowerCase();
-        return s === 'deleted' || s === 'gelöscht';
-    }).length, [invoices]);
 
     const totalOpenAmount = activeInvoices
         .filter((i: any) => i.status !== 'paid' && i.status !== 'bezahlt' && i.status !== 'cancelled' && i.status !== 'storniert' && i.type !== 'credit_note')
@@ -526,37 +514,48 @@ const Invoices = () => {
         .filter((i: any) => i.status === 'paid' || i.status === 'bezahlt')
         .reduce((acc: number, curr: any) => acc + (curr.amount_gross_eur ?? (curr.amount_gross / 100)), 0);
 
+<<<<<<< HEAD
     const overdueCount = subTabCounts.overdue || 0;
     const reminderCount = subTabCounts.reminders || 0;
     const paidCount = subTabCounts.paid || 0;
+=======
+    const overdueCount = activeInvoices.filter((inv: any) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dueDate = new Date(inv.due_date);
+        return dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft';
+    }).length;
 
-    const statusTabs = (
-        <TooltipProvider>
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
-                <StatusTabButton
-                    active={statusView === 'active'}
-                    onClick={() => { setStatusView('active'); setStatusFilter('pending'); }}
-                    icon={<FaFileInvoice />}
-                    label="Aktiv"
-                    count={activeCount}
-                />
-                <StatusTabButton
-                    active={statusView === 'archive'}
-                    onClick={() => setStatusView('archive')}
-                    icon={<FaArchive />}
-                    label="Archiv"
-                    count={archivedCount}
-                />
-                <StatusTabButton
-                    active={statusView === 'trash'}
-                    onClick={() => setStatusView('trash')}
-                    icon={<FaTrash />}
-                    label="Papierkorb"
-                    count={trashedCount}
-                />
-            </div>
-        </TooltipProvider>
-    );
+    const reminderCount = activeInvoices.filter((inv: any) => {
+        return (inv.reminder_level > 0 || (new Date(inv.due_date) < new Date() && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft'));
+    }).length;
+
+    const paidCount = activeInvoices.filter((i: any) => i.status === 'paid').length;
+    const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0);
+    const resetFilters = () => {
+        setStatusView('active');
+        setStatusFilter('all');
+    };
+>>>>>>> bf57ed3 (updated Views)
+
+    const tableFilters: FilterDef[] = [
+        {
+            id: 'statusView', label: 'Aktiv / Archiv', type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setStatusFilter('all'); },
+            options: [{ value: 'active', label: 'Aktiv' }, { value: 'archive', label: 'Archiviert' }, { value: 'trash', label: 'Papierkorb' }]
+        },
+        ...(statusView === 'active' ? [{
+            id: 'statusFilter', label: 'Rechnungsstatus', type: 'select' as const, value: statusFilter, onChange: (v: any) => setStatusFilter(v),
+            options: [
+                { value: 'all', label: 'Alle Rechnungen' },
+                { value: 'pending', label: 'Offen / Entwurf' },
+                { value: 'paid', label: 'Bezahlt' },
+                { value: 'overdue', label: 'Überfällig' },
+                { value: 'reminders', label: 'Mahnungen' },
+                { value: 'cancelled', label: 'Storniert' },
+                { value: 'credit_notes', label: 'Gutschriften' }
+            ]
+        }] : [])
+    ];
 
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
@@ -598,7 +597,7 @@ const Invoices = () => {
                 />
             </div>
 
-            {statusTabs}
+
 
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <DataTable
@@ -608,7 +607,6 @@ const Invoices = () => {
                     searchPlaceholder="Suchen nach Nr., Kunde oder Projekt..."
                     searchFields={['invoice_number', 'customer.company_name', 'project.project_name']}
                     actions={actions}
-                    tabs={tabs}
                     onRowClick={(inv: any) => setPreviewInvoice(inv)}
                     selectable
                     selectedIds={selectedInvoices}
@@ -660,6 +658,9 @@ const Invoices = () => {
                             show: statusView === 'trash' || statusView === 'archive'
                         }
                     ] as BulkActionItem[]}
+                    filters={tableFilters}
+                    activeFilterCount={activeFilterCount}
+                    onResetFilters={resetFilters}
                 />
             </div>
 

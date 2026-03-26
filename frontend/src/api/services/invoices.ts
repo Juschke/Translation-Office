@@ -43,16 +43,22 @@ export const invoiceService = {
         const response = await api.post(`/invoices/${id}/generate-pdf`);
         return response.data;
     },
-    download: async (id: number) => {
-        const response = await api.get(`/invoices/${id}/download`, { responseType: 'blob' });
+    download: async (id: number, rebuild?: boolean) => {
+        const response = await api.get(`/invoices/${id}/download`, {
+            params: { rebuild: rebuild ? 1 : undefined },
+            responseType: 'blob'
+        });
         return response;
     },
     downloadXml: async (id: number) => {
         const response = await api.get(`/invoices/${id}/download-xml`, { responseType: 'blob' });
         return response;
     },
-    print: async (id: number) => {
-        const response = await api.get(`/invoices/${id}/print`, { responseType: 'blob' });
+    print: async (id: number, rebuild?: boolean) => {
+        const response = await api.get(`/invoices/${id}/print`, {
+            params: { rebuild: rebuild ? 1 : undefined },
+            responseType: 'blob'
+        });
         return response;
     },
     bulkUpdate: async (ids: number[], data: any) => {
