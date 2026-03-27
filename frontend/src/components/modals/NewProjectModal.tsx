@@ -37,12 +37,12 @@ interface NewProjectModalProps {
 }
 
 const statusOptions = [
-    { value: 'offer', label: 'Neu' },
-    { value: 'in_progress', label: 'Bearbeitung' },
-    { value: 'delivered', label: 'Geliefert' },
-    { value: 'invoiced', label: 'Rechnung' },
-    { value: 'ready_for_pickup', label: 'Abholbereit' },
-    { value: 'completed', label: 'Abgeschlossen' }
+    { value: 'offer', label: 'Neu / Angebot', group: 'Schritt 1: Angebot' },
+    { value: 'in_progress', label: 'In Bearbeitung', group: 'Schritt 2: Produktion' },
+    { value: 'ready_for_pickup', label: 'Abholbereit', group: 'Schritt 3: Lieferung' },
+    { value: 'delivered', label: 'Geliefert / Versendet', group: 'Schritt 3: Lieferung' },
+    { value: 'invoiced', label: 'Rechnung gestellt', group: 'Schritt 4: Abschluss' },
+    { value: 'completed', label: 'Projekt abgeschlossen', group: 'Schritt 4: Abschluss' }
 ];
 
 const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
@@ -782,6 +782,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 value={status}
                                                 onChange={setStatus}
                                                 error={validationErrors.has('status')}
+                                                preserveOrder={true}
                                             />
                                         </div>
 

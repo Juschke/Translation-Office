@@ -1,5 +1,7 @@
 ﻿import { useState, useMemo, useEffect, useRef } from 'react';
 import { openBlobInNewTab } from '../utils/download';
+import { format, formatDistanceToNow } from 'date-fns';
+import { de } from 'date-fns/locale';
 import { mapProjectResponse } from '../utils/projectDataMapper';
 import { useProjectModals } from '../hooks/useProjectModals';
 import toast from 'react-hot-toast';
@@ -128,7 +130,9 @@ interface ProjectData {
     documentsSent: boolean;
     pm: string;
     createdAt: string;
+    createdAtRaw?: string;
     updatedAt: string;
+    updatedAtRaw?: string;
     creator?: { name: string };
     editor?: { name: string };
     positions: ProjectPosition[];
@@ -681,15 +685,21 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Meta Info Bar */}
-                <div className="px-3 sm:px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-4 sm:gap-6 text-xs text-slate-400 flex-wrap">
+                <div className="px-3 sm:px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-4 sm:gap-6 text-[10px] sm:text-xs text-slate-400 flex-wrap">
                     <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                        <span>Erstellt am <span className="text-slate-600">{projectData.createdAt}</span> {projectData.creator && `von ${projectData.creator.name}`}</span>
+                        <span>Erstellt: <span className="text-slate-600 font-medium">
+                            {projectData.createdAtRaw ? (
+                                `${format(new Date(projectData.createdAtRaw), 'eeee, dd.MM.yyyy', { locale: de })} | ${format(new Date(projectData.createdAtRaw), 'HH:mm')} Uhr (${formatDistanceToNow(new Date(projectData.createdAtRaw), { addSuffix: true, locale: de })})`
+                            ) : projectData.createdAt}
+                        </span> {projectData.creator && `von ${projectData.creator.name}`}</span>
                     </div>
-                    <span className="text-slate-200">•</span>
+                    <span className="text-slate-200 hidden sm:block">•</span>
                     <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                        <span>Zuletzt geändert: <span className="text-slate-600">{projectData.updatedAt}</span></span>
+                        <span>Zuletzt geändert: <span className="text-slate-600 font-medium">
+                            {projectData.updatedAtRaw ? (
+                                `${format(new Date(projectData.updatedAtRaw), 'eeee, dd.MM.yyyy', { locale: de })} | ${format(new Date(projectData.updatedAtRaw), 'HH:mm')} Uhr (${formatDistanceToNow(new Date(projectData.updatedAtRaw), { addSuffix: true, locale: de })})`
+                            ) : projectData.updatedAt}
+                        </span></span>
                     </div>
                 </div>
 
@@ -865,7 +875,7 @@ const ProjectDetail = () => {
                 {activeTab === 'finances' && projectData && (
                     <ProjectFinancesTab
                         projectData={projectData}
-                        onSavePositions={(positions) => updateProjectMutation.mutate({ positions })}
+                        onSavePositions={(positions, extras) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
                         onRecordPayment={() => {
                             setEditingPayment(null);
                             setIsPaymentModalOpen(true);

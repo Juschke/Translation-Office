@@ -12,11 +12,11 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
     <div className="space-y-6 pt-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded bg-white border border-slate-200 text-emerald-700 flex items-center justify-center text-xs font-medium shadow-sm">06</div>
-                <h4 className="text-xs font-medium text-slate-800">Teilzahlungen / Anzahlungen</h4>
+                <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm">06</div>
+                <h4 className="text-xs font-medium text-slate-800 uppercase tracking-widest">Teilzahlungen / Anzahlungen</h4>
             </div>
             <Button
-                variant="success"
+                variant="default"
                 size="sm"
                 onClick={onAddPayment}
             >

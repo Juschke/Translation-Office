@@ -3,13 +3,14 @@ import { FaCheckCircle, FaFileInvoiceDollar, FaInfoCircle, FaCalculator, FaEuroS
 import clsx from 'clsx';
 import { Button } from '../ui/button';
 import ProjectPositionsTable from '../modals/ProjectPositionsTable';
+import type { ExtraServiceRow } from '../modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../modals/ProjectPaymentsTable';
 import ProjectFinancialSidebar from '../modals/ProjectFinancialSidebar';
 import type { ProjectPosition } from '../modals/projectTypes';
 
 interface ProjectFinancesTabProps {
     projectData: any;
-    onSavePositions: (positions: any[]) => void;
+    onSavePositions: (positions: any[], extras?: Record<string, any>) => void;
     onRecordPayment: () => void;
     onEditPayment?: (payment: any) => void;
     onDeletePayment?: (id: string) => void;
@@ -48,12 +49,25 @@ const ProjectFinancesTab = ({
         return [];
     });
 
+    const [extras, setExtras] = useState({
+        isCertified: projectData.isCertified || !!projectData.is_certified,
+        certifiedQty: projectData.certified_count || 1,
+        hasApostille: projectData.hasApostille || !!projectData.has_apostille,
+        apostilleQty: projectData.apostille_count || 1,
+        isExpress: projectData.isExpress || !!projectData.is_express,
+        expressQty: projectData.express_count || 1,
+        classification: projectData.classification === 'ja' || projectData.classification === true,
+        classificationQty: projectData.classification_count || 1,
+        copies: projectData.copies || projectData.copies_count || 0,
+        copyPrice: parseFloat(projectData.copyPrice || projectData.copy_price || '5'),
+    });
+
     const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
     const isLocked = !!activeInvoice;
 
-    // Calculation Logic (Sync from NewProjectModal)
+    // Calculation Logic
     useEffect(() => {
-        if (isLocked) return; // Prevent auto-update if locked
+        if (isLocked) return;
 
         const updatedPositions = positions.map(pos => {
             const qty = parseFloat(pos.quantity) || 0;
@@ -65,16 +79,13 @@ const ProjectFinancesTab = ({
             let cRate = 0;
 
             if (pos.customerMode === 'unit') {
-                // Margin-basiert auf EK
                 const margin = (parseFloat(pos.marginPercent) || 0) / 100;
                 cTotal = pTotal * (pos.marginType === 'markup' ? (1 + margin) : (1 - margin));
                 if (qty > 0) cRate = cTotal / qty;
             } else if (pos.customerMode === 'rate') {
-                // Direkt €/Einheit
                 cRate = parseFloat(pos.customerRate) || 0;
                 cTotal = qty * cRate;
             } else {
-                // Pauschal
                 cTotal = parseFloat(pos.customerRate) || 0;
             }
 
@@ -94,11 +105,12 @@ const ProjectFinancesTab = ({
 
     const financials = useMemo(() => {
         const payments = projectData.payments || [];
-        const extraNet = (projectData.isCertified ? 5 : 0) +
-            (projectData.hasApostille ? 15 : 0) +
-            (projectData.isExpress ? 15 : 0) +
-            (projectData.classification === 'ja' || projectData.classification === true ? 15 : 0) +
-            ((projectData.copies || projectData.copies_count || 0) * (Number(projectData.copyPrice || projectData.copy_price) || 5));
+        const extraNet =
+            (extras.isCertified ? 5 * extras.certifiedQty : 0) +
+            (extras.hasApostille ? 15 * extras.apostilleQty : 0) +
+            (extras.isExpress ? 15 * extras.expressQty : 0) +
+            (extras.classification ? 15 * extras.classificationQty : 0) +
+            (extras.copies * extras.copyPrice);
 
         const positionsNet = positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.customerTotal) || 0), 0);
         const partnerTotal = positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.partnerTotal) || 0), 0);
@@ -122,26 +134,72 @@ const ProjectFinancesTab = ({
             paid,
             open,
             extraTotal: extraNet,
-            baseNet: positionsNet
+            baseNet: positionsNet,
         };
-    }, [positions, projectData]);
+    }, [positions, extras, projectData]);
+
+    // Build extra rows for the positions table
+    const extraRows = useMemo((): ExtraServiceRow[] => {
+        const rows: ExtraServiceRow[] = [];
+        if (extras.isCertified)    rows.push({ key: 'isCertified',    description: 'Beglaubigung',       quantity: extras.certifiedQty,      unit: 'Stk', unitPrice: 5,               total: 5 * extras.certifiedQty });
+        if (extras.hasApostille)   rows.push({ key: 'hasApostille',   description: 'Apostille',           quantity: extras.apostilleQty,      unit: 'Stk', unitPrice: 15,              total: 15 * extras.apostilleQty });
+        if (extras.isExpress)      rows.push({ key: 'isExpress',      description: 'Express-Zuschlag',   quantity: extras.expressQty,        unit: 'Stk', unitPrice: 15,              total: 15 * extras.expressQty });
+        if (extras.classification) rows.push({ key: 'classification', description: 'FS-Klassifizierung', quantity: extras.classificationQty, unit: 'Stk', unitPrice: 15,              total: 15 * extras.classificationQty });
+        if (extras.copies > 0)     rows.push({ key: 'copies',         description: 'Zusatzkopien',       quantity: extras.copies,            unit: 'Stk', unitPrice: extras.copyPrice, total: extras.copies * extras.copyPrice });
+        return rows;
+    }, [extras]);
+
+    const handleToggleExtra = (key: string) => {
+        setExtras(prev => {
+            if (key === 'isCertified')    return { ...prev, isCertified: false };
+            if (key === 'hasApostille')   return { ...prev, hasApostille: false };
+            if (key === 'isExpress')      return { ...prev, isExpress: false };
+            if (key === 'classification') return { ...prev, classification: false };
+            if (key === 'copies')         return { ...prev, copies: 0 };
+            return prev;
+        });
+    };
+
+    const handleUpdateExtraQty = (key: string, qty: number) => {
+        setExtras(prev => {
+            if (key === 'isCertified')    return { ...prev, certifiedQty: qty };
+            if (key === 'hasApostille')   return { ...prev, apostilleQty: qty };
+            if (key === 'isExpress')      return { ...prev, expressQty: qty };
+            if (key === 'classification') return { ...prev, classificationQty: qty };
+            if (key === 'copies')         return { ...prev, copies: qty };
+            return prev;
+        });
+    };
 
     const handleSave = () => {
-        onSavePositions(positions.map(p => ({
-            id: p.id,
-            description: p.description,
-            unit: p.unit,
-            amount: parseFloat(p.amount) || 0,
-            quantity: parseFloat(p.quantity) || 0,
-            partner_rate: parseFloat(p.partnerRate) || 0,
-            partner_mode: p.partnerMode,
-            partner_total: parseFloat(p.partnerTotal) || 0,
-            customer_rate: parseFloat(p.customerRate) || 0,
-            customer_mode: p.customerMode,
-            customer_total: parseFloat(p.customerTotal) || 0,
-            margin_type: p.marginType,
-            margin_percent: parseFloat(p.marginPercent) || 0,
-        })));
+        onSavePositions(
+            positions.map(p => ({
+                id: p.id,
+                description: p.description,
+                unit: p.unit,
+                amount: parseFloat(p.amount) || 0,
+                quantity: parseFloat(p.quantity) || 0,
+                partner_rate: parseFloat(p.partnerRate) || 0,
+                partner_mode: p.partnerMode,
+                partner_total: parseFloat(p.partnerTotal) || 0,
+                customer_rate: parseFloat(p.customerRate) || 0,
+                customer_mode: p.customerMode,
+                customer_total: parseFloat(p.customerTotal) || 0,
+                margin_type: p.marginType,
+                margin_percent: parseFloat(p.marginPercent) || 0,
+            })),
+            {
+                is_certified: extras.isCertified,
+                certified_count: extras.certifiedQty,
+                has_apostille: extras.hasApostille,
+                apostille_count: extras.apostilleQty,
+                is_express: extras.isExpress,
+                express_count: extras.expressQty,
+                classification: extras.classification ? 'ja' : 'nein',
+                classification_count: extras.classificationQty,
+                copies_count: extras.copies,
+            }
+        );
     };
 
     return (
@@ -194,6 +252,9 @@ const ProjectFinancesTab = ({
                                 positions={positions}
                                 setPositions={setPositions}
                                 disabled={isLocked}
+                                extraRows={extraRows}
+                                onToggleExtra={handleToggleExtra}
+                                onUpdateExtraQty={handleUpdateExtraQty}
                             />
                         </div>
                     </div>
@@ -234,12 +295,12 @@ const ProjectFinancesTab = ({
                         remainingBalance={financials.open}
                         profit={financials.margin}
                         profitMargin={financials.marginPercent}
-                        isCertified={projectData.isCertified || !!projectData.is_certified}
-                        hasApostille={projectData.hasApostille || !!projectData.has_apostille}
-                        isExpress={projectData.isExpress || !!projectData.is_express}
-                        classification={projectData.classification === 'ja' || projectData.classification === true ? 'ja' : 'nein'}
-                        copies={projectData.copies || projectData.copies_count || 0}
-                        copyPrice={(projectData.copyPrice || projectData.copy_price || '5').toString()}
+                        isCertified={extras.isCertified}
+                        hasApostille={extras.hasApostille}
+                        isExpress={extras.isExpress}
+                        classification={extras.classification ? 'ja' : 'nein'}
+                        copies={extras.copies}
+                        copyPrice={extras.copyPrice.toString()}
                     />
 
                     {/* Invoice Status Card */}

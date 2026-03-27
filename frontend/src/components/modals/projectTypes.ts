@@ -2,7 +2,8 @@ export interface ProjectPosition {
     id: string;
     description: string;
     unit: string;
-    quantity: string;          // Menge (einziges Mengenfeld)
+    amount: string;             // Wort/Zeilenanzahl (Menge 1)
+    quantity: string;           // Anzahl der Dokumente (Menge 2)
     partnerRate: string;
     partnerMode: string;       // 'unit' | 'flat'
     partnerTotal: string;

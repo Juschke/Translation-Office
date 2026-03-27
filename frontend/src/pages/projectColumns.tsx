@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
-import { FaArrowRight, FaEdit, FaTrash, FaEye, FaTrashRestore, FaTimes, FaCheckCircle, FaTimesCircle, FaEnvelope } from 'react-icons/fa';
+import { FaArrowRight, FaEdit, FaTrash, FaEye, FaTrashRestore, FaCheckCircle } from 'react-icons/fa';
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
 
@@ -211,12 +211,9 @@ export function buildProjectColumns({
                         {isPaid ? (
                             <FaCheckCircle className="text-emerald-500 text-xs" title="Vollständig bezahlt" />
                         ) : (
-                            <>
-                                <FaTimesCircle className="text-red-400 text-[8px]" title="Zahlung offen" />
-                                <span className={clsx('text-[11px]', parseFloat(p.down_payment) > 0 ? 'text-slate-600 font-medium' : 'text-slate-300')}>
-                                    {parseFloat(p.down_payment || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                                </span>
-                            </>
+                            <span className={clsx('text-[11px]', parseFloat(p.down_payment) > 0 ? 'text-slate-600 font-medium' : 'text-slate-300')}>
+                                {parseFloat(p.down_payment || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                            </span>
                         )}
                     </div>
                 );

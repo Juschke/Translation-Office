@@ -92,7 +92,9 @@ export function mapProjectResponse(projectResponse: any) {
         documentsSent: !!projectResponse.documents_sent,
         pm: projectResponse.pm?.name || 'Admin',
         createdAt: new Date(projectResponse.created_at).toLocaleDateString('de-DE'),
+        createdAtRaw: projectResponse.created_at,
         updatedAt: new Date(projectResponse.updated_at).toLocaleDateString('de-DE'),
+        updatedAtRaw: projectResponse.updated_at,
         creator: projectResponse.creator,
         editor: projectResponse.editor,
         positions: (projectResponse.positions || []).map((p: any) => ({

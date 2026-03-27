@@ -40,12 +40,12 @@ const SECTION_NUM = 'w-7 h-7 rounded-md bg-slate-900 text-white flex items-cente
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
 const statusOptions = [
-    { value: 'offer', label: 'Neu' },
-    { value: 'in_progress', label: 'Bearbeitung' },
-    { value: 'delivered', label: 'Geliefert' },
-    { value: 'invoiced', label: 'Rechnung' },
-    { value: 'ready_for_pickup', label: 'Abholbereit' },
-    { value: 'completed', label: 'Abgeschlossen' }
+    { value: 'offer', label: 'Neu / Angebot', group: 'Schritt 1: Angebot' },
+    { value: 'in_progress', label: 'In Bearbeitung', group: 'Schritt 2: Produktion' },
+    { value: 'ready_for_pickup', label: 'Abholbereit', group: 'Schritt 3: Lieferung' },
+    { value: 'delivered', label: 'Geliefert / Versendet', group: 'Schritt 3: Lieferung' },
+    { value: 'invoiced', label: 'Rechnung gestellt', group: 'Schritt 4: Abschluss' },
+    { value: 'completed', label: 'Projekt abgeschlossen', group: 'Schritt 4: Abschluss' }
 ];
 
 /* ─── Tooltip Helper ─── */
@@ -94,14 +94,18 @@ const NewProject = () => {
     const [status, setStatus] = useState('offer');
     const [withTax, setWithTax] = useState(true);
     const [isCertified, setIsCertified] = useState(true);
+    const [certifiedQty, setCertifiedQty] = useState(1);
     const [hasApostille, setHasApostille] = useState(false);
+    const [apostilleQty, setApostilleQty] = useState(1);
     const [isExpress, setIsExpress] = useState(false);
+    const [expressQty, setExpressQty] = useState(1);
     const [classification, setClassification] = useState('nein');
+    const [classificationQty, setClassificationQty] = useState(1);
     const [copies, setCopies] = useState(0);
     const [copyPrice, setCopyPrice] = useState('5.00');
     const [positions, setPositions] = useState<ProjectPosition[]>([{
         id: Date.now().toString(), description: 'Übersetzung',
-        unit: 'Normzeile', quantity: '1.00', partnerRate: '0.00', partnerMode: 'unit',
+        unit: 'Normzeile', amount: '1.00', quantity: '1.00', partnerRate: '0.00', partnerMode: 'unit',
         partnerTotal: '0.00', customerRate: '0.00', customerTotal: '0.00',
         customerMode: 'rate', marginType: 'markup', marginPercent: '0.00'
     }]);
@@ -223,9 +227,13 @@ const NewProject = () => {
             setPriority(initialData.priority || 'medium');
             setStatus(initialData.status || 'draft');
             setIsCertified(initialData.isCertified || !!initialData.is_certified);
+            setCertifiedQty(initialData.certified_count || 1);
             setHasApostille(initialData.hasApostille || !!initialData.has_apostille);
+            setApostilleQty(initialData.apostille_count || 1);
             setIsExpress(initialData.isExpress || !!initialData.is_express);
+            setExpressQty(initialData.express_count || 1);
             setClassification(initialData.classification === 'ja' || initialData.classification === true ? 'ja' : 'nein');
+            setClassificationQty(initialData.classification_count || 1);
             setCopies(initialData.copies || initialData.copies_count || 0);
             setCopyPrice(String(initialData.copyPrice || initialData.copy_price || '5'));
             const dt: string[] = [];
@@ -272,7 +280,7 @@ const NewProject = () => {
     });
 
     // ── Financials ──
-    const extraCosts = (isCertified ? 5 : 0) + (hasApostille ? 15 : 0) + (isExpress ? 15 : 0) + (classification === 'ja' ? 15 : 0) + (copies * Number(copyPrice) || 0);
+    const extraCosts = (isCertified ? 5 * certifiedQty : 0) + (hasApostille ? 15 * apostilleQty : 0) + (isExpress ? 15 * expressQty : 0) + (classification === 'ja' ? 15 * classificationQty : 0) + (copies * Number(copyPrice) || 0);
     const baseNet = parseFloat(totalPrice) || 0;
     const calcNet = baseNet + extraCosts;
     const calcTax = withTax ? calcNet * 0.19 : 0;
@@ -310,7 +318,10 @@ const NewProject = () => {
         const payload: any = {
             project_name: finalName, customer_id: parseInt(customer), partner_id: translator ? parseInt(translator) : null,
             source_lang_id: sourceLangId, target_lang_id: targetLangId, deadline, priority, status,
-            is_certified: isCertified, has_apostille: hasApostille, is_express: isExpress, classification: classification === 'ja',
+            is_certified: isCertified, certified_count: certifiedQty,
+            has_apostille: hasApostille, apostille_count: apostilleQty,
+            is_express: isExpress, express_count: expressQty,
+            classification: classification === 'ja', classification_count: classificationQty,
             copies_count: copies, copy_price: parseFloat(copyPrice) || 0, price_total: calcNet,
             partner_cost_net: parseFloat(partnerPrice) || 0, document_type_id: docType.length > 0 ? parseInt(docType[0]) : null,
             additional_doc_types: docType.length > 1 ? docType.slice(1) : null, notes,
@@ -346,7 +357,7 @@ const NewProject = () => {
     return (
         <div className="fade-in pb-12">
             {/* ── Sticky Header ── */}
-            <div className="sticky top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-6 shadow-sm">
+            <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-6 shadow-sm">
                 <div className="flex items-center justify-between max-w-6xl mx-auto">
                     <div className="flex items-center gap-4">
                         <button onClick={() => navigate('/projects')} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition">
@@ -404,7 +415,7 @@ const NewProject = () => {
                                 </div>
                             </FormRow>
                             <FormRow label="Status" tooltip="Aktueller Bearbeitungsstatus des Projekts." error={validationErrors.has('status')} id="field-status">
-                                <SearchableSelect options={statusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} />
+                                <SearchableSelect options={statusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} preserveOrder={true} />
                             </FormRow>
                             <FormRow label="Liefertermin" tooltip="Geplanter Abgabetermin inkl. Uhrzeit.">
                                 <DatePicker showTime format="DD.MM.YYYY HH:mm" value={deadline ? dayjs(deadline) : null}
@@ -458,38 +469,37 @@ const NewProject = () => {
                             </FormRow>
 
                             {/* Partner suggestion table */}
-                            <div className="mt-4 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-medium text-slate-400">Vorschläge basierend auf Sprache</span>
+                            <div className="mt-4">
+                                <div className="flex justify-end mb-2">
                                     <div className="relative w-40">
                                         <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-xs" />
                                         <input type="text" placeholder="Suchen..." value={partnerSearch} onChange={e => setPartnerSearch(e.target.value)}
-                                            className="w-full pl-7 pr-2 py-1.5 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:border-slate-400 transition" />
+                                            className="w-full pl-7 pr-2 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:outline-none focus:border-slate-400 transition" />
                                     </div>
                                 </div>
-                                <div className="border border-slate-200 rounded-md bg-white overflow-hidden max-h-[200px] overflow-y-auto custom-scrollbar">
+                                <div className="border border-slate-200 rounded-sm bg-white overflow-hidden max-h-[200px] overflow-y-auto custom-scrollbar shadow-sm">
                                     <table className="w-full text-left border-collapse">
-                                        <thead className="sticky top-0 bg-white z-10 border-b border-slate-100">
+                                        <thead className="sticky top-0 bg-white border-b border-slate-200">
                                             <tr>
-                                                <th className="px-3 py-2 text-xs font-semibold text-slate-400">Partner</th>
-                                                <th className="px-3 py-2 text-xs font-semibold text-slate-400">Sprachen</th>
-                                                <th className="px-3 py-2 text-xs font-semibold text-slate-400 text-right w-16">Wählen</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Partner</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Sprachen</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-16">Wählen</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-50">
+                                        <tbody className="divide-y divide-slate-100">
                                             {[...matchingPartners, ...otherPartners].map((p: any) => (
                                                 <tr key={p.id} className={clsx('group transition-colors cursor-pointer hover:bg-slate-50', translator === p.id.toString() && 'bg-brand-primary/5')}
                                                     onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}>
-                                                    <td className="px-3 py-2">
+                                                    <td className="px-4 py-2">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
+                                                            <div className="w-6 h-6 rounded bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
                                                             <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-3 py-2">
-                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded text-[10px] font-medium border bg-white text-slate-400 border-slate-100">{l}</span>)}</div>
+                                                    <td className="px-4 py-2">
+                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded text-[9px] font-black tracking-tighter border bg-white text-slate-400 border-slate-100 uppercase">{l}</span>)}</div>
                                                     </td>
-                                                    <td className="px-3 py-2 text-right">
+                                                    <td className="px-4 py-2 text-right">
                                                         <div className={clsx('inline-flex items-center justify-center w-5 h-5 rounded-full border transition', translator === p.id.toString() ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200 text-transparent')}>
                                                             <FaCheck className="text-[10px]" />
                                                         </div>
@@ -497,7 +507,7 @@ const NewProject = () => {
                                                 </tr>
                                             ))}
                                             {matchingPartners.length === 0 && otherPartners.length === 0 && (
-                                                <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-400 italic text-xs">Keine Partner gefunden</td></tr>
+                                                <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-300 italic text-xs">Keine Partner gefunden</td></tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -515,16 +525,29 @@ const NewProject = () => {
                         <div className="px-6 pb-5">
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-4 border-b border-slate-100">
                                 {[
-                                    { label: 'Beglaubigung (5€)', val: isCertified ? 'ja' : 'nein', set: (v: string) => setIsCertified(v === 'ja'), tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
-                                    { label: 'Express (15€)', val: isExpress ? 'ja' : 'nein', set: (v: string) => setIsExpress(v === 'ja'), tip: 'Eilzuschlag für schnelle Bearbeitung.' },
-                                    { label: 'Apostille (15€)', val: hasApostille ? 'ja' : 'nein', set: (v: string) => setHasApostille(v === 'ja'), tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
-                                    { label: 'Klassifizierung (15€)', val: classification, set: setClassification, tip: 'Führerschein-Klassifizierung.' },
+                                    { label: 'Beglaubigung (5€)', val: isCertified ? 'ja' : 'nein', set: (v: string) => setIsCertified(v === 'ja'), enabled: isCertified, qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
+                                    { label: 'Express (15€)', val: isExpress ? 'ja' : 'nein', set: (v: string) => setIsExpress(v === 'ja'), enabled: isExpress, qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
+                                    { label: 'Apostille (15€)', val: hasApostille ? 'ja' : 'nein', set: (v: string) => setHasApostille(v === 'ja'), enabled: hasApostille, qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
+                                    { label: 'Klassifizierung (15€)', val: classification, set: setClassification, enabled: classification === 'ja', qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
                                 ].map(opt => (
                                     <div key={opt.label} className="space-y-1">
                                         <label className="text-xs font-medium text-slate-400 flex items-center gap-1">{opt.label} <FieldTip text={opt.tip} /></label>
-                                        <Input isSelect value={opt.val} onChange={e => opt.set(e.target.value)} containerClassName="h-9 text-sm">
-                                            <option value="nein">Nein</option><option value="ja">Ja</option>
-                                        </Input>
+                                        <div className="flex gap-1.5">
+                                            <Input isSelect value={opt.val} onChange={e => opt.set(e.target.value)} containerClassName="h-9 flex-1 text-sm">
+                                                <option value="nein">Nein</option><option value="ja">Ja</option>
+                                            </Input>
+                                            {opt.enabled && (
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    step="1"
+                                                    value={opt.qty}
+                                                    onChange={e => opt.setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                    className="w-14 h-9 text-center text-sm font-medium text-slate-700 border border-slate-200 rounded-md outline-none focus:ring-2 focus:ring-brand-100"
+                                                    title="Menge"
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                                 <div className="space-y-1">
@@ -613,10 +636,10 @@ const NewProject = () => {
                         <h4 className="text-xs font-semibold text-slate-500 pb-2 border-b border-slate-100">Rechnungsvorschau</h4>
                         <div className="space-y-2 text-xs">
                             <div className="flex justify-between text-slate-500"><span>Positionen Netto</span><span>{fmtEur(baseNet)}</span></div>
-                            {isCertified && <div className="flex justify-between text-slate-400 pl-2"><span>+ Beglaubigung</span><span>5,00 €</span></div>}
-                            {hasApostille && <div className="flex justify-between text-slate-400 pl-2"><span>+ Apostille</span><span>15,00 €</span></div>}
-                            {isExpress && <div className="flex justify-between text-slate-400 pl-2"><span>+ Express</span><span>15,00 €</span></div>}
-                            {classification === 'ja' && <div className="flex justify-between text-slate-400 pl-2"><span>+ Klassifizierung</span><span>15,00 €</span></div>}
+                            {isCertified && <div className="flex justify-between text-slate-400 pl-2"><span>+ Beglaubigung {certifiedQty > 1 ? `(${certifiedQty}×)` : ''}</span><span>{fmtEur(5 * certifiedQty)}</span></div>}
+                            {hasApostille && <div className="flex justify-between text-slate-400 pl-2"><span>+ Apostille {apostilleQty > 1 ? `(${apostilleQty}×)` : ''}</span><span>{fmtEur(15 * apostilleQty)}</span></div>}
+                            {isExpress && <div className="flex justify-between text-slate-400 pl-2"><span>+ Express {expressQty > 1 ? `(${expressQty}×)` : ''}</span><span>{fmtEur(15 * expressQty)}</span></div>}
+                            {classification === 'ja' && <div className="flex justify-between text-slate-400 pl-2"><span>+ Klassifizierung {classificationQty > 1 ? `(${classificationQty}×)` : ''}</span><span>{fmtEur(15 * classificationQty)}</span></div>}
                             {copies > 0 && <div className="flex justify-between text-slate-400 pl-2"><span>+ Kopien ({copies}×)</span><span>{fmtEur(copies * Number(copyPrice))}</span></div>}
                             <div className="pt-2 border-t border-slate-100 flex justify-between font-medium text-slate-800"><span>Gesamt Netto</span><span>{fmtEur(calcNet)}</span></div>
                             <div className="flex justify-between text-slate-400"><span>MwSt. 19%</span><span>{fmtEur(calcTax)}</span></div>

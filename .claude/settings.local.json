@@ -25,7 +25,8 @@
       "Bash(cd /c/xampp/htdocs/Translation-Office/backend && composer dump-autoload 2>&1)",
       "Bash(mv:*)",
       "Bash(composer show:*)",
-      "Bash(mysql:*)"
+      "Bash(mysql:*)",
+      "Bash(grep -rn \"TooltipProvider\\\\|from.*tooltip\" \"C:\\\\xampp\\\\htdocs\\\\Translation-Office\\\\frontend\\\\src\\\\components\\\\ui\"\" --include=\"*.tsx\" -l 2>/dev/null; grep -n \"TooltipProvider\" \"C:xampphtdocsTranslation-OfficefrontendsrcpagesNewProject.tsx \")"
     ]
   }
 }

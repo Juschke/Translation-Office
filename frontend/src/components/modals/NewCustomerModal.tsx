@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FaTimes, FaPlus, FaTrash, FaEnvelope, FaExclamationTriangle, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaEnvelope, FaExclamationTriangle, FaExternalLinkAlt, FaInfoCircle } from 'react-icons/fa';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { customerService, settingsService } from '../../api/services';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -11,6 +12,21 @@ import { IMaskInput } from 'react-imask';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/button';
+
+const FieldTip = ({ text }: { text: string }) => (
+    <TooltipProvider delayDuration={200}>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <span className="text-slate-300 hover:text-slate-500 transition cursor-help">
+                    <FaInfoCircle className="text-[10px]" />
+                </span>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p className="text-xs max-w-52">{text}</p>
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
+);
 
 const legalFormOptions = [
     { value: 'Einzelunternehmen', label: 'Einzelunternehmen' },
@@ -161,7 +177,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         });
     };
 
-    const [activeTab, setActiveTab] = useState<'general' | 'address' | 'accounting' | 'notes'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'accounting' | 'notes'>('general');
 
     // Debounced duplication check
     useEffect(() => {
@@ -305,11 +321,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         } else {
             const errorMsgs = Object.values(validation.errors);
 
-            if (!formData.last_name || !formData.first_name || ((formData.type === 'company' || formData.type === 'authority') && !formData.company_name) || (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))) {
-                setActiveTab('general');
-            } else if (!formData.address_street || !formData.address_house_no || !formData.address_zip || !formData.address_city) {
-                setActiveTab('address');
-            }
+            setActiveTab('general');
 
             toast.error(
                 <div className="flex flex-col gap-1">
@@ -473,7 +485,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         {/* Tab Bar */}
                         <div className="flex space-x-1 border-b border-slate-200 mb-4 shrink-0 overflow-x-auto custom-scrollbar pb-1">
                             <button type="button" onClick={() => setActiveTab('general')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'general' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Allgemein</button>
-                            <button type="button" onClick={() => setActiveTab('address')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'address' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Adresse</button>
                             <button type="button" onClick={() => setActiveTab('accounting')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'accounting' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Buchhaltung & Bank</button>
                             <button type="button" onClick={() => setActiveTab('notes')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'notes' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Erweitert</button>
                         </div>
@@ -507,8 +518,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                     name="company_name"
                                                     value={formData.company_name}
                                                     onChange={handleChange}
+                                                    tooltip={formData.type === 'authority' ? 'Name der Behörde oder öffentlichen Institution' : 'Vollständiger Firmenname für Rechnungen und Briefkopf'}
                                                     placeholder={formData.type === 'authority' ? 'z.B. Standesamt Kassel' : 'z.B. Muster GmbH'}
-                                                    helperText={getError('company_name') || (formData.type === 'authority' ? 'Name der Behörde' : 'Firmenname')}
                                                     error={!!getError('company_name') || duplicates.some(d => d.company_name === formData.company_name && formData.company_name !== '')}
                                                 />
                                                 {formData.type === 'authority' ? (
@@ -517,8 +528,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                         name="leitweg_id"
                                                         value={formData.leitweg_id}
                                                         onChange={handleChange}
+                                                        tooltip="Erforderlich für XRechnung / ZUGFeRD — Format: Gemeindeschlüssel-Steuernummer-Prüfziffer"
                                                         placeholder="z.B. 1234-5678-90"
-                                                        helperText="Erforderlich für XRechnung / ZUGFeRD"
                                                     />
                                                 ) : (
                                                     <div className="md:mt-0">
@@ -534,43 +545,45 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                             </div>
                                         )}
 
-                                        <div className="col-span-12 md:col-span-2">
-                                            <Input
-                                                isSelect
-                                                label="Anrede"
-                                                name="salutation"
-                                                value={formData.salutation}
-                                                onChange={handleChange}
-                                                helperText="Anrede"
-                                            >
-                                                <option value="Herr">Herr</option>
-                                                <option value="Frau">Frau</option>
-                                                <option value="Divers">Divers</option>
-                                            </Input>
-                                        </div>
-                                        <div className="col-span-12 md:col-span-4">
-                                            <Input
-                                                label="Vorname *"
-                                                name="first_name"
-                                                value={formData.first_name}
-                                                onChange={handleChange}
-                                                required
-                                                placeholder="Max"
-                                                helperText={getError('first_name') || 'Vorname'}
-                                                error={!!getError('first_name') || duplicates.some(d => d.first_name === formData.first_name && d.last_name === formData.last_name && formData.first_name !== '')}
-                                            />
-                                        </div>
-                                        <div className="col-span-12 md:col-span-6">
-                                            <Input
-                                                label="Nachname *"
-                                                name="last_name"
-                                                value={formData.last_name}
-                                                onChange={handleChange}
-                                                required
-                                                placeholder="Mustermann"
-                                                helperText={getError('last_name') || 'Nachname'}
-                                                error={!!getError('last_name') || duplicates.some(d => d.last_name === formData.last_name && formData.last_name !== '')}
-                                            />
+                                        <div className="col-span-12 grid grid-cols-12 gap-x-6 items-end">
+                                            <div className="col-span-12 md:col-span-2">
+                                                <Input
+                                                    isSelect
+                                                    label="Anrede"
+                                                    tooltip="Förmliche Anrede für Briefkopf und E-Mail-Vorlagen"
+                                                    name="salutation"
+                                                    value={formData.salutation}
+                                                    onChange={handleChange}
+                                                >
+                                                    <option value="Herr">Herr</option>
+                                                    <option value="Frau">Frau</option>
+                                                    <option value="Divers">Divers</option>
+                                                </Input>
+                                            </div>
+                                            <div className="col-span-12 md:col-span-4">
+                                                <Input
+                                                    label="Vorname *"
+                                                    tooltip="Vorname des Ansprechpartners"
+                                                    name="first_name"
+                                                    value={formData.first_name}
+                                                    onChange={handleChange}
+                                                    required
+                                                    placeholder="Max"
+                                                    error={!!getError('first_name') || duplicates.some(d => d.first_name === formData.first_name && d.last_name === formData.last_name && formData.first_name !== '')}
+                                                />
+                                            </div>
+                                            <div className="col-span-12 md:col-span-6">
+                                                <Input
+                                                    label="Nachname *"
+                                                    tooltip="Nachname des Ansprechpartners"
+                                                    name="last_name"
+                                                    value={formData.last_name}
+                                                    onChange={handleChange}
+                                                    required
+                                                    placeholder="Mustermann"
+                                                    error={!!getError('last_name') || duplicates.some(d => d.last_name === formData.last_name && formData.last_name !== '')}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -586,17 +599,17 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         <div className="col-span-12 md:col-span-6 space-y-4">
                                             <Input
                                                 label="E-Mail (Primär)"
+                                                tooltip="Hauptadresse für Rechnungsversand und Benachrichtigungen"
                                                 name="email"
                                                 value={formData.email}
                                                 onChange={handleChange}
                                                 type="email"
                                                 startIcon={<FaEnvelope />}
                                                 placeholder="max.mustermann@beispiel.de"
-                                                helperText={getError('email') || 'Hauptadresse für E-Mails und Dokumente'}
                                                 error={!!getError('email') || duplicates.some(d => d.email === formData.email && formData.email !== '')}
                                             />
 
-                                            <div className="space-y-2">
+                                            <div className="space-y-1">
                                                 {formData.additional_emails.map((email, i) => (
                                                     <div key={i} className="flex gap-2 group animate-fadeIn items-start">
                                                         <Input
@@ -617,23 +630,26 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                     </div>
                                                 ))}
                                                 {formData.additional_emails.length < 3 && (
-                                                    <button type="button" onClick={() => addField('additional_emails')} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-2 ml-1">
-                                                        <FaPlus className="text-xs" /> Weitere E-Mail hinzufügen
+                                                    <button type="button" onClick={() => addField('additional_emails')} className="text-xs text-slate-400 font-medium flex items-center gap-1.5 hover:text-slate-700 transition-colors py-1 ml-1">
+                                                        <FaPlus className="text-[10px]" /> Weitere E-Mail
                                                     </button>
                                                 )}
                                             </div>
                                         </div>
 
                                         <div className="col-span-12 md:col-span-6 space-y-4">
-                                            <PhoneInput
-                                                label="Telefon / Mobil"
-                                                value={formData.phone}
-                                                onChange={handlePhoneChange}
-                                                helperText={getError('phone') || 'Format: +49 123 456789'}
-                                                error={!!getError('phone') || duplicates.some(d => d.phone === formData.phone && formData.phone !== '')}
-                                            />
+                                            <div>
+                                                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                                                    Telefon / Mobil <FieldTip text="Haupttelefonnummer des Kunden inkl. Ländervorwahl" />
+                                                </label>
+                                                <PhoneInput
+                                                    value={formData.phone}
+                                                    onChange={handlePhoneChange}
+                                                    error={!!getError('phone') || duplicates.some(d => d.phone === formData.phone && formData.phone !== '')}
+                                                />
+                                            </div>
 
-                                            <div className="space-y-2">
+                                            <div className="space-y-1">
                                                 {formData.additional_phones.map((phone, i) => (
                                                     <div key={i} className="flex gap-2 group animate-fadeIn items-start">
                                                         <div className="flex-1">
@@ -652,18 +668,14 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                     </div>
                                                 ))}
                                                 {formData.additional_phones.length < 3 && (
-                                                    <button type="button" onClick={() => addField('additional_phones')} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-2 ml-1">
-                                                        <FaPlus className="text-xs" /> Weitere Nummer hinzufügen
+                                                    <button type="button" onClick={() => addField('additional_phones')} className="text-xs text-slate-400 font-medium flex items-center gap-1.5 hover:text-slate-700 transition-colors py-1 ml-1">
+                                                        <FaPlus className="text-[10px]" /> Weitere Nummer
                                                     </button>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* TAB: Adresse */}
-                            <div className={clsx("space-y-6", activeTab !== 'address' && "hidden")}>
                                 {/* Section 3: Address */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
@@ -710,12 +722,12 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         <div className="col-span-12 md:col-span-4">
                                             <Input
                                                 label="Zahlungsziel (Tage)"
+                                                tooltip="Standardfrist in Tagen nach Rechnungsdatum, z.B. 14 oder 30"
                                                 name="payment_terms_days"
                                                 type="number"
                                                 value={formData.payment_terms_days}
                                                 onChange={handleChange}
                                                 placeholder="14"
-                                                helperText="Standard-Zahlungsfrist für Rechnungen"
                                             />
                                         </div>
                                         {formData.type !== 'private' && (
@@ -723,6 +735,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 <div className="col-span-12 md:col-span-4">
                                                     <Input
                                                         label="USt-IdNr."
+                                                        tooltip="Umsatzsteuer-Identifikationsnummer für EU-Rechnungen (z.B. DE123456789)"
                                                         name="vat_id"
                                                         value={formData.vat_id}
                                                         onChange={handleChange}
@@ -732,6 +745,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 <div className="col-span-12 md:col-span-4">
                                                     <Input
                                                         label="Steuernummer"
+                                                        tooltip="Vom Finanzamt vergebene Steuernummer des Unternehmens"
                                                         name="tax_id"
                                                         value={formData.tax_id}
                                                         onChange={handleChange}
@@ -754,16 +768,16 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         <div className="col-span-12">
                                             <Input
                                                 label="Kontoinhaber"
+                                                tooltip="Name des Kontoinhabers, wie auf dem Bankkonto eingetragen"
                                                 name="bank_account_holder"
                                                 value={formData.bank_account_holder}
                                                 onChange={handleChange}
                                                 placeholder={formData.type === 'company' || formData.type === 'authority' ? formData.company_name || 'Musterfirma GmbH' : `${formData.first_name || 'Max'} ${formData.last_name || 'Mustermann'}`.trim()}
-                                                helperText="Automatisch vorausgefüllt basierend auf dem Namen."
                                             />
                                         </div>
                                         <div className="col-span-12">
                                             <div className="flex flex-col">
-                                                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">IBAN</label>
+                                                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">IBAN <FieldTip text="Internationale Bankkontonummer — BIC und Bankname werden automatisch erkannt" /></label>
                                                 <div className="relative">
                                                     <IMaskInput
                                                         mask="aa00 0000 0000 0000 0000 00"
@@ -793,6 +807,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         <div className="col-span-12 md:col-span-4">
                                             <Input
                                                 label="Bankname"
+                                                tooltip="Wird bei gültiger IBAN automatisch befüllt"
                                                 name="bank_name"
                                                 value={formData.bank_name}
                                                 onChange={handleChange}
@@ -802,6 +817,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         <div className="col-span-12 md:col-span-4">
                                             <Input
                                                 label="BLZ"
+                                                tooltip="Deutsche Bankleitzahl (8 Stellen)"
                                                 name="bank_code"
                                                 value={formData.bank_code}
                                                 onChange={handleChange}
@@ -810,7 +826,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         </div>
                                         <div className="col-span-12 md:col-span-4">
                                             <div className="flex flex-col">
-                                                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">BIC</label>
+                                                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">BIC <FieldTip text="Bank Identifier Code (SWIFT-Code) — wird bei IBAN-Eingabe automatisch erkannt" /></label>
                                                 <IMaskInput
                                                     mask="aaaaaa aa [aaa]"
                                                     definitions={{ 'a': /[a-zA-Z0-9]/ }}
@@ -841,14 +857,13 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         <h4 className="text-xs font-semibold text-slate-800">Interne Akte</h4>
                                     </div>
                                     <div className="flex flex-col">
-                                        <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Interne Notizen</label>
+                                        <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">Interne Notizen <FieldTip text="Nur für Mitarbeiter sichtbar — Besonderheiten, Präferenzen, Kundenhistorie" /></label>
                                         <Input
                                             isTextArea
                                             name="notes"
                                             value={formData.notes}
                                             onChange={handleChange}
                                             placeholder="Interne Bemerkungen, Besonderheiten des Kunden, Historie..."
-                                            helperText="Informationen sind nur für Mitarbeiter sichtbar"
                                         />
                                     </div>
                                 </div>

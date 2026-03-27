@@ -145,10 +145,21 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
       setFormData(prev => ({
         ...prev,
         ...initialData,
-        unitRates: { ...prev.unitRates, ...(initialData.unitRates || {}) },
-        flatRates: { ...prev.flatRates, ...(initialData.flatRates || {}) },
-        emails: initialData.emails || (initialData.email ? [initialData.email] : ['']),
-        phones: initialData.phones || (initialData.phone ? [initialData.phone] : ['']),
+        // Map backend snake_case to frontend camelCase
+        firstName: initialData.firstName || initialData.first_name || '',
+        lastName: initialData.lastName || initialData.last_name || '',
+        street: initialData.street || initialData.address_street || '',
+        houseNo: initialData.houseNo || initialData.address_house_no || '',
+        zip: initialData.zip || initialData.address_zip || '',
+        city: initialData.city || initialData.address_city || '',
+        taxId: initialData.taxId || initialData.tax_id || '',
+        paymentTerms: initialData.paymentTerms?.toString() || initialData.payment_terms?.toString() || '30',
+        priceMode: initialData.priceMode || initialData.price_mode || 'per_unit',
+        bankName: initialData.bankName || initialData.bank_name || '',
+        unitRates: { ...prev.unitRates, ...(initialData.unit_rates || initialData.unitRates || {}) },
+        flatRates: { ...prev.flatRates, ...(initialData.flat_rates || initialData.flatRates || {}) },
+        emails: initialData.emails || (initialData.email ? [initialData.email] : (initialData.additional_emails ? [initialData.email, ...initialData.additional_emails] : [''])),
+        phones: initialData.phones || (initialData.phone ? [initialData.phone] : (initialData.additional_phones ? [initialData.phone, ...initialData.additional_phones] : [''])),
         languages: Array.isArray(initialData.languages) ? initialData.languages : (typeof initialData.languages === 'string' ? initialData.languages.split(',').map((l: string) => l.trim()) : []),
         domains: Array.isArray(initialData.domains) ? initialData.domains : (typeof initialData.domains === 'string' ? initialData.domains.split(',').map((d: string) => d.trim()) : [])
       }));
@@ -179,8 +190,9 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
 
       if (searchEmail.length > 3 || (searchLast.length > 3) || (searchCompany.length > 3)) {
         try {
-          const results = await partnerService.search({
+          const results = await partnerService.checkDuplicates({
             email: searchEmail,
+            firstName: formData.firstName,
             lastName: searchLast,
             company: searchCompany
           });
