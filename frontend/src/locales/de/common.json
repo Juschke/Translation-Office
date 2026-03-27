@@ -1,4 +1,22 @@
 {
+  "common": {
+    "number": "Nummer",
+    "number_short": "Nr.",
+    "designation": "Bezeichnung",
+    "language_pair": "Sprachpaar",
+    "down_payment": "Anzahlung",
+    "total_price": "Gesamtpreis",
+    "status": "Status",
+    "actions": "Aktionen",
+    "details": "Details",
+    "export": "Export",
+    "all": "Alle",
+    "yes": "Ja",
+    "no": "Nein",
+    "search": "Suchen",
+    "filter": "Filter",
+    "loading": "Laden..."
+  },
   "actions": {
     "save": "Speichern",
     "cancel": "Abbrechen",
@@ -61,30 +79,27 @@
   },
   "settings": {
     "tabs": {
-      "profile": "Profil",
       "company": "Unternehmen",
-      "subscription": "Abonnement",
-      "invoice": "Rechnung & Angebot",
-      "master_data": "Stammdaten",
+      "invoice": "Finanzen & Dokumentlayouts",
+      "master_data": "Stammdatenverwaltung",
       "notifications": "Benachrichtigungen",
-      "audit": "Audit Logs",
+      "audit": "Systemprotokoll",
       "languages": "Sprachen",
-      "doc_types": "Dokumentarten",
-      "services": "Dienstleistungen",
-      "email_templates": "Email Vorlagen",
+      "doc_types": "Dokumenttypen",
+      "services": "Leistungskatalog",
+      "email_templates": "Email-Vorlagen",
       "specializations": "Fachgebiete",
       "units": "Einheiten",
       "currencies": "Währungen"
     },
     "master_data": {
-      "language_config": "Sprachkonfiguration",
-      "doc_categories": "Dokumenten-Kategorien",
+      "language_config": "Sprachen",
+      "doc_categories": "Dokumenttypen",
       "service_catalog": "Leistungskatalog",
-      "email_templates": "Email Textvorlagen",
+      "email_templates": "Email-Vorlagen",
       "specializations": "Fachgebiete",
       "units": "Einheiten",
       "currencies": "Währungen",
-      "add_new": "Neu hinzufügen",
       "code_iso": "Code (ISO)",
       "language_flag": "Sprache / Flagge",
       "native": "Nativ",
@@ -93,9 +108,25 @@
       "template_name": "Vorlagenname",
       "subject": "Betreff",
       "unit": "Einheit",
+      "abbreviation": "Abkürzung",
+      "type": "Art",
+      "unit_types": {
+        "quantity": "Menge",
+        "time": "Zeitaufwand",
+        "flatrate": "Pauschal"
+      },
       "currency_code": "Währung (ISO)",
       "symbol": "Symbol",
-      "status": "Status"
+      "status": "Status",
+      "category_filter": "Kategorie Filter",
+      "all_items": "Alle anzeigen",
+      "items_found": "{{count}} Einträge gefunden",
+      "add_new": "Neu hinzufügen"
+    },
+    "roles": {
+      "owner": "Inhaber",
+      "manager": "Manager",
+      "employee": "Mitarbeiter"
     }
   },
   "nav": {
@@ -104,17 +135,307 @@
     "customers": "Kunden",
     "partners": "Partner",
     "invoices": "Rechnungen",
-    "inbox": "Posteingang",
+    "inbox": "E-Mail",
     "settings": "Einstellungen",
     "reports": "Berichte",
     "contacts": "Kontakte",
     "interpreters": "Dolmetscher",
     "calendar": "Kalender",
-    "analysis": "Auswertung",
+    "analysis": "Analyse",
     "team": "Mitarbeiter",
     "logout": "Abmelden",
-    "profile": "Profil",
+    "profile": "Mein Profil",
     "subscription": "Abonnement"
+  },
+  "projects": {
+    "title": "Projekte & Aufträge",
+    "subtitle": "Verwalten und überwachen Sie alle Übersetzungsaufträge.",
+    "new_project": "Neues Projekt",
+    "new_short": "Neu",
+    "kanban_view": "Kanban-Ansicht",
+    "list_view": "Tabellenansicht",
+    "search_placeholder": "Suchen nach Projekten...",
+    "board_title": "Projekt-Board",
+    "status": {
+      "draft": "Neu",
+      "offer": "Angebot",
+      "pending": "Neu",
+      "in_progress": "In Bearbeitung",
+      "review": "In Bearbeitung",
+      "ready_for_pickup": "Abholbereit",
+      "invoiced": "Abgerechnet",
+      "delivered": "Geliefert",
+      "completed": "Abgeschlossen",
+      "cancelled": "Storniert",
+      "archived": "Archiviert",
+      "deleted": "Gelöscht"
+    },
+    "kpi": {
+      "active_projects": "Aktive Projekte",
+      "active_count_sub": "von {{total}} Projekten gesamt",
+      "open_assignments": "Offene Zuweisungen",
+      "unassigned": "Noch kein Partner zugewiesen",
+      "all_assigned": "Alle Projekte vergeben",
+      "profitability": "Profitabilität (YTD)",
+      "margin_sub": "{{amount}} Rohmarge",
+      "deadline_alarm": "Deadline Alarm",
+      "on_track": "Alles im Zeitplan",
+      "overdue": "Fällig oder Überfällig"
+    },
+    "filters": {
+      "status_view": "Aktiv / Archiv",
+      "quick_filter": "Schnellfilter",
+      "all_projects": "Alle Projekte",
+      "active": "Aktiv",
+      "archive": "Archiviert",
+      "trash": "Papierkorb",
+      "status_tabs": {
+        "all": "Alle",
+        "offer": "Angebot",
+        "in_progress": "In Bearbeitung",
+        "ready_for_pickup": "Abholbereit",
+        "delivered": "Geliefert",
+        "invoiced": "Abgerechnet",
+        "completed": "Abgeschlossen"
+      },
+      "priority": {
+        "label": "Priorität",
+        "all": "Alle Prioritäten",
+        "standard": "Standard",
+        "normal": "Normal",
+        "high": "Hoch",
+        "express": "Express"
+      },
+      "customers": {
+        "label": "Kunde",
+        "all": "Alle Kunden"
+      },
+      "partners": {
+        "label": "Partner / Übersetzer",
+        "all": "Alle Partner"
+      },
+      "languages": {
+        "source": "Quellsprache",
+        "target": "Zielsprache",
+        "all": "Alle Sprachen"
+      },
+      "deadline": {
+        "label": "Frist",
+        "all": "Alle Fristen",
+        "overdue": "Überfällig",
+        "today": "Heute fällig",
+        "this_week": "Diese Woche",
+        "this_month": "Diesen Monat"
+      },
+      "certified": "Beglaubigt",
+      "apostille": "Apostille",
+      "yes": "Ja",
+      "no": "Nein"
+    },
+    "actions": {
+      "export": "Export",
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF Report",
+      "bulk": {
+        "complete": "Abschließen",
+        "reset": "Zurücksetzen",
+        "send_email": "E-Mail senden",
+        "archive": "Archivieren",
+        "trash": "Papierkorb",
+        "restore": "Wiederherstellen",
+        "delete_permanent": "Endgültig löschen"
+      }
+    },
+    "messages": {
+      "create_success": "Projekt erfolgreich erstellt",
+      "create_error": "Fehler beim Erstellen des Projekts",
+      "update_success": "Projekt erfolgreich aktualisiert",
+      "update_error": "Fehler beim Aktualisieren des Projekts",
+      "delete_success": "Projekt erfolgreich gelöscht",
+      "delete_error": "Fehler beim Löschen des Projekts",
+      "bulk_trash": "{{count}} Projekte in den Papierkorb verschoben",
+      "bulk_update": "{{count}} Projekte aktualisiert",
+      "bulk_delete": "{{count}} Projekte endgültig gelöscht",
+      "bulk_error": "Massenvorgang fehlgeschlagen"
+    }
+  },
+  "customers": {
+    "title": "Kundenstamm",
+    "subtitle": "Zentralverwaltung aller Auftraggeber und Rechnungsadressen.",
+    "new_customer": "Neuer Kunde",
+    "new_short": "Neu",
+    "search_placeholder": "Kunden nach Name, Kontakt oder E-Mail suchen...",
+    "kpi": {
+      "total_customers": "Gesamtkunden",
+      "new_entries": "Neuzugänge",
+      "last_30_days": "Letzte 30 Tage",
+      "top_customer": "Top Auftraggeber",
+      "top_customer_sub": "Höchster Umsatz YTD",
+      "revenue_ytd": "Umsatz YTD",
+      "vs_last_year": "vs. Vorjahr"
+    },
+    "filters": {
+      "type": "Kundentyp",
+      "types": {
+        "all": "Alle",
+        "company": "Firmen",
+        "private": "Privat",
+        "authority": "Behörden"
+      }
+    },
+    "table": {
+      "company": "Unternehmen",
+      "contact": "Ansprechpartner",
+      "address": "Adresse",
+      "phone": "Telefon",
+      "projects": "Projekte",
+      "sales": "Umsatz (YTD)",
+      "id": "ID"
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "deleted": "Gelöscht",
+      "archived": "Archiviert"
+    },
+    "actions": {
+      "activate": "Aktivieren",
+      "deactivate": "Deaktivieren"
+    },
+    "confirm": {
+      "delete_title": "Kunden endgültig löschen",
+      "delete_message": "Sind Sie sicher, dass Sie {{count}} Kunden endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden."
+    },
+    "messages": {
+      "create_success": "Kunde erfolgreich angelegt",
+      "create_error": "Fehler beim Anlegen des Kunden",
+      "update_success": "Kunde erfolgreich aktualisiert",
+      "update_error": "Fehler beim Aktualisieren des Kunden",
+      "delete_success": "Kunde erfolgreich gelöscht",
+      "delete_error": "Fehler beim Löschen des Kunden",
+      "bulk_update_success": "{{count}} Kunden aktualisiert",
+      "bulk_update_error": "Fehler beim Aktualisieren der Kunden",
+      "bulk_delete_success": "{{count}} Kunden endgültig gelöscht",
+      "bulk_delete_error": "Fehler beim endgültigen Löschen"
+    }
+  },
+  "partners": {
+    "title": "Partnernetzwerk",
+    "subtitle": "Verwaltung externer Übersetzer, Dolmetscher und Agenturen.",
+    "new_partner": "Neuer Partner",
+    "new_short": "Neu",
+    "search_placeholder": "Partner nach Name, Sprache oder E-Mail suchen...",
+    "kpi": {
+      "active_partners": "Aktive Partner",
+      "partner_costs": "Partner-Kosten",
+      "avg_per_project": "Ø {{amount}} / Projekt",
+      "quality_average": "Qualitätsfaktor",
+      "rating_sub": "Durchschnittliche Bewertung",
+      "collaboration": "Zusammenarbeit",
+      "projects_this_month": "Projekte diesen Monat"
+    },
+    "filters": {
+      "type": "Partnertyp",
+      "types": {
+        "all": "Alle Partner",
+        "service_providers": "Alle Partner",
+        "translator": "Übersetzer",
+        "interpreter": "Dolmetscher",
+        "agency": "Agenturen"
+      }
+    },
+    "table": {
+      "partner": "Partner / Dienstleister",
+      "projects": "Projekte",
+      "languages": "Sprachen",
+      "location": "Standort",
+      "rating": "Bewertung"
+    },
+    "status": {
+      "available": "Verfügbar",
+      "busy": "Beschäftigt",
+      "vacation": "Urlaub",
+      "blacklisted": "Gesperrt",
+      "archived": "Archiviert",
+      "deleted": "Gelöscht"
+    },
+    "actions": {
+      "lock": "Sperren"
+    },
+    "messages": {
+      "create_success": "Partner erfolgreich angelegt",
+      "create_error": "Fehler beim Anlegen des Partners",
+      "update_success": "Partner erfolgreich aktualisiert",
+      "update_error": "Fehler beim Aktualisieren des Partners",
+      "delete_success": "Partner erfolgreich gelöscht",
+      "delete_error": "Fehler beim Löschen des Partners",
+      "bulk_update_success": "{{count}} Partner aktualisiert"
+    }
+  },
+  "invoices": {
+    "title": "Rechnungen",
+    "subtitle": "Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.",
+    "new_invoice": "Neue Rechnung",
+    "new_credit_note": "Neue Gutschrift",
+    "search_placeholder": "Suchen nach Nr., Kunde oder Projekt...",
+    "kpi": {
+      "open_amount": "Offener Betrag",
+      "paid_total": "Bezahlt (Gesamt)",
+      "overdue_sub": "{{count}} überfällig",
+      "transactions_sub": "{{count}} Transaktionen",
+      "reminders": "Mahnungen",
+      "reminders_sub": "Fällig / Aktiv",
+      "external_costs": "Fremdkosten",
+      "this_month": "Diesen Monat"
+    },
+    "tabs": {
+      "all": "Alle",
+      "open": "Offen",
+      "paid": "Bezahlt",
+      "overdue": "Überfällig",
+      "reminders": "Mahnungen",
+      "cancelled": "Storniert",
+      "credit_notes": "Gutschriften"
+    },
+    "filters": {
+      "invoice_status": "Rechnungsstatus"
+    },
+    "actions": {
+      "paid": "Bezahlt",
+      "send_reminder": "Mahnung senden",
+      "rebuild": "Neu generieren",
+      "print": "Drucken",
+      "download_xml": "XML herunterladen"
+    },
+    "messages": {
+      "create_success": "Rechnung erfolgreich erstellt",
+      "create_error": "Fehler beim Erstellen der Rechnung",
+      "update_success": "Rechnung erfolgreich aktualisiert",
+      "update_error": "Fehler beim Aktualisieren der Rechnung",
+      "delete_success": "Rechnungsentwurf gelöscht",
+      "delete_error": "Fehler beim Löschen des Entwurfs",
+      "bulk_update_success": "{{count}} Rechnungen aktualisiert",
+      "bulk_error": "Rechnungen konnten nicht aktualisiert werden",
+      "issue_success": "Rechnung ausgestellt und gesperrt (GoBD-konform)",
+      "issue_error": "Fehler beim Ausstellen",
+      "cancel_success": "Rechnung storniert, Gutschrift erstellt",
+      "cancel_error": "Fehler beim Stornieren",
+      "paid_success": "Rechnung als bezahlt markiert",
+      "datev_success": "DATEV Export erfolgreich erstellt.",
+      "datev_error": "Fehler beim DATEV Export.",
+      "pdf_error": "Fehler beim Herunterladen der PDF-Datei.",
+      "xml_error": "Fehler beim Herunterladen der XML-Datei.",
+      "print_error": "Fehler beim Öffnen der PDF-Datei zum Drucken."
+    },
+    "confirm": {
+      "cancel_title": "Rechnung stornieren",
+      "cancel_reason": "Storno-Grund (optional)",
+      "cancel_placeholder": "z.B. Fehlerhafte Angaben, Kundenwunsch...",
+      "reminder_title": "Mahnungen versenden",
+      "reminder_message": "{{count}} Mahnungen senden/hochstufen?",
+      "reminders_btn": "Mahnungen senden"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -155,6 +476,175 @@
       "partner_create_error": "Fehler beim Anlegen des Partners",
       "invoice_created": "Rechnung wurde erstellt",
       "invoice_create_error": "Fehler beim Erstellen der Rechnung"
+    }
+  },
+  "calendar": {
+    "title": "Kalender & Termine",
+    "subtitle": "Übersicht über alle Projekte, Rechnungen und Einsätze.",
+    "new_appointment": "Neuer Termin",
+    "new_interpreting": "Neuer Dolmetschereinsatz",
+    "view": {
+      "month": "Monat",
+      "week": "Woche",
+      "day": "Tag"
+    },
+    "sidebar": {
+      "unassigned_projects": "Nicht zugeordnete Projekte",
+      "search_project": "Projekt suchen...",
+      "no_projects": "Keine Projekte ohne Deadline",
+      "all_planned": "Alle Projekte sind bereits geplant",
+      "staff_title": "Personal & Mitarbeiter",
+      "search_staff": "Mitarbeiter suchen...",
+      "no_staff": "Keine Mitarbeiter gefunden",
+      "try_another_search": "Versuchen Sie einen anderen Suchbegriff"
+    },
+    "messages": {
+      "deadline_success": "Deadline gesetzt",
+      "deadline_error": "Fehler beim Setzen der Deadline",
+      "create_success": "Termin erstellt",
+      "create_error": "Fehler beim Erstellen des Termins",
+      "update_success": "Termin aktualisiert",
+      "update_error": "Fehler beim Aktualisieren"
+    },
+    "roles": {
+      "owner": "Inhaber",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "project_manager": "Projektmanager",
+      "translator": "Übersetzer",
+      "interpreter": "Dolmetscher",
+      "editor": "Lektor",
+      "proofreader": "Korrektor",
+      "sales": "Vertrieb",
+      "accounting": "Buchhaltung",
+      "support": "Support",
+      "employee": "Mitarbeiter",
+      "user": "Mitarbeiter"
+    }
+  },
+  "interpreting": {
+    "title": "Dolmetschereinsätze",
+    "subtitle": "Zentrale Verwaltung aller Vor-Ort und Online Dolmetschtertermine.",
+    "new_assignment": "Neuer Einsatz",
+    "new_short": "Neu",
+    "search_placeholder": "Einsätze suchen...",
+    "kpi": {
+      "upcoming": "Anstehend",
+      "completed": "Abgeschlossen",
+      "active_interpreters": "Aktive Dolmetscher",
+      "deployed_partners": "Eingesetzte Partner",
+      "this_month": "Diesen Monat",
+      "assignments": "Einsätze"
+    },
+    "columns": {
+      "date": "Datum & Zeit",
+      "title": "Einsatz / Titel",
+      "customer": "Kunde",
+      "interpreter": "Dolmetscher",
+      "location": "Ort",
+      "not_assigned": "Nicht zugewiesen",
+      "unknown": "Unbekannt"
+    },
+    "actions": {
+      "generate_confirmation": "Dolmetscherbestätigung erzeugen"
+    },
+    "messages": {
+      "create_success": "Einsatz erstellt",
+      "create_error": "Fehler beim Erstellen",
+      "update_success": "Einsatz aktualisiert",
+      "update_error": "Fehler beim Aktualisieren",
+      "delete_success": "Einsatz gelöscht",
+      "delete_error": "Fehler beim Löschen"
+    },
+    "confirm": {
+      "delete_title": "Einsatz löschen",
+      "delete_message": "Sind Sie sicher, dass Sie diesen Dolmetschereinsatz löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden."
+    }
+  },
+  "reports": {
+    "title": "Berichte & Analysen",
+    "subtitle": "Detaillierte Auswertung Ihrer Geschäftsdaten.",
+    "presets": {
+      "last_7_days": "Letzte 7 Tage",
+      "last_30_days": "Letzte 30 Tage",
+      "last_3_months": "Letzte 3 Monate",
+      "last_6_months": "Letzte 6 Monate",
+      "this_year": "Dieses Jahr"
+    },
+    "tabs": {
+      "analytics": "Grafische Analyse",
+      "finance": "Finanz-Auswertung (UStVA)"
+    },
+    "kpi": {
+      "total_revenue": "Gesamtumsatz",
+      "avg_margin": "Netto-Marge Ø",
+      "jobs": "Aufträge",
+      "growth": "Wachstum",
+      "vs_period": "vs. Vorperiode"
+    },
+    "charts": {
+      "revenue_dev": "Umsatzentwicklung",
+      "margin_per_month": "Marge pro Monat",
+      "revenue_by_lang": "Umsatz nach Sprache",
+      "top_customers": "Top Kunden (Umsatz)",
+      "project_status": "Projektstatus",
+      "no_data": "Keine Daten für diesen Zeitraum"
+    },
+    "finance": {
+      "title": "Finanz-Berichte",
+      "subtabs": {
+        "tax": "USt.-Voranmeldung",
+        "profitability": "Rentabilitäts-Analyse",
+        "opos": "OPOS",
+        "bwa": "BWA"
+      },
+      "export_datev": "DATEV XML Export",
+      "tax": {
+        "period": "Meldezeitraum",
+        "revenue_net": "Umsatzerlöse (Netto)",
+        "tax_amount": "Umsatzsteuer",
+        "input_tax": "Vorsteuer",
+        "est_short": "(Schätzung)",
+        "payable_tax": "Zahllast",
+        "reverse_charge": "Rev. Charge",
+        "total": "Gesamt",
+        "empty_msg": "Keine Finanzdaten für diesen Zeitraum vorhanden."
+      },
+      "profitability": {
+        "proj_cust": "Projekt / Kunde",
+        "revenue_net": "Umsatz (Netto)",
+        "cost_net": "Kosten (Netto)",
+        "profit": "Gewinn",
+        "margin": "Marge",
+        "status": "Status",
+        "total": "Gesamt ({{count}} Projekte)",
+        "empty_msg": "Keine Projektdaten für diesen Zeitraum vorhanden."
+      },
+      "opos": {
+        "inv_no": "Rechnungs-Nr.",
+        "due_date": "Fällig am",
+        "overdue_days": "({{count}} Tage drüber)",
+        "amount_gross": "Betrag (Brutto)",
+        "issued": "Ausgestellt",
+        "overdue": "Überfällig",
+        "total_outstanding": "Gesamt ausstehend",
+        "empty_msg": "Keine offenen Posten gefunden."
+      },
+      "bwa": {
+        "month": "Monat",
+        "revenue": "Umsatzerlöse",
+        "material_cost": "Materialaufwand (Fremdleistungen)",
+        "gross_profit": "Rohertrag",
+        "gross_margin": "Rohertragsquote",
+        "empty_msg": "Keine BWA-Daten gefunden."
+      },
+      "hints_title": "Hinweise zur UStVA",
+      "hint_1": "Die Zahllast berechnet sich aus der Summe der vereinnahmten Umsatzsteuer abzüglich der gezahlten Vorsteuer.",
+      "hint_2": "Reverse Charge Umsätze (innergemeinschaftliche Leistungen) sind im Inland steuerfrei, müssen aber in der UStVA gemeldet werden.",
+      "hint_3": "Die Vorsteuer wird aktuell basierend auf den Projektkosten mit 19% geschätzt, solange keine expliziten Eingangsrechnungen erfasst sind.",
+      "export_title": "Finanzamt Export",
+      "export_desc": "Sie können diese Daten direkt für Ihre monatliche oder vierteljährliche Umsatzsteuer-Voranmeldung verwenden. Ein direkter Elster-Export ist in Vorbereitung. Alternativ können Sie die Datenstruktur zur Weitergabe an Ihren Steuerberater exportieren.",
+      "export_btn": "CSV Finanzbericht (UStVA) exportieren"
     }
   },
   "notifications": {

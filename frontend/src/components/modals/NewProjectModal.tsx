@@ -663,8 +663,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     };
 
     return (
-        <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-center justify-center backdrop-blur-sm transition-all py-4 overflow-y-auto">
-            <div className="bg-white rounded-sm shadow-sm w-full max-w-7xl mx-4 overflow-hidden transform scale-100 flex flex-col h-[90vh] relative animate-fadeInUp" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-start justify-center backdrop-blur-sm transition-all overflow-hidden h-screen w-screen">
+            <div className="bg-white w-full h-full flex flex-col relative animate-fadeInUp shadow-2xl" onClick={e => e.stopPropagation()}>
                 {/* Loading Overlay */}
                 {isLoading && (
                     <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-[110] flex items-center justify-center transition-all duration-300">
@@ -709,7 +709,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                     {/* Left Column */}
                     <div className="lg:flex-1 p-3 sm:p-5 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:overflow-hidden">
                         {/* Tab Bar */}
-                        <div className="flex space-x-1 border-b border-slate-200 mb-4 shrink-0 overflow-x-auto custom-scrollbar pb-1">
+                        {/* Tab Bar - Sticky at top */}
+                        <div className="flex space-x-1 border-b border-slate-200 mb-4 shrink-0 overflow-x-auto custom-scrollbar pb-1 sticky top-0 bg-white z-[30] py-2">
                             <button type="button" onClick={() => setActiveTab('general')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'general' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Allgemein</button>
                             <button type="button" onClick={() => setActiveTab('services')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'services' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Leistungen & Finanzen</button>
                             <button type="button" onClick={() => setActiveTab('details')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'details' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Erweitert</button>

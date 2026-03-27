@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -14,23 +15,23 @@ import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 
-const roleTranslations: Record<string, string> = {
-    'owner': 'Inhaber',
-    'admin': 'Administrator',
-    'manager': 'Manager',
-    'project_manager': 'Projektmanager',
-    'translator': 'Übersetzer',
-    'interpreter': 'Dolmetscher',
-    'editor': 'Lektor',
-    'proofreader': 'Korrektor',
-    'sales': 'Vertrieb',
-    'accounting': 'Buchhaltung',
-    'support': 'Support',
-    'employee': 'Mitarbeiter',
-    'user': 'Mitarbeiter'
-};
-
 const Calendar = () => {
+    const { t, i18n } = useTranslation();
+    const roleTranslations: Record<string, string> = {
+        'owner': t('calendar.roles.owner'),
+        'admin': t('calendar.roles.admin'),
+        'manager': t('calendar.roles.manager'),
+        'project_manager': t('calendar.roles.project_manager'),
+        'translator': t('calendar.roles.translator'),
+        'interpreter': t('calendar.roles.interpreter'),
+        'editor': t('calendar.roles.editor'),
+        'proofreader': t('calendar.roles.proofreader'),
+        'sales': t('calendar.roles.sales'),
+        'accounting': t('calendar.roles.accounting'),
+        'support': t('calendar.roles.support'),
+        'employee': t('calendar.roles.employee'),
+        'user': t('calendar.roles.user')
+    };
     const calendarRef = useRef<FullCalendar>(null);
     const queryClient = useQueryClient();
     const navigate = useNavigate();
@@ -132,10 +133,10 @@ const Calendar = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['calendar', 'events'] });
             queryClient.invalidateQueries({ queryKey: ['projects'] });
-            toast.success('Deadline gesetzt');
+            toast.success(t('calendar.messages.deadline_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Setzen der Deadline');
+            toast.error(t('calendar.messages.deadline_error'));
         }
     });
 
@@ -144,9 +145,9 @@ const Calendar = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['calendar', 'events'] });
             setIsModalOpen(false);
-            toast.success('Termin erstellt');
+            toast.success(t('calendar.messages.create_success'));
         },
-        onError: () => toast.error('Fehler beim Erstellen des Termins')
+        onError: () => toast.error(t('calendar.messages.create_error'))
     });
 
     const updateMutation = useMutation({
@@ -174,13 +175,13 @@ const Calendar = () => {
             queryClient.invalidateQueries({ queryKey: ['calendar', 'events'] });
             setIsModalOpen(false);
             setEditingAppointment(null);
-            toast.success('Termin aktualisiert');
+            toast.success(t('calendar.messages.update_success'));
         },
         onError: (_err, _variables, context: any) => {
             if (context?.previousEvents) {
                 queryClient.setQueryData(['calendar', 'events'], context.previousEvents);
             }
-            toast.error('Fehler beim Aktualisieren');
+            toast.error(t('calendar.messages.update_error'));
         }
     });
 
@@ -265,21 +266,21 @@ const Calendar = () => {
         <div className="flex flex-col gap-6 fade-in h-[calc(100vh-140px)]">
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Kalender & Termine</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Übersicht über alle Projekte, Rechnungen und Einsätze.</p>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('calendar.title')}</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('calendar.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                     <Button
                         onClick={() => { setEditingAppointment({ type: 'interpreting' }); setSelectedDate(new Date()); setIsModalOpen(true); }}
                         className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
                     >
-                        <FaPlus className="text-xs text-brand-primary" /> Neuer Dolmetschereinsatz
+                        <FaPlus className="text-xs text-brand-primary" /> {t('calendar.new_interpreting')}
                     </Button>
                     <Button
                         onClick={() => { setEditingAppointment(null); setSelectedDate(new Date()); setIsModalOpen(true); }}
                         className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
                     >
-                        <FaPlus className="text-xs" /> Neuer Termin
+                        <FaPlus className="text-xs" /> {t('calendar.new_appointment')}
                     </Button>
                 </div>
             </div>
@@ -297,7 +298,7 @@ const Calendar = () => {
                                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                             )}
                         >
-                            Monat
+                            {t('calendar.view.month')}
                         </button>
                         <button
                             onClick={() => { setView('timeGridWeek'); calendarRef.current?.getApi().changeView('timeGridWeek'); }}
@@ -308,7 +309,7 @@ const Calendar = () => {
                                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                             )}
                         >
-                            Woche
+                            {t('calendar.view.week')}
                         </button>
                         <button
                             onClick={() => { setView('timeGridDay'); calendarRef.current?.getApi().changeView('timeGridDay'); }}
@@ -319,7 +320,7 @@ const Calendar = () => {
                                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                             )}
                         >
-                            Tag
+                            {t('calendar.view.day')}
                         </button>
                     </div>
                     {isLoading && (
@@ -333,7 +334,7 @@ const Calendar = () => {
                         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                         initialView={view}
                         locales={[deLocale]}
-                        locale="de"
+                        locale={i18n.language}
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
@@ -415,7 +416,7 @@ const Calendar = () => {
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                                         <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
-                                        Nicht zugeordnete Projekte
+                                        {t('calendar.sidebar.unassigned_projects')}
                                     </h3>
                                     <span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-sm">
                                         {unassignedProjects.length}
@@ -425,7 +426,7 @@ const Calendar = () => {
                                     <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]" />
                                     <input
                                         type="text"
-                                        placeholder="Projekt suchen..."
+                                        placeholder={t('calendar.sidebar.search_project')}
                                         value={projectSearch}
                                         onChange={(e) => setProjectSearch(e.target.value)}
                                         className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:ring-2 focus:ring-brand-primary/10 transition-all outline-none"
@@ -484,8 +485,8 @@ const Calendar = () => {
                                         <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                                             <FaSearch className="text-2xl text-slate-300" />
                                         </div>
-                                        <p className="text-xs font-medium">Keine Projekte ohne Deadline</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">Alle Projekte sind bereits geplant</p>
+                                        <p className="text-xs font-medium">{t('calendar.sidebar.no_projects')}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1">{t('calendar.sidebar.all_planned')}</p>
                                     </div>
                                 )}
                             </div>
@@ -495,13 +496,13 @@ const Calendar = () => {
                             <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
                                 <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-3">
                                     <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
-                                    Personal & Mitarbeiter
+                                    {t('calendar.sidebar.staff_title')}
                                 </h3>
                                 <div className="relative">
                                     <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]" />
                                     <input
                                         type="text"
-                                        placeholder="Mitarbeiter suchen..."
+                                        placeholder={t('calendar.sidebar.search_staff')}
                                         value={userSearch}
                                         onChange={(e) => setUserSearch(e.target.value)}
                                         className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:ring-2 focus:ring-brand-primary/10 transition-all outline-none"
@@ -580,8 +581,8 @@ const Calendar = () => {
                                         <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                                             <FaSearch className="text-2xl text-slate-300" />
                                         </div>
-                                        <p className="text-xs font-medium">Keine Mitarbeiter gefunden</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">Versuchen Sie einen anderen Suchbegriff</p>
+                                        <p className="text-xs font-medium">{t('calendar.sidebar.no_staff')}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1">{t('calendar.sidebar.try_another_search')}</p>
                                     </div>
                                 )}
                             </div>

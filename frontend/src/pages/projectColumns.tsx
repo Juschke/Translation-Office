@@ -5,20 +5,20 @@ import { FaArrowRight, FaEdit, FaTrash, FaEye, FaTrashRestore, FaCheckCircle } f
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
 
-export function getStatusBadge(status: string): ReactNode {
+export function getStatusBadge(status: string, t: any): ReactNode {
     const labels: Record<string, string> = {
-        draft: 'Neu',
-        offer: 'Neu',
-        pending: 'Neu',
-        in_progress: 'Bearbeitung',
-        review: 'Bearbeitung',
-        ready_for_pickup: 'Abholbereit',
-        invoiced: 'Rechnung',
-        delivered: 'Geliefert',
-        completed: 'Abgeschlossen',
-        cancelled: 'Storniert',
-        archived: 'Archiviert',
-        deleted: 'Gelöscht',
+        draft: t('projects.status.draft'),
+        offer: t('projects.status.offer'),
+        pending: t('projects.status.pending'),
+        in_progress: t('projects.status.in_progress'),
+        review: t('projects.status.review'),
+        ready_for_pickup: t('projects.status.ready_for_pickup'),
+        invoiced: t('projects.status.invoiced'),
+        delivered: t('projects.status.delivered'),
+        completed: t('projects.status.completed'),
+        cancelled: t('projects.status.cancelled'),
+        archived: t('projects.status.archived'),
+        deleted: t('projects.status.deleted'),
     };
     const styles: Record<string, string> = {
         draft: 'bg-slate-50 text-slate-600 border-slate-200',
@@ -55,6 +55,7 @@ export interface BuildProjectColumnsParams {
     setConfirmTitle: (t: string) => void;
     setConfirmMessage: (m: string) => void;
     setIsConfirmOpen: (v: boolean) => void;
+    t: any;
 }
 
 export function buildProjectColumns({
@@ -66,6 +67,7 @@ export function buildProjectColumns({
     setConfirmTitle,
     setConfirmMessage,
     setIsConfirmOpen,
+    t,
 }: BuildProjectColumnsParams) {
 
     return [
@@ -73,7 +75,7 @@ export function buildProjectColumns({
             id: 'project_number',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">Nr.</span>
+                    <span className="text-xs">{t('common.number_short') || 'Nr.'}</span>
                 </div>
             ),
             accessor: (p: any) => (
@@ -87,7 +89,7 @@ export function buildProjectColumns({
             id: 'project_name',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">Bezeichnung</span>
+                    <span className="text-xs">{t('common.designation') || 'Bezeichnung'}</span>
                 </div>
             ),
             accessor: (p: any) => (
@@ -103,7 +105,7 @@ export function buildProjectColumns({
             id: 'customer',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">Kunde</span>
+                    <span className="text-xs">{t('projects.filters.customers.label')}</span>
                 </div>
             ),
             accessor: (p: any) => {
@@ -131,7 +133,7 @@ export function buildProjectColumns({
             id: 'partner',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">Übersetzer</span>
+                    <span className="text-xs">{t('projects.filters.partners.label')}</span>
                 </div>
             ),
             accessor: (p: any) => {
@@ -158,7 +160,7 @@ export function buildProjectColumns({
             id: 'languages',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">Sprachpaar</span>
+                    <span className="text-xs">{t('common.language_pair') || 'Sprachpaar'}</span>
                 </div>
             ),
             accessor: (p: any) => {
@@ -190,7 +192,7 @@ export function buildProjectColumns({
             id: 'down_payment',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-right">
-                    <span className="text-xs">Anzahlung</span>
+                    <span className="text-xs">{t('common.down_payment') || 'Anzahlung'}</span>
                 </div>
             ),
             accessor: (p: any) => {
@@ -225,7 +227,7 @@ export function buildProjectColumns({
             id: 'price_total',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-right">
-                    <span className="text-xs">Gesamtpreis</span>
+                    <span className="text-xs">{t('common.total_price') || 'Gesamtpreis'}</span>
                 </div>
             ),
             accessor: (p: any) => {
@@ -252,7 +254,7 @@ export function buildProjectColumns({
             id: 'deadline',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">Deadline</span>
+                    <span className="text-xs">{t('projects.filters.deadline.label')}</span>
                 </div>
             ),
             accessor: (p: any) => {
@@ -292,10 +294,10 @@ export function buildProjectColumns({
             id: 'status',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">Status</span>
+                    <span className="text-xs">{t('common.status')}</span>
                 </div>
             ),
-            accessor: (p: any) => getStatusBadge(p.status),
+            accessor: (p: any) => getStatusBadge(p.status, t),
             sortable: true,
             sortKey: 'status',
             width: 110,

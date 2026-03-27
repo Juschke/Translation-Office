@@ -17,9 +17,11 @@ import { customerService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
+import { useTranslation } from 'react-i18next';
 
 
 const Customers = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,10 +77,10 @@ const Customers = () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
-            toast.success('Kunde erfolgreich angelegt');
+            toast.success(t('customers.messages.create_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Anlegen des Kunden');
+            toast.error(t('customers.messages.create_error'));
         }
     });
 
@@ -89,10 +91,10 @@ const Customers = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingCustomer(null);
-            toast.success('Kunde erfolgreich aktualisiert');
+            toast.success(t('customers.messages.update_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Aktualisieren des Kunden');
+            toast.error(t('customers.messages.update_error'));
         }
     });
 
@@ -102,10 +104,10 @@ const Customers = () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
-            toast.success('Kunde erfolgreich gelöscht');
+            toast.success(t('customers.messages.delete_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Löschen des Kunden');
+            toast.error(t('customers.messages.delete_error'));
         }
     });
 
@@ -115,10 +117,10 @@ const Customers = () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
-            toast.success(`${variables.ids.length} Kunden aktualisiert`);
+            toast.success(t('customers.messages.bulk_update_success', { count: variables.ids.length }));
         },
         onError: () => {
-            toast.error('Fehler beim Aktualisieren der Kunden');
+            toast.error(t('customers.messages.bulk_update_error'));
         }
     });
 
@@ -128,10 +130,10 @@ const Customers = () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedCustomers([]);
-            toast.success(`${variables.length} Kunden endgültig gelöscht`);
+            toast.success(t('customers.messages.bulk_delete_success', { count: variables.length }));
         },
         onError: () => {
-            toast.error('Fehler beim endgültigen Löschen');
+            toast.error(t('customers.messages.bulk_delete_error'));
         }
     });
 
@@ -204,7 +206,7 @@ const Customers = () => {
     const columns = [
         {
             id: 'company',
-            header: 'Unternehmen',
+            header: t('customers.table.company'),
             accessor: (c: any) => (
                 <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 shrink-0 bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold border-slate-100 border rounded-sm`}>
@@ -225,7 +227,7 @@ const Customers = () => {
         },
         {
             id: 'contact',
-            header: 'Ansprechpartner',
+            header: t('customers.table.contact'),
             accessor: (c: any) => (
                 <div className="flex flex-col">
                     <span className="font-medium text-slate-700">{c.contact_person || `${c.first_name} ${c.last_name}`}</span>
@@ -237,7 +239,7 @@ const Customers = () => {
         },
         {
             id: 'address',
-            header: 'Adresse',
+            header: t('customers.table.address'),
             accessor: (c: any) => (
                 <div className="flex flex-col max-w-[150px]">
                     <span className="text-slate-700 truncate">{c.address_street} {c.address_house_no}</span>
@@ -249,14 +251,14 @@ const Customers = () => {
         },
         {
             id: 'phone',
-            header: 'Telefon',
+            header: t('customers.table.phone'),
             accessor: (c: any) => <span className="text-slate-600">{c.phone || '-'}</span>,
             sortable: true,
             sortKey: 'phone'
         },
         {
             id: 'projects_count',
-            header: 'Projekte',
+            header: t('customers.table.projects'),
             accessor: (c: any) => (
                 <div className="flex items-center justify-center gap-2">
                     <div className="w-6 h-6 rounded-sm bg-slate-100 flex items-center justify-center text-xs font-medium text-slate-600">
@@ -270,7 +272,7 @@ const Customers = () => {
         },
         {
             id: 'sales',
-            header: 'Umsatz (YTD)',
+            header: t('customers.table.sales'),
             accessor: (c: any) => <span className="font-semibold text-slate-800">{formatCurrency(c.sales || 0)}</span>,
             sortable: true,
             sortKey: 'sales',
@@ -278,7 +280,7 @@ const Customers = () => {
         },
         {
             id: 'status',
-            header: 'Status',
+            header: t('common.status'),
             accessor: (c: any) => {
                 const statusStyles: { [key: string]: string } = {
                     'active': 'bg-emerald-50 text-emerald-700 border-emerald-100', // Lighter border
@@ -287,10 +289,10 @@ const Customers = () => {
                     'archived': 'bg-slate-800 text-white border-slate-700'
                 };
                 const labels: { [key: string]: string } = {
-                    'active': 'Aktiv',
-                    'inactive': 'Inaktiv',
-                    'deleted': 'Gelöscht',
-                    'archived': 'Archiviert'
+                    'active': t('customers.status.active'),
+                    'inactive': t('customers.status.inactive'),
+                    'deleted': t('customers.status.deleted'),
+                    'archived': t('customers.status.archived')
                 };
                 const displayStatus = c.status === 'Aktiv' ? 'active' : c.status === 'Inaktiv' ? 'inactive' : c.status?.toLowerCase();
                 return (
@@ -324,10 +326,10 @@ const Customers = () => {
                     }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
                     <button onClick={() => {
                         setCustomerToDelete(c.id);
-                        setConfirmTitle('Kunde löschen');
-                        setConfirmMessage('Sind Sie sicher, dass Sie diesen Kunden in den Papierkorb verschieben möchten?');
+                        setConfirmTitle(t('customers.status.deleted'));
+                        setConfirmMessage(t('customers.confirm.delete_message', { count: 1 }));
                         setIsConfirmOpen(true);
-                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Löschen"><FaTrash /></button>
+                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')}><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -343,16 +345,16 @@ const Customers = () => {
 
     const tableFilters: FilterDef[] = [
         {
-            id: 'statusView', label: 'Aktiv / Archiv', type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('all'); },
-            options: [{ value: 'active', label: 'Aktiv' }, { value: 'archive', label: 'Archiviert' }, { value: 'trash', label: 'Papierkorb' }]
+            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('all'); },
+            options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
         },
         ...(statusView === 'active' ? [{
-            id: 'type', label: 'Kundentyp', type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
+            id: 'type', label: t('customers.filters.type'), type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
             options: [
-                { value: 'all', label: 'Alle' },
-                { value: 'Firma', label: 'Firmen' },
-                { value: 'Privat', label: 'Privat' },
-                { value: 'Behörde', label: 'Behörden' }
+                { value: 'all', label: t('customers.filters.types.all') },
+                { value: 'Firma', label: t('customers.filters.types.company') },
+                { value: 'Privat', label: t('customers.filters.types.private') },
+                { value: 'Behörde', label: t('customers.filters.types.authority') }
             ]
         }] : [])
     ];
@@ -387,31 +389,31 @@ const Customers = () => {
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Kundenstamm</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Auftraggeber und Rechnungsadressen.</p>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('customers.title')}</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('customers.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <Button
                         onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
                         className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neuer Kunde</span><span className="inline sm:hidden">Neu</span>
+                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('customers.new_customer')}</span><span className="inline sm:hidden">{t('customers.new_short')}</span>
                     </Button>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label="Gesamtkunden" value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
-                <KPICard label="Neuzugänge" value={newCustomersCount} icon={<FaUserPlus />} iconColor="text-indigo-600" subValue="Letzte 30 Tage" />
-                <KPICard label="Top Auftraggeber" value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" subValue="Höchster Umsatz YTD" />
+                <KPICard label={t('customers.kpi.total_customers')} value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
+                <KPICard label={t('customers.kpi.new_entries')} value={newCustomersCount} icon={<FaUserPlus />} iconColor="text-indigo-600" subValue={t('customers.kpi.last_30_days')} />
+                <KPICard label={t('customers.kpi.top_customer')} value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" subValue={t('customers.kpi.top_customer_sub')} />
                 <KPICard
-                    label="Umsatz YTD"
+                    label={t('customers.kpi.revenue_ytd')}
                     value={formatCurrency(stats?.total_revenue_ytd || 0)}
                     icon={<FaChartLine />}
                     iconColor="text-green-600"
                     trend={stats?.revenue_trend !== undefined ? {
                         value: `${stats.revenue_trend > 0 ? '+' : ''}${stats.revenue_trend}%`,
-                        label: 'vs. Vorjahr',
+                        label: t('customers.kpi.vs_last_year'),
                         isPositive: stats.revenue_trend >= 0
                     } : undefined}
                 />
@@ -422,8 +424,7 @@ const Customers = () => {
                     data={filteredCustomers}
                     columns={columns as any}
                     onRowClick={(c) => navigate(`/customers/${c.id}`)}
-                    pageSize={10}
-                    searchPlaceholder="Kunden nach Name, Kontakt oder E-Mail suchen..."
+                    searchPlaceholder={t('customers.search_placeholder')}
                     searchFields={['company_name', 'contact_person', 'email']}
                     actions={actions}
                     onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
@@ -432,14 +433,14 @@ const Customers = () => {
                     onSelectionChange={(ids) => setSelectedCustomers(ids as number[])}
                     bulkActions={[
                         {
-                            label: 'Aktivieren',
+                            label: t('customers.actions.activate'),
                             icon: <FaCheck className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Aktiv' } }),
                             variant: 'success',
                             show: statusView === 'active'
                         },
                         {
-                            label: 'E-Mail senden',
+                            label: t('projects.actions.bulk.send_email'),
                             icon: <FaEnvelope className="text-xs" />,
                             onClick: () => {
                                 const selectedEmails = customers
@@ -455,40 +456,40 @@ const Customers = () => {
                             show: statusView === 'active'
                         },
                         {
-                            label: 'Deaktivieren',
+                            label: t('customers.actions.deactivate'),
                             icon: <FaBan className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Inaktiv' } }),
                             variant: 'danger',
                             show: statusView === 'active'
                         },
                         {
-                            label: 'Archivieren',
+                            label: t('projects.actions.bulk.archive'),
                             icon: <FaArchive className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Archiviert' } }),
                             variant: 'default',
                             show: statusView === 'active'
                         },
                         {
-                            label: 'Löschen',
+                            label: t('projects.actions.bulk.trash'),
                             icon: <FaTrash className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Gelöscht' } }),
                             variant: 'danger',
                             show: statusView === 'active'
                         },
                         {
-                            label: 'Wiederherstellen',
+                            label: t('projects.actions.bulk.restore'),
                             icon: <FaTrashRestore className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Aktiv' } }),
                             variant: 'success',
                             show: statusView === 'trash' || statusView === 'archive'
                         },
                         {
-                            label: 'Endgültig löschen',
+                            label: t('projects.actions.bulk.delete_permanent'),
                             icon: <FaTrash className="text-xs" />,
                             onClick: () => {
                                 setCustomerToDelete(selectedCustomers);
-                                setConfirmTitle('Kunden endgültig löschen');
-                                setConfirmMessage(`Sind Sie sicher, dass Sie ${selectedCustomers.length} Kunden endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.`);
+                                setConfirmTitle(t('customers.confirm.delete_title'));
+                                setConfirmMessage(t('customers.confirm.delete_message', { count: selectedCustomers.length }));
                                 setIsConfirmOpen(true);
                             },
                             variant: 'dangerSolid',

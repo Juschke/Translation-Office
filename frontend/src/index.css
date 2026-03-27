@@ -592,8 +592,26 @@ body,
 }
 
 /* Fix: remove the scrollbar placeholder column in the header */
-.ant-table-thead>tr>th.ant-table-cell-scrollbar {
+.ant-table-thead>tr>th.ant-table-cell-scrollbar,
+.ant-table-tbody>tr>td.ant-table-cell-scrollbar {
   display: none !important;
+  padding: 0 !important;
+  border: none !important;
+  width: 0 !important;
+}
+
+/* Fix: hide the measurement row completely */
+.ant-table-measure-row {
+  visibility: hidden !important;
+  height: 0 !important;
+  line-height: 0 !important;
+}
+
+.ant-table-measure-row td {
+  padding: 0 !important;
+  border: 0 !important;
+  height: 0 !important;
+  line-height: 0 !important;
 }
 
 /* Sort-active column header */
@@ -641,7 +659,7 @@ body,
 }
 
 /* ── BODY CELLS ── */
-.ant-table-wrapper .ant-table-tbody>tr>td {
+.ant-table-wrapper .ant-table-tbody>tr:not(.ant-table-measure-row)>td {
   border-bottom: 1px solid #e8e8e8 !important;
   border-right: 1px solid #f2f2f2 !important;
   padding: 6px 10px !important;
@@ -653,30 +671,30 @@ body,
   text-overflow: ellipsis;
 }
 
-.ant-table-wrapper .ant-table-tbody>tr>td:last-child {
+.ant-table-wrapper .ant-table-tbody>tr:not(.ant-table-measure-row)>td:last-child {
   border-right: none !important;
 }
 
-.ant-table-wrapper .ant-table-tbody>tr:last-child>td {
+.ant-table-wrapper .ant-table-tbody>tr:not(.ant-table-measure-row):last-child>td {
   border-bottom: none !important;
 }
 
 /* ── STRIPED ROWS — gray abstufung ── */
-.ant-table-wrapper .ant-table-tbody>tr.dt-row-odd>td {
+.ant-table-wrapper .ant-table-tbody>tr.dt-row-odd:not(.ant-table-measure-row)>td {
   background-color: #f9f9f9 !important;
 }
 
-.ant-table-wrapper .ant-table-tbody>tr.dt-row-even>td {
+.ant-table-wrapper .ant-table-tbody>tr.dt-row-even:not(.ant-table-measure-row)>td {
   background-color: #ffffff !important;
 }
 
 /* ── ROW HOVER — light gray ── */
-.ant-table-wrapper .ant-table-tbody>tr:hover>td {
+.ant-table-wrapper .ant-table-tbody>tr:not(.ant-table-measure-row):hover>td {
   background-color: #f0f0f0 !important;
 }
 
 /* Selected row — teal accent (only the clicked row) */
-.ant-table-wrapper .ant-table-tbody>tr.dt-row-selected>td {
+.ant-table-wrapper .ant-table-tbody>tr.dt-row-selected:not(.ant-table-measure-row)>td {
   background-color: #eaf4f3 !important;
   border-bottom-color: #d0eae8 !important;
 }

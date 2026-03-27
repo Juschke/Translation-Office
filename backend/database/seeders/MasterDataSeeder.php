@@ -198,21 +198,28 @@ class MasterDataSeeder extends Seeder
             ['category' => 'Marketing & Sonstiges', 'name' => 'Pressemitteilung'],
             ['category' => 'Marketing & Sonstiges', 'name' => 'Privatkorrespondenz'],
             ['category' => 'Marketing & Sonstiges', 'name' => 'Website-Inhalte / Blog'],
+            ['category' => 'Marketing & Sonstiges', 'name' => 'Social Media Post'],
+            ['category' => 'Marketing & Sonstiges', 'name' => 'Werbetext'],
         ];
 
         foreach ($docTypes as $type) {
             DocumentType::updateOrCreate(
                 ['tenant_id' => $tenantId, 'name' => $type['name']],
-                ['category' => $type['category']]
+                ['category' => $type['category'], 'status' => 'active']
             );
         }
 
         // 3. Standard Service Packages
         $services = [
-            ['service_code' => 'ÜB-01', 'name' => 'Übersetzung', 'unit' => 'word', 'base_price' => 0.12],
-            ['service_code' => 'BÜ-02', 'name' => 'Beglaubigte Übersetzung', 'unit' => 'piece', 'base_price' => 15.00],
-            ['service_code' => 'AP-03', 'name' => 'Apostille', 'unit' => 'piece', 'base_price' => 25.00],
-            ['service_code' => 'DO-04', 'name' => 'Dolmetschertätigkeit', 'unit' => 'hour', 'base_price' => 85.00],
+            ['service_code' => 'ÜB-01', 'name' => 'Übersetzung (Standard)', 'unit' => 'word', 'base_price' => 0.12, 'status' => 'active'],
+            ['service_code' => 'ÜB-02', 'name' => 'Fachübersetzung (Jura / Medizin)', 'unit' => 'word', 'base_price' => 0.18, 'status' => 'active'],
+            ['service_code' => 'BÜ-01', 'name' => 'Beglaubigte Übersetzung', 'unit' => 'piece', 'base_price' => 15.00, 'status' => 'active'],
+            ['service_code' => 'BÜ-02', 'name' => 'Beglaubigungspauschale', 'unit' => 'piece', 'base_price' => 10.00, 'status' => 'active'],
+            ['service_code' => 'AP-01', 'name' => 'Apostille-Service', 'unit' => 'piece', 'base_price' => 25.00, 'status' => 'active'],
+            ['service_code' => 'DO-01', 'name' => 'Dolmetschen (Simultan)', 'unit' => 'hour', 'base_price' => 120.00, 'status' => 'active'],
+            ['service_code' => 'DO-02', 'name' => 'Dolmetschen (Konsekutiv)', 'unit' => 'hour', 'base_price' => 95.00, 'status' => 'active'],
+            ['service_code' => 'LE-01', 'name' => 'Lektorat / Korrekturlesen', 'unit' => 'word', 'base_price' => 0.05, 'status' => 'active'],
+            ['service_code' => 'TR-01', 'name' => 'Transkription (Audio/Video)', 'unit' => 'minute', 'base_price' => 2.50, 'status' => 'active'],
         ];
 
         foreach ($services as $service) {
@@ -225,6 +232,7 @@ class MasterDataSeeder extends Seeder
                 'name' => 'Angebot Standard',
                 'type' => 'Angebot',
                 'subject' => 'Angebot {{project_number}} – {{project_name}}',
+                'status' => 'active',
                 'body' => implode("\n", [
                     "Sehr geehrte Damen und Herren,",
                     "",
@@ -247,6 +255,7 @@ class MasterDataSeeder extends Seeder
                 'name' => 'Rechnung Standard',
                 'type' => 'Rechnung',
                 'subject' => 'Rechnung {{invoice_number}} – {{project_name}}',
+                'status' => 'active',
                 'body' => implode("\n", [
                     "Sehr geehrte Damen und Herren,",
                     "",
@@ -273,6 +282,7 @@ class MasterDataSeeder extends Seeder
                 'name' => 'Auftragsbestätigung',
                 'type' => 'Auftragsbestätigung',
                 'subject' => 'Auftragsbestätigung – {{project_number}}',
+                'status' => 'active',
                 'body' => implode("\n", [
                     "Sehr geehrte Damen und Herren,",
                     "",
@@ -293,6 +303,7 @@ class MasterDataSeeder extends Seeder
                 'name' => 'Partner-Anfrage (Übersetzung)',
                 'type' => 'Partner-Anfrage',
                 'subject' => 'Verfügbarkeitsanfrage – {{project_name}} ({{source_language}} › {{target_language}})',
+                'status' => 'active',
                 'body' => implode("\n", [
                     "Guten Tag {{partner_name}},",
                     "",
@@ -314,6 +325,7 @@ class MasterDataSeeder extends Seeder
                 'name' => 'Abholbestätigung',
                 'type' => 'Abholbestätigung',
                 'subject' => 'Ihr Auftrag ist abholbereit – {{project_number}}',
+                'status' => 'active',
                 'body' => implode("\n", [
                     "Sehr geehrte Damen und Herren,",
                     "",
@@ -336,55 +348,52 @@ class MasterDataSeeder extends Seeder
 
         // 5. Specializations (Fachgebiete)
         $specializations = [
-            ['name' => 'Recht & Verträge'],
-            ['name' => 'Medizin & Pharmazie'],
-            ['name' => 'Technik & Ingenieurwesen'],
-            ['name' => 'Wirtschaft & Finanzen'],
-            ['name' => 'IT & Software'],
-            ['name' => 'Marketing & Werbung'],
-            ['name' => 'Behörden & Urkunden'],
-            ['name' => 'Wissenschaft & Forschung'],
-            ['name' => 'Literatur & Medien'],
+            ['name' => 'Recht & Verträge', 'status' => 'active'],
+            ['name' => 'Medizin & Pharmazie', 'status' => 'active'],
+            ['name' => 'Technik & Ingenieurwesen', 'status' => 'active'],
+            ['name' => 'Wirtschaft & Finanzen', 'status' => 'active'],
+            ['name' => 'IT & Software', 'status' => 'active'],
+            ['name' => 'Marketing & Werbung', 'status' => 'active'],
+            ['name' => 'Behörden & Urkunden', 'status' => 'active'],
+            ['name' => 'Wissenschaft & Forschung', 'status' => 'active'],
+            ['name' => 'Literatur & Medien', 'status' => 'active'],
+            ['name' => 'Tourismus & Reise', 'status' => 'active'],
+            ['name' => 'Automotive', 'status' => 'active'],
+            ['name' => 'Architektur & Bauwesen', 'status' => 'active'],
         ];
 
         foreach ($specializations as $spec) {
-            Specialization::updateOrCreate(
-                ['tenant_id' => $tenantId, 'name' => $spec['name']],
-                $spec
-            );
+            Specialization::updateOrCreate(['tenant_id' => $tenantId, 'name' => $spec['name']], $spec);
         }
 
         // 6. Units (Einheiten)
         $units = [
-            ['name' => 'Wort', 'abbreviation' => 'Wrt'],
-            ['name' => 'Zeile', 'abbreviation' => 'Zl'],
-            ['name' => 'Normseite', 'abbreviation' => 'NS'],
-            ['name' => 'Seite', 'abbreviation' => 'S.'],
-            ['name' => 'Stunde', 'abbreviation' => 'Std'],
-            ['name' => 'Pauschal', 'abbreviation' => 'Psch'],
+            ['name' => 'Wort', 'abbreviation' => 'Wrt', 'status' => 'active'],
+            ['name' => 'Zeile', 'abbreviation' => 'Zl', 'status' => 'active'],
+            ['name' => 'Normseite', 'abbreviation' => 'NS', 'status' => 'active'],
+            ['name' => 'Seite', 'abbreviation' => 'S.', 'status' => 'active'],
+            ['name' => 'Stunde', 'abbreviation' => 'Std', 'status' => 'active'],
+            ['name' => 'Minute', 'abbreviation' => 'Min', 'status' => 'active'],
+            ['name' => 'Pauschal', 'abbreviation' => 'Psch', 'status' => 'active'],
+            ['name' => 'Anschlag', 'abbreviation' => 'Anschl.', 'status' => 'active'],
         ];
 
         foreach ($units as $unit) {
-            Unit::updateOrCreate(
-                ['tenant_id' => $tenantId, 'name' => $unit['name']],
-                $unit
-            );
+            Unit::updateOrCreate(['tenant_id' => $tenantId, 'name' => $unit['name']], $unit);
         }
 
         // 7. Currencies (Währungen)
         $currencies = [
-            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'is_default' => true],
-            ['code' => 'USD', 'name' => 'US-Dollar', 'symbol' => '$', 'is_default' => false],
-            ['code' => 'CHF', 'name' => 'Schweizer Franken', 'symbol' => 'Fr.', 'is_default' => false],
-            ['code' => 'GBP', 'name' => 'Britisches Pfund', 'symbol' => '£', 'is_default' => false],
-            ['code' => 'PLN', 'name' => 'Polnischer Zloty', 'symbol' => 'zł', 'is_default' => false],
+            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'is_default' => true, 'status' => 'active'],
+            ['code' => 'USD', 'name' => 'US-Dollar', 'symbol' => '$', 'is_default' => false, 'status' => 'active'],
+            ['code' => 'CHF', 'name' => 'Schweizer Franken', 'symbol' => 'Fr.', 'is_default' => false, 'status' => 'active'],
+            ['code' => 'GBP', 'name' => 'Britisches Pfund', 'symbol' => '£', 'is_default' => false, 'status' => 'active'],
+            ['code' => 'PLN', 'name' => 'Polnischer Zloty', 'symbol' => 'zł', 'is_default' => false, 'status' => 'active'],
+            ['code' => 'TRY', 'name' => 'Türkische Lira', 'symbol' => '₺', 'is_default' => false, 'status' => 'active'],
         ];
 
         foreach ($currencies as $currency) {
-            Currency::updateOrCreate(
-                ['tenant_id' => $tenantId, 'name' => $currency['name']],
-                $currency
-            );
+            Currency::updateOrCreate(['tenant_id' => $tenantId, 'name' => $currency['name']], $currency);
         }
     }
 }

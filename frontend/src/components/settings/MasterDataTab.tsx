@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import {
     FaPlus, FaTrash, FaGlobe, FaEdit, FaEnvelopeOpenText, FaLanguage, FaFileAlt, FaTag, FaRuler, FaMoneyBillWave
 } from 'react-icons/fa';
@@ -15,10 +16,24 @@ import { getFlagUrl } from '../../utils/flags';
 const MasterDataTab = () => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
-    const [masterTab, setMasterTab] = useState<'languages' | 'doc_types' | 'services' | 'email_templates' | 'specializations' | 'units' | 'currencies'>('languages');
+    const [searchParams] = useSearchParams();
+    const initialSubTab = searchParams.get('sub') as any;
+    const [masterTab, setMasterTab] = useState<'languages' | 'doc_types' | 'services' | 'email_templates' | 'specializations' | 'units' | 'currencies'>(
+        (['languages', 'doc_types', 'services', 'email_templates', 'specializations', 'units', 'currencies'] as const).includes(initialSubTab)
+            ? initialSubTab
+            : 'languages'
+    );
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
+    const [docTypeCategoryFilter, setDocTypeCategoryFilter] = useState<string>('');
     const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; item: any | null }>({ isOpen: false, item: null });
+
+    useEffect(() => {
+        const sub = searchParams.get('sub') as any;
+        if (sub && (['languages', 'doc_types', 'services', 'email_templates', 'specializations', 'units', 'currencies'] as const).includes(sub)) {
+            setMasterTab(sub);
+        }
+    }, [searchParams]);
 
     const { data: languages = [], isLoading: isLanguagesLoading } = useQuery<any[]>({
         queryKey: ['settings', 'languages'],
@@ -93,70 +108,137 @@ const MasterDataTab = () => {
     };
 
     return (
-        <div className="flex flex-col animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-slate-200">
-                <div className="flex items-center gap-6 overflow-x-auto">
-                    {(['languages', 'doc_types', 'services', 'email_templates', 'specializations', 'units', 'currencies'] as const).map(tab_key => (
-                        <button
-                            key={tab_key}
-                            onClick={() => setMasterTab(tab_key)}
-                            className={clsx('py-3 text-sm font-medium border-b-2 transition whitespace-nowrap', masterTab === tab_key ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600')}
-                        >
-                            {t(`settings.tabs.${tab_key}`)}
-                        </button>
-                    ))}
+        <div className="flex flex-col md:flex-row gap-6 animate-fadeIn">
+            {/* Sidebar Navigation */}
+            <div className="w-full md:w-64 shrink-0">
+                <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden sticky top-20">
+                    <div className="p-3 bg-slate-50 border-b border-slate-200">
+                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kategorien</h3>
+                    </div>
+                    <div className="flex flex-col p-1">
+                        {(['languages', 'doc_types', 'services', 'email_templates', 'specializations', 'units', 'currencies'] as const).map(tab_key => {
+                            const Icon = tab_key === 'languages' ? FaLanguage : tab_key === 'doc_types' ? FaFileAlt : tab_key === 'services' ? FaGlobe : tab_key === 'email_templates' ? FaEnvelopeOpenText : tab_key === 'specializations' ? FaTag : tab_key === 'units' ? FaRuler : FaMoneyBillWave;
+                            return (
+                                <button
+                                    key={tab_key}
+                                    onClick={() => setMasterTab(tab_key)}
+                                    className={clsx(
+                                        'flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition rounded-sm',
+                                        masterTab === tab_key
+                                            ? 'bg-brand-primary text-white shadow-sm'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    )}
+                                >
+                                    <Icon className={clsx("w-4 h-4", masterTab === tab_key ? "text-white" : "text-slate-400")} />
+                                    {t(`settings.tabs.${tab_key}`)}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
-                <button onClick={() => handleOpenModal()} className="flex items-center gap-2 px-5 py-1.5 bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition rounded shrink-0 ml-4 mb-px">
-                    <FaPlus className="text-xs" /> {t('settings.master_data.add_new')}
-                </button>
             </div>
-            <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden flex flex-col flex-1 mt-4">
-                <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
-                    <h3 className="text-sm font-medium text-slate-800 flex items-center gap-3">
-                        {masterTab === 'languages' ? <FaLanguage /> : masterTab === 'doc_types' ? <FaFileAlt /> : masterTab === 'services' ? <FaGlobe /> : masterTab === 'email_templates' ? <FaEnvelopeOpenText /> : masterTab === 'specializations' ? <FaTag /> : masterTab === 'units' ? <FaRuler /> : <FaMoneyBillWave />}
-                        {t(`settings.master_data.${masterTab === 'languages' ? 'language_config' : masterTab === 'doc_types' ? 'doc_categories' : masterTab === 'services' ? 'service_catalog' : masterTab === 'email_templates' ? 'email_templates' : masterTab === 'specializations' ? 'specializations' : masterTab === 'units' ? 'units' : 'currencies'}`)}
-                    </h3>
-                </div>
-                <div className="flex-1 overflow-hidden flex flex-col">
-                    {masterTab === 'languages' && (isLanguagesLoading ? <TableSkeleton rows={5} columns={5} /> : <DataTable isLoading={isLanguagesLoading} data={languages} columns={[
-                        { id: 'code', header: t('settings.master_data.code_iso'), accessor: (l: any) => <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 border border-slate-100 rounded">{l.iso_code}</span>, className: 'w-32' },
-                        { id: 'name', header: t('settings.master_data.language_flag'), accessor: (l: any) => <div className="flex items-center gap-3"><div className="w-8 h-6 overflow-hidden shadow-sm border border-slate-200 bg-slate-50 rounded-sm">{l.flag_icon && <img src={getFlagUrl(l.flag_icon)} className="w-full h-full object-cover" />}</div><span className="font-medium text-slate-800 text-sm">{l.name_internal}</span></div> },
-                        { id: 'native', header: t('settings.master_data.native'), accessor: 'name_native' },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (l: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', l.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{l.status}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (l: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(l)} className="p-2 text-slate-400 hover:text-slate-700 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(l)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={10} />)}
-                    {masterTab === 'doc_types' && (isDocTypesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isDocTypesLoading} data={docTypes} columns={[
-                        { id: 'category', header: t('settings.master_data.category'), accessor: (d: any) => <span className="text-xs font-medium text-slate-400">{d.category || '-'}</span>, className: 'w-48' },
-                        { id: 'name', header: t('fields.name'), accessor: (d: any) => <span className="font-medium text-slate-800 text-sm">{d.name}</span> },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (d: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', d.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{d.status}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (d: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(d)} className="p-2 text-slate-400 hover:text-slate-700 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(d)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={10} />)}
-                    {masterTab === 'services' && (isServicesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isServicesLoading} data={services} columns={[
-                        { id: 'name', header: t('settings.master_data.service_name'), accessor: (s: any) => <span className="font-medium text-slate-800 text-sm">{s.name}</span> },
-                        { id: 'description', header: t('fields.description'), accessor: (s: any) => <span className="text-xs text-slate-400">{s.description || '-'}</span> },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (s: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', s.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{s.status}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (s: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(s)} className="p-2 text-slate-400 hover:text-slate-700 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(s)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={10} />)}
-                    {masterTab === 'email_templates' && (isTemplatesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isTemplatesLoading} data={emailTemplates} columns={[
-                        { id: 'name', header: t('settings.master_data.template_name'), accessor: (t: any) => <span className="font-medium text-slate-800 text-sm">{t.name}</span> },
-                        { id: 'subject', header: t('settings.master_data.subject'), accessor: (t: any) => <span className="text-xs text-slate-500">{t.subject}</span> },
-                        { id: 'actions', header: '', accessor: (t: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(t)} className="p-2 text-slate-400 hover:text-slate-700 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(t)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={10} />)}
-                    {masterTab === 'specializations' && (isSpecializationsLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isSpecializationsLoading} data={specializations} columns={[
-                        { id: 'name', header: t('fields.name'), accessor: (s: any) => <span className="font-medium text-slate-800 text-sm">{s.name}</span> },
-                        { id: 'description', header: t('fields.description'), accessor: (s: any) => <span className="text-xs text-slate-400">{s.description || '-'}</span> },
-                        { id: 'actions', header: '', accessor: (s: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(s)} className="p-2 text-slate-400 hover:text-slate-700 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(s)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={10} />)}
-                    {masterTab === 'units' && (isUnitsLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isUnitsLoading} data={units} columns={[
-                        { id: 'name', header: t('fields.name'), accessor: (u: any) => <span className="font-medium text-slate-800 text-sm">{u.name}</span> },
-                        { id: 'code', header: t('settings.master_data.unit'), accessor: (u: any) => <span className="text-xs font-medium text-slate-500">{u.code}</span> },
-                        { id: 'actions', header: '', accessor: (u: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(u)} className="p-2 text-slate-400 hover:text-slate-700 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(u)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={10} />)}
-                    {masterTab === 'currencies' && (isCurrenciesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isCurrenciesLoading} data={currencies} columns={[
-                        { id: 'code', header: t('settings.master_data.currency_code'), accessor: (c: any) => <span className="font-medium text-slate-800 text-sm">{c.code}</span> },
-                        { id: 'symbol', header: t('settings.master_data.symbol'), accessor: (c: any) => <span className="text-xs text-slate-500">{c.symbol}</span> },
-                        { id: 'actions', header: '', accessor: (c: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(c)} className="p-2 text-slate-400 hover:text-slate-700 rounded"><FaEdit /></button><button onClick={() => handleDeleteMasterData(c)} className="p-2 text-slate-300 hover:text-red-500 rounded"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={10} />)}
+
+            {/* Main Content Area */}
+            <div className="flex-1 min-w-0 flex flex-col gap-4">
+                <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden flex flex-col h-full">
+                    <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+                        <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3">
+                            {t(`settings.master_data.${masterTab === 'languages' ? 'language_config' : masterTab === 'doc_types' ? 'doc_categories' : masterTab === 'services' ? 'service_catalog' : masterTab === 'email_templates' ? 'email_templates' : masterTab === 'specializations' ? 'specializations' : masterTab === 'units' ? 'units' : 'currencies'}`)}
+                        </h3>
+                        <button onClick={() => handleOpenModal()} className="flex items-center gap-2 px-4 py-1.5 bg-brand-primary text-white text-xs font-medium hover:bg-brand-primary/90 transition rounded shrink-0">
+                            <FaPlus className="text-[10px]" /> {t('settings.master_data.add_new')}
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-x-auto min-h-[400px]">
+                        {masterTab === 'languages' && (isLanguagesLoading ? <TableSkeleton rows={5} columns={6} /> : <DataTable isLoading={isLanguagesLoading} data={languages} columns={[
+                            { id: 'name', header: t('fields.name'), accessor: (l: any) => <span className="font-medium text-slate-800 text-sm">{l.name_internal}</span> },
+                            { id: 'code', header: t('settings.master_data.code_iso'), accessor: (l: any) => <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 border border-slate-100 rounded">{l.iso_code}</span>, className: 'w-32' },
+                            { id: 'flag', header: 'Flagge', accessor: (l: any) => <div className="w-8 h-6 overflow-hidden shadow-sm border border-slate-200 bg-slate-50 rounded-sm flex items-center justify-center">{l.flag_icon ? <img src={getFlagUrl(l.flag_icon)} className="w-full h-full object-cover" /> : <span className="text-[10px] text-slate-300 uppercase font-bold">no</span>}</div>, align: 'center' },
+                            { id: 'native', header: t('settings.master_data.native'), accessor: 'name_native', className: 'text-slate-500 italic text-sm' },
+                            { id: 'status', header: t('settings.master_data.status'), accessor: (l: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', l.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{l.status || 'active'}</span>, align: 'center' },
+                            { id: 'actions', header: '', accessor: (l: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(l)} className="p-2 text-slate-400 hover:text-slate-700 rounded transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(l)} className="p-2 text-slate-300 hover:text-red-500 rounded transition-colors"><FaTrash /></button></div>, align: 'right' }
+                        ]} pageSize={1000} />)}
+
+                        {masterTab === 'doc_types' && (isDocTypesLoading ? <TableSkeleton rows={5} columns={4} /> : (
+                            <>
+                                <div className="px-6 py-3 border-b border-slate-100 bg-white flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('settings.master_data.category_filter')}:</label>
+                                        <select
+                                            value={docTypeCategoryFilter}
+                                            onChange={(e) => setDocTypeCategoryFilter(e.target.value)}
+                                            className="h-8 border border-slate-200 rounded px-2 text-xs text-slate-700 outline-none focus:border-brand-primary min-w-[150px]"
+                                        >
+                                            <option value="">{t('settings.master_data.all_items')}</option>
+                                            {Array.from(new Set(docTypes.map((d: any) => d.category))).filter(Boolean).sort().map(cat => (
+                                                <option key={cat as string} value={cat as string}>{cat as string}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 italic">
+                                        {t('settings.master_data.items_found', { count: docTypes.filter((d: any) => !docTypeCategoryFilter || d.category === docTypeCategoryFilter).length })}
+                                    </div>
+                                </div>
+                                <DataTable
+                                    isLoading={isDocTypesLoading}
+                                    data={docTypes.filter((d: any) => !docTypeCategoryFilter || d.category === docTypeCategoryFilter)}
+                                    columns={[
+                                        {
+                                            id: 'name',
+                                            header: t('fields.name'),
+                                            accessor: (d: any) => (
+                                                <div className="flex flex-col py-1">
+                                                    <span className="font-semibold text-slate-800 text-sm leading-tight">{d.name}</span>
+                                                    <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">{d.category || '-'}</span>
+                                                </div>
+                                            )
+                                        },
+                                        { id: 'status', header: t('settings.master_data.status'), accessor: (d: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', d.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{d.status || 'active'}</span>, align: 'center' },
+                                        { id: 'actions', header: '', accessor: (d: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(d)} className="p-2 text-slate-400 hover:text-slate-700 rounded transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(d)} className="p-2 text-slate-300 hover:text-red-500 rounded transition-colors"><FaTrash /></button></div>, align: 'right' }
+                                    ]}
+                                    pageSize={100}
+                                />
+                            </>
+                        ))}
+
+                        {masterTab === 'services' && (isServicesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isServicesLoading} data={services} columns={[
+                            { id: 'name', header: t('settings.master_data.service_name'), accessor: (s: any) => <span className="font-medium text-slate-800 text-sm">{s.name}</span> },
+                            { id: 'description', header: t('fields.description'), accessor: (s: any) => <span className="text-xs text-slate-400">{s.description || '-'}</span> },
+                            { id: 'status', header: t('settings.master_data.status'), accessor: (s: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', s.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{s.status || 'active'}</span>, align: 'center' },
+                            { id: 'actions', header: '', accessor: (s: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(s)} className="p-2 text-slate-400 hover:text-slate-700 rounded transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(s)} className="p-2 text-slate-300 hover:text-red-500 rounded transition-colors"><FaTrash /></button></div>, align: 'right' }
+                        ]} pageSize={1000} />)}
+
+                        {masterTab === 'email_templates' && (isTemplatesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isTemplatesLoading} data={emailTemplates} columns={[
+                            { id: 'name', header: t('settings.master_data.template_name'), accessor: (t: any) => <span className="font-medium text-slate-800 text-sm">{t.name}</span> },
+                            { id: 'subject', header: t('settings.master_data.subject'), accessor: (t: any) => <span className="text-xs text-slate-500">{t.subject}</span> },
+                            { id: 'status', header: t('settings.master_data.status'), accessor: (t: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', t.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{t.status || 'active'}</span>, align: 'center' },
+                            { id: 'actions', header: '', accessor: (t: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(t)} className="p-2 text-slate-400 hover:text-slate-700 rounded transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(t)} className="p-2 text-slate-300 hover:text-red-500 rounded transition-colors"><FaTrash /></button></div>, align: 'right' }
+                        ]} pageSize={1000} />)}
+
+                        {masterTab === 'specializations' && (isSpecializationsLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isSpecializationsLoading} data={specializations} columns={[
+                            { id: 'name', header: t('fields.name'), accessor: (s: any) => <span className="font-medium text-slate-800 text-sm">{s.name}</span> },
+                            { id: 'description', header: t('fields.description'), accessor: (s: any) => <span className="text-xs text-slate-400">{s.description || '-'}</span> },
+                            { id: 'status', header: t('settings.master_data.status'), accessor: (s: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', s.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{s.status || 'active'}</span>, align: 'center' },
+                            { id: 'actions', header: '', accessor: (s: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(s)} className="p-2 text-slate-400 hover:text-slate-700 rounded transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(s)} className="p-2 text-slate-300 hover:text-red-500 rounded transition-colors"><FaTrash /></button></div>, align: 'right' }
+                        ]} pageSize={1000} />)}
+
+                        {masterTab === 'units' && (isUnitsLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isUnitsLoading} data={units} columns={[
+                            { id: 'name', header: t('fields.name'), accessor: (u: any) => <span className="font-medium text-slate-800 text-sm">{u.name}</span> },
+                            { id: 'abbreviation', header: t('settings.master_data.abbreviation'), accessor: (u: any) => <span className="text-xs font-medium text-slate-500">{u.abbreviation}</span> },
+                            { id: 'type', header: t('settings.master_data.type'), accessor: (u: any) => <span className="text-xs text-slate-400 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-full font-medium">{t(`settings.master_data.unit_types.${u.type || 'quantity'}`)}</span> },
+                            { id: 'description', header: t('fields.description'), accessor: (u: any) => <span className="text-xs text-slate-400 italic line-clamp-1 max-w-[200px]">{u.description || '-'}</span> },
+                            { id: 'status', header: t('settings.master_data.status'), accessor: (u: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', u.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{u.status || 'active'}</span>, align: 'center' },
+                            { id: 'actions', header: '', accessor: (u: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(u)} className="p-2 text-slate-400 hover:text-slate-700 rounded transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(u)} className="p-2 text-slate-300 hover:text-red-500 rounded transition-colors"><FaTrash /></button></div>, align: 'right' }
+                        ]} pageSize={1000} />)}
+
+                        {masterTab === 'currencies' && (isCurrenciesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isCurrenciesLoading} data={currencies} columns={[
+                            { id: 'code', header: t('settings.master_data.currency_code'), accessor: (c: any) => <span className="font-medium text-slate-800 text-sm">{c.code}</span> },
+                            { id: 'symbol', header: t('settings.master_data.symbol'), accessor: (c: any) => <span className="text-xs text-slate-500">{c.symbol}</span> },
+                            { id: 'status', header: t('settings.master_data.status'), accessor: (c: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', c.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{c.status || 'active'}</span>, align: 'center' },
+                            { id: 'actions', header: '', accessor: (c: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(c)} className="p-2 text-slate-400 hover:text-slate-700 rounded transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(c)} className="p-2 text-slate-300 hover:text-red-500 rounded transition-colors"><FaTrash /></button></div>, align: 'right' }
+                        ]} pageSize={1000} />)}
+                    </div>
                 </div>
             </div>
 
@@ -164,7 +246,7 @@ const MasterDataTab = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 type={masterTab}
-                editingItem={editingItem}
+                initialData={editingItem}
                 onSubmit={(data: any) => {
                     const id = editingItem?.id;
                     if (masterTab === 'languages') id ? updateLanguageMutation.mutate({ id, data }) : createLanguageMutation.mutate(data);

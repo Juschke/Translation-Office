@@ -1,6 +1,7 @@
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, BarElement } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { FaChartLine, FaEuroSign, FaPercentage, FaLayerGroup, FaUserTie, FaTasks, FaTable, FaCalculator, FaFileInvoiceDollar, FaFilter } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import KPICard from '../components/common/KPICard';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -25,6 +26,7 @@ const STATUS_COLORS = [
 ];
 
 const Reports = () => {
+    const { t, i18n } = useTranslation();
     const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([
         dayjs().subtract(5, 'month').startOf('month'),
         dayjs().endOf('day')
@@ -243,8 +245,8 @@ const Reports = () => {
             {/* Header */}
             <div className="flex justify-between items-center gap-4 bg-white p-4 rounded-sm border border-slate-200 shadow-sm">
                 <div className="min-w-0">
-                    <h1 className="text-xl font-medium text-slate-800 truncate">Berichte & Analysen</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Detaillierte Auswertung Ihrer Geschäftsdaten.</p>
+                    <h1 className="text-xl font-medium text-slate-800 truncate">{t('reports.title')}</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('reports.subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                     <div className="flex-1 sm:flex-none">
@@ -256,11 +258,11 @@ const Reports = () => {
                             allowClear={false}
                             disabledDate={(current) => current && current > dayjs().endOf('day')}
                             presets={[
-                                { label: 'Letzte 7 Tage', value: [dayjs().subtract(7, 'day'), dayjs()] },
-                                { label: 'Letzte 30 Tage', value: [dayjs().subtract(30, 'day'), dayjs()] },
-                                { label: 'Letzte 3 Monate', value: [dayjs().subtract(3, 'month'), dayjs()] },
-                                { label: 'Letzte 6 Monate', value: [dayjs().subtract(6, 'month'), dayjs()] },
-                                { label: 'Dieses Jahr', value: [dayjs().startOf('year'), dayjs()] },
+                                { label: t('reports.presets.last_7_days'), value: [dayjs().subtract(7, 'day'), dayjs()] },
+                                { label: t('reports.presets.last_30_days'), value: [dayjs().subtract(30, 'day'), dayjs()] },
+                                { label: t('reports.presets.last_3_months'), value: [dayjs().subtract(3, 'month'), dayjs()] },
+                                { label: t('reports.presets.last_6_months'), value: [dayjs().subtract(6, 'month'), dayjs()] },
+                                { label: t('reports.presets.this_year'), value: [dayjs().startOf('year'), dayjs()] },
                             ]}
                         />
                     </div>
@@ -268,7 +270,7 @@ const Reports = () => {
                         onClick={() => setAppliedDateRange(dateRange)}
                         className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition shrink-0 h-[38px]"
                     >
-                        <FaFilter className="text-xs" /> <span className="hidden xs:inline">Anzeigen</span><span className="xs:hidden">Anzeigen</span>
+                        <FaFilter className="text-xs" /> <span className="hidden xs:inline">{t('common.show')}</span><span className="xs:hidden">{t('common.show')}</span>
                     </button>
                 </div>
             </div>
@@ -300,29 +302,29 @@ const Reports = () => {
                     {/* KPIs */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <KPICard
-                            label="Gesamtumsatz"
+                            label={t('reports.kpi.total_revenue')}
                             value={fmt(kpis?.revenue ?? 0)}
                             icon={<FaEuroSign />}
                             iconColor="text-slate-900"
                         />
                         <KPICard
-                            label="Netto-Marge Ø"
+                            label={t('reports.kpi.avg_margin')}
                             value={`${kpis?.margin ?? 0} %`}
                             icon={<FaPercentage />}
                             iconColor="text-emerald-600"
                         />
                         <KPICard
-                            label="Aufträge"
+                            label={t('reports.kpi.jobs')}
                             value={`${kpis?.jobs ?? 0}`}
                             icon={<FaLayerGroup />}
                             iconColor="text-blue-600"
                         />
                         <KPICard
-                            label="Wachstum"
+                            label={t('reports.kpi.growth')}
                             value={`${(kpis?.growth ?? 0) > 0 ? '+' : ''}${kpis?.growth ?? 0} %`}
                             icon={<FaChartLine />}
                             iconColor="text-indigo-600"
-                            subValue="vs. Vorperiode"
+                            subValue={t('reports.kpi.vs_period')}
                         />
                     </div>
 

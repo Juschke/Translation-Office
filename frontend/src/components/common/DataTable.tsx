@@ -86,7 +86,7 @@ const DataTable = <T extends { id: string | number }>({
     data,
     columns,
     onRowClick,
-    pageSize: pageSizeProp = 10,
+    pageSize: pageSizeProp = 9_999_999,
     isLoading = false,
     searchPlaceholder = "Suche...",
     searchFields = [],

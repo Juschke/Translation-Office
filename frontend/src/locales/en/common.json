@@ -1,4 +1,22 @@
 {
+  "common": {
+    "number": "Number",
+    "number_short": "No.",
+    "designation": "Designation",
+    "language_pair": "Language Pair",
+    "down_payment": "Down Payment",
+    "total_price": "Total Price",
+    "status": "Status",
+    "actions": "Actions",
+    "details": "Details",
+    "export": "Export",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading..."
+  },
   "actions": {
     "save": "Save",
     "cancel": "Cancel",
@@ -62,41 +80,39 @@
   },
   "settings": {
     "tabs": {
-      "profile": "Profile",
-      "company": "Company",
-      "subscription": "Subscription",
-      "invoice": "Invoices & Offers",
-      "master_data": "Master Data",
+      "profile": "My Profile",
+      "company": "Company Profile",
+      "subscription": "Plan & Billing",
+      "invoice": "Financials & Document Layouts",
+      "master_data": "Master Data Management",
       "notifications": "Notifications",
-      "audit": "Audit Logs",
+      "audit": "System Logs",
       "languages": "Languages",
       "doc_types": "Document Types",
-      "services": "Services",
+      "services": "Service Catalog",
       "email_templates": "Email Templates",
-      "specializations": "Specializations",
-      "units": "Units",
+      "specializations": "Areas of Expertise",
+      "units": "Units of Measurement",
       "currencies": "Currencies"
     },
     "master_data": {
-      "language_config": "Language Configuration",
+      "language_config": "Language Settings",
       "doc_categories": "Document Categories",
-      "service_catalog": "Service Catalog",
-      "email_templates": "Email Templates",
+      "service_catalog": "Service Portfolio",
+      "email_templates": "Correspondence Templates",
       "specializations": "Specializations",
       "units": "Units",
-      "currencies": "Currencies",
-      "add_new": "Add New",
-      "code_iso": "Code (ISO)",
-      "language_flag": "Language / Flag",
-      "native": "Native",
-      "category": "Category",
-      "service_name": "Service Name",
-      "template_name": "Template Name",
-      "subject": "Subject",
-      "unit": "Unit",
+      "abbreviation": "Abbreviation",
+      "type": "Type",
+      "unit_types": {
+        "quantity": "Quantity",
+        "time": "Time Effort",
+        "flatrate": "Flat Rate"
+      },
       "currency_code": "Currency (ISO)",
       "symbol": "Symbol",
-      "status": "Status"
+      "status": "Status",
+      "add_new": "Add New Entry"
     }
   },
   "nav": {
@@ -116,6 +132,296 @@
     "logout": "Log Out",
     "profile": "Profile",
     "subscription": "Subscription"
+  },
+  "projects": {
+    "title": "Projects & Assignments",
+    "subtitle": "Manage and monitor all translation projects.",
+    "new_project": "New Project",
+    "new_short": "New",
+    "kanban_view": "Kanban View",
+    "list_view": "List View",
+    "search_placeholder": "Search projects...",
+    "board_title": "Project Board",
+    "status": {
+      "draft": "New",
+      "offer": "Offer",
+      "pending": "New",
+      "in_progress": "In Progress",
+      "review": "In Progress",
+      "ready_for_pickup": "Ready for Pickup",
+      "invoiced": "Invoiced",
+      "delivered": "Delivered",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "archived": "Archived",
+      "deleted": "Deleted"
+    },
+    "kpi": {
+      "active_projects": "Active Projects",
+      "active_count_sub": "out of {{total}} projects total",
+      "open_assignments": "Open Assignments",
+      "unassigned": "No partner assigned yet",
+      "all_assigned": "All projects assigned",
+      "profitability": "Profitability (YTD)",
+      "margin_sub": "{{amount}} gross margin",
+      "deadline_alarm": "Deadline Alert",
+      "on_track": "All on track",
+      "overdue": "Due or Overdue"
+    },
+    "filters": {
+      "status_view": "Active / Archive",
+      "quick_filter": "Quick Filter",
+      "all_projects": "All Projects",
+      "active": "Active",
+      "archive": "Archived",
+      "trash": "Trash",
+      "status_tabs": {
+        "all": "All",
+        "offer": "Offer",
+        "in_progress": "In Progress",
+        "ready_for_pickup": "Ready for Pickup",
+        "delivered": "Delivered",
+        "invoiced": "Invoiced",
+        "completed": "Completed"
+      },
+      "priority": {
+        "label": "Priority",
+        "all": "All Priorities",
+        "standard": "Standard",
+        "normal": "Normal",
+        "high": "High",
+        "express": "Express"
+      },
+      "customers": {
+        "label": "Customer",
+        "all": "All Customers"
+      },
+      "partners": {
+        "label": "Partner / Translator",
+        "all": "All Partners"
+      },
+      "languages": {
+        "source": "Source Language",
+        "target": "Target Language",
+        "all": "All Languages"
+      },
+      "deadline": {
+        "label": "Deadline",
+        "all": "All Deadlines",
+        "overdue": "Overdue",
+        "today": "Due Today",
+        "this_week": "This Week",
+        "this_month": "This Month"
+      },
+      "certified": "Certified",
+      "apostille": "Apostille",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "actions": {
+      "export": "Export",
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF Report",
+      "bulk": {
+        "complete": "Complete",
+        "reset": "Reset",
+        "send_email": "Send Email",
+        "archive": "Archive",
+        "trash": "Trash",
+        "restore": "Restore",
+        "delete_permanent": "Delete permanently"
+      }
+    },
+    "messages": {
+      "create_success": "Project created successfully",
+      "create_error": "Error creating project",
+      "update_success": "Project updated successfully",
+      "update_error": "Error updating project",
+      "delete_success": "Project deleted successfully",
+      "delete_error": "Error deleting project",
+      "bulk_trash": "{{count}} projects moved to trash",
+      "bulk_update": "{{count}} projects updated",
+      "bulk_delete": "{{count}} projects permanently deleted",
+      "bulk_error": "Bulk action failed"
+    }
+  },
+  "customers": {
+    "title": "Customer Base",
+    "subtitle": "Central management of all clients and billing addresses.",
+    "new_customer": "New Customer",
+    "new_short": "New",
+    "search_placeholder": "Search customers by name, contact, or email...",
+    "kpi": {
+      "total_customers": "Total Customers",
+      "new_entries": "New Additions",
+      "last_30_days": "Last 30 Days",
+      "top_customer": "Top Client",
+      "top_customer_sub": "Highest Revenue YTD",
+      "revenue_ytd": "Revenue YTD",
+      "vs_last_year": "vs. Last Year"
+    },
+    "filters": {
+      "type": "Customer Type",
+      "types": {
+        "all": "All",
+        "company": "Companies",
+        "private": "Private",
+        "authority": "Authorities"
+      }
+    },
+    "table": {
+      "company": "Company",
+      "contact": "Contact Person",
+      "address": "Address",
+      "phone": "Phone",
+      "projects": "Projects",
+      "sales": "Sales (YTD)",
+      "id": "ID"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "deleted": "Deleted",
+      "archived": "Archived"
+    },
+    "actions": {
+      "activate": "Activate",
+      "deactivate": "Deactivate"
+    },
+    "confirm": {
+      "delete_title": "Permanently Delete Customers",
+      "delete_message": "Are you sure you want to permanently delete {{count}} customers? This process cannot be undone."
+    },
+    "messages": {
+      "create_success": "Customer created successfully",
+      "create_error": "Error creating customer",
+      "update_success": "Customer updated successfully",
+      "update_error": "Error updating customer",
+      "delete_success": "Customer deleted successfully",
+      "delete_error": "Error deleting customer",
+      "bulk_update_success": "{{count}} customers updated",
+      "bulk_update_error": "Error updating customers",
+      "bulk_delete_success": "{{count}} customers permanently deleted",
+      "bulk_delete_error": "Error during permanent deletion"
+    }
+  },
+  "partners": {
+    "title": "Partner Network",
+    "subtitle": "Management of external translators, interpreters, and agencies.",
+    "new_partner": "New Partner",
+    "new_short": "New",
+    "search_placeholder": "Search partners by name, language, or email...",
+    "kpi": {
+      "active_partners": "Active Partners",
+      "partner_costs": "Partner Costs",
+      "avg_per_project": "Ø {{amount}} / project",
+      "quality_average": "Quality Score",
+      "rating_sub": "Based on average rating",
+      "collaboration": "Collaboration",
+      "projects_this_month": "Projects this Month"
+    },
+    "filters": {
+      "type": "Partner Type",
+      "types": {
+        "all": "All Partners",
+        "service_providers": "All Partners",
+        "translator": "Translators",
+        "interpreter": "Interpreters",
+        "agency": "Agencies"
+      }
+    },
+    "table": {
+      "partner": "Partner / Provider",
+      "projects": "Projects",
+      "languages": "Languages",
+      "location": "Location",
+      "rating": "Rating"
+    },
+    "status": {
+      "available": "Available",
+      "busy": "Busy",
+      "vacation": "Vacation",
+      "blacklisted": "Locked",
+      "archived": "Archived",
+      "deleted": "Deleted"
+    },
+    "actions": {
+      "lock": "Lock"
+    },
+    "messages": {
+      "create_success": "Partner created successfully",
+      "create_error": "Error creating partner",
+      "update_success": "Partner updated successfully",
+      "update_error": "Error updating partner",
+      "delete_success": "Partner deleted successfully",
+      "delete_error": "Error deleting partner",
+      "bulk_update_success": "{{count}} partners updated"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "subtitle": "Central management of all billing documents and DATEV exports.",
+    "new_invoice": "New Invoice",
+    "new_credit_note": "New Credit Note",
+    "search_placeholder": "Search by No., Customer or Project...",
+    "kpi": {
+      "open_amount": "Open Amount",
+      "paid_total": "Paid (Total)",
+      "overdue_sub": "{{count}} overdue",
+      "transactions_sub": "{{count}} transactions",
+      "reminders": "Reminders",
+      "reminders_sub": "Due / Active",
+      "external_costs": "External Costs",
+      "this_month": "This Month"
+    },
+    "tabs": {
+      "all": "All",
+      "open": "Open",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "reminders": "Reminders",
+      "cancelled": "Cancelled",
+      "credit_notes": "Credit Notes"
+    },
+    "filters": {
+      "invoice_status": "Invoice Status"
+    },
+    "actions": {
+      "paid": "Paid",
+      "send_reminder": "Send Reminder",
+      "rebuild": "Rebuild",
+      "print": "Print",
+      "download_xml": "Download XML"
+    },
+    "messages": {
+      "create_success": "Invoice created successfully",
+      "create_error": "Error creating invoice",
+      "update_success": "Invoice updated successfully",
+      "update_error": "Error updating invoice",
+      "delete_success": "Invoice draft deleted",
+      "delete_error": "Error deleting draft",
+      "bulk_update_success": "{{count}} invoices updated",
+      "bulk_error": "Invoices could not be updated",
+      "issue_success": "Invoice issued and locked (GoBD compliant)",
+      "issue_error": "Error during issuance",
+      "cancel_success": "Invoice cancelled, credit note created",
+      "cancel_error": "Error during cancellation",
+      "paid_success": "Invoice marked as paid",
+      "datev_success": "DATEV export created successfully.",
+      "datev_error": "Error during DATEV export.",
+      "pdf_error": "Error downloading the PDF file.",
+      "xml_error": "Error downloading the XML file.",
+      "print_error": "Error opening the PDF file for printing."
+    },
+    "confirm": {
+      "cancel_title": "Cancel Invoice",
+      "cancel_reason": "Cancellation reason (optional)",
+      "cancel_placeholder": "e.g. Incorrect details, customer request...",
+      "reminder_title": "Send Reminders",
+      "reminder_message": "Send/upgrade {{count}} reminders?",
+      "reminders_btn": "Send Reminders"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -156,6 +462,175 @@
       "partner_create_error": "Error creating partner",
       "invoice_created": "Invoice has been created",
       "invoice_create_error": "Error creating invoice"
+    }
+  },
+  "calendar": {
+    "title": "Calendar & Appointments",
+    "subtitle": "Overview of all projects, invoices and assignments.",
+    "new_appointment": "New Appointment",
+    "new_interpreting": "New Interpreting Assignment",
+    "view": {
+      "month": "Month",
+      "week": "Week",
+      "day": "Day"
+    },
+    "sidebar": {
+      "unassigned_projects": "Unassigned Projects",
+      "search_project": "Search project...",
+      "no_projects": "No projects without deadline",
+      "all_planned": "All projects are already planned",
+      "staff_title": "Staff & Employees",
+      "search_staff": "Search staff...",
+      "no_staff": "No staff members found",
+      "try_another_search": "Try another search term"
+    },
+    "messages": {
+      "deadline_success": "Deadline set",
+      "deadline_error": "Error setting deadline",
+      "create_success": "Appointment created",
+      "create_error": "Error creating appointment",
+      "update_success": "Appointment updated",
+      "update_error": "Error updating"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "project_manager": "Project Manager",
+      "translator": "Translator",
+      "interpreter": "Interpreter",
+      "editor": "Editor",
+      "proofreader": "Proofreader",
+      "sales": "Sales",
+      "accounting": "Accounting",
+      "support": "Support",
+      "employee": "Employee",
+      "user": "User"
+    }
+  },
+  "interpreting": {
+    "title": "Interpreting Assignments",
+    "subtitle": "Central management of all on-site and online interpreting appointments.",
+    "new_assignment": "New Assignment",
+    "new_short": "New",
+    "search_placeholder": "Search assignments...",
+    "kpi": {
+      "upcoming": "Upcoming",
+      "completed": "Completed",
+      "active_interpreters": "Active Interpreters",
+      "deployed_partners": "Deployed Partners",
+      "this_month": "This Month",
+      "assignments": "Assignments"
+    },
+    "columns": {
+      "date": "Date & Time",
+      "title": "Assignment / Title",
+      "customer": "Customer",
+      "interpreter": "Interpreter",
+      "location": "Location",
+      "not_assigned": "Not assigned",
+      "unknown": "Unknown"
+    },
+    "actions": {
+      "generate_confirmation": "Generate interpreter confirmation"
+    },
+    "messages": {
+      "create_success": "Assignment created",
+      "create_error": "Error creating",
+      "update_success": "Assignment updated",
+      "update_error": "Error updating",
+      "delete_success": "Assignment deleted",
+      "delete_error": "Error deleting"
+    },
+    "confirm": {
+      "delete_title": "Delete assignment",
+      "delete_message": "Are you sure you want to delete this interpreting assignment? This process cannot be undone."
+    }
+  },
+  "reports": {
+    "title": "Reports & Analytics",
+    "subtitle": "Detailed evaluation of your business data.",
+    "presets": {
+      "last_7_days": "Last 7 days",
+      "last_30_days": "Last 30 days",
+      "last_3_months": "Last 3 months",
+      "last_6_months": "Last 6 months",
+      "this_year": "This year"
+    },
+    "tabs": {
+      "analytics": "Graphical Analysis",
+      "finance": "Finance Evaluation (VAT)"
+    },
+    "kpi": {
+      "total_revenue": "Total Revenue",
+      "avg_margin": "Avg. Net Margin",
+      "jobs": "Jobs",
+      "growth": "Growth",
+      "vs_period": "vs. previous period"
+    },
+    "charts": {
+      "revenue_dev": "Revenue Development",
+      "margin_per_month": "Margin per Month",
+      "revenue_by_lang": "Revenue by Language",
+      "top_customers": "Top Customers (Revenue)",
+      "project_status": "Project Status",
+      "no_data": "No data for this period"
+    },
+    "finance": {
+      "title": "Finance Reports",
+      "subtabs": {
+        "tax": "VAT Return",
+        "profitability": "Profitability Analysis",
+        "opos": "OPOS",
+        "bwa": "BWA"
+      },
+      "export_datev": "DATEV XML Export",
+      "tax": {
+        "period": "Reporting Period",
+        "revenue_net": "Revenue (Net)",
+        "tax_amount": "VAT",
+        "input_tax": "Input Tax",
+        "est_short": "(Estimate)",
+        "payable_tax": "Tax Payable",
+        "reverse_charge": "Rev. Charge",
+        "total": "Total",
+        "empty_msg": "No financial data available for this period."
+      },
+      "profitability": {
+        "proj_cust": "Project / Customer",
+        "revenue_net": "Revenue (Net)",
+        "cost_net": "Costs (Net)",
+        "profit": "Profit",
+        "margin": "Margin",
+        "status": "Status",
+        "total": "Total ({{count}} projects)",
+        "empty_msg": "No project data available for this period."
+      },
+      "opos": {
+        "inv_no": "Invoice No.",
+        "due_date": "Due on",
+        "overdue_days": "({{count}} days overdue)",
+        "amount_gross": "Amount (Gross)",
+        "issued": "Issued",
+        "overdue": "Overdue",
+        "total_outstanding": "Total outstanding",
+        "empty_msg": "No open items found."
+      },
+      "bwa": {
+        "month": "Month",
+        "revenue": "Revenue",
+        "material_cost": "Material Costs (External Services)",
+        "gross_profit": "Gross Profit",
+        "gross_margin": "Gross Margin Rate",
+        "empty_msg": "No BWA data found."
+      },
+      "hints_title": "Notes on VAT return",
+      "hint_1": "The tax payable is calculated from the sum of the VAT received minus the input tax paid.",
+      "hint_2": "Reverse charge transactions (intra-community services) are tax-free in the domestic country, but must be reported in the VAT return.",
+      "hint_3": "The input tax is currently estimated at 19% based on the project costs, as long as no explicit incoming invoices are recorded.",
+      "export_title": "Tax Office Export",
+      "export_desc": "You can use this data directly for your monthly or quarterly VAT return. A direct Elster export is in preparation. Alternatively, you can export the data structure for transfer to your tax advisor.",
+      "export_btn": "Export CSV Finance Report (VAT)"
     }
   },
   "notifications": {

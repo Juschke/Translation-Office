@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calendarService } from '../api/services';
 import DataTable from '../components/common/DataTable';
@@ -33,6 +34,7 @@ const getInitials = (name: string): string => {
 };
 
 const Interpreting = () => {
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,9 +61,9 @@ const Interpreting = () => {
                 setIsInterpreterModalOpen(true);
                 setPendingProjectForConfirmation(null);
             }
-            toast.success('Einsatz erstellt');
+            toast.success(t('interpreting.messages.create_success'));
         },
-        onError: () => toast.error('Fehler beim Erstellen')
+        onError: () => toast.error(t('interpreting.messages.create_error'))
     });
 
     const updateMutation = useMutation({
@@ -70,9 +72,9 @@ const Interpreting = () => {
             queryClient.invalidateQueries({ queryKey: ['appointments', 'interpreting'] });
             setIsModalOpen(false);
             setEditingAssignment(null);
-            toast.success('Einsatz aktualisiert');
+            toast.success(t('interpreting.messages.update_success'));
         },
-        onError: () => toast.error('Fehler beim Aktualisieren')
+        onError: () => toast.error(t('interpreting.messages.update_error'))
     });
 
     const deleteMutation = useMutation({
@@ -81,9 +83,9 @@ const Interpreting = () => {
             queryClient.invalidateQueries({ queryKey: ['appointments', 'interpreting'] });
             setIsConfirmOpen(false);
             setAssignmentToDelete(null);
-            toast.success('Einsatz gelöscht');
+            toast.success(t('interpreting.messages.delete_success'));
         },
-        onError: () => toast.error('Fehler beim Löschen')
+        onError: () => toast.error(t('interpreting.messages.delete_error'))
     });
 
     const stats = useMemo(() => {
@@ -101,22 +103,22 @@ const Interpreting = () => {
     const columns: any[] = [
         {
             id: 'date',
-            header: 'Datum & Zeit',
+            header: t('interpreting.columns.date'),
             accessor: (item: Appointment) => (
                 <div className="flex flex-col">
                     <span className="font-bold text-slate-800">
-                        {format(new Date(item.start_date), 'eeee, dd.MM.yyyy', { locale: de })}
+                        {format(new Date(item.start_date), 'eeee, dd.MM.yyyy', { locale: i18n.language === 'de' ? de : undefined })}
                     </span>
                     <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                        {format(new Date(item.start_date), 'HH:mm', { locale: de })}
-                        {item.end_date && ` - ${format(new Date(item.end_date), 'HH:mm', { locale: de })}`}
+                        {format(new Date(item.start_date), 'HH:mm', { locale: i18n.language === 'de' ? de : undefined })}
+                        {item.end_date && ` - ${format(new Date(item.end_date), 'HH:mm', { locale: i18n.language === 'de' ? de : undefined })}`}
                     </span>
                 </div>
             )
         },
         {
             id: 'title',
-            header: 'Einsatz / Titel',
+            header: t('interpreting.columns.title'),
             accessor: (item: Appointment) => (
                 <div className="flex flex-col">
                     <span className="font-semibold text-slate-800">{item.title}</span>
@@ -136,12 +138,12 @@ const Interpreting = () => {
         },
         {
             id: 'customer',
-            header: 'Kunde',
+            header: t('interpreting.columns.customer'),
             accessor: (item: Appointment) => {
                 const customer = item.customer || item.project?.customer;
                 if (!customer) return <span className="text-slate-400">-</span>;
                 const salutation = customer.salutation ? `${customer.salutation} ` : '';
-                const name = customer.company_name || `${salutation}${customer.first_name} ${customer.last_name}` || 'Unbekannt';
+                const name = customer.company_name || `${salutation}${customer.first_name} ${customer.last_name}` || t('interpreting.columns.unknown');
                 return (
                     <div className="flex items-center gap-3 max-w-[240px]">
                         <div className="w-8 h-8 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm">
@@ -161,11 +163,11 @@ const Interpreting = () => {
         },
         {
             id: 'partner',
-            header: 'Dolmetscher',
+            header: t('interpreting.columns.interpreter'),
             accessor: (item: Appointment) => {
                 const partner = item.partner;
-                if (!partner) return <span className="text-slate-400 italic">Nicht zugewiesen</span>;
-                const name = partner.company_name || `${partner.first_name} ${partner.last_name}` || 'Dolmetscher';
+                if (!partner) return <span className="text-slate-400 italic">{t('interpreting.columns.not_assigned')}</span>;
+                const name = partner.company_name || `${partner.first_name} ${partner.last_name}` || t('interpreting.columns.interpreter');
                 return (
                     <div className="flex items-center gap-3 max-w-[240px]">
                         <div className="w-8 h-8 bg-brand-primary/5 border border-brand-primary/10 text-brand-primary flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm">
@@ -185,7 +187,7 @@ const Interpreting = () => {
         },
         {
             id: 'location',
-            header: 'Ort',
+            header: t('interpreting.columns.location'),
             accessor: (item: Appointment) => item.location ? (
                 <div className="flex items-center gap-1.5 text-slate-600 font-medium">
                     <FaMapMarkerAlt className="text-[10px] text-slate-400" />
@@ -194,7 +196,7 @@ const Interpreting = () => {
             ) : <span className="text-slate-400">-</span>
         },
         {
-            header: 'Aktionen',
+            header: t('common.actions'),
             id: 'actions',
             accessor: (item: Appointment) => (
                 <div className="flex items-center gap-2">
@@ -206,7 +208,7 @@ const Interpreting = () => {
                                 setIsInterpreterModalOpen(true);
                             }}
                             className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-sm transition-all"
-                            title="Dolmetscherbestätigung erzeugen"
+                            title={t('interpreting.actions.generate_confirmation')}
                         >
                             <FaFilePdf className="text-sm" />
                         </button>
@@ -218,7 +220,7 @@ const Interpreting = () => {
                             setIsModalOpen(true);
                         }}
                         className="p-1.5 text-slate-400 hover:text-brand-primary hover:bg-brand-primary/5 rounded-sm transition-all"
-                        title="Bearbeiten"
+                        title={t('common.edit')}
                     >
                         <FaEdit className="text-sm" />
                     </button>
@@ -229,7 +231,7 @@ const Interpreting = () => {
                             setIsConfirmOpen(true);
                         }}
                         className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-sm transition-all"
-                        title="Löschen"
+                        title={t('common.delete')}
                     >
                         <FaTrash className="text-sm" />
                     </button>
@@ -242,40 +244,40 @@ const Interpreting = () => {
         <div className="flex flex-col gap-6 fade-in pb-10">
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Dolmetschereinsätze</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Zentrale Verwaltung aller Vor-Ort und Online Dolmetschtertermine.</p>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('interpreting.title')}</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('interpreting.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <Button
                         onClick={() => setIsProjectSelectionOpen(true)}
                         className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neuer Einsatz</span><span className="inline sm:hidden">Neu</span>
+                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('interpreting.new_assignment')}</span><span className="inline sm:hidden">{t('interpreting.new_short')}</span>
                     </Button>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label="Anstehend" value={stats.upcoming} icon={<FaCalendarAlt />} iconColor="text-blue-600" />
+                <KPICard label={t('interpreting.kpi.upcoming')} value={stats.upcoming} icon={<FaCalendarAlt />} iconColor="text-blue-600" />
                 <KPICard
-                    label="Abgeschlossen"
+                    label={t('interpreting.kpi.completed')}
                     value={stats.completed}
                     icon={<FaCheckCircle />}
                     iconColor="text-emerald-600"
                 />
                 <KPICard
-                    label="Aktive Dolmetscher"
+                    label={t('interpreting.kpi.active_interpreters')}
                     value={stats.uniquePartners}
                     icon={<FaUserTie />}
                     iconColor="text-brand-primary"
-                    subValue="Eingesetzte Partner"
+                    subValue={t('interpreting.kpi.deployed_partners')}
                 />
                 <KPICard
-                    label="Diesen Monat"
+                    label={t('interpreting.kpi.this_month')}
                     value={stats.thisMonth}
                     icon={<FaHandshake />}
                     iconColor="text-amber-600"
-                    subValue="Einsätze"
+                    subValue={t('interpreting.kpi.assignments')}
                 />
             </div>
 
@@ -283,8 +285,7 @@ const Interpreting = () => {
                 data={assignments}
                 columns={columns}
                 isLoading={isLoading}
-                pageSize={10}
-                searchPlaceholder="Einsätze suchen..."
+                searchPlaceholder={t('interpreting.search_placeholder')}
                 searchFields={['title', 'location', 'description']}
                 onRowClick={(row) => {
                     setEditingAssignment(row);
@@ -318,8 +319,8 @@ const Interpreting = () => {
                         deleteMutation.mutate(assignmentToDelete.id);
                     }
                 }}
-                title="Einsatz löschen"
-                message="Sind Sie sicher, dass Sie diesen Dolmetschereinsatz löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden."
+                title={t('interpreting.confirm.delete_title')}
+                message={t('interpreting.confirm.delete_message')}
                 isLoading={deleteMutation.isPending}
             />
 

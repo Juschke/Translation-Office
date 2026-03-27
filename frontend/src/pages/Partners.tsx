@@ -18,9 +18,11 @@ import { getFlagUrl, getLanguageName } from '../utils/flags';
 import ConfirmModal from '../components/common/ConfirmModal';
 import TableSkeleton from '../components/common/TableSkeleton';
 import type { BulkActionItem } from '../components/common/BulkActions';
+import { useTranslation } from 'react-i18next';
 
 
 const Partners = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,10 +75,10 @@ const Partners = () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
-            toast.success('Partner erfolgreich angelegt');
+            toast.success(t('partners.messages.create_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Anlegen des Partners');
+            toast.error(t('partners.messages.create_error'));
         }
     });
 
@@ -87,10 +89,10 @@ const Partners = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingPartner(null);
-            toast.success('Partner erfolgreich aktualisiert');
+            toast.success(t('partners.messages.update_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Aktualisieren des Partners');
+            toast.error(t('partners.messages.update_error'));
         }
     });
 
@@ -100,10 +102,10 @@ const Partners = () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedPartners([]);
-            toast.success('Partner erfolgreich gelöscht');
+            toast.success(t('partners.messages.delete_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Löschen des Partners');
+            toast.error(t('partners.messages.delete_error'));
         }
     });
 
@@ -113,10 +115,10 @@ const Partners = () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedPartners([]);
-            toast.success(`${variables.ids.length} Partner aktualisiert`);
+            toast.success(t('partners.messages.bulk_update_success', { count: variables.ids.length }));
         },
         onError: () => {
-            toast.error('Massenvorgang fehlgeschlagen');
+            toast.error(t('projects.messages.bulk_error'));
         }
     });
 
@@ -197,7 +199,7 @@ const Partners = () => {
     const columns = [
         {
             id: 'partner',
-            header: 'Partner / Dienstleister',
+            header: t('partners.table.partner'),
             accessor: (p: any) => (
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-sm shrink-0 bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-medium border border-indigo-100">
@@ -210,9 +212,9 @@ const Partners = () => {
                             <span className="text-xs text-slate-300 shrink-0">•</span>
                             <span
                                 className="text-xs text-slate-500 font-medium truncate shrink"
-                                title={p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type}
+                                title={p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
                             >
-                                {p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type}
+                                {p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
                             </span>
                         </div>
                     </div>
@@ -223,7 +225,7 @@ const Partners = () => {
         },
         {
             id: 'projects_count',
-            header: 'Projekte',
+            header: t('partners.table.projects'),
             accessor: (p: any) => (
                 <div className="flex flex-col items-center">
                     <span className="text-xs font-semibold text-slate-700">{p.projects_count || 0}</span>
@@ -235,7 +237,7 @@ const Partners = () => {
         },
         {
             id: 'status',
-            header: 'Status',
+            header: t('common.status'),
             accessor: (p: any) => {
                 const styles: { [key: string]: string } = {
                     'available': 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -246,12 +248,12 @@ const Partners = () => {
                     'deleted': 'bg-red-50 text-red-700 border-red-200'
                 };
                 const labels: { [key: string]: string } = {
-                    'available': 'Verfügbar',
-                    'busy': 'Beschäftigt',
-                    'vacation': 'Urlaub',
-                    'blacklisted': 'Gesperrt',
-                    'archived': 'Archiviert',
-                    'deleted': 'Gelöscht'
+                    'available': t('partners.status.available'),
+                    'busy': t('partners.status.busy'),
+                    'vacation': t('partners.status.vacation'),
+                    'blacklisted': t('partners.status.blacklisted'),
+                    'archived': t('partners.status.archived'),
+                    'deleted': t('partners.status.deleted')
                 };
                 const status = p.status?.toLowerCase();
                 return (
@@ -266,7 +268,7 @@ const Partners = () => {
         },
         {
             id: 'languages',
-            header: 'Sprachen',
+            header: t('partners.table.languages'),
             accessor: (p: any) => {
                 const languages = Array.isArray(p.languages) ? p.languages : (p.languages ? [p.languages] : []);
                 const visibleLangs = languages.slice(0, 2);
@@ -296,7 +298,7 @@ const Partners = () => {
         },
         {
             id: 'location',
-            header: 'Standort',
+            header: t('partners.table.location'),
             accessor: (p: any) => (
                 <div className="flex flex-col max-w-[180px]">
                     <span className="text-slate-700 text-xs font-medium truncate" title={[p.address_street, p.address_house_no].filter(Boolean).join(' ')}>
@@ -313,21 +315,21 @@ const Partners = () => {
         },
         {
             id: 'email',
-            header: 'E-Mail',
+            header: t('fields.email'),
             accessor: (p: any) => <span className="text-slate-600 truncate max-w-[150px] inline-block">{p.email || '-'}</span>,
             sortable: true,
             sortKey: 'email'
         },
         {
             id: 'phone',
-            header: 'Telefon',
+            header: t('fields.phone'),
             accessor: (p: any) => <span className="text-slate-600 whitespace-nowrap">{p.phone || '-'}</span>,
             sortable: true,
             sortKey: 'phone'
         },
         {
             id: 'rating',
-            header: 'Bewertung',
+            header: t('partners.table.rating'),
             accessor: (p: any) => (
                 <div className="flex items-center gap-1.5">
                     <span className="text-xs font-medium text-slate-600">{p.rating || 0}</span>
@@ -353,7 +355,7 @@ const Partners = () => {
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye /></button>
+                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('common.details')}><FaEye /></button>
                     <button onClick={async () => {
                         setEditingPartner(p);
                         setIsModalOpen(true);
@@ -366,8 +368,8 @@ const Partners = () => {
                         } finally {
                             setIsDetailLoading(false);
                         }
-                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
-                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Löschen"><FaTrash /></button>
+                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit /></button>
+                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')}><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -396,16 +398,16 @@ const Partners = () => {
 
     const tableFilters: FilterDef[] = [
         {
-            id: 'statusView', label: 'Aktiv / Archiv', type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('service_providers'); },
-            options: [{ value: 'active', label: 'Aktiv' }, { value: 'archive', label: 'Archiviert' }, { value: 'trash', label: 'Papierkorb' }]
+            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('service_providers'); },
+            options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
         },
         ...(statusView === 'active' ? [{
-            id: 'type', label: 'Partnertyp', type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
+            id: 'type', label: t('partners.filters.type'), type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
             options: [
-                { value: 'service_providers', label: 'Alle Partner' },
-                { value: 'translator', label: 'Übersetzer' },
-                { value: 'interpreter', label: 'Dolmetscher' },
-                { value: 'agency', label: 'Agenturen' }
+                { value: 'service_providers', label: t('partners.filters.types.all') },
+                { value: 'translator', label: t('partners.filters.types.translator') },
+                { value: 'interpreter', label: t('partners.filters.types.interpreter') },
+                { value: 'agency', label: t('partners.filters.types.agency') }
             ]
         }] : [])
     ];
@@ -416,36 +418,36 @@ const Partners = () => {
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Partnernetzwerk</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Verwaltung externer Übersetzer, Dolmetscher und Agenturen.</p>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('partners.title')}</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('partners.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <Button
                         onClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
                         className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neuer Partner</span><span className="inline sm:hidden">Neu</span>
+                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('partners.new_partner')}</span><span className="inline sm:hidden">{t('partners.new_short')}</span>
                     </Button>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label="Aktive Partner" value={activePartnersCount} icon={<FaUserTie />} />
+                <KPICard label={t('partners.kpi.active_partners')} value={activePartnersCount} icon={<FaUserTie />} />
                 <KPICard
-                    label="Partner Kosten"
+                    label={t('partners.kpi.partner_costs')}
                     value={partnerFinancials.totalCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                     icon={<FaEuroSign />}
                     iconColor="text-rose-600"
-                    subValue={`Ø ${partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} / Projekt`}
+                    subValue={t('partners.kpi.avg_per_project', { amount: partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) })}
                 />
                 <KPICard
-                    label="Qualitätsschnitt"
+                    label={t('partners.kpi.quality_average')}
                     value={`${partnerQuality.toFixed(1)} / 5.0`}
                     icon={<FaStar />}
                     iconColor="text-amber-500"
-                    subValue="Durchschnittliche Bewertung"
+                    subValue={t('partners.kpi.rating_sub')}
                 />
-                <KPICard label="Zusammenarbeit" value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" subValue="Projekte diesen Monat" />
+                <KPICard label={t('partners.kpi.collaboration')} value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" subValue={t('partners.kpi.projects_this_month')} />
             </div>
 
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
@@ -453,8 +455,7 @@ const Partners = () => {
                     data={filteredPartners}
                     columns={columns as any}
                     onRowClick={(p) => navigate(`/partners/${p.id}`)}
-                    pageSize={10}
-                    searchPlaceholder="Partner nach Name, Sprache oder E-Mail suchen..."
+                    searchPlaceholder={t('partners.search_placeholder')}
                     searchFields={['first_name', 'last_name', 'company', 'email']}
                     actions={actions}
                     onAddClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
@@ -463,14 +464,14 @@ const Partners = () => {
                     onSelectionChange={(ids) => setSelectedPartners(ids as number[])}
                     bulkActions={[
                         {
-                            label: 'Aktivieren',
+                            label: t('customers.actions.activate'),
                             icon: <FaCheck className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
                             variant: 'success',
                             show: statusView === 'active'
                         },
                         {
-                            label: 'E-Mail senden',
+                            label: t('projects.actions.bulk.send_email'),
                             icon: <FaEnvelope className="text-xs" />,
                             onClick: () => {
                                 const selectedEmails = partners
@@ -486,28 +487,28 @@ const Partners = () => {
                             show: statusView === 'active'
                         },
                         {
-                            label: 'Sperren',
+                            label: t('partners.actions.lock'),
                             icon: <FaBan className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'blacklisted' } }),
                             variant: 'danger',
                             show: statusView === 'active'
                         },
                         {
-                            label: 'Archivieren',
+                            label: t('projects.actions.bulk.archive'),
                             icon: <FaArchive className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'archived' } }),
                             variant: 'default',
                             show: statusView === 'active'
                         },
                         {
-                            label: 'Löschen',
+                            label: t('projects.actions.bulk.trash'),
                             icon: <FaTrash className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'deleted' } }),
                             variant: 'danger',
                             show: statusView === 'active'
                         },
                         {
-                            label: 'Wiederherstellen',
+                            label: t('projects.actions.bulk.restore'),
                             icon: <FaTrashRestore className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
                             variant: 'success',
@@ -551,8 +552,8 @@ const Partners = () => {
                         });
                     }
                 }}
-                title="Partner löschen"
-                message="Sind Sie sicher, dass Sie diesen Partner in den Papierkorb verschieben möchten? Dieser Vorgang kann später im Papierkorb endgültig gelöscht oder wiederhergestellt werden."
+                title={t('partners.messages.delete_success')}
+                message={t('customers.confirm.delete_message', { count: 1 })}
                 isLoading={deleteMutation.isPending}
             />
         </div >

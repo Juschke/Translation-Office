@@ -21,9 +21,11 @@ import { invoiceService, externalCostService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
+import { useTranslation } from 'react-i18next';
 
 
 const Invoices = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
@@ -88,10 +90,10 @@ const Invoices = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             setIsNewInvoiceOpen(false);
             setInvoiceToEdit(null);
-            toast.success('Rechnung erfolgreich erstellt');
+            toast.success(t('invoices.messages.create_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Erstellen der Rechnung');
+            toast.error(t('invoices.messages.create_error'));
         }
     });
 
@@ -101,10 +103,10 @@ const Invoices = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             setIsNewInvoiceOpen(false);
             setInvoiceToEdit(null);
-            toast.success('Rechnung erfolgreich aktualisiert');
+            toast.success(t('invoices.messages.update_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Aktualisieren der Rechnung');
+            toast.error(t('invoices.messages.update_error'));
         }
     });
 
@@ -114,10 +116,10 @@ const Invoices = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
-            toast.success('Rechnungsentwurf gelöscht');
+            toast.success(t('invoices.messages.delete_success'));
         },
         onError: (error: any) => {
-            toast.error(error?.response?.data?.error || 'Nur Entwürfe können gelöscht werden.');
+            toast.error(error?.response?.data?.error || t('invoices.messages.delete_error'));
         }
     });
 
@@ -131,10 +133,10 @@ const Invoices = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            toast.success('Rechnung ausgestellt und gesperrt (GoBD-konform)');
+            toast.success(t('invoices.messages.issue_success'));
         },
         onError: (error: any) => {
-            toast.error(error?.response?.data?.error || 'Fehler beim Ausstellen');
+            toast.error(error?.response?.data?.error || t('invoices.messages.issue_error'));
         }
     });
 
@@ -143,10 +145,10 @@ const Invoices = () => {
         onSuccess: (data: any) => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            toast.success(data?.message || 'Rechnung storniert, Gutschrift erstellt');
+            toast.success(data?.message || t('invoices.messages.cancel_success'));
         },
         onError: (error: any) => {
-            toast.error(error?.response?.data?.error || 'Fehler beim Stornieren');
+            toast.error(error?.response?.data?.error || t('invoices.messages.cancel_error'));
         }
     });
 
@@ -156,10 +158,10 @@ const Invoices = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedInvoices([]);
-            toast.success(`${variables.ids.length} Rechnungen aktualisiert`);
+            toast.success(t('invoices.messages.bulk_update_success', { count: variables.ids.length }));
         },
         onError: () => {
-            toast.error('Rechnungen konnten nicht aktualisiert werden');
+            toast.error(t('invoices.messages.bulk_error'));
         }
     });
 
@@ -168,9 +170,9 @@ const Invoices = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            toast.success('Rechnung als bezahlt markiert');
+            toast.success(t('invoices.messages.paid_success'));
         },
-        onError: () => toast.error('Fehler beim Aktualisieren'),
+        onError: () => toast.error(t('common.error')),
     });
 
     const filteredInvoices = useMemo(() => {
@@ -241,15 +243,15 @@ const Invoices = () => {
                 link.remove();
                 window.URL.revokeObjectURL(url);
                 setIsExportOpen(false);
-                toast.success('DATEV Export erfolgreich erstellt.');
+                toast.success(t('invoices.messages.datev_success'));
             } catch (error) {
-                toast.error('Fehler beim DATEV Export.');
+                toast.error(t('invoices.messages.datev_error'));
             }
             return;
         }
 
         // Keep other formats as is or placeholder
-        const headers = ['Nr', 'Datum', 'Kunde', 'Projekt', 'Fällig', 'Betrag', 'Status'];
+        const headers = [t('fields.invoice_number_short') || 'Nr', t('fields.date'), t('fields.customer'), t('fields.project'), t('fields.due_date_short') || 'Fällig', t('fields.amount'), t('common.status')];
         const rows = filteredInvoices.filter((inv: any) => ids.includes(inv.id)).map((inv: any) => [
             inv.invoice_number,
             new Date(inv.date).toLocaleDateString('de-DE'),
@@ -305,7 +307,7 @@ const Invoices = () => {
                 }, 2000);
             };
         } catch (error) {
-            toast.error('Fehler beim Öffnen der PDF-Datei zum Drucken.');
+            toast.error(t('invoices.messages.print_error'));
         }
     };
 
@@ -325,7 +327,7 @@ const Invoices = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            toast.error('Fehler beim Herunterladen der PDF-Datei.');
+            toast.error(t('invoices.messages.pdf_error'));
         }
     };
 
@@ -342,12 +344,12 @@ const Invoices = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            toast.error('Fehler beim Herunterladen der XML-Datei.');
+            toast.error(t('invoices.messages.xml_error'));
         }
     };
 
     const columns = buildInvoiceColumns({
-
+        t,
         setPreviewInvoice,
         setInvoiceToEdit,
         setIsNewInvoiceOpen,
@@ -431,46 +433,46 @@ const Invoices = () => {
                 onClick={() => setStatusFilter('all')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Alle
+                {t('invoices.tabs.all')}
             </button>
             <button
                 onClick={() => setStatusFilter('pending')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Offen
+                {t('invoices.tabs.open')}
                 {subTabCounts.pending > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'pending' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.pending}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('paid')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'paid' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Bezahlt
+                {t('invoices.tabs.paid')}
             </button>
             <button
                 onClick={() => setStatusFilter('overdue')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Überfällig
+                {t('invoices.tabs.overdue')}
                 {subTabCounts.overdue > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'overdue' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.overdue}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('reminders')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Mahnungen
+                {t('invoices.tabs.reminders')}
                 {subTabCounts.reminders > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'reminders' ? 'bg-white text-amber-600' : 'bg-amber-50 text-amber-600'}`}>{subTabCounts.reminders}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('cancelled')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Storniert
+                {t('invoices.tabs.cancelled')}
             </button>
             <button
                 onClick={() => setStatusFilter('credit_notes')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
-                Gutschriften
+                {t('invoices.tabs.credit_notes')}
                 {subTabCounts.credit_notes > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'credit_notes' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.credit_notes}</span>}
             </button>
         </div>
@@ -520,19 +522,19 @@ const Invoices = () => {
 
     const tableFilters: FilterDef[] = [
         {
-            id: 'statusView', label: 'Aktiv / Archiv', type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setStatusFilter('all'); },
-            options: [{ value: 'active', label: 'Aktiv' }, { value: 'archive', label: 'Archiviert' }, { value: 'trash', label: 'Papierkorb' }]
+            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setStatusFilter('all'); },
+            options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
         },
         ...(statusView === 'active' ? [{
-            id: 'statusFilter', label: 'Rechnungsstatus', type: 'select' as const, value: statusFilter, onChange: (v: any) => setStatusFilter(v),
+            id: 'statusFilter', label: t('invoices.filters.invoice_status'), type: 'select' as const, value: statusFilter, onChange: (v: any) => setStatusFilter(v),
             options: [
-                { value: 'all', label: 'Alle Rechnungen' },
-                { value: 'pending', label: 'Offen / Entwurf' },
-                { value: 'paid', label: 'Bezahlt' },
-                { value: 'overdue', label: 'Überfällig' },
-                { value: 'reminders', label: 'Mahnungen' },
-                { value: 'cancelled', label: 'Storniert' },
-                { value: 'credit_notes', label: 'Gutschriften' }
+                { value: 'all', label: t('invoices.tabs.all') },
+                { value: 'pending', label: t('invoices.tabs.open') },
+                { value: 'paid', label: t('invoices.tabs.paid') },
+                { value: 'overdue', label: t('invoices.tabs.overdue') },
+                { value: 'reminders', label: t('invoices.tabs.reminders') },
+                { value: 'cancelled', label: t('invoices.tabs.cancelled') },
+                { value: 'credit_notes', label: t('invoices.tabs.credit_notes') }
             ]
         }] : [])
     ];
@@ -543,8 +545,8 @@ const Invoices = () => {
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Rechnungen</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Zentralverwaltung aller Rechnungsbelege und DATEV-Exporte.</p>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('invoices.title')}</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('invoices.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <Button
@@ -556,24 +558,24 @@ const Invoices = () => {
                     >
                         <FaPlus className="text-xs" />
                         <span className="hidden sm:inline">
-                            {statusFilter === 'credit_notes' ? 'Neue Gutschrift' : 'Neue Rechnung'}
+                            {statusFilter === 'credit_notes' ? t('invoices.new_credit_note') : t('invoices.new_invoice')}
                         </span>
                         <span className="inline sm:hidden">
-                            Neu
+                            {t('common.new_short') || 'Neu'}
                         </span>
                     </Button>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label="Offener Betrag" value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={`${overdueCount} überfällig`} />
-                <KPICard label="Bezahlt (Gesamt)" value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={`${paidCount} Transaktionen`} />
-                <KPICard label="Mahnungen" value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue="Fällig / Aktiv" />
+                <KPICard label={t('invoices.kpi.open_amount')} value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={t('invoices.kpi.overdue_sub', { count: overdueCount })} />
+                <KPICard label={t('invoices.kpi.paid_total')} value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={t('invoices.kpi.transactions_sub', { count: paidCount })} />
+                <KPICard label={t('invoices.kpi.reminders')} value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue={t('invoices.kpi.reminders_sub')} />
                 <KPICard
-                    label="Fremdkosten"
+                    label={t('invoices.kpi.external_costs')}
                     value={(externalCostsStats?.total_costs ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                     icon={<FaHistory />}
-                    subValue="Diesen Monat"
+                    subValue={t('invoices.kpi.this_month')}
                 />
             </div>
 
@@ -583,29 +585,29 @@ const Invoices = () => {
                 <DataTable
                     data={filteredInvoices}
                     columns={columns as any}
-                    pageSize={10}
-                    searchPlaceholder="Suchen nach Nr., Kunde oder Projekt..."
+                    searchPlaceholder={t('invoices.search_placeholder')}
                     searchFields={['invoice_number', 'customer.company_name', 'project.project_name']}
                     actions={actions}
+                    tabs={tabs}
                     onRowClick={(inv: any) => setPreviewInvoice(inv)}
                     selectable
                     selectedIds={selectedInvoices}
                     onSelectionChange={(ids) => setSelectedInvoices(ids as number[])}
                     bulkActions={[
                         {
-                            label: 'Bezahlt',
+                            label: t('invoices.actions.paid'),
                             icon: <FaCheck className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }),
                             variant: 'success',
                             show: statusView === 'active' && statusFilter !== 'cancelled' && statusFilter !== 'paid'
                         },
                         {
-                            label: 'Mahnung senden',
+                            label: t('invoices.actions.send_reminder'),
                             icon: <FaPaperPlane className="text-xs text-amber-500" />,
                             onClick: () => {
-                                setConfirmTitle('Mahnungen versenden');
-                                setConfirmMessage(`${selectedInvoices.length} Mahnungen senden/hochstufen?`);
-                                setConfirmLabel('Mahnungen senden');
+                                setConfirmTitle(t('invoices.confirm.reminder_title'));
+                                setConfirmMessage(t('invoices.confirm.reminder_message', { count: selectedInvoices.length }));
+                                setConfirmLabel(t('invoices.confirm.reminders_btn'));
                                 setConfirmVariant('warning');
                                 setConfirmAction(() => () => {
                                     toast.loading('Mahnungen werden verarbeitet...');
@@ -624,14 +626,14 @@ const Invoices = () => {
                             show: statusView === 'active' && (statusFilter === 'reminders' || statusFilter === 'overdue')
                         },
                         {
-                            label: 'Archivieren',
+                            label: t('projects.actions.bulk.archive'),
                             icon: <FaArchive className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'archived' } }),
                             variant: 'default',
                             show: statusView === 'active' && statusFilter === 'paid'
                         },
                         {
-                            label: 'Wiederherstellen',
+                            label: t('projects.actions.bulk.restore'),
                             icon: <FaTrashRestore className="text-xs" />,
                             onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'draft' } }),
                             variant: 'success',
@@ -679,14 +681,14 @@ const Invoices = () => {
                 variant={confirmVariant}
                 isLoading={deleteMutation.isPending || issueMutation.isPending || cancelMutation.isPending || bulkUpdateMutation.isPending}
             >
-                {confirmTitle === 'Rechnung stornieren' && (
+                {confirmTitle === t('invoices.confirm.cancel_title') && (
                     <div className="mt-4">
-                        <label className="block text-xs font-medium text-slate-500 mb-1">Storno-Grund (optional)</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('invoices.confirm.cancel_reason')}</label>
                         <textarea
                             value={cancelReason}
                             onChange={(e) => setCancelReason(e.target.value)}
                             className="w-full border border-slate-200 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            placeholder="z.B. Fehlerhafte Angaben, Kundenwunsch..."
+                            placeholder={t('invoices.confirm.cancel_placeholder')}
                             rows={3}
                         />
                     </div>

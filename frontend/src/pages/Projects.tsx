@@ -5,10 +5,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth, subMonths, startOfYear, subYears, isWithinInterval } from 'date-fns';
 import {
     FaPlus, FaFileCsv,
-    FaFilePdf, FaFileExcel, FaLayerGroup, FaChartLine, FaGlobe,
+    FaFilePdf, FaFileExcel, FaLayerGroup,
     FaDownload,
     FaListUl, FaColumns,
-    FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore
+    FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore,
+    FaExclamationTriangle, FaChartPie, FaUserTimes
 } from 'react-icons/fa';
 import { buildProjectColumns } from './projectColumns';
 import clsx from 'clsx';
@@ -25,8 +26,11 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
 import echo from '../utils/echo';
 
+import { useTranslation } from 'react-i18next';
+
 
 const Projects = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -125,10 +129,10 @@ const Projects = () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
-            toast.success('Projekt erfolgreich erstellt');
+            toast.success(t('projects.messages.create_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Erstellen des Projekts');
+            toast.error(t('projects.messages.create_error'));
         }
     });
 
@@ -155,14 +159,14 @@ const Projects = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsModalOpen(false);
             setEditingProject(null);
-            toast.success('Projekt erfolgreich aktualisiert');
+            toast.success(t('projects.messages.update_success'));
         },
         onError: (_err, _updatedProject, context: any) => {
             // If the mutation fails, use the context returned from onMutate to roll back
             if (context?.previousProjects) {
                 queryClient.setQueryData(['projects'], context.previousProjects);
             }
-            toast.error('Fehler beim Aktualisieren des Projekts');
+            toast.error(t('projects.messages.update_error'));
         },
         onSettled: () => {
             // Always refetch after error or success to ensure we are in sync with the server
@@ -176,10 +180,10 @@ const Projects = () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedProjects([]);
-            toast.success('Projekt erfolgreich gelöscht');
+            toast.success(t('projects.messages.delete_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Löschen des Projekts');
+            toast.error(t('projects.messages.delete_error'));
         }
     });
 
@@ -190,12 +194,12 @@ const Projects = () => {
             setSelectedProjects([]);
             const count = variables.ids.length;
             const message = variables.data.status === 'deleted'
-                ? `${count} Projekte in den Papierkorb verschoben`
-                : `${count} Projekte aktualisiert`;
+                ? t('projects.messages.bulk_trash', { count })
+                : t('projects.messages.bulk_update', { count });
             toast.success(message);
         },
         onError: () => {
-            toast.error('Massenvorgang fehlgeschlagen');
+            toast.error(t('projects.messages.bulk_error'));
         }
     });
 
@@ -205,10 +209,10 @@ const Projects = () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setSelectedProjects([]);
-            toast.success(`${variables.length} Projekte endgültig gelöscht`);
+            toast.success(t('projects.messages.bulk_delete', { count: variables.length }));
         },
         onError: () => {
-            toast.error('Fehler beim endgültigen Löschen');
+            toast.error(t('projects.messages.bulk_error'));
         }
     });
 
@@ -274,13 +278,25 @@ const Projects = () => {
     }, [filteredProjectsByAdvanced]);
 
     const totalProjectsCount = activeProjectsData.length;
-    const activeProjectsCount = activeProjectsData.filter((p: any) => ['in_progress', 'review', 'ready_for_pickup'].includes(p.status)).length;
+    const ongoingProjects = activeProjectsData.filter((p: any) => ['in_progress', 'review', 'ready_for_pickup'].includes(p.status));
+    const activeProjectsCount = ongoingProjects.length;
+
     const totalRevenue = activeProjectsData.reduce((acc: number, curr: any) => acc + parseFloat(curr.price_total || 0), 0);
     const totalMargin = activeProjectsData.reduce((acc: number, curr: any) => {
         const rev = parseFloat(curr.price_total || 0);
         const cost = parseFloat(curr.partner_cost_net || 0);
         return acc + (rev - cost);
     }, 0);
+
+    const marginPercentage = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
+    const unassignedCount = activeProjectsData.filter((p: any) =>
+        !p.partner_id && ['in_progress', 'review', 'pending', 'offer'].includes(p.status)
+    ).length;
+
+    const urgencyCount = activeProjectsData.filter((p: any) => {
+        if (!p.deadline || ['completed', 'delivered', 'invoiced', 'archived', 'deleted'].includes(p.status)) return false;
+        return new Date(p.deadline) <= endOfDay(new Date());
+    }).length;
 
     const filteredProjects = useMemo(() => {
         let result = projects.filter((p: any) => {
@@ -418,6 +434,7 @@ const Projects = () => {
         setConfirmTitle,
         setConfirmMessage,
         setIsConfirmOpen,
+        t,
     });
 
     // Count projects by status for badges
@@ -437,70 +454,70 @@ const Projects = () => {
     const tableFilters = useMemo(() => {
         const filters: FilterDef[] = [
             {
-                id: 'statusView', label: 'Aktiv / Archiv', type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setFilter('all'); },
-                options: [{ value: 'active', label: 'Aktiv' }, { value: 'archive', label: 'Archiviert' }, { value: 'trash', label: 'Papierkorb' }]
+                id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setFilter('all'); },
+                options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
             }
         ];
 
         if (statusView === 'active') {
             filters.push({
-                id: 'filter', label: 'Schnellfilter', type: 'select' as const, value: filter, onChange: (v: any) => setFilter(v),
+                id: 'filter', label: t('projects.filters.quick_filter'), type: 'select' as const, value: filter, onChange: (v: any) => setFilter(v),
                 options: [
-                    { value: 'all', label: 'Alle Projekte' },
-                    { value: 'offer', label: 'Neu' },
-                    { value: 'in_progress', label: 'In Bearbeitung' },
-                    { value: 'ready_for_pickup', label: 'Abholbereit' },
-                    { value: 'delivered', label: 'Geliefert' },
-                    { value: 'invoiced', label: 'Rechnung' },
-                    { value: 'completed', label: 'Abgeschlossen' }
+                    { value: 'all', label: t('projects.filters.status_tabs.all') },
+                    { value: 'offer', label: t('projects.filters.status_tabs.offer') },
+                    { value: 'in_progress', label: t('projects.filters.status_tabs.in_progress') },
+                    { value: 'ready_for_pickup', label: t('projects.filters.status_tabs.ready_for_pickup') },
+                    { value: 'delivered', label: t('projects.filters.status_tabs.delivered') },
+                    { value: 'invoiced', label: t('projects.filters.status_tabs.invoiced') },
+                    { value: 'completed', label: t('projects.filters.status_tabs.completed') }
                 ]
             });
         }
 
         filters.push(
             {
-                id: 'priority', label: 'Priorität', type: 'select' as const, value: advancedFilters.priority || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, priority: v })),
+                id: 'priority', label: t('projects.filters.priority.label'), type: 'select' as const, value: advancedFilters.priority || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, priority: v })),
                 options: [
-                    { value: 'all', label: 'Alle Prioritäten' },
-                    { value: 'low', label: 'Standard' },
-                    { value: 'medium', label: 'Normal' },
-                    { value: 'high', label: 'Hoch' },
-                    { value: 'express', label: 'Express' },
+                    { value: 'all', label: t('projects.filters.priority.all') },
+                    { value: 'low', label: t('projects.filters.priority.standard') },
+                    { value: 'medium', label: t('projects.filters.priority.normal') },
+                    { value: 'high', label: t('projects.filters.priority.high') },
+                    { value: 'express', label: t('projects.filters.priority.express') },
                 ]
             },
             {
-                id: 'customer', label: 'Kunde', type: 'select' as const, value: advancedFilters.customerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: v })),
-                options: [{ value: '', label: 'Alle Kunden' }, ...customers.map((c: any) => ({ value: c.id, label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]
+                id: 'customer', label: t('projects.filters.customers.label'), type: 'select' as const, value: advancedFilters.customerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: v })),
+                options: [{ value: '', label: t('projects.filters.customers.all') }, ...customers.map((c: any) => ({ value: c.id, label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]
             },
             {
-                id: 'partner', label: 'Partner / Übersetzer', type: 'select' as const, value: advancedFilters.partnerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: v })),
-                options: [{ value: '', label: 'Alle Partner' }, ...partners.map((p: any) => ({ value: p.id, label: (p.company || `${p.first_name || ''} ${p.last_name || ''}`).trim() }))]
+                id: 'partner', label: t('projects.filters.partners.label'), type: 'select' as const, value: advancedFilters.partnerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: v })),
+                options: [{ value: '', label: t('projects.filters.partners.all') }, ...partners.map((p: any) => ({ value: p.id, label: (p.company || `${p.first_name || ''} ${p.last_name || ''}`).trim() }))]
             },
             {
-                id: 'sourceLang', label: 'Quellsprache', type: 'select' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
-                options: [{ value: '', label: 'Alle Sprachen' }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
+                id: 'sourceLang', label: t('projects.filters.languages.source'), type: 'select' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
+                options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
             },
             {
-                id: 'targetLang', label: 'Zielsprache', type: 'select' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
-                options: [{ value: '', label: 'Alle Sprachen' }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
+                id: 'targetLang', label: t('projects.filters.languages.target'), type: 'select' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
+                options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
             },
             {
-                id: 'deadlineRange', label: 'Frist', type: 'select' as const, value: advancedFilters.deadlineRange || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, deadlineRange: v })),
+                id: 'deadlineRange', label: t('projects.filters.deadline.label'), type: 'select' as const, value: advancedFilters.deadlineRange || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, deadlineRange: v })),
                 options: [
-                    { value: 'all', label: 'Alle Fristen' },
-                    { value: 'overdue', label: 'Überfällig' },
-                    { value: 'today', label: 'Heute fällig' },
-                    { value: 'this_week', label: 'Diese Woche' },
-                    { value: 'this_month', label: 'Diesen Monat' },
+                    { value: 'all', label: t('projects.filters.deadline.all') },
+                    { value: 'overdue', label: t('projects.filters.deadline.overdue') },
+                    { value: 'today', label: t('projects.filters.deadline.today') },
+                    { value: 'this_week', label: t('projects.filters.deadline.this_week') },
+                    { value: 'this_month', label: t('projects.filters.deadline.this_month') },
                 ]
             },
             {
-                id: 'certified', label: 'Beglaubigt', type: 'select' as const, value: advancedFilters.certified || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, certified: v })),
-                options: [{ value: 'all', label: 'Alle' }, { value: 'yes', label: 'Ja' }, { value: 'no', label: 'Nein' }]
+                id: 'certified', label: t('projects.filters.certified'), type: 'select' as const, value: advancedFilters.certified || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, certified: v })),
+                options: [{ value: 'all', label: t('projects.filters.languages.all') }, { value: 'yes', label: t('projects.filters.yes') }, { value: 'no', label: t('projects.filters.no') }]
             },
             {
-                id: 'apostille', label: 'Apostille', type: 'select' as const, value: advancedFilters.apostille || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, apostille: v })),
-                options: [{ value: 'all', label: 'Alle' }, { value: 'yes', label: 'Ja' }, { value: 'no', label: 'Nein' }]
+                id: 'apostille', label: t('projects.filters.apostille'), type: 'select' as const, value: advancedFilters.apostille || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, apostille: v })),
+                options: [{ value: 'all', label: t('projects.filters.languages.all') }, { value: 'yes', label: t('projects.filters.yes') }, { value: 'no', label: t('projects.filters.no') }]
             },
         );
 
@@ -530,24 +547,52 @@ const Projects = () => {
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Projekte & Aufträge</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Verwalten und überwachen Sie alle Übersetzungsaufträge.</p>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('projects.title')}</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('projects.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <Button
                         onClick={() => navigate('/projects/new')}
                         className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neues Projekt</span><span className="inline sm:hidden">Neu</span>
+                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('projects.new_project')}</span><span className="inline sm:hidden">{t('projects.new_short')}</span>
                     </Button>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label="Gesamtprojekte" value={totalProjectsCount} icon={<FaLayerGroup />} />
-                <KPICard label="Aktive Projekte" value={activeProjectsCount} icon={<FaChartLine />} iconColor="text-blue-600" iconBg="bg-blue-50" />
-                <KPICard label="Marge gesamt" value={totalMargin.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaGlobe />} iconColor="text-indigo-600" iconBg="bg-indigo-50" />
-                <KPICard label="Umsatz YTD" value={totalRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaChartLine />} iconColor="text-green-600" iconBg="bg-green-50" />
+                <KPICard
+                    label={t('projects.kpi.active_projects')}
+                    value={activeProjectsCount}
+                    icon={<FaLayerGroup />}
+                    iconColor="text-blue-600"
+                    iconBg="bg-blue-50"
+                    subValue={t('projects.kpi.active_count_sub', { total: totalProjectsCount })}
+                />
+                <KPICard
+                    label={t('projects.kpi.open_assignments')}
+                    value={unassignedCount}
+                    icon={<FaUserTimes />}
+                    iconColor={unassignedCount > 0 ? "text-amber-600" : "text-slate-400"}
+                    iconBg={unassignedCount > 0 ? "bg-amber-50" : "bg-slate-50"}
+                    subValue={unassignedCount > 0 ? t('projects.kpi.unassigned') : t('projects.kpi.all_assigned')}
+                />
+                <KPICard
+                    label={t('projects.kpi.profitability')}
+                    value={marginPercentage > 0 ? `${marginPercentage.toFixed(1)}%` : '0%'}
+                    icon={<FaChartPie />}
+                    iconColor="text-emerald-600"
+                    iconBg="bg-emerald-50"
+                    subValue={t('projects.kpi.margin_sub', { amount: totalMargin.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) })}
+                />
+                <KPICard
+                    label={t('projects.kpi.deadline_alarm')}
+                    value={urgencyCount}
+                    icon={<FaExclamationTriangle />}
+                    iconColor={urgencyCount > 0 ? "text-rose-600" : "text-slate-400"}
+                    iconBg={urgencyCount > 0 ? "bg-rose-50" : "bg-slate-50"}
+                    subValue={urgencyCount > 0 ? t('projects.kpi.overdue') : t('projects.kpi.on_track')}
+                />
             </div>
 
             <div className="flex justify-end -mb-2">
@@ -584,8 +629,7 @@ const Projects = () => {
                         data={filteredProjects as any[]}
                         columns={columns as any}
                         onRowClick={(p) => navigate(`/projects/${p.id}`)}
-                        pageSize={window.innerWidth < 768 ? 5 : 10}
-                        searchPlaceholder="Suchen nach Projekten..."
+                        searchPlaceholder={t('projects.search_placeholder')}
                         searchFields={['project_name', 'project_number'] as any[]}
                         actions={actions}
                         onAddClick={() => navigate('/projects/new')}
@@ -593,13 +637,13 @@ const Projects = () => {
                         selectedIds={selectedProjects}
                         onSelectionChange={(ids) => setSelectedProjects(ids as string[])}
                         bulkActions={[
-                            { label: 'Abschließen', icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'completed', progress: 100 } }), variant: 'success', show: statusView === 'active' && filter !== 'completed' },
-                            { label: 'Zurücksetzen', icon: <FaArrowRight className="text-xs rotate-180" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'default', show: statusView === 'active' && filter === 'completed' },
-                            { label: 'E-Mail senden', icon: <FaEnvelope className="text-xs" />, onClick: () => { if (selectedProjects.length === 1) { const p = projects.find((pro: any) => pro.id === selectedProjects[0]); navigate('/inbox', { state: { compose: true, to: p?.customer?.email, subject: `Projekt: ${p?.project_name} (${p?.project_number || 'ID ' + p?.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p?.project_name}.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`, attachments: p?.files || [] } }); } }, variant: 'primary', show: selectedProjects.length === 1 && statusView === 'active' },
-                            { label: 'Archivieren', icon: <FaArchive className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'archived' } }), variant: 'default', show: statusView === 'active' },
-                            { label: 'Papierkorb', icon: <FaTrash className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'deleted' } }), variant: 'danger', show: statusView === 'active' },
-                            { label: 'Wiederherstellen', icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' },
-                            { label: 'Endgültig löschen', icon: <FaTrash className="text-xs" />, onClick: () => { setProjectToDelete(selectedProjects); setConfirmTitle('Projekte endgültig löschen'); setConfirmMessage(`Sind Sie sicher, dass Sie ${selectedProjects.length} Projekte endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.`); setIsConfirmOpen(true); }, variant: 'dangerSolid', show: statusView === 'trash' },
+                            { label: t('projects.actions.bulk.complete'), icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'completed', progress: 100 } }), variant: 'success', show: statusView === 'active' && filter !== 'completed' },
+                            { label: t('projects.actions.bulk.reset'), icon: <FaArrowRight className="text-xs rotate-180" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'default', show: statusView === 'active' && filter === 'completed' },
+                            { label: t('projects.actions.bulk.send_email'), icon: <FaEnvelope className="text-xs" />, onClick: () => { if (selectedProjects.length === 1) { const p = projects.find((pro: any) => pro.id === selectedProjects[0]); navigate('/inbox', { state: { compose: true, to: p?.customer?.email, subject: `Projekt: ${p?.project_name} (${p?.project_number || 'ID ' + p?.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p?.project_name}.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`, attachments: p?.files || [] } }); } }, variant: 'primary', show: selectedProjects.length === 1 && statusView === 'active' },
+                            { label: t('projects.actions.bulk.archive'), icon: <FaArchive className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'archived' } }), variant: 'default', show: statusView === 'active' },
+                            { label: t('projects.actions.bulk.trash'), icon: <FaTrash className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'deleted' } }), variant: 'danger', show: statusView === 'active' },
+                            { label: t('projects.actions.bulk.restore'), icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' },
+                            { label: t('projects.actions.bulk.delete_permanent'), icon: <FaTrash className="text-xs" />, onClick: () => { setProjectToDelete(selectedProjects); setConfirmTitle(t('projects.confirm.delete_title')); setConfirmMessage(t('projects.confirm.delete_message', { count: selectedProjects.length })); setIsConfirmOpen(true); }, variant: 'dangerSolid', show: statusView === 'trash' },
                         ] as BulkActionItem[]}
                         filters={tableFilters}
                         activeFilterCount={activeFilterCount}
@@ -608,7 +652,7 @@ const Projects = () => {
                 ) : (
                     <div className="flex-1 min-h-0 flex flex-col pt-4 overflow-x-hidden">
                         <div className="flex justify-between items-center mb-6 px-4">
-                            <h2 className="text-xl font-medium text-slate-800 tracking-tight">Projekt-Board</h2>
+                            <h2 className="text-xl font-medium text-slate-800 tracking-tight">{t('projects.board_title')}</h2>
                         </div>
                         <div className="flex-1 min-h-0 px-4 overflow-y-auto pb-10 custom-scrollbar">
                             <KanbanBoard

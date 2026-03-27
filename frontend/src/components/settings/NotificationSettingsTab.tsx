@@ -54,9 +54,9 @@ const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
     <button
         type="button"
         onClick={() => onChange(!value)}
-        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${value ? 'bg-slate-800' : 'bg-slate-200'}`}
+        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${value ? 'bg-brand-primary' : 'bg-slate-200'}`}
     >
-        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${value ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${value ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
     </button>
 );
 
@@ -159,7 +159,7 @@ const NotificationSettingsTab = () => {
                 <button
                     onClick={() => mutation.mutate(settings)}
                     disabled={mutation.isPending}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 rounded shadow-sm transition disabled:opacity-60"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white text-xs font-medium hover:bg-brand-primary/90 rounded shadow-sm transition disabled:opacity-60"
                 >
                     <FaSave /> {mutation.isPending ? t('notifications.settings.saving') : t('notifications.settings.save')}
                 </button>

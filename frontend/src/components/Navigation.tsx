@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt, FaCommentDots, FaCrown, FaBuilding, FaDatabase, FaHistory, FaFileInvoice, FaGlobe } from 'react-icons/fa';
+import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt, FaCommentDots, FaCrown, FaBuilding, FaDatabase, FaHistory, FaFileInvoice, FaGlobe, FaFileAlt, FaTag, FaRuler, FaMoneyBillWave } from 'react-icons/fa';
 
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
@@ -16,12 +16,9 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "./ui/tooltip";
+import { getFlagUrl } from '../utils/flags';
 
-const ROLE_LABELS: Record<string, string> = {
-    owner: 'Inhaber',
-    manager: 'Manager',
-    employee: 'Mitarbeiter',
-};
+
 
 const Navigation = () => {
     const { t, i18n } = useTranslation();
@@ -42,10 +39,7 @@ const Navigation = () => {
     const navRef = useRef<HTMLElement>(null);
 
     const SETTINGS_TABS = [
-        { id: 'profile', label: t('nav.profile'), icon: FaUser },
-        { id: 'language', label: t('profile.language'), icon: FaGlobe },
         { id: 'company', label: t('settings.tabs.company'), icon: FaBuilding },
-        { id: 'subscription', label: t('nav.subscription'), icon: FaCrown },
         { id: 'invoice', label: t('settings.tabs.invoice'), icon: FaFileInvoice },
         { id: 'master_data', label: t('settings.tabs.master_data'), icon: FaDatabase },
         { id: 'notifications', label: t('settings.tabs.notifications'), icon: FaBell },
@@ -392,25 +386,62 @@ const Navigation = () => {
                                         </button>
 
                                         {isSettingsOpen && (
-                                            <div className="absolute right-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 animate-slideUp overflow-hidden">
+                                            <div className="absolute right-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 animate-slideUp overflow-visible">
                                                 <div className="py-1">
                                                     {SETTINGS_TABS.map((tab, i) => (
-                                                        <button
-                                                            key={tab.id}
-                                                            onClick={() => { navigate(`/settings?tab=${tab.id}`); setIsSettingsOpen(false); }}
-                                                            className={clsx(
-                                                                "w-full px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors text-left",
-                                                                i > 0 && tab.id === 'audit' && "border-t border-slate-100 mt-1",
-                                                                location.pathname === '/settings' && new URLSearchParams(location.search).get('tab') === tab.id
-                                                                    ? "text-brand-primary bg-slate-50"
-                                                                    : "text-slate-700"
+                                                        <div key={tab.id} className="relative group/tab">
+                                                            <button
+                                                                onClick={() => { navigate(`/settings?tab=${tab.id}`); setIsSettingsOpen(false); }}
+                                                                className={clsx(
+                                                                    "w-full px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors text-left",
+                                                                    i > 0 && tab.id === 'audit' && "border-t border-slate-100 mt-1",
+                                                                    location.pathname === '/settings' && new URLSearchParams(location.search).get('tab') === tab.id
+                                                                        ? "text-brand-primary bg-slate-50"
+                                                                        : "text-slate-700"
+                                                                )}
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <tab.icon className="text-slate-400 w-3.5 h-3.5" />
+                                                                    <span>{tab.label}</span>
+                                                                </div>
+                                                                {tab.id === 'master_data' && (
+                                                                    <FaChevronDown className="text-[10px] -rotate-90 opacity-80 ml-2 text-slate-400 group-hover/tab:text-brand-primary transition-colors" />
+                                                                )}
+                                                            </button>
+
+                                                            {/* Sub-menu for Master Data on hover */}
+                                                            {tab.id === 'master_data' && (
+                                                                <div className="absolute left-full top-0 ml-[1px] w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 opacity-0 invisible group-hover/tab:opacity-100 group-hover/tab:visible transition-all duration-200 transform translate-x-2 group-hover/tab:translate-x-0">
+                                                                    <div className="py-1">
+                                                                        <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">
+                                                                            {t('settings.tabs.master_data')}
+                                                                        </div>
+                                                                        {[
+                                                                            { id: 'languages', label: t('settings.tabs.languages'), icon: FaGlobe },
+                                                                            { id: 'doc_types', label: t('settings.tabs.doc_types'), icon: FaFileAlt },
+                                                                            { id: 'services', label: t('settings.tabs.services'), icon: FaLayerGroup },
+                                                                            { id: 'email_templates', label: t('settings.tabs.email_templates'), icon: FaEnvelope },
+                                                                            { id: 'specializations', label: t('settings.tabs.specializations'), icon: FaTag },
+                                                                            { id: 'units', label: t('settings.tabs.units'), icon: FaRuler },
+                                                                            { id: 'currencies', label: t('settings.tabs.currencies'), icon: FaMoneyBillWave },
+                                                                        ].map((subItem) => (
+                                                                            <button
+                                                                                key={subItem.id}
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    navigate(`/settings?tab=master_data&sub=${subItem.id}`);
+                                                                                    setIsSettingsOpen(false);
+                                                                                }}
+                                                                                className="w-full px-4 py-2 text-sm font-medium flex items-center gap-3 hover:bg-slate-50 text-slate-600 hover:text-brand-primary transition-colors text-left"
+                                                                            >
+                                                                                <subItem.icon className="text-slate-400 w-3 h-3 group-hover/tab:text-brand-primary" />
+                                                                                <span>{subItem.label}</span>
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
                                                             )}
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <tab.icon className="text-slate-400 w-3.5 h-3.5" />
-                                                                <span>{tab.label}</span>
-                                                            </div>
-                                                        </button>
+                                                        </div>
                                                     ))}
                                                 </div>
                                             </div>
@@ -483,6 +514,29 @@ const Navigation = () => {
                             )}
                         </div>
 
+                        {/* Language Switcher */}
+                        <div className="hidden sm:flex items-center mr-1">
+                            <button
+                                onClick={() => {
+                                    const nextLang = i18n.language === 'de' ? 'en' : 'de';
+                                    i18n.changeLanguage(nextLang);
+                                    localStorage.setItem('locale', nextLang);
+                                }}
+                                className="group flex items-center gap-2.5 px-2.5 py-1.5 rounded-[var(--radius-sm)] hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
+                            >
+                                <div className="w-5 h-3.5 flex overflow-hidden rounded-[1px] shadow-sm border border-white/20">
+                                    <img
+                                        src={getFlagUrl(i18n.language)}
+                                        alt={i18n.language}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-100/60 group-hover:text-emerald-100 transition-colors">
+                                    {i18n.language === 'de' ? 'DE' : 'EN'}
+                                </span>
+                            </button>
+                        </div>
+
                         {/* Profile Menu */}
                         <div className="relative" ref={profileRef}>
                             <div
@@ -506,7 +560,7 @@ const Navigation = () => {
                                             <p className="text-xs font-semibold text-slate-900 truncate">{user?.name || 'Benutzer'}</p>
                                             {user?.role && (
                                                 <span className="inline-block px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-full mt-1 uppercase tracking-wider">
-                                                    {ROLE_LABELS[user.role] ?? user.role}
+                                                    {t(`settings.roles.${user.role}`) ?? user.role}
                                                 </span>
                                             )}
                                         </div>
@@ -530,29 +584,6 @@ const Navigation = () => {
                                                 <FaCrown className="mr-3 text-amber-500 w-3.5 h-3.5" /> Backend: Filament
                                             </a>
                                         )}
-                                        <div className="border-t border-slate-50 mt-1 pt-1">
-                                            <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('profile.language')}</div>
-                                            <div className="flex px-4 py-1 gap-1 pb-2">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); i18n.changeLanguage('de'); localStorage.setItem('locale', 'de'); }}
-                                                    className={clsx(
-                                                        "flex-1 py-1 rounded text-[10px] font-bold transition-all border",
-                                                        i18n.language === 'de' ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                                                    )}
-                                                >
-                                                    DEUTSCH
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); i18n.changeLanguage('en'); localStorage.setItem('locale', 'en'); }}
-                                                    className={clsx(
-                                                        "flex-1 py-1 rounded text-[10px] font-bold transition-all border",
-                                                        i18n.language === 'en' ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                                                    )}
-                                                >
-                                                    ENGLISH
-                                                </button>
-                                            </div>
-                                        </div>
                                     </div>
                                     <div className="border-t border-slate-100 py-1 font-normal text-left">
                                         <button
@@ -630,6 +661,38 @@ const Navigation = () => {
                                 </Link>
                             );
                         })}
+
+                        {/* Mobile Language Switcher */}
+                        <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between px-2.5">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('profile.language')}</span>
+                            <div className="flex gap-2">
+                                {['de', 'en'].map(lang => (
+                                    <button
+                                        key={lang}
+                                        onClick={() => {
+                                            i18n.changeLanguage(lang);
+                                            localStorage.setItem('locale', lang);
+                                            setIsMobileMenuOpen(false);
+                                        }}
+                                        className={clsx(
+                                            "flex items-center gap-2 px-3 py-1.5 rounded-sm border text-[10px] font-bold uppercase transition-all shadow-sm",
+                                            i18n.language === lang
+                                                ? "bg-brand-primary text-white border-brand-primary"
+                                                : "bg-white text-slate-600 border-slate-200 contrast-75 grayscale-[0.3]"
+                                        )}
+                                    >
+                                        <div className="w-4 h-2.5 flex overflow-hidden rounded-[px] border border-white/20">
+                                            <img
+                                                src={getFlagUrl(lang)}
+                                                alt={lang}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        {lang === 'de' ? 'DE' : 'EN'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

@@ -6,6 +6,7 @@ import { Dropdown } from 'antd';
 import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 
 export interface BuildInvoiceColumnsParams {
+    t: (key: string, options?: any) => string;
     setPreviewInvoice: (inv: any) => void;
     setInvoiceToEdit: (inv: any) => void;
     setIsNewInvoiceOpen: (v: boolean) => void;
@@ -28,6 +29,7 @@ export interface BuildInvoiceColumnsParams {
 }
 
 export function buildInvoiceColumns({
+    t,
     setPreviewInvoice,
     setInvoiceToEdit,
     setIsNewInvoiceOpen,
@@ -50,7 +52,7 @@ export function buildInvoiceColumns({
     return [
         {
             id: 'invoice_number',
-            header: 'Rechnung #',
+            header: t('fields.invoice_number'),
             accessor: (inv: any) => (
                 <div className="flex flex-col">
                     <span className="font-semibold text-slate-800">{inv.invoice_number}</span>
@@ -62,13 +64,13 @@ export function buildInvoiceColumns({
         },
         {
             id: 'customer',
-            header: 'Empfänger',
+            header: t('fields.recipient'),
             accessor: (inv: any) => {
                 const name = inv.snapshot_customer_name || inv.customer?.company_name || `${inv.customer?.first_name || ''} ${inv.customer?.last_name || ''}`;
                 return (
                     <div className="flex flex-col">
                         <span className="font-medium text-slate-700">{name}</span>
-                        {inv.type === 'credit_note' && <span className="text-xs font-medium text-red-500">Gutschrift</span>}
+                        {inv.type === 'credit_note' && <span className="text-xs font-medium text-red-500">{t('invoices.tabs.credit_notes')}</span>}
                     </div>
                 );
             },
@@ -76,7 +78,7 @@ export function buildInvoiceColumns({
         },
         {
             id: 'project',
-            header: 'Projekt',
+            header: t('fields.project'),
             accessor: (inv: any) => (
                 <span className="text-xs font-medium text-slate-500">{inv.snapshot_project_name || inv.project?.project_name || inv.snapshot_project_number || ''}</span>
             ),
@@ -84,7 +86,7 @@ export function buildInvoiceColumns({
         },
         {
             id: 'due_date',
-            header: 'Fälligkeit',
+            header: t('fields.due_date'),
             accessor: (inv: any) => (
                 <div className="flex flex-col">
                     <span className="text-slate-600 font-medium">{new Date(inv.due_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
@@ -95,7 +97,7 @@ export function buildInvoiceColumns({
         },
         {
             id: 'amount',
-            header: 'Betrag (Brutto)',
+            header: `${t('fields.amount')} (${t('fields.gross')})`,
             accessor: (inv: any) => {
                 const eur = inv.amount_gross_eur ?? (inv.amount_gross / 100);
                 return (
@@ -110,7 +112,7 @@ export function buildInvoiceColumns({
         },
         {
             id: 'status',
-            header: 'Status',
+            header: t('common.status'),
             accessor: (inv: any) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -132,18 +134,18 @@ export function buildInvoiceColumns({
                     {
                         key: 'mgmt_header',
                         type: 'group' as const,
-                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">Verwaltung</span>,
+                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">{t('common.management')}</span>,
                         children: [
                             {
                                 key: 'view',
                                 icon: <FaEye className="text-slate-400" />,
-                                label: <span className="text-xs">Ansehen (Vorschau)</span>,
+                                label: <span className="text-xs">{t('common.details')}</span>,
                                 onClick: () => setPreviewInvoice(inv),
                             },
                             ...(inv.status === 'draft' ? [{
                                 key: 'edit',
                                 icon: <FaPen className="text-teal-500" />,
-                                label: <span className="text-xs">Bearbeiten</span>,
+                                label: <span className="text-xs">{t('actions.edit')}</span>,
                                 onClick: () => { setInvoiceToEdit(inv); setIsNewInvoiceOpen(true); },
                             }] : []),
                         ]
@@ -151,16 +153,16 @@ export function buildInvoiceColumns({
                     {
                         key: 'fin_header',
                         type: 'group' as const,
-                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">Finanzen</span>,
+                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">{t('common.finance')}</span>,
                         children: [
                             ...(inv.status === 'cancelled' ? [{
                                 key: 'archive',
                                 icon: <FaHistory className="text-slate-500" />,
-                                label: <span className="text-xs">Archivieren</span>,
+                                label: <span className="text-xs">{t('projects.actions.bulk.archive')}</span>,
                                 onClick: () => {
-                                    setConfirmTitle('Rechnung archivieren');
-                                    setConfirmMessage('Möchten Sie diese stornierte Rechnung archivieren?');
-                                    setConfirmLabel('Archivieren');
+                                    setConfirmTitle(t('projects.actions.bulk.archive'));
+                                    setConfirmMessage(t('projects.confirm.archive_message', { count: 1 }));
+                                    setConfirmLabel(t('projects.actions.bulk.archive'));
                                     setConfirmVariant('info');
                                     setConfirmAction(() => () => archiveMutation.mutate({ ids: [inv.id], data: { status: 'archived' } }));
                                     setIsConfirmOpen(true);
@@ -169,11 +171,11 @@ export function buildInvoiceColumns({
                             ...(['issued', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note ? [{
                                 key: 'cancel',
                                 icon: <FaBan className="text-orange-500" />,
-                                label: <span className="text-xs">Stornieren (Gutschrift)</span>,
+                                label: <span className="text-xs">{t('invoices.confirm.cancel_title')}</span>,
                                 onClick: () => {
-                                    setConfirmTitle('Rechnung stornieren');
-                                    setConfirmMessage('Möchten Sie diese Rechnung wirklich stornieren? Es wird eine automatische Gutschrift erstellt.');
-                                    setConfirmLabel('Stornieren');
+                                    setConfirmTitle(t('invoices.confirm.cancel_title'));
+                                    setConfirmMessage(t('invoices.confirm.cancel_message_note') || 'Möchten Sie diese Rechnung wirklich stornieren? Es wird eine automatische Gutschrift erstellt.');
+                                    setConfirmLabel(t('invoices.confirm.cancel_title'));
                                     setConfirmVariant('warning');
                                     setConfirmAction(() => () => cancelMutation.mutate({ id: inv.id, reason: cancelReason || undefined }));
                                     setIsConfirmOpen(true);
@@ -184,30 +186,30 @@ export function buildInvoiceColumns({
                     {
                         key: 'docs_header',
                         type: 'group' as const,
-                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">Dokumente</span>,
+                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">{t('common.documents')}</span>,
                         children: [
                             {
                                 key: 'print',
                                 icon: <FaPrint className="text-slate-500" />,
-                                label: <span className="text-xs">Drucken</span>,
+                                label: <span className="text-xs">{t('invoices.actions.print')}</span>,
                                 onClick: () => handlePrint(inv),
                             },
                             {
                                 key: 'pdf',
                                 icon: <FaFilePdf className="text-red-500" />,
-                                label: <span className="text-xs">PDF Herunterladen</span>,
+                                label: <span className="text-xs">{t('common.download')} PDF</span>,
                                 onClick: () => handleDownload(inv),
                             },
                             {
                                 key: 'xml',
                                 icon: <FaFileCode className="text-emerald-500" />,
-                                label: <span className="text-xs">E-Rechnung (XML)</span>,
+                                label: <span className="text-xs">{t('invoices.actions.download_xml')}</span>,
                                 onClick: () => handleDownloadXml(inv),
                             },
                             {
                                 key: 'rebuild',
                                 icon: <FaHistory className="text-blue-500" />,
-                                label: <span className="text-xs">PDF (Neu generieren)</span>,
+                                label: <span className="text-xs">{t('invoices.actions.rebuild')}</span>,
                                 onClick: () => handleDownload(inv, true),
                             },
                         ]
@@ -215,17 +217,17 @@ export function buildInvoiceColumns({
                     ...(inv.status === 'draft' ? [{
                         key: 'danger_header',
                         type: 'group' as const,
-                        label: <span className="text-[9px] font-bold text-red-500 uppercase tracking-widest pl-1">Gefahrenzone</span>,
+                        label: <span className="text-[9px] font-bold text-red-500 uppercase tracking-widest pl-1">{t('common.danger_zone')}</span>,
                         children: [
                             {
                                 key: 'delete',
                                 icon: <FaTrash />,
-                                label: <span className="text-xs font-medium">Entwurf löschen</span>,
+                                label: <span className="text-xs font-medium">{t('actions.delete')}</span>,
                                 danger: true,
                                 onClick: () => {
-                                    setConfirmTitle('Entwurf löschen');
-                                    setConfirmMessage('Sind Sie sicher, dass Sie diesen Rechnungsentwurf löschen möchten?');
-                                    setConfirmLabel('Löschen');
+                                    setConfirmTitle(t('invoices.confirm.delete_title') || t('actions.delete'));
+                                    setConfirmMessage(t('invoices.confirm.delete_message') || 'Sind Sie sicher, dass Sie diesen Rechnungsentwurf löschen möchten?');
+                                    setConfirmLabel(t('actions.delete'));
                                     setConfirmVariant('danger');
                                     setConfirmAction(() => () => deleteMutation.mutate(inv.id));
                                     setIsConfirmOpen(true);
@@ -241,18 +243,18 @@ export function buildInvoiceColumns({
                         {inv.status === 'draft' && (
                             <button
                                 onClick={() => {
-                                    setConfirmTitle('Rechnung ausstellen');
-                                    setConfirmMessage('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform, keine Änderung mehr möglich)');
-                                    setConfirmLabel('Jetzt ausstellen');
+                                    setConfirmTitle(t('invoices.confirm.issue_title') || 'Rechnung ausstellen');
+                                    setConfirmMessage(t('invoices.confirm.issue_message') || 'Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform, keine Änderung mehr möglich)');
+                                    setConfirmLabel(t('invoices.confirm.issue_btn') || 'Jetzt ausstellen');
                                     setConfirmVariant('info');
                                     setConfirmAction(() => () => issueMutation.mutate(inv.id));
                                     setIsConfirmOpen(true);
                                 }}
                                 className="flex items-center gap-1.5 px-2 py-1 bg-[#1B4D4F]/5 text-[#1B4D4F] hover:bg-[#1B4D4F]/10 border border-[#1B4D4F]/20 rounded-sm text-[10px] font-bold uppercase tracking-tight transition-all shadow-sm"
-                                title="Ausstellen (GoBD)"
+                                title={t('invoices.actions.issue') || "Ausstellen (GoBD)"}
                             >
                                 <FaStamp className="text-xs" />
-                                <span>Ausstellen</span>
+                                <span>{t('invoices.actions.issue_short') || "Ausstellen"}</span>
                             </button>
                         )}
 
@@ -261,10 +263,10 @@ export function buildInvoiceColumns({
                                 onClick={() => markAsPaidMutation.mutate(inv.id)}
                                 disabled={markAsPaidMutation.isPending}
                                 className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-sm text-[10px] font-bold uppercase tracking-tight transition-all shadow-sm disabled:opacity-40"
-                                title="Als bezahlt markieren"
+                                title={t('invoices.actions.paid')}
                             >
                                 <FaCheck className="text-xs" />
-                                <span>Bezahlt</span>
+                                <span>{t('invoices.actions.paid')}</span>
                             </button>
                         )}
 
@@ -278,7 +280,7 @@ export function buildInvoiceColumns({
                         >
                             <button
                                 className="p-1 px-1.5 rounded-sm hover:bg-slate-100 text-slate-400 hover:text-[#1B4D4F] transition-all border border-transparent hover:border-slate-200"
-                                title="Weitere Aktionen"
+                                title={t('common.more_actions')}
                             >
                                 <FaEllipsisV className="text-[10px]" />
                             </button>
