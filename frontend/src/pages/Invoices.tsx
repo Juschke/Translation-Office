@@ -369,7 +369,6 @@ const Invoices = () => {
         setIsConfirmOpen,
     });
 
-<<<<<<< HEAD
     const subTabCounts = useMemo(() => {
         const defaultCounts = {
             all: 0,
@@ -477,8 +476,6 @@ const Invoices = () => {
         </div>
     ) : null;
 
-=======
->>>>>>> bf57ed3 (updated Views)
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
             <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
@@ -493,9 +490,6 @@ const Invoices = () => {
             )}
         </div>
     );
-
-
-
 
     const activeInvoices = useMemo(() => {
         return invoices.filter((inv: any) => {
@@ -514,29 +508,15 @@ const Invoices = () => {
         .filter((i: any) => i.status === 'paid' || i.status === 'bezahlt')
         .reduce((acc: number, curr: any) => acc + (curr.amount_gross_eur ?? (curr.amount_gross / 100)), 0);
 
-<<<<<<< HEAD
     const overdueCount = subTabCounts.overdue || 0;
     const reminderCount = subTabCounts.reminders || 0;
     const paidCount = subTabCounts.paid || 0;
-=======
-    const overdueCount = activeInvoices.filter((inv: any) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const dueDate = new Date(inv.due_date);
-        return dueDate < today && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft';
-    }).length;
 
-    const reminderCount = activeInvoices.filter((inv: any) => {
-        return (inv.reminder_level > 0 || (new Date(inv.due_date) < new Date() && inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft'));
-    }).length;
-
-    const paidCount = activeInvoices.filter((i: any) => i.status === 'paid').length;
     const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0);
     const resetFilters = () => {
         setStatusView('active');
         setStatusFilter('all');
     };
->>>>>>> bf57ed3 (updated Views)
 
     const tableFilters: FilterDef[] = [
         {

@@ -42,27 +42,59 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
             toast.error('Bitte prüfen Sie die Dubletten oder bestätigen Sie die Neuanlage explizit.');
             return;
         }
+
         const errors = new Set<string>();
+        const errorMessages: string[] = [];
         const data = formData || initialData;
 
-        if (!data?.lastName) errors.add('lastName');
-        if (data?.type === 'agency' && !data?.company) errors.add('company');
+        if (!data?.lastName) {
+            errors.add('lastName');
+            errorMessages.push('Nachname ist ein Pflichtfeld');
+        }
+        if (data?.type === 'agency' && !data?.company) {
+            errors.add('company');
+            errorMessages.push('Firmenname ist erforderlich für Agenturen');
+        }
 
-        // Optional but recommended fields - we still validate them if they are empty
-        // but maybe we should only warn? For now let's keep them as required by UI
-        // but check if they exist in the combined data.
-        if (!data?.firstName) errors.add('firstName');
-        if (!data?.emails?.[0]) errors.add('email');
+        if (!data?.firstName) {
+            errors.add('firstName');
+            errorMessages.push('Vorname ist ein Pflichtfeld');
+        }
+        if (!data?.emails?.[0]) {
+            errors.add('email');
+            errorMessages.push('Mindestens eine E-Mail-Adresse ist erforderlich');
+        }
 
         // Bank details: Optional, but if one is filled, all must be filled
         if (data?.bankName || data?.bic || data?.iban) {
-            if (!data?.bankName) errors.add('bankName');
-            if (!data?.bic) errors.add('bic');
-            if (!data?.iban) errors.add('iban');
+            if (!data?.bankName) {
+                errors.add('bankName');
+                errorMessages.push('Bankname fehlt');
+            }
+            if (!data?.bic) {
+                errors.add('bic');
+                errorMessages.push('BIC fehlt');
+            }
+            if (!data?.iban) {
+                errors.add('iban');
+                errorMessages.push('IBAN fehlt');
+            }
         }
 
         setValidationErrors(errors);
-        if (errors.size > 0) return;
+
+        if (errorMessages.length > 0) {
+            toast.error(
+                <div className="flex flex-col gap-1">
+                    <span className="font-medium">Bitte korrigieren Sie folgende Fehler:</span>
+                    <ul className="list-disc list-inside text-xs">
+                        {errorMessages.map((msg, i) => <li key={i}>{msg}</li>)}
+                    </ul>
+                </div>,
+                { duration: 5000 }
+            );
+            return;
+        }
 
         onSubmit(data);
         onClose();

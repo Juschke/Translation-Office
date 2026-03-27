@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaUser, FaEnvelope, FaGlobe, FaSpinner, FaCheck, FaTimes, FaShieldAlt, FaLock } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { authService, twoFactorService } from '../api/services';
@@ -7,6 +8,7 @@ import clsx from 'clsx';
 import Input from '../components/common/Input';
 
 const Profile = () => {
+    const { t, i18n } = useTranslation();
     const { user, refreshUser } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -48,9 +50,9 @@ const Profile = () => {
                 language: formData.language
             });
             await refreshUser();
-            setMessage({ type: 'success', text: 'Profil erfolgreich aktualisiert.' });
+            setMessage({ type: 'success', text: t('profile.messages.profile_updated') });
         } catch (error: any) {
-            setMessage({ type: 'error', text: error.response?.data?.message || 'Fehler beim Aktualisieren des Profils.' });
+            setMessage({ type: 'error', text: error.response?.data?.message || t('profile.messages.profile_update_error') });
         } finally { setIsLoading(false); }
     };
 
@@ -58,11 +60,11 @@ const Profile = () => {
         setIsLoading(true); setMessage(null);
         try {
             await authService.changePassword(passwordData);
-            setMessage({ type: 'success', text: 'Passwort erfolgreich geändert.' });
+            setMessage({ type: 'success', text: t('profile.messages.password_changed') });
             setShowPasswordForm(false);
             setPasswordData({ current_password: '', password: '', password_confirmation: '' });
         } catch (error: any) {
-            setMessage({ type: 'error', text: error.response?.data?.message || 'Fehler beim Ändern des Passworts.' });
+            setMessage({ type: 'error', text: error.response?.data?.message || t('profile.messages.password_change_error') });
         } finally { setIsLoading(false); }
     };
 
@@ -75,7 +77,7 @@ const Profile = () => {
             setTwoFactorCode('');
         } catch (error) {
             console.error(error);
-            setMessage({ type: 'error', text: 'Fehler beim Starten der 2FA-Einrichtung.' });
+            setMessage({ type: 'error', text: t('profile.messages.two_factor_enabled_error') });
         } finally { setIsLoading(false); }
     };
 
@@ -88,9 +90,9 @@ const Profile = () => {
             setShowTwoFactorInline(false);
             setShowRecoveryCodesInline(true);
             await refreshUser();
-            setMessage({ type: 'success', text: '2FA erfolgreich aktiviert!' });
+            setMessage({ type: 'success', text: t('profile.messages.two_factor_activated') });
         } catch (error: any) {
-            setMessage({ type: 'error', text: 'Ungültiger Code. Bitte versuchen Sie es erneut.' });
+            setMessage({ type: 'error', text: t('profile.messages.two_factor_invalid_code') });
         } finally { setIsLoading(false); }
     };
 
@@ -102,9 +104,9 @@ const Profile = () => {
             setShowDisableConfirmInline(false);
             setDisablePassword('');
             await refreshUser();
-            setMessage({ type: 'success', text: '2FA deaktiviert.' });
+            setMessage({ type: 'success', text: t('profile.messages.two_factor_disabled') });
         } catch (error: any) {
-            setMessage({ type: 'error', text: error.response?.data?.message || 'Passwort falsch.' });
+            setMessage({ type: 'error', text: error.response?.data?.message || t('profile.messages.wrong_password') });
         } finally { setIsLoading(false); }
     };
 
@@ -115,7 +117,7 @@ const Profile = () => {
             setRecoveryCodes(codes);
             setShowRecoveryCodesInline(true);
         } catch (error) {
-            setMessage({ type: 'error', text: 'Fehler beim Abrufen der Wiederherstellungscodes.' });
+            setMessage({ type: 'error', text: t('profile.messages.recovery_codes_error') });
         } finally { setIsLoading(false); }
     };
 
@@ -124,9 +126,9 @@ const Profile = () => {
         try {
             const codes = await twoFactorService.regenerateRecoveryCodes();
             setRecoveryCodes(codes);
-            setMessage({ type: 'success', text: 'Neue Wiederherstellungscodes generiert.' });
+            setMessage({ type: 'success', text: t('profile.messages.new_recovery_codes') });
         } catch (error) {
-            setMessage({ type: 'error', text: 'Fehler beim Generieren neuer Codes.' });
+            setMessage({ type: 'error', text: t('profile.messages.new_recovery_codes_error') });
         } finally { setIsLoading(false); }
     };
 
@@ -135,12 +137,18 @@ const Profile = () => {
 
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
+    const changeLanguage = (lng: string) => {
+        i18n.changeLanguage(lng);
+        localStorage.setItem('locale', lng);
+        window.location.reload(); // Reload to ensure all context is updated
+    };
+
     return (
         <div className="max-w-4xl mx-auto fade-in pb-10">
             {/* Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-medium text-slate-800">Mein Profil</h1>
-                <p className="text-slate-500 text-sm">Verwalten Sie Ihre persönlichen Informationen und Sicherheitseinstellungen.</p>
+                <h1 className="text-2xl font-medium text-slate-800">{t('profile.title')}</h1>
+                <p className="text-slate-500 text-sm">{t('profile.subtitle')}</p>
             </div>
 
             {message && (
@@ -173,7 +181,7 @@ const Profile = () => {
                                 </div>
                                 <div className="flex items-center text-sm text-slate-600">
                                     <FaGlobe className="w-4 flex-shrink-0 mr-3 text-slate-400" />
-                                    <span>{formData.language === 'en' ? 'English (EN)' : 'Deutsch (DE)'}</span>
+                                    <span>{i18n.language === 'en' ? 'English (EN)' : 'Deutsch (DE)'}</span>
                                 </div>
                             </div>
                         </div>
@@ -187,42 +195,31 @@ const Profile = () => {
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-10 h-10 rounded-sm bg-slate-50 text-brand-primary flex items-center justify-center border border-slate-100 shadow-sm font-bold"><FaUser className="text-sm" /></div>
                             <div>
-                                <h3 className="text-sm font-semibold text-slate-800">Persönliche Daten</h3>
-                                <p className="text-xs text-slate-400 font-medium mt-0.5">Ihre Grundinformationen</p>
+                                <h3 className="text-sm font-semibold text-slate-800">{t('profile.personal_data')}</h3>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">{t('profile.basic_info')}</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                             <Input
-                                label="Vorname"
+                                label={t('profile.first_name')}
                                 value={formData.firstName}
                                 onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                                placeholder="Vorname"
+                                placeholder={t('profile.first_name')}
                             />
                             <Input
-                                label="Nachname"
+                                label={t('profile.last_name')}
                                 value={formData.lastName}
                                 onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                                placeholder="Nachname"
+                                placeholder={t('profile.last_name')}
                             />
                             <div className="sm:col-span-2">
                                 <Input
-                                    label="E-Mail ADRESSE"
+                                    label={t('profile.email_address')}
                                     type="email"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="email@beispiel.de"
                                 />
-                            </div>
-                            <div className="sm:col-span-2">
-                                <Input
-                                    isSelect
-                                    label="Sprache / Language"
-                                    value={formData.language}
-                                    onChange={e => setFormData({ ...formData, language: e.target.value })}
-                                >
-                                    <option value="de">Deutsch (DE)</option>
-                                    <option value="en">English (EN)</option>
-                                </Input>
                             </div>
                         </div>
                         <div className="mt-8 flex justify-end">
@@ -231,7 +228,38 @@ const Profile = () => {
                                 disabled={isLoading}
                                 className="px-8 py-2.5 bg-brand-primary text-white rounded text-sm font-bold hover:bg-brand-primary/90 transition-all shadow-sm disabled:opacity-50"
                             >
-                                Profil speichern
+                                {t('profile.save_profile')}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Language Selection */}
+                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 p-8">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-10 h-10 rounded-sm bg-slate-50 text-brand-primary flex items-center justify-center border border-slate-100 shadow-sm font-bold"><FaGlobe className="text-sm" /></div>
+                            <div>
+                                <h3 className="text-sm font-semibold text-slate-800">{t('profile.language')}</h3>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">Wählen Sie Ihre bevorzugte Sprache.</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={() => changeLanguage('de')}
+                                className={clsx(
+                                    "p-4 rounded-sm border-2 transition-all flex flex-col items-center gap-2",
+                                    i18n.language === 'de' ? "border-brand-primary bg-emerald-50/30 font-bold" : "border-slate-100 bg-white hover:border-slate-200"
+                                )}
+                            >
+                                <span className={clsx("text-sm", i18n.language === 'de' ? "text-brand-primary" : "text-slate-600")}>Deutsch (DE)</span>
+                            </button>
+                            <button
+                                onClick={() => changeLanguage('en')}
+                                className={clsx(
+                                    "p-4 rounded-sm border-2 transition-all flex flex-col items-center gap-2",
+                                    i18n.language === 'en' ? "border-brand-primary bg-emerald-50/30 font-bold" : "border-slate-100 bg-white hover:border-slate-200"
+                                )}
+                            >
+                                <span className={clsx("text-sm", i18n.language === 'en' ? "text-brand-primary" : "text-slate-600")}>English (EN)</span>
                             </button>
                         </div>
                     </div>
@@ -241,8 +269,8 @@ const Profile = () => {
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-10 h-10 rounded-sm bg-slate-50 text-brand-primary flex items-center justify-center border border-slate-100 shadow-sm font-bold"><FaShieldAlt className="text-sm" /></div>
                             <div>
-                                <h3 className="text-sm font-semibold text-slate-800">Sicherheit & Zugang</h3>
-                                <p className="text-xs text-slate-400 font-medium mt-0.5">Passwort & Authentifizierung</p>
+                                <h3 className="text-sm font-semibold text-slate-800">{t('profile.security')}</h3>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">{t('profile.auth_info')}</p>
                             </div>
                         </div>
 
@@ -250,8 +278,8 @@ const Profile = () => {
                         <div className="mb-10 pb-10 border-b border-slate-100">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <h4 className="text-sm src-slate-700 font-medium">Passwort ändern</h4>
-                                    <p className="text-sm text-slate-500 mt-1">Geben Sie Ihr aktuelles und ein neues Passwort ein.</p>
+                                    <h4 className="text-sm src-slate-700 font-medium">{t('profile.change_password')}</h4>
+                                    <p className="text-sm text-slate-500 mt-1">{t('profile.password_desc')}</p>
                                 </div>
                                 <button
                                     onClick={() => setShowPasswordForm(!showPasswordForm)}
@@ -260,7 +288,7 @@ const Profile = () => {
                                         showPasswordForm ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-sm"
                                     )}
                                 >
-                                    {showPasswordForm ? 'Abbrechen' : 'Passwort ändern'}
+                                    {showPasswordForm ? t('actions.cancel') : t('profile.change_password')}
                                 </button>
                             </div>
 
@@ -270,7 +298,7 @@ const Profile = () => {
                                         <div className="md:col-span-2">
                                             <Input
                                                 type="password"
-                                                label="Aktuelles Passwort"
+                                                label={t('profile.current_password')}
                                                 placeholder="••••••••"
                                                 value={passwordData.current_password}
                                                 onChange={e => setPasswordData({ ...passwordData, current_password: e.target.value })}
@@ -279,7 +307,7 @@ const Profile = () => {
                                         <div>
                                             <Input
                                                 type="password"
-                                                label="Neues Passwort"
+                                                label={t('profile.new_password')}
                                                 placeholder="••••••••"
                                                 value={passwordData.password}
                                                 onChange={e => setPasswordData({ ...passwordData, password: e.target.value })}
@@ -297,17 +325,17 @@ const Profile = () => {
                                                     ))}
                                                 </div>
                                                 <p className="text-[10px] text-slate-400 mt-1 font-medium">
-                                                    {passwordData.password.length === 0 ? 'Passwortstärke' :
-                                                        passwordData.password.length < 6 ? 'Sehr schwach' :
-                                                            passwordData.password.length < 9 ? 'Schwach' :
-                                                                passwordData.password.length < 12 ? 'Mittel' : 'Stark'}
+                                                    {passwordData.password.length === 0 ? t('profile.password_strength') :
+                                                        passwordData.password.length < 6 ? t('profile.strength.very_weak') :
+                                                            passwordData.password.length < 9 ? t('profile.strength.weak') :
+                                                                passwordData.password.length < 12 ? t('profile.strength.medium') : t('profile.strength.strong')}
                                                 </p>
                                             </div>
                                         </div>
                                         <div>
                                             <Input
                                                 type="password"
-                                                label="Wiederholen"
+                                                label={t('profile.confirm_password')}
                                                 placeholder="••••••••"
                                                 value={passwordData.password_confirmation}
                                                 onChange={e => setPasswordData({ ...passwordData, password_confirmation: e.target.value })}
@@ -320,7 +348,7 @@ const Profile = () => {
                                             disabled={isLoading}
                                             className="px-8 py-2.5 bg-brand-primary text-white rounded text-xs font-bold hover:bg-brand-primary/90 transition-all shadow-sm disabled:opacity-70"
                                         >
-                                            Sicherheitsupdate bestätigen
+                                            {t('profile.confirm_security_update')}
                                         </button>
                                     </div>
                                 </div>
@@ -332,10 +360,10 @@ const Profile = () => {
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h4 className="text-sm src-slate-700 font-medium flex items-center gap-2">
-                                        Zwei-Faktor-Authentifizierung (2FA)
-                                        {user.two_factor_confirmed_at ? <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded font-medium">Aktiv</span> : <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs rounded font-medium">Inaktiv</span>}
+                                        {t('profile.two_factor')}
+                                        {user.two_factor_confirmed_at ? <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded font-medium">{t('profile.active')}</span> : <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs rounded font-medium">{t('profile.inactive')}</span>}
                                     </h4>
-                                    <p className="text-sm text-slate-500 mt-1">Schützen Sie Ihr Konto zusätzlich mit einem Code von Ihrem Smartphone.</p>
+                                    <p className="text-sm text-slate-500 mt-1">{t('profile.two_factor_desc')}</p>
                                 </div>
                                 {!user.two_factor_confirmed_at ? (
                                     <button
@@ -346,12 +374,12 @@ const Profile = () => {
                                             showTwoFactorInline ? "bg-slate-100 text-slate-500" : "bg-slate-50 text-slate-900 hover:bg-slate-100"
                                         )}
                                     >
-                                        {showTwoFactorInline ? 'Abbrechen' : 'Aktivieren'}
+                                        {showTwoFactorInline ? t('actions.cancel') : t('profile.enable')}
                                     </button>
                                 ) : (
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setShowRecoveryCodesInline(!showRecoveryCodesInline); if (!showRecoveryCodesInline) showRecoveryCodes(); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-xs font-bold hover:bg-slate-200">Codes</button>
-                                        <button onClick={() => setShowDisableConfirmInline(!showDisableConfirmInline)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded text-xs font-bold hover:bg-red-100">Deaktivieren</button>
+                                        <button onClick={() => { setShowRecoveryCodesInline(!showRecoveryCodesInline); if (!showRecoveryCodesInline) showRecoveryCodes(); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-xs font-bold hover:bg-slate-200">{t('profile.recovery_codes_btn')}</button>
+                                        <button onClick={() => setShowDisableConfirmInline(!showDisableConfirmInline)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded text-xs font-bold hover:bg-red-100">{t('profile.disable')}</button>
                                     </div>
                                 )}
                             </div>
@@ -365,11 +393,11 @@ const Profile = () => {
                                         </div>
                                         <div className="flex-1 space-y-4">
                                             <div>
-                                                <h5 className="text-xs font-medium text-slate-700 mb-1">Authenticator scannen</h5>
-                                                <p className="text-sm text-slate-500">Scannen Sie diesen QR-Code mit Ihrer Authenticator-App (z.B. Google Authenticator).</p>
+                                                <h5 className="text-xs font-medium text-slate-700 mb-1">{t('profile.scan_qr')}</h5>
+                                                <p className="text-sm text-slate-500">{t('profile.scan_qr_desc')}</p>
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-xs font-medium text-slate-400 block ml-1">Verifizierungscode</label>
+                                                <label className="text-xs font-medium text-slate-400 block ml-1">{t('profile.verification_code')}</label>
                                                 <div className="flex gap-2">
                                                     <input
                                                         type="text"
@@ -384,7 +412,7 @@ const Profile = () => {
                                                         disabled={twoFactorCode.length < 6 || isLoading}
                                                         className="px-6 bg-brand-primary text-white font-bold text-xs rounded-sm hover:bg-brand-primary/90 disabled:opacity-50 transition-all shadow-sm"
                                                     >
-                                                        Bestätigen
+                                                        {t('profile.confirm')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -398,17 +426,17 @@ const Profile = () => {
                                 <div className="bg-slate-50 p-6 rounded-sm border border-slate-200 animate-slideDown">
                                     <div className="flex items-center gap-3 mb-4">
                                         <FaLock className="text-amber-500" />
-                                        <h5 className="text-xs font-medium text-slate-700">Wiederherstellungscodes</h5>
+                                        <h5 className="text-xs font-medium text-slate-700">{t('profile.recovery_codes_title')}</h5>
                                     </div>
-                                    <p className="text-sm text-slate-500 mb-4">Speichern Sie diese Codes an einem sicheren Ort. Sie können verwendet werden, wenn Sie keinen Zugriff auf Ihr Gerät haben.</p>
+                                    <p className="text-sm text-slate-500 mb-4">{t('profile.recovery_codes_desc')}</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
                                         {recoveryCodes.map((code, i) => (
                                             <div key={i} className="text-center py-1.5 bg-white border border-slate-200 rounded-sm text-sm font-medium text-slate-700 shadow-sm">{code}</div>
                                         ))}
                                     </div>
                                     <div className="flex gap-3">
-                                        <button onClick={handleRegenerateRecoveryCodes} disabled={isLoading} className="flex-1 py-2 bg-slate-50 text-slate-900 font-bold text-xs rounded hover:bg-slate-100 transition-all border border-slate-200">Neue Codes generieren</button>
-                                        <button onClick={() => setShowRecoveryCodesInline(false)} className="flex-1 py-2 bg-slate-800 text-white font-bold text-xs rounded hover:bg-black transition-all">Verstanden</button>
+                                        <button onClick={handleRegenerateRecoveryCodes} disabled={isLoading} className="flex-1 py-2 bg-slate-50 text-slate-900 font-bold text-xs rounded hover:bg-slate-100 transition-all border border-slate-200">{t('profile.regenerate_codes')}</button>
+                                        <button onClick={() => setShowRecoveryCodesInline(false)} className="flex-1 py-2 bg-slate-800 text-white font-bold text-xs rounded hover:bg-black transition-all">{t('profile.got_it')}</button>
                                     </div>
                                 </div>
                             )}
@@ -418,13 +446,13 @@ const Profile = () => {
                                 <div className="bg-rose-50 p-6 rounded-sm border border-rose-100 animate-slideDown">
                                     <div className="flex items-center gap-3 mb-4">
                                         <FaShieldAlt className="text-rose-600" />
-                                        <h5 className="text-xs font-medium text-rose-700">2FA Deaktivieren</h5>
+                                        <h5 className="text-xs font-medium text-rose-700">{t('profile.disable_2fa_title')}</h5>
                                     </div>
-                                    <p className="text-sm text-rose-600/80 mb-4 font-medium">Bitte bestätigen Sie Ihr Passwort, um die Zwei-Faktor-Authentifizierung für Ihr Konto zu deaktivieren.</p>
+                                    <p className="text-sm text-rose-600/80 mb-4 font-medium">{t('profile.disable_2fa_desc')}</p>
                                     <div className="flex gap-2">
                                         <input
                                             type="password"
-                                            placeholder="Passwort bestätigen"
+                                            placeholder={t('profile.confirm_password_placeholder')}
                                             value={disablePassword}
                                             onChange={e => setDisablePassword(e.target.value)}
                                             className="flex-1 px-4 py-2 border border-rose-200 rounded-sm text-sm outline-none focus:border-rose-500 bg-white shadow-inner"
@@ -434,7 +462,7 @@ const Profile = () => {
                                             disabled={!disablePassword || isLoading}
                                             className="px-6 bg-rose-600 text-white font-semibold text-xs rounded-sm hover:bg-rose-700 disabled:opacity-50 transition-all shadow-sm shadow-rose-500/10"
                                         >
-                                            Deaktivieren
+                                            {t('profile.disable')}
                                         </button>
                                     </div>
                                 </div>

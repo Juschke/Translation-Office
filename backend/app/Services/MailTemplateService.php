@@ -190,6 +190,6 @@ class MailTemplateService
             $lines[] = "Ihr Team vom Translation Office";
         }
 
-        return implode("\n", $lines);
+        return implode("<br>", $lines);
     }
 }

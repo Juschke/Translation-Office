@@ -11,6 +11,7 @@ class Service extends Model
     protected $fillable = [
         'tenant_id',
         'name',
+        'service_code',
         'unit',
         'base_price',
         'status',

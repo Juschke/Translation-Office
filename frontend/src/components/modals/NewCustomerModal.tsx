@@ -225,7 +225,10 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         }
 
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return {
+            isValid: Object.keys(newErrors).length === 0,
+            errors: newErrors
+        };
     }, []);
 
     useEffect(() => {
@@ -296,15 +299,27 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
         Object.keys(formData).forEach(key => allTouched[key] = true);
         setTouched(allTouched);
 
-        if (validate(formData)) {
+        const validation = validate(formData);
+        if (validation.isValid) {
             onSubmit(formData);
         } else {
+            const errorMsgs = Object.values(validation.errors);
+
             if (!formData.last_name || !formData.first_name || ((formData.type === 'company' || formData.type === 'authority') && !formData.company_name) || (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))) {
                 setActiveTab('general');
             } else if (!formData.address_street || !formData.address_house_no || !formData.address_zip || !formData.address_city) {
                 setActiveTab('address');
             }
-            toast.error('Bitte korrigieren Sie die markierten Pflichtfelder.');
+
+            toast.error(
+                <div className="flex flex-col gap-1">
+                    <span className="font-medium">Bitte korrigieren Sie folgende Fehler:</span>
+                    <ul className="list-disc list-inside text-xs">
+                        {errorMsgs.map((msg, i) => <li key={i}>{msg}</li>)}
+                    </ul>
+                </div>,
+                { duration: 5000 }
+            );
         }
     };
 

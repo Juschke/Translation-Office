@@ -9,21 +9,25 @@ interface ProjectPositionsTableProps {
     disabled?: boolean;
 }
 
+const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stk', 'Minuten', 'Tage'];
+
 const EMPTY_POSITION = (): ProjectPosition => ({
     id: Date.now().toString(),
     description: 'Zusatzleistung',
-    amount: '1.00',
     unit: 'Normzeile',
     quantity: '1.00',
     partnerRate: '0.00',
     partnerMode: 'unit',
     partnerTotal: '0.00',
     customerRate: '0.00',
-    customerMode: 'unit',
+    customerMode: 'rate',
     customerTotal: '0.00',
     marginType: 'markup',
     marginPercent: '0.00',
 });
+
+const fmt2 = (v: string | number) =>
+    (parseFloat(v as string) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const ProjectPositionsTable = ({ positions, setPositions, disabled }: ProjectPositionsTableProps) => {
     const update = (index: number, patch: Partial<ProjectPosition>) => {
@@ -35,25 +39,25 @@ const ProjectPositionsTable = ({ positions, setPositions, disabled }: ProjectPos
 
     return (
         <div className="overflow-x-auto border border-slate-200 rounded-sm shadow-sm bg-white">
-            <table className="w-full text-left border-collapse min-w-[700px]">
-                <thead className="bg-white text-slate-500 text-xs font-semibold border-b border-slate-200">
+            <table className="w-full text-left border-collapse min-w-[680px]">
+                <thead className="bg-slate-50 text-slate-500 text-xs font-semibold border-b border-slate-200">
                     <tr>
-                        <th className="px-4 py-3 w-10 text-center">#</th>
+                        <th className="px-4 py-3 w-8 text-center">#</th>
                         <th className="px-4 py-3">Beschreibung</th>
-                        <th className="px-4 py-3 w-28 text-right">Menge</th>
-                        <th className="px-1 py-3 w-6 text-center"></th>
-                        <th className="px-4 py-3 w-24 text-right">Anzahl</th>
-                        <th className="px-4 py-3 w-24 text-right">Einh.</th>
-                        <th className="px-4 py-3 w-32 text-right text-red-500/80 border-l border-slate-100 uppercase tracking-tighter text-[9px] font-black">EK (Partner)</th>
-                        <th className="px-4 py-3 w-32 text-right text-emerald-600/80 border-l border-slate-100 uppercase tracking-tighter text-[9px] font-black">VK (Kunde)</th>
-                        <th className="px-4 py-3 w-28 text-right font-semibold text-slate-700 border-l border-slate-100 uppercase tracking-tighter text-[9px] font-black italic">Gesamt</th>
-                        <th className="px-2 py-3 w-10 text-center"></th>
+                        <th className="px-4 py-3 w-24 text-right">Menge</th>
+                        <th className="px-4 py-3 w-28 text-right">Einheit</th>
+                        <th className="px-4 py-3 w-36 text-right text-red-500/80 border-l border-slate-100 text-[10px] font-black uppercase tracking-tight">EK Partner</th>
+                        <th className="px-4 py-3 w-40 text-right text-emerald-600/80 border-l border-slate-100 text-[10px] font-black uppercase tracking-tight">VK Kunde</th>
+                        <th className="px-4 py-3 w-28 text-right border-l border-slate-100 text-[10px] font-black uppercase tracking-tight">Gesamt</th>
+                        <th className="px-2 py-3 w-8"></th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-600">
                     {positions.map((pos, index) => (
-                        <tr key={pos.id} className="group hover:bg-slate-50 transition-colors">
+                        <tr key={pos.id} className="group hover:bg-slate-50/70 transition-colors">
                             <td className="px-4 py-3 text-center text-slate-400 font-medium">{index + 1}</td>
+
+                            {/* Beschreibung */}
                             <td className="px-4 py-3">
                                 <input
                                     type="text"
@@ -64,19 +68,8 @@ const ProjectPositionsTable = ({ positions, setPositions, disabled }: ProjectPos
                                     onChange={e => update(index, { description: e.target.value })}
                                 />
                             </td>
-                            <td className="px-4 py-3 text-right">
-                                <input
-                                    type="number"
-                                    disabled={disabled}
-                                    step="0.01"
-                                    min="0"
-                                    className="w-full text-right bg-transparent outline-none font-mono focus:bg-white focus:ring-2 focus:ring-brand-100 rounded px-1 -mx-1 disabled:cursor-not-allowed"
-                                    value={pos.amount}
-                                    onChange={e => update(index, { amount: e.target.value })}
-                                    onBlur={e => update(index, { amount: Math.max(0, parseFloat(e.target.value) || 0).toFixed(2) })}
-                                />
-                            </td>
-                            <td className="px-1 py-3 text-center text-slate-300 font-light">×</td>
+
+                            {/* Menge */}
                             <td className="px-4 py-3 text-right">
                                 <input
                                     type="number"
@@ -86,92 +79,100 @@ const ProjectPositionsTable = ({ positions, setPositions, disabled }: ProjectPos
                                     className="w-full text-right bg-transparent outline-none font-mono focus:bg-white focus:ring-2 focus:ring-brand-100 rounded px-1 -mx-1 disabled:cursor-not-allowed"
                                     value={pos.quantity}
                                     onChange={e => update(index, { quantity: e.target.value })}
-                                    onBlur={e => update(index, { quantity: Math.max(0, parseFloat(e.target.value) || 1).toFixed(2) })}
+                                    onBlur={e => update(index, { quantity: (parseFloat(e.target.value) || 0).toFixed(2) })}
                                 />
                             </td>
+
+                            {/* Einheit */}
                             <td className="px-4 py-3 text-right">
                                 <select
                                     disabled={disabled}
-                                    className="w-full bg-transparent text-right outline-none text-xs font-medium text-slate-500 cursor-pointer hover:text-slate-700 disabled:cursor-not-allowed"
+                                    className="w-full h-7 px-1 bg-white border border-slate-200 rounded text-xs font-medium text-slate-600 outline-none cursor-pointer hover:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50"
                                     value={pos.unit}
                                     onChange={e => update(index, { unit: e.target.value })}
                                 >
-                                    <option value="Wörter">Wörter</option>
-                                    <option value="Normzeile">Normzeile</option>
-                                    <option value="Seiten">Seiten</option>
-                                    <option value="Stunden">Stunden</option>
-                                    <option value="Pauschal">Pauschal</option>
+                                    {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                 </select>
                             </td>
-                            <td className="px-4 py-3 text-right border-l border-slate-100 bg-white group-hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center justify-end gap-1">
+
+                            {/* EK Partner */}
+                            <td className="px-4 py-3 text-right border-l border-slate-100">
+                                <div className="flex items-center justify-end gap-1.5">
                                     <input
                                         type="number"
                                         disabled={disabled}
                                         step="0.01"
                                         min="0"
-                                        className="w-20 text-right bg-transparent outline-none font-mono text-red-400 focus:bg-white focus:ring-2 focus:ring-red-100 rounded px-1 disabled:cursor-not-allowed disabled:text-red-300"
+                                        className="w-16 text-right bg-transparent outline-none font-mono text-red-400 focus:bg-white focus:ring-2 focus:ring-red-100 rounded px-1 disabled:cursor-not-allowed disabled:text-red-300"
                                         value={pos.partnerRate}
                                         onChange={e => update(index, { partnerRate: e.target.value })}
-                                        onBlur={e => update(index, { partnerRate: Math.max(0, parseFloat(e.target.value) || 0).toFixed(2) })}
+                                        onBlur={e => update(index, { partnerRate: (parseFloat(e.target.value) || 0).toFixed(2) })}
                                     />
                                     <select
                                         disabled={disabled}
-                                        className="w-4 bg-transparent text-xs text-slate-400 outline-none disabled:cursor-not-allowed"
+                                        className="h-7 px-1 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-500 outline-none cursor-pointer hover:border-slate-400 disabled:cursor-not-allowed"
                                         value={pos.partnerMode}
                                         onChange={e => update(index, { partnerMode: e.target.value })}
-                                        title="Berechnung: Rate oder Pauschal"
+                                        title="Berechnungsmodus"
                                     >
-                                        <option value="unit">€/Eh.</option>
-                                        <option value="flat">Fix</option>
+                                        <option value="unit">/ Einh.</option>
+                                        <option value="flat">Pausch.</option>
                                     </select>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-right border-l border-slate-100 bg-white group-hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center justify-end gap-1">
-                                    {pos.customerMode === 'flat' || pos.customerMode === 'rate' ? (
+
+                            {/* VK Kunde */}
+                            <td className="px-4 py-3 text-right border-l border-slate-100">
+                                <div className="flex items-center justify-end gap-1.5">
+                                    {pos.customerMode === 'unit' ? (
                                         <input
                                             type="number"
                                             disabled={disabled}
                                             step="0.01"
                                             min="0"
-                                            className="w-20 text-right bg-transparent outline-none font-mono text-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded px-1 disabled:cursor-not-allowed disabled:text-emerald-400"
-                                            value={pos.customerRate}
-                                            onChange={e => update(index, { customerRate: e.target.value })}
-                                            onBlur={e => update(index, { customerRate: Math.max(0, parseFloat(e.target.value) || 0).toFixed(2) })}
+                                            className="w-16 text-right bg-transparent outline-none font-mono text-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded px-1 disabled:cursor-not-allowed disabled:text-emerald-400"
+                                            value={pos.marginPercent}
+                                            onChange={e => update(index, { marginPercent: e.target.value })}
+                                            onBlur={e => update(index, { marginPercent: (parseFloat(e.target.value) || 0).toFixed(2) })}
+                                            placeholder="0.00"
                                         />
                                     ) : (
                                         <input
                                             type="number"
                                             disabled={disabled}
+                                            step="0.01"
                                             min="0"
-                                            className="w-20 text-right bg-transparent outline-none font-mono text-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded px-1 disabled:cursor-not-allowed disabled:text-emerald-400"
-                                            value={pos.marginPercent}
-                                            onChange={e => update(index, { marginPercent: e.target.value })}
-                                            onBlur={e => update(index, { marginPercent: Math.max(0, parseFloat(e.target.value) || 0).toFixed(2) })}
+                                            className="w-16 text-right bg-transparent outline-none font-mono text-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded px-1 disabled:cursor-not-allowed disabled:text-emerald-400"
+                                            value={pos.customerRate}
+                                            onChange={e => update(index, { customerRate: e.target.value })}
+                                            onBlur={e => update(index, { customerRate: (parseFloat(e.target.value) || 0).toFixed(2) })}
                                         />
                                     )}
                                     <select
                                         disabled={disabled}
-                                        className="w-4 bg-transparent text-xs text-slate-400 outline-none disabled:cursor-not-allowed"
-                                        value={pos.customerMode === 'flat' ? 'flat' : (pos.customerMode === 'rate' ? 'rate' : pos.marginType)}
+                                        className="h-7 px-1 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-500 outline-none cursor-pointer hover:border-slate-400 disabled:cursor-not-allowed"
+                                        value={pos.customerMode === 'flat' ? 'flat' : pos.customerMode === 'rate' ? 'rate' : 'margin'}
                                         onChange={e => {
                                             const v = e.target.value;
-                                            if (v === 'flat') update(index, { customerMode: 'flat', marginType: 'markup' });
+                                            if (v === 'flat')   update(index, { customerMode: 'flat',  marginType: 'markup' });
                                             else if (v === 'rate') update(index, { customerMode: 'rate', marginType: 'markup' });
-                                            else update(index, { customerMode: 'unit', marginType: v });
+                                            else                update(index, { customerMode: 'unit',  marginType: 'markup' });
                                         }}
-                                        title="Berechnung: Rate, Aufschlag, etc."
+                                        title="Berechnungsmodus Kundenpreis"
                                     >
-                                        <option value="rate">Rate</option>
-                                        <option value="markup">Aufschl. %</option>
-                                        <option value="flat">Fix</option>
+                                        <option value="rate">/ Einh.</option>
+                                        <option value="margin">% Marge</option>
+                                        <option value="flat">Pausch.</option>
                                     </select>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100 bg-white group-hover:bg-slate-50 transition-colors">
-                                {pos.customerTotal} €
+
+                            {/* Gesamt (Kunde) */}
+                            <td className="px-4 py-3 text-right font-semibold text-slate-800 border-l border-slate-100">
+                                {fmt2(pos.customerTotal)} €
                             </td>
+
+                            {/* Löschen */}
                             <td className="px-2 py-3 text-center">
                                 {!disabled && positions.length > 1 ? (
                                     <button

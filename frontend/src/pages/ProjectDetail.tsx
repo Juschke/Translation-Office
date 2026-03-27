@@ -828,6 +828,8 @@ const ProjectDetail = () => {
                         locationPathname={location.pathname}
                         setIsCustomerSearchOpen={setIsCustomerSearchOpen}
                         setIsPartnerModalOpen={setIsPartnerModalOpen}
+                        setIsCustomerEditModalOpen={setIsCustomerEditModalOpen}
+                        setIsPartnerEditModalOpen={setIsPartnerEditModalOpen}
                         handlePreviewFile={handlePreviewFile}
                         setPreviewInvoice={setPreviewInvoice}
                         onSendEmail={(recipientType) => {

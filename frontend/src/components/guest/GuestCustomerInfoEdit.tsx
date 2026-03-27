@@ -293,7 +293,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                             )}
 
                             {formData.email && (
-                                <div>
+                                <div className="md:col-span-2">
                                     <span className="block text-xs font-medium text-slate-600 mb-1">E-Mail</span>
                                     <a href={`mailto:${formData.email}`} className="text-slate-900 hover:text-[#1B4D4F] hover:underline">
                                         {formData.email}
@@ -302,7 +302,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                             )}
 
                             {formData.phone && (
-                                <div>
+                                <div className="md:col-span-2">
                                     <span className="block text-xs font-medium text-slate-600 mb-1">Telefon</span>
                                     <a href={`tel:${formData.phone}`} className="text-slate-900 hover:text-[#1B4D4F] hover:underline">
                                         {formData.phone}

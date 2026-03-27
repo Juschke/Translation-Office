@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/button';
 import {
     FaLayerGroup, FaClock, FaEuroSign, FaEnvelope, FaPlus, FaUserPlus, FaHandshake
@@ -16,6 +17,7 @@ import DashboardSkeleton from '../components/common/DashboardSkeleton';
 import KPICard from '../components/common/KPICard';
 
 const Dashboard = () => {
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
@@ -35,8 +37,6 @@ const Dashboard = () => {
         queryFn: () => projectService.getAll()
     });
 
-
-
     // Mutations
     const createProjectMutation = useMutation({
         mutationFn: projectService.create,
@@ -44,10 +44,10 @@ const Dashboard = () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             navigate(`/projects/${data.id}`);
-            toast.success('Projekt wurde angelegt');
+            toast.success(t('dashboard.messages.project_created'));
         },
         onError: () => {
-            toast.error('Fehler beim Anlegen des Projekts');
+            toast.error(t('dashboard.messages.project_create_error'));
         }
     });
 
@@ -56,10 +56,10 @@ const Dashboard = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             setIsNewCustomerModalOpen(false);
-            toast.success('Kunde wurde angelegt');
+            toast.success(t('dashboard.messages.customer_created'));
         },
         onError: () => {
-            toast.error('Fehler beim Anlegen des Kunden');
+            toast.error(t('dashboard.messages.customer_create_error'));
         }
     });
 
@@ -68,10 +68,10 @@ const Dashboard = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             setIsNewPartnerModalOpen(false);
-            toast.success('Partner wurde angelegt');
+            toast.success(t('dashboard.messages.partner_created'));
         },
         onError: () => {
-            toast.error('Fehler beim Anlegen des Partners');
+            toast.error(t('dashboard.messages.partner_create_error'));
         }
     });
 
@@ -80,10 +80,10 @@ const Dashboard = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             setIsNewInvoiceModalOpen(false);
-            toast.success('Rechnung wurde erstellt');
+            toast.success(t('dashboard.messages.invoice_created'));
         },
         onError: () => {
-            toast.error('Fehler beim Erstellen der Rechnung');
+            toast.error(t('dashboard.messages.invoice_create_error'));
         }
     });
 
@@ -96,15 +96,13 @@ const Dashboard = () => {
         unread_emails: 0
     };
 
-
-
     const sourceLanguageRevenue = dashboardData?.source_language_revenue || [];
     const targetLanguageRevenue = dashboardData?.target_language_revenue || [];
     const kpiSummary = [
-        { label: 'Offene Projekte', value: stats.open_projects, trend: stats.open_projects_trend?.toString() || '0', color: 'text-slate-900' },
-        { label: 'Fällige Tasks', value: stats.deadlines_today, trend: stats.deadlines_trend?.toString() || '0', color: stats.deadlines_today > 0 ? 'text-red-500' : 'text-slate-900' },
-        { label: 'Aktive Kunden', value: stats.active_customers, trend: stats.customers_trend?.toString() || '0', color: 'text-slate-900' },
-        { label: 'E-Mail Eingang', value: stats.unread_emails, trend: stats.unread_emails > 0 ? `+${stats.unread_emails}` : '0', color: stats.unread_emails > 0 ? 'text-slate-700' : 'text-slate-400' }
+        { label: t('dashboard.kpi.open_projects'), value: stats.open_projects, trend: stats.open_projects_trend?.toString() || '0', color: 'text-slate-900' },
+        { label: t('dashboard.kpi.failing_tasks'), value: stats.deadlines_today, trend: stats.deadlines_trend?.toString() || '0', color: stats.deadlines_today > 0 ? 'text-red-500' : 'text-slate-900' },
+        { label: t('dashboard.kpi.active_customers'), value: stats.active_customers, trend: stats.customers_trend?.toString() || '0', color: 'text-slate-900' },
+        { label: t('dashboard.kpi.email_inbox'), value: stats.unread_emails, trend: stats.unread_emails > 0 ? `+${stats.unread_emails}` : '0', color: stats.unread_emails > 0 ? 'text-slate-700' : 'text-slate-400' }
     ];
 
     if (isDashboardLoading || isProjectsLoading) {
@@ -116,8 +114,8 @@ const Dashboard = () => {
             {/* Minimalist Professional Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pb-6">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight">Dashboard</h1>
-                    <p className="text-slate-500 text-sm mt-0.5 hidden sm:block">Übersicht & Operative Steuerung</p>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight">{t('dashboard.title')}</h1>
+                    <p className="text-slate-500 text-sm mt-0.5 hidden sm:block">{t('dashboard.subtitle')}</p>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
@@ -126,7 +124,7 @@ const Dashboard = () => {
                         className="bg-brand-primary text-white hover:bg-brand-primary/90 transition font-bold"
                     >
                         <FaPlus className="mr-2 h-4 w-4" />
-                        Neues Projekt
+                        {t('dashboard.actions.new_project')}
                     </Button>
                     <Button
                         variant="outline"
@@ -134,7 +132,7 @@ const Dashboard = () => {
                         className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition font-bold"
                     >
                         <FaUserPlus className="mr-2 h-4 w-4" />
-                        Kunde anlegen
+                        {t('dashboard.actions.create_customer')}
                     </Button>
                     <Button
                         variant="outline"
@@ -142,7 +140,7 @@ const Dashboard = () => {
                         className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition font-bold"
                     >
                         <FaHandshake className="mr-2 h-4 w-4" />
-                        Partner anlegen
+                        {t('dashboard.actions.create_partner')}
                     </Button>
                 </div>
             </div>
@@ -155,33 +153,33 @@ const Dashboard = () => {
                     {/* Primary KPI Cards */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                         <KPICard
-                            label="Offene Projekte"
+                            label={t('dashboard.kpi.open_projects')}
                             value={stats.open_projects}
                             icon={<FaLayerGroup />}
                             onClick={() => navigate('/projects?filter=in_progress')}
                         />
                         <KPICard
-                            label="Deadlines (Heute)"
+                            label={t('dashboard.kpi.deadlines_today')}
                             value={stats.deadlines_today}
                             icon={<FaClock />}
                             iconColor="text-red-600"
-                            subValue={stats.deadlines_today > 0 ? "Prüfung erforderlich" : "Alles im Plan"}
+                            subValue={stats.deadlines_today > 0 ? t('dashboard.kpi.needs_review') : t('dashboard.kpi.everything_on_track')}
                             onClick={() => navigate('/projects')}
                         />
                         <KPICard
-                            label="Umsatz"
-                            value={stats.monthly_revenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                            label={t('dashboard.kpi.revenue')}
+                            value={stats.monthly_revenue.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
                             icon={<FaEuroSign />}
                             iconColor="text-green-600"
-                            subValue={`${stats.revenue_trend >= 0 ? '+' : ''}${stats.revenue_trend}% vs. Vorperiode`}
+                            subValue={t('dashboard.kpi.revenue_vs_period', { trend: stats.revenue_trend >= 0 ? `+${stats.revenue_trend}` : stats.revenue_trend })}
                             onClick={() => navigate('/reports')}
                         />
                         <KPICard
-                            label="Ungelesene Mails"
+                            label={t('dashboard.kpi.unread_mails')}
                             value={stats.unread_emails}
                             icon={<FaEnvelope />}
                             iconColor={stats.unread_emails > 0 ? "text-slate-700" : "text-slate-400"}
-                            subValue={stats.unread_emails > 0 ? `${stats.unread_emails} neue Nachrichten` : "Keine neuen Mails"}
+                            subValue={stats.unread_emails > 0 ? t('dashboard.kpi.new_messages', { count: stats.unread_emails }) : t('dashboard.kpi.no_new_mails')}
                             onClick={() => navigate('/inbox')}
                         />
                     </div>
@@ -192,19 +190,19 @@ const Dashboard = () => {
                         <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
                             <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center">
                                 <h3 className="text-xs font-medium text-slate-900">
-                                    Performance: Ausgangssprache (Source)
+                                    {t('dashboard.performance.source_language')}
                                 </h3>
                                 <span className="text-xs text-slate-500 tabular-nums">
-                                    {dashboardData?.period?.label || 'lfd. Monat'}
+                                    {dashboardData?.period?.label || t('dashboard.performance.current_month')}
                                 </span>
                             </div>
                             <div className="p-0 overflow-x-auto">
                                 <table className="w-full text-left min-w-[300px]">
                                     <thead className="text-xs font-medium text-slate-500">
                                         <tr>
-                                            <th className="px-3 py-2 border-b border-slate-200">Sprache</th>
-                                            <th className="px-3 py-2 border-b border-slate-200 text-right">Umsatz (€)</th>
-                                            <th className="px-3 py-2 border-b border-slate-200 text-right">Anteil (%)</th>
+                                            <th className="px-3 py-2 border-b border-slate-200">{t('dashboard.performance.language')}</th>
+                                            <th className="px-3 py-2 border-b border-slate-200 text-right">{t('dashboard.kpi.revenue')} (€)</th>
+                                            <th className="px-3 py-2 border-b border-slate-200 text-right">{t('dashboard.performance.share')} (%)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
@@ -214,7 +212,7 @@ const Dashboard = () => {
                                                 <tr key={i} className="hover:bg-slate-50 transition-colors">
                                                     <td className="px-3 py-2 text-xs font-medium text-slate-900">{item.label}</td>
                                                     <td className="px-3 py-2 text-xs text-slate-900 text-right tabular-nums">
-                                                        {item.value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                                        {item.value.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                     </td>
                                                     <td className="px-3 py-2 text-xs text-slate-500 text-right tabular-nums">
                                                         {share.toFixed(1)}%
@@ -224,7 +222,7 @@ const Dashboard = () => {
                                         })}
                                         {sourceLanguageRevenue.length === 0 && (
                                             <tr>
-                                                <td colSpan={3} className="px-3 py-6 text-center text-slate-500 text-xs">Keine Daten</td>
+                                                <td colSpan={3} className="px-3 py-6 text-center text-slate-500 text-xs">{t('empty.noData')}</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -236,19 +234,19 @@ const Dashboard = () => {
                         <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
                             <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center">
                                 <h3 className="text-xs font-medium text-slate-900">
-                                    Performance: Zielsprache (Target)
+                                    {t('dashboard.performance.target_language')}
                                 </h3>
                                 <span className="text-xs text-slate-500 tabular-nums">
-                                    {dashboardData?.period?.label || 'lfd. Monat'}
+                                    {dashboardData?.period?.label || t('dashboard.performance.current_month')}
                                 </span>
                             </div>
                             <div className="p-0 overflow-x-auto">
                                 <table className="w-full text-left min-w-[300px]">
                                     <thead className="text-xs font-medium text-slate-500">
                                         <tr>
-                                            <th className="px-3 py-2 border-b border-slate-200">Sprache</th>
-                                            <th className="px-3 py-2 border-b border-slate-200 text-right">Umsatz (€)</th>
-                                            <th className="px-3 py-2 border-b border-slate-200 text-right">Anteil (%)</th>
+                                            <th className="px-3 py-2 border-b border-slate-200">{t('dashboard.performance.language')}</th>
+                                            <th className="px-3 py-2 border-b border-slate-200 text-right">{t('dashboard.kpi.revenue')} (€)</th>
+                                            <th className="px-3 py-2 border-b border-slate-200 text-right">{t('dashboard.performance.share')} (%)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
@@ -258,7 +256,7 @@ const Dashboard = () => {
                                                 <tr key={i} className="hover:bg-slate-50 transition-colors">
                                                     <td className="px-3 py-2 text-xs font-medium text-slate-900">{item.label}</td>
                                                     <td className="px-3 py-2 text-xs text-slate-900 text-right tabular-nums">
-                                                        {item.value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                                        {item.value.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                     </td>
                                                     <td className="px-3 py-2 text-xs text-slate-500 text-right tabular-nums">
                                                         {share.toFixed(1)}%
@@ -268,7 +266,7 @@ const Dashboard = () => {
                                         })}
                                         {targetLanguageRevenue.length === 0 && (
                                             <tr>
-                                                <td colSpan={3} className="px-3 py-6 text-center text-slate-500 text-xs">Keine Daten</td>
+                                                <td colSpan={3} className="px-3 py-6 text-center text-slate-500 text-xs">{t('empty.noData')}</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -278,10 +276,10 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Sidebar: KPI Übersicht (1/4 width) */}
+                {/* Sidebar: Recent Projects (1/4 width) */}
                 <div className="bg-white border border-slate-200 rounded-sm flex flex-col h-fit">
                     <div className="px-5 py-4 border-b border-slate-200">
-                        <h3 className="text-sm font-medium text-slate-900">KPI Übersicht</h3>
+                        <h3 className="text-sm font-medium text-slate-900">{t('dashboard.recent_projects')}</h3>
                     </div>
                     <div className="flex-1 divide-y divide-slate-100">
                         {kpiSummary.map((item, idx) => (
@@ -300,8 +298,6 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
-
-
 
             {/* Bottom Section: Recent Projects (Symmetrical full width or 2-col) */}
             <div className="mb-4">

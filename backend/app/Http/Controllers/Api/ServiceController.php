@@ -17,6 +17,7 @@ class ServiceController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
+            'service_code' => 'nullable|string|max:20',
             'unit' => 'required|string',
             'base_price' => 'required|numeric',
             'status' => 'in:active,inactive',
@@ -36,6 +37,7 @@ class ServiceController extends Controller
         $service = Service::findOrFail($id);
         $validated = $request->validate([
             'name' => 'string',
+            'service_code' => 'nullable|string|max:20',
             'unit' => 'string',
             'base_price' => 'numeric',
             'status' => 'in:active,inactive',

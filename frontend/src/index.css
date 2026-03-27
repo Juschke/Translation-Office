@@ -592,7 +592,7 @@ body,
 }
 
 /* Fix: remove the scrollbar placeholder column in the header */
-.ant-table-thead > tr > th.ant-table-cell-scrollbar {
+.ant-table-thead>tr>th.ant-table-cell-scrollbar {
   display: none !important;
 }
 

@@ -99,6 +99,28 @@ export const settingsService = {
         return response.data;
     },
 
+    // Stammdaten: Fachgebiete
+    getSpecializations: async () => { const r = await api.get('/settings/specializations'); return r.data; },
+    createSpecialization: async (data: any) => { const r = await api.post('/settings/specializations', data); return r.data; },
+    updateSpecialization: async (id: number, data: any) => { const r = await api.put(`/settings/specializations/${id}`, data); return r.data; },
+    deleteSpecialization: async (id: number) => { const r = await api.delete(`/settings/specializations/${id}`); return r.data; },
+
+    // Stammdaten: Einheiten
+    getUnits: async () => { const r = await api.get('/settings/units'); return r.data; },
+    createUnit: async (data: any) => { const r = await api.post('/settings/units', data); return r.data; },
+    updateUnit: async (id: number, data: any) => { const r = await api.put(`/settings/units/${id}`, data); return r.data; },
+    deleteUnit: async (id: number) => { const r = await api.delete(`/settings/units/${id}`); return r.data; },
+
+    // Stammdaten: Währungen
+    getCurrencies: async () => { const r = await api.get('/settings/currencies'); return r.data; },
+    createCurrency: async (data: any) => { const r = await api.post('/settings/currencies', data); return r.data; },
+    updateCurrency: async (id: number, data: any) => { const r = await api.put(`/settings/currencies/${id}`, data); return r.data; },
+    deleteCurrency: async (id: number) => { const r = await api.delete(`/settings/currencies/${id}`); return r.data; },
+
+    // Benachrichtigungs-Einstellungen
+    getNotificationSettings: async () => { const r = await api.get('/settings/notifications'); return r.data; },
+    updateNotificationSettings: async (data: any) => { const r = await api.put('/settings/notifications', data); return r.data; },
+
     // Audit-Log
     getActivities: async () => {
         const response = await api.get('/settings/activities');

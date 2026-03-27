@@ -69,12 +69,19 @@ class MailController extends Controller
         $finalSubject = $mailTemplateService->parseTemplate($validated['subject'] ?? '(Kein Betreff)', $variables, $tenant, $user);
         $finalBody = $mailTemplateService->parseTemplate($validated['body'] ?? '', $variables, $tenant, $user);
 
+        // Convert plain-text body to HTML (nl2br) if it contains no HTML tags.
+        // Bodies from the Quill editor already contain <p>/<br> tags and are left untouched.
+        $isHtml = $finalBody !== strip_tags($finalBody);
+        $htmlBody = $isHtml
+            ? $finalBody
+            : nl2br(htmlspecialchars($finalBody, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+
         $attachments = [];
         $email = (new \Symfony\Component\Mime\Email())
             ->from($account->email)
             ->to(...array_map('trim', explode(',', $validated['to'])))
             ->subject($finalSubject)
-            ->html($finalBody);
+            ->html($htmlBody);
 
         if (!empty($validated['cc'])) {
             $email->cc(...array_map('trim', explode(',', $validated['cc'])));

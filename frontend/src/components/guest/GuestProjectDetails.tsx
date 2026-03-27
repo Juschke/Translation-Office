@@ -19,7 +19,7 @@ export const GuestProjectDetails: React.FC<GuestProjectDetailsProps> = ({ projec
             {/* Sprachen Section */}
             <div className="px-4 sm:px-6 py-5 border-b border-slate-200">
                 <h3 className="text-xs font-semibold text-slate-600 mb-4">Sprachrichtung</h3>
-                <div className="flex items-center justify-center gap-4 bg-slate-50 p-4 rounded">
+                <div className="flex items-center justify-center gap-4 p-4 rounded">
                     <div className="flex items-center gap-2">
                         <img
                             src={getFlagUrl(project.source_lang?.iso_code || 'de')}
@@ -54,16 +54,21 @@ export const GuestProjectDetails: React.FC<GuestProjectDetailsProps> = ({ projec
                 </div>
             )}
 
-            {/* Kostenaufstellung (nur für Customer) */}
+            {/* Kostenaufstellung */}
             {project.role === 'customer' && project.price_total > 0 && (
                 <div className="px-4 sm:px-6 py-5">
                     <h3 className="text-xs font-semibold text-slate-600 mb-4">Kostenaufstellung</h3>
                     <div className="space-y-2">
                         {project.positions && project.positions.length > 0 ? (
                             project.positions.map((pos: any, idx: number) => (
-                                <div key={pos.id || idx} className="flex justify-between text-sm pb-2 border-b border-slate-100 last:border-0">
-                                    <span className="text-slate-700">{pos.name || 'Dienstleistung'}</span>
-                                    <span className="font-medium text-slate-900">{formatCurrency(pos.total_price, project.currency)}</span>
+                                <div key={pos.id || idx} className="flex justify-between items-start text-sm pb-3 border-b border-slate-100 last:border-0">
+                                    <div className="flex-1">
+                                        <span className="text-slate-700 font-medium">{pos.description || pos.name || 'Dienstleistung'}</span>
+                                        <div className="text-xs text-slate-400 mt-0.5">
+                                            {parseFloat(pos.amount || pos.quantity || 0).toFixed(2)} × {parseFloat(pos.quantity || pos.amount || 1).toFixed(2)} {pos.unit || ''}
+                                        </div>
+                                    </div>
+                                    <span className="font-medium text-slate-900 ml-4">{formatCurrency(pos.customer_total || pos.total_price, project.currency)}</span>
                                 </div>
                             ))
                         ) : (

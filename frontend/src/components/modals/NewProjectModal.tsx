@@ -28,8 +28,6 @@ import ProjectFinancialSidebar from './ProjectFinancialSidebar';
 import { Button } from '../ui/button';
 
 
-// ... (rest of imports)
-
 interface NewProjectModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -153,14 +151,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const custOptions = useMemo(() => {
         return Array.isArray(customersData) ? customersData.map((c: any) => ({
             value: c.id.toString(),
-            label: c.company_name || `${c.first_name} ${c.last_name} `
+            label: c.company_name || `${c.first_name} ${c.last_name}`
         })) : [];
     }, [customersData]);
 
     const partnerOptions = useMemo(() => {
         return Array.isArray(partnersData) ? partnersData.map((p: any) => ({
             value: p.id.toString(),
-            label: p.company_name || `${p.first_name} ${p.last_name} `
+            label: p.company_name || `${p.first_name} ${p.last_name}`
         })) : [];
     }, [partnersData]);
 
@@ -190,7 +188,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             const matchSrc = src && langs.some((l: string) => l.toLowerCase().includes(src));
             const matchTrg = trg && langs.some((l: string) => l.toLowerCase().includes(trg));
 
-            // It's a match if either language is supported
             const isMatch = matchSrc || matchTrg;
             const isPerfectMatch = matchSrc && matchTrg;
 
@@ -199,12 +196,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         });
 
         const sortFn = (a: any, b: any) => {
-            // Within a group, perfect matches go first
             if (a.isPerfectMatch && !b.isPerfectMatch) return -1;
             if (!a.isPerfectMatch && b.isPerfectMatch) return 1;
 
-            const nameA = (a.company_name || `${a.first_name} ${a.last_name} `).toLowerCase();
-            const nameB = (b.company_name || `${b.first_name} ${b.last_name} `).toLowerCase();
+            const nameA = (a.company_name || `${a.first_name} ${a.last_name}`).toLowerCase();
+            const nameB = (b.company_name || `${b.first_name} ${b.last_name}`).toLowerCase();
             return nameA.localeCompare(nameB);
         };
 
@@ -274,6 +270,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             setCustomer(newCust.id.toString());
             setShowCustomerModal(false);
+            toast.success('Kunde erfolgreich angelegt');
         }
     });
 
@@ -283,6 +280,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             setTranslator(newPartner.id.toString());
             setShowPartnerModal(false);
+            toast.success('Partner erfolgreich angelegt');
         }
     });
 
@@ -313,7 +311,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     useEffect(() => {
         const updatedPositions = positions.map(pos => {
             const amount = parseFloat(pos.amount) || 0;
-            // Use 1 as default quantity if not set or 0 to avoid zeroing out prices
             const qty = (parseFloat(pos.quantity) || 1);
             const totalUnits = amount * qty;
 
@@ -355,20 +352,18 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setTotalPrice(totalC.toFixed(2));
     }, [positions]);
 
-    // Auto-generate project name when source/target language changes
+    // Auto-generate project name
     useEffect(() => {
         if (!initialData && source && target && Array.isArray(projectsData)) {
-            // Clean codes (remove flags/dashes if any)
             const cleanSource = source.split('-')[0].toLowerCase();
             const cleanTarget = target.split('-')[0].toLowerCase();
 
             const now = new Date();
-            const yy = String(now.getFullYear()).slice(-2); // Last 2 digits of year
+            const yy = String(now.getFullYear()).slice(-2);
             const mm = String(now.getMonth() + 1).padStart(2, '0');
             const dd = String(now.getDate()).padStart(2, '0');
             const datePart = yy + mm + dd;
 
-            // Format: source-target-YYMMDD
             const basePrefix = `${cleanSource}_${cleanTarget}_${datePart}`.toUpperCase();
 
             const list = Array.isArray(projectsData) ? projectsData : ((projectsData as any).data || []);
@@ -508,7 +503,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             newErrorSet.add('translator');
         }
 
-        // Extended Plausibility Checks
         const hasActiveInvoice = initialData?.invoices?.some((inv: any) => inv.status !== 'cancelled') ||
             initialData?.invoices_count > 0;
 
@@ -568,6 +562,9 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             const mm = String(now.getMonth() + 1).padStart(2, '0');
             const dd = String(now.getDate()).padStart(2, '0');
             finalName = `${customerName}_${source.toUpperCase()}_${target.toUpperCase()}_${yyyy}${mm}${dd}`.replace(/\s+/g, '_');
+        } else {
+            // Remove spaces from manual name entry
+            finalName = finalName.replace(/\s+/g, '_');
         }
 
         const sourceLangId = languages.find((l: any) => l.iso_code.startsWith(source))?.id || 1;
@@ -621,7 +618,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setConfirmConfig({
             isOpen: true,
             title: 'Projekt löschen?',
-            message: `Möchten Sie das Projekt "${name}" wirklich unwiderruflich löschen ? `,
+            message: `Möchten Sie das Projekt "${name}" wirklich unwiderruflich löschen?`,
             type: 'danger',
             confirmLabel: 'Löschen',
             onConfirm: () => {
@@ -711,27 +708,12 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                 <div className="flex-1 lg:overflow-hidden overflow-y-auto flex flex-col lg:flex-row">
                     {/* Left Column */}
                     <div className="lg:flex-1 p-3 sm:p-5 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:overflow-hidden">
-
-<<<<<<< HEAD
-                            <div className="grid grid-cols-12 gap-x-4 gap-y-3">
-                                <div className="col-span-12">
-                                    <Input
-                                        label="Projektname"
-                                        placeholder="Projektname eingeben..."
-                                        value={name}
-                                        onChange={e => setName(e.target.value.replace(/\s+/g, '_'))}
-                                        helperText="Projektname darf keine Leerzeichen enthalten (Leerzeichen werden automatisch durch Unterstriche ersetzt)."
-                                        className="bg-white"
-                                    />
-                                </div>
-=======
                         {/* Tab Bar */}
                         <div className="flex space-x-1 border-b border-slate-200 mb-4 shrink-0 overflow-x-auto custom-scrollbar pb-1">
                             <button type="button" onClick={() => setActiveTab('general')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'general' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Allgemein</button>
                             <button type="button" onClick={() => setActiveTab('services')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'services' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Leistungen & Finanzen</button>
                             <button type="button" onClick={() => setActiveTab('details')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'details' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Erweitert</button>
                         </div>
->>>>>>> bf57ed3 (updated Views)
 
                         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-1">
 
@@ -751,6 +733,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 placeholder="Projektname eingeben..."
                                                 value={name}
                                                 onChange={e => setName(e.target.value)}
+                                                helperText="Der Name darf keine Leerzeichen enthalten (autom. Korrektur)."
                                                 className="bg-white"
                                             />
                                         </div>
@@ -792,13 +775,13 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             </div>
                                         </div>
 
-                                        <div className="col-span-12 md:col-span-6">
+                                        <div className="col-span-12 md:col-span-6" id="field-container-status">
                                             <SearchableSelect
                                                 label="Status"
                                                 options={statusOptions}
                                                 value={status}
                                                 onChange={setStatus}
-                                                preserveOrder={true}
+                                                error={validationErrors.has('status')}
                                             />
                                         </div>
 
@@ -882,7 +865,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                     {/* Partner Selection Table */}
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between pb-1 border-b border-slate-100 gap-2">
-                                            <h4 className="text-[10px] sm:text-xs font-medium text-slate-400 ml-1 truncate">Partner Auswahl</h4>
+                                            <h4 className="text-[10px] sm:text-xs font-medium text-slate-400 ml-1 truncate">Partner Auswahl (Vorschläge basierend auf Sprache)</h4>
                                             <div className="relative w-32 sm:w-40">
                                                 <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[10px] sm:text-xs" />
                                                 <input
@@ -906,16 +889,72 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-50">
-                                                        {/* Matching Partners Header */}
-                                                        <tr className="bg-white">
-                                                            <td colSpan={3} className="px-2 py-1.5">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-xs font-semibold text-slate-600">Passende Übersetzer</span>
-                                                                    <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{matchingPartners.length}</span>
+                                                        {matchingPartners.length > 0 && (
+                                                            <>
+                                                                <tr className="bg-slate-50/30">
+                                                                    <td colSpan={3} className="px-2 py-1.5 border-b border-slate-100">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-xs font-semibold text-slate-600">Passende Übersetzer</span>
+                                                                            <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{matchingPartners.length}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                                {matchingPartners.map((p: any) => (
+                                                                    <tr
+                                                                        key={p.id}
+                                                                        className={clsx(
+                                                                            "group transition-colors cursor-pointer hover:bg-slate-50/50",
+                                                                            translator === p.id.toString() ? "bg-white" : ""
+                                                                        )}
+                                                                        onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
+                                                                    >
+                                                                        <td className="px-2 py-2">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="w-6 h-6 rounded bg-white text-slate-500 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
+                                                                                    {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
+                                                                                </div>
+                                                                                <div className="flex flex-col min-w-0">
+                                                                                    <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
+                                                                                    <span className="text-xs text-slate-400 truncate tracking-tight">{p.email}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-2 py-2">
+                                                                            <div className="flex flex-wrap gap-1">
+                                                                                {(p.languages || []).slice(0, 3).map((l: string) => {
+                                                                                    const isSourceMatch = source && l.toLowerCase().includes(source.toLowerCase().split('-')[0]);
+                                                                                    const isTargetMatch = target && l.toLowerCase().includes(target.toLowerCase().split('-')[0]);
+                                                                                    return (
+                                                                                        <span key={l} className={clsx(
+                                                                                            "px-1 py-0 rounded text-[7px] font-semibolder border",
+                                                                                            isSourceMatch || isTargetMatch ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white text-slate-400 border-slate-100"
+                                                                                        )}>{l}</span>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-2 py-2 text-right">
+                                                                            <div className={clsx(
+                                                                                "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
+                                                                                translator === p.id.toString() ? "bg-brand-primary border-brand-primary text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
+                                                                            )}>
+                                                                                <FaCheck className="text-xs" />
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </>
+                                                        )}
+
+                                                        <tr className="bg-slate-50/30">
+                                                            <td colSpan={3} className="px-2 py-1.5 border-b border-slate-100">
+                                                                <div className="flex items-center gap-2 mt-2">
+                                                                    <span className="text-xs font-semibold text-slate-400">Sonstige Partner</span>
+                                                                    <span className="bg-white border border-slate-200 text-slate-500 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{otherPartners.length}</span>
                                                                 </div>
                                                             </td>
                                                         </tr>
-                                                        {matchingPartners.map((p: any) => (
+                                                        {otherPartners.map((p: any) => (
                                                             <tr
                                                                 key={p.id}
                                                                 className={clsx(
@@ -926,65 +965,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                             >
                                                                 <td className="px-2 py-2">
                                                                     <div className="flex items-center gap-2">
-                                                                        <div className="w-6 h-6 rounded bg-white text-slate-500 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
-                                                                            {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
-                                                                        </div>
-                                                                        <div className="flex flex-col min-w-0">
-                                                                            <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name} `}</span>
-                                                                            <span className="text-xs text-slate-400 truncate tracking-tight">{p.email}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-2 py-2">
-                                                                    <div className="flex flex-wrap gap-1">
-                                                                        {(p.languages || []).slice(0, 3).map((l: string) => {
-                                                                            const isSourceMatch = source && l.toLowerCase().includes(source.toLowerCase().split('-')[0]);
-                                                                            const isTargetMatch = target && l.toLowerCase().includes(target.toLowerCase().split('-')[0]);
-                                                                            return (
-                                                                                <span key={l} className={clsx(
-                                                                                    "px-1 py-0 rounded text-[7px] font-semibolder border",
-                                                                                    isSourceMatch || isTargetMatch ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white text-slate-400 border-slate-100"
-                                                                                )}>{l}</span>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-2 py-2 text-right">
-                                                                    <div className={clsx(
-                                                                        "inline-flex items-center justify-center w-5 h-5 rounded-full border transition-all",
-                                                                        translator === p.id.toString() ? "bg-brand-primary border-brand-primary text-white shadow-sm" : "bg-white border-slate-200 text-transparent group-hover:border-brand-400"
-                                                                    )}>
-                                                                        <FaCheck className="text-xs" />
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-
-                                                        {/* Other Partners Header */}
-                                                        <tr className="bg-white">
-                                                            <td colSpan={3} className="px-2 py-1.5">
-                                                                <div className="flex items-center gap-2 mt-2">
-                                                                    <span className="text-xs font-semibold text-slate-400">Sonstige</span>
-                                                                    <span className="bg-white border border-slate-200 text-slate-500 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{otherPartners.length}</span>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        {otherPartners.map((p: any) => (
-                                                            <tr
-                                                                key={p.id}
-                                                                className={clsx(
-                                                                    "group transition-colors cursor-pointer hover:bg-transparent",
-                                                                    translator === p.id.toString() ? "bg-white" : ""
-                                                                )}
-                                                                onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}
-                                                            >
-                                                                <td className="px-2 py-2">
-                                                                    <div className="flex items-center gap-2">
                                                                         <div className="w-6 h-6 rounded bg-white text-slate-400 border border-slate-200 flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
                                                                             {(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}
                                                                         </div>
                                                                         <div className="flex flex-col min-w-0">
-                                                                            <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name} `}</span>
+                                                                            <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
                                                                             <span className="text-xs text-slate-400 truncate tracking-tight">{p.email}</span>
                                                                         </div>
                                                                     </div>
@@ -1036,7 +1021,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                             {/* TAB: Leistungen & Finanzen */}
                             <div className={clsx("space-y-6", activeTab !== 'services' && "hidden")}>
-                                {/* Leistungen */}
                                 <div className="space-y-6 pt-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                         <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">04</div>
@@ -1108,10 +1092,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                     </button>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-1 ml-1 lg:hidden">
-                                                <span>Summe:</span>
-                                                <span className="text-slate-700">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span>
-                                            </div>
                                         </div>
                                         <div className="col-span-6 lg:col-span-4">
                                             <div className="space-y-1.5">
@@ -1142,7 +1122,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                     />
                                 </div>
 
-                                {/* Kalkulation */}
                                 <div className="space-y-6 pt-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                         <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">05</div>
@@ -1152,7 +1131,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                     <ProjectPositionsTable positions={positions} setPositions={setPositions} />
                                 </div>
 
-                                {/* Teilzahlungen */}
                                 <ProjectPaymentsTable
                                     payments={payments}
                                     onAddPayment={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}

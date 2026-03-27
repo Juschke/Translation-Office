@@ -1,11 +1,7 @@
 import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
-<<<<<<< HEAD
-import { FaArrowRight, FaEdit, FaTrash, FaEye, FaTrashRestore, FaTimes, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-=======
-import { FaArrowRight, FaEdit, FaTrash, FaEye, FaEnvelope, FaTrashRestore } from 'react-icons/fa';
->>>>>>> bf57ed3 (updated Views)
+import { FaArrowRight, FaEdit, FaTrash, FaEye, FaTrashRestore, FaTimes, FaCheckCircle, FaTimesCircle, FaEnvelope } from 'react-icons/fa';
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
 
@@ -312,24 +308,6 @@ export function buildProjectColumns({
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-right items-end">
                     <span className="text-xs">&nbsp;</span>
-<<<<<<< HEAD
-                    {setAdvancedFilters ? (
-                        <div className="h-7 mt-1 flex items-center justify-end">
-                            {Object.values(advancedFilters).some(v => v && v !== 'all') && (
-                                <button
-                                    onClick={() => setAdvancedFilters({
-                                        customerId: '', partnerId: '', sourceLanguageId: '', targetLanguageId: '', dateRange: 'all', projectSearch: '', deadlineDate: ''
-                                    })}
-                                    className="px-2 py-1 text-[10px] font-medium border border-slate-200 text-slate-500 rounded-sm hover:bg-slate-50 hover:text-slate-700 transition"
-                                    title="Filter zurücksetzen"
-                                >
-                                    Reset
-                                </button>
-                            )}
-                        </div>
-                    ) : null}
-=======
->>>>>>> bf57ed3 (updated Views)
                 </div>
             ),
             accessor: (p: any) => (

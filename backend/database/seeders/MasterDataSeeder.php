@@ -7,6 +7,9 @@ use App\Models\Language;
 use App\Models\DocumentType;
 use App\Models\Service;
 use App\Models\EmailTemplate;
+use App\Models\Specialization;
+use App\Models\Unit;
+use App\Models\Currency;
 use App\Models\Tenant;
 
 class MasterDataSeeder extends Seeder
@@ -206,14 +209,10 @@ class MasterDataSeeder extends Seeder
 
         // 3. Standard Service Packages
         $services = [
-            ['name' => 'Übersetzung (Human-Only)', 'unit' => 'word', 'base_price' => 0.12],
-            ['name' => 'MTPE (Machine Translation + Proofreading)', 'unit' => 'word', 'base_price' => 0.07],
-            ['name' => 'Lektorat / Korrektorat', 'unit' => 'hour', 'base_price' => 65.00],
-            ['name' => 'Beglaubigte Übersetzung', 'unit' => 'piece', 'base_price' => 15.00],
-            ['name' => 'Transkription (Audio/Video)', 'unit' => 'hour', 'base_price' => 85.00],
-            ['name' => 'DTP / Layout-Anpassung', 'unit' => 'hour', 'base_price' => 55.00],
-            ['name' => 'Eilzuschlag', 'unit' => 'percent', 'base_price' => 25.00],
-            ['name' => 'Mindestauftragspauschale', 'unit' => 'piece', 'base_price' => 35.00],
+            ['service_code' => 'ÜB-01', 'name' => 'Übersetzung', 'unit' => 'word', 'base_price' => 0.12],
+            ['service_code' => 'BÜ-02', 'name' => 'Beglaubigte Übersetzung', 'unit' => 'piece', 'base_price' => 15.00],
+            ['service_code' => 'AP-03', 'name' => 'Apostille', 'unit' => 'piece', 'base_price' => 25.00],
+            ['service_code' => 'DO-04', 'name' => 'Dolmetschertätigkeit', 'unit' => 'hour', 'base_price' => 85.00],
         ];
 
         foreach ($services as $service) {
@@ -225,37 +224,167 @@ class MasterDataSeeder extends Seeder
             [
                 'name' => 'Angebot Standard',
                 'type' => 'Angebot',
-                'subject' => 'Ihr Übersetzungsangebot {{project_number}}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage und das damit verbundene Interesse an unseren Dienstleistungen.\n\nAnbei erhalten Sie unser unverbindliches Angebot für das Projekt '{{project_name}}'. Wir würden uns sehr freuen, diesen Auftrag für Sie ausführen zu dürfen.\n\nFür Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.\n\nMit freundlichen Grüßen,\n\n{{sender_name}}\n\n{{company_name}}\n{{company_address}}\nTel: {{company_phone}}\nEmail: {{company_email}}\nWeb: {{company_website}}\n\nGeschäftsführung: {{managing_director}}\nUSt-IdNr.: {{vat_id}}"
+                'subject' => 'Angebot {{project_number}} – {{project_name}}',
+                'body' => implode("\n", [
+                    "Sehr geehrte Damen und Herren,",
+                    "",
+                    "vielen Dank für Ihre Anfrage.",
+                    "",
+                    "Anbei erhalten Sie unser Angebot für Ihr Projekt:",
+                    "",
+                    "Projekt:      {{project_name}} ({{project_number}})",
+                    "Sprachpaar:   {{source_language}} → {{target_language}}",
+                    "Nettobetrag:  {{price_net}}",
+                    "",
+                    "Bei Fragen stehen wir Ihnen gerne zur Verfügung.",
+                    "",
+                    "Mit freundlichen Grüßen",
+                    "{{sender_name}}",
+                    "{{company_name}}",
+                ]),
             ],
             [
                 'name' => 'Rechnung Standard',
                 'type' => 'Rechnung',
-                'subject' => 'Rechnung {{invoice_number}} - {{project_name}}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nin der Anlage erhalten Sie die Rechnung zu Ihrem Projekt '{{project_name}}' als PDF-Dokument.\n\nWir bitten um Begleichung des Rechnungsbetrages bis zum {{due_date}}. Sollten Sie den Betrag bereits überwiesen haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.\n\nVielen Dank für die angenehme Zusammenarbeit und Ihr Vertrauen in unsere Arbeit.\n\nMit freundlichen Grüßen,\n\n{{sender_name}}\n\n{{company_name}}\n{{company_address}}\nTel: {{company_phone}}\nEmail: {{company_email}}\nWeb: {{company_website}}\n\nBankverbindung:\n{{bank_name}}\nIBAN: {{bank_iban}}\nBIC: {{bank_bic}}\nKontoinhaber: {{bank_holder}}\n\nUSt-IdNr.: {{vat_id}} | Steuernummer: {{tax_id}}"
+                'subject' => 'Rechnung {{invoice_number}} – {{project_name}}',
+                'body' => implode("\n", [
+                    "Sehr geehrte Damen und Herren,",
+                    "",
+                    "anbei erhalten Sie die Rechnung für folgendes Projekt:",
+                    "",
+                    "Rechnungsnr.: {{invoice_number}}",
+                    "Projekt:      {{project_name}}",
+                    "Betrag:       {{price_gross}} (inkl. MwSt.)",
+                    "Zahlungsziel: {{due_date}}",
+                    "",
+                    "Bankverbindung:",
+                    "{{bank_name}}",
+                    "IBAN: {{bank_iban}}",
+                    "BIC:  {{bank_bic}}",
+                    "",
+                    "Vielen Dank für die gute Zusammenarbeit.",
+                    "",
+                    "Mit freundlichen Grüßen",
+                    "{{sender_name}}",
+                    "{{company_name}}",
+                ]),
             ],
             [
                 'name' => 'Auftragsbestätigung',
                 'type' => 'Auftragsbestätigung',
-                'subject' => 'Auftragsbestätigung: Projekt {{project_number}}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihren Auftrag. Hiermit bestätigen wir Ihnen die Annahme und den Beginn der Bearbeitung Ihres Projektes '{{project_name}}'.\n\nDie geplante Fertigstellung erfolgt bis zum {{deadline}}.\n\nSollten Sie noch Ergänzungen oder Fragen haben, lassen Sie es uns bitte wissen.\n\nMit freundlichen Grüßen,\n\n{{sender_name}}\n\n{{company_name}}\n{{company_address}}\nTel: {{company_phone}}"
+                'subject' => 'Auftragsbestätigung – {{project_number}}',
+                'body' => implode("\n", [
+                    "Sehr geehrte Damen und Herren,",
+                    "",
+                    "hiermit bestätigen wir die Bearbeitung Ihres Auftrags:",
+                    "",
+                    "Projekt:      {{project_name}} ({{project_number}})",
+                    "Sprachpaar:   {{source_language}} → {{target_language}}",
+                    "Liefertermin: {{deadline}}",
+                    "",
+                    "Bei Fragen melden Sie sich gerne bei uns.",
+                    "",
+                    "Mit freundlichen Grüßen",
+                    "{{sender_name}}",
+                    "{{company_name}}",
+                ]),
             ],
             [
                 'name' => 'Partner-Anfrage (Übersetzung)',
                 'type' => 'Partner-Anfrage',
-                'subject' => 'Verfügbarkeitsanfrage: Projekt {{project_name}} ({{source_language}} > {{target_language}})',
-                'body' => "Guten Tag,\n\nwir haben ein neues Projekt im Bereich {{source_language}} > {{target_language}} erhalten und möchten anfragen, ob Sie hierfür aktuell Kapazitäten frei haben.\n\nEckdaten des Projekts:\n- Volumen: {{price_net}}\n- Liefertermin: {{deadline}}\n\nBitte geben Sie uns kurz Bescheid, ob Sie diesen Auftrag übernehmen können. Wir freuen uns auf eine mögliche Zusammenarbeit.\n\nBeste Grüße,\n\n{{sender_name}}\nProjektmanagement | {{company_name}}"
+                'subject' => 'Verfügbarkeitsanfrage – {{project_name}} ({{source_language}} › {{target_language}})',
+                'body' => implode("\n", [
+                    "Guten Tag {{partner_name}},",
+                    "",
+                    "wir haben einen neuen Auftrag erhalten und fragen an, ob Sie aktuell Kapazitäten haben.",
+                    "",
+                    "Projekt:      {{project_name}}",
+                    "Sprachpaar:   {{source_language}} → {{target_language}}",
+                    "Volumen:      {{price_net}}",
+                    "Liefertermin: {{deadline}}",
+                    "",
+                    "Bitte melden Sie sich kurz, ob Sie verfügbar sind.",
+                    "",
+                    "Viele Grüße",
+                    "{{sender_name}}",
+                    "{{company_name}}",
+                ]),
             ],
             [
                 'name' => 'Abholbestätigung',
                 'type' => 'Abholbestätigung',
-                'subject' => 'Abholbestätigung für Ihren Auftrag {{project_number}}',
-                'body' => "Sehr geehrte Damen und Herren,\n\nwir freuen uns, Ihnen mitteilen zu können, dass Ihr Auftrag '{{project_name}}' fertiggestellt wurde und zur Abholung bereitliegt.\n\nSie können Ihre Unterlagen zu unseren Öffnungszeiten in unserem Büro abholen.\n\nWir danken für die gute Zusammenarbeit.\n\nMit freundlichen Grüßen,\n\n{{sender_name}}\n\n{{company_name}}\n{{company_address}}\nTel: {{company_phone}}"
+                'subject' => 'Ihr Auftrag ist abholbereit – {{project_number}}',
+                'body' => implode("\n", [
+                    "Sehr geehrte Damen und Herren,",
+                    "",
+                    "Ihr Auftrag ist fertiggestellt und steht zur Abholung bereit.",
+                    "",
+                    "Projekt: {{project_name}} ({{project_number}})",
+                    "",
+                    "Sie können Ihre Unterlagen während unserer Öffnungszeiten bei uns abholen.",
+                    "",
+                    "Mit freundlichen Grüßen",
+                    "{{sender_name}}",
+                    "{{company_name}}",
+                ]),
             ],
         ];
 
         foreach ($emailTemplates as $tpl) {
             EmailTemplate::updateOrCreate(['tenant_id' => $tenantId, 'name' => $tpl['name']], $tpl);
+        }
+
+        // 5. Specializations (Fachgebiete)
+        $specializations = [
+            ['name' => 'Recht & Verträge'],
+            ['name' => 'Medizin & Pharmazie'],
+            ['name' => 'Technik & Ingenieurwesen'],
+            ['name' => 'Wirtschaft & Finanzen'],
+            ['name' => 'IT & Software'],
+            ['name' => 'Marketing & Werbung'],
+            ['name' => 'Behörden & Urkunden'],
+            ['name' => 'Wissenschaft & Forschung'],
+            ['name' => 'Literatur & Medien'],
+        ];
+
+        foreach ($specializations as $spec) {
+            Specialization::updateOrCreate(
+                ['tenant_id' => $tenantId, 'name' => $spec['name']],
+                $spec
+            );
+        }
+
+        // 6. Units (Einheiten)
+        $units = [
+            ['name' => 'Wort', 'abbreviation' => 'Wrt'],
+            ['name' => 'Zeile', 'abbreviation' => 'Zl'],
+            ['name' => 'Normseite', 'abbreviation' => 'NS'],
+            ['name' => 'Seite', 'abbreviation' => 'S.'],
+            ['name' => 'Stunde', 'abbreviation' => 'Std'],
+            ['name' => 'Pauschal', 'abbreviation' => 'Psch'],
+        ];
+
+        foreach ($units as $unit) {
+            Unit::updateOrCreate(
+                ['tenant_id' => $tenantId, 'name' => $unit['name']],
+                $unit
+            );
+        }
+
+        // 7. Currencies (Währungen)
+        $currencies = [
+            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'is_default' => true],
+            ['code' => 'USD', 'name' => 'US-Dollar', 'symbol' => '$', 'is_default' => false],
+            ['code' => 'CHF', 'name' => 'Schweizer Franken', 'symbol' => 'Fr.', 'is_default' => false],
+            ['code' => 'GBP', 'name' => 'Britisches Pfund', 'symbol' => '£', 'is_default' => false],
+            ['code' => 'PLN', 'name' => 'Polnischer Zloty', 'symbol' => 'zł', 'is_default' => false],
+        ];
+
+        foreach ($currencies as $currency) {
+            Currency::updateOrCreate(
+                ['tenant_id' => $tenantId, 'name' => $currency['name']],
+                $currency
+            );
         }
     }
 }

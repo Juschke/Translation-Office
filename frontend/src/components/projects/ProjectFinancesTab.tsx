@@ -33,9 +33,8 @@ const ProjectFinancesTab = ({
             return projectData.positions.map((p: any) => ({
                 id: p.id.toString(),
                 description: p.description || '',
-                amount: (p.amount || '0').toString(),
                 unit: p.unit || 'Normzeile',
-                quantity: (p.quantity || '1').toString(),
+                quantity: (p.quantity || p.amount || '1').toString(),
                 partnerRate: (p.partnerRate || p.partner_rate || '0').toString(),
                 partnerMode: p.partnerMode || p.partner_mode || 'unit',
                 partnerTotal: (p.partnerTotal || p.partner_total || '0').toString(),
@@ -57,26 +56,25 @@ const ProjectFinancesTab = ({
         if (isLocked) return; // Prevent auto-update if locked
 
         const updatedPositions = positions.map(pos => {
-            const amount = parseFloat(pos.amount) || 0;
             const qty = parseFloat(pos.quantity) || 0;
-            const totalUnits = amount * qty;
 
             const pRate = parseFloat(pos.partnerRate) || 0;
-            const pTotal = pos.partnerMode === 'unit' ? totalUnits * pRate : pRate;
+            const pTotal = pos.partnerMode === 'unit' ? qty * pRate : pRate;
 
             let cTotal = 0;
             let cRate = 0;
 
             if (pos.customerMode === 'unit') {
+                // Margin-basiert auf EK
                 const margin = (parseFloat(pos.marginPercent) || 0) / 100;
                 cTotal = pTotal * (pos.marginType === 'markup' ? (1 + margin) : (1 - margin));
-                if (totalUnits > 0) cRate = cTotal / totalUnits;
+                if (qty > 0) cRate = cTotal / qty;
             } else if (pos.customerMode === 'rate') {
+                // Direkt €/Einheit
                 cRate = parseFloat(pos.customerRate) || 0;
-                cTotal = totalUnits * cRate;
-            } else if (pos.customerMode === 'flat') {
-                cTotal = parseFloat(pos.customerRate) || 0;
+                cTotal = qty * cRate;
             } else {
+                // Pauschal
                 cTotal = parseFloat(pos.customerRate) || 0;
             }
 
@@ -84,7 +82,7 @@ const ProjectFinancesTab = ({
                 ...pos,
                 partnerTotal: pTotal.toFixed(2),
                 customerTotal: cTotal.toFixed(2),
-                customerRate: pos.customerMode === 'unit' ? cRate.toFixed(2) : pos.customerRate
+                customerRate: pos.customerMode === 'unit' ? cRate.toFixed(2) : pos.customerRate,
             };
         });
 

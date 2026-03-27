@@ -21,7 +21,7 @@ interface NewInvoiceModalProps {
     defaultType?: 'invoice' | 'credit_note';
 }
 
-const UNITS = ['Wörter', 'Zeilen', 'Seiten', 'Stunden', 'Pauschal', 'Stk', 'Minuten', 'Tag'];
+const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stk', 'Minuten', 'Tage'];
 
 const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoading, defaultType = 'invoice' }: NewInvoiceModalProps) => {
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -74,13 +74,13 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
         const shipping = parseFloat(formData.shipping) || 0;
         const discount = parseFloat(formData.discount) || 0;
         const paid = parseFloat(formData.paid_amount) || 0;
-        const netBase = netItems + shipping - discount;
         const rate = formData.tax_exemption === 'none' ? (parseFloat(formData.tax_rate) || 0) : 0;
-        const tax = netBase * (rate / 100);
-        const gross = netBase + tax;
+        const amount_net = netItems;
+        const amount_tax = amount_net * (rate / 100);
+        const amount_gross = amount_net + amount_tax + shipping - discount;
         const isCN = formData.type === 'credit_note';
-        const due = isCN ? (gross - paid) : Math.max(0, gross - paid);
-        return { amount_net: netBase, amount_tax: tax, amount_gross: gross, amount_due: due };
+        const due = isCN ? (amount_gross - paid) : Math.max(0, amount_gross - paid);
+        return { amount_net, amount_tax, amount_gross, amount_due: due };
     }, [items, formData.shipping, formData.discount, formData.paid_amount, formData.tax_rate, formData.tax_exemption, formData.type]);
 
     const projectOptions = useMemo(() => {
@@ -605,7 +605,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                         <select
                                                             value={item.unit}
                                                             onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
-                                                            className="text-right text-xs font-medium text-slate-400 bg-transparent outline-none cursor-pointer hover:text-slate-700 transition-colors w-full appearance-none"
+                                                            className="w-full h-7 px-1 bg-white border border-slate-200 rounded text-xs font-medium text-slate-600 outline-none cursor-pointer hover:border-slate-400"
                                                         >
                                                             {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                                         </select>
@@ -616,10 +616,10 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                             <select
                                                                 value={item.price_mode || 'unit'}
                                                                 onChange={(e) => updateItem(item.id, 'price_mode', e.target.value)}
-                                                                className="text-right text-xs font-medium text-emerald-400 bg-transparent outline-none cursor-pointer hover:text-emerald-600 transition-colors appearance-none"
+                                                                className="h-6 px-1 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-500 outline-none cursor-pointer hover:border-slate-400"
                                                             >
-                                                                <option value="unit">/ Einheit</option>
-                                                                <option value="fixed">Pauschal</option>
+                                                                <option value="unit">/ Einh.</option>
+                                                                <option value="fixed">Pausch.</option>
                                                             </select>
                                                         </div>
                                                     </td>

@@ -82,6 +82,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::apiResource('settings/document-types', \App\Http\Controllers\Api\DocumentTypeController::class);
         Route::apiResource('settings/services', \App\Http\Controllers\Api\ServiceController::class);
         Route::apiResource('settings/email-templates', \App\Http\Controllers\Api\EmailTemplateController::class);
+        Route::apiResource('settings/specializations', \App\Http\Controllers\Api\SpecializationController::class);
+        Route::apiResource('settings/units', \App\Http\Controllers\Api\UnitController::class);
+        Route::apiResource('settings/currencies', \App\Http\Controllers\Api\CurrencyController::class);
+        Route::get('settings/notifications', [\App\Http\Controllers\Api\NotificationSettingsController::class, 'index']);
+        Route::put('settings/notifications', [\App\Http\Controllers\Api\NotificationSettingsController::class, 'update']);
         Route::get('settings/activities', [\App\Http\Controllers\Api\ActivityController::class, 'index']);
 
         // Bulk update operations

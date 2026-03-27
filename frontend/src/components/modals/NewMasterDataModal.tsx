@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { FaTimes, FaSave, FaLanguage, FaFileAlt, FaGlobe, FaCheck, FaBan, FaEnvelopeOpenText, FaEye, FaCode, FaPlus } from 'react-icons/fa';
+import { FaTimes, FaSave, FaLanguage, FaFileAlt, FaGlobe, FaCheck, FaBan, FaEnvelopeOpenText, FaEye, FaCode, FaPlus, FaTag, FaRuler, FaMoneyBillWave } from 'react-icons/fa';
 import { clsx } from 'clsx';
 import SearchableSelect from '../common/SearchableSelect';
 import { settingsService } from '../../api/services';
@@ -9,7 +9,7 @@ interface NewMasterDataModalProps {
  isOpen: boolean;
  onClose: () => void;
  onSubmit: (data: any) => void;
- type: 'languages' | 'doc_types' | 'services' | 'email_templates';
+ type: 'languages' | 'doc_types' | 'services' | 'email_templates' | 'specializations' | 'units' | 'currencies';
  initialData?: any;
 }
 
@@ -123,6 +123,17 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
  if (!formData.subject) { newErrors.subject = true; if (!firstErrorId) firstErrorId = 'subject'; }
  if (!formData.body) { newErrors.body = true; if (!firstErrorId) firstErrorId = 'body'; }
  }
+ if (type === 'specializations') {
+ if (!formData.name) { newErrors.name = true; if (!firstErrorId) firstErrorId = 'name'; }
+ }
+ if (type === 'units') {
+ if (!formData.name) { newErrors.name = true; if (!firstErrorId) firstErrorId = 'name'; }
+ }
+ if (type === 'currencies') {
+ if (!formData.code) { newErrors.code = true; if (!firstErrorId) firstErrorId = 'code'; }
+ if (!formData.name) { newErrors.name = true; if (!firstErrorId) firstErrorId = 'name'; }
+ if (!formData.symbol) { newErrors.symbol = true; if (!firstErrorId) firstErrorId = 'symbol'; }
+ }
 
  setErrors(newErrors);
 
@@ -168,6 +179,9 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
  case 'doc_types': return 'Neue Dokumentenart';
  case 'services': return 'Neue Dienstleistung';
  case 'email_templates': return 'Neue Email-Vorlage';
+ case 'specializations': return 'Neues Fachgebiet';
+ case 'units': return 'Neue Einheit';
+ case 'currencies': return 'Neue Währung';
  default: return 'Datensatz anlegen';
  }
  };
@@ -178,6 +192,9 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
  case 'doc_types': return <FaFileAlt className="text-slate-700" />;
  case 'services': return <FaGlobe className="text-slate-700" />;
  case 'email_templates': return <FaEnvelopeOpenText className="text-slate-700" />;
+ case 'specializations': return <FaTag className="text-slate-700" />;
+ case 'units': return <FaRuler className="text-slate-700" />;
+ case 'currencies': return <FaMoneyBillWave className="text-slate-700" />;
  default: return null;
  }
  };
@@ -309,7 +326,8 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
  {/* Service Fields */}
  {type === 'services' && (
  <>
- <div className="space-y-1.5">
+ <div className="grid grid-cols-3 gap-4">
+ <div className="space-y-1.5 col-span-2">
  <label className="block text-xs font-medium text-slate-400">Leistungs-Name <span className="text-red-500">*</span></label>
  <input
  id="name"
@@ -319,6 +337,18 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
  value={formData.name || ''}
  onChange={(e) => handleChange('name', e.target.value)}
  />
+ </div>
+ <div className="space-y-1.5">
+ <label className="block text-xs font-medium text-slate-400">Leistungscode</label>
+ <input
+ type="text"
+ maxLength={20}
+ className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white font-mono"
+ placeholder="ÜB-01"
+ value={formData.service_code || ''}
+ onChange={(e) => handleChange('service_code', e.target.value)}
+ />
+ </div>
  </div>
  <div className="grid grid-cols-2 gap-4">
  <div className="space-y-1.5">
@@ -346,6 +376,60 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
  onChange={(e) => handleChange('base_price', e.target.value)}
  />
  </div>
+ </div>
+ </>
+ )}
+
+ {/* Specialization Fields */}
+ {type === 'specializations' && (
+ <>
+ <div className="space-y-1.5">
+ <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
+ <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Recht & Verträge" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+ </div>
+ <div className="space-y-1.5">
+ <label className="block text-xs font-medium text-slate-400">Beschreibung</label>
+ <input type="text" className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white" placeholder="Kurze Beschreibung (optional)" value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} />
+ </div>
+ </>
+ )}
+
+ {/* Unit Fields */}
+ {type === 'units' && (
+ <div className="grid grid-cols-2 gap-4">
+ <div className="space-y-1.5 col-span-2">
+ <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
+ <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Normseite" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+ </div>
+ <div className="space-y-1.5 col-span-2">
+ <label className="block text-xs font-medium text-slate-400">Abkürzung</label>
+ <input type="text" maxLength={10} className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white" placeholder="z.B. NS" value={formData.abbreviation || ''} onChange={(e) => handleChange('abbreviation', e.target.value)} />
+ </div>
+ </div>
+ )}
+
+ {/* Currency Fields */}
+ {type === 'currencies' && (
+ <>
+ <div className="grid grid-cols-3 gap-3">
+ <div className="space-y-1.5">
+ <label className="block text-xs font-medium text-slate-400">Code (ISO) <span className="text-red-500">*</span></label>
+ <input id="code" type="text" maxLength={3} className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all uppercase", errors.code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="EUR" value={formData.code || ''} onChange={(e) => handleChange('code', e.target.value.toUpperCase())} />
+ </div>
+ <div className="space-y-1.5">
+ <label className="block text-xs font-medium text-slate-400">Symbol <span className="text-red-500">*</span></label>
+ <input id="symbol" type="text" maxLength={5} className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.symbol ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="€" value={formData.symbol || ''} onChange={(e) => handleChange('symbol', e.target.value)} />
+ </div>
+ <div className="space-y-1.5">
+ <label className="block text-xs font-medium text-slate-400">Standard</label>
+ <button type="button" onClick={() => handleChange('is_default', !formData.is_default)} className={clsx("w-full h-11 px-3 border rounded text-xs font-medium transition-all flex items-center justify-center gap-2", formData.is_default ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "border-slate-300 text-slate-400 bg-white")}>
+ {formData.is_default ? <><FaCheck className="text-xs" /> Standard</> : 'Nein'}
+ </button>
+ </div>
+ </div>
+ <div className="space-y-1.5">
+ <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
+ <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Euro" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
  </div>
  </>
  )}

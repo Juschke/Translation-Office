@@ -36,7 +36,6 @@ const Projects = () => {
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<any>(null);
-    const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
     const [advancedFilters, setAdvancedFilters] = useState<any>({
         customerId: '',
@@ -46,8 +45,10 @@ const Projects = () => {
         dateRange: 'all',
         projectSearch: '',
         deadlineDate: '',
-        status: 'all',
-        progress: 'all'
+        deadlineRange: 'all',
+        priority: 'all',
+        certified: 'all',
+        apostille: 'all',
     });
 
     const exportRef = useRef<HTMLDivElement>(null);
@@ -250,6 +251,17 @@ const Projects = () => {
                     if (!isWithinInterval(pDate, { start, end })) return false;
                 }
             }
+
+            if (advancedFilters.priority && advancedFilters.priority !== 'all') {
+                if (p.priority !== advancedFilters.priority) return false;
+            }
+            if (advancedFilters.certified !== 'all') {
+                if (Boolean(p.is_certified) !== (advancedFilters.certified === 'yes')) return false;
+            }
+            if (advancedFilters.apostille !== 'all') {
+                if (Boolean(p.has_apostille) !== (advancedFilters.apostille === 'yes')) return false;
+            }
+
             return true;
         });
     }, [projects, advancedFilters]);
@@ -313,6 +325,25 @@ const Projects = () => {
                 if (dDate !== advancedFilters.deadlineDate) return false;
             }
 
+            if (advancedFilters.deadlineRange && advancedFilters.deadlineRange !== 'all') {
+                const now = new Date();
+                if (advancedFilters.deadlineRange === 'overdue') {
+                    if (!p.deadline || new Date(p.deadline) >= startOfDay(now)) return false;
+                } else if (advancedFilters.deadlineRange === 'today') {
+                    if (!p.deadline) return false;
+                    const dl = new Date(p.deadline);
+                    if (dl < startOfDay(now) || dl > endOfDay(now)) return false;
+                } else if (advancedFilters.deadlineRange === 'this_week') {
+                    if (!p.deadline) return false;
+                    const dl = new Date(p.deadline);
+                    if (!isWithinInterval(dl, { start: startOfDay(now), end: endOfDay(subDays(startOfWeek(subDays(now, -7), { weekStartsOn: 1 }), 1)) })) return false;
+                } else if (advancedFilters.deadlineRange === 'this_month') {
+                    if (!p.deadline) return false;
+                    const dl = new Date(p.deadline);
+                    if (!isWithinInterval(dl, { start: startOfDay(now), end: endOfDay(new Date(now.getFullYear(), now.getMonth() + 1, 0)) })) return false;
+                }
+            }
+
             if (advancedFilters.dateRange && advancedFilters.dateRange !== 'all') {
                 const now = new Date();
                 let start: Date | null = null;
@@ -334,6 +365,21 @@ const Projects = () => {
                     if (!isWithinInterval(pDate, { start, end })) return false;
                 }
             }
+
+            if (advancedFilters.priority && advancedFilters.priority !== 'all') {
+                if (p.priority !== advancedFilters.priority) return false;
+            }
+
+            if (advancedFilters.certified !== 'all') {
+                const want = advancedFilters.certified === 'yes';
+                if (Boolean(p.is_certified) !== want) return false;
+            }
+
+            if (advancedFilters.apostille !== 'all') {
+                const want = advancedFilters.apostille === 'yes';
+                if (Boolean(p.has_apostille) !== want) return false;
+            }
+
             return true;
         });
     }, [projects, statusView, filter, advancedFilters]);
@@ -360,17 +406,7 @@ const Projects = () => {
     };
 
     const handleEditProject = async (p: any) => {
-        setEditingProject(p);
-        setIsModalOpen(true);
-        setIsDetailLoading(true);
-        try {
-            const fullData = await projectService.getById(p.id);
-            setEditingProject(fullData);
-        } catch (err) {
-            // Error already handled by axios interceptor
-        } finally {
-            setIsDetailLoading(false);
-        }
+        navigate(`/projects/${p.id}/edit`);
     };
 
     const columns = buildProjectColumns({
@@ -392,7 +428,9 @@ const Projects = () => {
         setStatusView('active');
         setFilter('all');
         setAdvancedFilters({
-            customerId: '', partnerId: '', sourceLanguageId: '', targetLanguageId: '', dateRange: 'all', projectSearch: '', deadlineDate: '', status: 'all', progress: 'all'
+            customerId: '', partnerId: '', sourceLanguageId: '', targetLanguageId: '',
+            dateRange: 'all', projectSearch: '', deadlineDate: '',
+            deadlineRange: 'all', priority: 'all', certified: 'all', apostille: 'all',
         });
     };
 
@@ -421,12 +459,14 @@ const Projects = () => {
 
         filters.push(
             {
-                id: 'advStatus', label: 'Projekt-Status', type: 'select' as const, value: advancedFilters.status || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, status: v })),
-                options: [{ value: 'all', label: 'Alle' }, { value: 'pending', label: 'Ausstehend' }, { value: 'in_progress', label: 'In Bearbeitung' }, { value: 'completed', label: 'Abgeschlossen' }, { value: 'delivered', label: 'Geliefert' }, { value: 'cancelled', label: 'Storniert' }]
-            },
-            {
-                id: 'advProgress', label: 'Fortschritt', type: 'select' as const, value: advancedFilters.progress || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, progress: v })),
-                options: [{ value: 'all', label: 'Alle' }, { value: 'not_started', label: 'Nicht begonnen' }, { value: 'in_progress', label: 'In Arbeit' }, { value: 'almost_done', label: 'Fast fertig' }, { value: 'completed', label: 'Fertig' }]
+                id: 'priority', label: 'Priorität', type: 'select' as const, value: advancedFilters.priority || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, priority: v })),
+                options: [
+                    { value: 'all', label: 'Alle Prioritäten' },
+                    { value: 'low', label: 'Standard' },
+                    { value: 'medium', label: 'Normal' },
+                    { value: 'high', label: 'Hoch' },
+                    { value: 'express', label: 'Express' },
+                ]
             },
             {
                 id: 'customer', label: 'Kunde', type: 'select' as const, value: advancedFilters.customerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: v })),
@@ -438,12 +478,30 @@ const Projects = () => {
             },
             {
                 id: 'sourceLang', label: 'Quellsprache', type: 'select' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
-                options: [{ value: '', label: 'Alle Sprachen' }, ...languages.map((l: any) => ({ value: l.id, label: (l.iso_code || '').substring(0, 2).toUpperCase() }))]
+                options: [{ value: '', label: 'Alle Sprachen' }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
             },
             {
                 id: 'targetLang', label: 'Zielsprache', type: 'select' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
-                options: [{ value: '', label: 'Alle Sprachen' }, ...languages.map((l: any) => ({ value: l.id, label: (l.iso_code || '').substring(0, 2).toUpperCase() }))]
-            }
+                options: [{ value: '', label: 'Alle Sprachen' }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
+            },
+            {
+                id: 'deadlineRange', label: 'Frist', type: 'select' as const, value: advancedFilters.deadlineRange || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, deadlineRange: v })),
+                options: [
+                    { value: 'all', label: 'Alle Fristen' },
+                    { value: 'overdue', label: 'Überfällig' },
+                    { value: 'today', label: 'Heute fällig' },
+                    { value: 'this_week', label: 'Diese Woche' },
+                    { value: 'this_month', label: 'Diesen Monat' },
+                ]
+            },
+            {
+                id: 'certified', label: 'Beglaubigt', type: 'select' as const, value: advancedFilters.certified || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, certified: v })),
+                options: [{ value: 'all', label: 'Alle' }, { value: 'yes', label: 'Ja' }, { value: 'no', label: 'Nein' }]
+            },
+            {
+                id: 'apostille', label: 'Apostille', type: 'select' as const, value: advancedFilters.apostille || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, apostille: v })),
+                options: [{ value: 'all', label: 'Alle' }, { value: 'yes', label: 'Ja' }, { value: 'no', label: 'Nein' }]
+            },
         );
 
         return filters;
@@ -477,7 +535,7 @@ const Projects = () => {
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <Button
-                        onClick={() => { setEditingProject(null); setIsModalOpen(true); }}
+                        onClick={() => navigate('/projects/new')}
                         className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">Neues Projekt</span><span className="inline sm:hidden">Neu</span>
@@ -530,7 +588,7 @@ const Projects = () => {
                         searchPlaceholder="Suchen nach Projekten..."
                         searchFields={['project_name', 'project_number'] as any[]}
                         actions={actions}
-                        onAddClick={() => { setEditingProject(null); setIsModalOpen(true); }}
+                        onAddClick={() => navigate('/projects/new')}
                         selectable
                         selectedIds={selectedProjects}
                         onSelectionChange={(ids) => setSelectedProjects(ids as string[])}
@@ -577,7 +635,7 @@ const Projects = () => {
                     }
                 }}
                 initialData={editingProject}
-                isLoading={isDetailLoading || createMutation.isPending || updateMutation.isPending}
+                isLoading={createMutation.isPending || updateMutation.isPending}
             />
 
             <ConfirmModal

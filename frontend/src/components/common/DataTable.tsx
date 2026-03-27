@@ -2,14 +2,11 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Table, type TableProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table/interface';
-import { FaSearch, FaColumns, FaPlus, FaChevronLeft, FaChevronRight, FaChevronDown, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaColumns, FaPlus, FaChevronLeft, FaChevronRight, FaChevronDown, FaTimes, FaFilter, FaUndo } from 'react-icons/fa';
 import clsx from 'clsx';
 import Switch from './Switch';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
-<<<<<<< HEAD
 import TableSkeleton from './TableSkeleton';
-=======
-import { FaFilter, FaUndo } from 'react-icons/fa';
 
 export interface FilterDef {
     id: string;
@@ -20,8 +17,6 @@ export interface FilterDef {
     onChange: (val: any) => void;
     placeholder?: string;
 }
-
->>>>>>> bf57ed3 (updated Views)
 
 interface Column<T> {
     id: string;

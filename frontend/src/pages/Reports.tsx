@@ -443,11 +443,7 @@ const Reports = () => {
                         </div>
                         <div className="overflow-x-auto">
                             {financeSubTab === 'tax' && (
-<<<<<<< HEAD
-                                <table className="w-full text-left">
-=======
                                 <table className="w-full text-left align-middle border-collapse">
->>>>>>> bf57ed3 (updated Views)
                                     <thead>
                                         <tr className="bg-slate-50 border-y border-slate-200 text-xs text-slate-500">
                                             <th className="px-4 py-2 font-medium border-r border-slate-200" rowSpan={2}>Meldezeitraum</th>
@@ -514,11 +510,7 @@ const Reports = () => {
                             )}
 
                             {financeSubTab === 'profitability' && (
-<<<<<<< HEAD
-                                <table className="w-full text-left">
-=======
                                 <table className="w-full text-left align-middle border-collapse">
->>>>>>> bf57ed3 (updated Views)
                                     <thead>
                                         <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                                             <th className="px-5 py-3 border-r border-slate-100">Projekt / Kunde</th>

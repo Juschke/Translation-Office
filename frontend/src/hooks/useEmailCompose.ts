@@ -93,7 +93,19 @@ export function useEmailCompose() {
 
     const handleApplyTemplate = (template: any) => {
         setComposeSubject(template.subject);
-        setComposeBody(template.body);
+        const body: string = template.body ?? '';
+        // If the stored body already contains HTML tags (e.g. saved from Quill), use it directly.
+        // Otherwise convert plain-text newlines to Quill-compatible <p> paragraphs.
+        const isHtml = /<[a-z][\s\S]*>/i.test(body);
+        if (isHtml) {
+            setComposeBody(body);
+        } else {
+            const html = body
+                .split('\n')
+                .map((line: string) => `<p>${line.trim() !== '' ? line : '<br>'}</p>`)
+                .join('');
+            setComposeBody(html);
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

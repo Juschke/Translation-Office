@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt, FaCommentDots, FaCrown } from 'react-icons/fa';
+import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt, FaCommentDots, FaCrown, FaBuilding, FaDatabase, FaHistory, FaFileInvoice, FaGlobe } from 'react-icons/fa';
 
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService, notificationService } from '../api/services';
@@ -23,24 +24,41 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const Navigation = () => {
+    const { t, i18n } = useTranslation();
     const { user, logout, hasMinRole } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [isContactsOpen, setIsContactsOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const contactsRef = useRef<HTMLDivElement>(null);
+    const settingsRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
     const navRef = useRef<HTMLElement>(null);
+
+    const SETTINGS_TABS = [
+        { id: 'profile', label: t('nav.profile'), icon: FaUser },
+        { id: 'language', label: t('profile.language'), icon: FaGlobe },
+        { id: 'company', label: t('settings.tabs.company'), icon: FaBuilding },
+        { id: 'subscription', label: t('nav.subscription'), icon: FaCrown },
+        { id: 'invoice', label: t('settings.tabs.invoice'), icon: FaFileInvoice },
+        { id: 'master_data', label: t('settings.tabs.master_data'), icon: FaDatabase },
+        { id: 'notifications', label: t('settings.tabs.notifications'), icon: FaBell },
+        { id: 'audit', label: t('settings.tabs.audit'), icon: FaHistory },
+    ];
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (contactsRef.current && !contactsRef.current.contains(event.target as Node)) {
                 setIsContactsOpen(false);
+            }
+            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+                setIsSettingsOpen(false);
             }
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
@@ -63,6 +81,7 @@ const Navigation = () => {
         setIsProfileOpen(false);
         setIsNotifOpen(false);
         setIsContactsOpen(false);
+        setIsSettingsOpen(false);
     }, [location]);
 
     const { data: dashboardData } = useQuery({
@@ -166,8 +185,8 @@ const Navigation = () => {
                                     <TooltipTrigger asChild>
                                         <Link to="/" className={navLinkClass("/")}>
                                             <FaHome className="text-base lg:hidden" />
-                                            <span className="hidden lg:inline">Dashboard</span>
-                                            <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
+                                            <span className="hidden lg:inline">{t('nav.dashboard')}</span>
+                                            <NavBadge count={dashboardData?.stats?.deadlines_today} label={t('nav.calendar')} activeColor="bg-rose-500" />
                                         </Link>
                                     </TooltipTrigger>
                                     <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
@@ -187,8 +206,8 @@ const Navigation = () => {
                                     <TooltipTrigger asChild>
                                         <Link to="/projects" className={navLinkClass("/projects")}>
                                             <FaLayerGroup className="text-base lg:hidden" />
-                                            <span className="hidden lg:inline">Projekte</span>
-                                            <NavBadge count={dashboardData?.stats?.open_projects} label="Offene Projekte" activeColor="bg-rose-500" />
+                                            <span className="hidden lg:inline">{t('nav.projects')}</span>
+                                            <NavBadge count={dashboardData?.stats?.open_projects} label={t('nav.projects')} activeColor="bg-rose-500" />
                                         </Link>
                                     </TooltipTrigger>
                                     <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
@@ -214,7 +233,7 @@ const Navigation = () => {
                                         className={navLinkClass("", isContactsOpen || location.pathname.startsWith('/customers') || location.pathname.startsWith('/partners') || location.pathname.startsWith('/interpreting'))}
                                     >
                                         <FaUsers className="text-base lg:hidden" />
-                                        <span className="hidden lg:inline">Kontakte</span>
+                                        <span className="hidden lg:inline">{t('nav.contacts')}</span>
                                         <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isContactsOpen && "rotate-180")} />
                                     </button>
 
@@ -230,7 +249,7 @@ const Navigation = () => {
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <FaUsers className="text-slate-400 w-3.5 h-3.5" />
-                                                        <span>Kunden</span>
+                                                        <span>{t('nav.customers')}</span>
                                                     </div>
                                                     {dashboardData?.stats?.active_customers > 0 && (
                                                         <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
@@ -248,7 +267,7 @@ const Navigation = () => {
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <FaUserTie className="text-slate-400 w-3.5 h-3.5" />
-                                                        <span>Partner</span>
+                                                        <span>{t('nav.partners')}</span>
                                                     </div>
                                                     {dashboardData?.stats?.active_partners > 0 && (
                                                         <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
@@ -284,10 +303,10 @@ const Navigation = () => {
                                         <TooltipTrigger asChild>
                                             <Link to="/invoices" className={navLinkClass("/invoices")}>
                                                 <FaFileInvoiceDollar className="text-base lg:hidden" />
-                                                <span className="hidden lg:inline">Rechnungen</span>
+                                                <span className="hidden lg:inline">{t('nav.invoices')}</span>
                                                 <NavBadge
                                                     count={dashboardData?.stats?.unpaid_invoices}
-                                                    label="Offene Rechnungen"
+                                                    label={t('nav.invoices')}
                                                     activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
                                                 />
                                             </Link>
@@ -312,8 +331,8 @@ const Navigation = () => {
                                         <TooltipTrigger asChild>
                                             <Link to="/inbox" className={navLinkClass("/inbox")}>
                                                 <FaEnvelope className="text-base lg:hidden" />
-                                                <span className="hidden lg:inline">Email</span>
-                                                <NavBadge count={unreadEmails} label="Ungelesene E-Mails" activeColor="bg-rose-500" />
+                                                <span className="hidden lg:inline">{t('nav.inbox')}</span>
+                                                <NavBadge count={unreadEmails} label={t('nav.inbox')} activeColor="bg-rose-500" />
                                             </Link>
                                         </TooltipTrigger>
                                         <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
@@ -355,11 +374,54 @@ const Navigation = () => {
                                         </TooltipContent>
                                     </Tooltip>
                                 )}
+
+                                {hasMinRole('manager') && (
+                                    <div className="relative h-full" ref={settingsRef}>
+                                        <button
+                                            onClick={() => {
+                                                setIsSettingsOpen(!isSettingsOpen);
+                                                setIsContactsOpen(false);
+                                                setIsProfileOpen(false);
+                                                setIsNotifOpen(false);
+                                            }}
+                                            className={navLinkClass("", isSettingsOpen || location.pathname.startsWith('/settings'))}
+                                        >
+                                            <FaCog className="text-base lg:hidden" />
+                                            <span className="hidden lg:inline">Einstellungen</span>
+                                            <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isSettingsOpen && "rotate-180")} />
+                                        </button>
+
+                                        {isSettingsOpen && (
+                                            <div className="absolute right-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 animate-slideUp overflow-hidden">
+                                                <div className="py-1">
+                                                    {SETTINGS_TABS.map((tab, i) => (
+                                                        <button
+                                                            key={tab.id}
+                                                            onClick={() => { navigate(`/settings?tab=${tab.id}`); setIsSettingsOpen(false); }}
+                                                            className={clsx(
+                                                                "w-full px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors text-left",
+                                                                i > 0 && tab.id === 'audit' && "border-t border-slate-100 mt-1",
+                                                                location.pathname === '/settings' && new URLSearchParams(location.search).get('tab') === tab.id
+                                                                    ? "text-brand-primary bg-slate-50"
+                                                                    : "text-slate-700"
+                                                            )}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <tab.icon className="text-slate-400 w-3.5 h-3.5" />
+                                                                <span>{tab.label}</span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </TooltipProvider>
                     </div>
 
-                    {/* Right Side: Notifications, Profile & Mobile Menu */}
+                    {/* Right Side: Language Switcher, Notifications, Profile & Mobile Menu */}
                     <div className="flex items-center gap-3 relative">
                         {/* Notification Bell */}
                         <div className="relative" ref={notifRef}>
@@ -451,21 +513,16 @@ const Navigation = () => {
                                     </div>
                                     <div className="py-1 font-normal text-left">
                                         <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                            <FaUser className="mr-3 text-slate-400 w-3.5 h-3.5" /> Profil
+                                            <FaUser className="mr-3 text-slate-400 w-3.5 h-3.5" /> {t('nav.profile')}
                                         </Link>
                                         {hasMinRole('owner') && (
                                             <Link to="/team" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                                <FaUsers className="mr-3 text-slate-400 w-3.5 h-3.5" /> Mitarbeiter
+                                                <FaUsers className="mr-3 text-slate-400 w-3.5 h-3.5" /> {t('nav.team')}
                                             </Link>
                                         )}
                                         {hasMinRole('owner') && (
                                             <Link to="/billing" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center" onClick={() => setIsProfileOpen(false)}>
-                                                <FaCreditCard className="mr-3 text-slate-400 w-3.5 h-3.5" /> Abonnement
-                                            </Link>
-                                        )}
-                                        {hasMinRole('manager') && (
-                                            <Link to="/settings" className="block px-4 py-2 text-sm hover:bg-slate-50 text-slate-700 flex items-center border-t border-slate-50 mt-1" onClick={() => setIsProfileOpen(false)}>
-                                                <FaCog className="mr-3 text-slate-400 w-3.5 h-3.5" /> Einstellungen
+                                                <FaCreditCard className="mr-3 text-slate-400 w-3.5 h-3.5" /> {t('nav.subscription')}
                                             </Link>
                                         )}
                                         {user?.is_admin && (
@@ -473,13 +530,36 @@ const Navigation = () => {
                                                 <FaCrown className="mr-3 text-amber-500 w-3.5 h-3.5" /> Backend: Filament
                                             </a>
                                         )}
+                                        <div className="border-t border-slate-50 mt-1 pt-1">
+                                            <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('profile.language')}</div>
+                                            <div className="flex px-4 py-1 gap-1 pb-2">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); i18n.changeLanguage('de'); localStorage.setItem('locale', 'de'); }}
+                                                    className={clsx(
+                                                        "flex-1 py-1 rounded text-[10px] font-bold transition-all border",
+                                                        i18n.language === 'de' ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                                                    )}
+                                                >
+                                                    DEUTSCH
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); i18n.changeLanguage('en'); localStorage.setItem('locale', 'en'); }}
+                                                    className={clsx(
+                                                        "flex-1 py-1 rounded text-[10px] font-bold transition-all border",
+                                                        i18n.language === 'en' ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                                                    )}
+                                                >
+                                                    ENGLISH
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="border-t border-slate-100 py-1 font-normal text-left">
                                         <button
                                             onClick={handleLogout}
                                             className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center cursor-pointer"
                                         >
-                                            <FaSignOutAlt className="mr-3" /> Log out
+                                            <FaSignOutAlt className="mr-3" /> {t('nav.logout')}
                                         </button>
                                     </div>
                                 </div>

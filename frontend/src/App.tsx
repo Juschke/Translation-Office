@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
+import NewProject from './pages/NewProject';
 import Customers from './pages/Customers';
 import CustomerDetail from './pages/CustomerDetail';
 import Partners from './pages/Partners';
@@ -66,6 +67,8 @@ function App() {
                         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                             <Route path="/" element={<Dashboard />} />
                             <Route path="/projects" element={<Projects />} />
+                            <Route path="/projects/new" element={<NewProject />} />
+                            <Route path="/projects/:id/edit" element={<NewProject />} />
                             <Route path="/projects/:id" element={<ProjectDetail />} />
                             <Route path="/calendar" element={<Calendar />} />
                             <Route path="/interpreting" element={<Interpreting />} />
