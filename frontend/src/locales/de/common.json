@@ -657,7 +657,10 @@
     "confirm_delete": "Sind Sie sicher?",
     "cancel": "Abbrechen",
     "delete": "Löschen",
-    "submit": "Senden"
+    "submit": "Senden",
+    "create_template": "Vorlage erstellen",
+    "current_date": "Aktuelles Datum",
+    "sender": "Absender"
   },
   "modals": {
     "confirm_title": "Bestätigung",
@@ -718,7 +721,22 @@
     "bulk_actions": "Massenaktionen",
     "search": "Suchen",
     "export": "Exportieren",
-    "import": "Importieren"
+    "import": "Importieren",
+    "id": "ID",
+    "company_name": "Unternehmen/Name",
+    "contact_person": "Ansprechpartner",
+    "email": "E-Mail",
+    "revenue": "Umsatz",
+    "status": "Status",
+    "partner_name": "Partner/Firma",
+    "partner_type": "Typ",
+    "rating": "Bewertung",
+    "project_name": "Projektname",
+    "customer": "Kunde",
+    "source_lang": "Quelle",
+    "target_lang": "Ziel",
+    "deadline": "Deadline",
+    "price": "Preis"
   },
   "project": {
     "step_1": "Schritt 1: Angebot",

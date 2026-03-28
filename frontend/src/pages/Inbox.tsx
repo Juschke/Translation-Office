@@ -663,7 +663,7 @@ const CommunicationHub = () => {
                                 title="E-Mail Vorlagen"
                                 items={templates}
                                 headers={['Name', 'Betreff', 'Kategorie']}
-                                addLabel="Vorlage erstellen"
+                                addLabel={t('forms.create_template')}
                                 onAdd={() => {
                                     setTemplateToEdit(null);
                                     setIsTemplateModalOpen(true);

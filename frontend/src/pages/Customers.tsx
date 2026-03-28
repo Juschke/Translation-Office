@@ -188,7 +188,7 @@ const Customers = () => {
     const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
         if (filteredCustomers.length === 0) return;
 
-        const headers = ['ID', 'Unternehmen/Name', 'Ansprechpartner', 'E-Mail', 'Umsatz', 'Status'];
+        const headers = [t('tables.id'), t('tables.company_name'), t('tables.contact_person'), t('tables.email'), t('tables.revenue'), t('tables.status')];
         const rows = filteredCustomers.map((c: any) => [
             c.id,
             c.company_name || `${c.first_name} ${c.last_name}`,

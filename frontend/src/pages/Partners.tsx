@@ -186,7 +186,7 @@ const Partners = () => {
 
     const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
         if (filteredPartners.length === 0) return;
-        const headers = ['ID', 'Partner/Firma', 'E-Mail', 'Typ', 'Bewertung', 'Status'];
+        const headers = [t('tables.id'), t('tables.partner_name'), t('tables.email'), t('tables.partner_type'), t('tables.rating'), t('tables.status')];
         const rows = filteredPartners.map((p: any) => [
             p.id, p.company || `${p.first_name} ${p.last_name}`, p.email || '', p.type || '', p.rating || '0', p.status || ''
         ]);

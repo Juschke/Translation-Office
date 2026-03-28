@@ -657,7 +657,10 @@
     "confirm_delete": "Are you sure?",
     "cancel": "Cancel",
     "delete": "Delete",
-    "submit": "Submit"
+    "submit": "Submit",
+    "create_template": "Create Template",
+    "current_date": "Current Date",
+    "sender": "Sender"
   },
   "modals": {
     "confirm_title": "Confirmation",
@@ -718,7 +721,22 @@
     "bulk_actions": "Bulk Actions",
     "search": "Search",
     "export": "Export",
-    "import": "Import"
+    "import": "Import",
+    "id": "ID",
+    "company_name": "Company/Name",
+    "contact_person": "Contact Person",
+    "email": "Email",
+    "revenue": "Revenue",
+    "status": "Status",
+    "partner_name": "Partner/Company",
+    "partner_type": "Type",
+    "rating": "Rating",
+    "project_name": "Project Name",
+    "customer": "Customer",
+    "source_lang": "Source",
+    "target_lang": "Target",
+    "deadline": "Deadline",
+    "price": "Price"
   },
   "project": {
     "step_1": "Step 1: Offer",

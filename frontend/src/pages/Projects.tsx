@@ -406,7 +406,7 @@ const Projects = () => {
     const handleExport = (format: 'csv' | 'xlsx' | 'pdf') => {
         if (filteredProjects.length === 0) return;
 
-        const headers = ['ID', 'Projektname', 'Kunde', 'Quelle', 'Ziel', 'Status', 'Deadline', 'Preis'];
+        const headers = [t('tables.id'), t('tables.project_name'), t('tables.customer'), t('tables.source_lang'), t('tables.target_lang'), t('tables.status'), t('tables.deadline'), t('tables.price')];
         const rows = filteredProjects.map((p: any) => [
             p.project_number || p.id,
             p.project_name,
