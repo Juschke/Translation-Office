@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaFileInvoice, FaPaperPlane, FaStamp, FaBan, FaLock, FaArchive } from 'react-icons/fa';
+import { FaTimes, FaFileInvoice, FaPaperPlane, FaStamp, FaBan, FaLock, FaArchive, FaTrash } from 'react-icons/fa';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '../../api/services';
 import api from '../../api/axios';
@@ -117,30 +117,28 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
     const fmtEur = (val: number) => val.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white shadow-sm w-full h-full flex flex-col overflow-hidden fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fadeIn p-4 md:p-10">
+            <div className="bg-white shadow-2xl w-full max-w-6xl h-full flex flex-col overflow-hidden rounded-xl animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="px-4 md:px-6 py-3 md:py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-slate-50 gap-3 shrink-0">
-                    <div className="flex items-center gap-3 md:gap-4">
-                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-sm flex-shrink-0 flex items-center justify-center text-lg md:text-xl ${isCreditNote ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-900'}`}>
+                <div className="px-5 py-3.5 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white gap-3 shrink-0">
+                    <div className="flex items-center gap-4">
+                        <div className={`w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center text-lg ${isCreditNote ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-900'}`}>
                             <FaFileInvoice />
                         </div>
                         <div className="min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                <h2 className="text-sm md:text-lg font-medium text-slate-800 tracking-tight truncate">
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-bold text-slate-800 tracking-tight truncate">
                                     {isCreditNote ? 'Gutschrift' : 'Rechnung'} {invoiceNumber}
                                 </h2>
-                                <div className="flex items-center gap-2">
-                                    <InvoiceStatusBadge status={invoice.status} reminderLevel={invoice.reminder_level} type={invoice.type} />
-                                    {isLocked && <FaLock className="text-slate-400 text-xs md:text-xs" title="GoBD-gesperrt" />}
-                                </div>
+                                <InvoiceStatusBadge status={invoice.status} reminderLevel={invoice.reminder_level} type={invoice.type} />
+                                {isLocked && <FaLock className="text-slate-300 text-[10px]" title="GoBD-gesperrt" />}
                             </div>
-                            <p className="text-xs md:text-xs text-slate-500 font-medium truncate">
-                                {customerName} • {projectName} • <span className={amountGrossEur < 0 ? 'text-red-500' : 'text-slate-700'}>{fmtEur(amountGrossEur)}</span>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5">
+                                {customerName} • {projectName} • <span className={amountGrossEur < 0 ? 'text-red-500' : 'text-slate-500'}>{fmtEur(amountGrossEur)}</span>
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1 md:gap-2 self-end sm:self-auto">
+                    <div className="flex items-center gap-2 group">
                         {/* Reminder button (for issued/sent/overdue) */}
                         {!isDraft && !isCreditNote && invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
                             <button
@@ -159,15 +157,14 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                     });
                                     setConfirmOpen(true);
                                 }}
-                                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 text-orange-600 hover:bg-orange-50 border border-transparent hover:border-orange-200 rounded-sm transition font-medium text-xs md:text-sm"
-                                title="Mahnung"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaPaperPlane className="text-xs" />
-                                <span className="hidden md:inline">Mahnung</span>
+                                <FaPaperPlane className="text-[9px]" />
+                                Mahnung
                             </button>
                         )}
 
-                        {/* Cancel / Storno button (issued invoices only) */}
+                        {/* Stornieren button */}
                         {canCancel && (
                             <button
                                 onClick={() => {
@@ -178,18 +175,14 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                     setConfirmAction(() => () => cancelMutation.mutate(cancelReason || undefined));
                                     setConfirmOpen(true);
                                 }}
-                                className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 rounded-sm transition font-medium text-xs md:text-sm border border-transparent ${isCreditNote
-                                    ? 'text-red-600 hover:bg-red-50 hover:border-red-200'
-                                    : 'text-amber-600 hover:bg-amber-50 hover:border-amber-200'
-                                    }`}
-                                title={isCreditNote ? "Gutschrift stornieren" : "Rechnung stornieren"}
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaBan className="text-xs" />
-                                <span className="hidden md:inline">{isCreditNote ? 'Gutschrift stornieren' : 'Stornieren'}</span>
+                                <FaBan className="text-[9px]" />
+                                {isCreditNote ? 'Gutschrift stornieren' : 'Stornieren'}
                             </button>
                         )}
 
-                        {/* Archive button (cancelled only) */}
+                        {/* Archivieren button */}
                         {invoice.status === 'cancelled' && (
                             <button
                                 onClick={() => {
@@ -199,15 +192,14 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                     setConfirmAction(() => () => archiveMutation.mutate());
                                     setConfirmOpen(true);
                                 }}
-                                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-200 rounded-sm transition font-medium text-xs md:text-sm"
-                                title="Archivieren"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaArchive className="text-xs" />
-                                <span className="hidden md:inline">Archivieren</span>
+                                <FaArchive className="text-[9px]" />
+                                Archivieren
                             </button>
                         )}
 
-                        {/* Issue button (draft only) */}
+                        {/* Ausstellen button */}
                         {isDraft && (
                             <button
                                 onClick={() => {
@@ -217,15 +209,14 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                     setConfirmAction(() => () => issueMutation.mutate());
                                     setConfirmOpen(true);
                                 }}
-                                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 text-indigo-600 hover:bg-indigo-50 border border-transparent hover:border-indigo-200 rounded-sm transition font-medium text-xs md:text-sm"
-                                title="Ausstellen"
+                                className="h-8 px-4 rounded flex items-center gap-2 bg-brand-primary text-white hover:bg-brand-primary/90 transition-colors text-[10px] font-bold uppercase tracking-widest shadow-none"
                             >
-                                <FaStamp className="text-xs" />
-                                <span className="hidden md:inline">Ausstellen</span>
+                                <FaStamp className="text-[9px]" />
+                                Ausstellen
                             </button>
                         )}
 
-                        {/* Delete button (draft only) */}
+                        {/* Löschen button */}
                         {isDraft && (
                             <button
                                 onClick={() => {
@@ -235,32 +226,30 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                     setConfirmAction(() => () => deleteMutation.mutate());
                                     setConfirmOpen(true);
                                 }}
-                                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition font-medium text-xs md:text-sm"
-                                title="Löschen"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-white text-red-500 border border-red-100 hover:bg-red-50 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <span className="hidden md:inline">Löschen</span>
+                                <FaTrash className="text-[9px]" />
+                                Löschen
                             </button>
                         )}
 
-                        {(canCancel || invoice.status === 'cancelled' || (!isDraft && !isCreditNote && invoice.status !== 'paid' && invoice.status !== 'cancelled') || isDraft) && (
-                            <div className="w-px h-6 bg-slate-200 mx-1 md:mx-2" />
-                        )}
+                        <div className="w-px h-6 bg-slate-200 mx-2" />
 
-                        <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-sm transition">
+                        <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded transition">
                             <FaTimes />
                         </button>
                     </div>
                 </div>
 
                 {/* Preview Area */}
-                <div className="flex-1 bg-slate-100 overflow-hidden flex justify-center items-center">
+                <div className="flex-1 bg-white overflow-hidden flex flex-col">
                     {isFetchingPreview ? (
-                        <div className="flex flex-col items-center justify-center p-20 text-slate-400 gap-4">
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
-                            <span className="text-xs font-medium">Generiere Vorschau...</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Generiere Vorschau...</span>
                         </div>
                     ) : (
-                        <div className="w-full h-full relative">
+                        <div className="w-full h-full">
                             {previewUrl ? (
                                 <iframe
                                     title="Invoice Preview"
@@ -268,8 +257,9 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                     className="w-full h-full border-none block"
                                 />
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-2">
-                                    <span className="text-sm">Vorschau konnte nicht geladen werden</span>
+                                <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-2 p-20 text-center">
+                                    <FaFileInvoice size={40} className="mb-2 opacity-20" />
+                                    <span className="text-xs font-bold uppercase tracking-widest">Vorschau konnte nicht geladen werden</span>
                                 </div>
                             )}
                         </div>

@@ -31,6 +31,7 @@ const EMPTY_POSITION = (): ProjectPosition => ({
     id: Date.now().toString(),
     description: '',
     unit: 'Normzeile',
+    amount: '1.00',
     quantity: '1.00',
     partnerRate: '0.00',
     partnerMode: 'unit',
@@ -106,6 +107,7 @@ const ProjectPositionsTable = ({
             id: Date.now().toString(),
             description: item.name,
             unit: UNITS.includes(item.unit) ? item.unit : 'Normzeile',
+            amount: '1.00',
             quantity: '1.00',
             partnerRate: '0.00',
             partnerMode: 'unit',
@@ -130,15 +132,15 @@ const ProjectPositionsTable = ({
         <div className="overflow-x-auto bg-white">
             <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
-                    <tr className="border-b-2 border-slate-200">
-                        <th className="px-3 py-2 w-7 text-center text-[10px] font-black uppercase tracking-widest text-slate-300">#</th>
-                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Beschreibung</th>
-                        <th className="px-3 py-2 w-20 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Menge</th>
-                        <th className="px-3 py-2 w-24 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Einheit</th>
-                        <th className="px-3 py-2 w-36 text-right text-[10px] font-black uppercase tracking-widest text-slate-400 border-l border-slate-100">EK Partner</th>
-                        <th className="px-3 py-2 w-40 text-right text-[10px] font-black uppercase tracking-widest text-slate-400 border-l border-slate-100">VK Kunde</th>
-                        <th className="px-3 py-2 w-28 text-right text-[10px] font-black uppercase tracking-widest text-slate-500 border-l border-slate-100">Gesamt</th>
-                        <th className="px-2 py-2 w-8"></th>
+                    <tr className="border-b border-slate-200 bg-slate-50/30">
+                        <th className="px-2 py-1.5 w-7 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400">#</th>
+                        <th className="px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">Bezeichnung</th>
+                        <th className="px-2 py-1.5 w-16 text-right text-[9px] font-bold uppercase tracking-wider text-slate-400">Menge</th>
+                        <th className="px-2 py-1.5 w-20 text-right text-[9px] font-bold uppercase tracking-wider text-slate-400">Einheit</th>
+                        <th className="px-2 py-1.5 w-32 text-right text-[9px] font-bold uppercase tracking-wider text-slate-400 border-l border-slate-100">EK</th>
+                        <th className="px-2 py-1.5 w-32 text-right text-[9px] font-bold uppercase tracking-wider text-slate-400 border-l border-slate-100">VK</th>
+                        <th className="px-2 py-1.5 w-24 text-right text-[9px] font-bold uppercase tracking-wider text-slate-500 border-l border-slate-100 italic">Gesamt</th>
+                        <th className="px-2 py-1.5 w-8"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -243,9 +245,9 @@ const ProjectPositionsTable = ({
                                             value={pos.customerMode === 'flat' ? 'flat' : pos.customerMode === 'rate' ? 'rate' : 'margin'}
                                             onChange={e => {
                                                 const v = e.target.value;
-                                                if (v === 'flat')      update(index, { customerMode: 'flat',  marginType: 'markup' });
+                                                if (v === 'flat') update(index, { customerMode: 'flat', marginType: 'markup' });
                                                 else if (v === 'rate') update(index, { customerMode: 'rate', marginType: 'markup' });
-                                                else                   update(index, { customerMode: 'unit', marginType: 'markup' });
+                                                else update(index, { customerMode: 'unit', marginType: 'markup' });
                                             }}
                                             title="Modus"
                                         >

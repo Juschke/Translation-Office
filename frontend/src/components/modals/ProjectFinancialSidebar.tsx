@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { FaInfoCircle } from 'react-icons/fa';
+import { FaCheckCircle } from 'react-icons/fa';
 
 interface ProjectFinancialSidebarProps {
     creationDate: string;
@@ -25,7 +25,6 @@ const ProjectFinancialSidebar = ({
     creationDate,
     projectManager,
     baseNet,
-    extraCosts,
     calcNet,
     calcTax,
     calcGross,
@@ -40,108 +39,106 @@ const ProjectFinancialSidebar = ({
     copies,
     copyPrice,
 }: ProjectFinancialSidebarProps) => (
-    <div className="w-full lg:w-80 bg-white shrink-0 h-auto lg:h-full lg:overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
-        <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
-                <FaInfoCircle className="text-slate-400 text-xs" />
-                <h4 className="text-xs font-medium text-slate-500">Meta Info</h4>
-            </div>
-            <div className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                    <span className="text-slate-500">Erstellt:</span>
-                    <span className="font-medium text-slate-700">{creationDate}</span>
+    <div className="w-full lg:w-72 bg-white border border-slate-200 rounded-lg shadow-sm font-sans divide-y divide-slate-100 flex flex-col">
+        {/* Section: Calculation */}
+        <div className="p-5 space-y-3">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Kalkulation</h4>
+
+            <div className="space-y-2">
+                <div className="flex justify-between text-xs text-slate-600">
+                    <span>Leistungen</span>
+                    <span className="font-semibold">{baseNet.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
-                <div className="flex justify-between">
-                    <span className="text-slate-500">Manager:</span>
-                    <span className="font-medium text-slate-700">{projectManager}</span>
+
+                {/* Extras - Minimalist */}
+                {(isCertified || hasApostille || isExpress || classification === 'ja' || copies > 0) && (
+                    <div className="space-y-1.5 pl-1.5 border-l border-slate-100">
+                        {isCertified && <div className="flex justify-between text-[10px] text-slate-400"><span>Beglaubigung</span><span>5,00 €</span></div>}
+                        {hasApostille && <div className="flex justify-between text-[10px] text-slate-400"><span>Apostille</span><span>15,00 €</span></div>}
+                        {isExpress && <div className="flex justify-between text-[10px] text-slate-400"><span>Express</span><span>15,00 €</span></div>}
+                        {classification === 'ja' && <div className="flex justify-between text-[10px] text-slate-400"><span>Klassifizierung</span><span>15,00 €</span></div>}
+                        {copies > 0 && <div className="flex justify-between text-[10px] text-slate-400"><span>Kopien ({copies}x)</span><span>{(copies * Number(copyPrice)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span></div>}
+                    </div>
+                )}
+            </div>
+
+            <div className="pt-3 space-y-1.5 border-t border-slate-50">
+                <div className="flex justify-between text-[11px] text-slate-500 font-medium">
+                    <span>Zwischensumme</span>
+                    <span>{calcNet.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400">
+                    <span>MwSt. (19%)</span>
+                    <span>{calcTax.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                </div>
+                <div className="flex justify-between items-baseline pt-2">
+                    <span className="text-[11px] font-bold text-slate-800 uppercase tracking-tighter">Gesamt</span>
+                    <span className="text-lg font-bold text-slate-900 tracking-tight tabular-nums">
+                        {calcGross.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div className="space-y-4">
-            <h4 className="text-xs font-medium text-slate-400">Rechnungsvorschau</h4>
-            <div className="bg-white p-4 rounded-sm border border-slate-200 shadow-sm space-y-3 relative overflow-hidden">
-                <div className="flex justify-between text-xs text-slate-500">
-                    <span>Positionen Netto</span>
-                    <span>{baseNet.toFixed(2)} €</span>
-                </div>
-                {isCertified && (
-                    <div className="flex justify-between text-sm text-slate-400 pl-2">
-                        <span>+ Beglaubigung</span>
-                        <span>5,00 €</span>
-                    </div>
-                )}
-                {hasApostille && (
-                    <div className="flex justify-between text-sm text-slate-400 pl-2">
-                        <span>+ Apostille</span>
-                        <span>15,00 €</span>
-                    </div>
-                )}
-                {isExpress && (
-                    <div className="flex justify-between text-sm text-slate-400 pl-2">
-                        <span>+ Express-Zuschlag</span>
-                        <span>15,00 €</span>
-                    </div>
-                )}
-                {classification === 'ja' && (
-                    <div className="flex justify-between text-sm text-slate-400 pl-2">
-                        <span>+ FS-Klassifizierung</span>
-                        <span>15,00 €</span>
-                    </div>
-                )}
-                {copies > 0 && (
-                    <div className="flex justify-between text-sm text-slate-400 pl-2">
-                        <span>+ Zusatzkopien ({copies}x)</span>
-                        <span>{(copies * Number(copyPrice)).toFixed(2)} €</span>
-                    </div>
-                )}
-                {extraCosts > 0 && <div className="border-t border-slate-50 my-1" />}
-                <div className="pt-2 border-t border-slate-100 flex justify-between font-medium text-slate-800">
-                    <span>Gesamt Netto</span>
-                    <span>{calcNet.toFixed(2)} €</span>
-                </div>
-                <div className="flex justify-between text-xs text-slate-400">
-                    <span>MwSt. 19%</span>
-                    <span>{calcTax.toFixed(2)} €</span>
-                </div>
-                <div className="pt-2 border-t-2 border-slate-100 flex justify-between text-xl font-medium text-slate-900 transition-all">
-                    <span>Gesamt</span>
-                    <span>{calcGross.toFixed(2)} €</span>
-                </div>
-                {totalPaid > 0 && (
-                    <div className="pt-2 flex justify-between text-xs text-emerald-600 font-medium border-t border-slate-50">
-                        <span>Geleistete Zahlungen</span>
-                        <span>-{totalPaid.toFixed(2)} €</span>
-                    </div>
-                )}
-                <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center bg-white -mx-4 -mb-4 p-4 rounded-b">
-                    <span className="text-sm font-medium text-slate-600 tracking-wider">Restbetrag</span>
-                    <span className={clsx('text-lg font-medium', remainingBalance <= 0.01 ? 'text-emerald-600' : 'text-slate-900')}>
-                        {remainingBalance <= 0.01 ? 'BEZAHLT' : `${remainingBalance.toFixed(2)} €`}
-                    </span>
-                </div>
+        {/* Section: Payment Status */}
+        <div className="p-5 space-y-3 bg-slate-50/30">
+            <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Zahlung</span>
+                {remainingBalance <= 0.01 && <FaCheckCircle className="text-emerald-500" size={12} />}
             </div>
 
-            <div className="bg-white p-4 rounded-sm border border-slate-200">
-                <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs font-medium text-slate-500 tracking-tight">Voraussichtl. Gewinn</span>
-                    <span className={clsx('text-xs font-medium', profit >= 0 ? 'text-slate-800' : 'text-red-600')}>
-                        {profit.toFixed(2)} €
+            <div className="space-y-2">
+                {totalPaid > 0 && (
+                    <div className="flex justify-between text-[10px] font-medium text-emerald-600">
+                        <span>Bereits bezahlt</span>
+                        <span>-{totalPaid.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                    </div>
+                )}
+
+                <div className={clsx(
+                    "flex flex-col gap-0.5 p-3 rounded-md border",
+                    remainingBalance <= 0.01
+                        ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                        : "bg-white border-slate-100 text-slate-700"
+                )}>
+                    <span className="text-[9px] font-bold uppercase tracking-tight opacity-50">
+                        Restbetrag
+                    </span>
+                    <span className="text-base font-bold tracking-tight">
+                        {remainingBalance <= 0.01 ? 'ERLEDIGT' : `${remainingBalance.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
                     </span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner">
-                    <div
-                        className={clsx(
-                            'h-full transition-all duration-500',
-                            profitMargin > 40 ? 'bg-emerald-500' : profitMargin > 20 ? 'bg-slate-700' : 'bg-amber-500',
-                        )}
-                        style={{ width: `${Math.min(100, Math.max(0, profitMargin))}%` }}
-                    />
-                </div>
-                <div className="text-right mt-1.5 text-xs font-medium text-slate-500">
-                    {profitMargin.toFixed(1)}% Marge
-                </div>
             </div>
+        </div>
+
+        {/* Section: Profit */}
+        <div className="p-5 space-y-3">
+            <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Projektmarge</span>
+                <span className={clsx("text-[10px] font-black px-1.5 py-0.5 rounded", profit >= 0 ? "bg-slate-100 text-slate-600" : "bg-red-50 text-red-600")}>
+                    {profitMargin.toFixed(1)}%
+                </span>
+            </div>
+            <div className="flex justify-between items-baseline">
+                <span className="text-sm font-bold text-slate-800">
+                    {profit.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                <div
+                    className={clsx(
+                        'h-full transition-all duration-700',
+                        profitMargin > 40 ? 'bg-emerald-500' : profitMargin > 20 ? 'bg-slate-500' : 'bg-amber-400',
+                    )}
+                    style={{ width: `${Math.min(100, Math.max(0, profitMargin))}%` }}
+                />
+            </div>
+        </div>
+
+        {/* Footer: Metadata */}
+        <div className="px-5 py-3 bg-slate-50/50 flex justify-between text-[9px] text-slate-400 font-medium">
+            <span>Erstellt: {creationDate}</span>
+            <span>PM: {projectManager}</span>
         </div>
     </div>
 );

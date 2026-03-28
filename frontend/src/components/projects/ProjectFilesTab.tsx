@@ -9,6 +9,8 @@ interface ProjectFilesTabProps {
     toggleFileType: (file: any) => Promise<void>;
     onRenameFile: (file: any, newName: string) => Promise<void>;
     onMoveFile: (file: any, newType: string) => Promise<void>;
+    onBulkMove: (ids: string[], newType: string) => Promise<void>;
+    onBulkDownloadZip: (ids: string[]) => Promise<void>;
     formatFileSize: (bytes: any) => string;
     onUpload: (files: any[], onProgress: (id: string, progress: number) => void) => Promise<void>;
 }
@@ -22,6 +24,8 @@ const ProjectFilesTab = ({
     toggleFileType,
     onRenameFile,
     onMoveFile,
+    onBulkMove,
+    onBulkDownloadZip,
     formatFileSize,
     onUpload,
 }: ProjectFilesTabProps) => {
@@ -36,6 +40,8 @@ const ProjectFilesTab = ({
                 toggleFileType={toggleFileType}
                 onRenameFile={onRenameFile}
                 onMoveFile={onMoveFile}
+                onBulkMove={onBulkMove}
+                onBulkDownloadZip={onBulkDownloadZip}
                 formatFileSize={formatFileSize}
                 onUpload={onUpload}
             />

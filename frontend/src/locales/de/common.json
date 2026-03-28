@@ -27,6 +27,7 @@
     "search": "Suchen",
     "filter": "Filtern",
     "export": "Export",
+    "loading": "Laden...",
     "sending": "Sende...",
     "saving": "Speichere...",
     "error": "Fehler",
@@ -79,7 +80,9 @@
   },
   "settings": {
     "tabs": {
+      "profile": "Mein Profil",
       "company": "Unternehmen",
+      "subscription": "Abonnement & Plan",
       "invoice": "Finanzen & Dokumentlayouts",
       "master_data": "Stammdatenverwaltung",
       "notifications": "Benachrichtigungen",

@@ -50,6 +50,17 @@ export const projectService = {
         });
         return response;
     },
+    bulkUpdateFiles: async (projectId: string, ids: string[], type: string) => {
+        const response = await api.post(`/projects/${projectId}/files/bulk-update`, { ids, type });
+        return response.data;
+    },
+    downloadFilesZip: async (projectId: string, ids: string[]) => {
+        const response = await api.get(`/projects/${projectId}/files/download-zip`, {
+            params: { ids: ids.join(',') },
+            responseType: 'blob',
+        });
+        return response;
+    },
     invite: async (projectId: string, data: any) => {
         const response = await api.post(`/projects/${projectId}/invite`, data);
         return response.data;

@@ -16,7 +16,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "./ui/tooltip";
-import { getFlagUrl } from '../utils/flags';
+
 
 
 
@@ -30,12 +30,13 @@ const Navigation = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [isLangOpen, setIsLangOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
     const contactsRef = useRef<HTMLDivElement>(null);
     const settingsRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
+    const langRef = useRef<HTMLDivElement>(null);
     const navRef = useRef<HTMLElement>(null);
 
     const SETTINGS_TABS = [
@@ -60,6 +61,9 @@ const Navigation = () => {
             if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
                 setIsNotifOpen(false);
             }
+            if (langRef.current && !langRef.current.contains(event.target as Node)) {
+                setIsLangOpen(false);
+            }
             // Close mobile menu when clicking outside the whole navigation bar
             if (isMobileMenuOpen && navRef.current && !navRef.current.contains(event.target as Node)) {
                 setIsMobileMenuOpen(false);
@@ -76,6 +80,7 @@ const Navigation = () => {
         setIsNotifOpen(false);
         setIsContactsOpen(false);
         setIsSettingsOpen(false);
+        setIsLangOpen(false);
     }, [location]);
 
     const { data: dashboardData } = useQuery({
@@ -530,26 +535,51 @@ const Navigation = () => {
                         </div>
 
                         {/* Language Switcher */}
-                        <div className="hidden sm:flex items-center mr-1">
+                        <div className="hidden sm:flex items-center mr-1" ref={langRef}>
                             <button
                                 onClick={() => {
-                                    const nextLang = i18n.language === 'de' ? 'en' : 'de';
-                                    i18n.changeLanguage(nextLang);
-                                    localStorage.setItem('locale', nextLang);
+                                    setIsLangOpen(!isLangOpen);
+                                    setIsNotifOpen(false);
+                                    setIsProfileOpen(false);
                                 }}
-                                className="group flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
+                                className="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
                             >
-                                <div className="w-5 h-3.5 flex overflow-hidden rounded-[1px] shadow-sm border border-white/20">
-                                    <img
-                                        src={getFlagUrl(i18n.language)}
-                                        alt={i18n.language}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
+                                <FaGlobe className="text-emerald-100/60 group-hover:text-white transition-colors text-lg" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-100/60 group-hover:text-emerald-100 transition-colors">
                                     {i18n.language === 'de' ? 'DE' : 'EN'}
                                 </span>
+                                <FaChevronDown className={clsx("text-[10px] text-emerald-100/40 transition-transform group-hover:text-emerald-100/60", isLangOpen && "rotate-180")} />
                             </button>
+
+                            {/* Language Dropdown */}
+                            {isLangOpen && (
+                                <div className="absolute right-0 mt-2 top-full w-36 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 animate-slideUp overflow-hidden origin-top-right">
+                                    <div className="py-1">
+                                        {[
+                                            { code: 'de', label: 'Deutsch' },
+                                            { code: 'en', label: 'Englisch' }
+                                        ].map((lang) => (
+                                            <button
+                                                key={lang.code}
+                                                onClick={() => {
+                                                    i18n.changeLanguage(lang.code);
+                                                    localStorage.setItem('locale', lang.code);
+                                                    setIsLangOpen(false);
+                                                }}
+                                                className={clsx(
+                                                    "w-full px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors text-left",
+                                                    i18n.language === lang.code ? "text-brand-primary bg-slate-50 font-bold" : "text-slate-700"
+                                                )}
+                                            >
+                                                <span>{lang.label}</span>
+                                                {i18n.language === lang.code && (
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-brand-primary"></div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Profile Menu */}
@@ -691,20 +721,13 @@ const Navigation = () => {
                                             setIsMobileMenuOpen(false);
                                         }}
                                         className={clsx(
-                                            "flex items-center gap-2 px-3 py-1.5 rounded-sm border text-[10px] font-bold uppercase transition-all shadow-sm",
+                                            "flex items-center justify-center min-w-[3.5rem] py-2 rounded-sm border text-[10px] font-bold uppercase transition-all shadow-sm",
                                             i18n.language === lang
                                                 ? "bg-brand-primary text-white border-brand-primary"
-                                                : "bg-white text-slate-600 border-slate-200 contrast-75 grayscale-[0.3]"
+                                                : "bg-white text-slate-600 border-slate-200"
                                         )}
                                     >
-                                        <div className="w-4 h-2.5 flex overflow-hidden rounded-[px] border border-white/20">
-                                            <img
-                                                src={getFlagUrl(lang)}
-                                                alt={lang}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        {lang === 'de' ? 'DE' : 'EN'}
+                                        {lang === 'de' ? 'Deutsch' : 'Englisch'}
                                     </button>
                                 ))}
                             </div>

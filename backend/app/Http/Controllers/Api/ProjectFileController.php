@@ -238,4 +238,59 @@ class ProjectFileController extends Controller
             ], 500);
         }
     }
+
+    public function bulkUpdate(Request $request, Project $project)
+    {
+        if ($project->tenant_id !== $request->user()->tenant_id) {
+            abort(403, 'Unauthorized access to project');
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:project_files,id',
+            'type' => 'required|string|in:source,target,reference,delivery'
+        ]);
+
+        $project->files()->whereIn('id', $validated['ids'])->update(['type' => $validated['type']]);
+
+        return response()->json(['message' => 'Dateien erfolgreich verschoben']);
+    }
+
+    public function downloadZip(Project $project, Request $request)
+    {
+        if ($project->tenant_id !== $request->user()->tenant_id) {
+            abort(403, 'Unauthorized access to project');
+        }
+
+        $fileIds = explode(',', $request->query('ids', ''));
+        if (empty($fileIds)) {
+            return response()->json(['error' => 'Keine Dateien ausgewählt'], 400);
+        }
+
+        $files = $project->files()->whereIn('id', $fileIds)->get();
+        if ($files->isEmpty()) {
+            return response()->json(['error' => 'Dateien nicht gefunden'], 404);
+        }
+
+        $zip = new \ZipArchive();
+        $zipFileName = 'project_' . $project->id . '_files_' . time() . '.zip';
+        $tempDir = storage_path('app/public/temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        $zipPath = $tempDir . '/' . $zipFileName;
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE) !== TRUE) {
+            return response()->json(['error' => 'ZIP-Archiv konnte nicht erstellt werden'], 500);
+        }
+
+        foreach ($files as $file) {
+            if (Storage::disk('public')->exists($file->path)) {
+                $zip->addFile(Storage::disk('public')->path($file->path), $file->original_name);
+            }
+        }
+        $zip->close();
+
+        return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
 }

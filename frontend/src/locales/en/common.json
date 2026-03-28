@@ -102,6 +102,15 @@
       "email_templates": "Correspondence Templates",
       "specializations": "Specializations",
       "units": "Units",
+      "currencies": "Currencies",
+      "code_iso": "Code (ISO)",
+      "language_flag": "Language / Flag",
+      "native": "Native",
+      "category": "Category",
+      "service_name": "Service",
+      "template_name": "Template Name",
+      "subject": "Subject",
+      "unit": "Unit",
       "abbreviation": "Abbreviation",
       "type": "Type",
       "unit_types": {
@@ -112,7 +121,15 @@
       "currency_code": "Currency (ISO)",
       "symbol": "Symbol",
       "status": "Status",
+      "category_filter": "Category Filter",
+      "all_items": "Show All",
+      "items_found": "{{count}} entries found",
       "add_new": "Add New Entry"
+    },
+    "roles": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "employee": "Employee"
     }
   },
   "nav": {

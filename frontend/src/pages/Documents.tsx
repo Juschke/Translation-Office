@@ -4,15 +4,17 @@ import { projectService } from '../api/services';
 import {
     FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
     FaDownload, FaTrashAlt, FaExternalLinkAlt, FaFolder, FaUser, FaCloudUploadAlt,
-    FaCheckCircle, FaInbox
+    FaCheckCircle, FaInbox, FaHdd
 } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui';
 import DataTable from '../components/common/DataTable';
+import KPICard from '../components/common/KPICard';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -23,6 +25,8 @@ const formatFileSize = (bytes: number) => {
 };
 
 const Documents = () => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [typeFilter, setTypeFilter] = useState('all');
     const [extFilter, setExtFilter] = useState('all');
@@ -37,9 +41,9 @@ const Documents = () => {
             projectService.deleteFile(projectId, fileId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['files'] });
-            toast.success('Datei gelöscht');
+            toast.success(t('common.messages.deleted') || 'Datei gelöscht');
         },
-        onError: () => toast.error('Fehler beim Löschen'),
+        onError: () => toast.error(t('common.messages.error') || 'Fehler beim Löschen'),
     });
 
     const getFileIcon = (fileName: string) => {
@@ -53,7 +57,7 @@ const Documents = () => {
     };
 
     const handleDownload = async (file: any) => {
-        const toastId = toast.loading('Download wird vorbereitet...');
+        const toastId = toast.loading(t('common.messages.downloading') || 'Download wird vorbereitet...');
         try {
             const response = await projectService.downloadFile(file.project_id, file.id);
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -63,9 +67,9 @@ const Documents = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
-            toast.success('Download gestartet', { id: toastId });
+            toast.success(t('common.messages.download_started') || 'Download gestartet', { id: toastId });
         } catch (error) {
-            toast.error('Download fehlgeschlagen', { id: toastId });
+            toast.error(t('common.messages.download_failed') || 'Download fehlgeschlagen', { id: toastId });
         }
     };
 
@@ -80,11 +84,12 @@ const Documents = () => {
 
     const sourceFilesCount = files.filter((f: any) => f.type === 'source').length;
     const targetFilesCount = files.filter((f: any) => f.type === 'target').length;
+    const totalSize = files.reduce((acc: number, f: any) => acc + (f.file_size || 0), 0);
 
     const columns = [
         {
             id: 'file',
-            header: 'Datei',
+            header: t('common.file') || 'Datei',
             accessor: (file: any) => (
                 <div className="flex items-center gap-3">
                     <div className="text-xl shrink-0">
@@ -104,13 +109,13 @@ const Documents = () => {
         },
         {
             id: 'project',
-            header: 'Projekt',
+            header: t('common.project') || 'Projekt',
             accessor: (file: any) => (
                 <Link
                     to={`/projects/${file.project_id}`}
-                    className="flex flex-col hover:text-brand-primary transition-colors"
+                    className="flex flex-col hover:text-brand-primary transition-colors group"
                 >
-                    <span className="text-xs font-bold text-slate-700 truncate flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-700 truncate flex items-center gap-2 group-hover:text-brand-primary">
                         <FaFolder className="text-[10px] opacity-20" />
                         {file.project?.project_number}
                     </span>
@@ -123,13 +128,13 @@ const Documents = () => {
         },
         {
             id: 'type',
-            header: 'Typ',
+            header: t('common.type') || 'Typ',
             accessor: (file: any) => (
                 <div className="flex flex-col gap-1">
-                    <Badge variant={file.type === 'target' ? 'success' : 'default'} className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0">
+                    <Badge variant={file.type === 'target' ? 'success' : 'default'} className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0 w-fit">
                         {file.type === 'target' ? 'Ausspielung' : 'Eingang'}
                     </Badge>
-                    <span className="text-[10px] text-slate-400 font-mono">
+                    <span className="text-[10px] text-slate-400 font-mono tabular-nums">
                         {formatFileSize(file.file_size || 0)}
                     </span>
                 </div>
@@ -138,7 +143,7 @@ const Documents = () => {
         },
         {
             id: 'uploader',
-            header: 'Hochgeladen',
+            header: t('common.uploaded_by') || 'Hochgeladen',
             accessor: (file: any) => (
                 <div className="flex flex-col">
                     <span className="text-[11px] font-bold text-slate-700 flex items-center gap-2">
@@ -156,31 +161,35 @@ const Documents = () => {
             id: 'actions',
             header: '',
             accessor: (file: any) => (
-                <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-end gap-0.5" onClick={e => e.stopPropagation()}>
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-slate-400 hover:text-brand-primary"
+                        className="h-8 w-8 text-slate-400 hover:text-brand-primary hover:bg-brand-primary/5"
                         onClick={() => handleDownload(file)}
-                        title="Download"
+                        title={t('common.download') || "Download"}
                     >
                         <FaDownload className="text-xs" />
                     </Button>
-                    <Link to={`/projects/${file.project_id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600" title="Projekt öffnen">
-                            <FaExternalLinkAlt className="text-[10px]" />
-                        </Button>
-                    </Link>
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-slate-400 hover:text-red-500"
+                        className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                        onClick={() => navigate(`/projects/${file.project_id}`)}
+                        title={t('projects.actions.view_details') || "Projekt öffnen"}
+                    >
+                        <FaExternalLinkAlt className="text-[10px]" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50"
                         onClick={() => {
-                            if (window.confirm('Datei wirklich löschen?')) {
+                            if (window.confirm(t('common.confirm_delete') || 'Datei wirklich löschen?')) {
                                 deleteMutation.mutate({ projectId: file.project_id, fileId: file.id });
                             }
                         }}
-                        title="Löschen"
+                        title={t('common.delete') || "Löschen"}
                     >
                         <FaTrashAlt className="text-xs" />
                     </Button>
@@ -194,24 +203,24 @@ const Documents = () => {
     const filters = [
         {
             id: 'type',
-            label: 'Dateityp',
+            label: t('common.type') || 'Dateityp',
             type: 'select' as const,
             value: typeFilter,
             onChange: setTypeFilter,
             options: [
-                { value: 'all', label: 'Alle Typen' },
-                { value: 'source', label: 'Eingang' },
-                { value: 'target', label: 'Ausspielung' },
+                { value: 'all', label: t('projects.filters.status_tabs.all') || 'Alle Typen' },
+                { value: 'source', label: 'Eingang (Source)' },
+                { value: 'target', label: 'Ausspielung (Target)' },
             ]
         },
         {
             id: 'extension',
-            label: 'Format',
+            label: t('common.format') || 'Format',
             type: 'select' as const,
             value: extFilter,
             onChange: setExtFilter,
             options: [
-                { value: 'all', label: 'Alle Formate' },
+                { value: 'all', label: t('projects.filters.status_tabs.all') || 'Alle Formate' },
                 { value: 'pdf', label: 'PDF' },
                 { value: 'docx', label: 'Word (DOCX)' },
                 { value: 'xlsx', label: 'Excel (XLSX)' },
@@ -226,88 +235,58 @@ const Documents = () => {
     };
 
     return (
-        <div className="p-6 space-y-8 animate-fadeIn bg-[#F8FAFB] min-h-screen">
+        <div className="flex flex-col gap-6 fade-in pb-10">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-sm bg-brand-primary flex items-center justify-center text-white shadow-lg shadow-brand-primary/20">
-                            <FaFileAlt className="text-lg" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dateien</h1>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Globaler Datei-Index</span>
-                                <div className="h-1 w-1 rounded-full bg-slate-300" />
-                                <span className="text-[11px] font-bold text-brand-primary">{totalCount} Dokumente</span>
-                            </div>
-                        </div>
-                    </div>
+            <div className="flex justify-between items-center gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Dateien</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">Zentrale Verwaltung aller Projektdokumente und Lieferungen</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                    <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-tight h-9 px-4 border-slate-200 hover:bg-slate-50 transition-all">
+                        <FaCloudUploadAlt className="text-slate-400" /> List Export
+                    </Button>
                 </div>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Gesamt */}
-                <div className="bg-white p-5 rounded-sm border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500">
-                        <FaFileAlt size={60} />
-                    </div>
-                    <div className="flex flex-col gap-1 relative z-10">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dateien Gesamt</span>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-bold text-slate-900 leading-tight">
-                                {totalCount}
-                            </span>
-                            <span className="text-[11px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-sm">
-                                Index aktiv
-                            </span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-2">Über alle Projekte hinweg</p>
-                    </div>
-                </div>
-
-                {/* Eingänge */}
-                <div className="bg-white p-5 rounded-sm border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500">
-                        <FaInbox size={60} />
-                    </div>
-                    <div className="flex flex-col gap-1 relative z-10">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Eingänge</span>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-bold text-slate-900 leading-tight">
-                                {sourceFilesCount}
-                            </span>
-                            <span className="text-[11px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-sm">
-                                Source
-                            </span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-2">Kunden-Dokumente & Quellen</p>
-                    </div>
-                </div>
-
-                {/* Ausspielungen */}
-                <div className="bg-white p-5 rounded-sm border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500">
-                        <FaCheckCircle size={60} />
-                    </div>
-                    <div className="flex flex-col gap-1 relative z-10">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ausspielungen</span>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-bold text-emerald-600 leading-tight">
-                                {targetFilesCount}
-                            </span>
-                            <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-sm">
-                                Fertiggestellt
-                            </span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-2">Übersetzte Ziel-Dateien</p>
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <KPICard
+                    label="Dateien Gesamt"
+                    value={totalCount}
+                    icon={<FaFileAlt />}
+                    iconColor="text-brand-primary"
+                    iconBg="bg-brand-primary/5"
+                    subValue="Indexierte Dokumente"
+                />
+                <KPICard
+                    label="Speicherplatz"
+                    value={formatFileSize(totalSize)}
+                    icon={<FaHdd />}
+                    iconColor="text-blue-600"
+                    iconBg="bg-blue-50"
+                    subValue="Belegter Speicher"
+                />
+                <KPICard
+                    label="Quell-Dokumente"
+                    value={sourceFilesCount}
+                    icon={<FaInbox />}
+                    iconColor="text-amber-600"
+                    iconBg="bg-amber-50"
+                    subValue="Eingänge von Kunden"
+                />
+                <KPICard
+                    label="Ausspielungen"
+                    value={targetFilesCount}
+                    icon={<FaCheckCircle />}
+                    iconColor="text-emerald-600"
+                    iconBg="bg-emerald-50"
+                    subValue="Gelieferte Dateien"
+                />
             </div>
 
             {/* Table Section */}
-            <div className="space-y-4">
+            <div className="flex-1 flex flex-col min-h-[500px] relative z-0">
                 <DataTable
                     data={filteredFiles}
                     columns={columns}
@@ -318,13 +297,7 @@ const Documents = () => {
                     searchPlaceholder="Nach Dateiname oder Erweiterung suchen..."
                     searchFields={['original_name', 'extension']}
                     pageSize={25}
-                    actions={(
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-tight h-8 px-4 border-[#D1D9D8] hover:bg-slate-50">
-                                <FaCloudUploadAlt className="text-slate-400" /> List Export
-                            </Button>
-                        </div>
-                    )}
+                    onRowClick={(file) => navigate(`/projects/${file.project_id}`)}
                 />
             </div>
         </div>

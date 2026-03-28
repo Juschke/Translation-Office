@@ -1,4 +1,4 @@
-import { FaCalendarAlt, FaInfoCircle, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaCalendarAlt, FaInfoCircle, FaTrash, FaEuroSign } from 'react-icons/fa';
 import { Button } from '../ui/button';
 
 interface ProjectPaymentsTableProps {
@@ -9,18 +9,19 @@ interface ProjectPaymentsTableProps {
 }
 
 const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeletePayment }: ProjectPaymentsTableProps) => (
-    <div className="space-y-6 pt-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+    <div className="space-y-4">
+        <div className="px-1 flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm">06</div>
-                <h4 className="text-xs font-medium text-slate-800 uppercase tracking-widest">Teilzahlungen / Anzahlungen</h4>
+                <FaEuroSign className="text-slate-400 text-sm" />
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Anzahlungen / Teilzahlungen</h4>
             </div>
             <Button
                 variant="default"
                 size="sm"
                 onClick={onAddPayment}
+                className="h-7 px-3 text-[10px] uppercase font-bold tracking-tight shadow-none bg-brand-primary hover:bg-brand-primary/90 rounded"
             >
-                <FaPlus /> Zahlung erfassen
+                Zahlung erfassen
             </Button>
         </div>
 

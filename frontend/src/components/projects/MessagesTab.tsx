@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import {
     FaComments, FaCopy, FaPaperclip, FaPaperPlane, FaExchangeAlt,
     FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
-    FaFile, FaDownload, FaEye
+    FaFile, FaDownload, FaEye, FaCheckCircle, FaInfoCircle
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,14 +13,16 @@ import { Button } from '../ui/button';
 interface MessagesTabProps {
     projectData: any;
     projectId: string;
+    financials?: any;
 }
 
-const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
+const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) => {
     const queryClient = useQueryClient();
     const [newMessage, setNewMessage] = useState('');
     const [chatMode, setChatMode] = useState<'customer' | 'partner'>('customer');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const [isGeneratingToken, setIsGeneratingToken] = useState(false);
 
     const scrollToBottom = () => {
         if (messagesContainerRef.current) {
@@ -75,7 +77,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
 
     // Filter messages based on chatMode
     const filteredMessages = [...(projectData.messages || [])]
-        .filter((msg: any) => (msg.type === chatMode) || (!msg.type && chatMode === 'customer')) // Backward compatibility: old messages are 'customer'
+        .filter((msg: any) => (msg.type === chatMode) || (!msg.type && chatMode === 'customer'))
         .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
     useEffect(() => {
@@ -110,17 +112,13 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
         }
     };
 
-    const [isGeneratingToken, setIsGeneratingToken] = useState(false);
-
     const handleSendGuestLink = async () => {
         let token = chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token;
-
         if (!token) {
             setIsGeneratingToken(true);
             try {
                 const response = await projectService.generateToken(projectId, chatMode);
                 token = response.access_token;
-                // Important: Update query cache so the input field shows the link immediately
                 await queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
                 toast.success('Link wurde generiert');
             } catch (err) {
@@ -130,30 +128,24 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                 setIsGeneratingToken(false);
             }
         } else {
-            // If token already exists, we just通知 user it's already there or copy it
             toast.success('Link bereits vorhanden');
         }
     };
 
-    const activePerson = chatMode === 'customer'
-        ? projectData.customer
-        : projectData.translator;
-
+    const activePerson = chatMode === 'customer' ? projectData.customer : projectData.translator;
     const tokenExists = chatMode === 'customer' ? !!projectData.access_token : !!projectData.partner_access_token;
-
-    const personName = chatMode === 'customer'
-        ? (activePerson?.company_name || activePerson?.name || 'Kunde')
-        : (activePerson?.name || 'Partner');
-
+    const personName = chatMode === 'customer' ? (activePerson?.company_name || activePerson?.name || 'Kunde') : (activePerson?.name || 'Partner');
     const personEmail = activePerson?.email || 'Keine E-Mail hinterlegt';
     const initials = (personName || 'K').substring(0, 1).toUpperCase();
 
+    const isPaid = financials?.open <= 0.01;
+
     return (
-        <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[605px] mb-10 animate-fadeIn">
+        <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[650px] mb-10 animate-fadeIn">
             {/* Contact Info Header */}
             <div className="bg-white p-3 border-b border-slate-200 flex justify-between items-center shadow-sm z-20">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-lg border border-slate-100">
                         {initials}
                     </div>
                     <div className="flex flex-col">
@@ -171,68 +163,62 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Guest Portal Link Container */}
-                    <div className="flex items-center gap-2 mr-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 min-w-[400px]">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Portal-Link:</span>
+                    <div className="hidden lg:flex items-center gap-2 mr-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 min-w-[300px]">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Portal:</span>
                         <div className="flex-1">
                             <input
                                 readOnly
                                 value={
                                     (chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token)
                                         ? `${window.location.protocol}//${window.location.host}/guest/project/${chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token}`
-                                        : 'Link nicht generiert'
+                                        : 'Kein Link'
                                 }
                                 onClick={(e) => (e.target as HTMLInputElement).select()}
-                                className="w-full bg-white border border-slate-200 rounded-sm px-2 py-0.5 text-[10px] text-slate-500 font-medium outline-none cursor-default"
+                                className="w-full bg-transparent border-none rounded-sm px-1 py-0.5 text-[9px] text-slate-400 font-medium outline-none cursor-default"
                             />
                         </div>
-
-                        <button
-                            onClick={() => {
-                                const token = chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token;
-                                if (token) {
-                                    navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/guest/project/${token}`);
-                                    toast.success('Link kopiert');
-                                } else {
-                                    toast.error('Kein Link zum Kopieren vorhanden');
-                                }
-                            }}
-                            className="text-slate-400 hover:text-brand-primary transition-colors p-1"
-                            title="Link kopieren"
-                        >
-                            <FaCopy size={12} />
-                        </button>
-
-                        <div className="h-4 w-px bg-slate-200 mx-1"></div>
-
-                        <Button
-                            size="sm"
-                            onClick={handleSendGuestLink}
-                            disabled={isGeneratingToken}
-                            className="h-7 px-3 text-[10px] font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm flex items-center gap-1.5"
-                        >
-                            {isGeneratingToken ? (
-                                <span className="animate-spin mr-1">○</span>
-                            ) : (
-                                <FaPaperPlane size={9} />
-                            )}
-                            {tokenExists ? 'Link senden' : 'Link generieren'}
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => {
+                                    const token = chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token;
+                                    if (token) {
+                                        navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/guest/project/${token}`);
+                                        toast.success('Link kopiert');
+                                    }
+                                }}
+                                className="text-slate-300 hover:text-brand-primary transition-colors p-1"
+                            >
+                                <FaCopy size={10} />
+                            </button>
+                            <Button
+                                size="sm"
+                                onClick={handleSendGuestLink}
+                                disabled={isGeneratingToken}
+                                className="h-6 px-2 text-[8px] font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm flex items-center gap-1"
+                            >
+                                {isGeneratingToken ? (
+                                    <span className="animate-spin">○</span>
+                                ) : (
+                                    <FaPaperPlane size={7} />
+                                )}
+                                {tokenExists ? 'Senden' : 'Generieren'}
+                            </Button>
+                        </div>
                     </div>
 
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setChatMode(chatMode === 'customer' ? 'partner' : 'customer')}
-                        className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-brand-primary hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all rounded-full h-9 px-4"
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-brand-primary hover:bg-slate-50 transition-all rounded-full h-8 px-4"
                     >
-                        <FaExchangeAlt className="text-[10px]" />
-                        Zu {chatMode === 'customer' ? 'Partner' : 'Kunde'} wechseln
+                        <FaExchangeAlt size={9} />
+                        Wechseln
                     </Button>
                 </div>
             </div>
 
-            {/* Chat Area - WhatsApp Background */}
+            {/* Chat Area */}
             <div
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar relative"
@@ -247,7 +233,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                         <div className="w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mb-4">
                             <FaComments className="text-2xl text-white" />
                         </div>
-                        <p className="text-sm font-medium">Keine Nachrichten mit diesem {chatMode === 'customer' ? 'Kunden' : 'Partner'} vorhanden.</p>
+                        <p className="text-sm font-medium italic">Keine Nachrichten vorhanden.</p>
                     </div>
                 ) : (
                     filteredMessages.map((msg: any) => {
@@ -256,7 +242,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                             <div key={msg.id} className={clsx("flex flex-col w-full", isMe ? "items-end" : "items-start")}>
                                 <div
                                     className={clsx(
-                                        "px-2.5 py-2 rounded-sm text-xs shadow-sm max-w-[85%] relative min-w-[120px]",
+                                        "px-2.5 py-2 rounded-xl text-xs shadow-sm max-w-[85%] relative min-w-[80px]",
                                         isMe
                                             ? "bg-[#dcf8c6] text-slate-800 rounded-tr-none border border-[#c7eba7]"
                                             : "bg-white text-slate-800 rounded-tl-none border border-slate-200"
@@ -264,7 +250,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                                 >
                                     {msg.file ? (
                                         <div className="flex flex-col gap-2 min-w-[200px]">
-                                            <div className="flex items-center gap-3 p-2 bg-black/5 rounded-sm border border-black/5">
+                                            <div className="flex items-center gap-3 p-2 bg-black/5 rounded-lg border border-black/5">
                                                 <div className={clsx("text-2xl", getFileIcon(msg.file.extension).color)}>
                                                     {(() => {
                                                         const { icon: Icon } = getFileIcon(msg.file.extension);
@@ -272,7 +258,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                                                     })()}
                                                 </div>
                                                 <div className="flex flex-col overflow-hidden">
-                                                    <span className="font-bold truncate text-[11px] leading-tight" title={msg.file.original_name}>
+                                                    <span className="font-bold truncate text-[11px] leading-tight">
                                                         {msg.file.original_name}
                                                     </span>
                                                     <span className="text-[9px] text-slate-500 font-medium">
@@ -284,18 +270,18 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 px-2 text-[10px] bg-white/50 border border-black/5 hover:bg-white flex items-center gap-1.5 font-bold text-slate-600"
+                                                    className="h-7 px-2 text-[10px] bg-white/50 hover:bg-white flex items-center gap-1.5 font-bold text-slate-600 rounded-lg"
                                                     onClick={() => handleFilePreview(msg.file)}
                                                 >
-                                                    <FaEye className="text-[10px]" /> Vorschau
+                                                    <FaEye size={10} /> Vorschau
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 px-2 text-[10px] bg-white/50 border border-black/5 hover:bg-white flex items-center gap-1.5 font-bold text-slate-600"
+                                                    className="h-7 px-2 text-[10px] bg-white/50 hover:bg-white flex items-center gap-1.5 font-bold text-slate-600 rounded-lg"
                                                     onClick={() => handleFileDownload(msg.file)}
                                                 >
-                                                    <FaDownload className="text-[10px]" /> Download
+                                                    <FaDownload size={10} /> Download
                                                 </Button>
                                             </div>
                                         </div>
@@ -303,7 +289,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                                         <div className="whitespace-pre-wrap break-words pr-12 pb-3">{msg.content}</div>
                                     )}
                                     <div className="absolute bottom-1 right-1.5 flex items-center gap-1">
-                                        <span className="text-[9px] text-slate-400 font-bold">
+                                        <span className="text-[9px] text-slate-400 font-medium">
                                             {new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                         {isMe && <span className="text-sky-400 text-[10px] font-bold">✓✓</span>}
@@ -316,26 +302,24 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
             </div>
 
             {/* Input Area */}
-            <div className="p-3 border-t border-slate-100 bg-white">
+            <div className="p-3 border-t border-slate-100 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
                 <div className="flex gap-2 items-center">
                     <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} id="chat-file-upload" />
-
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-10 h-10 flex-shrink-0 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-brand-primary shadow-sm"
+                        className="w-10 h-10 flex-shrink-0 rounded-full bg-slate-50 text-slate-400 hover:text-brand-primary"
                     >
                         <FaPaperclip />
                     </Button>
-
                     <div className="flex-1 relative">
                         <input
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder={`Nachricht an ${chatMode === 'customer' ? 'Kunde' : 'Partner'}...`}
-                            className="w-full h-11 pl-5 pr-12 rounded-full border border-slate-200 bg-white focus:border-brand-primary outline-none shadow-sm text-xs transition-all"
+                            className="w-full h-11 pl-5 pr-12 rounded-full border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-primary outline-none text-xs transition-all"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSendMessage();
                             }}
@@ -345,7 +329,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                             size="icon"
                             onClick={handleSendMessage}
                             disabled={!newMessage.trim()}
-                            className="absolute right-1.5 top-1.5 w-8 h-8 rounded-full bg-brand-primary hover:bg-brand-primary/90 shadow-sm transition-transform active:scale-95"
+                            className="absolute right-1.5 top-1.5 w-8 h-8 rounded-full bg-brand-primary hover:bg-brand-primary/90 shadow-sm"
                         >
                             <FaPaperPlane className="text-xs" />
                         </Button>
@@ -353,21 +337,46 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                 </div>
             </div>
 
-            <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(0,0,0,0.1);
-                    border-radius: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(0,0,0,0.2);
-                }
-            `}</style>
+            {/* Financial Summary Status Bar */}
+            {financials && chatMode === 'customer' && (
+                <div className={clsx(
+                    "px-4 py-2 border-t flex items-center justify-between transition-colors",
+                    isPaid ? "bg-emerald-600 text-white border-emerald-500" : "bg-slate-50 text-slate-600 border-slate-200"
+                )}>
+                    <div className="flex items-center gap-6">
+                        <div className="flex flex-col">
+                            <span className={clsx("text-[8px] font-black uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>Gesamt (Brutto)</span>
+                            <span className="text-xs font-bold tabular-nums">{(financials.grossTotal || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
+                        </div>
+                        <div className="w-px h-6 bg-current opacity-10"></div>
+                        <div className="flex flex-col">
+                            <span className={clsx("text-[8px] font-black uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>Geleistet</span>
+                            <span className={clsx("text-xs font-bold tabular-nums", !isPaid && financials?.paid > 0 ? "text-emerald-600" : "")}>
+                                {(financials.paid || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-end">
+                            <span className={clsx("text-[8px] font-black uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>
+                                {isPaid ? 'STATUS' : 'OFFEN'}
+                            </span>
+                            <span className="text-xs font-bold tabular-nums uppercase">
+                                {isPaid ? ' VOLLSTÄNDIG BEZAHLT' : (financials.open || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                            </span>
+                        </div>
+                        <div className={clsx(
+                            "w-6 h-6 rounded-full flex items-center justify-center",
+                            isPaid ? "bg-white text-emerald-600" : "bg-amber-100 text-amber-600"
+                        )}>
+                            {isPaid ? <FaCheckCircle size={12} /> : <FaInfoCircle size={12} />}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <style>{`.custom-scrollbar::-webkit-scrollbar{width:6px}.custom-scrollbar::-webkit-scrollbar-track{background:transparent}.custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:10px}.custom-scrollbar::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.2)}`}</style>
         </div>
     );
 };

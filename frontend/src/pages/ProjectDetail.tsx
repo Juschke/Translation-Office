@@ -463,6 +463,36 @@ const ProjectDetail = () => {
         }
     };
 
+    const handleBulkFilesMove = async (ids: string[], newType: string) => {
+        try {
+            await projectService.bulkUpdateFiles(id!, ids, newType);
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            toast.success('Dateien erfolgreich verschoben');
+        } catch (error) {
+            toast.error('Fehler beim Verschieben der Dateien');
+        }
+    };
+
+    const handleBulkFilesDownloadZip = async (ids: string[]) => {
+        try {
+            const toastId = toast.loading('ZIP-Archiv wird erstellt...');
+            const response = await projectService.downloadFilesZip(id!, ids);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `project_${id}_files.zip`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            toast.dismiss(toastId);
+            toast.success('ZIP-Download gestartet');
+        } catch (error) {
+            toast.dismiss();
+            toast.error('Fehler beim Erstellen des ZIP-Archivs');
+        }
+    };
+
     const handleFileUpload = async (newFiles: any[], onProgress: (id: string, p: number) => void) => {
         await uploadFileMutation.mutateAsync({ files: newFiles, onProgress });
     };
@@ -867,6 +897,8 @@ const ProjectDetail = () => {
                         toggleFileType={toggleFileType}
                         onRenameFile={handleRenameFile}
                         onMoveFile={handleMoveFile}
+                        onBulkMove={handleBulkFilesMove}
+                        onBulkDownloadZip={handleBulkFilesDownloadZip}
                         formatFileSize={formatFileSize}
                         onUpload={handleFileUpload}
                     />
@@ -889,18 +921,13 @@ const ProjectDetail = () => {
                             const newPayments = (projectData.payments || []).filter((p: any) => p.id !== paymentId);
                             updateProjectMutation.mutate({ payments: newPayments });
                         }}
-                        onCreateInvoice={() => setIsInvoiceModalOpen(true)}
-                        onGoToInvoice={() => {
-                            const activeInvoice = projectData.invoices?.find(inv => !['cancelled'].includes(inv.status));
-                            if (activeInvoice) setPreviewInvoice(activeInvoice);
-                        }}
                         isPendingSave={updateProjectMutation.isPending}
                     />
                 )}
 
                 {activeTab === 'messages' && (
                     <div className="mb-10 animate-fadeIn">
-                        <MessagesTab projectData={projectData} projectId={id!} />
+                        <MessagesTab projectData={projectData} projectId={id!} financials={financials} />
                     </div>
                 )}
 
@@ -1002,6 +1029,7 @@ const ProjectDetail = () => {
                 }}
                 file={previewFile}
                 onDownload={() => previewFile?.id && handleDownloadFile({ name: previewFile.name, id: previewFile.id })}
+                onDelete={previewFile?.id ? () => setDeleteFileConfirm({ isOpen: true, fileId: previewFile.id!, fileName: previewFile.name }) : undefined}
             />
             <ConfirmModal
                 isOpen={deleteFileConfirm.isOpen}

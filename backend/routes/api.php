@@ -170,6 +170,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('projects/{project}/files/{file}', [\App\Http\Controllers\Api\ProjectFileController::class, 'destroy']);
     Route::put('projects/{project}/files/{file}', [\App\Http\Controllers\Api\ProjectFileController::class, 'update']);
     Route::get('projects/{project}/files/{file}/download', [\App\Http\Controllers\Api\ProjectFileController::class, 'download']);
+    Route::post('projects/{project}/files/bulk-update', [\App\Http\Controllers\Api\ProjectFileController::class, 'bulkUpdate']);
+    Route::get('projects/{project}/files/download-zip', [\App\Http\Controllers\Api\ProjectFileController::class, 'downloadZip']);
     Route::apiResource('projects', \App\Http\Controllers\Api\ProjectController::class);
     Route::post('projects/{project}/invite', [\App\Http\Controllers\Api\ProjectController::class, 'inviteParticipant']);
     Route::post('projects/{project}/generate-document', [\App\Http\Controllers\Api\ProjectController::class, 'generateDocument']);
