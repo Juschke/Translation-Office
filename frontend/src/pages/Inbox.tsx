@@ -470,9 +470,9 @@ const CommunicationHub = () => {
         mutationFn: mailService.deleteAccount,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
-            toast.success('Konto gelöscht');
+            toast.success(t('auth.account_deleted'));
         },
-        onError: () => toast.error('Fehler beim Löschen des Kontos')
+        onError: () => toast.error(t('auth.error_deleting_account'))
     });
 
     const createTemplateMutation = useMutation({
@@ -501,7 +501,7 @@ const CommunicationHub = () => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
             toast.success('Vorlage gelöscht');
         },
-        onError: () => toast.error('Fehler beim Löschen der Vorlage')
+        onError: () => toast.error(t('auth.error_deleting_template'))
     });
 
     if (isLoadingInbox || isLoadingSent) return <div className="p-10 text-center font-medium text-slate-400 flex items-center justify-center gap-3">
@@ -696,7 +696,7 @@ const CommunicationHub = () => {
                                 title="E-Mail Konten"
                                 items={accounts}
                                 headers={['Bezeichnung', 'Email', 'Server', 'Status']}
-                                addLabel="Konto hinzufügen"
+                                addLabel={t('auth.add_account')}
                                 onAdd={() => {
                                     setAccountToEdit(null);
                                     setIsAccountModalOpen(true);

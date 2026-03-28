@@ -269,7 +269,7 @@ const Team: React.FC = () => {
                                                 <button
                                                     onClick={() => setModal({ type: 'delete', user: u })}
                                                     className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors"
-                                                    title="Löschen"
+                                                    title={t('actions.delete')}
                                                 >
                                                     <FaTrash />
                                                 </button>
@@ -335,7 +335,7 @@ const Team: React.FC = () => {
                 onConfirm={() => modal?.user && deleteMutation.mutate(modal.user.id)}
                 title="Mitarbeiter löschen"
                 message={`Möchten Sie „${modal?.user?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-                confirmLabel="Löschen"
+                confirmLabel={t('actions.delete')}
                 variant="danger"
                 isLoading={deleteMutation.isPending}
             />

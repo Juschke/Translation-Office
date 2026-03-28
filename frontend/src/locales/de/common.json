@@ -31,7 +31,8 @@
     "sending": "Sende...",
     "saving": "Speichere...",
     "error": "Fehler",
-    "success": "Erfolg"
+    "success": "Erfolg",
+    "add": "Hinzufügen"
   },
   "status": {
     "draft": "Entwurf",
@@ -279,7 +280,12 @@
       "bulk_update": "{{count}} Projekte aktualisiert",
       "bulk_delete": "{{count}} Projekte endgültig gelöscht",
       "bulk_error": "Massenvorgang fehlgeschlagen"
-    }
+    },
+    "priority_express": "⚡ Express",
+    "priority_standard": "Standard",
+    "document_output": "Ausspielung",
+    "document_input": "Eingang",
+    "system_uploader": "System"
   },
   "customers": {
     "title": "Kundenstamm",
@@ -339,7 +345,11 @@
       "bulk_update_error": "Fehler beim Aktualisieren der Kunden",
       "bulk_delete_success": "{{count}} Kunden endgültig gelöscht",
       "bulk_delete_error": "Fehler beim endgültigen Löschen"
-    }
+    },
+    "type_company": "Firma",
+    "type_private": "Privat",
+    "type_authority": "Behörde",
+    "private_customer": "Privatkunde"
   },
   "partners": {
     "title": "Partnernetzwerk",
@@ -742,8 +752,8 @@
     "forgot_password": "Passwort vergessen?",
     "dont_have_account": "Noch kein Konto?",
     "already_have_account": "Haben Sie bereits ein Konto?",
-    "sign_up": "Anmelden",
-    "sign_in": "Einloggen",
+    "sign_up": "Konto erstellen",
+    "sign_in": "Anmelden",
     "welcome_back": "Willkommen zurück",
     "two_factor_title": "2FA Bestätigung",
     "two_factor_prompt": "Bitte geben Sie Ihren Authenticator-Code ein.",
@@ -786,7 +796,21 @@
     "can_login_now": "Sie können sich jetzt mit Ihrem neuen Passwort anmelden.",
     "login_now": "Jetzt anmelden",
     "set_new_password": "Neues Passwort vergeben",
-    "secure_password_8_chars": "Bitte wählen Sie ein sicheres Passwort mit mindestens 8 Zeichen."
+    "secure_password_8_chars": "Bitte wählen Sie ein sicheres Passwort mit mindestens 8 Zeichen.",
+    "create_free_account": "Kostenloses Konto erstellen",
+    "confirm_password_label": "Passwort bestätigen",
+    "save_password": "Passwort speichern",
+    "forgot_password_link": "Passwort vergessen?",
+    "verifying": "Verifiziere...",
+    "confirming": "Bestätigen",
+    "signing_in": "Anmelden...",
+    "saving": "Speichern...",
+    "delete_account": "Konto löschen",
+    "account_deleted": "Konto gelöscht",
+    "error_deleting_account": "Fehler beim Löschen des Kontos",
+    "error_deleting_template": "Fehler beim Löschen der Vorlage",
+    "add_account": "Konto hinzufügen",
+    "confirm_delete_account": "Konto wirklich löschen?"
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich",
@@ -1038,5 +1062,22 @@
     "access_denied": "Zugriff verweigert",
     "invalid_link": "Das Projekt konnte nicht geladen werden. Bitte prüfen Sie den Link.",
     "loading": "Projekt wird geladen..."
+  },
+  "billing": {
+    "standard": "Standard",
+    "professional": "Professional",
+    "premium": "Premium",
+    "enterprise": "Enterprise",
+    "custom_price": "Custom",
+    "up_to_50_projects": "Bis zu 50 Projekte",
+    "team_members": "3 Team-Mitglieder",
+    "standard_support": "Standard Support",
+    "basic_features": "Basisfunktionen",
+    "choose_plan": "Wählen"
+  },
+  "countries": {
+    "de": "Deutschland",
+    "at": "Österreich",
+    "ch": "Schweiz"
   }
 }

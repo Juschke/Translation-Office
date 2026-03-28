@@ -1064,8 +1064,8 @@ const ProjectDetail = () => {
                 }}
                 title="Datei löschen"
                 message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-                confirmText="Löschen"
-                cancelText="Abbrechen"
+                confirmText={t('actions.delete')}
+                cancelText={t('actions.cancel')}
                 isLoading={deleteFileMutation.isPending}
             />
             <ConfirmModal
@@ -1080,7 +1080,7 @@ const ProjectDetail = () => {
                 }}
                 title="Zahlung löschen"
                 message={`Möchten Sie die Zahlung in Höhe von ${paymentDeleteConfirm.amount} € wirklich löschen?`}
-                confirmText="Löschen"
+                confirmText={t('actions.delete')}
                 type="danger"
             />
             <ConfirmModal
@@ -1089,8 +1089,8 @@ const ProjectDetail = () => {
                 onConfirm={() => deleteProjectMutation.mutate(id!)}
                 title="Projekt löschen"
                 message={`Möchten Sie das Projekt "${projectData?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-                confirmText="Löschen"
-                cancelText="Abbrechen"
+                confirmText={t('actions.delete')}
+                cancelText={t('actions.cancel')}
                 type="danger"
                 isLoading={deleteProjectMutation.isPending}
             />

@@ -21,8 +21,8 @@ const AuthPage = () => {
         <AuthLayout>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-8">
-                    <TabsTrigger value="login" className="text-base">Anmelden</TabsTrigger>
-                    <TabsTrigger value="register" className="text-base">Registrieren</TabsTrigger>
+                    <TabsTrigger value="login" className="text-base">{t('auth.sign_in')}</TabsTrigger>
+                    <TabsTrigger value="register" className="text-base">{t('auth.register')}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
@@ -46,6 +46,7 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ login, navigate }: LoginFormProps) => {
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -224,10 +225,10 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        {showTwoFactor ? 'Verifiziere...' : 'Anmelden...'}
+                        {showTwoFactor ? { showTwoFactor ? t('auth.verifying') : t('auth.signing_in') } : { showTwoFactor ? t('auth.verifying') : t('auth.signing_in') }}
                     </>
                 ) : (
-                    showTwoFactor ? 'Bestätigen' : 'Anmelden'
+                    showTwoFactor ? { showTwoFactor ? t('auth.confirming') : t('auth.sign_in') } : { t('auth.sign_in') }
                 )}
             </button>
         </form>
@@ -243,6 +244,7 @@ interface RegisterFormProps {
 }
 
 const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -261,15 +263,15 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
         setError(null);
 
         if (!formData.name || !formData.email || !formData.password) {
-            setError('Bitte füllen Sie alle Felder aus.');
+            setError(t('auth.fill_all_fields'));
             return;
         }
         if (formData.password !== formData.confirmPassword) {
-            setError('Die Passwörter stimmen nicht überein.');
+            setError(t('auth.passwords_no_match'));
             return;
         }
         if (formData.password.length < 8) {
-            setError('Das Passwort muss mindestens 8 Zeichen lang sein.');
+            setError(t('auth.password_min_8'));
             return;
         }
 
@@ -404,7 +406,7 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                         Erstellen...
                     </>
                 ) : (
-                    'Konto erstellen'
+                    { t('auth.sign_up') }
                 )}
             </button>
 

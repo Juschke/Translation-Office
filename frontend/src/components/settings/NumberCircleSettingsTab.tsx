@@ -11,20 +11,12 @@ import { Switch } from '../ui/switch';
 const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formData, handleChange, preview }: any) => (
     <div className="py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50/30 px-4 -mx-4 transition-colors rounded-sm grid grid-cols-12 gap-4 items-center">
         <div className="col-span-12 md:col-span-4 flex flex-col justify-center h-full">
-            <span className="text-sm font-bold text-slate-700">{title}</span>
-            <div className="flex items-center gap-2 mt-1">
-                <Switch
-                    checked={formData[showYearKey] || false}
-                    onCheckedChange={(val) => handleChange(showYearKey, val)}
-                    className="scale-75 origin-left"
-                />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Jahr anzeigen</span>
-            </div>
+            <span className="text-sm font-medium text-slate-700">{title}</span>
         </div>
 
         <div className="col-span-12 md:col-span-8 flex flex-col gap-1.5">
-            <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-0.5">
+            <div className="flex gap-3">
+                <div className="flex flex-col gap-0.5 flex-1">
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-1">Präfix</span>
                     <input
                         type="text"
@@ -34,7 +26,7 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
                         className="w-full h-8 border border-slate-200 rounded-sm px-2.5 text-xs font-semibold text-slate-800 focus:border-brand-primary outline-none transition shadow-sm bg-white"
                     />
                 </div>
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-col gap-0.5 flex-1">
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-1">Start-Nummer</span>
                     <input
                         type="number"
@@ -43,6 +35,16 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
                         placeholder="00001"
                         className="w-full h-8 border border-slate-200 rounded-sm px-2.5 text-xs font-semibold text-slate-800 focus:border-brand-primary outline-none transition shadow-sm bg-white"
                     />
+                </div>
+                <div className="flex flex-col gap-0.5 w-20 items-center shrink-0">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Jahr</span>
+                    <div className="h-8 flex items-center justify-center">
+                        <Switch
+                            checked={formData[showYearKey] || false}
+                            onCheckedChange={(val) => handleChange(showYearKey, val)}
+                            className="scale-75"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -164,7 +166,7 @@ const NumberCircleSettingsTab = () => {
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
                 <div className="mb-6">
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
-                        <div className="w-1 h-1 bg-brand-primary rounded-full"></div> Stammdaten
+                        Stammdaten
                     </h4>
                     <ConfigRow
                         title="Kunden"
@@ -188,7 +190,7 @@ const NumberCircleSettingsTab = () => {
 
                 <div className="mb-6">
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
-                        <div className="w-1 h-1 bg-brand-primary rounded-full"></div> Projektmanagement
+                        Projektmanagement
                     </h4>
                     <ConfigRow
                         title="Projekte"
@@ -221,7 +223,7 @@ const NumberCircleSettingsTab = () => {
 
                 <div className="mb-2">
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
-                        <div className="w-1 h-1 bg-brand-primary rounded-full"></div> Finanzwesen
+                        Finanzwesen
                     </h4>
                     <ConfigRow
                         title="Rechnungen"
