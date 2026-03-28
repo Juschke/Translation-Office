@@ -3,15 +3,23 @@ import { settingsService } from '../../api/services';
 import { FaListOl, FaEye, FaSave, FaInfoCircle } from 'react-icons/fa';
 import { Button } from '../ui/button';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { Switch } from '../ui/switch';
 
 // To avoid losing focus on input during re-renders,
 // components must be defined OUTSIDE the parent component and ideally memoized.
-const ConfigRow = React.memo(({ title, prefixKey, startKey, formData, handleChange, preview }: any) => (
+const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formData, handleChange, preview }: any) => (
     <div className="py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50/30 px-4 -mx-4 transition-colors rounded-sm grid grid-cols-12 gap-4 items-center">
-        <div className="col-span-12 md:col-span-4 flex items-center h-full">
+        <div className="col-span-12 md:col-span-4 flex flex-col justify-center h-full">
             <span className="text-sm font-bold text-slate-700">{title}</span>
+            <div className="flex items-center gap-2 mt-1">
+                <Switch
+                    checked={formData[showYearKey] || false}
+                    onCheckedChange={(val) => handleChange(showYearKey, val)}
+                    className="scale-75 origin-left"
+                />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Jahr anzeigen</span>
+            </div>
         </div>
 
         <div className="col-span-12 md:col-span-8 flex flex-col gap-1.5">
@@ -59,18 +67,25 @@ const NumberCircleSettingsTab = () => {
     const [formData, setFormData] = useState<any>({
         customer_id_prefix: 'K',
         customer_start_number: '1',
+        customer_show_year: false,
         partner_id_prefix: 'P',
         partner_start_number: '1',
+        partner_show_year: false,
         project_id_prefix: 'PR',
         project_start_number: '1',
+        project_show_year: true,
         appointment_id_prefix: 'A',
         appointment_start_number: '1',
+        appointment_show_year: true,
         offer_id_prefix: 'AG',
         offer_start_number: '1',
+        offer_show_year: true,
         invoice_prefix: 'RE',
         invoice_start_number: '1',
+        invoice_show_year: true,
         credit_note_prefix: 'GS',
-        credit_note_start_number: '1'
+        credit_note_start_number: '1',
+        credit_note_show_year: true
     });
 
     useEffect(() => {
@@ -78,18 +93,25 @@ const NumberCircleSettingsTab = () => {
             setFormData({
                 customer_id_prefix: companyData.customer_id_prefix || 'K',
                 customer_start_number: companyData.customer_start_number || '1',
+                customer_show_year: companyData.customer_show_year ?? false,
                 partner_id_prefix: companyData.partner_id_prefix || 'P',
                 partner_start_number: companyData.partner_start_number || '1',
+                partner_show_year: companyData.partner_show_year ?? false,
                 project_id_prefix: companyData.project_id_prefix || 'PR',
                 project_start_number: companyData.project_start_number || '1',
+                project_show_year: companyData.project_show_year ?? true,
                 appointment_id_prefix: companyData.appointment_id_prefix || 'A',
                 appointment_start_number: companyData.appointment_start_number || '1',
+                appointment_show_year: companyData.appointment_show_year ?? true,
                 offer_id_prefix: companyData.offer_id_prefix || 'AG',
                 offer_start_number: companyData.offer_start_number || '1',
+                offer_show_year: companyData.offer_show_year ?? true,
                 invoice_prefix: companyData.invoice_prefix || 'RE',
                 invoice_start_number: companyData.invoice_start_number || '1',
+                invoice_show_year: companyData.invoice_show_year ?? true,
                 credit_note_prefix: companyData.credit_note_prefix || 'GS',
-                credit_note_start_number: companyData.credit_note_start_number || '1'
+                credit_note_start_number: companyData.credit_note_start_number || '1',
+                credit_note_show_year: companyData.credit_note_show_year ?? true
             });
         }
     }, [companyData]);
@@ -109,17 +131,16 @@ const NumberCircleSettingsTab = () => {
     }, []);
 
     const previews = useMemo(() => {
-        const datePart = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
         const year = new Date().getFullYear();
 
         return {
-            customer: `${formData.customer_id_prefix || 'K'}-${String(formData.customer_start_number || '1').padStart(5, '0')}`,
-            partner: `${formData.partner_id_prefix || 'P'}-${String(formData.partner_start_number || '1').padStart(5, '0')}`,
-            project: `${formData.project_id_prefix || 'PR'}-${datePart}-${String(formData.project_start_number || '1').padStart(5, '0')}`,
-            appointment: `${formData.appointment_id_prefix || 'A'}-${datePart}-${String(formData.appointment_start_number || '1').padStart(5, '0')}`,
-            offer: `${formData.offer_id_prefix || 'AG'}-${datePart}-${String(formData.offer_start_number || '1').padStart(5, '0')}`,
-            invoice: `${formData.invoice_prefix || 'RE'}-${year}-${String(formData.invoice_start_number || '1').padStart(5, '0')}`,
-            credit_note: `${formData.credit_note_prefix || 'GS'}-${year}-${String(formData.credit_note_start_number || '1').padStart(5, '0')}`
+            customer: `${formData.customer_id_prefix || 'K'}${formData.customer_show_year ? '-' + year : ''}-${String(formData.customer_start_number || '1').padStart(5, '0')}`,
+            partner: `${formData.partner_id_prefix || 'P'}${formData.partner_show_year ? '-' + year : ''}-${String(formData.partner_start_number || '1').padStart(5, '0')}`,
+            project: `${formData.project_id_prefix || 'PR'}${formData.project_show_year ? '-' + year : ''}-${String(formData.project_start_number || '1').padStart(5, '0')}`,
+            appointment: `${formData.appointment_id_prefix || 'A'}${formData.appointment_show_year ? '-' + year : ''}-${String(formData.appointment_start_number || '1').padStart(5, '0')}`,
+            offer: `${formData.offer_id_prefix || 'AG'}${formData.offer_show_year ? '-' + year : ''}-${String(formData.offer_start_number || '1').padStart(5, '0')}`,
+            invoice: `${formData.invoice_prefix || 'RE'}${formData.invoice_show_year ? '-' + year : ''}-${String(formData.invoice_start_number || '1').padStart(5, '0')}`,
+            credit_note: `${formData.credit_note_prefix || 'GS'}${formData.credit_note_show_year ? '-' + year : ''}-${String(formData.credit_note_start_number || '1').padStart(5, '0')}`
         };
     }, [formData]);
 
@@ -149,6 +170,7 @@ const NumberCircleSettingsTab = () => {
                         title="Kunden"
                         prefixKey="customer_id_prefix"
                         startKey="customer_start_number"
+                        showYearKey="customer_show_year"
                         formData={formData}
                         handleChange={handleChange}
                         preview={previews.customer}
@@ -157,6 +179,7 @@ const NumberCircleSettingsTab = () => {
                         title="Partner / Übersetzer"
                         prefixKey="partner_id_prefix"
                         startKey="partner_start_number"
+                        showYearKey="partner_show_year"
                         formData={formData}
                         handleChange={handleChange}
                         preview={previews.partner}
@@ -171,6 +194,7 @@ const NumberCircleSettingsTab = () => {
                         title="Projekte"
                         prefixKey="project_id_prefix"
                         startKey="project_start_number"
+                        showYearKey="project_show_year"
                         formData={formData}
                         handleChange={handleChange}
                         preview={previews.project}
@@ -179,6 +203,7 @@ const NumberCircleSettingsTab = () => {
                         title="Termine"
                         prefixKey="appointment_id_prefix"
                         startKey="appointment_start_number"
+                        showYearKey="appointment_show_year"
                         formData={formData}
                         handleChange={handleChange}
                         preview={previews.appointment}
@@ -187,6 +212,7 @@ const NumberCircleSettingsTab = () => {
                         title="Angebote"
                         prefixKey="offer_id_prefix"
                         startKey="offer_start_number"
+                        showYearKey="offer_show_year"
                         formData={formData}
                         handleChange={handleChange}
                         preview={previews.offer}
@@ -201,6 +227,7 @@ const NumberCircleSettingsTab = () => {
                         title="Rechnungen"
                         prefixKey="invoice_prefix"
                         startKey="invoice_start_number"
+                        showYearKey="invoice_show_year"
                         formData={formData}
                         handleChange={handleChange}
                         preview={previews.invoice}
@@ -209,6 +236,7 @@ const NumberCircleSettingsTab = () => {
                         title="Gutschriften"
                         prefixKey="credit_note_prefix"
                         startKey="credit_note_start_number"
+                        showYearKey="credit_note_show_year"
                         formData={formData}
                         handleChange={handleChange}
                         preview={previews.credit_note}

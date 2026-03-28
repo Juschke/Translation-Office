@@ -19,12 +19,12 @@ const ForgotPassword = () => {
 
         try {
             const response = await authService.forgotPassword(email);
-            setStatus({ type: 'success', message: response.message || '{t('auth.reset_email_sent')}' });
+            setStatus({ type: 'success', message: response.message || t('auth.reset_email_sent') });
             setEmail('');
         } catch (error: any) {
             setStatus({
                 type: 'error',
-                message: error.response?.data?.message || '{t('auth.error_try_again')}'
+                message: error.response?.data?.message || t('auth.error_try_again')
             });
         } finally {
             setIsLoading(false);
@@ -33,8 +33,8 @@ const ForgotPassword = () => {
 
     return (
         <AuthLayout
-            title="{t('auth.forgot_password')}?"
-            subtitle="{t('auth.no_problem')}"
+            title={t('auth.forgot_password') + '?'}
+            subtitle={t('auth.no_problem')}
         >
             {status?.type === 'success' ? (
                 <div className="text-center space-y-6 py-4">

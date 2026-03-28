@@ -26,7 +26,7 @@ const ResetPassword = () => {
         const email = searchParams.get('email');
 
         if (!token || !email) {
-            setError('{t('auth.invalid_reset_link')}');
+            setError(t('auth.invalid_reset_link'));
         } else {
             setFormData(prev => ({ ...prev, token, email }));
         }
@@ -93,8 +93,8 @@ const ResetPassword = () => {
 
     return (
         <AuthLayout
-            title="{t('auth.set_new_password')}"
-            subtitle="{t('auth.secure_password_8_chars')}"
+            title={t('auth.set_new_password')}
+            subtitle={t('auth.secure_password_8_chars')}
         >
             <form className="space-y-5" onSubmit={handleSubmit}>
                 {error && (

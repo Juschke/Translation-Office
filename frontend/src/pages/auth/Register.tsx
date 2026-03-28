@@ -117,7 +117,7 @@ const RegisterPage = () => {
  </svg>
 {t('auth.creating')}
  </span>
- ) : "{t('auth.create_account')}"}
+ ) : t('auth.create_account')}
  </button>
  </div>
  </form>
