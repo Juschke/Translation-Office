@@ -34,8 +34,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     onConfirm,
     title,
     message,
-    confirmText = 'Bestätigen',
-    cancelText = 'Abbrechen',
+    confirmText = t('actions.confirm'),
+    cancelText = t('actions.cancel'),
     variant = 'danger',
     isLoading = false
 }) => {

@@ -27,7 +27,7 @@ const taxOfficeOptions = taxOfficesData.map((fa: any) => ({
 })).sort((a, b) => a.label.localeCompare(b.label));
 
 const legalFormOptions = [
-    { value: 'Einzelunternehmen', label: 'Einzelunternehmen' },
+    { value: t('settings.company_type_sole'), label: t('settings.company_type_sole') },
     { value: 'GbR', label: 'GbR' },
     { value: 'GmbH', label: 'GmbH' },
     { value: 'GmbH & Co. KG', label: 'GmbH & Co. KG' },
@@ -39,7 +39,7 @@ const legalFormOptions = [
     { value: 'PartG', label: 'PartG' },
     { value: 'eG', label: 'eG' },
     { value: 'e.V.', label: 'e.V.' },
-    { value: 'Stiftung', label: 'Stiftung' },
+    { value: t('settings.company_type_foundation'), label: t('settings.company_type_foundation') },
     { value: 'Körperschaft d.ö.R.', label: 'Körperschaft d.ö.R.' }
 ];
 
@@ -192,7 +192,7 @@ const CompanySettingsTab = () => {
         if (serverCompanyData) {
             setCompanyData({
                 ...serverCompanyData,
-                address_country: serverCompanyData.address_country || 'Deutschland'
+                address_country: serverCompanyData.address_country || t('countries.de_default')
             });
 
             if (serverCompanyData.opening_hours) {
@@ -391,7 +391,7 @@ const CompanySettingsTab = () => {
                     disabled={updateCompanyMutation.isPending}
                     className="flex items-center gap-2 px-6 py-2 bg-brand-primary text-white text-xs font-medium hover:bg-brand-primary/90 transition shadow-sm disabled:opacity-50 rounded-sm"
                 >
-                    <FaSave /> {updateCompanyMutation.isPending ? 'Speichert...' : 'Speichern'}
+                    <FaSave /> {updateCompanyMutation.isPending ? t('settings.saving') : t('settings.save')}
                 </button>
             </div>
 
@@ -551,7 +551,7 @@ const CompanySettingsTab = () => {
                                 </div>
                             </div>
                             <CountrySelect
-                                value={companyData.address_country || 'Deutschland'}
+                                value={companyData.address_country || t('countries.de_default')}
                                 onChange={(val) => handleInputMetaChange('address_country', val)}
                                 label="Land"
                             />

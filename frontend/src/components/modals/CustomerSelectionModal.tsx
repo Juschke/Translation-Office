@@ -179,7 +179,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  </div>
  </td>
  <td className="px-4 py-2.5 text-xs font-medium text-slate-600">
- {c.type === 'company' ? 'Firma' : c.type === 'authority' ? 'Behörde' : 'Privat'}
+ {c.type === 'company' ? t('customers.type_company_label') : c.type === 'authority' ? t('customers.type_authority_label') : t('customers.type_private_label')}
  </td>
  <td className="px-4 py-2.5">
  <StatusBadge status={c.status} type="customer" />

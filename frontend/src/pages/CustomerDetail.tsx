@@ -77,7 +77,7 @@ const CustomerDetail = () => {
                                 <StatusBadge status={customer.status || 'active'} type="customer" />
                             </div>
                             <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
-                                <span className="flex items-center gap-1"><FaBriefcase className="text-slate-400" /> {customer.type === 'company' ? 'Firma' : customer.type === 'authority' ? 'Behörde' : 'Privat'}</span>
+                                <span className="flex items-center gap-1"><FaBriefcase className="text-slate-400" /> {customer.type === 'company' ? t('customers.type_company_label') : customer.type === 'authority' ? t('customers.type_authority_label') : t('customers.type_private_label')}</span>
                                 {customer.email && <span className="flex items-center gap-1 truncate"><FaEnvelope className="text-slate-400" /> {customer.email}</span>}
                             </div>
                         </div>
@@ -146,7 +146,7 @@ const CustomerDetail = () => {
                                 <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
                                     {customer.type !== 'private' && (
                                         <>
-                                            <span className="text-slate-500 font-medium">{customer.type === 'authority' ? 'Behörde' : 'Firma'}</span>
+                                            <span className="text-slate-500 font-medium">{customer.type === 'authority' ? t('customers.type_authority_label') : t('customers.type_company_label')}</span>
                                             <span className="text-slate-800">{customer.company_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
                                         </>
                                     )}

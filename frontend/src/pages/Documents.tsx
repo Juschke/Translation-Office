@@ -209,8 +209,8 @@ const Documents = () => {
             onChange: setTypeFilter,
             options: [
                 { value: 'all', label: t('projects.filters.status_tabs.all') || 'Alle Typen' },
-                { value: 'source', label: 'Eingang (Source)' },
-                { value: 'target', label: 'Ausspielung (Target)' },
+                { value: 'source', label: t('documents.format_source') },
+                { value: 'target', label: t('documents.format_target') },
             ]
         },
         {
@@ -221,10 +221,10 @@ const Documents = () => {
             onChange: setExtFilter,
             options: [
                 { value: 'all', label: t('projects.filters.status_tabs.all') || 'Alle Formate' },
-                { value: 'pdf', label: 'PDF' },
-                { value: 'docx', label: 'Word (DOCX)' },
-                { value: 'xlsx', label: 'Excel (XLSX)' },
-                { value: 'zip', label: 'Archive (ZIP)' },
+                { value: 'pdf', label: t('documents.format_pdf') },
+                { value: 'docx', label: t('documents.format_word') },
+                { value: 'xlsx', label: t('documents.format_excel') },
+                { value: 'zip', label: t('documents.format_zip') },
             ]
         }
     ];

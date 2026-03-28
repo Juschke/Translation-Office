@@ -99,7 +99,7 @@ const Reports = () => {
     const revenueData = {
         labels: revenueDataPoints?.labels ?? [],
         datasets: [{
-            label: 'Umsatz',
+            label: t('reports.revenue_label'),
             data: revenueDataPoints?.data ?? [],
             borderColor: '#0d9488',
             backgroundColor: 'rgba(13, 148, 136, 0.08)',
@@ -116,7 +116,7 @@ const Reports = () => {
     const profitData = {
         labels: profitDataPoints?.labels ?? [],
         datasets: [{
-            label: 'Marge',
+            label: t('reports.margin_label'),
             data: profitDataPoints?.data ?? [],
             backgroundColor: profitDataPoints?.data?.map((v: number) =>
                 v >= 40 ? 'rgba(16,185,129,0.7)' : v >= 20 ? 'rgba(59,130,246,0.7)' : 'rgba(245,158,11,0.7)'
@@ -129,7 +129,7 @@ const Reports = () => {
     const langData = {
         labels: langDist?.labels ?? [],
         datasets: [{
-            label: 'Umsatz',
+            label: t('reports.revenue_label'),
             data: langDist?.revenue ?? [],
             backgroundColor: '#0d9488',
             borderRadius: 4,
@@ -140,7 +140,7 @@ const Reports = () => {
     const customerData = {
         labels: customerStats?.labels ?? [],
         datasets: [{
-            label: 'Umsatz',
+            label: t('reports.revenue_label'),
             data: customerStats?.revenue ?? [],
             backgroundColor: '#3b82f6',
             borderRadius: 4,
@@ -615,7 +615,7 @@ const Reports = () => {
                                                 <td className="px-5 py-3 text-xs font-semibold text-slate-900 text-right tabular-nums">{fmtNum(row.amount_gross)}</td>
                                                 <td className="px-5 py-3 text-right">
                                                     <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-sm bg-slate-100 text-slate-500">
-                                                        {row.status === 'issued' ? 'Ausgestellt' : row.status === 'overdue' ? 'Überfällig' : row.status}
+                                                        {row.status === 'issued' ? t('reports.invoice_issued') : row.status === 'overdue' ? t('reports.invoice_overdue') : row.status}
                                                     </span>
                                                 </td>
                                             </tr>

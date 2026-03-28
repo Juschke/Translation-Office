@@ -354,7 +354,7 @@ const NewProject = () => {
                 <FaTimes className="mr-1.5" /> Abbrechen
             </Button>
             <Button onClick={handleSubmit} disabled={isSaving} className="h-9 px-6 text-xs font-bold">
-                <FaSave className="mr-1.5" /> {isSaving ? 'Speichert...' : isEditing ? 'Aktualisieren' : 'Projekt Anlegen'}
+                <FaSave className="mr-1.5" /> {isSaving ? t('projects.project_creating') : isEditing ? t('projects.update_project') : t('projects.create_project')}
             </Button>
         </>
     );
@@ -393,7 +393,7 @@ const NewProject = () => {
                                     {p === 'low' && <FaClock className="text-xs" />}
                                     {p === 'medium' && <FaFlag className="text-xs" />}
                                     {p === 'high' && <FaBolt className="text-xs" />}
-                                    <span className="hidden sm:inline">{p === 'low' ? 'Standard' : p === 'medium' ? 'Dringend' : 'Express'}</span>
+                                    <span className="hidden sm:inline">{p === 'low' ? t('projects.priority_standard') : p === 'medium' ? t('projects.priority_urgent') : t('projects.priority_express')}</span>
                                 </button>
                             ))}
                         </div>

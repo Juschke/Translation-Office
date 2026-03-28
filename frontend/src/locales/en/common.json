@@ -149,7 +149,25 @@
       "owner": "Owner",
       "manager": "Manager",
       "employee": "Employee"
-    }
+    },
+    "company_type_sole": "Sole Proprietor",
+    "company_type_partnership": "Partnership",
+    "company_type_llc": "LLC",
+    "company_type_corp": "Corporation",
+    "company_type_cooperative": "Cooperative",
+    "company_type_foundation": "Foundation",
+    "saving": "Saving...",
+    "save": "Save",
+    "invoice_tab_payment": "Payment Terms",
+    "invoice_tab_tax": "Tax Rates",
+    "invoice_tab_texts": "Text Templates",
+    "invoice_tab_numbers": "Number Circles",
+    "invoice_tab_design": "Design",
+    "payment_term_immediate": "Immediately",
+    "payment_term_days": "{{days}} Days",
+    "payment_method_bank": "Bank Transfer",
+    "payment_method_cash": "Cash",
+    "payment_method_check": "Check"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -281,11 +299,16 @@
       "bulk_delete": "{{count}} projects permanently deleted",
       "bulk_error": "Bulk action failed"
     },
-    "priority_express": "⚡ Express",
+    "priority_express": "Express",
     "priority_standard": "Standard",
     "document_output": "Output",
     "document_input": "Input",
-    "system_uploader": "System"
+    "system_uploader": "System",
+    "priority_urgent": "Urgent",
+    "project_creating": "Creating...",
+    "project_updating": "Updating...",
+    "create_project": "Create Project",
+    "update_project": "Update Project"
   },
   "customers": {
     "title": "Customer Base",
@@ -349,7 +372,10 @@
     "type_company": "Company",
     "type_private": "Private",
     "type_authority": "Authority",
-    "private_customer": "Private Customer"
+    "private_customer": "Private Customer",
+    "type_company_label": "Company",
+    "type_authority_label": "Authority",
+    "type_private_label": "Private"
   },
   "partners": {
     "title": "Partner Network",
@@ -402,7 +428,12 @@
       "delete_success": "Partner deleted successfully",
       "delete_error": "Error deleting partner",
       "bulk_update_success": "{{count}} partners updated"
-    }
+    },
+    "type_translator": "Translator",
+    "type_interpreter": "Interpreter",
+    "type_agency": "Agency",
+    "type_trans_interp": "Translator & Interpreter",
+    "type_unknown": "Not specified"
   },
   "invoices": {
     "title": "Invoices",
@@ -573,7 +604,17 @@
     "costs": "Costs",
     "profit": "Profit",
     "margin": "Margin",
-    "no_data": "No data for selected period"
+    "no_data": "No data for selected period",
+    "revenue_label": "Revenue",
+    "margin_label": "Margin",
+    "profit_label": "Profit",
+    "tax_report": "Tax Report",
+    "profitability": "Profitability",
+    "opos": "OPOS Report",
+    "bwa": "BWA Report",
+    "finance": "Finance",
+    "invoice_issued": "Issued",
+    "invoice_overdue": "Overdue"
   },
   "notifications": {
     "title": "Notifications",
@@ -640,7 +681,9 @@
       "recovery_codes_error": "Error retrieving recovery codes.",
       "new_recovery_codes": "New recovery codes generated.",
       "new_recovery_codes_error": "Error generating new codes."
-    }
+    },
+    "verified": "Verified",
+    "unverified": "Unverified"
   },
   "forms": {
     "select_placeholder": "Select...",
@@ -1050,7 +1093,13 @@
     "document_type": "Document Type",
     "uploaded_by": "Uploaded by",
     "file_size": "File Size",
-    "no_documents": "No documents available"
+    "no_documents": "No documents available",
+    "format_source": "Source (Input)",
+    "format_target": "Target (Output)",
+    "format_pdf": "PDF",
+    "format_word": "Word (DOCX)",
+    "format_excel": "Excel (XLSX)",
+    "format_zip": "Archive (ZIP)"
   },
   "interpreting_advanced": {
     "assignment": "Assignment",
@@ -1096,7 +1145,8 @@
   "countries": {
     "de": "Germany",
     "at": "Austria",
-    "ch": "Switzerland"
+    "ch": "Switzerland",
+    "de_default": "Germany"
   },
   "inbox": {
     "group_customer": "Customer",
@@ -1104,6 +1154,43 @@
     "group_finance": "Finance",
     "group_partner": "Partner",
     "group_company": "Company",
-    "group_general": "General"
+    "group_general": "General",
+    "var_customer_name": "Customer Name",
+    "var_contact_person": "Contact Person",
+    "var_customer_email": "Customer Email",
+    "var_customer_phone": "Phone",
+    "var_customer_address": "Address",
+    "var_customer_city": "City",
+    "var_customer_zip": "ZIP Code",
+    "var_project_number": "Project Number",
+    "var_project_name": "Project Name",
+    "var_project_status": "Status",
+    "var_source_language": "Source Language",
+    "var_target_language": "Target Language",
+    "var_project_languages": "Language Pair",
+    "var_deadline": "Deadline",
+    "var_created_at": "Created",
+    "var_total_amount": "Total Amount",
+    "var_partner_name": "Partner Name",
+    "var_partner_type": "Partner Type",
+    "var_partner_email": "Partner Email",
+    "var_partner_phone": "Partner Phone",
+    "var_company_name": "Company Name",
+    "var_company_phone": "Company Phone",
+    "var_company_email": "Company Email",
+    "var_current_date": "Current Date",
+    "var_sender": "Sender",
+    "sync_syncing": "Syncing...",
+    "sync_fetch": "Fetch",
+    "template_general": "General"
+  },
+  "time": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
   }
 }

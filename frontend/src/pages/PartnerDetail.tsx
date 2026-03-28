@@ -74,7 +74,7 @@ const PartnerDetail = () => {
                                 <StatusBadge status={partner.status || 'active'} type="partner" />
                             </div>
                             <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
-                                <span className="flex items-center gap-1"><FaUserTie className="text-slate-400" /> {partner.type === 'translator' ? 'Übersetzer' : partner.type === 'interpreter' ? 'Dolmetscher' : partner.type === 'agency' ? 'Agentur' : partner.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : partner.type || 'Keine Angabe'}</span>
+                                <span className="flex items-center gap-1"><FaUserTie className="text-slate-400" /> {partner.type === 'translator' ? t('partners.type_translator') : partner.type === 'interpreter' ? t('partners.type_interpreter') : partner.type === 'agency' ? t('partners.type_agency') : partner.type === 'trans_interp' ? t('partners.type_trans_interp') : partner.type || t('partners.type_unknown')}</span>
                                 {partner.email && <span className="flex items-center gap-1 truncate"><FaEnvelope className="text-slate-400" /> {partner.email}</span>}
                             </div>
                         </div>

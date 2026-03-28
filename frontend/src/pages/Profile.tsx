@@ -178,7 +178,7 @@ const Profile = () => {
                                 <div className="flex items-center text-sm text-slate-600">
                                     <FaEnvelope className="w-4 flex-shrink-0 mr-3 text-slate-400" />
                                     <span className="truncate">{formData.email}</span>
-                                    {user.email_verified_at && <FaCheck className="ml-2 text-emerald-500 text-xs" title="Verifiziert" />}
+                                    {user.email_verified_at && <FaCheck className="ml-2 text-emerald-500 text-xs" title={t('profile.verified')} />}
                                 </div>
                                 <div className="flex items-center text-sm text-slate-600">
                                     <FaGlobe className="w-4 flex-shrink-0 mr-3 text-slate-400" />

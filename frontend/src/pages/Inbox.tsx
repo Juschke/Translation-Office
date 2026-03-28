@@ -40,52 +40,52 @@ import Checkbox from '../components/common/Checkbox';
 
 const ALL_VARIABLES: { key: string; label: string; desc: string; group: string }[] = [
     // Kunde
-    { key: 'customer_name', label: 'Kundenname', desc: 'Firmen- oder Vollname des Kunden', group: 'Kunde' },
-    { key: 'contact_person', label: 'Ansprechpartner', desc: 'Kontaktperson beim Kunden', group: 'Kunde' },
-    { key: 'customer_email', label: 'Kunden-E-Mail', desc: 'E-Mail-Adresse des Kunden', group: 'Kunde' },
-    { key: 'customer_phone', label: 'Telefon', desc: 'Telefonnummer des Kunden', group: 'Kunde' },
-    { key: 'customer_address', label: 'Adresse', desc: 'Straße und Hausnummer', group: 'Kunde' },
-    { key: 'customer_city', label: 'Stadt', desc: 'Stadt des Kunden', group: 'Kunde' },
-    { key: 'customer_zip', label: 'PLZ', desc: 'Postleitzahl des Kunden', group: 'Kunde' },
+    { key: 'customer_name', label: t('inbox.var_customer_name'), desc: 'Firmen- oder Vollname des Kunden', group: t('inbox.group_customer') },
+    { key: 'contact_person', label: t('inbox.var_contact_person'), desc: 'Kontaktperson beim Kunden', group: t('inbox.group_customer') },
+    { key: 'customer_email', label: t('inbox.var_customer_email'), desc: 'E-Mail-Adresse des Kunden', group: t('inbox.group_customer') },
+    { key: 'customer_phone', label: t('inbox.var_customer_phone'), desc: 'Telefonnummer des Kunden', group: t('inbox.group_customer') },
+    { key: 'customer_address', label: t('inbox.var_customer_address'), desc: 'Straße und Hausnummer', group: t('inbox.group_customer') },
+    { key: 'customer_city', label: t('inbox.var_customer_city'), desc: 'Stadt des Kunden', group: t('inbox.group_customer') },
+    { key: 'customer_zip', label: t('inbox.var_customer_zip'), desc: 'Postleitzahl des Kunden', group: t('inbox.group_customer') },
     // Projekt
-    { key: 'project_number', label: 'Projektnummer', desc: 'Eindeutige Projektnummer', group: 'Projekt' },
-    { key: 'project_name', label: 'Projektname', desc: 'Bezeichnung des Projekts', group: 'Projekt' },
-    { key: 'project_status', label: 'Status', desc: 'Aktueller Projektstatus', group: 'Projekt' },
-    { key: 'source_language', label: 'Ausgangssprache', desc: 'Ausgangssprache des Dokuments', group: 'Projekt' },
-    { key: 'target_language', label: 'Zielsprache', desc: 'Zielsprache des Dokuments', group: 'Projekt' },
-    { key: 'project_languages', label: 'Sprachpaar', desc: 'Ausgangs- und Zielsprache kombiniert', group: 'Projekt' },
-    { key: 'deadline', label: 'Deadline', desc: 'Abgabetermin des Projekts', group: 'Projekt' },
-    { key: 'document_type', label: 'Dokumentenart', desc: 'Art des zu übersetzenden Dokuments', group: 'Projekt' },
-    { key: 'priority', label: 'Priorität', desc: 'Projektpriorität (Standard / Express)', group: 'Projekt' },
+    { key: 'project_number', label: t('inbox.var_project_number'), desc: 'Eindeutige Projektnummer', group: t('inbox.group_project') },
+    { key: 'project_name', label: t('inbox.var_project_name'), desc: 'Bezeichnung des Projekts', group: t('inbox.group_project') },
+    { key: 'project_status', label: t('inbox.var_project_status'), desc: 'Aktueller Projektstatus', group: t('inbox.group_project') },
+    { key: 'source_language', label: t('inbox.var_source_language'), desc: 'Ausgangssprache des Dokuments', group: t('inbox.group_project') },
+    { key: 'target_language', label: t('inbox.var_target_language'), desc: 'Zielsprache des Dokuments', group: t('inbox.group_project') },
+    { key: 'project_languages', label: t('inbox.var_project_languages'), desc: 'Ausgangs- und Zielsprache kombiniert', group: t('inbox.group_project') },
+    { key: 'deadline', label: t('inbox.var_deadline'), desc: 'Abgabetermin des Projekts', group: t('inbox.group_project') },
+    { key: 'document_type', label: 'Dokumentenart', desc: 'Art des zu übersetzenden Dokuments', group: t('inbox.group_project') },
+    { key: 'priority', label: 'Priorität', desc: 'Projektpriorität (Standard / Express)', group: t('inbox.group_project') },
     // Finanzen
-    { key: 'price_net', label: 'Betrag (Netto)', desc: 'Netto-Projektbetrag', group: 'Finanzen' },
-    { key: 'price_gross', label: 'Betrag (Brutto)', desc: 'Brutto-Betrag inkl. MwSt.', group: 'Finanzen' },
-    { key: 'payment_terms', label: 'Zahlungsziel', desc: 'Zahlungsfrist in Tagen', group: 'Finanzen' },
-    { key: 'invoice_number', label: 'Rechnungsnummer', desc: 'Nummer der Projektrechnung', group: 'Finanzen' },
-    { key: 'invoice_date', label: 'Rechnungsdatum', desc: 'Datum der Rechnungstellung', group: 'Finanzen' },
-    { key: 'due_date', label: 'Fälligkeitsdatum', desc: 'Fälligkeitsdatum der Rechnung', group: 'Finanzen' },
+    { key: 'price_net', label: 'Betrag (Netto)', desc: 'Netto-Projektbetrag', group: t('inbox.group_finance') },
+    { key: 'price_gross', label: 'Betrag (Brutto)', desc: 'Brutto-Betrag inkl. MwSt.', group: t('inbox.group_finance') },
+    { key: 'payment_terms', label: 'Zahlungsziel', desc: 'Zahlungsfrist in Tagen', group: t('inbox.group_finance') },
+    { key: 'invoice_number', label: 'Rechnungsnummer', desc: 'Nummer der Projektrechnung', group: t('inbox.group_finance') },
+    { key: 'invoice_date', label: 'Rechnungsdatum', desc: 'Datum der Rechnungstellung', group: t('inbox.group_finance') },
+    { key: 'due_date', label: 'Fälligkeitsdatum', desc: 'Fälligkeitsdatum der Rechnung', group: t('inbox.group_finance') },
     // Partner
-    { key: 'partner_name', label: 'Partnername', desc: 'Name des Übersetzers / Partners', group: 'Partner' },
-    { key: 'partner_email', label: 'Partner-E-Mail', desc: 'E-Mail-Adresse des Partners', group: 'Partner' },
+    { key: 'partner_name', label: t('inbox.var_partner_name'), desc: 'Name des Übersetzers / Partners', group: t('inbox.group_partner') },
+    { key: 'partner_email', label: t('inbox.var_partner_email'), desc: 'E-Mail-Adresse des Partners', group: t('inbox.group_partner') },
     // Unternehmen
-    { key: 'company_name', label: 'Firmenname', desc: 'Name Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'company_address', label: 'Firmenadresse', desc: 'Adresse Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'company_phone', label: 'Telefon (Firma)', desc: 'Telefonnummer Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'company_email', label: 'E-Mail (Firma)', desc: 'E-Mail-Adresse Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'company_website', label: 'Website', desc: 'Website Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'managing_director', label: 'Geschäftsleitung', desc: 'Name der Geschäftsführung', group: 'Unternehmen' },
-    { key: 'vat_id', label: 'USt-IdNr.', desc: 'Umsatzsteuer-Identifikationsnummer', group: 'Unternehmen' },
-    { key: 'tax_id', label: 'Steuernummer', desc: 'Steuernummer des Unternehmens', group: 'Unternehmen' },
-    { key: 'bank_name', label: 'Bankname', desc: 'Name Ihrer Bank', group: 'Unternehmen' },
-    { key: 'bank_iban', label: 'IBAN', desc: 'IBAN Ihres Bankkontos', group: 'Unternehmen' },
-    { key: 'bank_bic', label: 'BIC', desc: 'BIC Ihrer Bank', group: 'Unternehmen' },
-    { key: 'bank_holder', label: 'Kontoinhaber', desc: 'Name des Kontoinhabers', group: 'Unternehmen' },
+    { key: 'company_name', label: t('inbox.var_company_name'), desc: 'Name Ihres Unternehmens', group: t('inbox.group_company') },
+    { key: 'company_address', label: 'Firmenadresse', desc: 'Adresse Ihres Unternehmens', group: t('inbox.group_company') },
+    { key: 'company_phone', label: 'Telefon (Firma)', desc: 'Telefonnummer Ihres Unternehmens', group: t('inbox.group_company') },
+    { key: 'company_email', label: 'E-Mail (Firma)', desc: 'E-Mail-Adresse Ihres Unternehmens', group: t('inbox.group_company') },
+    { key: 'company_website', label: 'Website', desc: 'Website Ihres Unternehmens', group: t('inbox.group_company') },
+    { key: 'managing_director', label: 'Geschäftsleitung', desc: 'Name der Geschäftsführung', group: t('inbox.group_company') },
+    { key: 'vat_id', label: 'USt-IdNr.', desc: 'Umsatzsteuer-Identifikationsnummer', group: t('inbox.group_company') },
+    { key: 'tax_id', label: 'Steuernummer', desc: 'Steuernummer des Unternehmens', group: t('inbox.group_company') },
+    { key: 'bank_name', label: 'Bankname', desc: 'Name Ihrer Bank', group: t('inbox.group_company') },
+    { key: 'bank_iban', label: 'IBAN', desc: 'IBAN Ihres Bankkontos', group: t('inbox.group_company') },
+    { key: 'bank_bic', label: 'BIC', desc: 'BIC Ihrer Bank', group: t('inbox.group_company') },
+    { key: 'bank_holder', label: 'Kontoinhaber', desc: 'Name des Kontoinhabers', group: t('inbox.group_company') },
     // Allgemein
-    { key: 'date', label: 'Aktuelles Datum', desc: 'Heutiges Datum', group: 'Allgemein' },
-    { key: 'sender_name', label: 'Absender', desc: 'Name des Sachbearbeiters', group: 'Allgemein' },
+    { key: 'date', label: t('inbox.var_current_date'), desc: 'Heutiges Datum', group: t('inbox.group_general') },
+    { key: 'sender_name', label: t('inbox.var_sender'), desc: 'Name des Sachbearbeiters', group: t('inbox.group_general') },
 ];
 
-const VAR_GROUPS = ['Kunde', 'Projekt', 'Finanzen', 'Partner', 'Unternehmen', 'Allgemein'];
+const VAR_GROUPS = [t('inbox.group_customer'), t('inbox.group_project'), t('inbox.group_finance'), t('inbox.group_partner'), t('inbox.group_company'), t('inbox.group_general')];
 
 const CommunicationHub = () => {
     const { t } = useTranslation();
@@ -523,7 +523,7 @@ const CommunicationHub = () => {
                         className="px-3 sm:px-4 py-1.5 text-xs font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-[#1B4D4F] active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition disabled:opacity-50 flex items-center gap-2"
                     >
                         <span className="hidden xs:inline">{syncMutation.isPending ? 'Synchronisiert...' : 'E-Mails abrufen'}</span>
-                        <span className="xs:hidden">{syncMutation.isPending ? 'Sync...' : 'Abrufen'}</span>
+                        <span className="xs:hidden">{syncMutation.isPending ? t('inbox.sync_syncing') : t('inbox.sync_fetch')}</span>
                     </button>
                     <button
                         onClick={() => setIsComposeOpen(true)}
@@ -682,7 +682,7 @@ const CommunicationHub = () => {
                                         <td className="px-6 py-4 text-xs font-medium text-slate-800">{tpl.name}</td>
                                         <td className="px-6 py-4 text-xs text-slate-500">{tpl.subject}</td>
                                         <td className="px-6 py-4">
-                                            <span className="px-2 py-0.5 bg-slate-100 text-xs font-semibold">{tpl.type || 'Allgemein'}</span>
+                                            <span className="px-2 py-0.5 bg-slate-100 text-xs font-semibold">{tpl.type || t('inbox.template_general')}</span>
                                         </td>
                                     </>
                                 )}
@@ -1199,7 +1199,7 @@ const CommunicationHub = () => {
                                                     className="w-full text-left p-3 bg-white border border-slate-100 hover:border-slate-900 hover:shadow-sm transition-all group rounded-sm"
                                                 >
                                                     <div className="font-bold text-slate-800 text-[11px] mb-0.5 group-hover:text-slate-900 uppercase tracking-tight">{tpl.name}</div>
-                                                    <div className="text-slate-400 truncate text-[10px] font-medium tracking-tight uppercase opacity-60">{tpl.type || 'Allgemein'}</div>
+                                                    <div className="text-slate-400 truncate text-[10px] font-medium tracking-tight uppercase opacity-60">{tpl.type || t('inbox.template_general')}</div>
                                                 </button>
                                             ))}
                                             {templates.length === 0 && (

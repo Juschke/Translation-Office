@@ -149,7 +149,25 @@
       "owner": "Inhaber",
       "manager": "Manager",
       "employee": "Mitarbeiter"
-    }
+    },
+    "company_type_sole": "Einzelunternehmen",
+    "company_type_partnership": "Personengesellschaft",
+    "company_type_llc": "GmbH",
+    "company_type_corp": "AG",
+    "company_type_cooperative": "Genossenschaft",
+    "company_type_foundation": "Stiftung",
+    "saving": "Speichert...",
+    "save": "Speichern",
+    "invoice_tab_payment": "Zahlungsbedingungen",
+    "invoice_tab_tax": "Steuersätze",
+    "invoice_tab_texts": "Textvorlagen",
+    "invoice_tab_numbers": "Nummerkreise",
+    "invoice_tab_design": "Design",
+    "payment_term_immediate": "Sofort",
+    "payment_term_days": "{{days}} Tage",
+    "payment_method_bank": "Banküberweisung",
+    "payment_method_cash": "Bargeld",
+    "payment_method_check": "Scheck"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -281,11 +299,16 @@
       "bulk_delete": "{{count}} Projekte endgültig gelöscht",
       "bulk_error": "Massenvorgang fehlgeschlagen"
     },
-    "priority_express": "⚡ Express",
+    "priority_express": "Express",
     "priority_standard": "Standard",
     "document_output": "Ausspielung",
     "document_input": "Eingang",
-    "system_uploader": "System"
+    "system_uploader": "System",
+    "priority_urgent": "Dringend",
+    "project_creating": "Speichert...",
+    "project_updating": "Aktualisiert...",
+    "create_project": "Projekt Anlegen",
+    "update_project": "Projekt Aktualisieren"
   },
   "customers": {
     "title": "Kundenstamm",
@@ -349,7 +372,10 @@
     "type_company": "Firma",
     "type_private": "Privat",
     "type_authority": "Behörde",
-    "private_customer": "Privatkunde"
+    "private_customer": "Privatkunde",
+    "type_company_label": "Firma",
+    "type_authority_label": "Behörde",
+    "type_private_label": "Privat"
   },
   "partners": {
     "title": "Partnernetzwerk",
@@ -402,7 +428,12 @@
       "delete_success": "Partner erfolgreich gelöscht",
       "delete_error": "Fehler beim Löschen des Partners",
       "bulk_update_success": "{{count}} Partner aktualisiert"
-    }
+    },
+    "type_translator": "Übersetzer",
+    "type_interpreter": "Dolmetscher",
+    "type_agency": "Agentur",
+    "type_trans_interp": "Übersetzer & Dolmetscher",
+    "type_unknown": "Keine Angabe"
   },
   "invoices": {
     "title": "Rechnungen",
@@ -566,14 +597,24 @@
   },
   "reports": {
     "title": "Berichte",
-    "analytics": "Analytik",
+    "analytics": "Analysen",
     "export": "Bericht exportieren",
     "period": "Berichtszeitraum",
     "revenue": "Umsatz",
     "costs": "Kosten",
     "profit": "Gewinn",
     "margin": "Marge",
-    "no_data": "Keine Daten für ausgewählten Zeitraum"
+    "no_data": "Keine Daten für ausgewählten Zeitraum",
+    "revenue_label": "Umsatz",
+    "margin_label": "Marge",
+    "profit_label": "Gewinn",
+    "tax_report": "Steuerbericht",
+    "profitability": "Rentabilität",
+    "opos": "OPOS-Bericht",
+    "bwa": "BWA-Bericht",
+    "finance": "Finanzen",
+    "invoice_issued": "Ausgestellt",
+    "invoice_overdue": "Überfällig"
   },
   "notifications": {
     "title": "Benachrichtigungen",
@@ -640,7 +681,9 @@
       "recovery_codes_error": "Fehler beim Abrufen der Wiederherstellungscodes.",
       "new_recovery_codes": "Neue Wiederherstellungscodes generiert.",
       "new_recovery_codes_error": "Fehler beim Generieren neuer Codes."
-    }
+    },
+    "verified": "Verifiziert",
+    "unverified": "Unverifiziert"
   },
   "forms": {
     "select_placeholder": "Auswählen...",
@@ -1050,7 +1093,13 @@
     "document_type": "Dokumenttyp",
     "uploaded_by": "Hochgeladen von",
     "file_size": "Dateigröße",
-    "no_documents": "Keine Dokumente vorhanden"
+    "no_documents": "Keine Dokumente vorhanden",
+    "format_source": "Eingang (Source)",
+    "format_target": "Ausspielung (Target)",
+    "format_pdf": "PDF",
+    "format_word": "Word (DOCX)",
+    "format_excel": "Excel (XLSX)",
+    "format_zip": "Archive (ZIP)"
   },
   "interpreting_advanced": {
     "assignment": "Einsatz",
@@ -1096,7 +1145,8 @@
   "countries": {
     "de": "Deutschland",
     "at": "Österreich",
-    "ch": "Schweiz"
+    "ch": "Schweiz",
+    "de_default": "Deutschland"
   },
   "inbox": {
     "group_customer": "Kunde",
@@ -1104,6 +1154,43 @@
     "group_finance": "Finanzen",
     "group_partner": "Partner",
     "group_company": "Unternehmen",
-    "group_general": "Allgemein"
+    "group_general": "Allgemein",
+    "var_customer_name": "Kundenname",
+    "var_contact_person": "Ansprechpartner",
+    "var_customer_email": "Kunden-E-Mail",
+    "var_customer_phone": "Telefon",
+    "var_customer_address": "Adresse",
+    "var_customer_city": "Stadt",
+    "var_customer_zip": "PLZ",
+    "var_project_number": "Projektnummer",
+    "var_project_name": "Projektname",
+    "var_project_status": "Status",
+    "var_source_language": "Ausgangssprache",
+    "var_target_language": "Zielsprache",
+    "var_project_languages": "Sprachpaar",
+    "var_deadline": "Deadline",
+    "var_created_at": "Erstellt",
+    "var_total_amount": "Gesamtbetrag",
+    "var_partner_name": "Partnername",
+    "var_partner_type": "Partnertyp",
+    "var_partner_email": "Partner-E-Mail",
+    "var_partner_phone": "Partner-Telefon",
+    "var_company_name": "Firmenname",
+    "var_company_phone": "Firmentelefon",
+    "var_company_email": "Firmen-E-Mail",
+    "var_current_date": "Aktuelles Datum",
+    "var_sender": "Absender",
+    "sync_syncing": "Sync...",
+    "sync_fetch": "Abrufen",
+    "template_general": "Allgemein"
+  },
+  "time": {
+    "monday": "Montag",
+    "tuesday": "Dienstag",
+    "wednesday": "Mittwoch",
+    "thursday": "Donnerstag",
+    "friday": "Freitag",
+    "saturday": "Samstag",
+    "sunday": "Sonntag"
   }
 }

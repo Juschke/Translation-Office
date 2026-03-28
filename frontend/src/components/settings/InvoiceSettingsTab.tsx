@@ -143,11 +143,11 @@ const InvoiceSettingsTab = () => {
     };
 
     const sections = [
-        { id: 'payment', label: 'Zahlungsbedingungen' },
-        { id: 'tax', label: 'Steuersätze' },
-        { id: 'texts', label: 'Textvorlagen' },
+        { id: 'payment', label: t('settings.invoice_tab_payment') },
+        { id: 'tax', label: t('settings.invoice_tab_tax') },
+        { id: 'texts', label: t('settings.invoice_tab_texts') },
         { id: 'layout', label: 'Layout & Fußzeile' },
-        { id: 'design', label: 'Design' },
+        { id: 'design', label: t('settings.invoice_tab_design') },
     ];
     return (
         <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden animate-fadeIn">
@@ -163,7 +163,7 @@ const InvoiceSettingsTab = () => {
                     isLoading={updateMutation.isPending}
                     className="px-6 py-2 text-xs font-medium flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90 transition shadow-sm border-brand-primary"
                 >
-                    <FaSave /> {updateMutation.isPending ? 'Speichert...' : 'Speichern'}
+                    <FaSave /> {updateMutation.isPending ? t('settings.saving') : t('settings.save')}
                 </Button>
             </div>
 
@@ -208,7 +208,7 @@ const InvoiceSettingsTab = () => {
                                                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                                             )}
                                         >
-                                            {d === '0' ? 'Sofort' : `${d} Tage`}
+                                            {d === '0' ? t('settings.payment_term_immediate') : t('settings.payment_term_days', {days: d})}
                                         </button>
                                     ))}
                                     <Input

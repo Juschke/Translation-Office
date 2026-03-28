@@ -31,8 +31,8 @@ const ConfirmModal = ({
     onConfirm,
     title,
     message,
-    confirmText = 'Bestätigen',
-    cancelText = 'Abbrechen',
+    confirmText = t('actions.confirm'),
+    cancelText = t('actions.cancel'),
     type = 'danger',
     isLoading = false
 }: ConfirmModalProps) => {
