@@ -1097,5 +1097,13 @@
     "de": "Deutschland",
     "at": "Österreich",
     "ch": "Schweiz"
+  },
+  "inbox": {
+    "group_customer": "Kunde",
+    "group_project": "Projekt",
+    "group_finance": "Finanzen",
+    "group_partner": "Partner",
+    "group_company": "Unternehmen",
+    "group_general": "Allgemein"
   }
 }
