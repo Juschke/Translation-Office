@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaTimes, FaSearch } from 'react-icons/fa';
 
 interface Option {

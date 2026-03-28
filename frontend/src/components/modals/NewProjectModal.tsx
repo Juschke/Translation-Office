@@ -8,9 +8,13 @@ import {
     FaSearch, FaCheck, FaTimes
 } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
+import CustomerSelect from '../common/CustomerSelect';
+import DocumentTypeSelect from '../common/DocumentTypeSelect';
+import PartnerSelect from '../common/PartnerSelect';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
 import PartnerSelectionModal from './PartnerSelectionModal';
+import CustomerSelectionModal from './CustomerSelectionModal';
 import NewCustomerModal from './NewCustomerModal';
 import NewPartnerModal from './NewPartnerModal';
 import ConfirmDialog from '../common/ConfirmDialog';
@@ -47,6 +51,7 @@ const statusOptions = [
 ];
 
 const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
 
     // Basic States
@@ -54,7 +59,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [customer, setCustomer] = useState('');
     const [deadline, setDeadline] = useState('');
     const [source, setSource] = useState('de-DE');
-    const [target, setTarget] = useState('de-DE');
+    const [target, setTarget] = useState<string[]>(['en-US']);
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
     const [status, setStatus] = useState('offer');
     const [withTax, setWithTax] = useState(true);
@@ -98,6 +103,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [showPartnerModal, setShowPartnerModal] = useState(false);
     const [showDocTypeModal, setShowDocTypeModal] = useState(false);
     const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
+    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
     const [langTrigger, setLangTrigger] = useState<'source' | 'target' | null>(null);
@@ -162,14 +168,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const custOptions = useMemo(() => {
         return Array.isArray(customersData) ? customersData.map((c: any) => ({
             value: c.id.toString(),
-            label: c.company_name || `${c.first_name} ${c.last_name}`
+            label: `${c.display_id || c.id} - ${c.company_name || `${c.first_name} ${c.last_name}`}`
         })) : [];
     }, [customersData]);
 
     const partnerOptions = useMemo(() => {
         return Array.isArray(partnersData) ? partnersData.map((p: any) => ({
             value: p.id.toString(),
-            label: p.company_name || `${p.first_name} ${p.last_name}`
+            label: `${p.id} - ${p.company_name || `${p.first_name} ${p.last_name}`}`
         })) : [];
     }, [partnersData]);
 
@@ -179,7 +185,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         if (!Array.isArray(partnersData)) return { matchingPartners: [], otherPartners: [] };
 
         const src = source?.toLowerCase().split('-')[0];
-        const trg = target?.toLowerCase().split('-')[0];
+        const targetArray = Array.isArray(target) ? target : [target];
+        const trgLangs = targetArray.map(trg => trg?.toLowerCase().split('-')[0]).filter(Boolean);
 
         const filtered = partnersData.filter((p: any) => {
             const searchStr = partnerSearch.toLowerCase();
@@ -197,7 +204,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                 (typeof rawLangs === 'string' ? rawLangs.split(',').map((l: string) => l.trim().toLowerCase()) : []);
 
             const matchSrc = src && langs.some((l: string) => l.toLowerCase().includes(src));
-            const matchTrg = trg && langs.some((l: string) => l.toLowerCase().includes(trg));
+            const matchTrg = trgLangs.length > 0 && trgLangs.some(trg => langs.some((l: string) => l.toLowerCase().includes(trg)));
 
             const isMatch = matchSrc || matchTrg;
             const isPerfectMatch = matchSrc && matchTrg;
@@ -241,8 +248,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setName('');
         setCustomer('');
         setDeadline('');
-        setSource('');
-        setTarget('de-DE');
+        setSource('de-DE');
+        setTarget(['en-US']);
         setPriority('low');
         setStatus('offer');
         setIsCertified(true);
@@ -310,7 +317,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             queryClient.invalidateQueries({ queryKey: ['settings', 'languages'] });
             const code = newLang.iso_code?.split('-')[0] || newLang.iso_code;
             if (langTrigger === 'source') setSource(code);
-            else if (langTrigger === 'target') setTarget(code);
+            else if (langTrigger === 'target') setTarget(prev => [...new Set([...prev, code])]);
             setIsLanguageModalOpen(false);
             setLangTrigger(null);
         }
@@ -367,7 +374,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     useEffect(() => {
         if (!initialData && source && target && Array.isArray(projectsData)) {
             const cleanSource = source.split('-')[0].toLowerCase();
-            const cleanTarget = target.split('-')[0].toLowerCase();
+            const targetArray = Array.isArray(target) ? target : [target];
+            const cleanTarget = targetArray[0]?.split('-')[0].toLowerCase() || 'xx';
 
             const now = new Date();
             const yy = String(now.getFullYear()).slice(-2);
@@ -396,7 +404,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             setCustomer(initialData.customer_id?.toString() || initialData.client_id?.toString() || '');
             setDeadline(initialData.due || initialData.deadline || '');
             setSource(initialData.source || initialData.source_language?.iso_code?.split('-')[0] || 'de');
-            setTarget(initialData.target || initialData.target_language?.iso_code?.split('-')[0] || 'en');
+            const initialTrg = initialData.target || initialData.target_language?.iso_code?.split('-')[0] || 'en';
+            setTarget(Array.isArray(initialTrg) ? initialTrg : (typeof initialTrg === 'string' && initialTrg.includes(',') ? initialTrg.split(',').map(s => s.trim()) : [initialTrg]));
             setPriority(initialData.priority || 'medium');
             setStatus(initialData.status || 'draft');
             setIsCertified(initialData.isCertified || !!initialData.is_certified);
@@ -498,10 +507,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             newErrorSet.add('customer');
         }
         if (!source) {
-            errors.push("Quellsprache ist erforderlich");
+            errors.push("Eingangssprache ist erforderlich");
             newErrorSet.add('source');
         }
-        if (!target) {
+        const targetArrayCheck = Array.isArray(target) ? target : [target];
+        if (!targetArrayCheck.length || !targetArrayCheck[0]) {
             errors.push("Zielsprache ist erforderlich");
             newErrorSet.add('target');
         }
@@ -565,6 +575,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             return;
         }
 
+        const targetArray = Array.isArray(target) ? target : [target];
         let finalName = name;
         if (!finalName) {
             const customerName = customersData.find((c: any) => c.id.toString() === customer)?.company_name || 'Project';
@@ -572,21 +583,23 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             const yyyy = String(now.getFullYear());
             const mm = String(now.getMonth() + 1).padStart(2, '0');
             const dd = String(now.getDate()).padStart(2, '0');
-            finalName = `${customerName}_${source.toUpperCase()}_${target.toUpperCase()}_${yyyy}${mm}${dd}`.replace(/\s+/g, '_');
+            const targetDisplayString = targetArray.join(', ').toUpperCase();
+            finalName = `${customerName}_${source.toUpperCase()}_${targetDisplayString}_${yyyy}${mm}${dd}`.replace(/\s+/g, '_').substring(0, 100);
         } else {
             // Remove spaces from manual name entry
             finalName = finalName.replace(/\s+/g, '_');
         }
 
         const sourceLangId = languages.find((l: any) => l.iso_code.startsWith(source))?.id || 1;
-        const targetLangId = languages.find((l: any) => l.iso_code.startsWith(target))?.id || 2;
+        const targetLangIds = targetArray.map(t => languages.find((l: any) => l.iso_code.startsWith(t))?.id || 2);
 
         const payload = {
             project_name: finalName,
             customer_id: parseInt(customer),
             partner_id: translator ? parseInt(translator) : null,
             source_lang_id: sourceLangId,
-            target_lang_id: targetLangId,
+            target_lang_id: targetLangIds[0],
+            target_lang_ids: targetLangIds,
             deadline,
             priority,
             status,
@@ -762,40 +775,28 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
 
                                         <div className="col-span-12" id="field-container-docType">
-                                            <div className="flex items-end gap-0">
-                                                <div className="flex-1 min-w-0">
-                                                    <SearchableSelect
-                                                        id="docType"
-                                                        label="Dokumentenart *"
-                                                        isMulti={true}
-                                                        value={docType}
-                                                        onChange={setDocType}
-                                                        maxVisibleItems={window.innerWidth >= 1024 ? 4 : 2}
-                                                        error={validationErrors.has('docType')}
-                                                        options={docTypes
-                                                            .sort((a: any, b: any) => {
-                                                                const catA = a.category?.toLowerCase() || '';
-                                                                const catB = b.category?.toLowerCase() || '';
-                                                                const isTopA = catA.includes('personal') || catA.includes('identität');
-                                                                const isTopB = catB.includes('personal') || catB.includes('identität');
-                                                                if (isTopA && !isTopB) return -1;
-                                                                if (!isTopA && isTopB) return 1;
-                                                                return catA.localeCompare(catB);
-                                                            })
-                                                            .map((dt: any) => ({
-                                                                value: dt.id.toString(),
-                                                                label: dt.name,
-                                                                group: dt.category
-                                                            }))}
-                                                    />
-                                                </div>
-                                                <Button
-                                                    onClick={() => setShowDocTypeModal(true)}
-                                                    className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0"
-                                                >
-                                                    <FaPlus className="text-xs" />
-                                                </Button>
-                                            </div>
+                                            <DocumentTypeSelect
+                                                options={docTypes
+                                                    .sort((a: any, b: any) => {
+                                                        const catA = a.category?.toLowerCase() || '';
+                                                        const catB = b.category?.toLowerCase() || '';
+                                                        const isTopA = catA.includes('personal') || catA.includes('identität');
+                                                        const isTopB = catB.includes('personal') || catB.includes('identität');
+                                                        if (isTopA && !isTopB) return -1;
+                                                        if (!isTopA && isTopB) return 1;
+                                                        return catA.localeCompare(catB);
+                                                    })
+                                                    .map((dt: any) => ({
+                                                        value: dt.id.toString(),
+                                                        label: dt.name,
+                                                        group: dt.category
+                                                    }))}
+                                                value={docType}
+                                                onChange={setDocType}
+                                                error={validationErrors.has('docType')}
+                                                isMulti={true}
+                                                placeholder="Dokumentart auswählen..."
+                                            />
                                         </div>
 
                                         <div className="col-span-12 md:col-span-6" id="field-container-status">
@@ -832,57 +833,59 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                     </div>
                                 </div>
 
-                                {/* 02: Sprachen & Kunde */}
+                                {/* 02: Kunde */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                         <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">02</div>
-                                        <h4 className="text-sm font-medium text-slate-800">Sprachen & Kunde</h4>
+                                        <h4 className="text-sm font-medium text-slate-800">Kunde</h4>
                                     </div>
 
                                     <div className="grid grid-cols-12 gap-x-4 gap-y-3">
                                         <div className="col-span-12" id="field-container-customer">
-                                            <div className="flex items-end gap-0">
-                                                <div className="flex-1 min-w-0">
-                                                    <SearchableSelect label="Kunde *" options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
-                                                </div>
-                                                <Button
-                                                    onClick={() => setShowCustomerModal(true)}
-                                                    className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0"
-                                                >
-                                                    <FaPlus className="text-xs" />
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="col-span-6" id="field-container-source">
-                                            <LanguageSelect id="source" label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
-                                        </div>
-                                        <div className="col-span-6" id="field-container-target">
-                                            <LanguageSelect id="target" label="Nach *" value={target} onChange={setTarget} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
+                                            <CustomerSelect
+                                                options={custOptions}
+                                                value={customer}
+                                                onChange={setCustomer}
+                                                error={validationErrors.has('customer')}
+                                                placeholder="Kunde auswählen..."
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* 03: Partner Auswahl */}
+                                {/* 03: Sprachen */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">03</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Sprachen</h4>
+                                    </div>
+
+                                    <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+                                        <div className="col-span-6" id="field-container-source">
+                                            <LanguageSelect id="source" label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
+                                        </div>
+                                        <div className="col-span-6" id="field-container-target">
+                                            <LanguageSelect id="target" label="Nach *" value={target} onChange={setTarget} isMulti={true} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 04: Partner Auswahl */}
                                 <div className="space-y-4 pt-2">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">03</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">04</div>
                                         <h4 className="text-sm font-medium text-slate-800">Partner & Beteiligte</h4>
                                     </div>
 
                                     <div className="grid grid-cols-12 gap-x-4 gap-y-3">
                                         <div className="col-span-12" id="field-container-translator">
-                                            <div className="flex items-end">
-                                                <div className="flex-1">
-                                                    <SearchableSelect label="Übersetzer *" options={partnerOptions} value={translator} onChange={setTranslator} error={validationErrors.has('translator')} />
-                                                </div>
-                                                <Button
-                                                    onClick={() => setShowPartnerModal(true)}
-                                                    className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0"
-                                                >
-                                                    <FaPlus className="text-xs" />
-                                                </Button>
-                                            </div>
+                                            <PartnerSelect
+                                                options={partnerOptions}
+                                                value={translator}
+                                                onChange={setTranslator}
+                                                error={validationErrors.has('translator')}
+                                                placeholder="Übersetzer auswählen..."
+                                            />
                                         </div>
                                     </div>
 
@@ -947,7 +950,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                             <div className="flex flex-wrap gap-1">
                                                                                 {(p.languages || []).slice(0, 3).map((l: string) => {
                                                                                     const isSourceMatch = source && l.toLowerCase().includes(source.toLowerCase().split('-')[0]);
-                                                                                    const isTargetMatch = target && l.toLowerCase().includes(target.toLowerCase().split('-')[0]);
+                                                                                    const targetArray = Array.isArray(target) ? target : [target];
+                                                                                    const isTargetMatch = targetArray.length > 0 && l.toLowerCase().includes(targetArray[0]?.toLowerCase().split('-')[0]);
                                                                                     return (
                                                                                         <span key={l} className={clsx(
                                                                                             "px-1 py-0 rounded-sm text-[7px] font-medium border",
@@ -1322,6 +1326,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             </div>
 
             <PartnerSelectionModal isOpen={isPartnerModalOpen} onClose={() => setIsPartnerModalOpen(false)} onSelect={handlePartnerSelect} />
+            <CustomerSelectionModal
+                isOpen={isCustomerSearchOpen}
+                onClose={() => setIsCustomerSearchOpen(false)}
+                onSelect={(selectedCust) => {
+                    setCustomer(selectedCust.id.toString());
+                    setIsCustomerSearchOpen(false);
+                }}
+            />
             <PaymentModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}

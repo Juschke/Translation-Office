@@ -15,7 +15,8 @@
     "no": "No",
     "search": "Search",
     "filter": "Filter",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "download_pdf": "Download PDF"
   },
   "actions": {
     "save": "Save",
@@ -32,7 +33,12 @@
     "saving": "Saving...",
     "error": "Error",
     "success": "Success",
-    "add": "Add"
+    "add": "Add",
+    "details": "Details",
+    "show_files": "Show files",
+    "restore": "Restore",
+    "delete_permanently": "Delete permanently",
+    "move_to_trash": "Move to trash"
   },
   "status": {
     "draft": "Draft",
@@ -377,7 +383,15 @@
     "private_customer": "Private Customer",
     "type_company_label": "Company",
     "type_authority_label": "Authority",
-    "type_private_label": "Private"
+    "type_private_label": "Private",
+    "status_active": "Active",
+    "status_inactive": "Inactive",
+    "status_archived": "Archived",
+    "status_deleted": "Deleted",
+    "email_subject": "Message to customers",
+    "type_filter_company": "Company",
+    "type_filter_private": "Private",
+    "type_filter_authority": "Authority"
   },
   "partners": {
     "title": "Partner Network",
@@ -556,7 +570,10 @@
     "no_date": "No Date",
     "days_overdue": "{{count}} days overdue",
     "due_today": "Due today",
-    "due_in_days": "In {{count}} days"
+    "due_in_days": "In {{count}} days",
+    "project_default": "Project",
+    "member_default": "Team Member",
+    "private_customer": "Private Customer"
   },
   "interpreting": {
     "title": "Interpreting Assignments",
@@ -707,7 +724,8 @@
     "current_date": "Current Date",
     "sender": "Sender",
     "password_masked": "••••••••",
-    "password_minimum": "At least 8 characters"
+    "password_minimum": "At least 8 characters",
+    "select_date_time": "Select date & time"
   },
   "modals": {
     "confirm_title": "Confirmation",
@@ -974,7 +992,35 @@
     "forbidden": "Access forbidden",
     "not_found": "Not found",
     "validation_error": "Please check your input",
-    "no_permission": "You don't have permission to perform this action"
+    "no_permission": "You don't have permission to perform this action",
+    "download_file_error": "File download error",
+    "loading_preview": "Loading preview...",
+    "preview_load_error": "Could not load preview.",
+    "file_type_change_error": "Could not change file type",
+    "file_deleted_success": "File successfully deleted",
+    "file_delete_error": "Error deleting file.",
+    "files_moved_success": "Files moved successfully",
+    "files_move_error": "Error moving files",
+    "creating_zip": "Creating ZIP archive...",
+    "zip_download_started": "ZIP download started",
+    "zip_creation_error": "Error creating ZIP archive",
+    "invoice_created_success": "Invoice created – project status set to \"Ready for pickup\".",
+    "invoice_creation_error": "Error creating invoice",
+    "creating_document": "Creating document...",
+    "document_opened": "Document opened",
+    "document_load_error": "Could not load document.",
+    "payment_complete_success": "Full payment recorded. Project marked as completed.",
+    "mailbox_synced": "Mailbox synchronized",
+    "template_created": "Template created",
+    "template_updated": "Template updated",
+    "template_update_error": "Error updating template",
+    "template_deleted": "Template deleted",
+    "plan_updated": "Plan updated successfully!",
+    "plan_update_error": "Error updating plan.",
+    "payment_method_updated": "Payment method updated successfully!",
+    "payment_method_update_error": "Error updating payment method.",
+    "preparing_project_files": "Preparing project files...",
+    "project_files_error": "Error retrieving project files"
   },
   "buttons": {
     "ok": "OK",
@@ -1107,7 +1153,19 @@
     "format_pdf": "PDF",
     "format_word": "Word (DOCX)",
     "format_excel": "Excel (XLSX)",
-    "format_zip": "Archive (ZIP)"
+    "format_zip": "Archive (ZIP)",
+    "total_files": "Total Files",
+    "indexed_documents": "Indexed documents",
+    "storage_space": "Storage Space",
+    "used_storage": "Used storage",
+    "source_documents": "Source Documents",
+    "customer_inputs": "Customer inputs",
+    "deliveries": "Deliveries",
+    "delivered_files": "Delivered files",
+    "search_files": "Search by filename or extension...",
+    "system_uploader": "System",
+    "file_input": "Input",
+    "file_output": "Output"
   },
   "interpreting_advanced": {
     "assignment": "Assignment",
@@ -1153,7 +1211,38 @@
     "per_month": "/ Month",
     "team": "Team",
     "users": "Users",
-    "unlimited": "∞"
+    "unlimited": "∞",
+    "plan_standard": "Standard",
+    "plan_professional": "Professional",
+    "plan_premium": "Premium",
+    "plan_enterprise": "Enterprise",
+    "plan_custom": "Custom",
+    "feature_50_projects": "Up to 50 projects",
+    "feature_3_members": "3 team members",
+    "feature_standard_support": "Standard Support",
+    "feature_basic": "Basic features",
+    "feature_unlimited_projects": "Unlimited projects",
+    "feature_10_members": "10 team members",
+    "feature_priority_support": "Priority Support",
+    "feature_advanced_reports": "Advanced reports",
+    "feature_api_access": "API access",
+    "feature_25_members": "25 team members",
+    "feature_24_7_support": "24/7 Support",
+    "feature_custom_branding": "Custom branding",
+    "feature_audit_logs": "Audit logs",
+    "feature_account_manager": "Dedicated Account Manager",
+    "feature_everything": "Everything unlimited",
+    "feature_unlimited_users": "Unlimited users",
+    "feature_sla": "SLA",
+    "feature_on_premise": "On-Premise option",
+    "feature_white_label": "White Label",
+    "plan_updated": "Plan updated successfully!",
+    "plan_update_error": "Error updating plan.",
+    "payment_method_updated": "Payment method updated successfully!",
+    "payment_method_error": "Error updating payment method.",
+    "pdf_generation_disabled": "PDF generation is currently disabled (Demo).",
+    "loading_invoices": "Loading invoices...",
+    "no_invoices": "No invoices available"
   },
   "countries": {
     "de": "Germany",
@@ -1197,7 +1286,20 @@
     "sync_fetch": "Fetch",
     "template_general": "General",
     "delete_single": "Delete Email",
-    "delete_multiple": "Delete {{count}} Emails"
+    "delete_multiple": "Delete {{count}} Emails",
+    "var_price_net": "Net Amount",
+    "var_price_gross": "Gross Amount",
+    "var_company_address": "Company Address",
+    "var_company_website": "Company Website",
+    "var_managing_director": "Managing Director",
+    "var_vat_id": "VAT ID",
+    "var_tax_id": "Tax ID",
+    "var_bank_name": "Bank Name",
+    "var_bank_iban": "IBAN",
+    "var_bank_bic": "BIC",
+    "var_bank_holder": "Account Holder",
+    "var_date": "Current Date",
+    "var_sender_name": "Sender"
   },
   "time": {
     "monday": "Monday",
@@ -1207,5 +1309,9 @@
     "friday": "Friday",
     "saturday": "Saturday",
     "sunday": "Sunday"
+  },
+  "placeholders": {
+    "example_name": "Max Doe",
+    "example_email": "max@company.de"
   }
 }

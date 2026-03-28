@@ -24,55 +24,6 @@ import {
     Button
 } from "../ui";
 
-const ALL_VARIABLES: { key: string; label: string; desc: string; group: string }[] = [
-    // Kunde
-    { key: 'customer_name', label: t('inbox.var_customer_name'), desc: 'Firmen- oder Vollname des Kunden', group: t('inbox.group_customer') },
-    { key: 'contact_person', label: t('inbox.var_contact_person'), desc: 'Kontaktperson beim Kunden', group: t('inbox.group_customer') },
-    { key: 'customer_email', label: t('inbox.var_customer_email'), desc: 'E-Mail-Adresse des Kunden', group: t('inbox.group_customer') },
-    { key: 'customer_phone', label: t('inbox.var_customer_phone'), desc: 'Telefonnummer des Kunden', group: t('inbox.group_customer') },
-    { key: 'customer_address', label: t('inbox.var_customer_address'), desc: 'Straße und Hausnummer', group: t('inbox.group_customer') },
-    { key: 'customer_city', label: t('inbox.var_customer_city'), desc: 'Stadt des Kunden', group: t('inbox.group_customer') },
-    { key: 'customer_zip', label: t('inbox.var_customer_zip'), desc: 'Postleitzahl des Kunden', group: t('inbox.group_customer') },
-    // Projekt
-    { key: 'project_number', label: t('inbox.var_project_number'), desc: 'Eindeutige Projektnummer', group: t('inbox.group_project') },
-    { key: 'project_name', label: t('inbox.var_project_name'), desc: 'Bezeichnung des Projekts', group: t('inbox.group_project') },
-    { key: 'project_status', label: t('inbox.var_project_status'), desc: 'Aktueller Projektstatus', group: t('inbox.group_project') },
-    { key: 'source_language', label: t('inbox.var_source_language'), desc: 'Ausgangssprache des Dokuments', group: t('inbox.group_project') },
-    { key: 'target_language', label: t('inbox.var_target_language'), desc: 'Zielsprache des Dokuments', group: t('inbox.group_project') },
-    { key: 'project_languages', label: t('inbox.var_project_languages'), desc: 'Ausgangs- und Zielsprache kombiniert', group: t('inbox.group_project') },
-    { key: 'deadline', label: t('inbox.var_deadline'), desc: 'Abgabetermin des Projekts', group: t('inbox.group_project') },
-    { key: 'document_type', label: t('inbox.var_document_type'), desc: 'Art des zu übersetzenden Dokuments', group: t('inbox.group_project') },
-    { key: 'priority', label: t('inbox.var_priority'), desc: 'Projektpriorität (Standard / Express)', group: t('inbox.group_project') },
-    // Finanzen
-    { key: 'price_net', label: 'Betrag (Netto)', desc: 'Netto-Projektbetrag', group: t('inbox.group_finance') },
-    { key: 'price_gross', label: 'Betrag (Brutto)', desc: 'Brutto-Betrag inkl. MwSt.', group: t('inbox.group_finance') },
-    { key: 'payment_terms', label: t('inbox.var_payment_terms'), desc: 'Zahlungsfrist in Tagen', group: t('inbox.group_finance') },
-    { key: 'invoice_number', label: t('inbox.var_invoice_number'), desc: 'Nummer der Projektrechnung', group: t('inbox.group_finance') },
-    { key: 'invoice_date', label: t('inbox.var_invoice_date'), desc: 'Datum der Rechnungstellung', group: t('inbox.group_finance') },
-    { key: 'due_date', label: t('inbox.var_due_date'), desc: 'Fälligkeitsdatum der Rechnung', group: t('inbox.group_finance') },
-    // Partner
-    { key: 'partner_name', label: 'Partnername', desc: 'Name des Übersetzers / Partners', group: 'Partner' },
-    { key: 'partner_email', label: 'Partner-E-Mail', desc: 'E-Mail-Adresse des Partners', group: 'Partner' },
-    // Unternehmen
-    { key: 'company_name', label: 'Firmenname', desc: 'Name Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'company_address', label: 'Firmenadresse', desc: 'Adresse Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'company_phone', label: 'Telefon (Firma)', desc: 'Telefonnummer Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'company_email', label: 'E-Mail (Firma)', desc: 'E-Mail-Adresse Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'company_website', label: 'Website', desc: 'Website Ihres Unternehmens', group: 'Unternehmen' },
-    { key: 'managing_director', label: 'Geschäftsleitung', desc: 'Name der Geschäftsführung', group: 'Unternehmen' },
-    { key: 'vat_id', label: 'USt-IdNr.', desc: 'Umsatzsteuer-Identifikationsnummer', group: 'Unternehmen' },
-    { key: 'tax_id', label: 'Steuernummer', desc: 'Steuernummer des Unternehmens', group: 'Unternehmen' },
-    { key: 'bank_name', label: 'Bankname', desc: 'Name Ihrer Bank', group: 'Unternehmen' },
-    { key: 'bank_iban', label: 'IBAN', desc: 'IBAN Ihres Bankkontos', group: 'Unternehmen' },
-    { key: 'bank_bic', label: 'BIC', desc: 'BIC Ihrer Bank', group: 'Unternehmen' },
-    { key: 'bank_holder', label: 'Kontoinhaber', desc: 'Name des Kontoinhabers', group: 'Unternehmen' },
-    // Allgemein
-    { key: 'date', label: 'Aktuelles Datum', desc: 'Heutiges Datum', group: 'Allgemein' },
-    { key: 'sender_name', label: 'Absender', desc: 'Name des Sachbearbeiters', group: 'Allgemein' },
-];
-
-const VAR_GROUPS = ['Kunde', 'Projekt', 'Finanzen', 'Partner', 'Unternehmen', 'Allgemein'];
-
 interface EmailComposeModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -172,6 +123,53 @@ const EmailComposeModal = ({
         }
     }, [accounts, selectedAccount]);
 
+    const ALL_VARIABLES = useMemo(() => [
+        // Kunde
+        { key: 'customer_name', label: t('inbox.var_customer_name'), desc: 'Firmen- oder Vollname des Kunden', group: t('inbox.group_customer') },
+        { key: 'contact_person', label: t('inbox.var_contact_person'), desc: 'Kontaktperson beim Kunden', group: t('inbox.group_customer') },
+        { key: 'customer_email', label: t('inbox.var_customer_email'), desc: 'E-Mail-Adresse des Kunden', group: t('inbox.group_customer') },
+        { key: 'customer_phone', label: t('inbox.var_customer_phone'), desc: 'Telefonnummer des Kunden', group: t('inbox.group_customer') },
+        { key: 'customer_address', label: t('inbox.var_customer_address'), desc: 'Straße und Hausnummer', group: t('inbox.group_customer') },
+        { key: 'customer_city', label: t('inbox.var_customer_city'), desc: 'Stadt des Kunden', group: t('inbox.group_customer') },
+        { key: 'customer_zip', label: t('inbox.var_customer_zip'), desc: 'Postleitzahl des Kunden', group: t('inbox.group_customer') },
+        // Projekt
+        { key: 'project_number', label: t('inbox.var_project_number'), desc: 'Eindeutige Projektnummer', group: t('inbox.group_project') },
+        { key: 'project_name', label: t('inbox.var_project_name'), desc: 'Bezeichnung des Projekts', group: t('inbox.group_project') },
+        { key: 'project_status', label: t('inbox.var_project_status'), desc: 'Aktueller Projektstatus', group: t('inbox.group_project') },
+        { key: 'source_language', label: t('inbox.var_source_language'), desc: 'Ausgangssprache des Dokuments', group: t('inbox.group_project') },
+        { key: 'target_language', label: t('inbox.var_target_language'), desc: 'Zielsprache des Dokuments', group: t('inbox.group_project') },
+        { key: 'project_languages', label: t('inbox.var_project_languages'), desc: 'Ausgangs- und Zielsprache kombiniert', group: t('inbox.group_project') },
+        { key: 'deadline', label: t('inbox.var_deadline'), desc: 'Abgabetermin des Projekts', group: t('inbox.group_project') },
+        { key: 'document_type', label: t('inbox.var_document_type'), desc: 'Art des zu übersetzenden Dokuments', group: t('inbox.group_project') },
+        { key: 'priority', label: t('inbox.var_priority'), desc: 'Projektpriorität (Standard / Express)', group: t('inbox.group_project') },
+        // Finanzen
+        { key: 'price_net', label: t('inbox.var_price_net'), desc: 'Netto-Projektbetrag', group: t('inbox.group_finance') },
+        { key: 'price_gross', label: t('inbox.var_price_gross'), desc: 'Brutto-Betrag inkl. MwSt.', group: t('inbox.group_finance') },
+        { key: 'payment_terms', label: t('inbox.var_payment_terms'), desc: 'Zahlungsfrist in Tagen', group: t('inbox.group_finance') },
+        { key: 'invoice_number', label: t('inbox.var_invoice_number'), desc: 'Nummer der Projektrechnung', group: t('inbox.group_finance') },
+        { key: 'invoice_date', label: t('inbox.var_invoice_date'), desc: 'Datum der Rechnungstellung', group: t('inbox.group_finance') },
+        { key: 'due_date', label: t('inbox.var_due_date'), desc: 'Fälligkeitsdatum der Rechnung', group: t('inbox.group_finance') },
+        // Partner
+        { key: 'partner_name', label: t('inbox.var_partner_name'), desc: 'Name des Übersetzers / Partners', group: t('inbox.group_partner') },
+        { key: 'partner_email', label: t('inbox.var_partner_email'), desc: 'E-Mail-Adresse des Partners', group: t('inbox.group_partner') },
+        // Unternehmen
+        { key: 'company_name', label: t('inbox.var_company_name'), desc: 'Name Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'company_address', label: t('inbox.var_company_address'), desc: 'Adresse Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'company_phone', label: t('inbox.var_company_phone'), desc: 'Telefonnummer Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'company_email', label: t('inbox.var_company_email'), desc: 'E-Mail-Adresse Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'company_website', label: t('inbox.var_company_website'), desc: 'Website Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'managing_director', label: t('inbox.var_managing_director'), desc: 'Name der Geschäftsführung', group: t('inbox.group_company') },
+        { key: 'vat_id', label: t('inbox.var_vat_id'), desc: 'Umsatzsteuer-Identifikationsnummer', group: t('inbox.group_company') },
+        { key: 'tax_id', label: t('inbox.var_tax_id'), desc: 'Steuernummer des Unternehmens', group: t('inbox.group_company') },
+        { key: 'bank_name', label: t('inbox.var_bank_name'), desc: 'Name Ihrer Bank', group: t('inbox.group_company') },
+        { key: 'bank_iban', label: t('inbox.var_bank_iban'), desc: 'IBAN Ihres Bankkontos', group: t('inbox.group_company') },
+        { key: 'bank_bic', label: t('inbox.var_bank_bic'), desc: 'BIC Ihrer Bank', group: t('inbox.group_company') },
+        { key: 'bank_holder', label: t('inbox.var_bank_holder'), desc: 'Name des Kontoinhabers', group: t('inbox.group_company') },
+        // Allgemein
+        { key: 'date', label: t('inbox.var_date'), desc: 'Heutiges Datum', group: t('inbox.group_general') },
+        { key: 'sender_name', label: t('inbox.var_sender_name'), desc: 'Name des Sachbearbeiters', group: t('inbox.group_general') },
+    ], [t]);
+
     const contactSuggestions = useMemo(() => {
         const list: any[] = [];
         customers.forEach((c: any) => {
@@ -191,7 +189,7 @@ const EmailComposeModal = ({
     }, [contactSuggestions, composeTo, showToSuggestions]);
 
     const handleAddProjectFiles = async (filesToAttach: any[]) => {
-        const toastId = toast.loading('Projekt-Dateien werden vorbereitet...');
+        const toastId = toast.loading(t('messages.preparing_project_files'));
         try {
             const newAttachments: File[] = [];
             for (const file of filesToAttach) {

@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -282,20 +281,20 @@ export function buildProjectColumns({
             ),
             accessor: (p: any) => (
                 <div className="flex justify-end gap-0.5 relative" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/projects/${p.id}`)} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye size={12} /></button>
-                    <button onClick={() => setViewFilesProject(p)} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Dateien anzeigen"><FaFolderOpen size={12} /></button>
+                    <button onClick={() => navigate(`/projects/${p.id}`)} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.details')}><FaEye size={12} /></button>
+                    <button onClick={() => setViewFilesProject(p)} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.show_files')}><FaFolderOpen size={12} /></button>
                     {p.status !== 'deleted' && (
-                        <button onClick={() => { setEditingProject(p); setIsModalOpen(true); }} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit size={12} /></button>
+                        <button onClick={() => { setEditingProject(p); setIsModalOpen(true); }} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit size={12} /></button>
                     )}
                     {p.status === 'deleted' ? (
                         <div className="flex gap-0.5">
-                            <button onClick={() => bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'in_progress' } })} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-sm transition" title="Wiederherstellen"><FaTrashRestore size={12} /></button>
+                            <button onClick={() => bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'in_progress' } })} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-sm transition" title={t('actions.restore')}><FaTrashRestore size={12} /></button>
                             <button onClick={() => {
                                 setProjectToDelete(p.id);
                                 setConfirmTitle('Endgültig löschen');
                                 setConfirmMessage('Dieses Projekt wird unwiderruflich gelöscht. Fortfahren?');
                                 setIsConfirmOpen(true);
-                            }} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="Endgültig löschen"><FaTrash size={12} /></button>
+                            }} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete_permanently')}><FaTrash size={12} /></button>
                         </div>
                     ) : (
                         <button onClick={() => {
@@ -309,7 +308,7 @@ export function buildProjectColumns({
                                 return;
                             }
                             bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'deleted' } });
-                        }} className="p-1 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title="In Papierkorb"><FaTrash size={12} /></button>
+                        }} className="p-1 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.move_to_trash')}><FaTrash size={12} /></button>
                     )}
                 </div>
             ),

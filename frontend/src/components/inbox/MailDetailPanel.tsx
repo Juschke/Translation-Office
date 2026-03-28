@@ -44,7 +44,7 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                     <button
                         onClick={() => onDelete(mail.id)}
                         className="p-2 text-slate-300 hover:text-red-500 transition rounded-sm"
-                        title="Löschen"
+                        title={t('actions.delete')}
                     >
                         <FaTrashAlt size={14} />
                     </button>

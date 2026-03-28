@@ -31,11 +31,14 @@ const ConfirmModal = ({
     onConfirm,
     title,
     message,
-    confirmText = t('actions.confirm'),
-    cancelText = t('actions.cancel'),
+    confirmText,
+    cancelText,
     type = 'danger',
     isLoading = false
 }: ConfirmModalProps) => {
+    const { t } = useTranslation();
+    const displayConfirmText = confirmText || t('actions.confirm');
+    const displayCancelText = cancelText || t('actions.cancel');
     const variantStyles: Record<string, any> = {
         danger: 'destructive',
         warning: 'warning',
@@ -60,7 +63,7 @@ const ConfirmModal = ({
                             disabled={isLoading}
                             className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
                         >
-                            {cancelText}
+                            {displayCancelText}
                         </Button>
                     </AlertDialogCancel>
                     <AlertDialogAction asChild>
@@ -76,7 +79,7 @@ const ConfirmModal = ({
                                     Wird verarbeitet...
                                 </>
                             ) : (
-                                confirmText
+                                displayConfirmText
                             )}
                         </Button>
                     </AlertDialogAction>

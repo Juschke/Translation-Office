@@ -48,6 +48,7 @@ interface UserFormProps {
 }
 
 const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loading, isEdit }) => {
+    const { t } = useTranslation();
     const [form, setForm] = useState({
         name: initial?.name ?? '',
         email: initial?.email ?? '',
@@ -261,7 +262,7 @@ const Team: React.FC = () => {
                                             <button
                                                 onClick={() => setModal({ type: 'edit', user: u })}
                                                 className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition-colors"
-                                                title="Bearbeiten"
+                                                title={t('actions.edit')}
                                             >
                                                 <FaEdit />
                                             </button>

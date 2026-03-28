@@ -9,10 +9,15 @@ import {
     FaInfoCircle, FaQuestionCircle
 } from 'react-icons/fa';
 import SearchableSelect from '../components/common/SearchableSelect';
+import CustomerSelect from '../components/common/CustomerSelect';
+import DocumentTypeSelect from '../components/common/DocumentTypeSelect';
+import PartnerSelect from '../components/common/PartnerSelect';
 import LanguageSelect from '../components/common/LanguageSelect';
 import Input from '../components/common/Input';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
+import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
+import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import NewDocTypeModal from '../components/modals/NewDocTypeModal';
 import NewMasterDataModal from '../components/modals/NewMasterDataModal';
 import PaymentModal from '../components/modals/PaymentModal';
@@ -94,7 +99,7 @@ const NewProject = () => {
     const [customer, setCustomer] = useState('');
     const [deadline, setDeadline] = useState('');
     const [source, setSource] = useState('de-DE');
-    const [target, setTarget] = useState('de-DE');
+    const [target, setTarget] = useState<string[]>(['en-US']);
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
     const [status, setStatus] = useState('offer');
     const [withTax, setWithTax] = useState(true);
@@ -125,7 +130,9 @@ const NewProject = () => {
 
     // UI modals
     const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
     const [showPartnerModal, setShowPartnerModal] = useState(false);
+    const [isPartnerSearchOpen, setIsPartnerSearchOpen] = useState(false);
     const [showDocTypeModal, setShowDocTypeModal] = useState(false);
     const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
     const [langTrigger, setLangTrigger] = useState<'source' | 'target' | null>(null);
@@ -159,17 +166,20 @@ const NewProject = () => {
 
     // ── Derived ──
     const custOptions = useMemo(() => (Array.isArray(customersData) ? customersData : []).map((c: any) => ({
-        value: c.id.toString(), label: c.company_name || `${c.first_name} ${c.last_name}`
+        value: c.id.toString(),
+        label: `${c.company_name || `${c.first_name} ${c.last_name}`} (${c.display_id || c.id}) - ${c.address_city || ''}`
     })), [customersData]);
 
     const partnerOptions = useMemo(() => (Array.isArray(partnersData) ? partnersData : []).map((p: any) => ({
-        value: p.id.toString(), label: p.company_name || `${p.first_name} ${p.last_name}`
+        value: p.id.toString(),
+        label: `${p.company_name || `${p.first_name} ${p.last_name}`} (${p.display_id || p.id}) - ${p.address_city || ''}`
     })), [partnersData]);
 
     const { matchingPartners, otherPartners } = useMemo(() => {
         if (!Array.isArray(partnersData)) return { matchingPartners: [], otherPartners: [] };
         const src = source?.toLowerCase().split('-')[0];
-        const trg = target?.toLowerCase().split('-')[0];
+        const targetLangs = Array.isArray(target) ? target : [target];
+        const trgs = targetLangs.map(t => t?.toLowerCase().split('-')[0]).filter(Boolean);
         const filtered = partnersData.filter((p: any) => {
             const s = partnerSearch.toLowerCase();
             return (p.first_name || '').toLowerCase().includes(s) || (p.last_name || '').toLowerCase().includes(s) || (p.company_name || '').toLowerCase().includes(s);
@@ -179,8 +189,8 @@ const NewProject = () => {
             const rawLangs = p.languages || [];
             const langs = Array.isArray(rawLangs) ? rawLangs : (typeof rawLangs === 'string' ? rawLangs.split(',').map((l: string) => l.trim().toLowerCase()) : []);
             const matchSrc = src && langs.some((l: string) => l.toLowerCase().includes(src));
-            const matchTrg = trg && langs.some((l: string) => l.toLowerCase().includes(trg));
-            if (matchSrc || matchTrg) matches.push({ ...p, isPerfectMatch: matchSrc && matchTrg, languages: Array.isArray(rawLangs) ? rawLangs : langs });
+            const matchAnyTrg = trgs.length > 0 && trgs.some(trg => langs.some((l: string) => l.toLowerCase().includes(trg)));
+            if (matchSrc || matchAnyTrg) matches.push({ ...p, isPerfectMatch: matchSrc && matchAnyTrg, languages: Array.isArray(rawLangs) ? rawLangs : langs });
             else others.push({ ...p, languages: Array.isArray(rawLangs) ? rawLangs : langs });
         });
         return { matchingPartners: matches, otherPartners: others };
@@ -221,7 +231,9 @@ const NewProject = () => {
     // Auto-generate name
     useEffect(() => {
         if (!isEditing && source && target && Array.isArray(projectsData)) {
-            const cs = source.split('-')[0].toLowerCase(), ct = target.split('-')[0].toLowerCase();
+            const targetArray = Array.isArray(target) ? target : [target];
+            const cs = source.split('-')[0].toLowerCase();
+            const ct = targetArray[0]?.split('-')[0].toLowerCase() || 'xx';
             const now = new Date();
             const dp = String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
             const base = `${cs}_${ct}_${dp}`.toUpperCase();
@@ -238,7 +250,15 @@ const NewProject = () => {
             setCustomer(initialData.customer_id?.toString() || '');
             setDeadline(initialData.due || initialData.deadline || '');
             setSource(initialData.source || initialData.source_language?.iso_code?.split('-')[0] || 'de');
-            setTarget(initialData.target || initialData.target_language?.iso_code?.split('-')[0] || 'en');
+            let targetLangs: string[] = ['en'];
+            if (initialData.target_languages?.length) {
+                targetLangs = initialData.target_languages.map((l: any) => l.iso_code || l);
+            } else if (initialData.target) {
+                targetLangs = Array.isArray(initialData.target) ? initialData.target : [initialData.target];
+            } else if (initialData.target_language?.iso_code) {
+                targetLangs = [initialData.target_language.iso_code];
+            }
+            setTarget(targetLangs);
             setPriority(initialData.priority || 'medium');
             setStatus(initialData.status || 'draft');
             setIsCertified(initialData.isCertified || !!initialData.is_certified);
@@ -295,7 +315,7 @@ const NewProject = () => {
     });
 
     // ── Financials ──
-    const extraCosts = (isCertified ? 5 * certifiedQty : 0) + (hasApostille ? 15 * apostilleQty : 0) + (isExpress ? 15 * expressQty : 0) + (classification === 'ja' ? 15 * classificationQty : 0) + (copies * Number(copyPrice) || 0);
+    const extraCosts = (isCertified ? 5 * certifiedQty : 0) + (hasApostille ? 25 * apostilleQty : 0) + (isExpress ? 15 * expressQty : 0) + (classification === 'ja' ? 15 * classificationQty : 0) + (copies * Number(copyPrice) || 0);
     const baseNet = parseFloat(totalPrice) || 0;
     const calcNet = baseNet + extraCosts;
     const calcTax = withTax ? calcNet * 0.19 : 0;
@@ -311,8 +331,9 @@ const NewProject = () => {
         const errors: string[] = [];
         const errSet = new Set<string>();
         if (!customer) { errors.push('Kunde ist ein Pflichtfeld'); errSet.add('customer'); }
-        if (!source) { errors.push('Quellsprache ist erforderlich'); errSet.add('source'); }
-        if (!target) { errors.push('Zielsprache ist erforderlich'); errSet.add('target'); }
+        if (!source) { errors.push('Eingangssprache ist erforderlich'); errSet.add('source'); }
+        const targetArray = Array.isArray(target) ? target : [target];
+        if (!targetArray.length || !targetArray[0]) { errors.push('Zielsprache ist erforderlich'); errSet.add('target'); }
         if (!docType.length) { errors.push('Dokumentenart ist ein Pflichtfeld'); errSet.add('docType'); }
         if (!translator) { errors.push('Übersetzer ist ein Pflichtfeld'); errSet.add('translator'); }
         setValidationErrors(errSet);
@@ -326,13 +347,14 @@ const NewProject = () => {
             setTimeout(() => { const el = document.getElementById(`field-${Array.from(errSet)[0]}`); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
             return;
         }
-        let finalName = name || `${source.toUpperCase()}_${target.toUpperCase()}_${Date.now()}`;
-        finalName = finalName.replace(/\s+/g, '_');
+        const targetDisplayString = targetArray.join(', ').toUpperCase();
+        let finalName = name || `${source.toUpperCase()}_${targetDisplayString}_${Date.now()}`;
+        finalName = finalName.replace(/\s+/g, '_').substring(0, 100);
         const sourceLangId = languages.find((l: any) => l.iso_code.startsWith(source))?.id || 1;
-        const targetLangId = languages.find((l: any) => l.iso_code.startsWith(target))?.id || 2;
+        const targetLangIds = targetArray.map(t => languages.find((l: any) => l.iso_code.startsWith(t))?.id || 2);
         const payload: any = {
             project_name: finalName, customer_id: parseInt(customer), partner_id: translator ? parseInt(translator) : null,
-            source_lang_id: sourceLangId, target_lang_id: targetLangId, deadline, priority, status,
+            source_lang_id: sourceLangId, target_lang_id: targetLangIds[0], target_lang_ids: targetLangIds, deadline, priority, status,
             is_certified: isCertified, certified_count: certifiedQty,
             has_apostille: hasApostille, apostille_count: apostilleQty,
             is_express: isExpress, express_count: expressQty,
@@ -419,15 +441,13 @@ const NewProject = () => {
                                 <Input placeholder="z.B. DE_EN_260326_01" value={name} onChange={e => setName(e.target.value)} />
                             </FormRow>
                             <FormRow label="Dokumentenart" required tooltip="Art des zu übersetzenden Dokuments. Mehrfachauswahl möglich." error={validationErrors.has('docType')} id="field-docType">
-                                <div className="flex items-end gap-0">
-                                    <div className="flex-1 min-w-0">
-                                        <SearchableSelect id="docType" isMulti value={docType} onChange={setDocType} maxVisibleItems={4} error={validationErrors.has('docType')}
-                                            options={docTypes.sort((a: any, b: any) => (a.category || '').localeCompare(b.category || '')).map((dt: any) => ({ value: dt.id.toString(), label: dt.name, group: dt.category }))} />
-                                    </div>
-                                    <Button onClick={() => setShowDocTypeModal(true)} className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0">
-                                        <FaPlus className="text-xs" />
-                                    </Button>
-                                </div>
+                                <DocumentTypeSelect
+                                    options={docTypes.sort((a: any, b: any) => (a.category || '').localeCompare(b.category || '')).map((dt: any) => ({ value: dt.id.toString(), label: dt.name, group: dt.category }))}
+                                    value={docType}
+                                    onChange={setDocType}
+                                    error={validationErrors.has('docType')}
+                                    isMulti={true}
+                                />
                             </FormRow>
                             <FormRow label="Status" tooltip="Aktueller Bearbeitungsstatus des Projekts." error={validationErrors.has('status')} id="field-status">
                                 <SearchableSelect options={statusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} preserveOrder={true} />
@@ -439,48 +459,56 @@ const NewProject = () => {
                         </div>
                     </section>
 
-                    {/* Section 2: Sprachen & Kunde */}
+                    {/* Section 2: Kunde */}
                     <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                             <div className={SECTION_NUM}>02</div>
-                            <h3 className={SECTION_TITLE}>Sprachen & Kunde</h3>
+                            <h3 className={SECTION_TITLE}>Kunde</h3>
                         </div>
                         <div className="px-6 pb-5">
                             <FormRow label="Kunde" required tooltip="Der Auftraggeber dieses Projekts." error={validationErrors.has('customer')} id="field-customer">
-                                <div className="flex items-end gap-0">
-                                    <div className="flex-1 min-w-0">
-                                        <SearchableSelect options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
-                                    </div>
-                                    <Button onClick={() => setShowCustomerModal(true)} className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0">
-                                        <FaPlus className="text-xs" />
-                                    </Button>
-                                </div>
-                            </FormRow>
-                            <FormRow label="Quellsprache" required tooltip="Sprache des Originaldokuments." error={validationErrors.has('source')} id="field-source">
-                                <LanguageSelect id="source" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
-                            </FormRow>
-                            <FormRow label="Zielsprache" required tooltip="Sprache, in die übersetzt werden soll." error={validationErrors.has('target')} id="field-target">
-                                <LanguageSelect id="target" value={target} onChange={setTarget} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
+                                <CustomerSelect
+                                    options={custOptions}
+                                    value={customer}
+                                    onChange={setCustomer}
+                                    error={validationErrors.has('customer')}
+                                    placeholder="Kunde auswählen..."
+                                />
                             </FormRow>
                         </div>
                     </section>
 
-                    {/* Section 3: Partner */}
+                    {/* Section 3: Sprachen */}
                     <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                             <div className={SECTION_NUM}>03</div>
+                            <h3 className={SECTION_TITLE}>Sprachen</h3>
+                        </div>
+                        <div className="px-6 pb-5">
+                            <FormRow label="Eingangssprache" required tooltip="Sprache des Originaldokuments." error={validationErrors.has('source')} id="field-source">
+                                <LanguageSelect id="source" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
+                            </FormRow>
+                            <FormRow label="Zielsprache" required tooltip="Sprache, in die übersetzt werden soll." error={validationErrors.has('target')} id="field-target">
+                                <LanguageSelect id="target" value={target} onChange={setTarget} isMulti={true} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
+                            </FormRow>
+                        </div>
+                    </section>
+
+                    {/* Section 4: Partner */}
+                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
+                            <div className={SECTION_NUM}>04</div>
                             <h3 className={SECTION_TITLE}>Partner & Übersetzer</h3>
                         </div>
                         <div className="px-6 pb-5">
                             <FormRow label="Übersetzer" required tooltip="Wählen Sie den Partner, der die Übersetzung durchführt." error={validationErrors.has('translator')} id="field-translator">
-                                <div className="flex items-end gap-0">
-                                    <div className="flex-1 min-w-0">
-                                        <SearchableSelect options={partnerOptions} value={translator} onChange={setTranslator} error={validationErrors.has('translator')} />
-                                    </div>
-                                    <Button onClick={() => setShowPartnerModal(true)} className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0">
-                                        <FaPlus className="text-xs" />
-                                    </Button>
-                                </div>
+                                <PartnerSelect
+                                    options={partnerOptions}
+                                    value={translator}
+                                    onChange={setTranslator}
+                                    error={validationErrors.has('translator')}
+                                    placeholder="Übersetzer auswählen..."
+                                />
                             </FormRow>
 
                             {/* Partner suggestion table */}
@@ -531,10 +559,10 @@ const NewProject = () => {
                         </div>
                     </section>
 
-                    {/* Section 4: Leistungen & Optionen */}
+                    {/* Section 5: Leistungen & Optionen */}
                     <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                            <div className={SECTION_NUM}>04</div>
+                            <div className={SECTION_NUM}>05</div>
                             <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
                         </div>
                         <div className="px-6 pb-5">
@@ -542,7 +570,7 @@ const NewProject = () => {
                                 {[
                                     { label: 'Beglaubigung (5€)', enabled: isCertified, toggle: () => setIsCertified(!isCertified), qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
                                     { label: 'Express (15€)', enabled: isExpress, toggle: () => setIsExpress(!isExpress), qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
-                                    { label: 'Apostille (15€)', enabled: hasApostille, toggle: () => setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
+                                    { label: 'Apostille (25€)', enabled: hasApostille, toggle: () => setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
                                     { label: 'Klassifizierung (15€)', enabled: classification === 'ja', toggle: () => setClassification(classification === 'ja' ? 'nein' : 'ja'), qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
                                 ].map(opt => (
                                     <div key={opt.label} className="space-y-1">
@@ -601,10 +629,10 @@ const NewProject = () => {
                         </div>
                     </section>
 
-                    {/* Section 5: Kalkulation */}
+                    {/* Section 6: Kalkulation */}
                     <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                            <div className={SECTION_NUM}>05</div>
+                            <div className={SECTION_NUM}>06</div>
                             <h3 className={SECTION_TITLE}>Kalkulation Positionen</h3>
                         </div>
                         <div className="px-6 pb-5">
@@ -612,11 +640,11 @@ const NewProject = () => {
                         </div>
                     </section>
 
-                    {/* Section 6: Zahlungen */}
+                    {/* Section 7: Zahlungen */}
                     <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden" id="field-payments">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
                             <div className="flex items-center gap-3">
-                                <div className={SECTION_NUM}>06</div>
+                                <div className={SECTION_NUM}>07</div>
                                 <h3 className={SECTION_TITLE}>Anzahlungen / Teilzahlungen</h3>
                                 <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
                                     {payments.length}
@@ -643,7 +671,7 @@ const NewProject = () => {
                                     setConfirmConfig({
                                         isOpen: true,
                                         title: 'Zahlung löschen',
-                                        message: t('confirm.delete_payment_amount', {amount: payment?.amount || '0'}),
+                                        message: t('confirm.delete_payment_amount', { amount: payment?.amount || '0' }),
                                         type: 'danger',
                                         confirmLabel: 'Löschen',
                                         onConfirm: () => {
@@ -657,10 +685,10 @@ const NewProject = () => {
                         </div>
                     </section>
 
-                    {/* Section 7: Anmerkungen */}
+                    {/* Section 8: Anmerkungen */}
                     <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                            <div className={SECTION_NUM}>07</div>
+                            <div className={SECTION_NUM}>08</div>
                             <h3 className={SECTION_TITLE}>Anmerkungen</h3>
                         </div>
                         <div className="px-6 pb-5">
@@ -691,7 +719,7 @@ const NewProject = () => {
                         <div className="space-y-2 text-xs">
                             <div className="flex justify-between text-slate-500"><span>Positionen Netto</span><span>{fmtEur(baseNet)}</span></div>
                             {isCertified && <div className="flex justify-between text-slate-400 pl-2"><span>+ Beglaubigung {certifiedQty > 1 ? `(${certifiedQty}×)` : ''}</span><span>{fmtEur(5 * certifiedQty)}</span></div>}
-                            {hasApostille && <div className="flex justify-between text-slate-400 pl-2"><span>+ Apostille {apostilleQty > 1 ? `(${apostilleQty}×)` : ''}</span><span>{fmtEur(15 * apostilleQty)}</span></div>}
+                            {hasApostille && <div className="flex justify-between text-slate-400 pl-2"><span>+ Apostille {apostilleQty > 1 ? `(${apostilleQty}×)` : ''}</span><span>{fmtEur(25 * apostilleQty)}</span></div>}
                             {isExpress && <div className="flex justify-between text-slate-400 pl-2"><span>+ Express {expressQty > 1 ? `(${expressQty}×)` : ''}</span><span>{fmtEur(15 * expressQty)}</span></div>}
                             {classification === 'ja' && <div className="flex justify-between text-slate-400 pl-2"><span>+ Klassifizierung {classificationQty > 1 ? `(${classificationQty}×)` : ''}</span><span>{fmtEur(15 * classificationQty)}</span></div>}
                             {copies > 0 && <div className="flex justify-between text-slate-400 pl-2"><span>+ Kopien ({copies}×)</span><span>{fmtEur(copies * Number(copyPrice))}</span></div>}
@@ -728,7 +756,9 @@ const NewProject = () => {
 
             {/* ── Modals ── */}
             <NewCustomerModal isOpen={showCustomerModal} onClose={() => setShowCustomerModal(false)} onSubmit={(d) => createCustomerMutation.mutate({ company_name: d.company_name, salutation: d.salutation, first_name: d.first_name, last_name: d.last_name, email: d.email, address: d.address_street, zip: d.address_zip, city: d.address_city, type: d.type })} />
+            <CustomerSelectionModal isOpen={isCustomerSearchOpen} onClose={() => setIsCustomerSearchOpen(false)} onSelect={(id) => { setCustomer(id); setIsCustomerSearchOpen(false); }} />
             <NewPartnerModal isOpen={showPartnerModal} onClose={() => setShowPartnerModal(false)} onSubmit={(d) => createPartnerMutation.mutate({ company_name: d.company || d.company_name, salutation: d.salutation, first_name: d.firstName, last_name: d.lastName, email: d.emails?.[0] || d.email, street: d.street, zip: d.zip, city: d.city, phone: d.phones?.[0] || d.phone, languages: d.languages, price_list: d.priceList })} isLoading={createPartnerMutation.isPending} />
+            <PartnerSelectionModal isOpen={isPartnerSearchOpen} onClose={() => setIsPartnerSearchOpen(false)} onSelect={(id) => { setTranslator(id); setIsPartnerSearchOpen(false); }} />
             <NewDocTypeModal isOpen={showDocTypeModal} onClose={() => setShowDocTypeModal(false)} onSubmit={(d) => createDocTypeMutation.mutate(d)} isLoading={createDocTypeMutation.isPending} />
             <NewMasterDataModal isOpen={isLanguageModalOpen} onClose={() => setIsLanguageModalOpen(false)} onSubmit={(d) => createLanguageMutation.mutate(d)} type="languages" />
             <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={(p) => { if (editingPayment) setPayments(payments.map(x => x.id === p.id ? p : x)); else setPayments([...payments, p]); setIsPaymentModalOpen(false); setEditingPayment(null); }} initialData={editingPayment} totalAmount={calcGross} />

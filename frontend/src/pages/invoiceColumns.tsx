@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import {
     FaCheck, FaPrint, FaFilePdf, FaEye,
     FaStamp, FaBan, FaPen, FaFileCode, FaTrash, FaHistory, FaEllipsisV,

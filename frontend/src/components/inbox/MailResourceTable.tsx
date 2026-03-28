@@ -62,13 +62,13 @@ const MailResourceTable = ({
                                     <button
                                         onClick={() => onEdit?.(item)}
                                         className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-[#ccc] rounded-[3px] transition shadow-none hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                                        title="Bearbeiten"
+                                        title={t('actions.edit')}
                                     >
                                         <FaEdit size={12} />
                                     </button>
                                     <button
                                         className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-[#ccc] rounded-[3px] transition shadow-none hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                                        title="Details"
+                                        title={t('actions.details')}
                                     >
                                         <FaFolderOpen size={12} />
                                     </button>

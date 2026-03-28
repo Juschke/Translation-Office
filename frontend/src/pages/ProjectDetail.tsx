@@ -387,13 +387,13 @@ const ProjectDetail = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            toast.error('Fehler beim Herunterladen der Datei.');
+            toast.error(t('messages.download_file_error'));
         }
     };
 
     const handlePreviewFile = async (file: any) => {
         try {
-            const toastId = toast.loading('Lade Vorschau...');
+            const toastId = toast.loading(t('messages.loading_preview'));
             const response = await projectService.downloadFile(id!, file.id);
             const mimeType = response.headers['content-type'];
             const blob = new Blob([response.data], { type: mimeType });
@@ -420,7 +420,7 @@ const ProjectDetail = () => {
             });
         } catch (error) {
             toast.dismiss();
-            toast.error('Vorschau konnte nicht geladen werden.');
+            toast.error(t('messages.preview_load_error'));
         }
     };
 
@@ -431,7 +431,7 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             toast.success(`Dateityp zu "${newType === 'source' ? 'Quelle' : 'Ziel'}" geändert`);
         } catch (error) {
-            toast.error('Dateityp konnte nicht geändert werden');
+            toast.error(t('messages.file_type_change_error'));
         }
     };
 
@@ -441,10 +441,10 @@ const ProjectDetail = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
-            toast.success('Datei erfolgreich gelöscht');
+            toast.success(t('messages.file_deleted_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Löschen der Datei.');
+            toast.error(t('messages.file_delete_error'));
         }
     });
 
@@ -470,15 +470,15 @@ const ProjectDetail = () => {
         try {
             await projectService.bulkUpdateFiles(id!, ids, newType);
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
-            toast.success('Dateien erfolgreich verschoben');
+            toast.success(t('messages.files_moved_success'));
         } catch (error) {
-            toast.error('Fehler beim Verschieben der Dateien');
+            toast.error(t('messages.files_move_error'));
         }
     };
 
     const handleBulkFilesDownloadZip = async (ids: string[]) => {
         try {
-            const toastId = toast.loading('ZIP-Archiv wird erstellt...');
+            const toastId = toast.loading(t('messages.creating_zip'));
             const response = await projectService.downloadFilesZip(id!, ids);
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
@@ -489,10 +489,10 @@ const ProjectDetail = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
             toast.dismiss(toastId);
-            toast.success('ZIP-Download gestartet');
+            toast.success(t('messages.zip_download_started'));
         } catch (error) {
             toast.dismiss();
-            toast.error('Fehler beim Erstellen des ZIP-Archivs');
+            toast.error(t('messages.zip_creation_error'));
         }
     };
 
@@ -506,11 +506,11 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             setIsInvoiceModalOpen(false);
-            toast.success('Rechnung erstellt – Projektstatus auf „Abholbereit" gesetzt.');
+            toast.success(t('messages.invoice_created_success'));
             navigate('/invoices');
         },
         onError: () => {
-            toast.error('Fehler beim Erstellen der Rechnung');
+            toast.error(t('messages.invoice_creation_error'));
         }
     });
 
@@ -576,15 +576,15 @@ const ProjectDetail = () => {
 
     const handleDownloadConfirmation = async (type: 'order_confirmation' | 'pickup_confirmation') => {
         try {
-            const toastId = toast.loading('Dokument wird erstellt...');
+            const toastId = toast.loading(t('messages.creating_document'));
             const response = await projectService.downloadConfirmation(id!, type);
             const blob = new Blob([response.data], { type: 'application/pdf' });
             openBlobInNewTab(blob);
             toast.dismiss(toastId);
-            toast.success('Dokument geöffnet');
+            toast.success(t('messages.document_opened'));
         } catch (error) {
             toast.dismiss();
-            toast.error('Dokument konnte nicht geladen werden.');
+            toast.error(t('messages.document_load_error'));
         }
     };
 
@@ -1018,7 +1018,7 @@ const ProjectDetail = () => {
                         if (isFullyPaid && projectData.status !== 'completed' && projectData.status !== 'archived') {
                             updateData.status = 'completed';
                             updateData.progress = 100;
-                            toast.success('Vollständige Zahlung erfasst. Projekt als abgeschlossen markiert.');
+                            toast.success(t('messages.payment_complete_success'));
                         }
                         updateProjectMutation.mutate(updateData);
                     }

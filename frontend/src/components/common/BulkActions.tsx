@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaTimes } from 'react-icons/fa';
 import clsx from 'clsx';
 

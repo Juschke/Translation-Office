@@ -15,13 +15,14 @@
     "no": "Nein",
     "search": "Suchen",
     "filter": "Filter",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "download_pdf": "Download PDF"
   },
   "actions": {
     "save": "Speichern",
     "cancel": "Abbrechen",
     "delete": "Löschen",
-    "edit": "Bearbeiten",
+    "edit": "Edit",
     "create": "Erstellen",
     "close": "Schließen",
     "search": "Suchen",
@@ -32,7 +33,12 @@
     "saving": "Speichere...",
     "error": "Fehler",
     "success": "Erfolg",
-    "add": "Hinzufügen"
+    "add": "Hinzufügen",
+    "details": "Details",
+    "show_files": "Show files",
+    "restore": "Restore",
+    "delete_permanently": "Delete permanently",
+    "move_to_trash": "Move to trash"
   },
   "status": {
     "draft": "Entwurf",
@@ -257,7 +263,7 @@
         "all": "Alle Partner"
       },
       "languages": {
-        "source": "Quellsprache",
+        "source": "Eingangssprache",
         "target": "Zielsprache",
         "all": "Alle Sprachen"
       },
@@ -377,7 +383,15 @@
     "private_customer": "Privatkunde",
     "type_company_label": "Firma",
     "type_authority_label": "Behörde",
-    "type_private_label": "Privat"
+    "type_private_label": "Privat",
+    "status_active": "Aktiv",
+    "status_inactive": "Inaktiv",
+    "status_archived": "Archiviert",
+    "status_deleted": "Gelöscht",
+    "email_subject": "Nachricht an Kunden",
+    "type_filter_company": "Firma",
+    "type_filter_private": "Privat",
+    "type_filter_authority": "Behörde"
   },
   "partners": {
     "title": "Partnernetzwerk",
@@ -556,7 +570,10 @@
     "no_date": "Kein Datum",
     "days_overdue": "{{count}} Tage überfällig",
     "due_today": "Heute fällig",
-    "due_in_days": "in {{count}} Tagen"
+    "due_in_days": "in {{count}} Tagen",
+    "project_default": "Projekt",
+    "member_default": "Mitarbeiter",
+    "private_customer": "Privatkunde"
   },
   "interpreting": {
     "title": "Dolmetschereinsätze",
@@ -707,7 +724,8 @@
     "current_date": "Aktuelles Datum",
     "sender": "Absender",
     "password_masked": "••••••••",
-    "password_minimum": "Mindestens 8 Zeichen"
+    "password_minimum": "Mindestens 8 Zeichen",
+    "select_date_time": "Select date & time"
   },
   "modals": {
     "confirm_title": "Bestätigung",
@@ -865,7 +883,7 @@
     "create_free_account": "Kostenloses Konto erstellen",
     "confirm_password_label": "Passwort bestätigen",
     "save_password": "Passwort speichern",
-    "forgot_password_link": "Passwort vergessen?",
+    "forgot_password_link": "Forgot password?",
     "verifying": "Verifiziere...",
     "confirming": "Bestätigen",
     "signing_in": "Anmelden...",
@@ -964,7 +982,7 @@
   "messages": {
     "success": "Vorgang erfolgreich",
     "error": "Ein Fehler ist aufgetreten",
-    "loading": "Lädt...",
+    "loading": "Loading...",
     "saving": "Wird gespeichert...",
     "deleting": "Wird gelöscht...",
     "confirm_action": "Sind Sie sicher?",
@@ -974,7 +992,35 @@
     "forbidden": "Zugriff verweigert",
     "not_found": "Nicht gefunden",
     "validation_error": "Bitte überprüfen Sie Ihre Eingaben",
-    "no_permission": "Sie haben keine Berechtigung, diese Aktion durchzuführen"
+    "no_permission": "Sie haben keine Berechtigung, diese Aktion durchzuführen",
+    "download_file_error": "File download error",
+    "loading_preview": "Loading preview...",
+    "preview_load_error": "Could not load preview.",
+    "file_type_change_error": "Could not change file type",
+    "file_deleted_success": "File successfully deleted",
+    "file_delete_error": "Error deleting file.",
+    "files_moved_success": "Files moved successfully",
+    "files_move_error": "Error moving files",
+    "creating_zip": "Creating ZIP archive...",
+    "zip_download_started": "ZIP download started",
+    "zip_creation_error": "Error creating ZIP archive",
+    "invoice_created_success": "Invoice created – project status set to \"Ready for pickup\".",
+    "invoice_creation_error": "Error creating invoice",
+    "creating_document": "Creating document...",
+    "document_opened": "Document opened",
+    "document_load_error": "Could not load document.",
+    "payment_complete_success": "Full payment recorded. Project marked as completed.",
+    "mailbox_synced": "Mailbox synchronized",
+    "template_created": "Template created",
+    "template_updated": "Template updated",
+    "template_update_error": "Error updating template",
+    "template_deleted": "Template deleted",
+    "plan_updated": "Plan updated successfully!",
+    "plan_update_error": "Error updating plan.",
+    "payment_method_updated": "Payment method updated successfully!",
+    "payment_method_update_error": "Error updating payment method.",
+    "preparing_project_files": "Preparing project files...",
+    "project_files_error": "Error retrieving project files"
   },
   "buttons": {
     "ok": "OK",
@@ -1107,7 +1153,19 @@
     "format_pdf": "PDF",
     "format_word": "Word (DOCX)",
     "format_excel": "Excel (XLSX)",
-    "format_zip": "Archive (ZIP)"
+    "format_zip": "Archive (ZIP)",
+    "total_files": "Dateien Gesamt",
+    "indexed_documents": "Indexierte Dokumente",
+    "storage_space": "Speicherplatz",
+    "used_storage": "Belegter Speicher",
+    "source_documents": "Quell-Dokumente",
+    "customer_inputs": "Eingänge von Kunden",
+    "deliveries": "Ausspielungen",
+    "delivered_files": "Gelieferte Dateien",
+    "search_files": "Nach Dateiname oder Erweiterung suchen...",
+    "system_uploader": "System",
+    "file_input": "Eingang",
+    "file_output": "Ausspielung"
   },
   "interpreting_advanced": {
     "assignment": "Einsatz",
@@ -1153,7 +1211,38 @@
     "per_month": "/ Monat",
     "team": "Team",
     "users": "User",
-    "unlimited": "∞"
+    "unlimited": "∞",
+    "plan_standard": "Standard",
+    "plan_professional": "Professional",
+    "plan_premium": "Premium",
+    "plan_enterprise": "Enterprise",
+    "plan_custom": "Custom",
+    "feature_50_projects": "Bis zu 50 Projekte",
+    "feature_3_members": "3 Team-Mitglieder",
+    "feature_standard_support": "Standard Support",
+    "feature_basic": "Basisfunktionen",
+    "feature_unlimited_projects": "Unbegrenzte Projekte",
+    "feature_10_members": "10 Team-Mitglieder",
+    "feature_priority_support": "Priority Support",
+    "feature_advanced_reports": "Erweiterte Berichte",
+    "feature_api_access": "API Zugriff",
+    "feature_25_members": "25 Team-Mitglieder",
+    "feature_24_7_support": "24/7 Support",
+    "feature_custom_branding": "Custom Branding",
+    "feature_audit_logs": "Audit Logs",
+    "feature_account_manager": "Dedicated Account Manager",
+    "feature_everything": "Alles unbegrenzt",
+    "feature_unlimited_users": "Unbegrenzte User",
+    "feature_sla": "SLA",
+    "feature_on_premise": "On-Premise Option",
+    "feature_white_label": "White Label",
+    "plan_updated": "Plan erfolgreich aktualisiert!",
+    "plan_update_error": "Fehler beim Aktualisieren des Plans.",
+    "payment_method_updated": "Zahlungsmethode erfolgreich aktualisiert!",
+    "payment_method_error": "Fehler beim Aktualisieren der Zahlungsmethode.",
+    "pdf_generation_disabled": "PDF Generierung ist aktuell deaktiviert (Demo).",
+    "loading_invoices": "Lade Rechnungen...",
+    "no_invoices": "Keine Rechnungen vorhanden"
   },
   "countries": {
     "de": "Deutschland",
@@ -1189,15 +1278,28 @@
     "var_partner_email": "Partner-E-Mail",
     "var_partner_phone": "Partner-Telefon",
     "var_company_name": "Firmenname",
-    "var_company_phone": "Firmentelefon",
-    "var_company_email": "Firmen-E-Mail",
+    "var_company_phone": "Telefon (Firma)",
+    "var_company_email": "E-Mail (Firma)",
     "var_current_date": "Aktuelles Datum",
     "var_sender": "Absender",
     "sync_syncing": "Sync...",
     "sync_fetch": "Abrufen",
     "template_general": "Allgemein",
     "delete_single": "E-Mail löschen",
-    "delete_multiple": "{{count}} E-Mails löschen"
+    "delete_multiple": "{{count}} E-Mails löschen",
+    "var_price_net": "Betrag (Netto)",
+    "var_price_gross": "Betrag (Brutto)",
+    "var_company_address": "Firmenadresse",
+    "var_company_website": "Website",
+    "var_managing_director": "Geschäftsleitung",
+    "var_vat_id": "USt-IdNr.",
+    "var_tax_id": "Steuernummer",
+    "var_bank_name": "Bankname",
+    "var_bank_iban": "IBAN",
+    "var_bank_bic": "BIC",
+    "var_bank_holder": "Kontoinhaber",
+    "var_date": "Aktuelles Datum",
+    "var_sender_name": "Absender"
   },
   "time": {
     "monday": "Montag",
@@ -1207,5 +1309,9 @@
     "friday": "Freitag",
     "saturday": "Samstag",
     "sunday": "Sonntag"
+  },
+  "placeholders": {
+    "example_name": "Max Doe",
+    "example_email": "max@company.de"
   }
 }

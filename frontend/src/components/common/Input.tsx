@@ -1,7 +1,6 @@
 // DEPRECATED: Use @/components/ui/input, @/components/ui/textarea, or @/components/ui/select instead
 // This file exists for backward compatibility only
 import React, { type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Input as ShadcnInput } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';

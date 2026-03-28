@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { FaChevronDown, FaSearch, FaCheck, FaTimes, FaPlus } from 'react-icons/fa';
 import clsx from 'clsx';
@@ -15,15 +14,17 @@ interface SearchableSelectProps {
     className?: string;
     isMulti?: boolean;
     onAddNew?: () => void;
+    onSearch?: (search: string) => void;
     id?: string;
     preserveOrder?: boolean;
     maxVisibleItems?: number;
+    roundedSide?: 'left' | 'right' | 'both' | 'none';
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
-    isMulti = false, onAddNew, id, preserveOrder = false,
-    maxVisibleItems = 2
+    isMulti = false, onAddNew, onSearch, id, preserveOrder = false,
+    maxVisibleItems = 2, roundedSide = 'both'
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -180,7 +181,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     className="w-full pl-9 pr-8 py-2.5 border-none text-sm focus:outline-none"
                     placeholder="Suchen..."
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                        onSearch?.(e.target.value);
+                    }}
                     onKeyDown={handleKeyDown}
                     autoFocus
                     autoComplete="off"
@@ -314,6 +318,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 id={id}
                 className={clsx(
                     "w-full border px-3 py-1 text-sm bg-white flex justify-between items-center cursor-pointer transition h-9",
+                    roundedSide === 'both' && "rounded-sm",
+                    roundedSide === 'left' && "rounded-l-sm",
+                    roundedSide === 'right' && "rounded-r-sm",
+                    roundedSide === 'none' && "rounded-none",
                     error ? "border-red-700 ring-2 ring-red-700/10" : "border-slate-300 hover:border-slate-400",
                     isOpen ? "border-slate-900 ring-2 ring-slate-950/10 shadow-sm" : "shadow-sm",
                     className

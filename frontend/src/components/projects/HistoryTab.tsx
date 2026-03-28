@@ -12,7 +12,7 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
     project_number: 'Projektnummer',
     customer_id: 'Kunde',
     partner_id: 'Partner',
-    source_lang_id: 'Quellsprache',
+    source_lang_id: 'Eingangssprache',
     target_lang_id: 'Zielsprache',
     document_type_id: 'Dokumentenart',
     additional_doc_types: 'Weitere Dokumentenarten',

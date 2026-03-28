@@ -34,11 +34,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     onConfirm,
     title,
     message,
-    confirmText = t('actions.confirm'),
-    cancelText = t('actions.cancel'),
+    confirmText,
+    cancelText,
     variant = 'danger',
     isLoading = false
 }) => {
+    const { t } = useTranslation();
+    const displayConfirmText = confirmText || t('actions.confirm');
+    const displayCancelText = cancelText || t('actions.cancel');
     const actionStyles: Record<string, any> = {
         danger: 'destructive',
         warning: 'warning',
@@ -54,7 +57,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     <AlertDialogDescription>{message}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    {cancelText && (
+                    {displayCancelText && (
                         <AlertDialogCancel asChild>
                             <Button
                                 variant="secondary"
@@ -62,7 +65,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                 disabled={isLoading}
                                 className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
                             >
-                                {cancelText}
+                                {displayCancelText}
                             </Button>
                         </AlertDialogCancel>
                     )}
@@ -74,7 +77,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
                         >
                             {isLoading && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />}
-                            {confirmText}
+                            {displayConfirmText}
                         </Button>
                     </AlertDialogAction>
                 </AlertDialogFooter>

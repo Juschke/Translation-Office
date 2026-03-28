@@ -498,7 +498,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                             <FaDownload className="text-[9px]" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500 bg-white/90 border border-slate-100"
-                                            onClick={(e) => { e.stopPropagation(); setDeleteFileConfirm({ isOpen: true, fileId: file.id, fileName: name }); }} title="Löschen">
+                                            onClick={(e) => { e.stopPropagation(); setDeleteFileConfirm({ isOpen: true, fileId: file.id, fileName: name }); }} title={t('actions.delete')}>
                                             <FaTrashAlt className="text-[9px]" />
                                         </Button>
                                     </div>
@@ -602,7 +602,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                                         <FaDownload className="text-xs" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500"
-                                                        onClick={() => setDeleteFileConfirm({ isOpen: true, fileId: file.id, fileName: name })} title="Löschen">
+                                                        onClick={() => setDeleteFileConfirm({ isOpen: true, fileId: file.id, fileName: name })} title={t('actions.delete')}>
                                                         <FaTrashAlt className="text-xs" />
                                                     </Button>
                                                 </div>

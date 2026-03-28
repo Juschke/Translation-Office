@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaFolderOpen, FaFileInvoiceDollar, FaUsers } from 'react-icons/fa';
 
 interface AuthLayoutProps {

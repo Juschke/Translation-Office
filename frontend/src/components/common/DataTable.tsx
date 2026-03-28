@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Table, type TableProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table/interface';

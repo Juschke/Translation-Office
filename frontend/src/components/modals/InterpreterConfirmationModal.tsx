@@ -122,7 +122,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
             queryClient.invalidateQueries({ queryKey: ['appointments'] });
 
             // 3. Download Document
-            const toastId = toast.loading('Dokument wird erstellt...');
+            const toastId = toast.loading(t('messages.creating_document'));
             const response = await projectService.downloadConfirmation(project.id, 'interpreter_confirmation');
             const blob = new Blob([response.data], { type: 'application/pdf' });
             openBlobInNewTab(blob);

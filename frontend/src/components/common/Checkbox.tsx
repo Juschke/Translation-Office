@@ -1,7 +1,6 @@
 // DEPRECATED: Use @/components/ui/checkbox instead
 // This file exists for backward compatibility only
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { Checkbox as ShadcnCheckbox } from '@/components/ui/checkbox';
 
 interface CheckboxProps {

@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import SearchableSelect from './SearchableSelect';
 import { countries } from '../../utils/countries';
 import { getFlagUrl } from '../../utils/flags';
@@ -42,7 +41,7 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
                 onChange={onChange}
                 placeholder={placeholder}
                 error={error}
-                className="h-11"
+                className="h-9"
             />
             {helperText && (
                 <p className={`mt-1 text-xs font-medium ml-1 ${error ? "text-red-500" : "text-slate-400"}`}>

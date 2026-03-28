@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { FaChevronDown, FaTimes, FaSearch, FaCheck, FaPlus } from 'react-icons/fa';
 import { getFlagUrl } from '../../utils/flags';
@@ -180,7 +179,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
 
             <div
                 className={clsx(
-                    "w-full px-3 bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm h-10 border",
+                    "w-full px-3 bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm h-10 border rounded-sm",
                     error ? "border-red-700 ring-2 ring-red-700/10" : (isOpen ? "ring-2 ring-slate-950/10 border-slate-900 shadow-sm" : "border-slate-300 hover:border-slate-400 shadow-sm")
                 )}
                 onClick={() => setIsOpen(!isOpen)}

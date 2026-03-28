@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,30 +18,6 @@ import finanzamt from 'finanzamt';
 // @ts-ignore
 import { normalizeSteuernummer } from 'normalize-steuernummer';
 import taxOfficesData from '../../data/tax_offices.json';
-
-const taxOfficeOptions = taxOfficesData.map((fa: any) => ({
-    value: `Finanzamt ${fa.name}`,
-    label: `Finanzamt ${fa.name}`,
-    group: fa.ort,
-    bufa: fa.buFaNr
-})).sort((a, b) => a.label.localeCompare(b.label));
-
-const legalFormOptions = [
-    { value: t('settings.company_type_sole'), label: t('settings.company_type_sole') },
-    { value: 'GbR', label: 'GbR' },
-    { value: 'GmbH', label: 'GmbH' },
-    { value: 'GmbH & Co. KG', label: 'GmbH & Co. KG' },
-    { value: 'UG (haftungsbeschränkt)', label: 'UG (haftungsbeschränkt)' },
-    { value: 'AG', label: 'AG' },
-    { value: 'KG', label: 'KG' },
-    { value: 'OHG', label: 'OHG' },
-    { value: 'e.K.', label: 'e.K.' },
-    { value: 'PartG', label: 'PartG' },
-    { value: 'eG', label: 'eG' },
-    { value: 'e.V.', label: 'e.V.' },
-    { value: t('settings.company_type_foundation'), label: t('settings.company_type_foundation') },
-    { value: 'Körperschaft d.ö.R.', label: 'Körperschaft d.ö.R.' }
-];
 
 const SettingRow = ({ label, description, children, className }: any) => (
     <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
@@ -154,8 +130,34 @@ const LogoUpload = ({ logoPath, onUploaded }: { logoPath?: string; onUploaded: (
 };
 
 const CompanySettingsTab = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const queryClient = useQueryClient();
+
+    const taxOfficeOptions = useMemo(() => taxOfficesData.map((fa: any) => ({
+        value: `Finanzamt ${fa.name}`,
+        label: `Finanzamt ${fa.name}`,
+        group: fa.ort,
+        bufa: fa.buFaNr
+    })).sort((a, b) => a.label.localeCompare(b.label)), []);
+
+    const legalFormOptions = useMemo(() => [
+        { value: 'Einzelunternehmen', label: t('settings.legal_forms.sole_proprietorship') || 'Einzelunternehmen' },
+        { value: 'GmbH', label: 'GmbH' },
+        { value: 'UG (haftungsbeschränkt)', label: 'UG (haftungsbeschränkt)' },
+        { value: 'GbR', label: 'GbR' },
+        { value: 'AG', label: 'AG' },
+        { value: 'OHG', label: 'OHG' },
+        { value: 'KG', label: 'KG' },
+        { value: 'GmbH & Co. KG', label: 'GmbH & Co. KG' },
+        { value: 'PartG', label: 'PartG' },
+        { value: 'e.K.', label: 'e.K.' },
+        { value: 'Limited (Ltd.)', label: 'Limited (Ltd.)' },
+        { value: 'Stiftung', label: t('settings.legal_forms.foundation') || 'Stiftung' },
+        { value: 'Verein', label: t('settings.legal_forms.association') || 'Verein' },
+        { value: 'Sonstiges', label: t('common.other') || 'Sonstiges' },
+    ], [t]);
+
     const [companyData, setCompanyData] = useState<any>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isValidatingZip, setIsValidatingZip] = useState(false);
@@ -208,7 +210,7 @@ const CompanySettingsTab = () => {
                 }
             }
         }
-    }, [serverCompanyData]);
+    }, [serverCompanyData, t]);
 
     const handleInputMetaChange = async (field: string, value: string) => {
         setCompanyData((prev: any) => ({ ...prev, [field]: value }));
@@ -443,8 +445,6 @@ const CompanySettingsTab = () => {
                     </SettingRow>
                 </div>
 
-
-
                 {/* Steuern & Identifikation */}
                 <div className="mb-8">
                     <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Steuern & Identifikation</h4>
@@ -617,6 +617,7 @@ const CompanySettingsTab = () => {
                                         definitions={{ 'a': /[a-zA-Z]/ }}
                                         placeholder="DE00 0000 0000 0000 0000 00"
                                         value={companyData.bank_iban || ''}
+                                        unmask={false}
                                         onAccept={(value) => handleInputMetaChange('bank_iban', value.toUpperCase())}
                                         onBlur={handleIbanBlur}
                                         className={clsx(

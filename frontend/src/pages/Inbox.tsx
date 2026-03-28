@@ -38,57 +38,59 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import { BulkActions } from '../components/common/BulkActions';
 import Checkbox from '../components/common/Checkbox';
 
-const ALL_VARIABLES: { key: string; label: string; desc: string; group: string }[] = [
-    // Kunde
-    { key: 'customer_name', label: t('inbox.var_customer_name'), desc: 'Firmen- oder Vollname des Kunden', group: t('inbox.group_customer') },
-    { key: 'contact_person', label: t('inbox.var_contact_person'), desc: 'Kontaktperson beim Kunden', group: t('inbox.group_customer') },
-    { key: 'customer_email', label: t('inbox.var_customer_email'), desc: 'E-Mail-Adresse des Kunden', group: t('inbox.group_customer') },
-    { key: 'customer_phone', label: t('inbox.var_customer_phone'), desc: 'Telefonnummer des Kunden', group: t('inbox.group_customer') },
-    { key: 'customer_address', label: t('inbox.var_customer_address'), desc: 'Straße und Hausnummer', group: t('inbox.group_customer') },
-    { key: 'customer_city', label: t('inbox.var_customer_city'), desc: 'Stadt des Kunden', group: t('inbox.group_customer') },
-    { key: 'customer_zip', label: t('inbox.var_customer_zip'), desc: 'Postleitzahl des Kunden', group: t('inbox.group_customer') },
-    // Projekt
-    { key: 'project_number', label: t('inbox.var_project_number'), desc: 'Eindeutige Projektnummer', group: t('inbox.group_project') },
-    { key: 'project_name', label: t('inbox.var_project_name'), desc: 'Bezeichnung des Projekts', group: t('inbox.group_project') },
-    { key: 'project_status', label: t('inbox.var_project_status'), desc: 'Aktueller Projektstatus', group: t('inbox.group_project') },
-    { key: 'source_language', label: t('inbox.var_source_language'), desc: 'Ausgangssprache des Dokuments', group: t('inbox.group_project') },
-    { key: 'target_language', label: t('inbox.var_target_language'), desc: 'Zielsprache des Dokuments', group: t('inbox.group_project') },
-    { key: 'project_languages', label: t('inbox.var_project_languages'), desc: 'Ausgangs- und Zielsprache kombiniert', group: t('inbox.group_project') },
-    { key: 'deadline', label: t('inbox.var_deadline'), desc: 'Abgabetermin des Projekts', group: t('inbox.group_project') },
-    { key: 'document_type', label: 'Dokumentenart', desc: 'Art des zu übersetzenden Dokuments', group: t('inbox.group_project') },
-    { key: 'priority', label: 'Priorität', desc: 'Projektpriorität (Standard / Express)', group: t('inbox.group_project') },
-    // Finanzen
-    { key: 'price_net', label: 'Betrag (Netto)', desc: 'Netto-Projektbetrag', group: t('inbox.group_finance') },
-    { key: 'price_gross', label: 'Betrag (Brutto)', desc: 'Brutto-Betrag inkl. MwSt.', group: t('inbox.group_finance') },
-    { key: 'payment_terms', label: 'Zahlungsziel', desc: 'Zahlungsfrist in Tagen', group: t('inbox.group_finance') },
-    { key: 'invoice_number', label: 'Rechnungsnummer', desc: 'Nummer der Projektrechnung', group: t('inbox.group_finance') },
-    { key: 'invoice_date', label: 'Rechnungsdatum', desc: 'Datum der Rechnungstellung', group: t('inbox.group_finance') },
-    { key: 'due_date', label: 'Fälligkeitsdatum', desc: 'Fälligkeitsdatum der Rechnung', group: t('inbox.group_finance') },
-    // Partner
-    { key: 'partner_name', label: t('inbox.var_partner_name'), desc: 'Name des Übersetzers / Partners', group: t('inbox.group_partner') },
-    { key: 'partner_email', label: t('inbox.var_partner_email'), desc: 'E-Mail-Adresse des Partners', group: t('inbox.group_partner') },
-    // Unternehmen
-    { key: 'company_name', label: t('inbox.var_company_name'), desc: 'Name Ihres Unternehmens', group: t('inbox.group_company') },
-    { key: 'company_address', label: 'Firmenadresse', desc: 'Adresse Ihres Unternehmens', group: t('inbox.group_company') },
-    { key: 'company_phone', label: 'Telefon (Firma)', desc: 'Telefonnummer Ihres Unternehmens', group: t('inbox.group_company') },
-    { key: 'company_email', label: 'E-Mail (Firma)', desc: 'E-Mail-Adresse Ihres Unternehmens', group: t('inbox.group_company') },
-    { key: 'company_website', label: 'Website', desc: 'Website Ihres Unternehmens', group: t('inbox.group_company') },
-    { key: 'managing_director', label: 'Geschäftsleitung', desc: 'Name der Geschäftsführung', group: t('inbox.group_company') },
-    { key: 'vat_id', label: 'USt-IdNr.', desc: 'Umsatzsteuer-Identifikationsnummer', group: t('inbox.group_company') },
-    { key: 'tax_id', label: 'Steuernummer', desc: 'Steuernummer des Unternehmens', group: t('inbox.group_company') },
-    { key: 'bank_name', label: 'Bankname', desc: 'Name Ihrer Bank', group: t('inbox.group_company') },
-    { key: 'bank_iban', label: 'IBAN', desc: 'IBAN Ihres Bankkontos', group: t('inbox.group_company') },
-    { key: 'bank_bic', label: 'BIC', desc: 'BIC Ihrer Bank', group: t('inbox.group_company') },
-    { key: 'bank_holder', label: 'Kontoinhaber', desc: 'Name des Kontoinhabers', group: t('inbox.group_company') },
-    // Allgemein
-    { key: 'date', label: t('inbox.var_current_date'), desc: 'Heutiges Datum', group: t('inbox.group_general') },
-    { key: 'sender_name', label: t('inbox.var_sender'), desc: 'Name des Sachbearbeiters', group: t('inbox.group_general') },
-];
 
-const VAR_GROUPS = [t('inbox.group_customer'), t('inbox.group_project'), t('inbox.group_finance'), t('inbox.group_partner'), t('inbox.group_company'), t('inbox.group_general')];
 
 const CommunicationHub = () => {
     const { t } = useTranslation();
+
+    const ALL_VARIABLES = useMemo(() => [
+        // Kunde
+        { key: 'customer_name', label: t('inbox.var_customer_name'), desc: 'Firmen- oder Vollname des Kunden', group: t('inbox.group_customer') },
+        { key: 'contact_person', label: t('inbox.var_contact_person'), desc: 'Kontaktperson beim Kunden', group: t('inbox.group_customer') },
+        { key: 'customer_email', label: t('inbox.var_customer_email'), desc: 'E-Mail-Adresse des Kunden', group: t('inbox.group_customer') },
+        { key: 'customer_phone', label: t('inbox.var_customer_phone'), desc: 'Telefonnummer des Kunden', group: t('inbox.group_customer') },
+        { key: 'customer_address', label: t('inbox.var_customer_address'), desc: 'Straße und Hausnummer', group: t('inbox.group_customer') },
+        { key: 'customer_city', label: t('inbox.var_customer_city'), desc: 'Stadt des Kunden', group: t('inbox.group_customer') },
+        { key: 'customer_zip', label: t('inbox.var_customer_zip'), desc: 'Postleitzahl des Kunden', group: t('inbox.group_customer') },
+        // Projekt
+        { key: 'project_number', label: t('inbox.var_project_number'), desc: 'Eindeutige Projektnummer', group: t('inbox.group_project') },
+        { key: 'project_name', label: t('inbox.var_project_name'), desc: 'Bezeichnung des Projekts', group: t('inbox.group_project') },
+        { key: 'project_status', label: t('inbox.var_project_status'), desc: 'Aktueller Projektstatus', group: t('inbox.group_project') },
+        { key: 'source_language', label: t('inbox.var_source_language'), desc: 'Ausgangssprache des Dokuments', group: t('inbox.group_project') },
+        { key: 'target_language', label: t('inbox.var_target_language'), desc: 'Zielsprache des Dokuments', group: t('inbox.group_project') },
+        { key: 'project_languages', label: t('inbox.var_project_languages'), desc: 'Ausgangs- und Zielsprache kombiniert', group: t('inbox.group_project') },
+        { key: 'deadline', label: t('inbox.var_deadline'), desc: 'Abgabetermin des Projekts', group: t('inbox.group_project') },
+        { key: 'document_type', label: 'Dokumentenart', desc: 'Art des zu übersetzenden Dokuments', group: t('inbox.group_project') },
+        { key: 'priority', label: 'Priorität', desc: 'Projektpriorität (Standard / Express)', group: t('inbox.group_project') },
+        // Finanzen
+        { key: 'price_net', label: 'Betrag (Netto)', desc: 'Netto-Projektbetrag', group: t('inbox.group_finance') },
+        { key: 'price_gross', label: 'Betrag (Brutto)', desc: 'Brutto-Betrag inkl. MwSt.', group: t('inbox.group_finance') },
+        { key: 'payment_terms', label: 'Zahlungsziel', desc: 'Zahlungsfrist in Tagen', group: t('inbox.group_finance') },
+        { key: 'invoice_number', label: 'Rechnungsnummer', desc: 'Nummer der Projektrechnung', group: t('inbox.group_finance') },
+        { key: 'invoice_date', label: 'Rechnungsdatum', desc: 'Datum der Rechnungstellung', group: t('inbox.group_finance') },
+        { key: 'due_date', label: 'Fälligkeitsdatum', desc: 'Fälligkeitsdatum der Rechnung', group: t('inbox.group_finance') },
+        // Partner
+        { key: 'partner_name', label: t('inbox.var_partner_name'), desc: 'Name des Übersetzers / Partners', group: t('inbox.group_partner') },
+        { key: 'partner_email', label: t('inbox.var_partner_email'), desc: 'E-Mail-Adresse des Partners', group: t('inbox.group_partner') },
+        // Unternehmen
+        { key: 'company_name', label: t('inbox.var_company_name'), desc: 'Name Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'company_address', label: 'Firmenadresse', desc: 'Adresse Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'company_phone', label: 'Telefon (Firma)', desc: 'Telefonnummer Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'company_email', label: 'E-Mail (Firma)', desc: 'E-Mail-Adresse Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'company_website', label: 'Website', desc: 'Website Ihres Unternehmens', group: t('inbox.group_company') },
+        { key: 'managing_director', label: 'Geschäftsleitung', desc: 'Name der Geschäftsführung', group: t('inbox.group_company') },
+        { key: 'vat_id', label: 'USt-IdNr.', desc: 'Umsatzsteuer-Identifikationsnummer', group: t('inbox.group_company') },
+        { key: 'tax_id', label: 'Steuernummer', desc: 'Steuernummer des Unternehmens', group: t('inbox.group_company') },
+        { key: 'bank_name', label: 'Bankname', desc: 'Name Ihrer Bank', group: t('inbox.group_company') },
+        { key: 'bank_iban', label: 'IBAN', desc: 'IBAN Ihres Bankkontos', group: t('inbox.group_company') },
+        { key: 'bank_bic', label: 'BIC', desc: 'BIC Ihrer Bank', group: t('inbox.group_company') },
+        { key: 'bank_holder', label: 'Kontoinhaber', desc: 'Name des Kontoinhabers', group: t('inbox.group_company') },
+        // Allgemein
+        { key: 'date', label: t('inbox.var_current_date'), desc: 'Heutiges Datum', group: t('inbox.group_general') },
+        { key: 'sender_name', label: t('inbox.var_sender'), desc: 'Name des Sachbearbeiters', group: t('inbox.group_general') },
+    ], [t]);
+
+    const VAR_GROUPS = useMemo(() => [t('inbox.group_customer'), t('inbox.group_project'), t('inbox.group_finance'), t('inbox.group_partner'), t('inbox.group_company'), t('inbox.group_general')], [t]);
     const queryClient = useQueryClient();
     const location = useLocation();
 
@@ -480,7 +482,7 @@ const CommunicationHub = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
             setIsTemplateModalOpen(false);
-            toast.success('Vorlage erstellt');
+            toast.success(t('messages.template_created'));
         },
         onError: () => toast.error(t('toast.email_template_error'))
     });
@@ -490,16 +492,16 @@ const CommunicationHub = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
             setIsTemplateModalOpen(false);
-            toast.success('Vorlage aktualisiert');
+            toast.success(t('messages.template_updated'));
         },
-        onError: () => toast.error('Fehler beim Aktualisieren der Vorlage')
+        onError: () => toast.error(t('messages.template_update_error'))
     });
 
     const deleteTemplateMutation = useMutation({
         mutationFn: mailService.deleteTemplate,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
-            toast.success('Vorlage gelöscht');
+            toast.success(t('messages.template_deleted'));
         },
         onError: () => toast.error(t('auth.error_deleting_template'))
     });
@@ -1357,7 +1359,7 @@ const CommunicationHub = () => {
                         toast.error('Geringfügiger Fehler beim Löschen aufgetreten');
                     }
                 }}
-                title={deleteType === 'single' ? t('inbox.delete_single') : t('inbox.delete_multiple', {count: selectedMails.length})}
+                title={deleteType === 'single' ? t('inbox.delete_single') : t('inbox.delete_multiple', { count: selectedMails.length })}
                 message={deleteType === 'single' ? "Möchten Sie diese E-Mail wirklich löschen?" : "Möchten Sie diese markierten E-Mails wirklich löschen?"}
             />
         </div>

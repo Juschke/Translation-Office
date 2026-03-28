@@ -292,7 +292,7 @@ const Customers = () => {
             header: '',
             accessor: (c: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye /></button>
+                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.details')}><FaEye /></button>
                     <button onClick={async () => {
                         setEditingCustomer(c);
                         setIsModalOpen(true);
@@ -305,7 +305,7 @@ const Customers = () => {
                         } finally {
                             setIsDetailLoading(false);
                         }
-                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit /></button>
+                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit /></button>
                     <button onClick={() => {
                         setCustomerToDelete(c.id);
                         setConfirmTitle(t('customers.status.deleted'));
