@@ -597,7 +597,7 @@ const ProjectDetail = () => {
 
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end mt-4 md:mt-0">
                                 <Button
-                                    onClick={() => setIsEditModalOpen(true)}
+                                    onClick={() => navigate(`/projects/${id}/edit`)}
                                     className="bg-brand-primary hover:bg-brand-primary/90 text-white px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEdit /> Bearbeiten
@@ -760,7 +760,7 @@ const ProjectDetail = () => {
 
                                     {tab !== 'overview' && tab !== 'history' && (
                                         <span className={clsx(
-                                            "px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors",
+                                            "px-1.5 py-0.5 rounded-sm text-[10px] font-bold transition-colors",
                                             isActive ? "bg-[#1B4D4F] text-white" : "bg-slate-100 text-slate-500"
                                         )}>
                                             {badgeCount}

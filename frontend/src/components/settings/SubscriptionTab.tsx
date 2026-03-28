@@ -325,7 +325,7 @@ const SubscriptionTab: React.FC = () => {
           </Form.Item>
         </Form>
 
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-sm text-sm text-blue-800">
           ℹ️ Ihre Upgrade-Anfrage wird an unser Team gesendet. Wir werden uns in Kürze bei Ihnen melden.
         </div>
       </Modal>

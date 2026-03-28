@@ -3,6 +3,7 @@ import { FaTimes, FaSearch, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa'
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { customerService } from '../../api/services';
+import StatusBadge from '../common/StatusBadge';
 // Reuse PartnerForm logic or create CustomerForm if differing significantly. For this step, I will focus on the list selection logic which is the primary request.
 // If CustomerForm is needed, we should create it. For now, I'll stick to the search/selection part as the 'Ändern' functionality primarily implies selecting an existing customer.
 // If creation is needed, we can expand later or reuse components.
@@ -101,7 +102,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  if (isLoading) {
  return (
  <div className="fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center backdrop-blur-sm p-6 overflow-hidden transition-all">
- <div className="bg-white rounded shadow-sm p-8 flex flex-col items-center gap-3 animate-fadeIn">
+ <div className="bg-white rounded-sm shadow-sm p-8 flex flex-col items-center gap-3 animate-fadeIn">
  <div className="w-8 h-8 border-4 border-slate-100 border-t-brand-600 rounded-full animate-spin"></div>
  <span className="text-xs font-medium text-slate-500">Lade Kunden...</span>
  </div>
@@ -109,29 +110,12 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  );
  }
 
- const getStatusBadge = (status: string) => {
- const styles: Record<string, string> = {
- 'active': 'bg-emerald-50 text-emerald-600 border-emerald-200',
- 'inactive': 'bg-slate-50 text-slate-400 border-slate-200',
- 'blocked': 'bg-red-50 text-red-600 border-red-200'
- };
- const labels: Record<string, string> = {
- 'active': 'Aktiv',
- 'inactive': 'Inaktiv',
- 'blocked': 'Gesperrt'
- };
- return (
- <span className={clsx("px-1.5 py-0.5 rounded border text-xs font-semibolder", styles[status] || styles.inactive)}>
- {labels[status] || status}
- </span>
- );
- };
 
  return (
  <div className="fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center backdrop-blur-sm p-6 overflow-hidden transition-all">
- <div className="bg-white rounded shadow-sm w-full max-w-4xl flex flex-col h-full max-h-[85vh] border border-slate-200 animate-fadeIn font-sans">
+ <div className="bg-white rounded-sm shadow-sm w-full max-w-4xl flex flex-col h-full max-h-[85vh] border border-slate-200 animate-fadeIn font-sans">
  {/* Header */}
- <div className="bg-slate-50 px-8 py-5 border-b border-slate-200 flex justify-between items-center shrink-0">
+ <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
  <div>
  <h3 className="font-semibold text-lg text-slate-800">
  Kunden-Auswahl
@@ -139,7 +123,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  <p className="text-xs text-slate-500 font-medium mt-0.5">Auftraggeber zuordnen</p>
  </div>
  <div className="flex items-center gap-3">
- <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded text-slate-400 hover:bg-slate-200 transition">
+ <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-sm text-slate-400 hover:bg-slate-200 transition">
  <FaTimes className="text-lg" />
  </button>
  </div>
@@ -151,7 +135,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs" />
  <input
  type="text"
- className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded text-sm bg-slate-50 focus:outline-none focus:border-slate-900 focus:bg-white transition"
+ className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-sm text-sm bg-slate-50 focus:outline-none focus:border-slate-900 focus:bg-white transition"
  placeholder="Kunde suchen (Name, Firma, Email)..."
  value={searchTerm}
  onChange={(e) => setSearchTerm(e.target.value)}
@@ -185,7 +169,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  >
  <td className="px-6 py-2.5">
  <div className="flex items-center gap-3">
- <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-semibold shadow-sm shrink-0 ${c.color}`}>{c.initials}</div>
+ <div className={`w-8 h-8 rounded-sm flex items-center justify-center text-xs font-semibold shadow-sm shrink-0 ${c.color}`}>{c.initials}</div>
  <div className="flex flex-col">
  <div className="font-medium text-slate-900 text-sm group-hover:text-slate-900 transition leading-tight">{c.company || c.name}</div>
  <div className="text-xs text-slate-500 font-medium">{c.email}</div>
@@ -196,12 +180,12 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  {c.type === 'company' ? 'Firma' : c.type === 'authority' ? 'Behörde' : 'Privat'}
  </td>
  <td className="px-4 py-2.5">
- {getStatusBadge(c.status)}
+ <StatusBadge status={c.status} type="customer" />
  </td>
  <td className="px-6 py-2.5 text-right">
  <button
  onClick={(e) => { e.stopPropagation(); onSelect(c); }}
- className="bg-slate-900 text-white px-4 py-1.5 rounded text-xs font-semibold shadow-sm hover:bg-slate-900 transition"
+ className="bg-slate-900 text-white px-4 py-1.5 rounded-sm text-xs font-semibold shadow-sm hover:bg-slate-900 transition"
  >
  Auswählen
  </button>
@@ -239,7 +223,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  <button
  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
  disabled={currentPage === 1}
- className="h-8 px-3 rounded border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+ className="h-8 px-3 rounded-sm border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
  >
  Zurück
  </button>
@@ -249,7 +233,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  key={i}
  onClick={() => setCurrentPage(i + 1)}
  className={clsx(
- "w-8 h-8 rounded text-xs font-semibold transition-all",
+ "w-8 h-8 rounded-sm text-xs font-semibold transition-all",
  currentPage === i + 1
  ? "bg-slate-900 text-white shadow-sm"
  : "text-slate-400 hover:bg-slate-50"
@@ -262,7 +246,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  <button
  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
  disabled={currentPage === totalPages}
- className="h-8 px-3 rounded border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+ className="h-8 px-3 rounded-sm border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
  >
  Weiter
  </button>
@@ -271,8 +255,8 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  )}
 
  {/* Footer */}
- <div className="px-8 py-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 shrink-0">
- <button onClick={onClose} className="px-6 py-2.5 border border-slate-300 rounded text-slate-600 text-sm font-medium hover:bg-white transition">
+ <div className="px-6 py-4 border-t border-slate-200 bg-white flex justify-end gap-3 shrink-0">
+ <button onClick={onClose} className="px-6 py-2.5 border border-slate-300 rounded-sm text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
  Abbrechen
  </button>
  </div>

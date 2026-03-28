@@ -101,7 +101,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                                 e.stopPropagation();
                                                 onDelete(mail.id);
                                             }}
-                                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-500 transition-all rounded"
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-500 transition-all rounded-sm"
                                         >
                                             <FaTrashAlt size={10} />
                                         </button>

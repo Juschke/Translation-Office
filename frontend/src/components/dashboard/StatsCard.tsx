@@ -13,7 +13,7 @@ interface StatsCardProps {
 const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, colorClass, subText, onClick, progress }) => {
     return (
         <div
-            className={`bg-white p-4 rounded-[var(--radius-lg)] border border-brand-border transition-all ${onClick ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+            className={`bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition-all ${onClick ? 'cursor-pointer hover:bg-slate-50' : ''}`}
             onClick={onClick}
         >
             <div className="flex justify-between items-start">
@@ -21,7 +21,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, colorClass, s
                     <p className="text-xs font-semibold text-slate-500">{title}</p>
                     <h3 className="text-2xl font-medium text-slate-800 mt-1">{value}</h3>
                 </div>
-                <div className={`p-2 rounded ${colorClass}`}>
+                <div className={`p-2 rounded-sm ${colorClass}`}>
                     {icon}
                 </div>
             </div>

@@ -9,7 +9,7 @@ interface NewMasterDataModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: any) => void;
-    type: 'languages' | 'doc_types' | 'services' | 'email_templates' | 'specializations' | 'units' | 'currencies';
+    type: 'languages' | 'doc_types' | 'services' | 'email_templates' | 'specializations' | 'units' | 'currencies' | 'project_statuses';
     initialData?: any;
 }
 
@@ -134,6 +134,10 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
             if (!formData.name) { newErrors.name = true; if (!firstErrorId) firstErrorId = 'name'; }
             if (!formData.symbol) { newErrors.symbol = true; if (!firstErrorId) firstErrorId = 'symbol'; }
         }
+        if (type === 'project_statuses') {
+            if (!formData.name) { newErrors.name = true; if (!firstErrorId) firstErrorId = 'name'; }
+            if (!formData.label) { newErrors.label = true; if (!firstErrorId) firstErrorId = 'label'; }
+        }
 
         setErrors(newErrors);
 
@@ -182,6 +186,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
             case 'specializations': return 'Neues Fachgebiet';
             case 'units': return 'Neue Einheit';
             case 'currencies': return 'Neue Währung';
+            case 'project_statuses': return 'Neuen Projekt-Status anlegen';
             default: return 'Datensatz anlegen';
         }
     };
@@ -195,6 +200,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
             case 'specializations': return <FaTag className="text-slate-700" />;
             case 'units': return <FaRuler className="text-slate-700" />;
             case 'currencies': return <FaMoneyBillWave className="text-slate-700" />;
+            case 'project_statuses': return <FaCheck className="text-slate-700" />;
             default: return null;
         }
     };
@@ -208,7 +214,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                 {/* Header */}
                 <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                        <div className="w-8 h-8 rounded-sm bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                             {getIcon()}
                         </div>
                         <h3 className="font-medium text-slate-800 text-sm">
@@ -225,16 +231,16 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {/* Status Field - Common for all */}
                     <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-slate-400">Status</label>
-                        <div className="flex bg-slate-100 p-0.5 rounded border border-slate-200 h-11">
+                        <div className="flex bg-slate-100 p-0.5 rounded-sm border border-slate-200 h-11">
                             <button
                                 onClick={() => handleChange('status', 'active')}
-                                className={clsx("flex-1 text-xs font-medium rounded flex items-center justify-center gap-2 transition", (formData.status || 'active') === 'active' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400")}
+                                className={clsx("flex-1 text-xs font-medium rounded-sm flex items-center justify-center gap-2 transition", (formData.status || 'active') === 'active' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400")}
                             >
                                 <FaCheck className="text-xs" /> Aktiv
                             </button>
                             <button
                                 onClick={() => handleChange('status', 'inactive')}
-                                className={clsx("flex-1 text-xs font-medium rounded flex items-center justify-center gap-2 transition", formData.status === 'inactive' ? "bg-white text-slate-500 shadow-sm" : "text-slate-400")}
+                                className={clsx("flex-1 text-xs font-medium rounded-sm flex items-center justify-center gap-2 transition", formData.status === 'inactive' ? "bg-white text-slate-500 shadow-sm" : "text-slate-400")}
                             >
                                 <FaBan className="text-xs" /> Inaktiv
                             </button>
@@ -249,7 +255,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="name_internal"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name_internal ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name_internal ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Deutsch (Deutschland)"
                                     value={formData.name_internal || ''}
                                     onChange={(e) => handleChange('name_internal', e.target.value)}
@@ -260,7 +266,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="name_native"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name_native ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name_native ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Deutsch"
                                     value={formData.name_native || ''}
                                     onChange={(e) => handleChange('name_native', e.target.value)}
@@ -272,7 +278,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <input
                                         id="iso_code"
                                         type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.iso_code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.iso_code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="de-DE"
                                         value={formData.iso_code || ''}
                                         onChange={(e) => handleChange('iso_code', e.target.value)}
@@ -282,7 +288,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <label className="block text-xs font-medium text-slate-400">Flaggen-Code (2-Stellig)</label>
                                     <input
                                         type="text"
-                                        className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white"
+                                        className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white"
                                         placeholder="de"
                                         maxLength={2}
                                         value={formData.flag_icon || ''}
@@ -305,7 +311,6 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     value={formData.category || ''}
                                     onChange={(val) => handleChange('category', val)}
                                     onAddNew={() => setIsAddCategoryModalOpen(true)}
-                                    addNewLabel="Neue Kategorie..."
                                     error={errors.category}
                                 />
                             </div>
@@ -314,7 +319,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="name"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Marketing Broschüre"
                                     value={formData.name || ''}
                                     onChange={(e) => handleChange('name', e.target.value)}
@@ -332,7 +337,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <input
                                         id="name"
                                         type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="z.B. Lektorat Premium"
                                         value={formData.name || ''}
                                         onChange={(e) => handleChange('name', e.target.value)}
@@ -343,7 +348,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <input
                                         type="text"
                                         maxLength={20}
-                                        className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white font-mono"
+                                        className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white font-mono"
                                         placeholder="ÜB-01"
                                         value={formData.service_code || ''}
                                         onChange={(e) => handleChange('service_code', e.target.value)}
@@ -354,7 +359,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Einheit</label>
                                     <select
-                                        className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white"
+                                        className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white"
                                         value={formData.unit || ''}
                                         onChange={(e) => handleChange('unit', e.target.value)}
                                     >
@@ -370,7 +375,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <input
                                         id="base_price"
                                         type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.base_price ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.base_price ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="0.12"
                                         value={formData.base_price || ''}
                                         onChange={(e) => handleChange('base_price', e.target.value)}
@@ -385,11 +390,11 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                         <>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
-                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Recht & Verträge" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Recht & Verträge" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Beschreibung</label>
-                                <input type="text" className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white" placeholder="Kurze Beschreibung (optional)" value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} />
+                                <input type="text" className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white" placeholder="Kurze Beschreibung (optional)" value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} />
                             </div>
                         </>
                     )}
@@ -400,16 +405,16 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5 col-span-2">
                                     <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
-                                    <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Normseite" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+                                    <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Normseite" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Abkürzung</label>
-                                    <input type="text" maxLength={10} className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white font-mono uppercase tracking-tighter" placeholder="z.B. NS" value={formData.abbreviation || ''} onChange={(e) => handleChange('abbreviation', e.target.value)} />
+                                    <input type="text" maxLength={10} className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white font-mono uppercase tracking-tighter" placeholder="z.B. NS" value={formData.abbreviation || ''} onChange={(e) => handleChange('abbreviation', e.target.value)} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Einheitstyp</label>
                                     <select
-                                        className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white"
+                                        className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white"
                                         value={formData.type || 'quantity'}
                                         onChange={(e) => handleChange('type', e.target.value)}
                                     >
@@ -421,7 +426,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             </div>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Beschreibung</label>
-                                <input type="text" className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm bg-white" placeholder="Kurze Erklärung (optional)" value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} />
+                                <input type="text" className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white" placeholder="Kurze Erklärung (optional)" value={formData.description || ''} onChange={(e) => handleChange('description', e.target.value)} />
                             </div>
                         </div>
                     )}
@@ -432,22 +437,22 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Code (ISO) <span className="text-red-500">*</span></label>
-                                    <input id="code" type="text" maxLength={3} className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all uppercase", errors.code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="EUR" value={formData.code || ''} onChange={(e) => handleChange('code', e.target.value.toUpperCase())} />
+                                    <input id="code" type="text" maxLength={3} className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all uppercase", errors.code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="EUR" value={formData.code || ''} onChange={(e) => handleChange('code', e.target.value.toUpperCase())} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Symbol <span className="text-red-500">*</span></label>
-                                    <input id="symbol" type="text" maxLength={5} className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.symbol ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="€" value={formData.symbol || ''} onChange={(e) => handleChange('symbol', e.target.value)} />
+                                    <input id="symbol" type="text" maxLength={5} className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.symbol ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="€" value={formData.symbol || ''} onChange={(e) => handleChange('symbol', e.target.value)} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Standard</label>
-                                    <button type="button" onClick={() => handleChange('is_default', !formData.is_default)} className={clsx("w-full h-11 px-3 border rounded text-xs font-medium transition-all flex items-center justify-center gap-2", formData.is_default ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "border-slate-300 text-slate-400 bg-white")}>
+                                    <button type="button" onClick={() => handleChange('is_default', !formData.is_default)} className={clsx("w-full h-11 px-3 border rounded-sm text-xs font-medium transition-all flex items-center justify-center gap-2", formData.is_default ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "border-slate-300 text-slate-400 bg-white")}>
                                         {formData.is_default ? <><FaCheck className="text-xs" /> Standard</> : 'Nein'}
                                     </button>
                                 </div>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
-                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Euro" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Euro" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
                             </div>
                         </>
                     )}
@@ -460,7 +465,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="name"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Angebot versenden"
                                     value={formData.name || ''}
                                     onChange={(e) => handleChange('name', e.target.value)}
@@ -471,7 +476,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="subject"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded outline-none focus:border-slate-900 text-sm transition-all", errors.subject ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.subject ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="Ihre Anfrage bei Translation Office"
                                     value={formData.subject || ''}
                                     onChange={(e) => handleChange('subject', e.target.value)}
@@ -482,14 +487,14 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <label className="block text-xs font-medium text-slate-400">Inhalt <span className="text-red-500">*</span></label>
                                     <button
                                         onClick={() => setShowPreview(!showPreview)}
-                                        className="text-xs font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-100"
+                                        className="text-xs font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-sm border border-slate-100"
                                     >
                                         {showPreview ? <><FaCode /> Editor</> : <><FaEye /> Vorschau</>}
                                     </button>
                                 </div>
 
                                 {showPreview ? (
-                                    <div className="w-full h-48 px-3 py-3 border border-slate-200 rounded text-sm bg-slate-50 overflow-y-auto cursor-not-allowed text-slate-600 whitespace-pre-wrap">
+                                    <div className="w-full h-48 px-3 py-3 border border-slate-200 rounded-sm text-sm bg-slate-50 overflow-y-auto cursor-not-allowed text-slate-600 whitespace-pre-wrap">
                                         {getPreviewText(formData.body)}
                                     </div>
                                 ) : (
@@ -499,7 +504,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                                 <button
                                                     key={v.value}
                                                     onClick={() => insertVariable(v.value)}
-                                                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded text-xs font-medium text-slate-600 hover:text-slate-700 transition"
+                                                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-sm text-xs font-medium text-slate-600 hover:text-slate-700 transition"
                                                     title="Klicken zum Einfügen"
                                                 >
                                                     {v.label}
@@ -509,7 +514,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                         <textarea
                                             id="body"
                                             ref={textareaRef}
-                                            className={clsx("w-full h-32 px-3 py-2 border rounded outline-none focus:border-slate-900 text-sm bg-white transition-all", errors.body ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                            className={clsx("w-full h-32 px-3 py-2 border rounded-sm outline-none focus:border-slate-900 text-sm bg-white transition-all", errors.body ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                             placeholder="Hallo {contact_person}, anbei erhalten Sie..."
                                             value={formData.body || ''}
                                             onChange={(e) => handleChange('body', e.target.value)}
@@ -519,19 +524,48 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             </div>
                         </>
                     )}
+
+                    {/* Project Status Fields */}
+                    {type === 'project_statuses' && (
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-slate-400">Key (Interner Code) <span className="text-red-500">*</span></label>
+                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all font-mono", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. in_progress" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+                                <p className="text-[10px] text-slate-400">Dienet der internen Identifikation (z.B. f_bearbeitung). Keine Leerstellen.</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-slate-400">Anzeigename <span className="text-red-500">*</span></label>
+                                <input id="label" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.label ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. In Bearbeitung" value={formData.label || ''} onChange={(e) => handleChange('label', e.target.value)} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-slate-400">Stil (Tailwind Klassen)</label>
+                                <input type="text" className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white" placeholder="bg-blue-50 text-blue-700 border-blue-200" value={formData.style || ''} onChange={(e) => handleChange('style', e.target.value)} />
+                                <div className="mt-2 flex items-center gap-2">
+                                    <span className="text-[10px] text-slate-400">Vorschau:</span>
+                                    <span className={clsx('px-2.5 py-0.5 rounded-sm text-xs font-semibold border tracking-tight', formData.style || 'bg-slate-50 text-slate-400 border-slate-200')}>
+                                        {formData.label || 'Vorschau'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-slate-400">Sortierung</label>
+                                <input type="number" className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white" value={formData.sort_order || 0} onChange={(e) => handleChange('sort_order', parseInt(e.target.value))} />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}
                 <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2.5 rounded border border-slate-300 text-slate-600 text-xs font-medium hover:bg-white transition"
+                        className="px-6 py-2.5 rounded-sm border border-slate-300 text-slate-600 text-xs font-medium hover:bg-white transition"
                     >
                         Abbrechen
                     </button>
                     <button
                         onClick={handleSubmit}
-                        className="px-6 py-2.5 bg-slate-900 text-white rounded text-xs font-medium hover:bg-slate-800 shadow-sm transition flex items-center gap-2"
+                        className="px-6 py-2.5 bg-slate-900 text-white rounded-sm text-xs font-medium hover:bg-slate-800 shadow-sm transition flex items-center gap-2"
                     >
                         <FaSave /> Speichern
                     </button>
@@ -551,7 +585,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <input
                                 autoFocus
                                 type="text"
-                                className="w-full h-11 px-3 border border-slate-300 rounded outline-none focus:border-slate-900 text-sm"
+                                className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm"
                                 placeholder="z.B. Medizinische Dokumente"
                                 value={newCategoryName}
                                 onChange={(e) => setNewCategoryName(e.target.value)}
@@ -567,7 +601,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             </button>
                             <button
                                 onClick={handleAddNewCategory}
-                                className="px-4 py-2 bg-slate-900 text-white rounded text-xs font-medium flex items-center gap-2"
+                                className="px-4 py-2 bg-slate-900 text-white rounded-sm text-xs font-medium flex items-center gap-2"
                             >
                                 <FaPlus className="text-xs" /> Hinzufügen
                             </button>

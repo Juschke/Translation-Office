@@ -159,7 +159,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                                     <FaEdit size={12} />
                                 </button>
                             )}
-                            <button onClick={(e) => moveDown(e, project)} className="p-1.5 text-slate-300 hover:text-brand-accent bg-slate-50 rounded" title="In nächste Phase">
+                            <button onClick={(e) => moveDown(e, project)} className="p-1.5 text-slate-300 hover:text-brand-accent bg-slate-50 rounded-sm" title="In nächste Phase">
                                 <FaArrowDown size={12} />
                             </button>
                         </div>

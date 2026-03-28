@@ -224,7 +224,7 @@ const ProjectFinancesTab = ({
                 <div className="flex-1 space-y-8 flex flex-col">
                     {/* Positions Table Container */}
                     <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-sm bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                                     <FaCalculator className="text-slate-600 text-sm" />
@@ -269,12 +269,12 @@ const ProjectFinancesTab = ({
                         />
 
                         {activeInvoice && financials.open <= 0 && (
-                            <div className="mt-4 flex items-center justify-center gap-2 px-3 py-3 bg-emerald-50 border border-emerald-200 rounded text-emerald-600 text-[11px] font-black uppercase tracking-widest animate-in zoom-in-95">
+                            <div className="mt-4 flex items-center justify-center gap-2 px-3 py-3 bg-emerald-50 border border-emerald-200 rounded-sm text-emerald-600 text-[11px] font-black uppercase tracking-widest animate-in zoom-in-95">
                                 <FaCheckCircle className="text-emerald-500" /> VOLLSTÄNDIG BEZAHLT
                             </div>
                         )}
                         {!activeInvoice && (
-                            <div className="mt-4 flex items-center justify-center gap-1.5 px-3 py-3 bg-amber-50 border border-amber-200 rounded text-amber-600 text-[10px] font-bold uppercase tracking-tight">
+                            <div className="mt-4 flex items-center justify-center gap-1.5 px-3 py-3 bg-amber-50 border border-amber-200 rounded-sm text-amber-600 text-[10px] font-bold uppercase tracking-tight">
                                 <FaInfoCircle className="text-[10px]" /> Rechnung erforderlich, um Zahlungen zu erfassen
                             </div>
                         )}
@@ -305,13 +305,13 @@ const ProjectFinancesTab = ({
 
                     {/* Invoice Status Card */}
                     <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-                            <div className="w-7 h-7 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500">
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                            <div className="w-7 h-7 rounded-sm bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500">
                                 <FaEuroSign className="text-xs" />
                             </div>
                             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Abrechnung</h3>
                         </div>
-                        <div className="p-5">
+                        <div className="p-6">
                             {activeInvoice ? (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">

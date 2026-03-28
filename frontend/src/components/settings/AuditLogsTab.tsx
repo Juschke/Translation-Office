@@ -17,7 +17,7 @@ const AuditLogsTab = () => {
         <div className="space-y-6 animate-fadeIn">
             <div className="bg-white shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                 <div className="p-4 bg-slate-50 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded"><FaUserShield /></div>
+                    <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded-sm"><FaUserShield /></div>
                     <div>
                         <h3 className="text-sm font-semibold text-slate-800">{t('settings.tabs.audit')}</h3>
                         <p className="text-xs text-slate-400 font-medium tracking-tight">Vollständige Historie aller Systemänderungen</p>

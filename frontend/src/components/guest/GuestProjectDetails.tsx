@@ -19,11 +19,11 @@ export const GuestProjectDetails: React.FC<GuestProjectDetailsProps> = ({ projec
             {/* Sprachen Section */}
             <div className="px-4 sm:px-6 py-5 border-b border-slate-200">
                 <h3 className="text-xs font-semibold text-slate-600 mb-4">Sprachrichtung</h3>
-                <div className="flex items-center justify-center gap-4 p-4 rounded">
+                <div className="flex items-center justify-center gap-4 p-4 rounded-sm">
                     <div className="flex items-center gap-2">
                         <img
                             src={getFlagUrl(project.source_lang?.iso_code || 'de')}
-                            className="w-8 h-6 rounded shadow-sm"
+                            className="w-8 h-6 rounded-sm shadow-sm"
                             alt={project.source_lang?.name_native}
                         />
                         <span className="text-sm font-medium text-slate-700">
@@ -34,7 +34,7 @@ export const GuestProjectDetails: React.FC<GuestProjectDetailsProps> = ({ projec
                     <div className="flex items-center gap-2">
                         <img
                             src={getFlagUrl(project.target_lang?.iso_code || 'en')}
-                            className="w-8 h-6 rounded shadow-sm"
+                            className="w-8 h-6 rounded-sm shadow-sm"
                             alt={project.target_lang?.name_native}
                         />
                         <span className="text-sm font-medium text-slate-700">

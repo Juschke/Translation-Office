@@ -10,6 +10,7 @@ import {
 
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import KPICard from '../components/common/KPICard';
+import StatusBadge from '../components/common/StatusBadge';
 import DataTable, { type FilterDef } from '../components/common/DataTable';
 import { Button } from '../components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -281,26 +282,7 @@ const Customers = () => {
         {
             id: 'status',
             header: t('common.status'),
-            accessor: (c: any) => {
-                const statusStyles: { [key: string]: string } = {
-                    'active': 'bg-emerald-50 text-emerald-700 border-emerald-100', // Lighter border
-                    'inactive': 'bg-slate-50 text-slate-400 border-slate-200',
-                    'deleted': 'bg-red-50 text-red-700 border-red-200',
-                    'archived': 'bg-slate-800 text-white border-slate-700'
-                };
-                const labels: { [key: string]: string } = {
-                    'active': t('customers.status.active'),
-                    'inactive': t('customers.status.inactive'),
-                    'deleted': t('customers.status.deleted'),
-                    'archived': t('customers.status.archived')
-                };
-                const displayStatus = c.status === 'Aktiv' ? 'active' : c.status === 'Inaktiv' ? 'inactive' : c.status?.toLowerCase();
-                return (
-                    <span className={`px-2 py-0.5 rounded-sm text-xs font-semibold border tracking-tight ${statusStyles[displayStatus] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
-                        {labels[displayStatus] || c.status}
-                    </span>
-                );
-            },
+            accessor: (c: any) => <StatusBadge status={c.status} type="customer" />,
             sortable: true,
             sortKey: 'status',
             align: 'center' as const
@@ -365,7 +347,7 @@ const Customers = () => {
                 onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }}
                 className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition"
             >
-                <FaDownload /> Export
+                <FaDownload /> Exportieren
             </button>
             {isExportOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
@@ -402,7 +384,7 @@ const Customers = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label={t('customers.kpi.total_customers')} value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
                 <KPICard label={t('customers.kpi.new_entries')} value={newCustomersCount} icon={<FaUserPlus />} iconColor="text-indigo-600" subValue={t('customers.kpi.last_30_days')} />
                 <KPICard label={t('customers.kpi.top_customer')} value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" subValue={t('customers.kpi.top_customer_sub')} />

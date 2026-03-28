@@ -14,7 +14,6 @@ interface SearchableSelectProps {
     className?: string;
     isMulti?: boolean;
     onAddNew?: () => void;
-    addNewLabel?: string;
     id?: string;
     preserveOrder?: boolean;
     maxVisibleItems?: number;
@@ -22,7 +21,7 @@ interface SearchableSelectProps {
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
-    isMulti = false, onAddNew, addNewLabel = "Neu hinzufügen", id, preserveOrder = false,
+    isMulti = false, onAddNew, id, preserveOrder = false,
     maxVisibleItems = 2
 }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -300,7 +299,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         }}
                         className="w-full"
                     >
-                        <FaPlus className="text-xs" /> {addNewLabel}
+                        <FaPlus className="text-xs text-brand-primary" />
                     </Button>
                 </div>
             )}
@@ -334,7 +333,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                         isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-slate-700 whitespace-nowrap" : "font-semibold text-slate-800"
                                     )}>
                                         {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
-                                        <span className="truncate max-w-[120px]">{opt.label}</span>
+                                        <span>{opt.label}</span>
                                         {isMulti && (
                                             <FaTimes
                                                 className="ml-1 text-slate-400 hover:text-red-500 transition-colors shrink-0"

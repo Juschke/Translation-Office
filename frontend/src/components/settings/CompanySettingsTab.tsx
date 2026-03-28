@@ -380,15 +380,15 @@ const CompanySettingsTab = () => {
 
     return (
         <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden animate-fadeIn">
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded"><FaBuilding /></div>
+                    <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded-sm"><FaBuilding /></div>
                     <h3 className="text-sm font-medium text-slate-800">Unternehmensdaten</h3>
                 </div>
                 <button
                     onClick={handleSaveCompany}
                     disabled={updateCompanyMutation.isPending}
-                    className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white text-xs font-medium hover:bg-black transition shadow-sm disabled:opacity-50 rounded"
+                    className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white text-xs font-medium hover:bg-black transition shadow-sm disabled:opacity-50 rounded-sm"
                 >
                     <FaSave /> {updateCompanyMutation.isPending ? 'Speichert...' : 'Speichern'}
                 </button>

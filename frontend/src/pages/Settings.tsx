@@ -24,7 +24,7 @@ const Settings: React.FC = () => {
     return (
         <div className="max-w-7xl mx-auto fade-in flex flex-col gap-4 p-4 pb-20">
             <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-600 shrink-0">
+                <div className="w-9 h-9 rounded-sm bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-600 shrink-0">
                     <Icon />
                 </div>
                 <div>

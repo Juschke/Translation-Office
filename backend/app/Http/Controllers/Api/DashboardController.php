@@ -62,7 +62,7 @@ class DashboardController extends Controller
             // 3. Customer & Partner stats
             $activeCustomersCount = Customer::count();
             $activePartnersCount = Partner::count();
-            
+
             $upcomingInterpretingCount = \App\Models\Appointment::where('type', 'interpreting')
                 ->where('start_date', '>=', $today)
                 ->count();
@@ -117,6 +117,9 @@ class DashboardController extends Controller
                     'unread_emails' => \App\Models\Mail::where('folder', 'inbox')->where('is_read', false)->count(),
                     'active_interpreting' => $activeInterpretingCount,
                     'external_costs' => (float) $externalCosts,
+                    'total_files' => \App\Models\ProjectFile::whereHas('project', function ($q) use ($tenantId) {
+                        $q->where('tenant_id', $tenantId);
+                    })->count(),
                 ],
                 'period' => [
                     'start' => $startDate->toDateString(),

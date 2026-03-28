@@ -61,6 +61,7 @@ export function buildInvoiceColumns({
             ),
             sortable: true,
             sortKey: 'invoice_number',
+            width: 100,
         },
         {
             id: 'customer',
@@ -75,6 +76,7 @@ export function buildInvoiceColumns({
                 );
             },
             sortable: true,
+            width: 140,
         },
         {
             id: 'project',
@@ -83,6 +85,7 @@ export function buildInvoiceColumns({
                 <span className="text-xs font-medium text-slate-500">{inv.snapshot_project_name || inv.project?.project_name || inv.snapshot_project_number || ''}</span>
             ),
             sortable: true,
+            width: 120,
         },
         {
             id: 'due_date',
@@ -94,14 +97,31 @@ export function buildInvoiceColumns({
             ),
             sortable: true,
             sortKey: 'due_date',
+            width: 90,
         },
         {
-            id: 'amount',
+            id: 'amount_net',
+            header: `${t('fields.amount')} (${t('fields.net')})`,
+            accessor: (inv: any) => {
+                const eur = inv.amount_net_eur ?? (inv.amount_net / 100);
+                return (
+                    <span className={`font-medium tabular-nums ${eur < 0 ? 'text-red-500' : 'text-slate-600'}`}>
+                        {eur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </span>
+                );
+            },
+            sortable: true,
+            sortKey: 'amount_net',
+            align: 'right' as const,
+            width: 80,
+        },
+        {
+            id: 'amount_gross',
             header: `${t('fields.amount')} (${t('fields.gross')})`,
             accessor: (inv: any) => {
                 const eur = inv.amount_gross_eur ?? (inv.amount_gross / 100);
                 return (
-                    <span className={`font-semibold ${eur < 0 ? 'text-red-600' : 'text-slate-800'}`}>
+                    <span className={`font-bold tabular-nums ${eur < 0 ? 'text-red-600' : 'text-slate-900'}`}>
                         {eur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                     </span>
                 );
@@ -109,6 +129,7 @@ export function buildInvoiceColumns({
             sortable: true,
             sortKey: 'amount_gross',
             align: 'right' as const,
+            width: 80,
         },
         {
             id: 'status',
@@ -125,6 +146,7 @@ export function buildInvoiceColumns({
             sortable: true,
             sortKey: 'status',
             align: 'center' as const,
+            width: 100,
         },
         {
             id: 'actions',
@@ -289,6 +311,7 @@ export function buildInvoiceColumns({
                 );
             },
             align: 'right' as const,
+            width: 90,
         },
     ];
 }

@@ -316,7 +316,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           <div className="space-y-4">
             {!isCompact && (
               <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">01</div>
+                <div className="w-6 h-6 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">01</div>
                 <h4 className="text-xs font-semibold text-slate-800">Klassifizierung & Name</h4>
               </div>
             )}
@@ -406,7 +406,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           <div className="space-y-4">
             {!isCompact && (
               <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">02</div>
+                <div className="w-6 h-6 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">02</div>
                 <h4 className="text-xs font-semibold text-slate-800">Kontaktdaten</h4>
               </div>
             )}
@@ -489,7 +489,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           <div className="space-y-4">
             {!isCompact && (
               <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">03</div>
+                <div className="w-6 h-6 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">03</div>
                 <h4 className="text-xs font-semibold text-slate-800">Standort & Adresse</h4>
               </div>
             )}
@@ -530,7 +530,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
           <>
             <div className={clsx("space-y-4", activeTab !== 'skills' && "hidden")}>
               <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">04</div>
+                <div className="w-6 h-6 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">04</div>
                 <h4 className="text-xs font-semibold text-slate-800">Kompetenzen & IT</h4>
               </div>
 

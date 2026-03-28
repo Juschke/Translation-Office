@@ -20,7 +20,7 @@ const PartnerDuplicateWarning = ({ duplicates, ignoreDuplicates, onIgnoreDuplica
                 </p>
                 <div className="mt-3 space-y-2">
                     {duplicates.map((d: any) => (
-                        <div key={d.id} className="flex items-center justify-between bg-white p-2 rounded border border-amber-100 shadow-sm transition-all hover:border-amber-300">
+                        <div key={d.id} className="flex items-center justify-between bg-white p-2 rounded-sm border border-amber-100 shadow-sm transition-all hover:border-amber-300">
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
                                     {d.company || `${d.first_name} ${d.last_name}`}
@@ -32,7 +32,7 @@ const PartnerDuplicateWarning = ({ duplicates, ignoreDuplicates, onIgnoreDuplica
                             <Link
                                 to={`/partners?id=${d.id}`}
                                 target="_blank"
-                                className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded text-[10px] font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                                className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded-sm text-[10px] font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
                             >
                                 <FaExternalLinkAlt size={10} />
                                 PROFIL ÖFFNEN

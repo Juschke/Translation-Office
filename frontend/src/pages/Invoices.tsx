@@ -29,7 +29,7 @@ const Invoices = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
-    const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'pending');
+    const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'all');
     useEffect(() => {
         setSelectedInvoices([]);
     }, [statusFilter]);
@@ -567,7 +567,7 @@ const Invoices = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label={t('invoices.kpi.open_amount')} value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={t('invoices.kpi.overdue_sub', { count: overdueCount })} />
                 <KPICard label={t('invoices.kpi.paid_total')} value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={t('invoices.kpi.transactions_sub', { count: paidCount })} />
                 <KPICard label={t('invoices.kpi.reminders')} value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue={t('invoices.kpi.reminders_sub')} />
@@ -687,7 +687,7 @@ const Invoices = () => {
                         <textarea
                             value={cancelReason}
                             onChange={(e) => setCancelReason(e.target.value)}
-                            className="w-full border border-slate-200 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            className="w-full border border-slate-200 rounded-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                             placeholder={t('invoices.confirm.cancel_placeholder')}
                             rows={3}
                         />

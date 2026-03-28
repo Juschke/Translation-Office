@@ -25,7 +25,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
         </div>
 
         {payments.length === 0 ? (
-            <div className="text-xs text-slate-400 italic py-2 text-center border-2 border-dashed border-slate-50 rounded">
+            <div className="text-xs text-slate-400 italic py-2 text-center border-2 border-dashed border-slate-50 rounded-sm">
                 Keine Zahlungen erfasst.
             </div>
         ) : (

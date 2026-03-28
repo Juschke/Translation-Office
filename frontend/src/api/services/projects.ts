@@ -83,4 +83,8 @@ export const projectService = {
         });
         return response;
     },
+    getFiles: async (params?: any) => {
+        const response = await api.get('/files', { params });
+        return response.data;
+    },
 };

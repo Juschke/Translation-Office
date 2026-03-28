@@ -74,7 +74,7 @@ const ProjectSelectionModal: React.FC<ProjectSelectionModalProps> = ({ isOpen, o
                                     className="flex items-center justify-between p-3 rounded-sm hover:bg-slate-50 transition-colors text-left group border border-transparent hover:border-slate-100"
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 rounded bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-brand-primary group-hover:text-white transition-colors">
+                                        <div className="w-10 h-10 rounded-sm bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-brand-primary group-hover:text-white transition-colors">
                                             <FaHashtag />
                                         </div>
                                         <div className="min-w-0">

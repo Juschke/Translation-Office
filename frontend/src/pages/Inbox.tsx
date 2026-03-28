@@ -1123,7 +1123,7 @@ const CommunicationHub = () => {
                                                 {composeAttachments.map((f, i) => (
                                                     <div key={i} className="flex items-center justify-between p-3 bg-white border border-slate-100 group hover:border-slate-900 transition-all rounded-sm shadow-sm">
                                                         <div className="flex items-center gap-3 overflow-hidden">
-                                                            <div className="w-8 h-8 rounded bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
+                                                            <div className="w-8 h-8 rounded-sm bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
                                                                 <FaPaperclip className="text-slate-400 text-[10px]" />
                                                             </div>
                                                             <div className="overflow-hidden">
@@ -1258,7 +1258,7 @@ const CommunicationHub = () => {
                                                             onChange={() => { }} // Controlled via parent div click
                                                         />
                                                     </div>
-                                                    <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200 shrink-0 shadow-sm group-hover:border-slate-900 transition-colors">
+                                                    <div className="w-10 h-10 rounded-sm bg-white flex items-center justify-center border border-slate-200 shrink-0 shadow-sm group-hover:border-slate-900 transition-colors">
                                                         <FaFileAlt className="text-slate-400 text-sm group-hover:text-slate-900" />
                                                     </div>
                                                     <div className="overflow-hidden">

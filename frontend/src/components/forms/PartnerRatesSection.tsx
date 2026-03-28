@@ -9,7 +9,7 @@ interface PartnerRatesSectionProps {
 const PartnerRatesSection = ({ formData, updateFormData }: PartnerRatesSectionProps) => (
     <div className="space-y-6">
         <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-            <div className="w-6 h-6 rounded bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">06</div>
+            <div className="w-6 h-6 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">06</div>
             <h4 className="text-xs font-semibold text-slate-800">Konditionen & Tarife</h4>
         </div>
 

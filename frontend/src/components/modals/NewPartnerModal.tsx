@@ -119,11 +119,11 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
                     </div>
                 )}
                 {/* Header */}
-                <div className="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
                     <div>
-                        <h3 className="font-semibold text-base text-slate-800 flex items-center gap-2">
+                        <h3 className="font-semibold text-lg text-slate-800 flex items-center gap-2">
                             {initialData ? 'Partner bearbeiten' : 'Neuen Partner erfassen'}
-                            <span className="text-xs font-medium text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm">
+                            <span className="text-xs font-medium text-slate-900 bg-white px-2 py-0.5 rounded-sm border border-slate-200 shadow-sm">
                                 Nr: {displayNr}
                             </span>
                         </h3>
@@ -135,7 +135,7 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto bg-white p-5 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto bg-white p-6 custom-scrollbar">
                     <PartnerForm
                         initialData={initialData}
                         onChange={setFormData}
@@ -147,7 +147,7 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 {/* Footer */}
-                <div className="bg-white px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+                <div className="bg-white px-6 py-4 border-t border-slate-200 flex justify-end gap-3 shrink-0">
                     <Button
                         variant="secondary"
                         onClick={onClose}

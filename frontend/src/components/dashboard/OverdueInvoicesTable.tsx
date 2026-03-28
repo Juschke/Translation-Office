@@ -22,7 +22,7 @@ const OverdueInvoicesTable: React.FC<OverdueInvoicesTableProps> = ({ invoices })
 
  return (
  <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden flex flex-col h-full">
- <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
+ <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
  <div className="flex items-center gap-2">
  <FaBell className="text-slate-400 text-xs" />
  <h2 className="text-sm font-medium text-slate-700">
@@ -66,7 +66,7 @@ const OverdueInvoicesTable: React.FC<OverdueInvoicesTableProps> = ({ invoices })
  {daysOverdue} Tage überfällig
  </span>
  {reminderLevel > 0 && (
- <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-1.5 py-0.5 rounded border border-orange-200er">
+ <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-1.5 py-0.5 rounded-sm border border-orange-200">
  M{reminderLevel}
  </span>
  )}

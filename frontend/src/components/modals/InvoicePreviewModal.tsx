@@ -294,7 +294,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                             <textarea
                                 value={cancelReason}
                                 onChange={(e) => setCancelReason(e.target.value)}
-                                className="w-full border border-slate-200 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                className="w-full border border-slate-200 rounded-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                                 placeholder="z.B. Korrektur, Fehlbuchung..."
                                 rows={3}
                             />

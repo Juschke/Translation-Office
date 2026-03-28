@@ -34,7 +34,7 @@ const ProjectStatusBadge: React.FC<ProjectStatusBadgeProps> = ({ status }) => {
  'archived': 'bg-slate-100 text-slate-500 border-slate-300',
  'deleted': 'bg-red-50 text-red-700 border-red-200'
  };
- return <span className={clsx("px-2.5 py-0.5 rounded text-xs font-medium border tracking-tight shadow-sm", styles[status] || styles['draft'])}>{labels[status] || status}</span>;
+ return <span className={clsx("px-2.5 py-0.5 rounded-sm text-xs font-medium border tracking-tight shadow-sm", styles[status] || styles['draft'])}>{labels[status] || status}</span>;
 };
 
 export default ProjectStatusBadge;

@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import Switch from './Switch';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
 import TableSkeleton from './TableSkeleton';
+import { Button } from '../ui/button';
 
 export interface FilterDef {
     id: string;
@@ -309,12 +310,13 @@ const DataTable = <T extends { id: string | number }>({
                 <p className="text-xs text-slate-400">Klicken Sie auf den Button unten, um den ersten Eintrag zu erstellen.</p>
             </div>
             {onAddClick && (
-                <button
+                <Button
+                    variant="default"
                     onClick={onAddClick}
-                    className="mt-2 px-6 py-2.5 bg-brand-primary text-white rounded-[3px] font-bold shadow-sm hover:bg-brand-primary/90 transition flex items-center gap-2"
+                    className="mt-2 px-6 py-2.5 font-bold flex items-center gap-2"
                 >
                     <FaPlus className="text-xs" /> Neuer Eintrag
-                </button>
+                </Button>
             )}
         </div>
     );
@@ -477,10 +479,9 @@ const DataTable = <T extends { id: string | number }>({
                         onChange={handleTableChange}
                         rowSelection={rowSelection}
                         sticky
-                        tableLayout="fixed"
+                        tableLayout="auto"
                         scroll={{
-                            x: '100%',
-                            y: window.innerWidth < 768 ? 400 : 'calc(100vh - 420px)'
+                            x: 'max-content'
                         }}
                         onRow={record => ({
                             onClick: () => {

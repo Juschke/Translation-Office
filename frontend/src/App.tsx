@@ -28,6 +28,7 @@ import Notifications from './pages/Notifications';
 import Team from './pages/Team';
 import Calendar from './pages/Calendar';
 import Interpreting from './pages/Interpreting';
+import Documents from './pages/Documents';
 
 
 
@@ -72,6 +73,7 @@ function App() {
                             <Route path="/projects/:id" element={<ProjectDetail />} />
                             <Route path="/calendar" element={<Calendar />} />
                             <Route path="/interpreting" element={<Interpreting />} />
+                            <Route path="/documents" element={<Documents />} />
 
                             <Route path="/customers" element={<Customers />} />
                             <Route path="/customers/:id" element={<CustomerDetail />} />

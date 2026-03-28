@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { Button } from '../ui/button';
+import StatusBadge from '../common/StatusBadge';
 import { FaTimes, FaSearch, FaStar, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import LanguageSelect from '../common/LanguageSelect';
 import clsx from 'clsx';
@@ -206,31 +208,10 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
         </div>
     );
 
-    const getStatusBadge = (status: string) => {
-        const styles: Record<string, string> = {
-            'verified': 'bg-emerald-50 text-emerald-600 border-emerald-200',
-            'active': 'bg-emerald-50 text-emerald-600 border-emerald-200',
-            'busy': 'bg-orange-50 text-orange-600 border-orange-200',
-            'vacation': 'bg-blue-50 text-blue-600 border-blue-200',
-            'inactive': 'bg-slate-50 text-slate-400 border-slate-200'
-        };
-        const labels: Record<string, string> = {
-            'verified': 'Aktiv',
-            'active': 'Aktiv',
-            'busy': 'Ausgelastet',
-            'vacation': 'Abwesend',
-            'inactive': 'Deaktiviert'
-        };
-        return (
-            <span className={clsx("px-1.5 py-0.5 rounded border text-xs font-semibolder", styles[status] || styles.inactive)}>
-                {labels[status] || 'Unbekannt'}
-            </span>
-        );
-    };
 
     return (
         <div className="fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center backdrop-blur-sm p-6 overflow-hidden transition-all">
-            <div className="bg-white rounded shadow-sm w-full max-w-7xl flex flex-col h-full max-h-[90vh] border border-slate-200 animate-fadeIn font-sans">
+            <div className="bg-white rounded-sm shadow-sm w-full max-w-7xl flex flex-col h-full max-h-[90vh] border border-slate-200 animate-fadeIn font-sans">
                 {/* Header */}
                 <div className="bg-slate-50 px-8 py-5 border-b border-slate-200 flex justify-between items-center shrink-0">
                     <div>
@@ -240,7 +221,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                         <p className="text-xs text-slate-500 font-medium mt-0.5">Externes Fachpersonal & Konditionen</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded text-slate-400 hover:bg-slate-200 transition">
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-sm text-slate-400 hover:bg-slate-200 transition">
                             <FaTimes className="text-lg" />
                         </button>
                     </div>
@@ -254,7 +235,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs" />
                                 <input
                                     type="text"
-                                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded text-sm bg-slate-50 focus:outline-none focus:border-brand-primary focus:bg-white transition"
+                                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-sm text-sm bg-slate-50 focus:outline-none focus:border-brand-primary focus:bg-white transition"
                                     placeholder="Suche nach Name, Firma..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -310,7 +291,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                             >
                                                 <td className="px-6 py-2.5">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-semibold shadow-sm shrink-0 ${p.color}`}>{p.initials}</div>
+                                                        <div className={`w-8 h-8 rounded-sm flex items-center justify-center text-xs font-semibold shadow-sm shrink-0 ${p.color}`}>{p.initials}</div>
                                                         <div className="flex flex-col">
                                                             <div className="font-medium text-slate-900 text-sm group-hover:text-brand-primary transition leading-tight">{p.name}</div>
                                                             {expandedPartnerId !== p.id && (
@@ -324,7 +305,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                                 <td className="px-6 py-2.5">
                                                     <div className="flex flex-wrap gap-1">
                                                         {p.languages.slice(0, 3).map(lang => (
-                                                            <span key={lang} className="inline-flex items-center gap-1 px-1 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-100 text-xs font-medium">
+                                                            <span key={lang} className="inline-flex items-center gap-1 px-1 py-0.5 bg-slate-50 text-slate-500 rounded-sm border border-slate-100 text-xs font-medium">
                                                                 <img src={getFlagUrl(lang)} className="w-2.5 h-1.5 object-cover rounded-sm" alt={lang} />
                                                                 <span className="uppercase">{lang}</span>
                                                             </span>
@@ -342,12 +323,13 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                                     {p.street ? `${p.street}, ${p.zip} ${p.city}` : '-'}
                                                 </td>
                                                 <td className="px-6 py-2.5 text-right">
-                                                    <button
+                                                    <Button
+                                                        variant="default"
                                                         onClick={(e) => { e.stopPropagation(); onSelect(p); }}
-                                                        className="bg-brand-primary text-white px-4 py-1.5 rounded text-xs font-bold shadow-sm hover:bg-brand-primary/90 transition"
+                                                        className="px-4 py-1.5 text-xs font-bold"
                                                     >
                                                         Übernehmen
-                                                    </button>
+                                                    </Button>
                                                 </td>
                                             </tr>
                                             {expandedPartnerId === p.id && (
@@ -364,7 +346,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
 
                                                             <div className="space-y-1">
                                                                 <span className="text-xs font-semibold text-slate-400 block">Status</span>
-                                                                <div>{getStatusBadge(p.status)}</div>
+                                                                <div><StatusBadge status={p.status} type="partner" /></div>
                                                             </div>
 
                                                             <div className="w-px h-8 bg-slate-200"></div>
@@ -414,7 +396,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                     <button
                                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
-                                        className="h-8 px-3 rounded border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                                        className="h-8 px-3 rounded-sm border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
                                     >
                                         Zurück
                                     </button>
@@ -424,7 +406,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                                 key={i}
                                                 onClick={() => setCurrentPage(i + 1)}
                                                 className={clsx(
-                                                    "w-8 h-8 rounded text-xs font-semibold transition-all",
+                                                    "w-8 h-8 rounded-sm text-xs font-semibold transition-all",
                                                     currentPage === i + 1
                                                         ? "bg-brand-primary text-white shadow-sm shadow-brand-primary/20"
                                                         : "text-slate-400 hover:bg-slate-50"
@@ -437,7 +419,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                     <button
                                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                         disabled={currentPage === totalPages}
-                                        className="h-8 px-3 rounded border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                                        className="h-8 px-3 rounded-sm border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
                                     >
                                         Weiter
                                     </button>
@@ -457,13 +439,13 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
 
                 {/* Footer */}
                 <div className="px-8 py-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 shrink-0">
-                    <button onClick={() => mode === 'list' ? onClose() : setMode('list')} className="px-6 py-2.5 border border-slate-300 rounded text-slate-600 text-sm font-medium hover:bg-white transition">
+                    <Button variant="secondary" onClick={() => mode === 'list' ? onClose() : setMode('list')}>
                         {mode === 'list' ? 'Schließen' : 'Abbrechen'}
-                    </button>
+                    </Button>
                     {mode !== 'list' && (
-                        <button onClick={handleSave} className="px-10 py-2.5 bg-brand-primary text-white rounded text-sm font-bold shadow-sm hover:bg-brand-primary/90 transition">
+                        <Button variant="default" onClick={handleSave}>
                             Speichern
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

@@ -28,7 +28,7 @@ class StoreProjectFileRequest extends FormRequest
                 'max:51200', // 50MB max
                 // 'mimes:pdf,doc,docx,txt,...' - Disabled to allow empty/new Office files that fail MIME detection
             ],
-            'type' => 'required|in:source,target,reference',
+            'type' => 'required|in:source,target,reference,delivery',
         ];
     }
 
@@ -43,7 +43,7 @@ class StoreProjectFileRequest extends FormRequest
             'file.max' => 'Die Datei darf maximal 50MB groß sein.',
             'file.mimes' => 'Dieser Dateityp wird nicht unterstützt. Erlaubte Formate: PDF, DOC, DOCX, TXT, Bilder, Excel, PowerPoint, ZIP, etc.',
             'type.required' => 'Bitte geben Sie den Dateityp an.',
-            'type.in' => 'Ungültiger Dateityp. Erlaubt: source, target, reference.',
+            'type.in' => 'Ungültiger Dateityp. Erlaubt: source, target, reference, delivery.',
         ];
     }
 }

@@ -130,7 +130,7 @@ export const GuestFilesList: React.FC<GuestFilesListProps> = ({ files, onDownloa
                     return (
                         <div
                             key={file.id}
-                            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border border-slate-200 rounded hover:border-slate-300 transition bg-white"
+                            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border border-slate-200 rounded-sm hover:border-slate-300 transition bg-white"
                         >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <Icon className={clsx('text-2xl flex-shrink-0', color)} />

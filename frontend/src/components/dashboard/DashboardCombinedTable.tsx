@@ -106,7 +106,7 @@ const DashboardCombinedTable: React.FC<DashboardCombinedTableProps> = ({
  <div className="flex items-center gap-2">
  <span className="text-sm font-medium text-slate-600 truncate max-w-[150px]">{customerName}</span>
  {reminderLevel > 0 && (
- <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-1.5 py-0.5 rounded border border-orange-200er">
+ <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-1.5 py-0.5 rounded-sm border border-orange-200">
  M{reminderLevel}
  </span>
  )}

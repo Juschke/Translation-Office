@@ -30,7 +30,24 @@ interface Appointment {
 
 const getInitials = (name: string): string => {
     if (!name) return '?';
-    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    return name
+        .split(' ')
+        .filter(w => w && w.length > 0)
+        .map(w => w[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+};
+
+const safeFormat = (dateStr: string | undefined | null, formatStr: string, locale: any) => {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '—';
+    try {
+        return format(date, formatStr, { locale });
+    } catch (e) {
+        return '—';
+    }
 };
 
 const Interpreting = () => {
@@ -50,6 +67,8 @@ const Interpreting = () => {
         queryKey: ['appointments', 'interpreting'],
         queryFn: () => calendarService.getAll({ type: 'interpreting' })
     });
+
+    const list = useMemo(() => Array.isArray(assignments) ? assignments : [], [assignments]);
 
     const createMutation = useMutation({
         mutationFn: calendarService.createAppointment,
@@ -92,29 +111,44 @@ const Interpreting = () => {
         const now = new Date();
         const startOfCurMonth = startOfMonth(now);
 
-        const upcoming = assignments.filter(a => isAfter(new Date(a.start_date), now)).length;
-        const completed = assignments.filter(a => isBefore(new Date(a.start_date), now)).length;
-        const thisMonth = assignments.filter(a => isAfter(new Date(a.start_date), startOfCurMonth)).length;
-        const uniquePartners = new Set(assignments.map(a => a.partner?.id).filter(Boolean)).size;
+        const upcoming = list.filter(a => {
+            const d = new Date(a.start_date);
+            return !isNaN(d.getTime()) && isAfter(d, now);
+        }).length;
+
+        const completed = list.filter(a => {
+            const d = new Date(a.start_date);
+            return !isNaN(d.getTime()) && isBefore(d, now);
+        }).length;
+
+        const thisMonth = list.filter(a => {
+            const d = new Date(a.start_date);
+            return !isNaN(d.getTime()) && isAfter(d, startOfCurMonth);
+        }).length;
+
+        const uniquePartners = new Set(list.map(a => a.partner?.id).filter(Boolean)).size;
 
         return { upcoming, completed, thisMonth, uniquePartners };
-    }, [assignments]);
+    }, [list]);
 
     const columns: any[] = [
         {
             id: 'date',
             header: t('interpreting.columns.date'),
-            accessor: (item: Appointment) => (
-                <div className="flex flex-col">
-                    <span className="font-bold text-slate-800">
-                        {format(new Date(item.start_date), 'eeee, dd.MM.yyyy', { locale: i18n.language === 'de' ? de : undefined })}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                        {format(new Date(item.start_date), 'HH:mm', { locale: i18n.language === 'de' ? de : undefined })}
-                        {item.end_date && ` - ${format(new Date(item.end_date), 'HH:mm', { locale: i18n.language === 'de' ? de : undefined })}`}
-                    </span>
-                </div>
-            )
+            accessor: (item: Appointment) => {
+                const locale = i18n.language === 'de' ? de : undefined;
+                return (
+                    <div className="flex flex-col">
+                        <span className="font-bold text-slate-800">
+                            {safeFormat(item.start_date, 'eeee, dd.MM.yyyy', locale)}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                            {safeFormat(item.start_date, 'HH:mm', locale)}
+                            {item.end_date && ` - ${safeFormat(item.end_date, 'HH:mm', locale)}`}
+                        </span>
+                    </div>
+                );
+            }
         },
         {
             id: 'title',
@@ -257,7 +291,7 @@ const Interpreting = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label={t('interpreting.kpi.upcoming')} value={stats.upcoming} icon={<FaCalendarAlt />} iconColor="text-blue-600" />
                 <KPICard
                     label={t('interpreting.kpi.completed')}
@@ -282,7 +316,7 @@ const Interpreting = () => {
             </div>
 
             <DataTable<Appointment>
-                data={assignments}
+                data={list}
                 columns={columns}
                 isLoading={isLoading}
                 searchPlaceholder={t('interpreting.search_placeholder')}

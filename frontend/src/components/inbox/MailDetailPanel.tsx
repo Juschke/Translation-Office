@@ -114,7 +114,7 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                                         key={i}
                                         className="flex items-center gap-4 px-4 py-4 bg-slate-50 border border-slate-100 rounded-sm group hover:border-slate-900 hover:bg-white transition-all cursor-default shadow-sm hover:shadow-md"
                                     >
-                                        <div className="w-10 h-10 rounded bg-white flex items-center justify-center border border-slate-200 shrink-0 group-hover:border-slate-900 transition-colors">
+                                        <div className="w-10 h-10 rounded-sm bg-white flex items-center justify-center border border-slate-200 shrink-0 group-hover:border-slate-900 transition-colors">
                                             <FaFileAlt className="text-slate-400 text-sm group-hover:text-slate-900" />
                                         </div>
                                         <div className="flex-1 min-w-0">

@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { userService } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/common/ConfirmModal';
+import TableSkeleton from '../components/common/TableSkeleton';
 
 type Role = 'manager' | 'employee';
 
@@ -211,7 +212,7 @@ const Team: React.FC = () => {
             {/* Table Container */}
             <div className="bg-white rounded-sm border border-slate-200 overflow-x-auto shadow-sm custom-scrollbar">
                 {isLoading ? (
-                    <div className="p-8 text-center text-sm text-slate-500">Wird geladen…</div>
+                    <TableSkeleton rows={5} columns={6} />
                 ) : (
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50 border-b border-slate-200">
@@ -257,7 +258,7 @@ const Team: React.FC = () => {
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => setModal({ type: 'edit', user: u })}
-                                                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors"
+                                                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition-colors"
                                                 title="Bearbeiten"
                                             >
                                                 <FaEdit />
@@ -265,7 +266,7 @@ const Team: React.FC = () => {
                                             {u.id !== currentUser?.id && !u.role.includes('owner') && (
                                                 <button
                                                     onClick={() => setModal({ type: 'delete', user: u })}
-                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors"
                                                     title="Löschen"
                                                 >
                                                     <FaTrash />

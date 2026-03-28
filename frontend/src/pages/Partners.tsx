@@ -278,14 +278,14 @@ const Partners = () => {
                     <div className="flex flex-col gap-1.5 max-w-[200px]">
                         <div className="flex flex-wrap gap-1">
                             {visibleLangs.map((lang: string, i: number) => (
-                                <span key={i} className="inline-flex items-center gap-1.5 px-1.5 py-0.5 bg-slate-50 text-slate-600 rounded border border-slate-200 text-xs font-medium shadow-sm whitespace-nowrap">
+                                <span key={i} className="inline-flex items-center gap-1.5 px-1.5 py-0.5 bg-slate-50 text-slate-600 rounded-sm border border-slate-200 text-xs font-medium shadow-sm whitespace-nowrap">
                                     <img src={getFlagUrl(lang)} className="w-3.5 h-2.5 object-cover rounded-[1px] shadow-sm" alt={lang} />
                                     <span className="truncate max-w-[60px]" title={getLanguageName(lang)}>{getLanguageName(lang)}</span>
                                 </span>
                             ))}
                             {hiddenCount > 0 && (
                                 <span
-                                    className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200 text-xs font-medium shadow-sm cursor-help"
+                                    className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-sm border border-slate-200 text-xs font-medium shadow-sm cursor-help"
                                     title={languages.slice(2).map((l: string) => getLanguageName(l)).join(', ')}
                                 >
                                     +{hiddenCount}
@@ -431,7 +431,7 @@ const Partners = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label={t('partners.kpi.active_partners')} value={activePartnersCount} icon={<FaUserTie />} />
                 <KPICard
                     label={t('partners.kpi.partner_costs')}

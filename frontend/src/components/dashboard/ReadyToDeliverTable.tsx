@@ -21,7 +21,7 @@ const ReadyToDeliverTable: React.FC<ReadyToDeliverTableProps> = ({ projects }) =
 
  return (
  <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden flex flex-col h-full">
- <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
+ <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
  <h2 className="text-sm font-medium text-slate-700">
  Versandbereit
  </h2>

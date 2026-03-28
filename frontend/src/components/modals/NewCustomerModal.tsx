@@ -416,11 +416,11 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                 )}
                 <form onSubmit={handleSave} className="flex flex-col h-full overflow-hidden">
                     {/* Header */}
-                    <div className="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
+                    <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
                         <div>
-                            <h3 className="font-semibold text-base text-slate-800 flex items-center gap-3">
+                            <h3 className="font-semibold text-lg text-slate-800 flex items-center gap-3">
                                 {initialData ? 'Kunde bearbeiten' : 'Neuen Kunden anlegen'}
-                                <span className="text-xs font-medium text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm">
+                                <span className="text-xs font-medium text-slate-900 bg-white px-2 py-0.5 rounded-sm border border-slate-200 shadow-sm">
                                     Nr: {displayNr}
                                 </span>
                             </h3>
@@ -432,7 +432,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-5 bg-white text-slate-900">
+                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-5 bg-white text-slate-900">
                         {/* Duplication Warning */}
                         {duplicates.length > 0 && (
                             <div className="bg-amber-50 border border-amber-200 p-4 rounded-sm mb-6 flex gap-4 relative overflow-hidden">
@@ -444,7 +444,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                     </p>
                                     <div className="mt-3 space-y-2">
                                         {duplicates.map((d: any) => (
-                                            <div key={d.id} className="flex items-center justify-between bg-white p-2 rounded border border-amber-100 shadow-sm transition-all hover:border-amber-300">
+                                            <div key={d.id} className="flex items-center justify-between bg-white p-2 rounded-sm border border-amber-100 shadow-sm transition-all hover:border-amber-300">
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
                                                         {d.company_name || `${d.first_name} ${d.last_name}`}
@@ -456,7 +456,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 <Link
                                                     to={`/customers/${d.id}`}
                                                     target="_blank"
-                                                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded text-[10px] font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                                                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded-sm text-[10px] font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
                                                 >
                                                     <FaExternalLinkAlt size={10} />
                                                     DATENSATZ ÖFFNEN
@@ -496,7 +496,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 {/* Section 1: Classification */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">01</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">01</div>
                                         <h4 className="text-xs font-semibold text-slate-800">Klassifizierung & Name</h4>
                                     </div>
 
@@ -591,7 +591,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 {/* Section 2: Contact */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">02</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">02</div>
                                         <h4 className="text-xs font-semibold text-slate-800">Kontaktdaten</h4>
                                     </div>
 
@@ -679,7 +679,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 {/* Section 3: Address */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">03</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">03</div>
                                         <h4 className="text-xs font-semibold text-slate-800">Standort & Adresse</h4>
                                     </div>
 
@@ -714,7 +714,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 {/* Section 4: Bookkeeping */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">04</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">04</div>
                                         <h4 className="text-xs font-semibold text-slate-800">Buchhaltung & Zahlungsdaten</h4>
                                     </div>
 
@@ -760,7 +760,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 {/* Section 5: Bank */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">05</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">05</div>
                                         <h4 className="text-xs font-semibold text-slate-800">Bankverbindung</h4>
                                     </div>
 
@@ -853,7 +853,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 {/* Section 6: Notes */}
                                 <div className="space-y-4 pb-10">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">06</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">06</div>
                                         <h4 className="text-xs font-semibold text-slate-800">Interne Akte</h4>
                                     </div>
                                     <div className="flex flex-col">
@@ -873,7 +873,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                     </div>
 
                     {/* Footer */}
-                    <div className="bg-white px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+                    <div className="bg-white px-6 py-4 border-t border-slate-200 flex justify-end gap-3 shrink-0">
                         <Button
                             variant="secondary"
                             onClick={onClose}

@@ -24,7 +24,6 @@ interface LanguageSelectProps {
     error?: boolean;
     className?: string;
     onAddNew?: () => void;
-    addNewLabel?: string;
     id?: string;
 }
 
@@ -37,7 +36,6 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     error,
     className = "",
     onAddNew,
-    addNewLabel = "Sprache hinzufügen",
     id
 }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -156,11 +154,22 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     };
 
     const getLangLabel = (code: string) => {
+        if (!code) return '';
+
+        // 1. Exact match
         let lang = languages.find((l: LanguageOption) => l.code === code);
+
+        // 2. Base code match (e.g. searching 'de-DE' finds 'de')
         if (!lang && code.includes('-')) {
             const baseCode = code.split('-')[0];
             lang = languages.find((l: LanguageOption) => l.code === baseCode);
         }
+
+        // 3. Extended code match (e.g. searching 'de' finds 'de-DE')
+        if (!lang) {
+            lang = languages.find((l: LanguageOption) => l.code.startsWith(code + '-'));
+        }
+
         return lang ? lang.name : code;
     };
 
@@ -186,7 +195,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                     isMulti ? "bg-white border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700" : "text-sm font-medium text-slate-800"
                                 )}>
                                     <img src={getFlagUrl(v.includes('-') ? v : (languages.find((l: LanguageOption) => l.code === v)?.flagCode || v))} className="w-6 h-4.5 object-cover shadow-sm shrink-0" alt="" />
-                                    <span className="truncate">{getLangLabel(v)}</span>
+                                    <span>{getLangLabel(v)}</span>
                                     {isMulti && (
                                         <FaTimes
                                             className="ml-1 text-slate-300 hover:text-red-500 cursor-pointer text-xs"
@@ -250,7 +259,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                     <div className="flex items-center gap-3 flex-1 overflow-hidden">
                                         {isMulti && (
                                             <div className={clsx(
-                                                "w-4 h-4 border rounded flex items-center justify-center transition-all shrink-0",
+                                                "w-4 h-4 border rounded-sm flex items-center justify-center transition-all shrink-0",
                                                 values.includes(opt.code) ? "bg-brand-primary border-brand-primary" : "border-slate-300 bg-white"
                                             )}>
                                                 {values.includes(opt.code) && <FaCheck className="text-white text-xs" />}
@@ -259,8 +268,8 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                         <div className="w-8 py-0.5 flex items-center justify-center shrink-0">
                                             <img src={getFlagUrl(opt.flagCode || opt.code)} className="w-7 h-5 object-cover shadow-sm" alt="" />
                                         </div>
-                                        <span className="truncate flex-1">{opt.name}</span>
-                                        <span className="text-xs text-slate-400 font-medium bg-slate-100 px-1 rounded shrink-0">{opt.code}</span>
+                                        <span className="flex-1">{opt.name}</span>
+                                        <span className="text-xs text-slate-400 font-medium bg-slate-100 px-1 rounded-sm shrink-0">{opt.code}</span>
                                     </div>
                                     {!isMulti && values.includes(opt.code) && <FaCheck className="text-slate-700 text-xs shrink-0 ml-2" />}
                                 </div>
@@ -283,7 +292,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 }}
                                 className="w-full py-2 text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm"
                             >
-                                <FaPlus className="text-[10px]" /> {addNewLabel}
+                                <FaPlus className="text-[10px] text-brand-primary" />
                             </Button>
                         </div>
                     )}

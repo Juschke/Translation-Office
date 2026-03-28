@@ -139,7 +139,7 @@ const Billing = () => {
                     {/* Active Plan */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden relative">
                         <div className="absolute top-4 right-4">
-                            <span className={clsx("px-2 py-1 text-xs font-medium rounded border",
+                            <span className={clsx("px-2 py-1 text-xs font-medium rounded-sm border",
                                 user.tenant.status === 'active' ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-red-50 text-red-700 border-red-100"
                             )}>
                                 {user.tenant.status === 'active' ? 'Aktiv' : 'Inaktiv'}
@@ -147,7 +147,7 @@ const Billing = () => {
                         </div>
                         <div className="p-6">
                             <div className="flex items-center gap-4 mb-6">
-                                <div className={clsx("w-12 h-12 rounded text-white flex items-center justify-center text-xl shadow-sm", activePlan.color)}>
+                                <div className={clsx("w-12 h-12 rounded-sm text-white flex items-center justify-center text-xl shadow-sm", activePlan.color)}>
                                     <FaRocket />
                                 </div>
                                 <div>
@@ -166,37 +166,38 @@ const Billing = () => {
                             </div>
 
                             <div className="flex flex-col sm:flex-row items-center gap-3 pt-6 border-t border-slate-100">
-                                <Button className="w-full sm:w-auto bg-brand-primary text-white hover:bg-brand-primary/90 transition-all shadow-sm font-bold">
+                                <Button variant="default" className="w-full sm:w-auto">
                                     Plan verwalten
                                 </Button>
-                                <button
+                                <Button
+                                    variant="secondary"
                                     onClick={() => setShowPlanModal(true)}
-                                    className="w-full sm:w-auto px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded text-sm font-medium hover:bg-slate-50 transition-all"
+                                    className="w-full sm:w-auto"
                                 >
                                     Paket wechseln
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
 
                     {/* Payment Method */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="p-4 border-b border-slate-100 bg-transparent flex items-center justify-between">
+                        <div className="px-6 py-4 border-b border-slate-100 bg-transparent flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs shadow-sm">
+                                <div className="w-7 h-7 rounded-sm bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs shadow-sm">
                                     <FaCreditCard />
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-medium text-slate-800">Zahlungsmethode</h3>
                                 </div>
                             </div>
-                            <button onClick={() => setShowPaymentModal(true)} className="text-xs font-medium text-slate-900 hover:text-slate-800 bg-slate-50 px-2 py-1 rounded border border-slate-100 transition-colors">Bearbeiten</button>
+                            <button onClick={() => setShowPaymentModal(true)} className="text-xs font-medium text-slate-900 hover:text-slate-800 bg-slate-50 px-2 py-1 rounded-sm border border-slate-100 transition-colors">Bearbeiten</button>
                         </div>
-                        <div className="p-5">
+                        <div className="p-6">
                             {paymentMethod ? (
-                                <div className="flex items-center justify-between p-3 bg-white rounded border border-slate-200 shadow-sm hover:border-slate-200 transition-colors cursor-pointer group">
+                                <div className="flex items-center justify-between p-3 bg-white rounded-sm border border-slate-200 shadow-sm hover:border-slate-200 transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-6 bg-[#1A1F71] rounded flex items-center justify-center text-white font-medium text-xs italic shadow-sm">
+                                        <div className="w-10 h-6 bg-[#1A1F71] rounded-sm flex items-center justify-center text-white font-medium text-xs italic shadow-sm">
                                             {paymentMethod.brand}
                                         </div>
                                         <div>
@@ -204,10 +205,10 @@ const Billing = () => {
                                             <p className="text-xs text-slate-400 font-medium">Läuft ab: {paymentMethod.expiry}</p>
                                         </div>
                                     </div>
-                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded border border-slate-200">Standard</span>
+                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-sm border border-slate-200">Standard</span>
                                 </div>
                             ) : (
-                                <div className="text-center p-4 border border-dashed border-slate-200 rounded text-xs text-slate-400">
+                                <div className="text-center p-4 border border-dashed border-slate-200 rounded-sm text-xs text-slate-400">
                                     Keine Zahlungsmethode hinterlegt
                                 </div>
                             )}
@@ -216,8 +217,8 @@ const Billing = () => {
 
                     {/* Billing History */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="p-4 border-b border-slate-100 bg-transparent flex items-center gap-2">
-                            <div className="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs shadow-sm">
+                        <div className="px-6 py-4 border-b border-slate-100 bg-transparent flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-sm bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs shadow-sm">
                                 <FaHistory />
                             </div>
                             <h3 className="text-sm font-medium text-slate-800">Rechnungshistorie</h3>
@@ -241,14 +242,14 @@ const Billing = () => {
                                                 <td className="px-6 py-4 text-xs font-medium text-slate-800 group-hover:text-slate-900 transition-colors">{inv.invoice_number}</td>
                                                 <td className="px-6 py-4 text-xs font-medium text-slate-800 text-right">{new Intl.NumberFormat('de-DE', { style: 'currency', currency: inv.currency }).format(Number(inv.amount))}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <span className={clsx("px-1.5 py-0.5 text-xs font-medium rounded border flex items-center justify-center gap-1 w-fit mx-auto",
+                                                    <span className={clsx("px-1.5 py-0.5 text-xs font-medium rounded-sm border flex items-center justify-center gap-1 w-fit mx-auto",
                                                         inv.status === 'paid' ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-50 text-slate-900 border-slate-100"
                                                     )}>
                                                         {inv.status === 'paid' && <FaCheck className="text-xs" />} {inv.status}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <button onClick={() => downloadInvoice(inv.pdf_url)} className="p-2 text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded transition-all" title="PDF Herunterladen">
+                                                    <button onClick={() => downloadInvoice(inv.pdf_url)} className="p-2 text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-sm transition-all" title="PDF Herunterladen">
                                                         <FaFileInvoiceDollar />
                                                     </button>
                                                 </td>
@@ -280,7 +281,7 @@ const Billing = () => {
                             </div>
 
                             <div className="space-y-4">
-                                <div className="p-3 bg-white/5 rounded border border-white/5 backdrop-blur-sm">
+                                <div className="p-3 bg-white/5 rounded-sm border border-white/5 backdrop-blur-sm">
                                     <div className="flex justify-between text-xs font-medium mb-2 text-white/70">
                                         <span>Projekte</span>
                                         <span>{activePlan.limit_projects === Infinity ? '∞' : activePlan.limit_projects} / Monat</span>
@@ -290,7 +291,7 @@ const Billing = () => {
                                     </div>
                                     <p className="text-xs text-white/40 mt-2 text-right">3 Projekte diesen Monat</p>
                                 </div>
-                                <div className="p-3 bg-white/5 rounded border border-white/5 backdrop-blur-sm">
+                                <div className="p-3 bg-white/5 rounded-sm border border-white/5 backdrop-blur-sm">
                                     <div className="flex justify-between text-xs font-medium mb-2 text-white/70">
                                         <span>Team</span>
                                         <span>{activePlan.limit_users === Infinity ? '∞' : activePlan.limit_users} User</span>
@@ -313,7 +314,7 @@ const Billing = () => {
                         <p className="text-xs text-slate-500 mb-5 leading-relaxed">
                             Fragen zu Ihrer Rechnung oder Ihrem Abonnement? Unser Support hilft Ihnen gerne weiter oder passen Sie Ihren Plan an.
                         </p>
-                        <button className="w-full py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded text-xs font-medium hover:bg-slate-100 hover:border-slate-300 transition-all">
+                        <button className="w-full py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-sm text-xs font-medium hover:bg-slate-100 hover:border-slate-300 transition-all">
                             Support kontaktieren
                         </button>
                     </div>
@@ -355,16 +356,13 @@ const Billing = () => {
                                         ))}
                                     </ul>
                                     <Button
+                                        variant={currentPlanId === key ? 'secondary' : 'default'}
                                         onClick={() => handleUpdatePlan(key)}
                                         disabled={currentPlanId === key || updatePlanMutation.isPending}
-                                        className={clsx(
-                                            "w-full font-bold",
-                                            currentPlanId === key
-                                                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                                                : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-sm"
-                                        )}
+                                        isLoading={updatePlanMutation.isPending && currentPlanId !== key}
+                                        className="w-full font-bold"
                                     >
-                                        {updatePlanMutation.isPending && currentPlanId !== key ? <FaSpinner className="animate-spin mx-auto" /> : (currentPlanId === key ? "Aktiv" : "Wählen")}
+                                        {currentPlanId === key ? 'Aktiv' : 'Wählen'}
                                     </Button>
                                 </div>
                             ))}
@@ -409,10 +407,12 @@ const Billing = () => {
                             <div className="pt-4">
                                 <Button
                                     type="submit"
+                                    variant="default"
                                     disabled={updatePaymentMutation.isPending}
-                                    className="w-full py-6 bg-brand-primary text-white hover:bg-brand-primary/90 transition-all flex justify-center items-center gap-2 font-bold shadow-lg shadow-brand-primary/20"
+                                    isLoading={updatePaymentMutation.isPending}
+                                    className="w-full py-6 font-bold"
                                 >
-                                    {updatePaymentMutation.isPending ? <><FaSpinner className="animate-spin" /> Speichern...</> : "Karte speichern"}
+                                    Karte speichern
                                 </Button>
                             </div>
                         </form>

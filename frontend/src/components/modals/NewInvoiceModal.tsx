@@ -266,7 +266,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                     autoFocus
                     type={type}
                     defaultValue={value}
-                    className={clsx('w-full bg-white border-2 border-slate-900 rounded px-2 py-1 outline-none text-xs font-medium shadow-sm', className)}
+                    className={clsx('w-full bg-white border-2 border-slate-900 rounded-sm px-2 py-1 outline-none text-xs font-medium shadow-sm', className)}
                     onBlur={(e) => { updateItem(id, field, e.target.value); setEditingCell(null); }}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') { updateItem(id, field, (e.target as HTMLInputElement).value); setEditingCell(null); }
@@ -278,7 +278,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
         return (
             <div
                 onClick={() => setEditingCell({ id, field })}
-                className={clsx('cursor-pointer hover:bg-slate-50 hover:text-slate-900 px-2 py-1 rounded transition', className)}
+                className={clsx('cursor-pointer hover:bg-slate-50 hover:text-slate-900 px-2 py-1 rounded-sm transition', className)}
                 title="Klicken zum Bearbeiten"
             >
                 {value || '-'}
@@ -327,7 +327,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                 {/* ── Header ── */}
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 rounded bg-slate-900 text-white flex items-center justify-center"><FaFileInvoiceDollar /></div>
+                        <div className="w-8 h-8 rounded-sm bg-slate-900 text-white flex items-center justify-center"><FaFileInvoiceDollar /></div>
                         <div>
                             <h2 className="text-[14px] font-semibold text-slate-800 tracking-wider">Beleg-Erstellung</h2>
                             <p className="text-xs text-slate-400 font-medium">{activeProject ? `${activeProject.project_number} • ${activeProject.project_name}` : 'Abrechnung konfigurieren'}</p>
@@ -605,7 +605,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                         <select
                                                             value={item.unit}
                                                             onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
-                                                            className="w-full h-7 px-1 bg-white border border-slate-200 rounded text-xs font-medium text-slate-600 outline-none cursor-pointer hover:border-slate-400"
+                                                            className="w-full h-7 px-1 bg-white border border-slate-200 rounded-sm text-xs font-medium text-slate-600 outline-none cursor-pointer hover:border-slate-400"
                                                         >
                                                             {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                                         </select>
@@ -616,7 +616,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                             <select
                                                                 value={item.price_mode || 'unit'}
                                                                 onChange={(e) => updateItem(item.id, 'price_mode', e.target.value)}
-                                                                className="h-6 px-1 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-500 outline-none cursor-pointer hover:border-slate-400"
+                                                                className="h-6 px-1 bg-white border border-slate-200 rounded-sm text-[10px] font-medium text-slate-500 outline-none cursor-pointer hover:border-slate-400"
                                                             >
                                                                 <option value="unit">/ Einh.</option>
                                                                 <option value="fixed">Pausch.</option>
@@ -629,7 +629,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                                     <td className="px-2 py-2.5 text-center">
                                                         <button
                                                             onClick={() => removeItem(item.id)}
-                                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
                                                             title="Position löschen"
                                                         >
                                                             <FaTrash className="text-xs" />
@@ -672,7 +672,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
 
                                 {/* Financial Summary — identischer Stil wie ProjectFinancesTab-Sidebar */}
                                 <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
-                                    <div className="p-4 border-b border-slate-100 bg-transparent">
+                                    <div className="px-6 py-4 border-b border-slate-100 bg-transparent">
                                         <h3 className="text-xs font-semibold text-slate-400 flex items-center gap-2">
                                             <FaFileInvoiceDollar className="text-slate-600" /> Finanz-Übersicht
                                         </h3>
@@ -687,7 +687,7 @@ const NewInvoiceModal = ({ isOpen, onClose, onSubmit, project, invoice, isLoadin
                                             </div>
                                             <div className="mt-2">
                                                 <span className={clsx(
-                                                    'px-2 py-0.5 rounded text-xs font-medium border',
+                                                    'px-2 py-0.5 rounded-sm text-xs font-medium border',
                                                     formData.type === 'credit_note' ? 'bg-red-50 text-red-700 border-red-100' :
                                                         (computedFinancials.amount_due <= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100')
                                                 )}>

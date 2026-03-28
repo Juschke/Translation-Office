@@ -24,7 +24,7 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
                     {/* Logo & Title */}
                     <div>
                         <div className="inline-flex items-center gap-3 mb-8">
-                            <div className="bg-white w-14 h-14 rounded-lg flex items-center justify-center font-bold text-[#1B4D4F] text-2xl shadow-lg">
+                            <div className="bg-white w-14 h-14 rounded-lg flex items-center justify-center font-bold text-brand-primary text-2xl shadow-lg">
                                 TO
                             </div>
                             <span className="text-2xl font-bold text-white">Translator Office</span>
@@ -70,7 +70,7 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
                 <div className="w-full max-w-md">
                     {/* Mobile Logo */}
                     <div className="lg:hidden flex justify-center mb-8">
-                        <div className="bg-[#1B4D4F] w-16 h-16 rounded-lg flex items-center justify-center font-bold text-white text-2xl shadow-lg">
+                        <div className="bg-brand-primary w-16 h-16 rounded-lg flex items-center justify-center font-bold text-white text-2xl shadow-lg">
                             TO
                         </div>
                     </div>

@@ -4,7 +4,6 @@ import { Button } from '../components/ui/button';
 import {
     FaLayerGroup, FaClock, FaEuroSign, FaEnvelope, FaPlus, FaUserPlus, FaHandshake
 } from 'react-icons/fa';
-import NewProjectModal from '../components/modals/NewProjectModal';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import NewInvoiceModal from '../components/modals/NewInvoiceModal';
@@ -22,7 +21,6 @@ const Dashboard = () => {
     const queryClient = useQueryClient();
 
     // Modal States
-    const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
     const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
     const [isNewPartnerModalOpen, setIsNewPartnerModalOpen] = useState(false);
     const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
@@ -37,19 +35,6 @@ const Dashboard = () => {
         queryFn: () => projectService.getAll()
     });
 
-    // Mutations
-    const createProjectMutation = useMutation({
-        mutationFn: projectService.create,
-        onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            navigate(`/projects/${data.id}`);
-            toast.success(t('dashboard.messages.project_created'));
-        },
-        onError: () => {
-            toast.error(t('dashboard.messages.project_create_error'));
-        }
-    });
 
     const createCustomerMutation = useMutation({
         mutationFn: (data: any) => customerService.create(data),
@@ -120,8 +105,8 @@ const Dashboard = () => {
 
                 <div className="flex items-center gap-2 flex-wrap">
                     <Button
-                        onClick={() => navigate('/projects', { state: { openNewModal: true } })}
-                        className="bg-brand-primary text-white hover:bg-brand-primary/90 transition font-bold"
+                        onClick={() => navigate('/projects/new')}
+                        variant="default"
                     >
                         <FaPlus className="mr-2 h-4 w-4" />
                         {t('dashboard.actions.new_project')}
@@ -151,7 +136,7 @@ const Dashboard = () => {
                 {/* Main Content (3/4 width) */}
                 <div className="lg:col-span-3 space-y-6">
                     {/* Primary KPI Cards */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                         <KPICard
                             label={t('dashboard.kpi.open_projects')}
                             value={stats.open_projects}
@@ -188,7 +173,7 @@ const Dashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Source Language Table */}
                         <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
-                            <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 className="text-xs font-medium text-slate-900">
                                     {t('dashboard.performance.source_language')}
                                 </h3>
@@ -232,7 +217,7 @@ const Dashboard = () => {
 
                         {/* Target Language Table */}
                         <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
-                            <div className="px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 className="text-xs font-medium text-slate-900">
                                     {t('dashboard.performance.target_language')}
                                 </h3>
@@ -305,12 +290,6 @@ const Dashboard = () => {
             </div>
 
             {/* Modals */}
-            <NewProjectModal
-                isOpen={isNewProjectModalOpen}
-                onClose={() => setIsNewProjectModalOpen(false)}
-                onSubmit={(data) => createProjectMutation.mutate(data)}
-                isLoading={createProjectMutation.isPending}
-            />
             <NewCustomerModal
                 isOpen={isNewCustomerModalOpen}
                 onClose={() => setIsNewCustomerModalOpen(false)}

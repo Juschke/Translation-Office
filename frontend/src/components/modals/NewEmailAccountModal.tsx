@@ -246,14 +246,14 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
  <FaInfoCircle className="text-slate-700" /> Einstellungen
  </label>
 
- <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded">
+ <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-sm">
  <input
  type="checkbox"
  id="is_default"
  name="is_default"
  checked={formData.is_default}
  onChange={handleChange}
- className="w-4 h-4 text-slate-700 border-slate-300 rounded focus:ring-brand-500"
+ className="w-4 h-4 text-slate-700 border-slate-300 rounded-sm focus:ring-brand-500"
  />
  <label htmlFor="is_default" className="text-xs font-medium text-slate-700 cursor-pointer">
  Als Standard-Konto festlegen
@@ -270,13 +270,13 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
  <button
  type="button"
  onClick={onClose}
- className="px-6 py-2.5 rounded border border-slate-300 text-slate-600 text-xs font-medium hover:bg-white transition"
+ className="px-6 py-2.5 rounded-sm border border-slate-300 text-slate-600 text-xs font-medium hover:bg-white transition"
  >
  Abbrechen
  </button>
  <button
  type="submit"
- className="px-8 py-2.5 bg-slate-900 text-white rounded text-xs font-medium shadow-sm hover:bg-slate-800 transition"
+ className="px-8 py-2.5 bg-slate-900 text-white rounded-sm text-xs font-medium shadow-sm hover:bg-slate-800 transition"
  >
  Konto speichern
  </button>

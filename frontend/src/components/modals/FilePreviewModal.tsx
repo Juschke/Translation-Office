@@ -32,13 +32,13 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload }: FilePreviewModa
  <div className="flex items-center gap-2">
  <button
  onClick={onDownload}
- className="px-4 py-2 bg-slate-50 text-slate-900 hover:bg-slate-100 rounded text-xs font-semibold flex items-center gap-2 transition"
+ className="px-4 py-2 bg-slate-50 text-slate-900 hover:bg-slate-100 rounded-sm text-xs font-semibold flex items-center gap-2 transition"
  >
  <FaDownload /> Herunterladen
  </button>
  <button
  onClick={() => window.open(file.url, '_blank')}
- className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded text-xs font-semibold flex items-center gap-2 transition"
+ className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-sm text-xs font-semibold flex items-center gap-2 transition"
  >
  <FaExternalLinkAlt /> Neuer Tab
  </button>

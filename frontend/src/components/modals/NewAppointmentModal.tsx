@@ -158,7 +158,7 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
                 )}
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
-                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                         <FaCalendarAlt className="text-slate-900" />
                         {initialData ? 'Termin bearbeiten' : 'Neuer Termin'}
                     </h3>

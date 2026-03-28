@@ -278,7 +278,7 @@ const Calendar = () => {
                     </Button>
                     <Button
                         onClick={() => { setEditingAppointment(null); setSelectedDate(new Date()); setIsModalOpen(true); }}
-                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
+                        variant="default" className="font-bold flex items-center justify-center gap-2 text-xs sm:text-sm"
                     >
                         <FaPlus className="text-xs" /> {t('calendar.new_appointment')}
                     </Button>
@@ -412,7 +412,7 @@ const Calendar = () => {
                 <div className="w-full lg:w-80 flex flex-col gap-4 shrink-0 h-auto lg:h-full max-h-[500px] lg:max-h-full">
                     {calendarTab === 'all' ? (
                         <div className="bg-white rounded-sm border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
-                            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                                         <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
@@ -460,7 +460,7 @@ const Calendar = () => {
                                                     {p.project_number || `ID ${p.id}`}
                                                 </span>
                                                 <span className={clsx(
-                                                    "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase shrink-0",
+                                                    "px-1.5 py-0.5 rounded-sm text-[9px] font-bold uppercase shrink-0",
                                                     p.priority === 'high' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
                                                 )}>
                                                     {p.priority === 'high' ? '⚡ Express' : 'Standard'}
@@ -493,7 +493,7 @@ const Calendar = () => {
                         </div>
                     ) : (
                         <div className="bg-white rounded-sm border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
-                            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                                 <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-3">
                                     <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
                                     {t('calendar.sidebar.staff_title')}

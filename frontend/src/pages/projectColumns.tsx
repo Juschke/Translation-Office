@@ -1,44 +1,12 @@
 import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
-import { FaArrowRight, FaEdit, FaTrash, FaEye, FaTrashRestore, FaCheckCircle } from 'react-icons/fa';
+import { StatusBadge } from '../components/common/StatusBadge';
+import { FaEdit, FaTrash, FaEye, FaTrashRestore, FaFolderOpen, FaEnvelope } from 'react-icons/fa';
 import { getFlagUrl } from '../utils/flags';
-import { getLanguageLabel } from '../utils/languages';
 
-export function getStatusBadge(status: string, t: any): ReactNode {
-    const labels: Record<string, string> = {
-        draft: t('projects.status.draft'),
-        offer: t('projects.status.offer'),
-        pending: t('projects.status.pending'),
-        in_progress: t('projects.status.in_progress'),
-        review: t('projects.status.review'),
-        ready_for_pickup: t('projects.status.ready_for_pickup'),
-        invoiced: t('projects.status.invoiced'),
-        delivered: t('projects.status.delivered'),
-        completed: t('projects.status.completed'),
-        cancelled: t('projects.status.cancelled'),
-        archived: t('projects.status.archived'),
-        deleted: t('projects.status.deleted'),
-    };
-    const styles: Record<string, string> = {
-        draft: 'bg-slate-50 text-slate-600 border-slate-200',
-        offer: 'bg-orange-50 text-orange-700 border-orange-200',
-        pending: 'bg-orange-50 text-orange-700 border-orange-200',
-        in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
-        review: 'bg-blue-50 text-blue-700 border-blue-200',
-        ready_for_pickup: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-        invoiced: 'bg-purple-50 text-purple-700 border-purple-200',
-        delivered: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        completed: 'bg-emerald-600 text-white border-emerald-700',
-        cancelled: 'bg-slate-100 text-slate-500 border-slate-300',
-        archived: 'bg-slate-100 text-slate-500 border-slate-300',
-        deleted: 'bg-red-50 text-red-700 border-red-200',
-    };
-    return (
-        <span className={`px-2.5 py-0.5 rounded-sm text-xs font-semibold border tracking-tight ${styles[status] || styles.draft}`}>
-            {labels[status] || status}
-        </span>
-    );
+export function getStatusBadge(status: string, _t?: any): ReactNode {
+    return <StatusBadge status={status} />;
 }
 
 function getInitials(name: string): string {
@@ -50,6 +18,7 @@ export interface BuildProjectColumnsParams {
     navigate: NavigateFunction;
     bulkUpdateMutation: any;
     setEditingProject: (p: any) => void;
+    setViewFilesProject: (p: any) => void;
     setIsModalOpen: (v: boolean) => void;
     setProjectToDelete: (id: string | string[] | null) => void;
     setConfirmTitle: (t: string) => void;
@@ -62,6 +31,7 @@ export function buildProjectColumns({
     navigate,
     bulkUpdateMutation,
     setEditingProject,
+    setViewFilesProject,
     setIsModalOpen,
     setProjectToDelete,
     setConfirmTitle,
@@ -72,34 +42,25 @@ export function buildProjectColumns({
 
     return [
         {
-            id: 'project_number',
+            id: 'project_info',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('common.number_short') || 'Nr.'}</span>
+                    <span className="text-xs">{t('common.project') || 'Projekt'}</span>
                 </div>
             ),
             accessor: (p: any) => (
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">{p.project_number || p.display_id}</span>
-            ),
-            sortable: true,
-            sortKey: 'project_number',
-            width: 90,
-        },
-        {
-            id: 'project_name',
-            header: (
-                <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('common.designation') || 'Bezeichnung'}</span>
+                <div className="flex flex-col cursor-pointer group/link w-fit">
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[150px]" title={p.project_name || `Projekt #${p.id}`}>
+                        {p.project_name || <span className="text-slate-400 italic font-normal text-xs">Unbenannt</span>}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono tracking-tighter group-hover/link:text-brand-primary transition">
+                        {p.project_number || `#${p.id}`}
+                    </span>
                 </div>
-            ),
-            accessor: (p: any) => (
-                <span className="font-semibold text-slate-800 truncate block max-w-[150px]" title={p.project_name || `Projekt #${p.id}`}>
-                    {p.project_name || <span className="text-slate-400 italic font-normal">Unbenannt (ID: {p.id})</span>}
-                </span>
             ),
             sortable: true,
             sortKey: 'project_name',
-            width: 120,
+            width: 140,
         },
         {
             id: 'customer',
@@ -112,22 +73,33 @@ export function buildProjectColumns({
                 const salutation = p.customer?.salutation ? `${p.customer.salutation} ` : '';
                 const name = p.customer?.company_name || `${salutation}${p.customer?.first_name} ${p.customer?.last_name}` || 'Unbekannt';
                 return (
-                    <div className="flex items-center gap-2 max-w-[200px]">
-                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm">
+                    <div className="flex items-center gap-2 max-w-[200px] group/cust cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/cust:border-brand-primary/30 transition-colors">
                             {getInitials(name)}
                         </div>
-                        <div className="flex flex-col text-[11px] leading-tight overflow-hidden">
-                            <span className="font-semibold text-slate-800 truncate" title={name}>{name}</span>
-                            {p.customer?.email && (
-                                <span className="text-[10px] text-slate-400 truncate tracking-tight">{p.customer.email}</span>
+                        <div className="flex flex-col leading-snug overflow-hidden">
+                            <span className="font-semibold text-slate-800 truncate group-hover/cust:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
+                            {(p.customer?.address_street || p.customer?.address_city) && (
+                                <div className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight mb-0.5">
+                                    {p.customer.address_street}{p.customer.address_street && (p.customer.address_zip || p.customer.address_city) ? ', ' : ''}
+                                    {p.customer.address_zip} {p.customer.address_city}
+                                </div>
                             )}
+                            <div className="flex items-center gap-1.5 overflow-hidden">
+                                {p.customer?.email && (
+                                    <div className="flex items-center gap-1 min-w-0">
+                                        <FaEnvelope className="text-[9px] text-slate-300 shrink-0" />
+                                        <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.customer.email}>{p.customer.email}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 );
             },
             sortable: true,
             sortKey: 'customer_id',
-            width: 180,
+            width: 150,
         },
         {
             id: 'partner',
@@ -137,24 +109,27 @@ export function buildProjectColumns({
                 </div>
             ),
             accessor: (p: any) => {
-                if (!p.partner) return <span className="text-slate-300 italic text-[11px]">-</span>;
+                if (!p.partner) return <span className="text-slate-300 italic text-[11px] px-2">-</span>;
                 const salutation = p.partner.salutation ? `${p.partner.salutation} ` : '';
                 const name = p.partner.company || `${salutation}${p.partner.first_name} ${p.partner.last_name}`;
                 return (
-                    <div className="flex items-center gap-2 max-w-[200px]">
-                        <div className="w-7 h-7 bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm">
+                    <div className="flex items-center gap-2 max-w-[200px] group/part cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/part:border-brand-primary/30 transition-colors">
                             {getInitials(name)}
                         </div>
-                        <div className="flex flex-col text-[11px] leading-tight overflow-hidden">
-                            <span className="font-semibold text-slate-800 truncate" title={name}>{name}</span>
+                        <div className="flex flex-col leading-snug overflow-hidden">
+                            <span className="font-semibold text-slate-800 truncate group-hover/part:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
                             {p.partner.email && (
-                                <span className="text-[10px] text-slate-400 truncate tracking-tight">{p.partner.email}</span>
+                                <div className="flex items-center gap-1 min-w-0 mt-0.5">
+                                    <FaEnvelope className="text-[9px] text-slate-300 shrink-0" />
+                                    <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.partner.email}>{p.partner.email}</span>
+                                </div>
                             )}
                         </div>
                     </div>
                 );
             },
-            width: 180,
+            width: 150,
         },
         {
             id: 'languages',
@@ -165,90 +140,37 @@ export function buildProjectColumns({
             ),
             accessor: (p: any) => {
                 const sourceCode = p.source_language?.iso_code || p.source || 'de';
-                const sCode = sourceCode.substring(0, 2).toUpperCase();
-                const sourceName = p.source_language?.name_internal || p.source_language?.name || getLanguageLabel(sCode);
+                const sourceName = p.source_language?.name_internal || p.source_language?.name || sourceCode.toUpperCase();
 
                 const targetCode = p.target_language?.iso_code || p.target || 'en';
-                const tCode = targetCode.substring(0, 2).toUpperCase();
-                const targetName = p.target_language?.name_internal || p.target_language?.name || getLanguageLabel(tCode);
-
+                const targetName = p.target_language?.name_internal || p.target_language?.name || targetCode.toUpperCase();
                 return (
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 min-w-[40px]" title={`Quelle: ${sourceName}`}>
-                            <img src={getFlagUrl(sourceCode)} className="w-3.5 h-2.5 object-cover shadow-sm border border-slate-200 rounded-[1px]" alt={sourceName} />
-                            <span className="text-[11px] font-bold text-slate-700">{sCode}</span>
+                    <div className="flex items-center justify-between w-full py-1">
+                        <div className="flex items-center gap-1.5 shrink-0 bg-slate-50 px-1.5 py-1 rounded-sm border border-slate-100">
+                            <img src={getFlagUrl(sourceCode)} className="w-4 h-3 object-cover shadow-sm border border-slate-200 rounded-[1px] brightness-110" alt={sourceName} />
+                            <span className="text-[11px] font-bold text-slate-700">{sourceName}</span>
                         </div>
-                        <FaArrowRight className="text-slate-300 text-[9px] shrink-0" />
-                        <div className="flex items-center gap-1.5 min-w-[40px]" title={`Ziel: ${targetName}`}>
-                            <img src={getFlagUrl(targetCode)} className="w-3.5 h-2.5 object-cover shadow-sm border border-slate-200 rounded-[1px]" alt={targetName} />
-                            <span className="text-[11px] font-bold text-slate-700">{tCode}</span>
+                        <span className="text-slate-300 text-[12px] font-bold">→</span>
+                        <div className="flex items-center gap-1.5 shrink-0 bg-brand-primary/[0.03] px-1.5 py-1 rounded-sm border border-brand-primary/5">
+                            <img src={getFlagUrl(targetCode)} className="w-4 h-3 object-cover shadow-sm border border-slate-200 rounded-[1px] brightness-110" alt={targetName} />
+                            <span className="text-[11px] font-bold text-brand-primary">{targetName}</span>
                         </div>
                     </div>
                 );
             },
-            width: 200,
+            width: 250,
         },
         {
-            id: 'down_payment',
+            id: 'status',
             header: (
-                <div className="flex flex-col gap-1.5 w-full text-right">
-                    <span className="text-xs">{t('common.down_payment') || 'Anzahlung'}</span>
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">{t('common.status')}</span>
                 </div>
             ),
-            accessor: (p: any) => {
-                const positionsNet = (p.positions || []).reduce((sum: number, pos: any) => sum + (parseFloat(pos.customer_total) || 0), 0);
-                const extraNet = (p.is_certified ? 5 : 0) +
-                    (p.has_apostille ? 15 : 0) +
-                    (p.is_express ? 15 : 0) +
-                    (p.classification ? 15 : 0) +
-                    ((p.copies_count || 0) * (parseFloat(p.copy_price || 0) || 5));
-
-                const netTotal = positionsNet > 0 ? (positionsNet + extraNet) : (parseFloat(p.price_total || 0) + extraNet);
-                const grossTotal = netTotal * 1.19;
-                const totalPaid = (p.payments || []).reduce((sum: number, pay: any) => sum + (parseFloat(pay.amount) || 0), 0);
-                const isPaid = (grossTotal - totalPaid) <= 0.05;
-
-                return (
-                    <div className="flex items-center justify-end gap-2 text-right">
-                        {isPaid ? (
-                            <FaCheckCircle className="text-emerald-500 text-xs" title="Vollständig bezahlt" />
-                        ) : (
-                            <span className={clsx('text-[11px]', parseFloat(p.down_payment) > 0 ? 'text-slate-600 font-medium' : 'text-slate-300')}>
-                                {parseFloat(p.down_payment || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                            </span>
-                        )}
-                    </div>
-                );
-            },
-            align: 'right' as const,
-            width: 90,
-        },
-        {
-            id: 'price_total',
-            header: (
-                <div className="flex flex-col gap-1.5 w-full text-right">
-                    <span className="text-xs">{t('common.total_price') || 'Gesamtpreis'}</span>
-                </div>
-            ),
-            accessor: (p: any) => {
-                const positionsNet = (p.positions || []).reduce((sum: number, pos: any) => sum + (parseFloat(pos.customer_total) || 0), 0);
-                const extraNet = (p.is_certified ? 5 : 0) +
-                    (p.has_apostille ? 15 : 0) +
-                    (p.is_express ? 15 : 0) +
-                    (p.classification ? 15 : 0) +
-                    ((p.copies_count || 0) * (parseFloat(p.copy_price || 0) || 5));
-
-                const netTotal = positionsNet > 0 ? (positionsNet + extraNet) : (parseFloat(p.price_total || 0) + extraNet);
-                const grossTotal = netTotal * 1.19;
-
-                return (
-                    <span className="font-semibold text-slate-800 text-[11px]">
-                        {grossTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                    </span>
-                );
-            },
-            align: 'right' as const,
-            width: 90,
+            accessor: (p: any) => getStatusBadge(p.status, t),
+            sortable: true,
+            sortKey: 'status',
+            width: 110,
         },
         {
             id: 'deadline',
@@ -278,9 +200,9 @@ export function buildProjectColumns({
 
                 return (
                     <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
-                            <span>{date.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span>
-                            <span className="text-slate-400 text-[10px]">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-center gap-1 text-xs font-medium text-slate-700">
+                            <span className="whitespace-nowrap">{date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
+                            <span className="text-slate-400 text-[10px] opacity-70">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                         <span className={`px-1 py-0 rounded-[2px] text-[9px] font-bold border w-fit uppercase ${badgeColor}`}>{label}</span>
                     </div>
@@ -288,19 +210,67 @@ export function buildProjectColumns({
             },
             sortable: true,
             sortKey: 'deadline',
-            width: 220,
+            width: 140,
         },
         {
-            id: 'status',
+            id: 'down_payment',
             header: (
-                <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('common.status')}</span>
+                <div className="flex flex-col gap-1.5 w-full text-right">
+                    <span className="text-xs">{t('common.down_payment') || 'Anzahlung'}</span>
                 </div>
             ),
-            accessor: (p: any) => getStatusBadge(p.status, t),
-            sortable: true,
-            sortKey: 'status',
-            width: 110,
+            accessor: (p: any) => {
+                const totalPaid = (p.payments || []).reduce((sum: number, pay: any) => sum + (parseFloat(pay.amount) || 0), 0);
+                const downPaymentAmount = parseFloat(p.down_payment || 0);
+                const hasGesamtAmount = parseFloat(p.price_total || 0) > 0;
+
+                let colorClass = 'text-slate-300';
+                let displayAmount = downPaymentAmount || 0;
+
+                if (totalPaid > 0) {
+                    displayAmount = totalPaid;
+                    colorClass = 'text-emerald-600 font-bold';
+                } else if (hasGesamtAmount && totalPaid === 0) {
+                    colorClass = 'text-red-500 font-bold';
+                }
+
+                return (
+                    <div className="flex items-center justify-end gap-2 text-right">
+                        <span className={clsx('text-xs tabular-nums', colorClass)}>
+                            {displayAmount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                        </span>
+                    </div>
+                );
+            },
+            align: 'right' as const,
+            width: 80,
+        },
+        {
+            id: 'price_total',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-right">
+                    <span className="text-xs">{t('common.total_price') || 'Gesamtpreis'}</span>
+                </div>
+            ),
+            accessor: (p: any) => {
+                const positionsNet = (p.positions || []).reduce((sum: number, pos: any) => sum + (parseFloat(pos.customer_total) || 0), 0);
+                const extraNet = (p.is_certified ? 5 : 0) +
+                    (p.has_apostille ? 15 : 0) +
+                    (p.is_express ? 15 : 0) +
+                    (p.classification ? 15 : 0) +
+                    ((p.copies_count || 0) * (parseFloat(p.copy_price || 0) || 5));
+
+                const netTotal = positionsNet > 0 ? (positionsNet + extraNet) : (parseFloat(p.price_total || 0) + extraNet);
+                const grossTotal = netTotal * 1.19;
+
+                return (
+                    <span className="font-semibold text-slate-800 text-xs tabular-nums">
+                        {grossTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </span>
+                );
+            },
+            align: 'right' as const,
+            width: 80,
         },
         {
             id: 'actions',
@@ -312,6 +282,7 @@ export function buildProjectColumns({
             accessor: (p: any) => (
                 <div className="flex justify-end gap-0.5 relative" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => navigate(`/projects/${p.id}`)} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Details"><FaEye size={12} /></button>
+                    <button onClick={() => setViewFilesProject(p)} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Dateien anzeigen"><FaFolderOpen size={12} /></button>
                     {p.status !== 'deleted' && (
                         <button onClick={() => { setEditingProject(p); setIsModalOpen(true); }} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title="Bearbeiten"><FaEdit size={12} /></button>
                     )}
@@ -342,7 +313,7 @@ export function buildProjectColumns({
                 </div>
             ),
             align: 'right' as const,
-            width: 60,
+            width: 80,
         },
     ];
 }

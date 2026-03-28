@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { reportService } from '../api/services';
 import ReportsSkeleton from '../components/common/ReportsSkeleton';
+import { Button } from '../components/ui/button';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import 'dayjs/locale/de';
@@ -266,12 +267,13 @@ const Reports = () => {
                             ]}
                         />
                     </div>
-                    <button
+                    <Button
+                        variant="default"
                         onClick={() => setAppliedDateRange(dateRange)}
-                        className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 rounded text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition shrink-0 h-[38px]"
+                        className="px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 shrink-0 h-[38px]"
                     >
-                        <FaFilter className="text-xs" /> <span className="hidden xs:inline">{t('common.show')}</span><span className="xs:hidden">{t('common.show')}</span>
-                    </button>
+                        <FaFilter className="text-xs" /> {t('common.show')}
+                    </Button>
                 </div>
             </div>
 
@@ -300,7 +302,7 @@ const Reports = () => {
             {activeTab === 'analytics' ? (
                 <>
                     {/* KPIs */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <KPICard
                             label={t('reports.kpi.total_revenue')}
                             value={fmt(kpis?.revenue ?? 0)}

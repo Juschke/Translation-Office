@@ -603,7 +603,7 @@ const EmailComposeModal = ({
                                                                     <div className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">{s.name}</div>
                                                                     <div className="text-[10px] text-slate-400 font-medium line-clamp-1">{s.content.replace(/<[^>]*>/g, '')}</div>
                                                                 </div>
-                                                                {s.is_default && <span className="text-[8px] font-bold bg-brand-primary/10 text-brand-primary px-1 rounded">DEFAULT</span>}
+                                                                {s.is_default && <span className="text-[8px] font-bold bg-brand-primary/10 text-brand-primary px-1 rounded-sm">DEFAULT</span>}
                                                             </button>
                                                         ));
                                                     })()}

@@ -266,7 +266,7 @@ const ProjectPositionsTable = ({
                                     {!disabled && positions.length > 1 ? (
                                         <button
                                             onClick={() => setPositions(positions.filter(p => p.id !== pos.id))}
-                                            className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                            className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
                                             title="Löschen"
                                         >
                                             <FaTrash className="text-[10px]" />
@@ -317,7 +317,7 @@ const ProjectPositionsTable = ({
                                 {!disabled && (
                                     <button
                                         onClick={() => onToggleExtra?.(row.key)}
-                                        className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                        className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
                                         title="Deaktivieren"
                                     >
                                         <FaTrash className="text-[10px]" />
@@ -336,7 +336,7 @@ const ProjectPositionsTable = ({
                     <div className="flex items-center justify-end gap-2 px-3 pt-2.5 pb-2">
                         <button
                             onClick={() => setPositions([...positions, EMPTY_POSITION()])}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-500 border border-slate-200 rounded hover:border-slate-300 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-500 border border-slate-200 rounded-sm hover:border-slate-300 hover:text-slate-700 hover:bg-slate-50 transition-colors"
                         >
                             <FaPlus className="text-[9px]" />
                             Position hinzufügen
@@ -345,7 +345,7 @@ const ProjectPositionsTable = ({
                         <button
                             onClick={() => { setCatalogOpen(o => !o); setShowCreate(false); setSearch(''); }}
                             className={clsx(
-                                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded transition-colors',
+                                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors',
                                 catalogOpen
                                     ? 'bg-[#163e40] text-white'
                                     : 'bg-[#1B4D4F] text-white hover:bg-[#163e40]',
@@ -462,7 +462,7 @@ const ProjectPositionsTable = ({
                                                     base_price: parseFloat(newSvc.base_price) || 0,
                                                     status: 'active',
                                                 })}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1B4D4F] text-white text-[10px] font-black uppercase tracking-wider rounded disabled:opacity-40 hover:bg-[#163e40] transition-colors"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1B4D4F] text-white text-[10px] font-black uppercase tracking-wider rounded-sm disabled:opacity-40 hover:bg-[#163e40] transition-colors"
                                             >
                                                 <FaCheck className="text-[8px]" />
                                                 {createServiceMutation.isPending ? 'Speichern…' : 'Erstellen & Hinzufügen'}

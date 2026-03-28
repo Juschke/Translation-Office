@@ -47,7 +47,7 @@ const ActiveTasksTable: React.FC<ActiveTasksTableProps> = ({ tasks }) => {
 
  return (
  <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden flex flex-col h-full">
- <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
+ <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
  <h2 className="text-sm font-medium text-slate-700">
  Laufende Aufträge
  </h2>
@@ -93,7 +93,7 @@ const ActiveTasksTable: React.FC<ActiveTasksTableProps> = ({ tasks }) => {
  </td>
  <td className="px-5 py-3">
  <div className="flex items-center gap-2">
- <div className={clsx("w-6 h-6 rounded flex items-center justify-center shrink-0", statusInfo.bg, statusInfo.color)}>
+ <div className={clsx("w-6 h-6 rounded-sm flex items-center justify-center shrink-0", statusInfo.bg, statusInfo.color)}>
  <Icon className="text-xs" />
  </div>
  <div className="flex flex-col">

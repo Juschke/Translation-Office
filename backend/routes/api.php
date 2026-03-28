@@ -80,6 +80,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::apiResource('settings/languages', \App\Http\Controllers\Api\LanguageController::class);
         Route::apiResource('settings/price-matrices', \App\Http\Controllers\Api\PriceMatrixController::class);
         Route::apiResource('settings/document-types', \App\Http\Controllers\Api\DocumentTypeController::class);
+        Route::apiResource('settings/project-statuses', \App\Http\Controllers\Api\ProjectStatusController::class);
         Route::apiResource('settings/services', \App\Http\Controllers\Api\ServiceController::class);
         Route::apiResource('settings/email-templates', \App\Http\Controllers\Api\EmailTemplateController::class);
         Route::apiResource('settings/specializations', \App\Http\Controllers\Api\SpecializationController::class);
@@ -157,6 +158,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // Partners (Deduplication Check)
     Route::post('partners/check-duplicates', [\App\Http\Controllers\Api\PartnerController::class, 'checkDuplicates']);
+
+    // Files
+    Route::get('files', [\App\Http\Controllers\Api\ProjectFileController::class, 'index']);
 
     // Projects
     Route::post('projects/analyze', [\App\Http\Controllers\Api\ProjectController::class, 'analyze']);

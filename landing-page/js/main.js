@@ -248,6 +248,160 @@ function animateCounters() {
 animateCounters();
 
 // ========================================
+// FAQ Accordion
+// ========================================
+
+function initFAQAccordion() {
+    const faqItems = document.querySelectorAll('.faq-item');
+
+    faqItems.forEach(item => {
+        const trigger = item.querySelector('.faq-trigger');
+
+        if (trigger) {
+            trigger.addEventListener('click', function() {
+                const answer = item.querySelector('.faq-answer');
+                const isOpen = item.classList.contains('open');
+
+                // Close all other items
+                faqItems.forEach(otherItem => {
+                    otherItem.classList.remove('open');
+                    const otherAnswer = otherItem.querySelector('.faq-answer');
+                    if (otherAnswer) {
+                        otherAnswer.classList.remove('open');
+                    }
+                });
+
+                // Toggle current item
+                if (!isOpen) {
+                    item.classList.add('open');
+                    if (answer) {
+                        answer.classList.add('open');
+                    }
+                }
+            });
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initFAQAccordion);
+
+// ========================================
+// Pricing Toggle (Monthly/Yearly)
+// ========================================
+
+function initPricingToggle() {
+    const pricingContainer = document.getElementById('pricing-container');
+    if (!pricingContainer) return;
+
+    const toggleButtons = pricingContainer.querySelectorAll('.toggle-button');
+
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const isMonthly = button.getAttribute('data-period') === 'monthly';
+
+            // Update active button
+            toggleButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            // Update pricing display
+            const container = document.getElementById('pricing-grid');
+            if (isMonthly) {
+                container.classList.remove('show-yearly');
+            } else {
+                container.classList.add('show-yearly');
+            }
+
+            // Update prices with animation
+            const priceElements = container.querySelectorAll('.pricing-price');
+            priceElements.forEach(element => {
+                element.style.opacity = '0.5';
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                }, 300);
+            });
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initPricingToggle);
+
+// ========================================
+// Typing Animation for Hero
+// ========================================
+
+function initTypingAnimation() {
+    const typingElement = document.getElementById('typing-text');
+    if (!typingElement) return;
+
+    const phrases = ['Übersetzungsbüros', 'Dolmetschagenturen', 'Sprachdienstleister'];
+    let currentPhrase = 0;
+    let currentChar = 0;
+    let isDeleting = false;
+
+    function type() {
+        const phrase = phrases[currentPhrase];
+
+        if (isDeleting) {
+            typingElement.textContent = phrase.substring(0, currentChar - 1);
+            currentChar--;
+        } else {
+            typingElement.textContent = phrase.substring(0, currentChar + 1);
+            currentChar++;
+        }
+
+        // Decide when to delete
+        if (!isDeleting && currentChar === phrase.length) {
+            isDeleting = true;
+            setTimeout(type, 2000); // Wait before deleting
+            return;
+        }
+
+        if (isDeleting && currentChar === 0) {
+            isDeleting = false;
+            currentPhrase = (currentPhrase + 1) % phrases.length;
+            setTimeout(type, 500); // Wait before typing next
+            return;
+        }
+
+        setTimeout(type, isDeleting ? 50 : 100);
+    }
+
+    type();
+}
+
+document.addEventListener('DOMContentLoaded', initTypingAnimation);
+
+// ========================================
+// Mobile Login Dropdown
+// ========================================
+
+function initMobileLoginDropdown() {
+    const navLogin = document.querySelector('.nav-login');
+    const mobileNavDropdown = document.querySelector('.mobile-nav-dropdown');
+
+    if (!navLogin || !mobileNavDropdown) return;
+
+    // On mobile, toggle the dropdown when clicking login
+    const isSmallScreen = () => window.innerWidth < 768;
+
+    if (isSmallScreen()) {
+        navLogin.addEventListener('click', function(e) {
+            e.preventDefault();
+            mobileNavDropdown.classList.toggle('open');
+        });
+    }
+
+    // Hide on resize to large screen
+    window.addEventListener('resize', function() {
+        if (!isSmallScreen()) {
+            mobileNavDropdown.classList.remove('open');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initMobileLoginDropdown);
+
+// ========================================
 // Page Load Optimizations
 // ========================================
 
@@ -294,7 +448,7 @@ function showCookieConsent() {
             <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p class="text-sm">
                     Wir verwenden Cookies, um Ihre Erfahrung zu verbessern. Mit der Nutzung unserer Website stimmen Sie unserer
-                    <a href="#" class="underline hover:text-gray-300">Datenschutzerklärung</a> zu.
+                    <a href="cookie.html" class="underline hover:text-gray-300">Cookie-Richtlinie</a> zu.
                 </p>
                 <div class="flex gap-4">
                     <button id="accept-cookies" class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg transition">

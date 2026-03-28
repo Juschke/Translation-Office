@@ -134,13 +134,13 @@ const NewEmailTemplateModal: React.FC<NewEmailTemplateModalProps> = ({ isOpen, o
  <FaInfoCircle className="text-slate-700" /> Nachrichten-Körper
  </label>
 
- <div className="flex-1 min-h-[300px] flex flex-col border border-slate-200 rounded overflow-hidden">
+ <div className="flex-1 min-h-[300px] flex flex-col border border-slate-200 rounded-sm overflow-hidden">
  <ReactQuill
  theme="snow"
  value={formData.body}
  onChange={handleBodyChange}
  modules={quillModules}
- className="flex-1 flex flex-col quill-modern no-rounded"
+ className="flex-1 flex flex-col quill-modern no-rounded-sm"
  />
  </div>
  <div className="shrink-0 text-xs text-slate-500">
@@ -154,13 +154,13 @@ const NewEmailTemplateModal: React.FC<NewEmailTemplateModalProps> = ({ isOpen, o
  <button
  type="button"
  onClick={onClose}
- className="px-6 py-2.5 rounded border border-slate-300 text-slate-600 text-xs font-medium hover:bg-white transition"
+ className="px-6 py-2.5 rounded-sm border border-slate-300 text-slate-600 text-xs font-medium hover:bg-white transition"
  >
  Abbrechen
  </button>
  <button
  type="submit"
- className="px-8 py-2.5 bg-slate-900 text-white rounded text-xs font-medium shadow-sm hover:bg-slate-800 transition"
+ className="px-8 py-2.5 bg-slate-900 text-white rounded-sm text-xs font-medium shadow-sm hover:bg-slate-800 transition"
  >
  Vorlage speichern
  </button>

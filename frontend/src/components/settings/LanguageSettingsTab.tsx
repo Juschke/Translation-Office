@@ -37,7 +37,7 @@ const LanguageSettingsTab: React.FC = () => {
                             <FaCheck className="text-[10px]" />
                         </div>
                     )}
-                    <div className="w-12 h-8 bg-slate-100 rounded shadow-sm border border-slate-200 overflow-hidden flex items-center justify-center font-bold text-slate-400">DE</div>
+                    <div className="w-12 h-8 bg-slate-100 rounded-sm shadow-sm border border-slate-200 overflow-hidden flex items-center justify-center font-bold text-slate-400">DE</div>
                     <span className={clsx("font-bold text-sm", i18n.language === 'de' ? "text-brand-primary" : "text-slate-700")}>Deutsch</span>
                     <span className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Standard</span>
                 </button>
@@ -56,7 +56,7 @@ const LanguageSettingsTab: React.FC = () => {
                             <FaCheck className="text-[10px]" />
                         </div>
                     )}
-                    <div className="w-12 h-8 bg-slate-100 rounded shadow-sm border border-slate-200 overflow-hidden flex items-center justify-center font-bold text-slate-400">EN</div>
+                    <div className="w-12 h-8 bg-slate-100 rounded-sm shadow-sm border border-slate-200 overflow-hidden flex items-center justify-center font-bold text-slate-400">EN</div>
                     <span className={clsx("font-bold text-sm", i18n.language === 'en' ? "text-brand-primary" : "text-slate-700")}>English</span>
                     <span className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">International</span>
                 </button>

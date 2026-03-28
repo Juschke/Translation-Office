@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FaCloudUploadAlt, FaTimes, FaTrash } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTimes, FaTrash, FaCamera } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,14 @@ interface FileUploadModalProps {
     onUpload: (files: any[], onProgress: (fileId: string, progress: number) => void) => Promise<void>;
 }
 
+type DocType = 'source' | 'target' | 'reference';
+
+const DOC_TYPES: { value: DocType; label: string; color: string }[] = [
+    { value: 'source', label: 'Eingangsdokument', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+    { value: 'target', label: 'Zieldokument', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    { value: 'reference', label: 'Referenz', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+];
+
 const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) => {
     const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
     const [dragActive, setDragActive] = useState(false);
@@ -17,6 +25,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
     const [progress, setProgress] = useState<{ [key: string]: number }>({});
     const [editingCell, setEditingCell] = useState<{ id: string, field: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
 
     const allowedExtensions = ['PDF', 'DOC', 'DOCX', 'TXT', 'JPG', 'JPEG', 'PNG', 'GIF', 'SVG', 'XLSX', 'PPTX', 'ZIP', 'IDML'];
 
@@ -52,10 +61,13 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
         setSelectedFiles(prev => prev.filter(f => f.id !== id));
     };
 
-    const toggleFileType = (id: string) => {
-        setSelectedFiles(prev => prev.map(f =>
-            f.id === id ? { ...f, type: f.type === 'source' ? 'target' : 'source' } : f
-        ));
+    const cycleFileType = (id: string) => {
+        setSelectedFiles(prev => prev.map(f => {
+            if (f.id !== id) return f;
+            const idx = DOC_TYPES.findIndex(t => t.value === f.type);
+            const next = DOC_TYPES[(idx + 1) % DOC_TYPES.length];
+            return { ...f, type: next.value };
+        }));
     };
 
     const handleUpload = async () => {
@@ -107,7 +119,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                     autoFocus
                     type="number"
                     defaultValue={value}
-                    className="w-20 px-1 py-0.5 bg-white border border-slate-900 rounded text-right text-xs font-medium outline-none"
+                    className="w-20 px-1 py-0.5 bg-white border border-slate-900 rounded-sm text-right text-xs font-medium outline-none"
                     onBlur={(e) => {
                         updateFileField(file.id, field, parseInt(e.target.value) || 0);
                         setEditingCell(null);
@@ -151,8 +163,8 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                     {/* Dropzone */}
                     <div
                         className={clsx(
-                            "border-2 border-dashed rounded-sm p-8 flex flex-col items-center justify-center transition-all cursor-pointer group mb-6",
-                            dragActive ? "border-slate-900 bg-slate-50" : "border-slate-200 hover:border-slate-300 bg-transparent hover:bg-slate-50"
+                            'border-2 border-dashed rounded-sm p-8 flex flex-col items-center justify-center transition-all cursor-pointer group mb-4',
+                            dragActive ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300 bg-transparent hover:bg-slate-50'
                         )}
                         onClick={() => fileInputRef.current?.click()}
                         onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
@@ -164,7 +176,34 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                             <FaCloudUploadAlt className="text-xl text-slate-700" />
                         </div>
                         <div className="text-sm font-medium text-slate-700">Dateien auswählen oder hierher ziehen</div>
-                        <div className="text-xs text-slate-400 font-medium mt-1">Erlaubt: PDF, DOC, Bilder, TXT, etc.</div>
+                        <div className="text-xs text-slate-400 font-medium mt-1">Erlaubt: PDF, DOC, Bilder, TXT, etc. — bis zu 50 MB pro Datei</div>
+                    </div>
+
+                    {/* Camera / Scanner button */}
+                    <div className="flex items-center justify-center gap-3 mb-6">
+                        <div className="h-px flex-1 bg-slate-100" />
+                        <button
+                            type="button"
+                            onClick={() => cameraInputRef.current?.click()}
+                            className="flex items-center gap-2 px-4 py-2 rounded-sm border border-brand-primary/20 bg-brand-primary/[0.03] text-brand-primary hover:bg-brand-primary/[0.08] text-xs font-bold uppercase tracking-wider transition-all shadow-sm group"
+                        >
+                            <FaCamera className="text-sm transition-transform group-hover:scale-110" />
+                            Dokument scannen (Kamera)
+                        </button>
+                        {/* capture="environment" → rear camera on mobile; file picker on desktop */}
+                        <input
+                            ref={cameraInputRef}
+                            type="file"
+                            accept="image/*,application/pdf"
+                            capture="environment"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                                if (e.target.files) addFiles(Array.from(e.target.files));
+                                e.target.value = '';
+                            }}
+                        />
+                        <div className="h-px flex-1 bg-slate-100" />
                     </div>
 
                     {/* File List as Table */}
@@ -186,12 +225,12 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                                         <tr key={file.id} className={clsx("group transition-colors", !file.isValid && "bg-red-50/30")}>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-400 shrink-0">
+                                                    <div className="w-8 h-8 rounded-sm bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-400 shrink-0">
                                                         {file.ext}
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="text-xs font-medium text-slate-800 truncate max-w-[200px]">{file.name}</div>
-                                                        {!file.isValid && <span className="text-xs font-semibold bg-red-500 text-white px-1 py-0.5 roundeder">Format nicht unterstützt</span>}
+                                                        {!file.isValid && <span className="text-xs font-semibold bg-red-500 text-white px-1 py-0.5 rounded-sm">Format nicht unterstützt</span>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -216,15 +255,14 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <button
-                                                    onClick={() => !uploading && toggleFileType(file.id)}
+                                                    onClick={() => !uploading && cycleFileType(file.id)}
+                                                    title="Klicken zum Wechseln"
                                                     className={clsx(
-                                                        "px-3 py-1 rounded text-xs font-semibold border transition-all",
-                                                        file.type === 'source'
-                                                            ? "bg-slate-100 text-slate-600 border-slate-200"
-                                                            : "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm"
+                                                        'px-3 py-1 rounded-sm text-xs font-semibold border transition-all',
+                                                        DOC_TYPES.find(t => t.value === file.type)?.color ?? 'bg-slate-100 text-slate-600 border-slate-200'
                                                     )}
                                                 >
-                                                    {file.type === 'source' ? 'Quelle' : 'Ziel'}
+                                                    {DOC_TYPES.find(t => t.value === file.type)?.label ?? file.type}
                                                 </button>
                                             </td>
                                             <td className="px-4 py-3 text-right pr-6">

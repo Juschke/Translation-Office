@@ -1,32 +1,37 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(php artisan tinker:*)",
-      "Bash(php artisan migrate:*)",
-      "Bash(php artisan route:list:*)",
-      "Bash(npm run build:*)",
-      "Bash(ls:*)",
+      "Bash(sed -i 's/clsx\\(\"\"px-2.5 py-0.5 rounded text-xs font-medium border tracking-tight shadow-sm\"\"/clsx\\(\"\"px-2.5 py-0.5 rounded-sm text-xs font-medium border tracking-tight shadow-sm\"\"/g' \"C:/xampp/htdocs/Translation-Office/frontend/src/components/projects/ProjectStatusBadge.tsx\")",
+      "Bash(__NEW_LINE_e4e448dc08a4a13c__ sed:*)",
+      "Bash(sed -i 's/\"\"px-4 py-2 rounded text-xs font-bold transition-all\"\"/\"\"px-4 py-2 rounded-sm text-xs font-bold transition-all\"\"/g;:*)",
+      "Bash(__NEW_LINE_70516c5fd5e1e29f__ sed:*)",
+      "Bash(for file:*)",
+      "Bash(do)",
+      "Bash(sed -i 's/\\\\brounded\\\\b\\\\\\([^-a-zA-Z0-9]\\\\\\)/rounded-sm\\\\1/g' \"$file\")",
+      "Bash(done)",
+      "Bash(grep -r \"Abbrechen\\\\|Speichern\\\\|Hinzufügen\\\\|Bearbeiten\\\\|Löschen\\\\|Wird geladen\\\\|Noch keine\\\\|Laden\\\\|Fehler\\\\|Erfolg\" frontend/src/pages/*.tsx)",
       "Bash(grep:*)",
-      "Bash(wc:*)",
-      "Bash(find:*)",
-      "Bash(powershell -Command:*)",
-      "Bash(powershell -File:*)",
+      "Bash(__NEW_LINE_ed06cdbe6b717eb5__ sed:*)",
+      "Bash(find C:xampphtdocsTranslation-OfficebackendappFilament -name *AdminPanel* -o -name *Provider*)",
+      "Bash(ls:*)",
+      "Bash(php -l /c/xampp/htdocs/Translation-Office/backend/app/Filament/Resources/ActivityLogResource.php)",
+      "Bash(php -l /c/xampp/htdocs/Translation-Office/backend/app/Filament/Resources/UserResource.php)",
+      "Bash(php -l /c/xampp/htdocs/Translation-Office/backend/app/Filament/Resources/InvoiceResource.php)",
       "Bash(npx tsc:*)",
-      "Bash(node:*)",
-      "Bash(npm install:*)",
-      "Bash(php artisan make:migration:*)",
-      "Bash(php:*)",
-      "Bash(cd:*)",
-      "Bash(cd C:\\\\xampp\\\\htdocs\\\\Translation-Office\\\\frontend:*)",
-      "Bash(head:*)",
-      "Bash(cd /c/xampp/htdocs/Translation-Office/backend && composer dump-autoload 2>&1)",
-      "Bash(mv:*)",
-      "Bash(composer show:*)",
-      "Bash(mysql:*)",
-      "Bash(grep -rn \"TooltipProvider\\\\|from.*tooltip\" \"C:\\\\xampp\\\\htdocs\\\\Translation-Office\\\\frontend\\\\src\\\\components\\\\ui\"\" --include=\"*.tsx\" -l 2>/dev/null; grep -n \"TooltipProvider\" \"C:xampphtdocsTranslation-OfficefrontendsrcpagesNewProject.tsx \")"
-    ]
+      "Bash(python3:*)",
+      "Bash(do echo:*)",
+      "Bash(echo \"File: $file\")",
+      "Read(//c/xampp/htdocs/Translation-Office/frontend/**)",
+      "Bash(cat:*)",
+      "Bash(/tmp/final-verification.txt:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(DROP TABLE:*)",
+      "Bash(php artisan db:wipe:*)"
+    ],
+    "defaultMode": "dontAsk"
   }
 }

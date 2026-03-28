@@ -23,6 +23,7 @@ import { projectService, customerService, partnerService, settingsService } from
 import TableSkeleton from '../components/common/TableSkeleton';
 import KanbanBoard from '../components/projects/KanbanBoard';
 import ConfirmModal from '../components/common/ConfirmModal';
+import ProjectFilesModal from '../components/modals/ProjectFilesModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
 import echo from '../utils/echo';
 
@@ -40,6 +41,8 @@ const Projects = () => {
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<any>(null);
+    const [viewFilesProject, setViewFilesProject] = useState<any>(null);
+    const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
     const [advancedFilters, setAdvancedFilters] = useState<any>({
         customerId: '',
@@ -429,6 +432,10 @@ const Projects = () => {
         navigate,
         bulkUpdateMutation,
         setEditingProject: handleEditProject,
+        setViewFilesProject: (p) => {
+            setViewFilesProject(p);
+            setIsFilesModalOpen(true);
+        },
         setIsModalOpen: (val) => { if (!val) setIsModalOpen(false); },
         setProjectToDelete,
         setConfirmTitle,
@@ -547,7 +554,7 @@ const Projects = () => {
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('projects.title')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Projekte</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">{t('projects.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -560,7 +567,7 @@ const Projects = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard
                     label={t('projects.kpi.active_projects')}
                     value={activeProjectsCount}
@@ -680,6 +687,15 @@ const Projects = () => {
                 }}
                 initialData={editingProject}
                 isLoading={createMutation.isPending || updateMutation.isPending}
+            />
+
+            <ProjectFilesModal
+                isOpen={isFilesModalOpen}
+                onClose={() => {
+                    setIsFilesModalOpen(false);
+                    setViewFilesProject(null);
+                }}
+                project={viewFilesProject}
             />
 
             <ConfirmModal

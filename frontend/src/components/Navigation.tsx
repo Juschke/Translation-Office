@@ -142,7 +142,7 @@ const Navigation = () => {
                     {displayCount}
                 </span>
                 {/* Tooltip */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-brand-primary text-white text-sm rounded-[var(--radius-sm)] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg border border-white/10 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0 hidden sm:block">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-2.5 py-1.5 bg-brand-primary text-white text-sm rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg border border-white/10 backdrop-blur-sm transform -translate-y-1 group-hover:translate-y-0 hidden sm:block">
                     <div className="font-semibold">{label}</div>
                     <div className="text-xs text-white/70 mt-0.5">{displayCount} insgesamt</div>
                     <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-brand-primary"></span>
@@ -168,7 +168,7 @@ const Navigation = () => {
                     <div className="flex items-center h-full gap-4 lg:gap-6">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
-                            <div className="bg-white w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center font-bold text-[#003333] shadow-sm">TO</div>
+                            <div className="bg-white w-8 h-8 rounded-sm flex items-center justify-center font-bold text-[#003333] shadow-sm">TO</div>
                             <span className="font-bold text-lg tracking-tight hidden lg:inline text-white">Translator Office</span>
                         </Link>
 
@@ -214,6 +214,21 @@ const Navigation = () => {
                                                 </div>
                                             )}
                                         </div>
+                                    </TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link to="/documents" className={navLinkClass("/documents")}>
+                                            <FaFileAlt className="text-base lg:hidden" />
+                                            <span className="hidden lg:inline">Dateien</span>
+                                            {dashboardData?.stats?.total_files > 0 && (
+                                                <NavBadge count={dashboardData.stats.total_files} label="Dateien" activeColor="bg-brand-primary" />
+                                            )}
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
+                                        <span className="font-semibold text-sm">Dateien</span>
                                     </TooltipContent>
                                 </Tooltip>
 
@@ -468,7 +483,7 @@ const Navigation = () => {
 
                             {/* Notification Dropdown */}
                             {isNotifOpen && (
-                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-[var(--radius-md)] shadow-sm border border-brand-primary/10 z-50 text-brand-text origin-top-right animate-slideUp">
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-sm border border-brand-primary/10 z-50 text-brand-text origin-top-right animate-slideUp">
                                     <div className="p-3 border-b border-slate-100 font-semibold text-sm flex justify-between">
                                         <span>Benachrichtigungen</span>
                                         <button
@@ -522,7 +537,7 @@ const Navigation = () => {
                                     i18n.changeLanguage(nextLang);
                                     localStorage.setItem('locale', nextLang);
                                 }}
-                                className="group flex items-center gap-2.5 px-2.5 py-1.5 rounded-[var(--radius-sm)] hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
+                                className="group flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
                             >
                                 <div className="w-5 h-3.5 flex overflow-hidden rounded-[1px] shadow-sm border border-white/20">
                                     <img
@@ -619,6 +634,7 @@ const Navigation = () => {
                         {[
                             { path: '/', label: 'Dashboard', icon: <FaHome />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute" },
                             { path: '/projects', label: 'Projekte', icon: <FaLayerGroup />, count: dashboardData?.stats?.open_projects, badgeLabel: "Offene Projekte" },
+                            { path: '/documents', label: 'Dateien', icon: <FaFileAlt />, count: dashboardData?.stats?.total_files, badgeLabel: "Dateien Gesamt" },
                             { path: '/customers', label: 'Kunden', icon: <FaUsers />, count: dashboardData?.stats?.active_customers, badgeLabel: "Aktive Kunden", color: "bg-slate-500" },
                             { path: '/partners', label: 'Partner', icon: <FaUserTie />, count: dashboardData?.stats?.active_partners, badgeLabel: "Aktive Partner", color: "bg-slate-500" },
                             { path: '/interpreting', label: 'Dolmetscher', icon: <FaCommentDots />, count: dashboardData?.stats?.active_interpreting, badgeLabel: "Anstehende Einsätze", color: "bg-slate-500" },
@@ -642,7 +658,7 @@ const Navigation = () => {
                                     key={item.path}
                                     to={item.path}
                                     className={clsx(
-                                        "px-2.5 py-1.5 rounded-[var(--radius-sm)] text-sm font-semibold flex items-center justify-between transition-colors",
+                                        "px-2.5 py-1.5 rounded-sm text-sm font-semibold flex items-center justify-between transition-colors",
                                         active
                                             ? "bg-brand-primary/5 text-brand-primary"
                                             : "text-brand-muted hover:bg-brand-bg hover:text-brand-primary"

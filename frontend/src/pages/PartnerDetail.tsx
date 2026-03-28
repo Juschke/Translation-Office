@@ -11,6 +11,8 @@ import { getFlagUrl, getLanguageName } from '../utils/flags';
 import { useState, useMemo } from 'react';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { StatusBadge } from '../components/common/StatusBadge';
+import { Button } from '../components/ui/button';
 import clsx from 'clsx';
 
 const PartnerDetail = () => {
@@ -67,24 +69,7 @@ const PartnerDetail = () => {
                         <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h1 className="text-lg md:text-2xl font-medium text-slate-800 truncate">{name}</h1>
-                                <span className={clsx(
-                                    "px-2 py-0.5 rounded text-xs font-medium border shrink-0 tracking-tight",
-                                    partner.status?.toLowerCase() === 'available' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                        partner.status?.toLowerCase() === 'busy' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                                            partner.status?.toLowerCase() === 'vacation' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                partner.status?.toLowerCase() === 'blacklisted' ? 'bg-slate-900 text-white border-slate-900' :
-                                                    partner.status?.toLowerCase() === 'archived' ? 'bg-slate-800 text-white border-slate-700' :
-                                                        partner.status?.toLowerCase() === 'deleted' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                            'bg-slate-50 text-slate-500 border-slate-200'
-                                )}>
-                                    {partner.status?.toLowerCase() === 'available' ? 'Verfügbar' :
-                                        partner.status?.toLowerCase() === 'busy' ? 'Beschäftigt' :
-                                            partner.status?.toLowerCase() === 'vacation' ? 'Urlaub' :
-                                                partner.status?.toLowerCase() === 'blacklisted' ? 'Gesperrt' :
-                                                    partner.status?.toLowerCase() === 'archived' ? 'Archiviert' :
-                                                        partner.status?.toLowerCase() === 'deleted' ? 'Gelöscht' :
-                                                            partner.status || 'Keine Angabe'}
-                                </span>
+                                <StatusBadge status={partner.status || 'active'} type="partner" />
                             </div>
                             <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
                                 <span className="flex items-center gap-1"><FaUserTie className="text-slate-400" /> {partner.type === 'translator' ? 'Übersetzer' : partner.type === 'interpreter' ? 'Dolmetscher' : partner.type === 'agency' ? 'Agentur' : partner.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : partner.type || 'Keine Angabe'}</span>
@@ -94,25 +79,27 @@ const PartnerDetail = () => {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap ml-0 md:ml-auto border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
-                        <button
+                        <Button
+                            variant="secondary"
                             onClick={() => navigate('/inbox', { state: { compose: true, to: partner.email, subject: `Anfrage: ${name}` } })}
-                            className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 rounded text-xs font-medium flex items-center gap-2 shadow-sm transition"
+                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
                         >
-                            <FaEnvelope /> Email
-                        </button>
-                        <button
+                            <FaEnvelope /> E-Mail
+                        </Button>
+                        <Button
+                            variant="default"
                             onClick={() => setIsEditModalOpen(true)}
-                            className="bg-brand-primary border border-brand-primary text-white hover:bg-brand-primary/90 px-3 py-2 rounded text-xs font-medium flex items-center gap-2 shadow-sm transition"
+                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
                         >
                             <FaEdit /> Bearbeiten
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="destructive"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 px-3 py-2 rounded text-xs font-medium flex items-center gap-2 shadow-sm transition"
-                            title="Löschen"
+                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
                         >
                             <FaTrash /> Löschen
-                        </button>
+                        </Button>
                     </div>
 
                     {/* Meta Info Bar */}
@@ -258,7 +245,7 @@ const PartnerDetail = () => {
 
                     {/* Skills Card */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-100 bg-slate-50">
+                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
                             <h4 className="text-xs font-medium text-slate-500">Qualifikationen</h4>
                         </div>
                         <div className="p-5 space-y-5">
@@ -281,7 +268,7 @@ const PartnerDetail = () => {
                                 <div className="flex flex-wrap gap-1.5">
                                     {partner.domains && partner.domains.length > 0 ? (
                                         partner.domains.map((domain: string, i: number) => (
-                                            <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-sm font-medium border border-slate-200">
+                                            <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-sm text-sm font-medium border border-slate-200">
                                                 {domain}
                                             </span>
                                         ))
@@ -367,23 +354,7 @@ const RecentPartnerProjects = ({ partnerId }: { partnerId: string }) => {
                         <tr key={p.id} onClick={() => navigate(`/projects/${p.id}`)} className="hover:bg-slate-50 cursor-pointer transition-colors group">
                             <td className="px-6 py-3 font-medium text-slate-700 group-hover:underline">{p.project_name || p.title || `Projekt #${p.id}`}</td>
                             <td className="px-6 py-3">
-                                <span className={clsx("px-2 py-0.5 rounded text-xs font-medium border",
-                                    p.status === 'completed' ? 'bg-emerald-600 text-white border-emerald-700' :
-                                        ['in_progress', 'review'].includes(p.status) ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                            p.status === 'ready_for_pickup' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                                                p.status === 'invoiced' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                                    p.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                                        ['offer', 'pending', 'draft'].includes(p.status) ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                                            'bg-slate-100 text-slate-500 border-slate-200'
-                                )}>
-                                    {p.status === 'completed' ? 'Abgeschlossen' :
-                                        ['in_progress', 'review'].includes(p.status) ? 'Bearbeitung' :
-                                            p.status === 'ready_for_pickup' ? 'Abholbereit' :
-                                                p.status === 'invoiced' ? 'Rechnung' :
-                                                    p.status === 'delivered' ? 'Geliefert' :
-                                                        ['offer', 'pending', 'draft'].includes(p.status) ? 'Neu' :
-                                                            p.status}
-                                </span>
+                                <StatusBadge status={p.status} />
                             </td>
                             <td className="px-6 py-3 text-right font-medium text-slate-700">{p.partner_cost_net ? Number(p.partner_cost_net).toFixed(2) + ' €' : '-'}</td>
                             <td className="px-6 py-3 text-right text-slate-500">{new Date(p.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
@@ -419,11 +390,11 @@ const PartnerStats = ({ partnerId }: { partnerId: string }) => {
 
     return (
         <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                 <h4 className="text-xs font-medium text-slate-500">Auswertung</h4>
                 <FaChartLine className="text-emerald-500" />
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-6 space-y-4">
                 <div>
                     <span className="text-xs text-slate-400 block mb-1">Projekte gesamt</span>
                     <span className="text-2xl font-semibold text-slate-800">{stats.totalProjects}</span>

@@ -6,6 +6,7 @@ import { authService, twoFactorService } from '../api/services';
 import { QRCodeSVG } from 'qrcode.react';
 import clsx from 'clsx';
 import Input from '../components/common/Input';
+import { Button } from '../components/ui/button';
 
 const Profile = () => {
     const { t, i18n } = useTranslation();
@@ -162,11 +163,11 @@ const Profile = () => {
                 {/* Left Column */}
                 <div className="space-y-6">
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="h-20 bg-[#003333]"></div>
+                        <div className="h-20 bg-brand-primary"></div>
                         <div className="px-6 pb-6 text-center">
                             <div className="relative -mt-10 mb-4 inline-block">
                                 <div className="w-20 h-20 rounded-sm bg-white p-1 shadow-sm mx-auto">
-                                    <div className="w-full h-full rounded bg-slate-100 flex items-center justify-center text-2xl font-bold text-brand-primary border border-slate-100">
+                                    <div className="w-full h-full rounded-sm bg-slate-100 flex items-center justify-center text-2xl font-bold text-brand-primary border border-slate-100">
                                         {formData.firstName || formData.lastName ? getInitials(`${formData.firstName} ${formData.lastName}`) : 'JD'}
                                     </div>
                                 </div>
@@ -223,13 +224,15 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="mt-8 flex justify-end">
-                            <button
+                            <Button
+                                variant="default"
                                 onClick={handleUpdateProfile}
                                 disabled={isLoading}
-                                className="px-8 py-2.5 bg-brand-primary text-white rounded text-sm font-bold hover:bg-brand-primary/90 transition-all shadow-sm disabled:opacity-50"
+                                isLoading={isLoading}
+                                className="px-8 py-2.5 text-sm font-bold"
                             >
                                 {t('profile.save_profile')}
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
@@ -284,7 +287,7 @@ const Profile = () => {
                                 <button
                                     onClick={() => setShowPasswordForm(!showPasswordForm)}
                                     className={clsx(
-                                        "px-4 py-2 rounded text-xs font-bold transition-all",
+                                        "px-4 py-2 rounded-sm text-xs font-bold transition-all",
                                         showPasswordForm ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-sm"
                                     )}
                                 >
@@ -343,13 +346,15 @@ const Profile = () => {
                                         </div>
                                     </div>
                                     <div className="flex justify-end pt-2">
-                                        <button
+                                        <Button
+                                            variant="default"
                                             onClick={handleChangePassword}
                                             disabled={isLoading}
-                                            className="px-8 py-2.5 bg-brand-primary text-white rounded text-xs font-bold hover:bg-brand-primary/90 transition-all shadow-sm disabled:opacity-70"
+                                            isLoading={isLoading}
+                                            className="px-8 py-2.5 text-xs font-bold"
                                         >
                                             {t('profile.confirm_security_update')}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             )}
@@ -361,7 +366,7 @@ const Profile = () => {
                                 <div>
                                     <h4 className="text-sm src-slate-700 font-medium flex items-center gap-2">
                                         {t('profile.two_factor')}
-                                        {user.two_factor_confirmed_at ? <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded font-medium">{t('profile.active')}</span> : <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs rounded font-medium">{t('profile.inactive')}</span>}
+                                        {user.two_factor_confirmed_at ? <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-sm font-medium">{t('profile.active')}</span> : <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs rounded-sm font-medium">{t('profile.inactive')}</span>}
                                     </h4>
                                     <p className="text-sm text-slate-500 mt-1">{t('profile.two_factor_desc')}</p>
                                 </div>
@@ -370,7 +375,7 @@ const Profile = () => {
                                         onClick={handleEnable2FA}
                                         disabled={isLoading}
                                         className={clsx(
-                                            "px-4 py-2 rounded text-xs font-semibold transition-all",
+                                            "px-4 py-2 rounded-sm text-xs font-semibold transition-all",
                                             showTwoFactorInline ? "bg-slate-100 text-slate-500" : "bg-slate-50 text-slate-900 hover:bg-slate-100"
                                         )}
                                     >
@@ -378,8 +383,8 @@ const Profile = () => {
                                     </button>
                                 ) : (
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setShowRecoveryCodesInline(!showRecoveryCodesInline); if (!showRecoveryCodesInline) showRecoveryCodes(); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-xs font-bold hover:bg-slate-200">{t('profile.recovery_codes_btn')}</button>
-                                        <button onClick={() => setShowDisableConfirmInline(!showDisableConfirmInline)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded text-xs font-bold hover:bg-red-100">{t('profile.disable')}</button>
+                                        <button onClick={() => { setShowRecoveryCodesInline(!showRecoveryCodesInline); if (!showRecoveryCodesInline) showRecoveryCodes(); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-sm text-xs font-bold hover:bg-slate-200">{t('profile.recovery_codes_btn')}</button>
+                                        <button onClick={() => setShowDisableConfirmInline(!showDisableConfirmInline)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-sm text-xs font-bold hover:bg-red-100">{t('profile.disable')}</button>
                                     </div>
                                 )}
                             </div>
@@ -435,8 +440,8 @@ const Profile = () => {
                                         ))}
                                     </div>
                                     <div className="flex gap-3">
-                                        <button onClick={handleRegenerateRecoveryCodes} disabled={isLoading} className="flex-1 py-2 bg-slate-50 text-slate-900 font-bold text-xs rounded hover:bg-slate-100 transition-all border border-slate-200">{t('profile.regenerate_codes')}</button>
-                                        <button onClick={() => setShowRecoveryCodesInline(false)} className="flex-1 py-2 bg-slate-800 text-white font-bold text-xs rounded hover:bg-black transition-all">{t('profile.got_it')}</button>
+                                        <button onClick={handleRegenerateRecoveryCodes} disabled={isLoading} className="flex-1 py-2 bg-slate-50 text-slate-900 font-bold text-xs rounded-sm hover:bg-slate-100 transition-all border border-slate-200">{t('profile.regenerate_codes')}</button>
+                                        <button onClick={() => setShowRecoveryCodesInline(false)} className="flex-1 py-2 bg-slate-800 text-white font-bold text-xs rounded-sm hover:bg-black transition-all">{t('profile.got_it')}</button>
                                     </div>
                                 </div>
                             )}

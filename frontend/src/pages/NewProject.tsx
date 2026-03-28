@@ -142,6 +142,16 @@ const NewProject = () => {
         enabled: isEditing,
     });
 
+    const getFullLanguageName = (code: string) => {
+        if (!code) return '';
+        const lang = languages.find((l: any) =>
+            l.iso_code.toLowerCase() === code.toLowerCase() ||
+            l.iso_code.toLowerCase().startsWith(code.toLowerCase() + '-') ||
+            code.toLowerCase().startsWith(l.iso_code.toLowerCase() + '-')
+        );
+        return lang ? (lang.name_internal || lang.name) : code.toUpperCase();
+    };
+
     // ── Derived ──
     const custOptions = useMemo(() => (Array.isArray(customersData) ? customersData : []).map((c: any) => ({
         value: c.id.toString(), label: c.company_name || `${c.first_name} ${c.last_name}`
@@ -374,7 +384,7 @@ const NewProject = () => {
                         {/* Priority */}
                         <div className="flex bg-slate-100 rounded-md p-0.5 border border-slate-200 h-9">
                             {(['low', 'medium', 'high'] as const).map(p => (
-                                <button key={p} onClick={() => setPriority(p)} className={clsx('px-3 h-full text-xs font-medium rounded transition-all flex items-center gap-1.5', priority === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600')}>
+                                <button key={p} onClick={() => setPriority(p)} className={clsx('px-3 h-full text-xs font-medium rounded-sm transition-all flex items-center gap-1.5', priority === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600')}>
                                     {p === 'low' && <FaClock className="text-xs" />}
                                     {p === 'medium' && <FaFlag className="text-xs" />}
                                     {p === 'high' && <FaBolt className="text-xs" />}
@@ -409,8 +419,8 @@ const NewProject = () => {
                                         <SearchableSelect id="docType" isMulti value={docType} onChange={setDocType} maxVisibleItems={4} error={validationErrors.has('docType')}
                                             options={docTypes.sort((a: any, b: any) => (a.category || '').localeCompare(b.category || '')).map((dt: any) => ({ value: dt.id.toString(), label: dt.name, group: dt.category }))} />
                                     </div>
-                                    <Button onClick={() => setShowDocTypeModal(true)} className="h-9 px-3 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 text-xs font-bold shrink-0">
-                                        <FaPlus className="text-xs mr-1" /> NEU
+                                    <Button onClick={() => setShowDocTypeModal(true)} className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0">
+                                        <FaPlus className="text-xs" />
                                     </Button>
                                 </div>
                             </FormRow>
@@ -436,8 +446,8 @@ const NewProject = () => {
                                     <div className="flex-1 min-w-0">
                                         <SearchableSelect options={custOptions} value={customer} onChange={setCustomer} error={validationErrors.has('customer')} />
                                     </div>
-                                    <Button onClick={() => setShowCustomerModal(true)} className="h-9 px-3 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 text-xs font-bold shrink-0">
-                                        <FaPlus className="text-xs mr-1" /> NEU
+                                    <Button onClick={() => setShowCustomerModal(true)} className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0">
+                                        <FaPlus className="text-xs" />
                                     </Button>
                                 </div>
                             </FormRow>
@@ -462,8 +472,8 @@ const NewProject = () => {
                                     <div className="flex-1 min-w-0">
                                         <SearchableSelect options={partnerOptions} value={translator} onChange={setTranslator} error={validationErrors.has('translator')} />
                                     </div>
-                                    <Button onClick={() => setShowPartnerModal(true)} className="h-9 px-3 bg-brand-primary text-white rounded-l-none border-l-0 hover:bg-brand-primary/90 text-xs font-bold shrink-0">
-                                        <FaPlus className="text-xs mr-1" /> NEU
+                                    <Button onClick={() => setShowPartnerModal(true)} className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-l-none hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0">
+                                        <FaPlus className="text-xs" />
                                     </Button>
                                 </div>
                             </FormRow>
@@ -492,12 +502,12 @@ const NewProject = () => {
                                                     onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}>
                                                     <td className="px-4 py-2">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
-                                                            <span className="text-xs font-medium text-slate-700 truncate">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
+                                                            <div className="w-6 h-6 rounded-sm bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
+                                                            <span className="text-xs font-medium text-slate-700">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-2">
-                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded text-[9px] font-black tracking-tighter border bg-white text-slate-400 border-slate-100 uppercase">{l}</span>)}</div>
+                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-[9px] font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
                                                     </td>
                                                     <td className="px-4 py-2 text-right">
                                                         <div className={clsx('inline-flex items-center justify-center w-5 h-5 rounded-full border transition', translator === p.id.toString() ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200 text-transparent')}>
@@ -525,27 +535,31 @@ const NewProject = () => {
                         <div className="px-6 pb-5">
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-4 border-b border-slate-100">
                                 {[
-                                    { label: 'Beglaubigung (5€)', val: isCertified ? 'ja' : 'nein', set: (v: string) => setIsCertified(v === 'ja'), enabled: isCertified, qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
-                                    { label: 'Express (15€)', val: isExpress ? 'ja' : 'nein', set: (v: string) => setIsExpress(v === 'ja'), enabled: isExpress, qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
-                                    { label: 'Apostille (15€)', val: hasApostille ? 'ja' : 'nein', set: (v: string) => setHasApostille(v === 'ja'), enabled: hasApostille, qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
-                                    { label: 'Klassifizierung (15€)', val: classification, set: setClassification, enabled: classification === 'ja', qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
+                                    { label: 'Beglaubigung (5€)', enabled: isCertified, toggle: () => setIsCertified(!isCertified), qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
+                                    { label: 'Express (15€)', enabled: isExpress, toggle: () => setIsExpress(!isExpress), qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
+                                    { label: 'Apostille (15€)', enabled: hasApostille, toggle: () => setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
+                                    { label: 'Klassifizierung (15€)', enabled: classification === 'ja', toggle: () => setClassification(classification === 'ja' ? 'nein' : 'ja'), qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
                                 ].map(opt => (
                                     <div key={opt.label} className="space-y-1">
                                         <label className="text-xs font-medium text-slate-400 flex items-center gap-1">{opt.label} <FieldTip text={opt.tip} /></label>
-                                        <div className="flex gap-1.5">
-                                            <Input isSelect value={opt.val} onChange={e => opt.set(e.target.value)} containerClassName="h-9 flex-1 text-sm">
-                                                <option value="nein">Nein</option><option value="ja">Ja</option>
-                                            </Input>
+                                        <div className="flex flex-col gap-2">
+                                            <div className="h-9 flex items-center gap-2 cursor-pointer" onClick={opt.toggle}>
+                                                <div className={clsx('w-8 h-4 rounded-full relative transition-colors', opt.enabled ? 'bg-emerald-500' : 'bg-slate-300')}>
+                                                    <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', opt.enabled ? 'left-4' : 'left-0.5')} />
+                                                </div>
+                                                <span className={clsx('text-[10px] font-bold', opt.enabled ? 'text-emerald-600' : 'text-slate-400')}>{opt.enabled ? 'JA' : 'NEIN'}</span>
+                                            </div>
                                             {opt.enabled && (
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    step="1"
-                                                    value={opt.qty}
-                                                    onChange={e => opt.setQty(Math.max(1, parseInt(e.target.value) || 1))}
-                                                    className="w-14 h-9 text-center text-sm font-medium text-slate-700 border border-slate-200 rounded-md outline-none focus:ring-2 focus:ring-brand-100"
-                                                    title="Menge"
-                                                />
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] text-slate-400 font-medium">Menge:</span>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={opt.qty}
+                                                        onChange={e => opt.setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                        className="w-12 h-7 text-center text-xs font-medium text-slate-700 border border-slate-200 rounded-sm outline-none focus:ring-1 focus:ring-brand-500"
+                                                    />
+                                                </div>
                                             )}
                                         </div>
                                     </div>

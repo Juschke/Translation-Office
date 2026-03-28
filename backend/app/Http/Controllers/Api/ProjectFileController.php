@@ -10,6 +10,26 @@ use Illuminate\Support\Facades\Storage;
 
 class ProjectFileController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = ProjectFile::whereHas('project', function ($q) {
+            $q->where('tenant_id', auth()->user()->tenant_id);
+        })->with(['project', 'uploader']);
+
+        if ($request->has('search')) {
+            $search = $request->query('search');
+            $query->where('original_name', 'like', "%{$search}%");
+        }
+
+        if ($request->has('type')) {
+            $query->where('type', $request->query('type'));
+        }
+
+        $files = $query->orderBy('created_at', 'desc')
+            ->paginate($request->query('per_page', 50));
+
+        return response()->json($files);
+    }
     public function store(\App\Http\Requests\StoreProjectFileRequest $request, Project $project)
     {
         try {

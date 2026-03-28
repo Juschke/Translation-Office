@@ -191,11 +191,11 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
             <div className="relative z-10 w-full h-full md:h-[92vh] md:max-w-[1400px] bg-white md:rounded-sm shadow-2xl flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 bg-white shrink-0">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white shrink-0">
                     <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 rounded bg-slate-900 text-white flex items-center justify-center"><FaFilePdf /></div>
+                        <div className="w-8 h-8 rounded-sm bg-slate-900 text-white flex items-center justify-center"><FaFilePdf /></div>
                         <div>
-                            <h2 className="text-[14px] font-semibold text-slate-800 tracking-wider">Dolmetscherbestätigung</h2>
+                            <h2 className="text-lg font-semibold text-slate-800">Dolmetscherbestätigung</h2>
                             <p className="text-xs text-slate-400 font-medium">{project?.project_number} • {project?.project_name || project?.name}</p>
                         </div>
                     </div>

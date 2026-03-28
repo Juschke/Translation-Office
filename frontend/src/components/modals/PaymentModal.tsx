@@ -80,8 +80,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
     return (
         <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center backdrop-blur-sm transition-all p-4">
             <div className="bg-white rounded-sm shadow-sm w-full max-w-lg overflow-hidden animate-fadeInUp">
-                <div className="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
-                    <h3 className="font-semibold text-base text-slate-800">
+                <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
+                    <h3 className="font-semibold text-lg text-slate-800">
                         {initialData ? 'Zahlung Bearbeiten' : 'Zahlung Erfassen'}
                     </h3>
                     <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-full transition-all">
@@ -141,7 +141,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
                     <div className="space-y-2">
                         <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Zahlungsmethode</label>
                         <select
-                            className="w-full h-9 bg-white border border-slate-200 rounded px-3 py-1.5 text-sm font-medium text-slate-700 outline-none focus:border-slate-900 transition-colors"
+                            className="w-full h-9 bg-white border border-slate-200 rounded-sm px-3 py-1.5 text-sm font-medium text-slate-700 outline-none focus:border-slate-900 transition-colors"
                             value={method}
                             onChange={(e) => setMethod(e.target.value)}
                         >
@@ -162,7 +162,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
                     </div>
                 </div>
 
-                <div className="bg-white px-6 py-3 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+                <div className="bg-white px-6 py-4 border-t border-slate-200 flex justify-end gap-3 shrink-0">
                     <Button
                         variant="secondary"
                         onClick={onClose}

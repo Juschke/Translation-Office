@@ -5,6 +5,7 @@ import { FaSave, FaPlus, FaTrash, FaEye, FaPalette } from 'react-icons/fa';
 import clsx from 'clsx';
 import { settingsService } from '../../api/services';
 import Input from '../common/Input';
+import { Button } from '../ui/button';
 
 const SettingRow = ({ label, description, children, className }: any) => (
     <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
@@ -177,17 +178,19 @@ const InvoiceSettingsTab = () => {
     return (
         <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden animate-fadeIn">
             {/* Header */}
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                     <h3 className="text-sm font-medium text-slate-800">Rechnung & Angebot</h3>
                 </div>
-                <button
+                <Button
+                    variant="default"
                     onClick={handleSave}
                     disabled={updateMutation.isPending}
-                    className="flex items-center gap-2 px-6 py-2 bg-brand-primary text-white text-xs font-medium hover:bg-brand-primary/90 transition disabled:opacity-50 rounded"
+                    isLoading={updateMutation.isPending}
+                    className="px-6 py-2 text-xs font-medium flex items-center gap-2"
                 >
                     <FaSave /> {updateMutation.isPending ? 'Speichert...' : 'Speichern'}
-                </button>
+                </Button>
             </div>
 
             {/* Section Navigation */}

@@ -10,6 +10,8 @@ import TableSkeleton from '../components/common/TableSkeleton';
 import { useState } from 'react';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { StatusBadge } from '../components/common/StatusBadge';
+import { Button } from '../components/ui/button';
 import clsx from 'clsx';
 
 const CustomerDetail = () => {
@@ -70,11 +72,7 @@ const CustomerDetail = () => {
                         <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h1 className="text-lg md:text-2xl font-medium text-slate-800 truncate">{name}</h1>
-                                <span className={`px-2 py-0.5 rounded text-xs font-medium border shrink-0 ${['Aktiv', 'active'].includes(customer.status?.toLowerCase()) ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                    'bg-slate-50 text-slate-500 border-slate-200'
-                                    }`}>
-                                    {['Aktiv', 'active'].includes(customer.status?.toLowerCase()) ? 'Aktiv' : customer.status || 'Aktiv'}
-                                </span>
+                                <StatusBadge status={customer.status || 'active'} type="customer" />
                             </div>
                             <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
                                 <span className="flex items-center gap-1"><FaBriefcase className="text-slate-400" /> {customer.type === 'company' ? 'Firma' : customer.type === 'authority' ? 'Behörde' : 'Privat'}</span>
@@ -84,24 +82,27 @@ const CustomerDetail = () => {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap ml-0 md:ml-auto border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
-                        <button
+                        <Button
+                            variant="secondary"
                             onClick={() => navigate('/inbox', { state: { compose: true, to: customer.email, subject: `Nachricht an: ${name}` } })}
-                            className="bg-white border border-slate-200 text-slate-600 hover:text-slate-700 hover:border-slate-200 px-3 py-2 rounded text-xs font-medium flex items-center gap-2 shadow-sm transition"
+                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
                         >
                             <FaEnvelope /> E-Mail
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="default"
                             onClick={() => setIsEditModalOpen(true)}
-                            className="bg-brand-primary border border-brand-primary text-white hover:bg-brand-primary/90 px-3 py-2 rounded text-xs font-medium flex items-center gap-2 shadow-sm transition"
+                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
                         >
                             <FaEdit /> Bearbeiten
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="destructive"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 px-3 py-2 rounded text-xs font-medium flex items-center gap-2 shadow-sm transition"
+                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
                         >
                             <FaTrash /> Löschen
-                        </button>
+                        </Button>
                     </div>
 
                     {/* Meta Info Bar */}
@@ -279,11 +280,11 @@ const CustomerDetail = () => {
 
                     {/* Financial KPI Card */}
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                             <h4 className="text-xs font-medium text-slate-500">Umsatzstatistik</h4>
                             <FaChartLine className="text-emerald-500" />
                         </div>
-                        <div className="p-5 flex flex-col gap-6">
+                        <div className="p-6 flex flex-col gap-6">
                             <div>
                                 <span className="text-xs text-slate-400 block mb-1 font-medium">Umsatz lfd. Jahr</span>
                                 <span className="text-2xl font-semibold text-slate-800">
@@ -383,23 +384,7 @@ const RecentProjectsList = ({ customerId }: { customerId: string }) => {
                         <tr key={p.id} onClick={() => navigate(`/projects/${p.id}`)} className="hover:bg-slate-50 cursor-pointer transition-colors group">
                             <td className="px-6 py-3 font-medium text-slate-700 group-hover:underline">{p.title || `Projekt #${p.id}`}</td>
                             <td className="px-6 py-3">
-                                <span className={clsx("px-2 py-0.5 rounded text-xs font-medium border",
-                                    p.status === 'completed' ? 'bg-emerald-600 text-white border-emerald-700' :
-                                        ['in_progress', 'review'].includes(p.status) ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                            p.status === 'ready_for_pickup' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                                                p.status === 'invoiced' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                                    p.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                                        ['offer', 'pending', 'draft'].includes(p.status) ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                                            'bg-slate-100 text-slate-500 border-slate-200'
-                                )}>
-                                    {p.status === 'completed' ? 'Abgeschlossen' :
-                                        ['in_progress', 'review'].includes(p.status) ? 'Bearbeitung' :
-                                            p.status === 'ready_for_pickup' ? 'Abholbereit' :
-                                                p.status === 'invoiced' ? 'Rechnung' :
-                                                    p.status === 'delivered' ? 'Geliefert' :
-                                                        ['offer', 'pending', 'draft'].includes(p.status) ? 'Neu' :
-                                                            p.status}
-                                </span>
+                                <StatusBadge status={p.status} />
                             </td>
                             <td className="px-6 py-3 text-right font-medium text-slate-700">{p.price_total ? Number(p.price_total).toFixed(2) + ' €' : '-'}</td>
                             <td className="px-6 py-3 text-right text-slate-500">{new Date(p.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>

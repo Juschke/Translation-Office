@@ -63,6 +63,24 @@ export const settingsService = {
         return response.data;
     },
 
+    // Stammdaten: Projekt-Status
+    getProjectStatuses: async () => {
+        const response = await api.get('/settings/project-statuses');
+        return response.data;
+    },
+    createProjectStatus: async (data: any) => {
+        const response = await api.post('/settings/project-statuses', data);
+        return response.data;
+    },
+    updateProjectStatus: async (id: number, data: any) => {
+        const response = await api.put(`/settings/project-statuses/${id}`, data);
+        return response.data;
+    },
+    deleteProjectStatus: async (id: number) => {
+        const response = await api.delete(`/settings/project-statuses/${id}`);
+        return response.data;
+    },
+
     // Stammdaten: Leistungsarten
     getServices: async () => {
         const response = await api.get('/settings/services');

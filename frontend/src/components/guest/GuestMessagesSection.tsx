@@ -92,7 +92,7 @@ export const GuestMessagesSection: React.FC<GuestMessagesSectionProps> = ({
                             >
                                 <div
                                     className={clsx(
-                                        'px-4 py-2.5 rounded text-sm shadow-sm',
+                                        'px-4 py-2.5 rounded-sm text-sm shadow-sm',
                                         !msg.user_id
                                             ? 'bg-[#1B4D4F] text-white rounded-br-none'
                                             : 'bg-slate-100 text-slate-800 rounded-bl-none'
