@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaTimes, FaCalendarAlt } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
 import Input from '../common/Input';

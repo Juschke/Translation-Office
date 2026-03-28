@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaCheckCircle, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
 import { authService } from '../../api/services';
@@ -6,6 +7,7 @@ import AuthLayout from '../../components/auth/AuthLayout';
 import clsx from 'clsx';
 
 const ForgotPassword = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -17,12 +19,12 @@ const ForgotPassword = () => {
 
         try {
             const response = await authService.forgotPassword(email);
-            setStatus({ type: 'success', message: response.message || 'Wir haben Ihnen eine E-Mail mit einem Reset-Link gesendet.' });
+            setStatus({ type: 'success', message: response.message || '{t('auth.reset_email_sent')}' });
             setEmail('');
         } catch (error: any) {
             setStatus({
                 type: 'error',
-                message: error.response?.data?.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.'
+                message: error.response?.data?.message || '{t('auth.error_try_again')}'
             });
         } finally {
             setIsLoading(false);
@@ -31,8 +33,8 @@ const ForgotPassword = () => {
 
     return (
         <AuthLayout
-            title="Passwort vergessen?"
-            subtitle="Kein Problem. Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Reset-Link."
+            title="{t('auth.forgot_password')}?"
+            subtitle="{t('auth.no_problem')}"
         >
             {status?.type === 'success' ? (
                 <div className="text-center space-y-6 py-4">
@@ -41,20 +43,20 @@ const ForgotPassword = () => {
                     </div>
                     <div>
                         <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                            E-Mail versendet
+                           {t('auth.email_sent')}
                         </h3>
                         <p className="text-sm text-slate-600">
                             {status.message}
                         </p>
                         <p className="text-xs text-slate-500 mt-2">
-                            Prüfen Sie auch Ihren Spam-Ordner, falls Sie keine E-Mail erhalten.
+                            {t('auth.check_spam')}
                         </p>
                     </div>
                     <Link
                         to="/auth"
                         className="inline-flex items-center justify-center gap-2 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors"
                     >
-                        <FaArrowLeft className="w-3 h-3" /> Zurück zur Anmeldung
+                        <FaArrowLeft className="w-3 h-3" /> {t('auth.back_to_login')}
                     </Link>
                 </div>
             ) : (
@@ -116,7 +118,7 @@ const ForgotPassword = () => {
                             to="/auth"
                             className="inline-flex items-center justify-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
                         >
-                            <FaArrowLeft className="w-3 h-3" /> Zurück zur Anmeldung
+                            <FaArrowLeft className="w-3 h-3" /> {t('auth.back_to_login')}
                         </Link>
                     </div>
                 </form>

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FaUser, FaLock, FaExclamationCircle, FaShieldAlt } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginPage = () => {
+    const { t } = useTranslation();
     const { login } = useAuth();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +31,7 @@ const LoginPage = () => {
 
             // If we are in 2FA mode but code is empty, don't submit yet (prevent useless call)
             if (showTwoFactor && !twoFactorCode) {
-                setError("Bitte geben Sie den Bestätigungscode ein.");
+                setError(t('auth.confirmation_code_required'));
                 setIsLoading(false);
                 return;
             }
@@ -46,7 +48,7 @@ const LoginPage = () => {
             navigate('/');
         } catch (err: any) {
             // Extract error message
-            let msg = 'Ungültige E-Mail-Adresse oder Passwort.';
+            let msg = t('auth.invalid_credentials');
             if (err.response?.data?.errors) {
                 const errors = err.response.data.errors;
                 if (errors.code) msg = errors.code[0];
@@ -73,10 +75,10 @@ const LoginPage = () => {
                     TO
                 </div>
                 <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-slate-900">
-                    {showTwoFactor ? '2FA Bestätigung' : 'Willkommen zurück'}
+                    {showTwoFactor ? t('auth.two_factor_title') : t('auth.welcome_back')}
                 </h2>
                 <p className="mt-2 text-center text-sm text-slate-600">
-                    {showTwoFactor ? 'Bitte geben Sie Ihren Authenticator-Code ein.' : 'Melden Sie sich an, um auf Ihr Dashboard zuzugreifen.'}
+                    {showTwoFactor ? t('auth.two_factor_prompt') : t('auth.login_prompt')}
                 </p>
             </div>
 

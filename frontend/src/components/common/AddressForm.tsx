@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Input from './Input';
 import CountrySelect from './CountrySelect';
 import { fetchCityByZip } from '../../utils/autoFill';

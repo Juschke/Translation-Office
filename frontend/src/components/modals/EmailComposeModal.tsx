@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { mailService, projectService, customerService } from '../../api/services';
@@ -89,6 +90,7 @@ const EmailComposeModal = ({
     subject: initialSubject,
     body: initialBody,
 }: EmailComposeModalProps) => {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const varPickerRef = useRef<HTMLDivElement>(null);

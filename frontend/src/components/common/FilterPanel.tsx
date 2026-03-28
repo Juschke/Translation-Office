@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaFilter, FaTimes } from 'react-icons/fa';
 import clsx from 'clsx';
 import { Button } from './Button';

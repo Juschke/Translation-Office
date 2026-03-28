@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { FaStar } from 'react-icons/fa';
 import Input from '../common/Input';

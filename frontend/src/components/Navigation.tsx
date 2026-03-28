@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt, FaCommentDots, FaCrown, FaBuilding, FaDatabase, FaHistory, FaFileInvoice, FaGlobe, FaFileAlt, FaTag, FaRuler, FaMoneyBillWave } from 'react-icons/fa';
+import { FaBell, FaSignOutAlt, FaChevronDown, FaUser, FaCog, FaUsers, FaCreditCard, FaEnvelope, FaHome, FaLayerGroup, FaUserTie, FaFileInvoiceDollar, FaChartBar, FaCalendarAlt, FaCommentDots, FaCrown, FaBuilding, FaDatabase, FaHistory, FaFileInvoice, FaGlobe, FaFileAlt, FaTag, FaRuler, FaMoneyBillWave, FaHashtag } from 'react-icons/fa';
 
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
@@ -41,7 +41,8 @@ const Navigation = () => {
 
     const SETTINGS_TABS = [
         { id: 'company', label: t('settings.tabs.company'), icon: FaBuilding },
-        { id: 'invoice', label: t('settings.tabs.invoice'), icon: FaFileInvoice },
+        { id: 'objects', label: t('settings.tabs.number_circles'), icon: FaHashtag },
+        { id: 'invoice', label: t('settings.tabs.document_layout'), icon: FaFileInvoice },
         { id: 'master_data', label: t('settings.tabs.master_data'), icon: FaDatabase },
         { id: 'notifications', label: t('settings.tabs.notifications'), icon: FaBell },
         { id: 'audit', label: t('settings.tabs.audit'), icon: FaHistory },

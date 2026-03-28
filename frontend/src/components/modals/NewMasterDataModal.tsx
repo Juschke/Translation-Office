@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { FaTimes, FaSave, FaLanguage, FaFileAlt, FaGlobe, FaCheck, FaBan, FaEnvelopeOpenText, FaEye, FaCode, FaPlus, FaTag, FaRuler, FaMoneyBillWave } from 'react-icons/fa';
 import { clsx } from 'clsx';
@@ -14,6 +15,7 @@ interface NewMasterDataModalProps {
 }
 
 const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose, onSubmit, type, initialData }) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState<any>({});
     const [showPreview, setShowPreview] = useState(false);
     const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
@@ -314,16 +316,29 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     error={errors.category}
                                 />
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
-                                <input
-                                    id="name"
-                                    type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
-                                    placeholder="z.B. Marketing Broschüre"
-                                    value={formData.name || ''}
-                                    onChange={(e) => handleChange('name', e.target.value)}
-                                />
+                            <div className="grid grid-cols-3 gap-4 pb-2">
+                                <div className="space-y-1.5 col-span-1">
+                                    <label className="block text-xs font-medium text-slate-400">{t('fields.code')}</label>
+                                    <input
+                                        id="code"
+                                        type="text"
+                                        className="w-full h-11 px-3 border border-slate-300 bg-white rounded-sm outline-none focus:border-slate-900 text-sm transition-all font-mono"
+                                        placeholder="z.B. AR-24"
+                                        value={formData.code || ''}
+                                        onChange={(e) => handleChange('code', e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-1.5 col-span-2">
+                                    <label className="block text-xs font-medium text-slate-400">{t('fields.name')} <span className="text-red-500">*</span></label>
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                        placeholder="z.B. Marketing Broschüre"
+                                        value={formData.name || ''}
+                                        onChange={(e) => handleChange('name', e.target.value)}
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}

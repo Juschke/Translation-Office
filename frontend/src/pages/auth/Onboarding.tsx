@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
     FaCheckCircle, FaRocket, FaBuilding, FaCreditCard,
@@ -83,6 +84,7 @@ const Field = ({
 );
 
 const OnboardingPage = () => {
+    const { t } = useTranslation();
     const { onboard } = useAuth();
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(0);

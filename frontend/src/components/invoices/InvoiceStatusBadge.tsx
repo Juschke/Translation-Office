@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaFileAlt, FaStamp, FaCheckCircle, FaExclamationTriangle, FaBan, FaArchive, FaTrashAlt, FaBell } from 'react-icons/fa';
 
 interface InvoiceStatusBadgeProps {

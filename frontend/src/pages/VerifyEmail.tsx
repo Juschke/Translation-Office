@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { FaCheckCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa';
 
 const VerifyEmail = () => {
  const [searchParams] = useSearchParams();
+    const { t } = useTranslation();
  const navigate = useNavigate();
  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
  const [message, setMessage] = useState('Verifiziere E-Mail...');

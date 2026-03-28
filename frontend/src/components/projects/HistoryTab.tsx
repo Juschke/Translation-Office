@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaHistory, FaTag } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';

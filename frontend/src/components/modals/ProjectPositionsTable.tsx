@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';

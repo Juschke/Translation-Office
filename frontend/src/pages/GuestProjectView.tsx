@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { guestService } from '@/api/services';
 
@@ -10,6 +11,7 @@ import { GuestMessagesSection } from '@/components/guest/GuestMessagesSection';
 import { GuestCustomerInfoEdit } from '@/components/guest/GuestCustomerInfoEdit';
 
 const GuestProjectView = () => {
+    const { t } = useTranslation();
     const { token } = useParams<{ token: string }>();
     const queryClient = useQueryClient();
 
@@ -57,7 +59,7 @@ const GuestProjectView = () => {
             <div className="min-h-screen bg-slate-100 flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-12 h-12 border-4 border-[#1B4D4F] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-sm text-slate-600">Projekt wird geladen...</p>
+                    <p className="text-sm text-slate-600">{t('guest_portal.loading')}</p>
                 </div>
             </div>
         );
@@ -68,9 +70,9 @@ const GuestProjectView = () => {
         return (
             <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
                 <div className="rounded-sm border border-red-200 shadow-sm bg-white p-8 max-w-md text-center">
-                    <h1 className="text-xl font-bold text-red-600 mb-2">Zugriff verweigert</h1>
+                    <h1 className="text-xl font-bold text-red-600 mb-2">{t('guest_portal.access_denied')}</h1>
                     <p className="text-sm text-slate-600">
-                        Das Projekt konnte nicht geladen werden. Bitte prüfen Sie den Link.
+                        {t('guest_portal.invalid_link')}
                     </p>
                 </div>
             </div>

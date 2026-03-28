@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
     FaPlus, FaMinus, FaFlag, FaClock, FaBolt,
     FaSearch, FaCheck, FaTimes, FaArrowLeft, FaSave,
@@ -39,13 +40,13 @@ const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-
 const SECTION_NUM = 'w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm';
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
-const statusOptions = [
-    { value: 'offer', label: 'Neu / Angebot', group: 'Schritt 1: Angebot' },
-    { value: 'in_progress', label: 'In Bearbeitung', group: 'Schritt 2: Produktion' },
-    { value: 'ready_for_pickup', label: 'Abholbereit', group: 'Schritt 3: Lieferung' },
-    { value: 'delivered', label: 'Geliefert / Versendet', group: 'Schritt 3: Lieferung' },
-    { value: 'invoiced', label: 'Rechnung gestellt', group: 'Schritt 4: Abschluss' },
-    { value: 'completed', label: 'Projekt abgeschlossen', group: 'Schritt 4: Abschluss' }
+const getStatusOptions = (t: any) => [
+    { value: 'offer', label: t('project.status_offer'), group: t('project.step_1') },
+    { value: 'in_progress', label: t('project.status_in_progress'), group: t('project.step_2') },
+    { value: 'ready_for_pickup', label: t('project.status_ready_for_pickup'), group: t('project.step_3') },
+    { value: 'delivered', label: t('project.status_delivered'), group: t('project.step_3') },
+    { value: 'invoiced', label: t('project.status_invoiced'), group: t('project.step_4') },
+    { value: 'completed', label: t('project.status_completed'), group: t('project.step_4') }
 ];
 
 /* ─── Tooltip Helper ─── */
@@ -79,10 +80,14 @@ const FormRow = ({ label, required, tooltip, children, error, id }: {
 );
 
 const NewProject = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditing = !!id;
     const queryClient = useQueryClient();
+
+    // ── Get status options with translations ──
+    const statusOptions = getStatusOptions(t);
 
     // ── States ──
     const [name, setName] = useState('');
@@ -608,12 +613,47 @@ const NewProject = () => {
                     </section>
 
                     {/* Section 6: Zahlungen */}
-                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 pb-5">
-                            <ProjectPaymentsTable payments={payments}
+                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden" id="field-payments">
+                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
+                            <div className="flex items-center gap-3">
+                                <div className={SECTION_NUM}>06</div>
+                                <h3 className={SECTION_TITLE}>Anzahlungen / Teilzahlungen</h3>
+                                <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
+                                    {payments.length}
+                                </span>
+                            </div>
+                            <Button
+                                onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
+                                disabled={remainingBalance <= 0.01}
+                                className={clsx(
+                                    "h-8 px-4 text-xs font-bold",
+                                    remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none" : ""
+                                )}
+                            >
+                                <FaPlus className="mr-1.5" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                            </Button>
+                        </div>
+                        <div className="px-6 pb-5 pt-3">
+                            <ProjectPaymentsTable
+                                payments={payments}
                                 onAddPayment={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
                                 onEditPayment={p => { setEditingPayment(p); setIsPaymentModalOpen(true); }}
-                                onDeletePayment={pid => setPayments(payments.filter(p => p.id !== pid))} />
+                                onDeletePayment={pid => {
+                                    const payment = payments.find(p => p.id === pid);
+                                    setConfirmConfig({
+                                        isOpen: true,
+                                        title: 'Zahlung löschen',
+                                        message: `Möchten Sie die Zahlung in Höhe von ${payment?.amount || '0'} € wirklich löschen?`,
+                                        type: 'danger',
+                                        confirmLabel: 'Löschen',
+                                        onConfirm: () => {
+                                            setPayments(payments.filter(p => p.id !== pid));
+                                            setConfirmConfig((p: any) => ({ ...p, isOpen: false }));
+                                        }
+                                    });
+                                }}
+                                hideHeader
+                            />
                         </div>
                     </section>
 

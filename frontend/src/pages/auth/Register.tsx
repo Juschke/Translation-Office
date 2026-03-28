@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaExclamationCircle } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
 
 const RegisterPage = () => {
+    const { t } = useTranslation();
  const { register } = useAuth();
  const navigate = useNavigate();
  const [isLoading, setIsLoading] = useState(false);
@@ -25,11 +27,11 @@ const RegisterPage = () => {
  setError(null);
 
  if (!formData.name || !formData.email || !formData.password) {
- setError('Bitte füllen Sie alle Felder aus.');
+ setError(t('auth.fill_all_fields'));
  return;
  }
  if (formData.password !== formData.confirmPassword) {
- setError('Die Passwörter stimmen nicht überein.');
+ setError(t('auth.passwords_no_match'));
  return;
  }
 
@@ -56,10 +58,10 @@ const RegisterPage = () => {
  TO
  </div>
  <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-slate-900">
- Konto erstellen
+ {t('auth.create_account')}
  </h2>
  <p className="mt-2 text-center text-sm text-slate-600">
- Starten Sie in wenigen Minuten mit Translator Office.
+ {t('auth.get_started')}
  </p>
  </div>
 
@@ -81,19 +83,19 @@ const RegisterPage = () => {
 
  <div className="space-y-6 animate-fadeIn">
  <div>
- <label className="block text-sm font-medium text-slate-700">Vollständiger Name</label>
+ <label className="block text-sm font-medium text-slate-700">{ t('auth.full_name') }</label>
  <input type="text" name="name" required value={formData.name} onChange={handleChange} className="mt-1 block w-full rounded-sm border-slate-300 shadow-sm focus:border-slate-900 focus:ring-brand-500 sm:text-sm h-10 px-3 border" placeholder="Max Mustermann" />
  </div>
  <div>
- <label className="block text-sm font-medium text-slate-700">E-Mail-Adresse</label>
+ <label className="block text-sm font-medium text-slate-700">{ t('auth.email_address') }</label>
  <input type="email" name="email" required value={formData.email} onChange={handleChange} className="mt-1 block w-full rounded-sm border-slate-300 shadow-sm focus:border-slate-900 focus:ring-brand-500 sm:text-sm h-10 px-3 border" placeholder="max@firma.de" />
  </div>
  <div>
- <label className="block text-sm font-medium text-slate-700">Passwort</label>
+ <label className="block text-sm font-medium text-slate-700">{ t('auth.password') }</label>
  <input type="password" name="password" required value={formData.password} onChange={handleChange} className="mt-1 block w-full rounded-sm border-slate-300 shadow-sm focus:border-slate-900 focus:ring-brand-500 sm:text-sm h-10 px-3 border" placeholder="••••••••" />
  </div>
  <div>
- <label className="block text-sm font-medium text-slate-700">Passwort bestätigen</label>
+ <label className="block text-sm font-medium text-slate-700">{ t('auth.confirm_password') }</label>
  <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} className="mt-1 block w-full rounded-sm border-slate-300 shadow-sm focus:border-slate-900 focus:ring-brand-500 sm:text-sm h-10 px-3 border" placeholder="••••••••" />
  </div>
  </div>
@@ -113,18 +115,18 @@ const RegisterPage = () => {
  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
  </svg>
- Erstellen...
+{t('auth.creating')}
  </span>
- ) : "Konto erstellen"}
+ ) : "{t('auth.create_account')}"}
  </button>
  </div>
  </form>
 
  <div className="mt-6 text-center">
  <p className="text-sm text-slate-600">
- Haben Sie bereits ein Konto?{' '}
+ {t('auth.already_have_account')}?{' '}
  <Link to="/login" className="font-semibold leading-6 text-slate-700 hover:text-slate-600 transition-colors">
- Anmelden
+ {t('auth.sign_in')}
  </Link>
  </p>
  </div>

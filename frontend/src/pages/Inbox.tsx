@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { mailService, projectService, customerService, partnerService } from '../api/services';
 import { useEmailCompose } from '../hooks/useEmailCompose';
@@ -87,6 +88,7 @@ const ALL_VARIABLES: { key: string; label: string; desc: string; group: string }
 const VAR_GROUPS = ['Kunde', 'Projekt', 'Finanzen', 'Partner', 'Unternehmen', 'Allgemein'];
 
 const CommunicationHub = () => {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const location = useLocation();
 
@@ -241,7 +243,7 @@ const CommunicationHub = () => {
     }, []);
 
     const handleAddProjectFiles = async (filesToAttach: any[]) => {
-        const toastId = toast.loading('Projekt-Dateien werden vorbereitet...');
+        const toastId = toast.loading(t('toast.preparing_files'));
         try {
             const newAttachments: File[] = [];
             for (const file of filesToAttach) {
@@ -257,7 +259,7 @@ const CommunicationHub = () => {
             setIsProjectFilesModalOpen(false);
         } catch (error) {
             console.error('Project file attachment error:', error);
-            toast.error('Fehler beim Abrufen der Projekt-Dateien', { id: toastId });
+            toast.error(t('toast.files_attach_error'), { id: toastId });
         }
     };
 
@@ -283,7 +285,7 @@ const CommunicationHub = () => {
             toast.success(data.message || 'Postfach synchronisiert');
         },
         onError: (error: any) => {
-            toast.error('Synchronisierung fehlgeschlagen: ' + (error.response?.data?.message || 'Unbekannter Fehler'));
+            toast.error(t('toast.sync_error'));
         }
     });
 
@@ -449,9 +451,9 @@ const CommunicationHub = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
             setIsAccountModalOpen(false);
-            toast.success('Konto erstellt');
+            toast.success(t('toast.account_created'));
         },
-        onError: () => toast.error('Fehler beim Erstellen des Kontos')
+        onError: () => toast.error(t('toast.account_create_error'))
     });
 
     const updateAccountMutation = useMutation({
@@ -459,9 +461,9 @@ const CommunicationHub = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
             setIsAccountModalOpen(false);
-            toast.success('Konto aktualisiert');
+            toast.success(t('toast.account_updated'));
         },
-        onError: () => toast.error('Fehler beim Aktualisieren des Kontos')
+        onError: () => toast.error(t('toast.account_update_error'))
     });
 
     const deleteAccountMutation = useMutation({
@@ -480,7 +482,7 @@ const CommunicationHub = () => {
             setIsTemplateModalOpen(false);
             toast.success('Vorlage erstellt');
         },
-        onError: () => toast.error('Fehler beim Erstellen der Vorlage')
+        onError: () => toast.error(t('toast.email_template_error'))
     });
 
     const updateTemplateMutation = useMutation({

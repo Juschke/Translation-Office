@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { FaEdit, FaFolderOpen, FaTrashAlt } from 'react-icons/fa';
 
 interface MailResourceTableProps {

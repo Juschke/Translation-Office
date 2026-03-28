@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -669,7 +670,18 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     };
 
     const handleDeletePayment = (id: string) => {
-        setPayments(payments.filter(p => p.id !== id));
+        const payment = payments.find(p => p.id === id);
+        setConfirmConfig({
+            isOpen: true,
+            title: 'Zahlung löschen',
+            message: `Möchten Sie die Zahlung in Höhe von ${payment?.amount || '0'} € wirklich löschen?`,
+            type: 'danger',
+            confirmLabel: 'Löschen',
+            onConfirm: () => {
+                setPayments(payments.filter(p => p.id !== id));
+                setConfirmConfig(p => ({ ...p, isOpen: false }));
+            }
+        });
     };
 
     return (
@@ -1017,6 +1029,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
                                     </div>
 
+
                                     <NewPartnerModal
                                         isOpen={showPartnerModal}
                                         onClose={() => setShowPartnerModal(false)}
@@ -1210,12 +1223,34 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                     <ProjectPositionsTable positions={positions} setPositions={setPositions} />
                                 </div>
 
-                                <ProjectPaymentsTable
-                                    payments={payments}
-                                    onAddPayment={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
-                                    onEditPayment={handleEditPayment}
-                                    onDeletePayment={handleDeletePayment}
-                                />
+                                <div className="space-y-6 pt-6">
+                                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">06</div>
+                                            <h4 className="text-sm font-medium text-slate-800">Anzahlungen / Teilzahlungen</h4>
+                                            <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{payments.length}</span>
+                                        </div>
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
+                                            disabled={remainingBalance <= 0.01}
+                                            className={clsx(
+                                                "h-7 px-3 text-[10px] uppercase font-bold tracking-tight shadow-none rounded flex items-center gap-1.5",
+                                                remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white"
+                                            )}
+                                        >
+                                            <FaPlus className="text-[9px]" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                                        </Button>
+                                    </div>
+
+                                    <ProjectPaymentsTable
+                                        payments={payments}
+                                        onEditPayment={handleEditPayment}
+                                        onDeletePayment={handleDeletePayment}
+                                        hideHeader
+                                    />
+                                </div>
                             </div>
 
                             {/* TAB: Erweitert */}
@@ -1287,7 +1322,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             </div>
 
             <PartnerSelectionModal isOpen={isPartnerModalOpen} onClose={() => setIsPartnerModalOpen(false)} onSelect={handlePartnerSelect} />
-            <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={handleSavePayment} initialData={editingPayment} totalAmount={calcGross} />
+            <PaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                onSave={handleSavePayment}
+                initialData={editingPayment}
+                totalAmount={calcGross}
+                alreadyPaid={editingPayment ? totalPaid - parseFloat(editingPayment.amount) : totalPaid}
+            />
             <NewMasterDataModal isOpen={isLanguageModalOpen} onClose={() => setIsLanguageModalOpen(false)} onSubmit={(data) => createLanguageMutation.mutate(data)} type="languages" />
             <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
         </div>

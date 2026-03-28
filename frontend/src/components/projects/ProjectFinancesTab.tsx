@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaCheckCircle, FaInfoCircle, FaCalculator } from 'react-icons/fa';
 import { Button } from '../ui/button';
 import ProjectPositionsTable from '../modals/ProjectPositionsTable';
@@ -250,6 +251,7 @@ const ProjectFinancesTab = ({
                             onAddPayment={onRecordPayment}
                             onEditPayment={onEditPayment || (() => { })}
                             onDeletePayment={onDeletePayment || (() => { })}
+                            disabledAdd={financials.open <= 0.01}
                         />
                     </div>
                 </div>

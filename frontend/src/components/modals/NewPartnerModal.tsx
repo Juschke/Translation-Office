@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/button';

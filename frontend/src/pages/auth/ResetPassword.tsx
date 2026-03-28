@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { FaCheckCircle, FaExclamationTriangle, FaLock } from 'react-icons/fa';
 import { authService } from '../../api/services';
@@ -7,6 +8,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 const ResetPassword = () => {
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -24,7 +26,7 @@ const ResetPassword = () => {
         const email = searchParams.get('email');
 
         if (!token || !email) {
-            setError('Ungültiger Reset-Link. Bitte fordern Sie einen neuen Link an.');
+            setError('{t('auth.invalid_reset_link')}');
         } else {
             setFormData(prev => ({ ...prev, token, email }));
         }
@@ -34,12 +36,12 @@ const ResetPassword = () => {
         e.preventDefault();
 
         if (formData.password !== formData.password_confirmation) {
-            toast.error('Passwörter stimmen nicht überein.');
+            toast.error(t('auth.password_mismatch'));
             return;
         }
 
         if (formData.password.length < 8) {
-            toast.error('Das Passwort muss mindestens 8 Zeichen lang sein.');
+            toast.error(t('auth.password_min_8'));
             return;
         }
 
@@ -49,7 +51,7 @@ const ResetPassword = () => {
         try {
             await authService.resetPassword(formData);
             setIsSuccess(true);
-            toast.success('Passwort erfolgreich zurückgesetzt.');
+            toast.success(t('auth.password_reset_success'));
             setTimeout(() => navigate('/auth'), 2000);
         } catch (error: any) {
             const message = error.response?.data?.message || 'Fehler beim Zurücksetzen des Passworts.';
@@ -69,20 +71,20 @@ const ResetPassword = () => {
                     </div>
                     <div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">
-                            Erfolgreich!
+                           {t('auth.success')}
                         </h3>
                         <p className="text-sm text-slate-600">
-                            Ihr Passwort wurde erfolgreich zurückgesetzt.
+                            {t('auth.password_reset_done')}
                         </p>
                         <p className="text-sm text-slate-600 mt-1">
-                            Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
+                            {t('auth.can_login_now')}
                         </p>
                     </div>
                     <Link
                         to="/auth"
                         className="inline-block w-full px-4 py-2.5 bg-[#1B4D4F] text-white text-sm font-semibold rounded-lg hover:bg-teal-800 transition-all"
                     >
-                        Jetzt anmelden
+                       {t('auth.login_now')}
                     </Link>
                 </div>
             </AuthLayout>
@@ -91,8 +93,8 @@ const ResetPassword = () => {
 
     return (
         <AuthLayout
-            title="Neues Passwort vergeben"
-            subtitle="Bitte wählen Sie ein sicheres Passwort mit mindestens 8 Zeichen."
+            title="{t('auth.set_new_password')}"
+            subtitle="{t('auth.secure_password_8_chars')}"
         >
             <form className="space-y-5" onSubmit={handleSubmit}>
                 {error && (

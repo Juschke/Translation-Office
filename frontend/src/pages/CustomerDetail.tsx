@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fa';
 import TableSkeleton from '../components/common/TableSkeleton';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -15,6 +16,7 @@ import { Button } from '../components/ui/button';
 import clsx from 'clsx';
 
 const CustomerDetail = () => {
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();

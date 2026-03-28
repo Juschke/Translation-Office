@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     FaTimes, FaDownload, FaExternalLinkAlt, FaPrint,
     FaTrashAlt, FaFilePdf, FaFileWord, FaFileExcel,
@@ -29,6 +30,7 @@ const getFileIcon = (name: string) => {
 };
 
 const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FilePreviewModalProps) => {
+    const { t } = useTranslation();
     const [imgLoaded, setImgLoaded] = useState(false);
     const imgRef = useRef<HTMLImageElement>(null);
 

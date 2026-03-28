@@ -16,10 +16,12 @@ class DocumentTypeController extends Controller
     {
         $validated = $request->validate([
             'category' => 'nullable|string',
+            'code' => 'nullable|string',
             'name' => 'required|string',
             'default_price' => 'nullable|numeric',
             'vat_rate' => 'numeric',
             'template_file' => 'nullable|string',
+            'status' => 'nullable|string',
         ]);
 
         $documentType = \App\Models\DocumentType::create($validated);
@@ -37,10 +39,12 @@ class DocumentTypeController extends Controller
 
         $validated = $request->validate([
             'category' => 'nullable|string',
+            'code' => 'nullable|string',
             'name' => 'string',
             'default_price' => 'nullable|numeric',
             'vat_rate' => 'numeric',
             'template_file' => 'nullable|string',
+            'status' => 'nullable|string',
         ]);
 
         $documentType->update($validated);

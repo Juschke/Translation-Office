@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
 import { StatusBadge } from '../components/common/StatusBadge';

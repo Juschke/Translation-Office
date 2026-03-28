@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { FaChevronDown, FaTimes, FaSearch, FaCheck, FaPlus } from 'react-icons/fa';
 import { getFlagUrl } from '../../utils/flags';

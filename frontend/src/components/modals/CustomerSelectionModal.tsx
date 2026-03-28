@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaTimes, FaSearch, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
@@ -34,6 +35,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  const [expandedCustomerId, setExpandedCustomerId] = useState<number | null>(null);
  const PAGE_SIZE = 8;
 
+    const { t } = useTranslation();
  const { data: customersData = [], isLoading } = useQuery({
  queryKey: ['customers'],
  queryFn: customerService.getAll

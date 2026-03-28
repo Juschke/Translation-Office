@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaDownload, FaFile, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaUpload } from 'react-icons/fa';
 import { Button } from '../ui/button';
 import toast from 'react-hot-toast';

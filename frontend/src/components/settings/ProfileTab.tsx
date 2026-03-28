@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaUser } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 
@@ -15,6 +16,7 @@ const SettingRow = ({ label, description, children }: any) => (
 );
 
 const ProfileTab = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
 
     return (

@@ -1,4 +1,5 @@
 ﻿import { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { openBlobInNewTab } from '../utils/download';
 import { format, formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -168,6 +169,7 @@ interface ProjectData {
 
 
 const ProjectDetail = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -189,6 +191,7 @@ const ProjectDetail = () => {
         isInterpreterModalOpen, setIsInterpreterModalOpen,
         previewFile, setPreviewFile,
         deleteFileConfirm, setDeleteFileConfirm,
+        paymentDeleteConfirm, setPaymentDeleteConfirm,
     } = useProjectModals();
 
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
@@ -230,18 +233,18 @@ const ProjectDetail = () => {
     }, [projectResponse]);
 
     const getDeadlineStatus = () => {
-        if (!projectData?.due) return { label: 'Kein Datum', color: 'bg-slate-50 text-slate-400 border-slate-100', icon: <FaClock /> };
+        if (!projectData?.due) return { label: t('calendar.no_date'), color: 'bg-slate-50 text-slate-400 border-slate-100', icon: <FaClock /> };
         const today = new Date();
         const due = new Date(projectData.due);
         const diffTime = due.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays < 0) {
-            return { label: `${Math.abs(diffDays)} Tage überfällig`, color: 'bg-red-100 text-red-600 border-red-200', icon: <FaExclamationTriangle /> };
+            return { label: t('calendar.days_overdue', { count: Math.abs(diffDays) }), color: 'bg-red-100 text-red-600 border-red-200', icon: <FaExclamationTriangle /> };
         } else if (diffDays === 0) {
-            return { label: 'Heute fällig', color: 'bg-orange-100 text-orange-600 border-orange-200', icon: <FaClock /> };
+            return { label: t('calendar.due_today'), color: 'bg-orange-100 text-orange-600 border-orange-200', icon: <FaClock /> };
         } else {
-            return { label: `in ${diffDays} Tagen`, color: 'bg-emerald-100 text-emerald-600 border-emerald-200', icon: <FaClock /> };
+            return { label: t('calendar.due_in_days', { count: diffDays }), color: 'bg-emerald-100 text-emerald-600 border-emerald-200', icon: <FaClock /> };
         }
     };
 
@@ -261,10 +264,10 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             setIsEditModalOpen(false);
-            toast.success('Projekt erfolgreich aktualisiert');
+            toast.success(t('toast.project_updated'));
         },
         onError: () => {
-            toast.error('Fehler beim Aktualisieren des Projekts');
+            toast.error(t('toast.project_update_error'));
         }
     });
 
@@ -273,11 +276,11 @@ const ProjectDetail = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            toast.success('Projekt erfolgreich gelöscht');
+            toast.success(t('toast.project_deleted'));
             navigate('/projects');
         },
         onError: () => {
-            toast.error('Fehler beim Löschen des Projekts');
+            toast.error(t('toast.project_delete_error'));
         },
         onSettled: () => {
             setIsProjectDeleteConfirmOpen(false);
@@ -300,10 +303,10 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             setIsCustomerEditModalOpen(false);
-            toast.success('Kundendaten erfolgreich aktualisiert');
+            toast.success(t('toast.customer_updated'));
         },
         onError: () => {
-            toast.error('Fehler beim Aktualisieren der Kundendaten');
+            toast.error(t('toast.customer_update_error'));
         }
     });
 
@@ -317,10 +320,10 @@ const ProjectDetail = () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
             queryClient.invalidateQueries({ queryKey: ['partners'] });
             setIsPartnerEditModalOpen(false);
-            toast.success('Partnerdaten erfolgreich aktualisiert');
+            toast.success(t('toast.partner_updated'));
         },
         onError: () => {
-            toast.error('Fehler beim Aktualisieren der Partnerdaten');
+            toast.error(t('toast.partner_update_error'));
         }
     });
 
@@ -345,10 +348,10 @@ const ProjectDetail = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
-            toast.success('Dateien erfolgreich hochgeladen');
+            toast.success(t('toast.files_uploaded'));
         },
         onError: () => {
-            toast.error('Fehler beim Hochladen der Dateien');
+            toast.error(t('toast.files_upload_error'));
         }
     });
 
@@ -608,7 +611,15 @@ const ProjectDetail = () => {
                                     </div>
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-3 flex-wrap">
-                                            <h1 className="text-lg md:text-xl font-semibold text-slate-800 tracking-tight break-words min-w-0" style={{ wordBreak: 'break-word' }}>{projectData.name}</h1>
+                                            <div className="flex flex-wrap items-baseline gap-2 mb-1">
+                                                <span className="text-sm font-bold text-slate-400 font-mono tracking-tight bg-slate-100 px-2 py-0.5 rounded-sm border border-slate-200">
+                                                    {projectData.project_number || `#${projectData.id}`}
+                                                </span>
+                                                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
+                                                    {projectData.name || 'Unbenanntes Projekt'}
+                                                </h1>
+                                            </div>
+
                                             {projectData.priority !== 'low' && (
                                                 <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0",
                                                     projectData.priority === 'express' ? "bg-red-50 text-red-600 border-red-100" : "bg-orange-50 text-orange-600 border-orange-100"
@@ -617,9 +628,6 @@ const ProjectDetail = () => {
                                                     <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
                                                 </div>
                                             )}
-                                        </div>
-                                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
-                                            <span>System-ID: <span className="text-slate-600 font-medium">{projectData.id}</span></span>
                                         </div>
                                     </div>
                                 </div>
@@ -715,21 +723,35 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Meta Info Bar */}
-                <div className="px-3 sm:px-4 md:px-8 py-2 border-t border-slate-50 flex items-center gap-4 sm:gap-6 text-[10px] sm:text-xs text-slate-400 flex-wrap">
+                <div className="flex items-center gap-4 sm:gap-6 text-[10px] sm:text-xs text-slate-400 flex-wrap border-t border-slate-50 px-3 sm:px-4 md:px-8 py-3 bg-slate-50/20">
                     <div className="flex items-center gap-2">
-                        <span>Erstellt: <span className="text-slate-600 font-medium">
-                            {projectData.createdAtRaw ? (
-                                `${format(new Date(projectData.createdAtRaw), 'eeee, dd.MM.yyyy', { locale: de })} | ${format(new Date(projectData.createdAtRaw), 'HH:mm')} Uhr (${formatDistanceToNow(new Date(projectData.createdAtRaw), { addSuffix: true, locale: de })})`
-                            ) : projectData.createdAt}
-                        </span> {projectData.creator && `von ${projectData.creator.name}`}</span>
+                        <span>Projekt: <span className="text-slate-600 font-medium">{projectData.project_number || projectData.id}</span></span>
                     </div>
                     <span className="text-slate-200 hidden sm:block">•</span>
                     <div className="flex items-center gap-2">
-                        <span>Zuletzt geändert: <span className="text-slate-600 font-medium">
-                            {projectData.updatedAtRaw ? (
-                                `${format(new Date(projectData.updatedAtRaw), 'eeee, dd.MM.yyyy', { locale: de })} | ${format(new Date(projectData.updatedAtRaw), 'HH:mm')} Uhr (${formatDistanceToNow(new Date(projectData.updatedAtRaw), { addSuffix: true, locale: de })})`
-                            ) : projectData.updatedAt}
-                        </span></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                        <span className="flex items-center gap-1 flex-wrap">
+                            Erstellt am <span className="text-slate-600 font-medium">
+                                {projectData.createdAtRaw ? (
+                                    `${format(new Date(projectData.createdAtRaw), 'dd.MM.yyyy, HH:mm', { locale: de })} Uhr`
+                                ) : projectData.createdAt}
+                            </span>
+                            {projectData.createdAtRaw && <span className="text-slate-400 font-normal">({formatDistanceToNow(new Date(projectData.createdAtRaw), { addSuffix: true, locale: de })})</span>}
+                            {projectData.creator && <span>von <span className="text-slate-600 font-medium">{projectData.creator.name}</span></span>}
+                        </span>
+                    </div>
+                    <span className="text-slate-200 hidden sm:block">•</span>
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
+                        <span className="flex items-center gap-1 flex-wrap">
+                            Zuletzt geändert: <span className="text-slate-600 font-medium">
+                                {projectData.updatedAtRaw ? (
+                                    `${format(new Date(projectData.updatedAtRaw), 'dd.MM.yyyy, HH:mm', { locale: de })} Uhr`
+                                ) : projectData.updatedAt}
+                            </span>
+                            {projectData.updatedAtRaw && <span className="text-slate-400 font-normal">({formatDistanceToNow(new Date(projectData.updatedAtRaw), { addSuffix: true, locale: de })})</span>}
+                            {projectData.editor && <span>von <span className="text-slate-600 font-medium">{projectData.editor.name}</span></span>}
+                        </span>
                     </div>
                 </div>
 
@@ -917,9 +939,8 @@ const ProjectDetail = () => {
                             setIsPaymentModalOpen(true);
                         }}
                         onDeletePayment={(paymentId) => {
-                            if (!window.confirm('Möchten Sie diese Zahlung wirklich löschen?')) return;
-                            const newPayments = (projectData.payments || []).filter((p: any) => p.id !== paymentId);
-                            updateProjectMutation.mutate({ payments: newPayments });
+                            const payment = (projectData.payments || []).find((p: any) => p.id === paymentId);
+                            setPaymentDeleteConfirm({ isOpen: true, paymentId, amount: payment?.amount || '0' });
                         }}
                         isPendingSave={updateProjectMutation.isPending}
                     />
@@ -1004,6 +1025,7 @@ const ProjectDetail = () => {
                     setEditingPayment(null);
                 }}
                 totalAmount={financials.grossTotal}
+                alreadyPaid={editingPayment ? financials.paid - parseFloat(editingPayment.amount) : financials.paid}
             />
 
             <NewCustomerModal
@@ -1047,6 +1069,21 @@ const ProjectDetail = () => {
                 isLoading={deleteFileMutation.isPending}
             />
             <ConfirmModal
+                isOpen={paymentDeleteConfirm.isOpen}
+                onClose={() => setPaymentDeleteConfirm({ isOpen: false, paymentId: null, amount: '' })}
+                onConfirm={() => {
+                    if (paymentDeleteConfirm.paymentId) {
+                        const newPayments = (projectData.payments || []).filter((p: any) => p.id !== paymentDeleteConfirm.paymentId);
+                        updateProjectMutation.mutate({ payments: newPayments });
+                        setPaymentDeleteConfirm({ isOpen: false, paymentId: null, amount: '' });
+                    }
+                }}
+                title="Zahlung löschen"
+                message={`Möchten Sie die Zahlung in Höhe von ${paymentDeleteConfirm.amount} € wirklich löschen?`}
+                confirmText="Löschen"
+                type="danger"
+            />
+            <ConfirmModal
                 isOpen={isProjectDeleteConfirmOpen}
                 onClose={() => setIsProjectDeleteConfirmOpen(false)}
                 onConfirm={() => deleteProjectMutation.mutate(id!)}
@@ -1082,7 +1119,7 @@ const ProjectDetail = () => {
                 to={emailComposeData.to}
                 subject={emailComposeData.subject}
             />
-        </div>
+        </div >
     );
 };
 

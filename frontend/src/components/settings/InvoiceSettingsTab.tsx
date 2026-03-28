@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FaSave, FaPlus, FaTrash, FaEye, FaPalette } from 'react-icons/fa';
+import { FaSave, FaPlus, FaTrash } from 'react-icons/fa';
 import clsx from 'clsx';
 import { settingsService } from '../../api/services';
 import Input from '../common/Input';
@@ -20,6 +21,7 @@ const SettingRow = ({ label, description, children, className }: any) => (
 );
 
 const InvoiceSettingsTab = () => {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
 
     const { data: companyData } = useQuery({
@@ -77,24 +79,12 @@ const InvoiceSettingsTab = () => {
     });
 
     const [newTaxRate, setNewTaxRate] = useState({ rate: '', label: '', paragraph: '' });
-    const [activeSection, setActiveSection] = useState('numbers');
+    const [activeSection, setActiveSection] = useState('payment');
 
     useEffect(() => {
         if (companyData) {
             setFormData((prev: any) => ({
                 ...prev,
-                invoice_prefix: companyData.invoice_prefix || prev.invoice_prefix,
-                invoice_start_number: companyData.invoice_start_number || prev.invoice_start_number,
-                credit_note_prefix: companyData.credit_note_prefix || prev.credit_note_prefix,
-                credit_note_start_number: companyData.credit_note_start_number || prev.credit_note_start_number,
-                project_id_prefix: companyData.project_id_prefix || companyData.offer_prefix || prev.project_id_prefix,
-                project_start_number: companyData.project_start_number || companyData.offer_start_number || prev.project_start_number,
-                customer_id_prefix: companyData.customer_id_prefix || companyData.customer_number_prefix || prev.customer_id_prefix,
-                customer_start_number: companyData.customer_start_number || prev.customer_start_number,
-                translator_id_prefix: companyData.translator_id_prefix || prev.translator_id_prefix,
-                interpreter_id_prefix: companyData.interpreter_id_prefix || prev.interpreter_id_prefix,
-                agency_id_prefix: companyData.agency_id_prefix || prev.agency_id_prefix,
-                customer_number_auto: companyData.customer_number_auto ?? prev.customer_number_auto,
                 default_payment_days: companyData.default_payment_days || prev.default_payment_days,
                 default_payment_text: companyData.default_payment_text || prev.default_payment_text,
                 invoice_intro_text: companyData.invoice_intro_text || prev.invoice_intro_text,
@@ -130,21 +120,6 @@ const InvoiceSettingsTab = () => {
     const handleSave = () => updateMutation.mutate(formData);
     const handleChange = (field: string, value: any) => setFormData((prev: any) => ({ ...prev, [field]: value }));
 
-    // Preview of next number
-    const invoicePreview = useMemo(() => {
-        const year = new Date().getFullYear();
-        const prefix = formData.invoice_prefix || 'RE';
-        const num = formData.invoice_start_number || '00001';
-        return `${prefix}-${year}-${num}`;
-    }, [formData.invoice_prefix, formData.invoice_start_number]);
-
-    const projectPreview = useMemo(() => {
-        const year = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
-        const prefix = formData.project_id_prefix || 'P';
-        const num = formData.project_start_number || '0001';
-        return `${prefix}-${year}-${num}`;
-    }, [formData.project_id_prefix, formData.project_start_number]);
-
     const paymentTextPreview = useMemo(() => {
         return (formData.default_payment_text || '').replace('{days}', formData.default_payment_days || '14');
     }, [formData.default_payment_text, formData.default_payment_days]);
@@ -168,7 +143,6 @@ const InvoiceSettingsTab = () => {
     };
 
     const sections = [
-        { id: 'numbers', label: 'Nummernkreise' },
         { id: 'payment', label: 'Zahlungsbedingungen' },
         { id: 'tax', label: 'Steuersätze' },
         { id: 'texts', label: 'Textvorlagen' },
@@ -180,14 +154,14 @@ const InvoiceSettingsTab = () => {
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-medium text-slate-800">Rechnung & Angebot</h3>
+                    <h3 className="text-sm font-medium text-slate-800 italic">Rechnungslayout</h3>
                 </div>
                 <Button
                     variant="default"
                     onClick={handleSave}
                     disabled={updateMutation.isPending}
                     isLoading={updateMutation.isPending}
-                    className="px-6 py-2 text-xs font-medium flex items-center gap-2"
+                    className="px-6 py-2 text-xs font-medium flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90 transition shadow-sm border-brand-primary"
                 >
                     <FaSave /> {updateMutation.isPending ? 'Speichert...' : 'Speichern'}
                 </Button>
@@ -212,133 +186,7 @@ const InvoiceSettingsTab = () => {
             </div>
 
             <div className="p-8">
-                {/* ── Nummernkreise ── */}
-                {activeSection === 'numbers' && (
-                    <div>
-                        <SettingRow
-                            label="Rechnungsnummer"
-                            description="Format: Präfix-Jahr-Nummer. Das Präfix und die Startnummer können frei gewählt werden. Die Nummer wird automatisch fortlaufend hochgezählt."
-                        >
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input
-                                        label="Präfix"
-                                        placeholder="RE"
-                                        value={formData.invoice_prefix}
-                                        onChange={(e) => handleChange('invoice_prefix', e.target.value)}
-                                        helperText="z.B. RE, R, oder R-"
-                                    />
-                                    <Input
-                                        label="Beginnt bei"
-                                        placeholder="00001"
-                                        value={formData.invoice_start_number}
-                                        onChange={(e) => handleChange('invoice_start_number', e.target.value)}
-                                        helperText="Numerisch, beliebig viele Stellen"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2 p-3 rounded-sm border-0">
-                                    <FaEye className="text-slate-400 text-xs shrink-0" />
-                                    <span className="text-sm text-slate-500">Nächste Rechnungsnummer:</span>
-                                    <span className="text-sm font-semibold text-slate-900">{invoicePreview}</span>
-                                </div>
-                            </div>
-                        </SettingRow>
 
-                        <SettingRow
-                            label="Gutschriften-Nummer"
-                            description="Präfix für automatisch erstellte Gutschriften (Stornos)."
-                        >
-                            <div className="grid grid-cols-2 gap-4">
-                                <Input
-                                    label="Präfix"
-                                    placeholder="GS"
-                                    value={formData.credit_note_prefix}
-                                    onChange={(e) => handleChange('credit_note_prefix', e.target.value)}
-                                    helperText="z.B. GS, G- oder ST-"
-                                />
-                                <Input
-                                    label="Beginnt bei"
-                                    placeholder="0001"
-                                    value={formData.credit_note_start_number}
-                                    onChange={(e) => handleChange('credit_note_start_number', e.target.value)}
-                                />
-                            </div>
-                        </SettingRow>
-
-                        <SettingRow
-                            label="Projektnummer"
-                            description="Format für Projektnummern. Wird beim Erstellen eines Projekts automatisch vergeben."
-                        >
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input
-                                        label="Präfix"
-                                        placeholder="P"
-                                        value={formData.project_id_prefix}
-                                        onChange={(e) => handleChange('project_id_prefix', e.target.value)}
-                                    />
-                                    <Input
-                                        label="Beginnt bei"
-                                        placeholder="0001"
-                                        value={formData.project_start_number}
-                                        onChange={(e) => handleChange('project_start_number', e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2 p-3 rounded-sm border-0">
-                                    <FaEye className="text-slate-400 text-xs shrink-0" />
-                                    <span className="text-sm text-slate-500">Nächste Projektnummer (Beispiel):</span>
-                                    <span className="text-sm font-semibold text-slate-900">{projectPreview}</span>
-                                </div>
-                            </div>
-                        </SettingRow>
-
-                        <SettingRow
-                            label="Kundennummer"
-                            description="Die Kundennummer wird automatisch vergeben. Hier können Sie das Präfix anpassen."
-                        >
-                            <div className="grid grid-cols-2 gap-4">
-                                <Input
-                                    label="Präfix"
-                                    placeholder="K"
-                                    value={formData.customer_id_prefix}
-                                    onChange={(e) => handleChange('customer_id_prefix', e.target.value)}
-                                />
-                                <Input
-                                    label="Beginnt bei"
-                                    placeholder="10000"
-                                    value={formData.customer_start_number}
-                                    onChange={(e) => handleChange('customer_start_number', e.target.value)}
-                                />
-                            </div>
-                        </SettingRow>
-
-                        <SettingRow
-                            label="Partnernummern"
-                            description="Präfixe für verschiedene Partner-Typen."
-                        >
-                            <div className="grid grid-cols-3 gap-4">
-                                <Input
-                                    label="Übersetzer"
-                                    placeholder="TR"
-                                    value={formData.translator_id_prefix}
-                                    onChange={(e) => handleChange('translator_id_prefix', e.target.value)}
-                                />
-                                <Input
-                                    label="Dolmetscher"
-                                    placeholder="IN"
-                                    value={formData.interpreter_id_prefix}
-                                    onChange={(e) => handleChange('interpreter_id_prefix', e.target.value)}
-                                />
-                                <Input
-                                    label="Agentur"
-                                    placeholder="AG"
-                                    value={formData.agency_id_prefix}
-                                    onChange={(e) => handleChange('agency_id_prefix', e.target.value)}
-                                />
-                            </div>
-                        </SettingRow>
-                    </div>
-                )}
 
                 {/* ── Zahlungsbedingungen ── */}
                 {activeSection === 'payment' && (
@@ -400,7 +248,7 @@ const InvoiceSettingsTab = () => {
                                 className={clsx(
                                     'px-4 py-2 rounded-sm text-sm font-medium border transition',
                                     formData.show_labor_cost_hint
-                                        ? 'bg-slate-900 text-white border-slate-900'
+                                        ? 'bg-brand-primary text-white border-brand-primary'
                                         : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                 )}
                             >
@@ -565,7 +413,7 @@ const InvoiceSettingsTab = () => {
                                 className={clsx(
                                     'px-4 py-2 rounded-sm text-sm font-medium border transition',
                                     formData.show_sender_line
-                                        ? 'bg-slate-900 text-white border-slate-900'
+                                        ? 'bg-brand-primary text-white border-brand-primary'
                                         : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                 )}
                             >

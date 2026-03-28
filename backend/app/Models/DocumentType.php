@@ -11,9 +11,11 @@ class DocumentType extends Model
     protected $fillable = [
         'tenant_id',
         'category',
+        'code',
         'name',
         'default_price',
         'vat_rate',
         'template_file',
+        'status',
     ];
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     FaTimes, FaFileInvoiceDollar, FaPlus, FaTrash, FaCheckCircle, FaInfoCircle
 } from 'react-icons/fa';

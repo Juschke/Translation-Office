@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { openBlobInNewTab } from '../../utils/download';
 import { FaFilePdf, FaCalendarAlt, FaMapMarkerAlt, FaUserEdit, FaInfoCircle, FaTimes } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
@@ -24,6 +25,7 @@ interface InterpreterConfirmationModalProps {
 
 const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> = ({ isOpen, onClose, project }) => {
     const queryClient = useQueryClient();
+    const { t } = useTranslation();
     const [interpreterId, setInterpreterId] = useState<string>('');
     const [appointmentDate, setAppointmentDate] = useState<Date | null>(null);
     const [location, setLocation] = useState<string>('');

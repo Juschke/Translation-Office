@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import {
     FaComments, FaCopy, FaPaperclip, FaPaperPlane, FaExchangeAlt,

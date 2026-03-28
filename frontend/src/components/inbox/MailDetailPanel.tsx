@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
 import { FaTimes, FaReply, FaForward, FaTrashAlt, FaPaperclip, FaFileAlt } from 'react-icons/fa';
 import { ScrollArea, Separator } from '../ui';

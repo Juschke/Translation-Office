@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
     FaDownload, FaTrashAlt, FaSearch, FaCloudUploadAlt, FaCheckCircle,

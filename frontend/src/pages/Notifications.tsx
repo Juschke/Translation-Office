@@ -1,5 +1,6 @@
 import { FaBell, FaCheck, FaCheckDouble, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationService } from '../api/services';
@@ -21,6 +22,7 @@ interface Notification {
 }
 
 const Notifications = () => {
+ const { t } = useTranslation();
  const queryClient = useQueryClient();
  const navigate = useNavigate();
 
@@ -49,7 +51,7 @@ const Notifications = () => {
  mutationFn: notificationService.markAllAsRead,
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['notifications'] });
- toast.success('Alle Benachrichtigungen wurden als gelesen markiert.');
+ toast.success(t('notifications.mark_all_as_read'));
  }
  });
 
@@ -71,14 +73,14 @@ const Notifications = () => {
  return (
  <div className="space-y-6">
  <div className="flex justify-between items-center">
- <h1 className="text-2xl font-medium text-slate-800">Benachrichtigungen</h1>
+ <h1 className="text-2xl font-medium text-slate-800">{t('notifications.title')}</h1>
  {notifications.length > 0 && notifications.some((n: Notification) => !n.read_at) && (
  <button
  onClick={() => markAllAsReadMutation.mutate()}
  disabled={markAllAsReadMutation.isPending}
  className="text-sm text-slate-700 hover:text-slate-900 font-medium flex items-center gap-2 hover:bg-slate-50 px-3 py-2 rounded-sm transition-colors disabled:opacity-50"
  >
- <FaCheckDouble /> Alle als gelesen markieren
+ <FaCheckDouble /> {t('notifications.mark_all_as_read')}
  </button>
  )}
  </div>
@@ -87,8 +89,8 @@ const Notifications = () => {
  {notifications.length === 0 ? (
  <div className="p-12 text-center text-slate-500">
  <FaBell className="mx-auto h-12 w-12 text-slate-300 mb-4" />
- <h3 className="text-lg font-medium text-slate-900">Keine Benachrichtigungen</h3>
- <p>Sie sind auf dem neuesten Stand!</p>
+ <h3 className="text-lg font-medium text-slate-900">Keine {t('notifications.title')}</h3>
+ <p>{t('notifications.no_notifications_message')}</p>
  </div>
  ) : (
  <div className="divide-y divide-slate-100">
@@ -123,7 +125,7 @@ const Notifications = () => {
  <button
  onClick={(e) => { e.stopPropagation(); markAsReadMutation.mutate(notification.id); }}
  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-full"
- title="Als gelesen markieren"
+ title="{t('notifications.mark_as_read')}"
  >
  <FaCheck className="w-3.5 h-3.5" />
  </button>
@@ -131,7 +133,7 @@ const Notifications = () => {
  <button
  onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(notification.id); }}
  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full"
- title="Löschen"
+ title="{t('actions.delete')}"
  >
  <FaTrash className="w-3.5 h-3.5" />
  </button>

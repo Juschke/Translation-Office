@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaUser, FaLock, FaExclamationCircle, FaShieldAlt, FaEnvelope } from 'react-icons/fa';
 import clsx from 'clsx';
@@ -7,6 +8,7 @@ import AuthLayout from '../../components/auth/AuthLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
 
 const AuthPage = () => {
+    const { t } = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
     const { login, register } = useAuth();

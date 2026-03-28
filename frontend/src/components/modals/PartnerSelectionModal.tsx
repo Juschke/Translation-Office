@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import StatusBadge from '../common/StatusBadge';
 import { FaTimes, FaSearch, FaStar, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';

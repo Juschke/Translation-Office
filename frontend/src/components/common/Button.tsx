@@ -1,6 +1,7 @@
 // DEPRECATED: Use @/components/ui/button instead
 // This file exists for backward compatibility only
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button as ShadcnButton, type ButtonProps as ShadcnButtonProps } from '@/components/ui/button';
 
 interface LegacyButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'ref'> {

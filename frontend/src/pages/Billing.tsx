@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaCreditCard, FaRocket, FaFileInvoiceDollar, FaRegCalendarAlt, FaHistory, FaCheck, FaExclamationTriangle, FaTimes, FaSpinner } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

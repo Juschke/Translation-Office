@@ -32,6 +32,6 @@
       "Bash(DROP TABLE:*)",
       "Bash(php artisan db:wipe:*)"
     ],
-    "defaultMode": "dontAsk"
+    "defaultMode": "bypassPermissions"
   }
 }

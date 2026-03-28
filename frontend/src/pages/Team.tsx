@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { FaPlus, FaEdit, FaTrash, FaUser, FaUserShield, FaUserTie } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -147,6 +148,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
 };
 
 const Team: React.FC = () => {
+    const { t } = useTranslation();
     const { user: currentUser } = useAuth();
     const queryClient = useQueryClient();
     const [modal, setModal] = useState<{ type: 'add' | 'edit' | 'delete'; user?: TeamUser } | null>(null);
@@ -160,7 +162,7 @@ const Team: React.FC = () => {
         mutationFn: (data: any) => userService.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['team-users'] });
-            toast.success('Mitarbeiter wurde hinzugefügt.');
+            toast.success(t('team.member_added'));
             setModal(null);
         },
         onError: (e: any) => toast.error(e.response?.data?.message ?? 'Fehler beim Erstellen.'),
@@ -170,7 +172,7 @@ const Team: React.FC = () => {
         mutationFn: ({ id, data }: { id: number; data: any }) => userService.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['team-users'] });
-            toast.success('Mitarbeiter wurde aktualisiert.');
+            toast.success(t('team.member_updated'));
             setModal(null);
         },
         onError: (e: any) => toast.error(e.response?.data?.message ?? 'Fehler beim Aktualisieren.'),
@@ -180,7 +182,7 @@ const Team: React.FC = () => {
         mutationFn: (id: number) => userService.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['team-users'] });
-            toast.success('Mitarbeiter wurde gelöscht.');
+            toast.success(t('team.member_deleted'));
             setModal(null);
         },
         onError: (e: any) => toast.error(e.response?.data?.message ?? 'Fehler beim Löschen.'),

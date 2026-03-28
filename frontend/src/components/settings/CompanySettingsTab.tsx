@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaBuilding, FaSave, FaImage, FaTrash, FaUpload, FaClock, FaTimes } from 'react-icons/fa';
@@ -388,7 +389,7 @@ const CompanySettingsTab = () => {
                 <button
                     onClick={handleSaveCompany}
                     disabled={updateCompanyMutation.isPending}
-                    className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white text-xs font-medium hover:bg-black transition shadow-sm disabled:opacity-50 rounded-sm"
+                    className="flex items-center gap-2 px-6 py-2 bg-brand-primary text-white text-xs font-medium hover:bg-brand-primary/90 transition shadow-sm disabled:opacity-50 rounded-sm"
                 >
                     <FaSave /> {updateCompanyMutation.isPending ? 'Speichert...' : 'Speichern'}
                 </button>
@@ -406,21 +407,21 @@ const CompanySettingsTab = () => {
                             error={!!errors.company_name}
                         />
                     </SettingRow>
-                    <SettingRow label="Rechtsform & Geschäftsführer" description="Rechtsform (z.B. GmbH) und Name des Geschäftsführers.">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <SearchableSelect
-                                placeholder="Rechtsform wählen..."
-                                options={legalFormOptions}
-                                value={companyData.legal_form || ''}
-                                onChange={(val) => handleInputMetaChange('legal_form', val)}
-                                className="h-10"
-                            />
-                            <Input
-                                placeholder="Geschäftsführer"
-                                value={companyData.managing_director || ''}
-                                onChange={(e) => handleInputMetaChange('managing_director', e.target.value)}
-                            />
-                        </div>
+                    <SettingRow label="Rechtsform" description="Die offizielle Rechtsform Ihres Unternehmens (z.B. GmbH).">
+                        <SearchableSelect
+                            placeholder="Rechtsform wählen..."
+                            options={legalFormOptions}
+                            value={companyData.legal_form || ''}
+                            onChange={(val) => handleInputMetaChange('legal_form', val)}
+                            className="h-10"
+                        />
+                    </SettingRow>
+                    <SettingRow label="Geschäftsführer" description="Name des vertretungsberechtigten Geschäftsführers.">
+                        <Input
+                            placeholder="Vorname Nachname"
+                            value={companyData.managing_director || ''}
+                            onChange={(e) => handleInputMetaChange('managing_director', e.target.value)}
+                        />
                     </SettingRow>
                     <SettingRow label="Webseite" description="Ihre offizielle Webseite.">
                         <Input
@@ -442,97 +443,53 @@ const CompanySettingsTab = () => {
                     </SettingRow>
                 </div>
 
-                {/* ID-Präfixe */}
-                <div className="mb-8">
-                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">ID-Präfixe</h4>
-                    <SettingRow label="Formatierung" description="Bestimmen Sie die Präfixe für IDs in Ihrem System.">
-                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
-                            <Input
-                                label="Kunde (K)"
-                                placeholder="K"
-                                value={companyData.customer_id_prefix || ''}
-                                onChange={(e) => handleInputMetaChange('customer_id_prefix', e.target.value)}
-                            />
-                            <Input
-                                label="Partner (PR)"
-                                placeholder="PR"
-                                value={companyData.partner_id_prefix || ''}
-                                onChange={(e) => handleInputMetaChange('partner_id_prefix', e.target.value)}
-                            />
-                            <Input
-                                label="Projekt (P)"
-                                placeholder="P"
-                                value={companyData.project_id_prefix || ''}
-                                onChange={(e) => handleInputMetaChange('project_id_prefix', e.target.value)}
-                            />
-                            <Input
-                                label="Termin (A)"
-                                placeholder="A"
-                                value={companyData.appointment_id_prefix || ''}
-                                onChange={(e) => handleInputMetaChange('appointment_id_prefix', e.target.value)}
-                            />
-                            <Input
-                                label="Angebot (A)"
-                                placeholder="A"
-                                value={companyData.offer_id_prefix || ''}
-                                onChange={(e) => handleInputMetaChange('offer_id_prefix', e.target.value)}
-                            />
-                        </div>
-                    </SettingRow>
-                </div>
+
 
                 {/* Steuern & Identifikation */}
                 <div className="mb-8">
                     <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Steuern & Identifikation</h4>
-                    <SettingRow label="Steuernummern" description="Hinterlegen Sie hier Ihre steuerlichen Identifikationsnummern.">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="flex flex-col">
-                                <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">Steuernummer</label>
-                                <IMaskInput
-                                    mask="00/000/00000"
-                                    placeholder="12/345/67890"
-                                    value={companyData.tax_number || ''}
-                                    unmask={false}
-                                    onAccept={(value) => handleInputMetaChange('tax_number', value)}
-                                    onBlur={handleTaxNumberBlur}
-                                    className={clsx(
-                                        'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                        'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
-                                        errors.tax_number && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
-                                    )}
-                                />
-                            </div>
-                            <div className="flex flex-col">
-                                <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">USt-IdNr.</label>
-                                <IMaskInput
-                                    mask="aa000000000"
-                                    definitions={{ 'a': /[a-zA-Z]/ }}
-                                    placeholder="DE123456789"
-                                    value={companyData.vat_id || ''}
-                                    onAccept={(value) => handleInputMetaChange('vat_id', value.toUpperCase())}
-                                    className={clsx(
-                                        'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                        'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
-                                        errors.vat_id && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
-                                    )}
-                                />
-                            </div>
-                            <div className="flex flex-col">
-                                <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">Wirtschafts-ID</label>
-                                <IMaskInput
-                                    mask="aa00000000000000"
-                                    definitions={{ 'a': /[a-zA-Z]/ }}
-                                    placeholder="DE12345678900001"
-                                    value={companyData.tax_id || ''}
-                                    onAccept={(value) => handleInputMetaChange('tax_id', value.toUpperCase())}
-                                    className={clsx(
-                                        'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                        'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
-                                        errors.tax_id && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
-                                    )}
-                                />
-                            </div>
-                        </div>
+                    <SettingRow label="Steuernummer" description="Ihre beim Finanzamt geführte Steuernummer.">
+                        <IMaskInput
+                            mask="00/000/00000"
+                            placeholder="12/345/67890"
+                            value={companyData.tax_number || ''}
+                            unmask={false}
+                            onAccept={(value) => handleInputMetaChange('tax_number', value)}
+                            onBlur={handleTaxNumberBlur}
+                            className={clsx(
+                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
+                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
+                                errors.tax_number && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
+                            )}
+                        />
+                    </SettingRow>
+                    <SettingRow label="USt-IdNr." description="Umsatzsteuer-Identifikationsnummer für den EU-weiten Handel.">
+                        <IMaskInput
+                            mask="aa000000000"
+                            definitions={{ 'a': /[a-zA-Z]/ }}
+                            placeholder="DE123456789"
+                            value={companyData.vat_id || ''}
+                            onAccept={(value) => handleInputMetaChange('vat_id', value.toUpperCase())}
+                            className={clsx(
+                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
+                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
+                                errors.vat_id && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
+                            )}
+                        />
+                    </SettingRow>
+                    <SettingRow label="Wirtschafts-ID" description="Die bundeseinheitliche Wirtschafts-Identifikationsnummer (W-IdNr.).">
+                        <IMaskInput
+                            mask="aa00000000000000"
+                            definitions={{ 'a': /[a-zA-Z]/ }}
+                            placeholder="DE12345678900001"
+                            value={companyData.tax_id || ''}
+                            onAccept={(value) => handleInputMetaChange('tax_id', value.toUpperCase())}
+                            className={clsx(
+                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
+                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
+                                errors.tax_id && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
+                            )}
+                        />
                     </SettingRow>
                     <SettingRow label="Finanzbehörde" description="Zugeordnetes Finanzamt für Ihre Steuererklärung.">
                         <SearchableSelect
@@ -710,6 +667,7 @@ const CompanySettingsTab = () => {
                         </div>
                     </SettingRow>
                 </div>
+
             </div>
             {/* Opening Hours Modal */}
             {isOpeningHoursModalOpen && (

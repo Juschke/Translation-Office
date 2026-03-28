@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaEdit, FaTimes, FaCheck } from 'react-icons/fa';
 import { Button } from '../ui/button';
@@ -57,7 +58,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
         },
         onError: (error: any) => {
             console.error('Update error:', error);
-            toast.error('Aktualisierung fehlgeschlagen');
+            toast.error(t('messages.error'));
         },
     });
 

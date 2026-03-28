@@ -1,6 +1,7 @@
 
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { partnerService, projectService } from '../api/services';
 import {
     FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaStar,
@@ -16,6 +17,7 @@ import { Button } from '../components/ui/button';
 import clsx from 'clsx';
 
 const PartnerDetail = () => {
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
@@ -46,7 +48,7 @@ const PartnerDetail = () => {
     });
 
     if (isLoading) return <TableSkeleton rows={5} columns={2} />;
-    if (!partner) return <div className="p-10 text-center text-slate-500">Partner nicht gefunden</div>;
+    if (!partner) return <div className="p-10 text-center text-slate-500">{t('empty.partner_not_found')}</div>;
 
     const name = partner.company || `${partner.first_name} ${partner.last_name}`;
     const initials = (partner.first_name?.[0] || '') + (partner.last_name?.[0] || 'P');
@@ -105,7 +107,7 @@ const PartnerDetail = () => {
                     {/* Meta Info Bar */}
                     <div className="flex items-center gap-6 text-xs text-slate-400 flex-wrap border-t border-slate-100 pt-3 mt-1">
                         <div className="flex items-center gap-2">
-                            <span>ID: <span className="text-slate-600 font-medium">{partner.display_id}</span></span>
+                            <span>Partner-ID: <span className="text-slate-600 font-medium">{partner.display_id}</span></span>
                         </div>
                         <span className="text-slate-200">•</span>
                         <div className="flex items-center gap-2">

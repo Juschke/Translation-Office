@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { FaArrowRight, FaCheck, FaCheckCircle, FaExternalLinkAlt, FaFileInvoiceDollar, FaCopy, FaStar, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEnvelope, FaEdit } from 'react-icons/fa';
 import { Button } from '../ui/button';
 import clsx from 'clsx';
@@ -75,8 +76,8 @@ const ProjectOverviewTab = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                         <div className="space-y-4">
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Projekt-ID</span>
-                                <span className="font-medium text-slate-800 tracking-tight">{projectData.id || <span className="text-slate-300 italic font-normal">Keine Angabe</span>}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Projekt</span>
+                                <span className="font-medium text-slate-800 tracking-tight">{projectData.project_number || projectData.id || <span className="text-slate-300 italic font-normal">Keine Angabe</span>}</span>
                             </div>
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bezeichnung</span>
@@ -186,8 +187,8 @@ const ProjectOverviewTab = ({
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">ID</span>
-                                <span className="font-medium text-slate-800 truncate">{projectData.customer.id || '-'}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Kunden-ID</span>
+                                <span className="font-medium text-slate-800 truncate">{projectData.customer.display_id || projectData.customer.id || '-'}</span>
                             </div>
                             <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Name</span>
@@ -220,8 +221,8 @@ const ProjectOverviewTab = ({
                                     <span className="text-slate-700 text-xs font-medium">
                                         {projectData.customer.address_country === 'DE' ? 'Deutschland'
                                             : projectData.customer.address_country === 'AT' ? 'Österreich'
-                                            : projectData.customer.address_country === 'CH' ? 'Schweiz'
-                                            : projectData.customer.address_country}
+                                                : projectData.customer.address_country === 'CH' ? 'Schweiz'
+                                                    : projectData.customer.address_country}
                                     </span>
                                 </div>
                             )}
@@ -305,8 +306,8 @@ const ProjectOverviewTab = ({
                         {projectData.translator?.id ? (
                             <div className="space-y-3">
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">ID</span>
-                                    <span className="font-medium text-slate-800 truncate">{projectData.translator.id || '-'}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partner-ID</span>
+                                    <span className="font-medium text-slate-800 truncate">{projectData.translator.display_id || projectData.translator.id || '-'}</span>
                                 </div>
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Name</span>

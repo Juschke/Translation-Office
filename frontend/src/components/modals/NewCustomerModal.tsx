@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaTimes, FaPlus, FaTrash, FaEnvelope, FaExclamationTriangle, FaExternalLinkAlt, FaInfoCircle } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { customerService, settingsService } from '../../api/services';

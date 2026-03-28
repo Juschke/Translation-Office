@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { FaChevronDown, FaSearch, FaCheck, FaTimes, FaPlus } from 'react-icons/fa';
 import clsx from 'clsx';

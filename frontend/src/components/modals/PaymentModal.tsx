@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaTimes, FaEuroSign } from 'react-icons/fa';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import Input from '../common/Input';
 import { Button } from '../ui/button';
+import { useAuth } from '../../context/AuthContext';
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -11,13 +13,17 @@ interface PaymentModalProps {
     onSave: (payment: any) => void;
     initialData?: any;
     totalAmount: number; // Gesamt Brutto for context
+    alreadyPaid?: number; // Sum of OTHER payments already made
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, initialData, totalAmount }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, initialData, totalAmount, alreadyPaid = 0 }) => {
+    const { user } = useAuth();
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState<Date>(new Date());
     const [method, setMethod] = useState('Überweisung');
     const [note, setNote] = useState('');
+
+    const remainingAmount = Math.max(0, totalAmount - alreadyPaid);
 
     useEffect(() => {
         if (isOpen) {
@@ -27,13 +33,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
                 setMethod(initialData.payment_method || 'Überweisung');
                 setNote(initialData.note || '');
             } else {
-                setAmount('');
+                setAmount(remainingAmount > 0 ? remainingAmount.toFixed(2) : '');
                 setDate(new Date());
                 setMethod('Überweisung');
                 setNote('');
             }
         }
-    }, [isOpen, initialData]);
+    }, [isOpen, initialData, remainingAmount]);
 
     const [error, setError] = useState<string | null>(null);
 
@@ -51,10 +57,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
 
         // Round to 2 decimal places for comparison to avoid floating-point issues
         const roundedVal = Math.round(val * 100);
-        const roundedTotal = Math.round(totalAmount * 100);
+        const roundedMax = Math.round(remainingAmount * 100);
 
-        if (roundedVal > roundedTotal) {
-            setError(`Betrag darf den Gesamtbetrag (${totalAmount.toFixed(2)} €) nicht überschreiten`);
+        if (roundedVal > roundedMax) {
+            setError(`Restbetrag (${remainingAmount.toFixed(2)} €) darf nicht überschritten werden. Der Gesamtbetrag des Projekts beträgt ${totalAmount.toFixed(2)} €.`);
             return;
         }
 
@@ -66,7 +72,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
             amount: finalAmount,
             payment_date: date.toISOString(),
             payment_method: method,
-            note
+            note,
+            created_by: initialData?.created_by || user?.name || 'Unbekannt'
         });
         onClose();
     };
@@ -145,9 +152,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSave, in
                             value={method}
                             onChange={(e) => setMethod(e.target.value)}
                         >
+                            <option value="Überweisung">Überweisung</option>
                             <option value="Bar">Bar</option>
                             <option value="Karte">Karte</option>
-                            <option value="Sonstige">Sontige Zahlungsmethode</option>
+                            <option value="Sonstige">Sontiges</option>
                         </select>
                     </div>
 
