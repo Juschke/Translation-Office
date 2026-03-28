@@ -77,7 +77,9 @@
     "restore_message": "This item will be restored from the archive.",
     "bulk_delete_title": "Delete {{count}} items?",
     "bulk_delete_message": "This action cannot be undone. Are you sure?",
-    "confirm_action": "Are you sure you want to proceed?"
+    "confirm_action": "Are you sure you want to proceed?",
+    "delete_payment": "Really delete this payment?",
+    "delete_payment_amount": "Really delete this payment of {{amount}} €?"
   },
   "pagination": {
     "previous": "Previous",
@@ -703,7 +705,9 @@
     "submit": "Submit",
     "create_template": "Create Template",
     "current_date": "Current Date",
-    "sender": "Sender"
+    "sender": "Sender",
+    "password_masked": "••••••••",
+    "password_minimum": "At least 8 characters"
   },
   "modals": {
     "confirm_title": "Confirmation",
@@ -1036,7 +1040,11 @@
     "member_updated": "Member updated successfully",
     "member_update_error": "Error updating member",
     "member_deleted": "Member deleted successfully",
-    "member_delete_error": "Error deleting member"
+    "member_delete_error": "Error deleting member",
+    "role_employee": "Employee",
+    "role_manager": "Manager",
+    "status_active": "Active",
+    "status_inactive": "Inactive"
   },
   "toast": {
     "project_updated": "Project successfully updated",
@@ -1140,7 +1148,12 @@
     "team_members": "3 team members",
     "standard_support": "Standard Support",
     "basic_features": "Basic features",
-    "choose_plan": "Choose"
+    "choose_plan": "Choose",
+    "projects": "Projects",
+    "per_month": "/ Month",
+    "team": "Team",
+    "users": "Users",
+    "unlimited": "∞"
   },
   "countries": {
     "de": "Germany",
@@ -1182,7 +1195,9 @@
     "var_sender": "Sender",
     "sync_syncing": "Syncing...",
     "sync_fetch": "Fetch",
-    "template_general": "General"
+    "template_general": "General",
+    "delete_single": "Delete Email",
+    "delete_multiple": "Delete {{count}} Emails"
   },
   "time": {
     "monday": "Monday",

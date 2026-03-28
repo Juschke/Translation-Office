@@ -643,7 +643,7 @@ const NewProject = () => {
                                     setConfirmConfig({
                                         isOpen: true,
                                         title: 'Zahlung löschen',
-                                        message: `Möchten Sie die Zahlung in Höhe von ${payment?.amount || '0'} € wirklich löschen?`,
+                                        message: t('confirm.delete_payment_amount', {amount: payment?.amount || '0'}),
                                         type: 'danger',
                                         confirmLabel: 'Löschen',
                                         onConfirm: () => {

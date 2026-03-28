@@ -97,8 +97,8 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                     onChange={e => set('role', e.target.value as Role)}
                     className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                 >
-                    <option value="employee">Mitarbeiter</option>
-                    <option value="manager">Manager</option>
+                    <option value="employee">{t('team.role_employee')}</option>
+                    <option value="manager">{t('team.role_manager')}</option>
                 </select>
                 <p className="text-xs text-slate-500 mt-1">
                     Manager haben Zugriff auf Rechnungen, Berichte und Einstellungen.
@@ -115,7 +115,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                     required={!isEdit}
                     minLength={8}
                     className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-                    placeholder={isEdit ? '••••••••' : 'Mindestens 8 Zeichen'}
+                    placeholder={isEdit ? t('forms.password_masked') : t('forms.password_minimum')}
                 />
             </div>
             {isEdit && (
@@ -126,8 +126,8 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                         onChange={e => set('status', e.target.value)}
                         className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                     >
-                        <option value="active">Aktiv</option>
-                        <option value="inactive">Inaktiv</option>
+                        <option value="active">{t('team.status_active')}</option>
+                        <option value="inactive">{t('team.status_inactive')}</option>
                     </select>
                 </div>
             )}

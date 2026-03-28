@@ -1357,7 +1357,7 @@ const CommunicationHub = () => {
                         toast.error('Geringfügiger Fehler beim Löschen aufgetreten');
                     }
                 }}
-                title={deleteType === 'single' ? "E-Mail löschen" : `${selectedMails.length} E-Mails löschen`}
+                title={deleteType === 'single' ? t('inbox.delete_single') : t('inbox.delete_multiple', {count: selectedMails.length})}
                 message={deleteType === 'single' ? "Möchten Sie diese E-Mail wirklich löschen?" : "Möchten Sie diese markierten E-Mails wirklich löschen?"}
             />
         </div>

@@ -77,7 +77,9 @@
     "restore_message": "Dieses Element wird aus dem Archiv wiederhergestellt.",
     "bulk_delete_title": "{{count}} Elemente löschen?",
     "bulk_delete_message": "Diese Aktion kann nicht rückgängig gemacht werden. Sind Sie sicher?",
-    "confirm_action": "Sind Sie sicher, dass Sie fortfahren möchten?"
+    "confirm_action": "Sind Sie sicher, dass Sie fortfahren möchten?",
+    "delete_payment": "Möchten Sie diese Zahlung wirklich löschen?",
+    "delete_payment_amount": "Möchten Sie die Zahlung in Höhe von {{amount}} € wirklich löschen?"
   },
   "pagination": {
     "previous": "Zurück",
@@ -703,7 +705,9 @@
     "submit": "Senden",
     "create_template": "Vorlage erstellen",
     "current_date": "Aktuelles Datum",
-    "sender": "Absender"
+    "sender": "Absender",
+    "password_masked": "••••••••",
+    "password_minimum": "Mindestens 8 Zeichen"
   },
   "modals": {
     "confirm_title": "Bestätigung",
@@ -1036,7 +1040,11 @@
     "member_updated": "Mitarbeiter wurde aktualisiert",
     "member_update_error": "Fehler beim Aktualisieren des Mitarbeiters",
     "member_deleted": "Mitarbeiter wurde gelöscht",
-    "member_delete_error": "Fehler beim Löschen des Mitarbeiters"
+    "member_delete_error": "Fehler beim Löschen des Mitarbeiters",
+    "role_employee": "Mitarbeiter",
+    "role_manager": "Manager",
+    "status_active": "Aktiv",
+    "status_inactive": "Inaktiv"
   },
   "toast": {
     "project_updated": "Projekt erfolgreich aktualisiert",
@@ -1140,7 +1148,12 @@
     "team_members": "3 Team-Mitglieder",
     "standard_support": "Standard Support",
     "basic_features": "Basisfunktionen",
-    "choose_plan": "Wählen"
+    "choose_plan": "Wählen",
+    "projects": "Projekte",
+    "per_month": "/ Monat",
+    "team": "Team",
+    "users": "User",
+    "unlimited": "∞"
   },
   "countries": {
     "de": "Deutschland",
@@ -1182,7 +1195,9 @@
     "var_sender": "Absender",
     "sync_syncing": "Sync...",
     "sync_fetch": "Abrufen",
-    "template_general": "Allgemein"
+    "template_general": "Allgemein",
+    "delete_single": "E-Mail löschen",
+    "delete_multiple": "{{count}} E-Mails löschen"
   },
   "time": {
     "monday": "Montag",

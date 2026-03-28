@@ -284,8 +284,8 @@ const Billing = () => {
                             <div className="space-y-4">
                                 <div className="p-3 bg-white/5 rounded-sm border border-white/5 backdrop-blur-sm">
                                     <div className="flex justify-between text-xs font-medium mb-2 text-white/70">
-                                        <span>Projekte</span>
-                                        <span>{activePlan.limit_projects === Infinity ? '∞' : activePlan.limit_projects} / Monat</span>
+                                        <span>{t('billing.projects')}</span>
+                                        <span>{activePlan.limit_projects === Infinity ? '∞' : activePlan.limit_projects} / {t('billing.per_month')}</span>
                                     </div>
                                     <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                                         <div className="h-full bg-emerald-500 w-[15%] transition-all duration-1000"></div>
@@ -294,8 +294,8 @@ const Billing = () => {
                                 </div>
                                 <div className="p-3 bg-white/5 rounded-sm border border-white/5 backdrop-blur-sm">
                                     <div className="flex justify-between text-xs font-medium mb-2 text-white/70">
-                                        <span>Team</span>
-                                        <span>{activePlan.limit_users === Infinity ? '∞' : activePlan.limit_users} User</span>
+                                        <span>{t('billing.team')}</span>
+                                        <span>{activePlan.limit_users === Infinity ? '∞' : activePlan.limit_users} {t('billing.users')}</span>
                                     </div>
                                     <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                                         <div className="h-full bg-blue-500 w-[40%] transition-all duration-1000"></div>
