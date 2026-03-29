@@ -3,12 +3,14 @@ import { FaUser, FaUsers, FaCreditCard, FaCrown, FaSignOutAlt, FaChevronDown } f
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 
+import type { UserRole } from '../../context/AuthContext';
+
 interface ProfileMenuProps {
     user: any;
     isOpen: boolean;
     onToggle: (e: React.MouseEvent) => void;
     onLogout: () => void;
-    hasMinRole: (role: string) => boolean;
+    hasMinRole: (role: UserRole) => boolean;
     dropdownRef: React.RefObject<HTMLDivElement | null>;
 }
 

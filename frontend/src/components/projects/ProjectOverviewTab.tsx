@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { FaArrowRight, FaCheck, FaCheckCircle, FaExternalLinkAlt, FaFileInvoiceDollar, FaCopy, FaStar, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaEnvelope, FaEdit } from 'react-icons/fa';
 import { Button } from '../ui/button';
 import clsx from 'clsx';

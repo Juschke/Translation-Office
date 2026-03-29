@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
-import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService, notificationService } from '../api/services';
 
@@ -14,7 +13,6 @@ import DesktopLinks from './navigation/DesktopLinks';
 import MobileMenu from './navigation/MobileMenu';
 
 const Navigation = () => {
-    const { t } = useTranslation();
     const { user, logout, hasMinRole } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();

@@ -7,11 +7,13 @@ import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import NavBadge from './NavBadge';
 
+import type { UserRole } from '../../context/AuthContext';
+
 interface MobileMenuProps {
     isOpen: boolean;
     onClose: () => void;
     isActive: (path: string) => boolean;
-    hasMinRole: (role: string) => boolean;
+    hasMinRole: (role: UserRole) => boolean;
     dashboardData: any;
     unreadEmails: number;
 }

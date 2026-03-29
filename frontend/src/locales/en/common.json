@@ -573,7 +573,49 @@
     "due_in_days": "In {{count}} days",
     "project_default": "Project",
     "member_default": "Team Member",
-    "private_customer": "Private Customer"
+    "private_customer": "Private Customer",
+    "title": "Calendar",
+    "subtitle": "Appointments & deadlines at a glance",
+    "new_appointment": "New Appointment",
+    "new_interpreting": "New Interpreting Assignment",
+    "view": {
+      "month": "Month",
+      "week": "Week",
+      "day": "Day"
+    },
+    "sidebar": {
+      "staff_title": "Staff",
+      "all_planned": "All planned",
+      "no_projects": "No projects",
+      "no_staff": "No staff",
+      "search_project": "Search project...",
+      "search_staff": "Search staff...",
+      "try_another_search": "Try another search",
+      "unassigned_projects": "Unassigned projects"
+    },
+    "roles": {
+      "translator": "Translator",
+      "proofreader": "Proofreader",
+      "interpreter": "Interpreter",
+      "project_manager": "Project Manager",
+      "editor": "Editor",
+      "sales": "Sales",
+      "accounting": "Accounting",
+      "support": "Support",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "employee": "Employee",
+      "owner": "Owner",
+      "user": "User"
+    },
+    "messages": {
+      "create_success": "Appointment created successfully",
+      "create_error": "Error creating appointment",
+      "update_success": "Appointment updated successfully",
+      "update_error": "Error updating appointment",
+      "deadline_success": "Deadline set successfully",
+      "deadline_error": "Error setting deadline"
+    }
   },
   "interpreting": {
     "title": "Interpreting Assignments",
@@ -616,6 +658,7 @@
   },
   "reports": {
     "title": "Reports",
+    "subtitle": "Analytics & Reports",
     "analytics": "Analytics",
     "export": "Export Report",
     "period": "Reporting Period",
@@ -633,7 +676,21 @@
     "bwa": "BWA Report",
     "finance": "Finance",
     "invoice_issued": "Issued",
-    "invoice_overdue": "Overdue"
+    "invoice_overdue": "Overdue",
+    "kpi": {
+      "total_revenue": "Total Revenue",
+      "avg_margin": "Avg. Margin",
+      "growth": "Growth",
+      "jobs": "Jobs",
+      "vs_period": "vs. Prior Period"
+    },
+    "presets": {
+      "last_7_days": "Last 7 Days",
+      "last_30_days": "Last 30 Days",
+      "last_3_months": "Last 3 Months",
+      "last_6_months": "Last 6 Months",
+      "this_year": "This Year"
+    }
   },
   "notifications": {
     "title": "Notifications",

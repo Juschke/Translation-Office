@@ -27,7 +27,7 @@ const STATUS_COLORS = [
 ];
 
 const Reports = () => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([
         dayjs().subtract(5, 'month').startOf('month'),
         dayjs().endOf('day')

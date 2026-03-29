@@ -16,13 +16,22 @@
     "search": "Suchen",
     "filter": "Filter",
     "loading": "Laden...",
-    "download_pdf": "Download PDF"
+    "download_pdf": "PDF herunterladen",
+    "no_data": "Keine Angabe",
+    "created_at": "Erstellt am",
+    "modified_at": "Zuletzt geändert",
+    "by": "von",
+    "time_suffix": "Uhr",
+    "total": "Gesamt",
+    "show": "Anzeigen",
+    "loading_data": "Lade Daten...",
+    "empty_value": "–"
   },
   "actions": {
     "save": "Speichern",
     "cancel": "Abbrechen",
     "delete": "Löschen",
-    "edit": "Edit",
+    "edit": "Bearbeiten",
     "create": "Erstellen",
     "close": "Schließen",
     "search": "Suchen",
@@ -35,10 +44,10 @@
     "success": "Erfolg",
     "add": "Hinzufügen",
     "details": "Details",
-    "show_files": "Show files",
-    "restore": "Restore",
-    "delete_permanently": "Delete permanently",
-    "move_to_trash": "Move to trash"
+    "show_files": "Dateien anzeigen",
+    "restore": "Wiederherstellen",
+    "delete_permanently": "Endgültig löschen",
+    "move_to_trash": "In den Papierkorb"
   },
   "status": {
     "draft": "Entwurf",
@@ -104,23 +113,33 @@
     "invoice_not_found": "Rechnung nicht gefunden"
   },
   "settings": {
+    "title": "Einstellungen",
     "tabs": {
       "profile": "Mein Profil",
       "company": "Unternehmen",
+      "company_desc": "Firmenangaben, Logo und E-Mail-Konten.",
       "subscription": "Abonnement & Plan",
       "invoice": "Finanzen & Dokumentlayouts",
       "number_circles": "Nummerkreise",
+      "numbering": "Nummernkreise",
+      "numbering_desc": "ID-Präfixe und Startnummern.",
       "document_layout": "Dokumentlayout",
-      "master_data": "Stammdatenverwaltung",
+      "master_data": "Stammdaten",
+      "master_data_desc": "Sprachen, Leistungen, Kategorien.",
       "notifications": "Benachrichtigungen",
+      "notifications_desc": "Steuerung der System-E-Mails.",
       "audit": "Systemprotokoll",
+      "audit_log": "Protokoll",
+      "audit_log_desc": "Systemaktivitäten & Änderungen.",
       "languages": "Sprachen",
       "doc_types": "Dokumenttypen",
       "services": "Leistungskatalog",
       "email_templates": "Email-Vorlagen",
       "specializations": "Fachgebiete",
       "units": "Einheiten",
-      "currencies": "Währungen"
+      "currencies": "Währungen",
+      "invoices": "Rechnungen",
+      "invoices_desc": "Layout, Texte und Steuern."
     },
     "master_data": {
       "language_config": "Sprachen",
@@ -204,6 +223,8 @@
     "list_view": "Tabellenansicht",
     "search_placeholder": "Suchen nach Projekten...",
     "board_title": "Projekt-Board",
+    "edit_title": "Projekt bearbeiten",
+    "new_title": "Neues Projekt erfassen",
     "status": {
       "draft": "Neu",
       "offer": "Angebot",
@@ -285,6 +306,7 @@
       "excel": "Excel (.xlsx)",
       "csv": "CSV (.csv)",
       "pdf": "PDF Report",
+      "send_email": "E-Mail senden",
       "bulk": {
         "complete": "Abschließen",
         "reset": "Zurücksetzen",
@@ -294,6 +316,35 @@
         "restore": "Wiederherstellen",
         "delete_permanent": "Endgültig löschen"
       }
+    },
+    "export": {
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF Report"
+    },
+    "views": {
+      "table": "Tabellenansicht",
+      "kanban": "Kanban-Ansicht"
+    },
+    "file_type": {
+      "source": "Quelle",
+      "target": "Ziel"
+    },
+    "detail": {
+      "project_label": "Projekt:"
+    },
+    "confirm": {
+      "delete_file": "Datei löschen",
+      "delete_payment": "Zahlung löschen",
+      "delete_project": "Projekt löschen"
+    },
+    "validation": {
+      "source_required": "Eingangssprache ist erforderlich",
+      "target_required": "Zielsprache ist erforderlich"
+    },
+    "form": {
+      "target_language": "Zielsprache",
+      "target_language_tooltip": "Sprache, in die übersetzt werden soll."
     },
     "messages": {
       "create_success": "Projekt erfolgreich erstellt",
@@ -305,7 +356,9 @@
       "bulk_trash": "{{count}} Projekte in den Papierkorb verschoben",
       "bulk_update": "{{count}} Projekte aktualisiert",
       "bulk_delete": "{{count}} Projekte endgültig gelöscht",
-      "bulk_error": "Massenvorgang fehlgeschlagen"
+      "bulk_error": "Massenvorgang fehlgeschlagen",
+      "load_error": "Fehler beim Laden des Projekts.",
+      "loading": "Lade Projektdaten..."
     },
     "priority_express": "Express",
     "priority_standard": "Standard",
@@ -361,9 +414,55 @@
       "activate": "Aktivieren",
       "deactivate": "Deaktivieren"
     },
+    "export": {
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF Report"
+    },
+    "email": {
+      "subject_bulk": "Nachricht an Kunden",
+      "subject_to": "Nachricht an: {{name}}"
+    },
+    "detail": {
+      "customer_id": "Kunden-ID:",
+      "master_data": "Stammdatenblatt",
+      "contact_info": "Kontaktinformationen",
+      "billing_address": "Rechnungsanschrift",
+      "financial_data": "Finanzdaten",
+      "internal_notes": "Interne Notizen",
+      "recent_projects": "Letzte Projekte",
+      "revenue_stats": "Umsatzstatistik",
+      "sales_current_year": "Umsatz lfd. Jahr",
+      "sales_last_year": "Vorjahr",
+      "total_projects": "Projekte Gesamt"
+    },
+    "form": {
+      "salutation": "Anrede",
+      "first_name": "Vorname",
+      "last_name": "Nachname",
+      "additional_emails": "Weitere E-Mails",
+      "additional_phones": "Weitere Tel.",
+      "phone": "Telefon",
+      "legal_form": "Rechtsform",
+      "street": "Straße",
+      "house_number": "Hausnummer",
+      "zip_code": "PLZ",
+      "city": "Stadt",
+      "country": "Land",
+      "leitweg_id": "Leitweg-ID",
+      "vat_id": "USt-IdNr.",
+      "tax_id": "Steuer-Nr.",
+      "payment_terms": "Zahlungsziel",
+      "payment_terms_default": "Tage (Standard)",
+      "iban": "IBAN",
+      "bic": "BIC",
+      "bank_name": "Bank",
+      "bank_code": "BLZ"
+    },
     "confirm": {
       "delete_title": "Kunden endgültig löschen",
-      "delete_message": "Sind Sie sicher, dass Sie {{count}} Kunden endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden."
+      "delete_message": "Sind Sie sicher, dass Sie {{count}} Kunden endgültig löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+      "delete_customer": "Kunde löschen"
     },
     "messages": {
       "create_success": "Kunde erfolgreich angelegt",
@@ -375,7 +474,11 @@
       "bulk_update_success": "{{count}} Kunden aktualisiert",
       "bulk_update_error": "Fehler beim Aktualisieren der Kunden",
       "bulk_delete_success": "{{count}} Kunden endgültig gelöscht",
-      "bulk_delete_error": "Fehler beim endgültigen Löschen"
+      "bulk_delete_error": "Fehler beim endgültigen Löschen",
+      "not_found": "Kunde nicht gefunden",
+      "no_notes": "Keine Notizen hinterlegt.",
+      "no_projects": "Keine Projekte vorhanden.",
+      "loading_projects": "Lade Projekte..."
     },
     "type_company": "Firma",
     "type_private": "Privat",
@@ -436,6 +539,55 @@
     "actions": {
       "lock": "Sperren"
     },
+    "export": {
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF Report"
+    },
+    "email": {
+      "subject_request": "Anfrage: {{name}}",
+      "subject_message": "Nachricht an Partner"
+    },
+    "detail": {
+      "partner_id": "Partner-ID:",
+      "master_data": "Stammdatenblatt",
+      "contact_info": "Kontaktinformationen",
+      "address": "Anschrift",
+      "payment_data": "Zahlungsdaten",
+      "internal_notes": "Interne Notizen",
+      "recent_projects": "Letzte Projekte",
+      "qualifications": "Qualifikationen",
+      "language_pairs": "Sprachpaare",
+      "specializations": "Fachgebiete",
+      "rates": "Preise / Raten",
+      "word_rate": "Wortpreis",
+      "line_rate": "Zeilenpreis",
+      "hourly_rate": "Stundensatz",
+      "stats": "Auswertung",
+      "total_projects": "Projekte gesamt",
+      "completed_label": "abgeschlossen",
+      "total_costs": "Gesamtkosten",
+      "avg_cost": "Ø Kosten / Projekt",
+      "total_words": "Wörter gesamt",
+      "rating": "Bewertung:"
+    },
+    "form": {
+      "company": "Firma",
+      "first_name": "Vorname",
+      "last_name": "Nachname",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "additional_phone": "Weitere Tel.",
+      "street": "Straße",
+      "zip": "PLZ",
+      "city": "Stadt",
+      "country": "Land",
+      "iban": "IBAN",
+      "bic": "BIC",
+      "bank": "Bank",
+      "tax_number": "Steuer-Nr.",
+      "vat_id": "USt-IdNr."
+    },
     "messages": {
       "create_success": "Partner erfolgreich angelegt",
       "create_error": "Fehler beim Anlegen des Partners",
@@ -443,7 +595,20 @@
       "update_error": "Fehler beim Aktualisieren des Partners",
       "delete_success": "Partner erfolgreich gelöscht",
       "delete_error": "Fehler beim Löschen des Partners",
-      "bulk_update_success": "{{count}} Partner aktualisiert"
+      "bulk_update_success": "{{count}} Partner aktualisiert",
+      "no_notes": "Keine Notizen hinterlegt.",
+      "no_languages": "Keine Sprachen angegeben",
+      "no_projects": "Keine Projekte vorhanden.",
+      "loading_projects": "Lade Projekte..."
+    },
+    "confirm": {
+      "delete_title": "Partner löschen",
+      "delete_message": "Möchten Sie den Partner \"{{name}}\" wirklich löschen?"
+    },
+    "tables": {
+      "project": "Projekt",
+      "amount": "Betrag",
+      "date": "Datum"
     },
     "type_translator": "Übersetzer",
     "type_interpreter": "Dolmetscher",
@@ -479,12 +644,18 @@
     "filters": {
       "invoice_status": "Rechnungsstatus"
     },
+    "export": {
+      "excel": "Excel (.xlsx)",
+      "csv_datev": "CSV DATEV",
+      "pdf_report": "PDF Sammel-Report"
+    },
     "actions": {
       "paid": "Bezahlt",
       "send_reminder": "Mahnung senden",
       "rebuild": "Neu generieren",
       "print": "Drucken",
-      "download_xml": "XML herunterladen"
+      "download_xml": "XML herunterladen",
+      "confirm": "Bestätigen"
     },
     "messages": {
       "create_success": "Rechnung erfolgreich erstellt",
@@ -573,7 +744,61 @@
     "due_in_days": "in {{count}} Tagen",
     "project_default": "Projekt",
     "member_default": "Mitarbeiter",
-    "private_customer": "Privatkunde"
+    "private_customer": "Privatkunde",
+    "title": "Kalender",
+    "subtitle": "Termine & Fristen im Überblick",
+    "new_appointment": "Neuer Termin",
+    "new_interpreting": "Neuer Dolmetscheinsatz",
+    "view": {
+      "month": "Monat",
+      "week": "Woche",
+      "day": "Tag"
+    },
+    "sidebar": {
+      "staff_title": "Mitarbeiter",
+      "all_planned": "Alle geplant",
+      "no_projects": "Keine Projekte",
+      "no_staff": "Keine Mitarbeiter",
+      "search_project": "Projekt suchen...",
+      "search_staff": "Mitarbeiter suchen...",
+      "try_another_search": "Andere Suche versuchen",
+      "unassigned_projects": "Nicht zugewiesene Projekte"
+    },
+    "roles": {
+      "translator": "Übersetzer",
+      "proofreader": "Korrektor",
+      "interpreter": "Dolmetscher",
+      "project_manager": "Projektmanager",
+      "editor": "Lektor",
+      "sales": "Vertrieb",
+      "accounting": "Buchhaltung",
+      "support": "Support",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "employee": "Mitarbeiter",
+      "owner": "Inhaber",
+      "user": "Benutzer"
+    },
+    "fallback": {
+      "project": "Projekt",
+      "member": "Mitarbeiter"
+    },
+    "priority": {
+      "express": "Express",
+      "standard": "Standard"
+    },
+    "tooltip": {
+      "vacation": "Urlaub",
+      "interpreter": "Dolmetscher"
+    },
+    "messages": {
+      "create_success": "Termin erfolgreich erstellt",
+      "create_error": "Fehler beim Erstellen des Termins",
+      "update_success": "Termin erfolgreich aktualisiert",
+      "update_error": "Fehler beim Aktualisieren des Termins",
+      "deadline_success": "Frist erfolgreich gesetzt",
+      "deadline_error": "Fehler beim Setzen der Frist"
+    }
   },
   "interpreting": {
     "title": "Dolmetschereinsätze",
@@ -581,6 +806,7 @@
     "new_assignment": "Neuer Einsatz",
     "new_short": "Neu",
     "search_placeholder": "Einsätze suchen...",
+    "project_prefix": "PROJEKT:",
     "kpi": {
       "upcoming": "Anstehend",
       "completed": "Abgeschlossen",
@@ -616,6 +842,7 @@
   },
   "reports": {
     "title": "Berichte",
+    "subtitle": "Analysen & Auswertungen",
     "analytics": "Analysen",
     "export": "Bericht exportieren",
     "period": "Berichtszeitraum",
@@ -633,7 +860,21 @@
     "bwa": "BWA-Bericht",
     "finance": "Finanzen",
     "invoice_issued": "Ausgestellt",
-    "invoice_overdue": "Überfällig"
+    "invoice_overdue": "Überfällig",
+    "kpi": {
+      "total_revenue": "Gesamtumsatz",
+      "avg_margin": "Ø Marge",
+      "growth": "Wachstum",
+      "jobs": "Aufträge",
+      "vs_period": "vs. Vorperiode"
+    },
+    "presets": {
+      "last_7_days": "Letzte 7 Tage",
+      "last_30_days": "Letzte 30 Tage",
+      "last_3_months": "Letzte 3 Monate",
+      "last_6_months": "Letzte 6 Monate",
+      "this_year": "Dieses Jahr"
+    }
   },
   "notifications": {
     "title": "Benachrichtigungen",
@@ -653,6 +894,9 @@
     "last_name": "Nachname",
     "email_address": "E-Mail ADRESSE",
     "language": "Sprache / Language",
+    "language_german": "Deutsch (DE)",
+    "language_english": "English (EN)",
+    "language_desc": "Wählen Sie Ihre bevorzugte Sprache.",
     "save_profile": "Profil speichern",
     "security": "Sicherheit & Zugang",
     "auth_info": "Passwort & Authentifizierung",
@@ -725,7 +969,7 @@
     "sender": "Absender",
     "password_masked": "••••••••",
     "password_minimum": "Mindestens 8 Zeichen",
-    "select_date_time": "Select date & time"
+    "select_date_time": "Datum & Uhrzeit auswählen"
   },
   "modals": {
     "confirm_title": "Bestätigung",
@@ -883,7 +1127,7 @@
     "create_free_account": "Kostenloses Konto erstellen",
     "confirm_password_label": "Passwort bestätigen",
     "save_password": "Passwort speichern",
-    "forgot_password_link": "Forgot password?",
+    "forgot_password_link": "Passwort vergessen?",
     "verifying": "Verifiziere...",
     "confirming": "Bestätigen",
     "signing_in": "Anmelden...",
@@ -982,7 +1226,7 @@
   "messages": {
     "success": "Vorgang erfolgreich",
     "error": "Ein Fehler ist aufgetreten",
-    "loading": "Loading...",
+    "loading": "Wird geladen...",
     "saving": "Wird gespeichert...",
     "deleting": "Wird gelöscht...",
     "confirm_action": "Sind Sie sicher?",
@@ -993,34 +1237,34 @@
     "not_found": "Nicht gefunden",
     "validation_error": "Bitte überprüfen Sie Ihre Eingaben",
     "no_permission": "Sie haben keine Berechtigung, diese Aktion durchzuführen",
-    "download_file_error": "File download error",
-    "loading_preview": "Loading preview...",
-    "preview_load_error": "Could not load preview.",
-    "file_type_change_error": "Could not change file type",
-    "file_deleted_success": "File successfully deleted",
-    "file_delete_error": "Error deleting file.",
-    "files_moved_success": "Files moved successfully",
-    "files_move_error": "Error moving files",
-    "creating_zip": "Creating ZIP archive...",
-    "zip_download_started": "ZIP download started",
-    "zip_creation_error": "Error creating ZIP archive",
-    "invoice_created_success": "Invoice created – project status set to \"Ready for pickup\".",
-    "invoice_creation_error": "Error creating invoice",
-    "creating_document": "Creating document...",
-    "document_opened": "Document opened",
-    "document_load_error": "Could not load document.",
-    "payment_complete_success": "Full payment recorded. Project marked as completed.",
-    "mailbox_synced": "Mailbox synchronized",
-    "template_created": "Template created",
-    "template_updated": "Template updated",
-    "template_update_error": "Error updating template",
-    "template_deleted": "Template deleted",
-    "plan_updated": "Plan updated successfully!",
-    "plan_update_error": "Error updating plan.",
-    "payment_method_updated": "Payment method updated successfully!",
-    "payment_method_update_error": "Error updating payment method.",
-    "preparing_project_files": "Preparing project files...",
-    "project_files_error": "Error retrieving project files"
+    "download_file_error": "Fehler beim Herunterladen der Datei",
+    "loading_preview": "Vorschau wird geladen...",
+    "preview_load_error": "Vorschau konnte nicht geladen werden.",
+    "file_type_change_error": "Dateityp konnte nicht geändert werden",
+    "file_deleted_success": "Datei erfolgreich gelöscht",
+    "file_delete_error": "Fehler beim Löschen der Datei.",
+    "files_moved_success": "Dateien erfolgreich verschoben",
+    "files_move_error": "Fehler beim Verschieben der Dateien",
+    "creating_zip": "ZIP-Archiv wird erstellt...",
+    "zip_download_started": "ZIP-Download gestartet",
+    "zip_creation_error": "Fehler beim Erstellen des ZIP-Archivs",
+    "invoice_created_success": "Rechnung erstellt – Projektstatus auf \"Abholbereit\" gesetzt.",
+    "invoice_creation_error": "Fehler beim Erstellen der Rechnung",
+    "creating_document": "Dokument wird erstellt...",
+    "document_opened": "Dokument geöffnet",
+    "document_load_error": "Dokument konnte nicht geladen werden.",
+    "payment_complete_success": "Vollständige Zahlung erfasst. Projekt als abgeschlossen markiert.",
+    "mailbox_synced": "Postfach synchronisiert",
+    "template_created": "Vorlage erstellt",
+    "template_updated": "Vorlage aktualisiert",
+    "template_update_error": "Fehler beim Aktualisieren der Vorlage",
+    "template_deleted": "Vorlage gelöscht",
+    "plan_updated": "Plan erfolgreich aktualisiert!",
+    "plan_update_error": "Fehler beim Aktualisieren des Plans.",
+    "payment_method_updated": "Zahlungsmethode erfolgreich aktualisiert!",
+    "payment_method_update_error": "Fehler beim Aktualisieren der Zahlungsmethode.",
+    "preparing_project_files": "Projektdateien werden vorbereitet...",
+    "project_files_error": "Fehler beim Abrufen der Projektdateien"
   },
   "buttons": {
     "ok": "OK",
@@ -1072,7 +1316,7 @@
   },
   "team": {
     "team_members": "Mitglieder",
-    "add_member": "Mitglied hinzufügen",
+    "add_member": "Mitarbeiter hinzufügen",
     "remove_member": "Mitglied entfernen",
     "role": "Rolle",
     "permissions": "Berechtigungen",
@@ -1090,7 +1334,47 @@
     "role_employee": "Mitarbeiter",
     "role_manager": "Manager",
     "status_active": "Aktiv",
-    "status_inactive": "Inaktiv"
+    "status_inactive": "Inaktiv",
+    "title": "Team & Mitarbeiter",
+    "subtitle": "Verwalten Sie die Benutzer Ihres Mandanten.",
+    "you": "(Sie)",
+    "empty": "Noch keine weiteren Mitarbeiter vorhanden.",
+    "role_overview": "Rollenübersicht:",
+    "role_owner_desc": "Inhaber – Vollzugriff, Abonnement, Team",
+    "role_manager_desc": "Manager – Rechnungen, Berichte, Einstellungen",
+    "role_employee_desc": "Mitarbeiter – Projekte, Kunden",
+    "columns": {
+      "name": "Name",
+      "email": "E-Mail",
+      "role": "Rolle",
+      "status": "Status",
+      "last_login": "Letzter Login"
+    },
+    "modal": {
+      "add_title": "Mitarbeiter hinzufügen",
+      "edit_title": "Mitarbeiter bearbeiten",
+      "delete_title": "Mitarbeiter löschen",
+      "delete_message": "Möchten Sie \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "form": {
+      "name": "Name",
+      "email": "E-Mail",
+      "role": "Rolle",
+      "role_hint": "Manager haben Zugriff auf Rechnungen, Berichte und Einstellungen.",
+      "password": "Passwort",
+      "password_edit": "Neues Passwort (leer lassen = unverändert)",
+      "status": "Status"
+    },
+    "role": {
+      "owner": "Inhaber",
+      "manager": "Manager",
+      "employee": "Mitarbeiter"
+    },
+    "errors": {
+      "create": "Fehler beim Erstellen.",
+      "update": "Fehler beim Aktualisieren.",
+      "delete": "Fehler beim Löschen."
+    }
   },
   "toast": {
     "project_updated": "Projekt erfolgreich aktualisiert",
@@ -1139,7 +1423,9 @@
     "import_error": "Fehler beim Importieren der Daten"
   },
   "documents": {
-    "title": "Dokumente",
+    "title": "Dateien",
+    "subtitle": "Zentrale Verwaltung aller Projektdokumente und Lieferungen",
+    "export_list": "List Export",
     "upload": "Dokument hochladen",
     "download": "Herunterladen",
     "preview": "Vorschau",
@@ -1153,7 +1439,7 @@
     "format_pdf": "PDF",
     "format_word": "Word (DOCX)",
     "format_excel": "Excel (XLSX)",
-    "format_zip": "Archive (ZIP)",
+    "format_zip": "Archiv (ZIP)",
     "total_files": "Dateien Gesamt",
     "indexed_documents": "Indexierte Dokumente",
     "storage_space": "Speicherplatz",
@@ -1165,7 +1451,22 @@
     "search_files": "Nach Dateiname oder Erweiterung suchen...",
     "system_uploader": "System",
     "file_input": "Eingang",
-    "file_output": "Ausspielung"
+    "file_output": "Ausspielung",
+    "kpi": {
+      "total_files": "Dateien Gesamt",
+      "indexed": "Indexierte Dokumente",
+      "storage": "Speicherplatz",
+      "storage_used": "Belegter Speicher",
+      "source_files": "Quell-Dokumente",
+      "customer_inputs": "Eingänge von Kunden",
+      "deliveries": "Ausspielungen",
+      "delivered_files": "Gelieferte Dateien"
+    },
+    "type": {
+      "target": "Ausspielung",
+      "source": "Eingang"
+    },
+    "search_placeholder": "Nach Dateiname oder Erweiterung suchen..."
   },
   "interpreting_advanced": {
     "assignment": "Einsatz",
@@ -1204,13 +1505,13 @@
     "custom_price": "Custom",
     "up_to_50_projects": "Bis zu 50 Projekte",
     "team_members": "3 Team-Mitglieder",
-    "standard_support": "Standard Support",
+    "standard_support": "Standard-Support",
     "basic_features": "Basisfunktionen",
     "choose_plan": "Wählen",
     "projects": "Projekte",
     "per_month": "/ Monat",
     "team": "Team",
-    "users": "User",
+    "users": "Benutzer",
     "unlimited": "∞",
     "plan_standard": "Standard",
     "plan_professional": "Professional",
@@ -1219,20 +1520,20 @@
     "plan_custom": "Custom",
     "feature_50_projects": "Bis zu 50 Projekte",
     "feature_3_members": "3 Team-Mitglieder",
-    "feature_standard_support": "Standard Support",
+    "feature_standard_support": "Standard-Support",
     "feature_basic": "Basisfunktionen",
     "feature_unlimited_projects": "Unbegrenzte Projekte",
     "feature_10_members": "10 Team-Mitglieder",
-    "feature_priority_support": "Priority Support",
+    "feature_priority_support": "Prioritäts-Support",
     "feature_advanced_reports": "Erweiterte Berichte",
     "feature_api_access": "API Zugriff",
     "feature_25_members": "25 Team-Mitglieder",
-    "feature_24_7_support": "24/7 Support",
+    "feature_24_7_support": "24/7-Support",
     "feature_custom_branding": "Custom Branding",
     "feature_audit_logs": "Audit Logs",
-    "feature_account_manager": "Dedicated Account Manager",
+    "feature_account_manager": "Dedizierter Account Manager",
     "feature_everything": "Alles unbegrenzt",
-    "feature_unlimited_users": "Unbegrenzte User",
+    "feature_unlimited_users": "Unbegrenzte Benutzer",
     "feature_sla": "SLA",
     "feature_on_premise": "On-Premise Option",
     "feature_white_label": "White Label",
@@ -1242,7 +1543,58 @@
     "payment_method_error": "Fehler beim Aktualisieren der Zahlungsmethode.",
     "pdf_generation_disabled": "PDF Generierung ist aktuell deaktiviert (Demo).",
     "loading_invoices": "Lade Rechnungen...",
-    "no_invoices": "Keine Rechnungen vorhanden"
+    "no_invoices": "Keine Rechnungen vorhanden",
+    "title": "Abonnement & Abrechnung",
+    "subtitle": "Verwalten Sie Ihren Plan, Zahlungsmethoden und laden Sie Belege herunter.",
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "current_plan": "Ihr aktueller Plan",
+    "manage_plan": "Plan verwalten",
+    "change_plan": "Paket wechseln",
+    "payment_method_title": "Zahlungsmethode",
+    "payment_expiry": "Läuft ab:",
+    "payment_default": "Standard",
+    "no_payment_method": "Keine Zahlungsmethode hinterlegt",
+    "history": "Rechnungshistorie",
+    "columns": {
+      "date": "Datum",
+      "invoice_number": "Beleg-Nr.",
+      "amount": "Betrag",
+      "status": "Status"
+    },
+    "download_pdf_btn": "PDF Herunterladen",
+    "next_billing": "Nächste Abrechnung",
+    "usage_projects": "{{count}} Projekte diesen Monat",
+    "help_title": "Hilfe & Support",
+    "help_desc": "Fragen zu Ihrer Rechnung oder Ihrem Abonnement? Unser Support hilft Ihnen gerne weiter.",
+    "contact_support": "Support kontaktieren",
+    "account_status_title": "Account Status",
+    "account_inactive_msg": "Ihr Account ist derzeit inaktiv oder gesperrt. Bitte kontaktieren Sie den Support.",
+    "select_plan_title": "Plan wählen",
+    "current_badge": "Aktuell",
+    "per_month_short": "/mtl.",
+    "enterprise_contact": "Für Enterprise Lösungen kontaktieren Sie bitte unseren",
+    "enterprise_sales": "Vertrieb",
+    "plan_active": "Aktiv",
+    "plan_choose": "Wählen",
+    "modal_payment_title": "Zahlungsmethode",
+    "form": {
+      "cardholder": "Karteninhaber",
+      "cardholder_placeholder": "Max Mustermann",
+      "card_number": "Kartennummer",
+      "expiry": "Gültig bis",
+      "expiry_format": "MM/JJ",
+      "cvc": "CVC"
+    },
+    "save_card": "Karte speichern",
+    "pdf_disabled": "PDF Generierung ist aktuell deaktiviert (Demo).",
+    "feature_on_premise": "On-Premise Option",
+    "feature_white_label": "White Label",
+    "feature_audit_logs": "Audit Logs",
+    "feature_custom_branding": "Custom Branding",
+    "feature_api_access": "API Zugriff"
   },
   "countries": {
     "de": "Deutschland",
@@ -1299,7 +1651,35 @@
     "var_bank_bic": "BIC",
     "var_bank_holder": "Kontoinhaber",
     "var_date": "Aktuelles Datum",
-    "var_sender_name": "Absender"
+    "var_sender_name": "Absender",
+    "synced": "Postfach synchronisiert",
+    "mails_deleted": "Mails gelöscht",
+    "loading": "Lade E-Mails...",
+    "bulk_delete_permanent": "Endgültig löschen",
+    "bulk_delete_trash": "In den Papierkorb",
+    "templates_title": "E-Mail Vorlagen",
+    "template_columns": {
+      "name": "Name",
+      "subject": "Betreff",
+      "category": "Kategorie"
+    },
+    "confirm_delete_template": "Vorlage wirklich löschen?",
+    "accounts_title": "E-Mail Konten",
+    "account_columns": {
+      "name": "Bezeichnung",
+      "email": "E-Mail",
+      "server": "Server",
+      "status": "Status"
+    },
+    "confirm_delete_account": "Konto wirklich löschen?",
+    "default_account": "Standard",
+    "modal": {
+      "delete_bulk_title": "Mails löschen",
+      "delete_single_title": "Mail löschen",
+      "delete_bulk_message": "Wollen Sie wirklich {{count}} Mails löschen?",
+      "delete_single_message": "Wollen Sie diese Mail wirklich löschen?",
+      "confirm_delete": "Löschen"
+    }
   },
   "time": {
     "monday": "Montag",

@@ -15,11 +15,13 @@ import {
 } from "../ui/tooltip";
 import NavBadge from './NavBadge';
 
+import type { UserRole } from '../../context/AuthContext';
+
 interface DesktopLinksProps {
     location: any;
     dashboardData: any;
     unreadEmails: number;
-    hasMinRole: (role: string) => boolean;
+    hasMinRole: (role: UserRole) => boolean;
     isContactsOpen: boolean;
     setIsContactsOpen: (open: boolean) => void;
     isSettingsOpen: boolean;

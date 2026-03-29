@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { FaBuilding, FaDatabase, FaHistory, FaFileInvoice, FaBell, FaListOl } from 'react-icons/fa';
 import CompanySettingsTab from '../components/settings/CompanySettingsTab';

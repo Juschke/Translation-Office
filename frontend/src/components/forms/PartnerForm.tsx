@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaPlus, FaTrash, FaEnvelope } from 'react-icons/fa';
 import type { PartnerFormData } from './partnerTypes';
 import { partnerService } from '../../api/services';
