@@ -1,539 +1,560 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import {
-    FaCheckCircle, FaRocket, FaBuilding, FaCreditCard,
-    FaChevronRight, FaChevronLeft, FaCertificate, FaShieldAlt,
-    FaInfoCircle, FaAsterisk
-} from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import {
+    Building2, CreditCard, Sparkles,
+    ChevronRight, ChevronLeft, Check, AlertCircle,
+    Info, ShieldCheck, Rocket, Globe, FileText, Users
+} from 'lucide-react';
 import clsx from 'clsx';
 
-// Define brand colors from the design system
-const brandColors = {
-    'brand-primary': '#1B4D4F', // Deep Teal
-    'brand-accent': '#9BCB56',  // Action Green
-};
-
-const steps = [
-    { title: 'Unternehmen', icon: <FaBuilding />, description: 'Grunddaten & Standort' },
-    { title: 'Finanzen', icon: <FaCreditCard />, description: 'Bank & Steuern' },
-    { title: 'Plan & Lizenz', icon: <FaShieldAlt />, description: 'Abonnement wählen' }
-];
-
-// Helper to format IBAN
-const formatIBAN = (value: string) => {
-    const v = value.replace(/\s+/g, '').toUpperCase();
-    const parts = [];
-    for (let i = 0; i < v.length; i += 4) {
-        parts.push(v.substring(i, i + 4));
-    }
+// ─── IBAN ──────────────────────────────────────────────────────────────────────
+const formatIBAN = (v: string) => {
+    const s = v.replace(/\s+/g, '').toUpperCase();
+    const parts: string[] = [];
+    for (let i = 0; i < s.length; i += 4) parts.push(s.substring(i, i + 4));
     return parts.join(' ').trim();
 };
-
-// Helper to validate IBAN
 const isValidIBAN = (iban: string) => {
-    const cleaned = iban.replace(/\s+/g, '');
-    if (cleaned.length < 15 || cleaned.length > 34) return false;
-    // Simple check for German IBANs as primary market
-    if (cleaned.startsWith('DE')) {
-        return cleaned.length === 22 && /^[A-Z0-9]+$/.test(cleaned);
-    }
-    return /^[A-Z0-9]+$/.test(cleaned);
+    const c = iban.replace(/\s+/g, '');
+    if (c.length < 15 || c.length > 34) return false;
+    if (c.startsWith('DE')) return c.length === 22 && /^[A-Z0-9]+$/.test(c);
+    return /^[A-Z0-9]+$/.test(c);
 };
 
-// Reusable labeled input with required indicator and help text
+// ─── Types ─────────────────────────────────────────────────────────────────────
+type FormData = {
+    company_name: string; legal_form: string;
+    address_street: string; address_house_no: string;
+    address_zip: string; address_city: string; address_country: string;
+    bank_name: string; bank_iban: string; bank_bic: string;
+    tax_number: string; tax_office: string; vat_id: string;
+    subscription_plan: string; license_key: string;
+};
+type Errors = Partial<Record<keyof FormData, string>>;
+
+// ─── Field ─────────────────────────────────────────────────────────────────────
 const Field = ({
-    label, name, value, onChange, placeholder, required, helpText, type = 'text', className = '',
-    disabled = false, error = false
+    label, name, value, onChange, placeholder, required,
+    helpText, type = 'text', className = '', error, autoComplete
 }: {
-    label: string; name: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    placeholder?: string; required?: boolean; helpText?: string; type?: string; className?: string;
-    disabled?: boolean; error?: boolean;
+    label: string; name: keyof FormData; value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder?: string; required?: boolean; helpText?: string;
+    type?: string; className?: string; error?: string; autoComplete?: string;
 }) => (
-    <div className={className}>
-        <label className="flex items-center gap-1 text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-1.5">
-            {label}
-            {required && <FaAsterisk className="text-red-500 text-[6px]" />}
+    <div className={clsx('flex flex-col gap-1', className)}>
+        <label htmlFor={name} className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            {label}{required && <span className="text-red-400 ml-0.5">*</span>}
         </label>
-        <div className="relative group">
-            <input
-                name={name} type={type} value={value} onChange={onChange} disabled={disabled}
-                className={clsx(
-                    "w-full px-4 py-2.5 border rounded-sm outline-none transition-all duration-200",
-                    "text-sm font-medium",
-                    error
-                        ? "border-red-300 bg-red-50 focus:ring-2 focus:ring-red-200"
-                        : "border-slate-200 focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary",
-                    disabled ? "bg-slate-50 text-slate-400 cursor-not-allowed" : "bg-white text-slate-800"
-                )}
-                placeholder={placeholder}
-            />
-            <div className={clsx(
-                "absolute bottom-0 left-0 h-0.5 bg-brand-primary transition-all duration-300",
-                "w-0 group-focus-within:w-full"
-            )}></div>
-        </div>
-        {helpText && (
-            <p className="mt-1.5 text-[11px] text-slate-400 flex items-start gap-1 leading-relaxed">
-                <FaInfoCircle className="shrink-0 mt-0.5" />
-                <span>{helpText}</span>
-            </p>
-        )}
+        <input
+            id={name} name={name} type={type} value={value}
+            onChange={onChange} placeholder={placeholder} autoComplete={autoComplete}
+            className={clsx(
+                'w-full px-3.5 py-2.5 rounded-lg border text-sm font-medium outline-none transition-all',
+                'placeholder:text-slate-300',
+                error
+                    ? 'border-red-300 bg-red-50 text-red-800 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 bg-white text-slate-800 focus:border-[#1B4D4F] focus:ring-2 focus:ring-[#1B4D4F]/8'
+            )}
+        />
+        {error ? (
+            <span className="flex items-center gap-1 text-[11px] text-red-500 font-medium">
+                <AlertCircle size={10} className="shrink-0" />{error}
+            </span>
+        ) : helpText ? (
+            <span className="flex items-start gap-1 text-[11px] text-slate-400 leading-relaxed">
+                <Info size={10} className="shrink-0 mt-px" />{helpText}
+            </span>
+        ) : null}
     </div>
 );
 
-const OnboardingPage = () => {
-    const { t } = useTranslation();
+// ─── Select ────────────────────────────────────────────────────────────────────
+const SelectField = ({
+    label, name, value, onChange, options, className = ''
+}: {
+    label: string; name: keyof FormData; value: string;
+    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+    options: string[]; className?: string;
+}) => (
+    <div className={clsx('flex flex-col gap-1', className)}>
+        <label htmlFor={name} className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            {label}
+        </label>
+        <select
+            id={name} name={name} value={value} onChange={onChange}
+            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-800 outline-none transition-all focus:border-[#1B4D4F] focus:ring-2 focus:ring-[#1B4D4F]/8 cursor-pointer appearance-none"
+            style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
+            }}
+        >
+            {options.map(o => <option key={o}>{o}</option>)}
+        </select>
+    </div>
+);
+
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const STEPS = [
+    { label: 'Unternehmen', icon: Building2 },
+    { label: 'Finanzen',    icon: CreditCard },
+    { label: 'Ihr Paket',   icon: Sparkles },
+];
+
+const COUNTRIES = [
+    'Deutschland', 'Österreich', 'Schweiz', 'Luxemburg',
+    'Frankreich', 'Italien', 'Spanien', 'Niederlande',
+    'Belgien', 'Polen', 'USA', 'Andere',
+];
+
+const PLANS = [
+    {
+        id: 'basic', name: 'Starter', price: '49',
+        hint: 'Einzelübersetzer',
+        features: ['5 Projekte / Monat', '1 Nutzer', 'Rechnungserstellung', 'E-Mail-Support'],
+    },
+    {
+        id: 'pro', name: 'Professional', price: '99',
+        hint: 'Wachsende Büros', badge: 'Beliebt',
+        features: ['Unbegrenzte Projekte', 'Bis zu 5 Nutzer', 'DATEV-Export', 'ZUGFeRD', 'Prioritäts-Support'],
+    },
+    {
+        id: 'premium', name: 'Premium', price: '199',
+        hint: 'Etablierte Agenturen',
+        features: ['Alle Pro-Features', 'Unbegrenzte Nutzer', 'API-Zugang', 'Key Account Manager'],
+    },
+] as const;
+
+const LEGAL_FORMS = ['GmbH', 'UG (haftungsbeschränkt)', 'e. K.', 'GbR', 'Einzelunternehmen', 'AG'];
+
+// ─── Main ──────────────────────────────────────────────────────────────────────
+export default function OnboardingPage() {
     const { onboard } = useAuth();
     const navigate = useNavigate();
-    const [currentStep, setCurrentStep] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [stepErrors, setStepErrors] = useState<string[]>([]);
 
-    const [formData, setFormData] = useState({
-        company_name: '',
-        legal_form: '',
-        address_street: '',
-        address_house_no: '',
-        address_zip: '',
-        address_city: '',
+    const [step, setStep] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Errors>({});
+
+    const [form, setForm] = useState<FormData>({
+        company_name: '', legal_form: '',
+        address_street: '', address_house_no: '', address_zip: '', address_city: '',
         address_country: 'Deutschland',
-        bank_name: '',
-        bank_iban: '',
-        bank_bic: '',
-        tax_number: '',
-        tax_office: '',
-        vat_id: '',
-        subscription_plan: 'basic',
-        license_key: ''
+        bank_name: '', bank_iban: '', bank_bic: '',
+        tax_number: '', tax_office: '', vat_id: '',
+        subscription_plan: 'pro', license_key: '',
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const set = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-
-        if (name === 'bank_iban') {
-            const formatted = formatIBAN(value);
-            if (formatted.replace(/\s/g, '').length <= 34) {
-                setFormData(prev => ({ ...prev, [name]: formatted }));
-            }
+        const key = name as keyof FormData;
+        if (key === 'bank_iban') {
+            const f = formatIBAN(value);
+            if (f.replace(/\s/g, '').length <= 34) setForm(p => ({ ...p, bank_iban: f }));
         } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
+            setForm(p => ({ ...p, [key]: value }));
         }
-
-        setStepErrors([]);
+        if (errors[key]) setErrors(p => { const c = { ...p }; delete c[key]; return c; });
     };
 
-    const validateStep = (): string[] => {
-        const errors: string[] = [];
-        if (currentStep === 0) {
-            if (!formData.company_name.trim()) errors.push('Firmenname ist erforderlich');
-            if (!formData.address_street.trim()) errors.push('Straße ist erforderlich');
-            if (!formData.address_zip.trim()) errors.push('PLZ ist erforderlich');
-            if (!formData.address_city.trim()) errors.push('Stadt ist erforderlich');
+    const validate = (): Errors => {
+        const e: Errors = {};
+        if (step === 0) {
+            if (!form.company_name.trim()) e.company_name = 'Firmenname ist erforderlich.';
+            if (!form.address_street.trim()) e.address_street = 'Straße ist erforderlich.';
+            if (!form.address_zip.trim()) e.address_zip = 'PLZ ist erforderlich.';
+            if (!form.address_city.trim()) e.address_city = 'Stadt ist erforderlich.';
         }
-        if (currentStep === 1) {
-            if (formData.bank_iban && !isValidIBAN(formData.bank_iban)) {
-                errors.push('Bitte geben Sie eine gültige IBAN ein');
-            }
+        if (step === 1 && form.bank_iban && !isValidIBAN(form.bank_iban)) {
+            e.bank_iban = 'Ungültige IBAN (z. B. DE89 3704 0044 0532 0130 00).';
         }
-        return errors;
+        return e;
     };
 
-    const handleNext = () => {
-        const errors = validateStep();
-        if (errors.length > 0) {
-            setStepErrors(errors);
-            return;
-        }
-        setStepErrors([]);
-        setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+    const next = () => {
+        const e = validate();
+        if (Object.keys(e).length) { setErrors(e); return; }
+        setErrors({});
+        setStep(s => Math.min(s + 1, 2));
     };
 
-    const handleBack = () => {
-        setStepErrors([]);
-        setCurrentStep(prev => Math.max(prev - 1, 0));
-    };
+    const back = () => { setErrors({}); setStep(s => Math.max(s - 1, 0)); };
 
-    const handleSubmit = async (e: React.SyntheticEvent) => {
-        e.preventDefault();
-        const finalValidation = validateStep();
-        if (finalValidation.length > 0) {
-            setStepErrors(finalValidation);
-            return;
-        }
-
-        setIsLoading(true);
-        setError(null);
+    const submit = async () => {
+        setLoading(true); setSubmitError(null);
         try {
-            const submissionData = {
-                ...formData,
-                bank_iban: formData.bank_iban.replace(/\s+/g, '')
-            };
-            await onboard(submissionData);
+            await onboard({ ...form, bank_iban: form.bank_iban.replace(/\s+/g, '') });
             navigate('/');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Onboarding fehlgeschlagen. Bitte prüfen Sie Ihre Eingaben.');
-        } finally {
-            setIsLoading(false);
-        }
+            setSubmitError(err.response?.data?.message ?? 'Einrichtung fehlgeschlagen. Bitte prüfen Sie Ihre Eingaben.');
+        } finally { setLoading(false); }
     };
 
-    const renderStep = () => {
-        switch (currentStep) {
-            case 0:
-                return (
-                    <div className="space-y-6 animate-fadeIn">
-                        <div className="bg-brand-primary/5 p-4 border-l-4 border-brand-primary rounded-r-md flex gap-3">
-                            <FaBuilding className="text-brand-primary mt-1 shrink-0" />
-                            <div>
-                                <p className="text-sm font-bold text-brand-primary">Unternehmensidentität</p>
-                                <p className="text-xs text-brand-primary/70">Dies bildet das Fundament Ihres digitalen Büros.</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-5">
-                            <Field
-                                label="Name des Übersetzungsbüros" name="company_name"
-                                value={formData.company_name} onChange={handleChange}
-                                placeholder="z.B. WordFlow Translations GmbH" required
-                                helpText="Der offizielle Firmenname, wie er auf Rechnungen erscheint."
-                                className="col-span-2"
-                                error={stepErrors.some(e => e.includes('Firmenname'))}
-                            />
-                            <Field
-                                label="Rechtsform" name="legal_form"
-                                value={formData.legal_form} onChange={handleChange}
-                                placeholder="z.B. GmbH, e.K., Einzelunternehmen"
-                                helpText="Ihre Gesellschaftsform für den Rechtsverkehr."
-                            />
-                            <div>
-                                <label className="flex items-center gap-1 text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-1.5">
-                                    Hauptstandort (Land)
-                                </label>
-                                <select
-                                    name="address_country" value={formData.address_country} onChange={handleChange}
-                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-sm outline-none transition-all duration-200 text-sm font-medium bg-white text-slate-800 focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary appearance-none cursor-pointer"
-                                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em' }}
-                                >
-                                    {['Deutschland', 'Österreich', 'Schweiz', 'Luxemburg', 'Frankreich', 'Italien', 'Spanien', 'Niederlande', 'Belgien', 'Polen', 'USA', 'Andere'].map(c => (
-                                        <option key={c} value={c}>{c}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="col-span-2 grid grid-cols-4 gap-3">
-                                <Field
-                                    label="Straße" name="address_street"
-                                    value={formData.address_street} onChange={handleChange}
-                                    placeholder="Musterstraße" required
-                                    className="col-span-3"
-                                    error={stepErrors.some(e => e.includes('Straße'))}
-                                />
-                                <Field
-                                    label="Hausnr." name="address_house_no"
-                                    value={formData.address_house_no} onChange={handleChange}
-                                    placeholder="12a"
-                                />
-                            </div>
-                            <div className="col-span-2 grid grid-cols-3 gap-3">
-                                <Field
-                                    label="PLZ" name="address_zip"
-                                    value={formData.address_zip} onChange={handleChange}
-                                    placeholder="12345" required
-                                    error={stepErrors.some(e => e.includes('PLZ'))}
-                                />
-                                <Field
-                                    label="Stadt" name="address_city"
-                                    value={formData.address_city} onChange={handleChange}
-                                    placeholder="Berlin" required
-                                    className="col-span-2"
-                                    error={stepErrors.some(e => e.includes('Stadt'))}
-                                />
-                            </div>
+    // ─── Step content ──────────────────────────────────────────────────────────
+    const stepContent = [
+        // Step 0 – Unternehmen & Standort
+        <div className="space-y-6" key="s0">
+            {/* Company */}
+            <div className="space-y-3">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Firmenstammdaten</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <Field
+                        label="Firmenname" name="company_name" value={form.company_name} onChange={set}
+                        placeholder="z. B. Lingua Franca GmbH" required className="col-span-2"
+                        error={errors.company_name} autoComplete="organization"
+                        helpText="Erscheint auf allen Rechnungen und Dokumenten."
+                    />
+                    <div className="col-span-2 flex flex-col gap-1">
+                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Rechtsform</label>
+                        <input
+                            name="legal_form" value={form.legal_form} onChange={set}
+                            placeholder="z. B. GmbH, UG, Einzelunternehmen"
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-800 placeholder:text-slate-300 outline-none focus:border-[#1B4D4F] focus:ring-2 focus:ring-[#1B4D4F]/8 transition-all"
+                        />
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                            {LEGAL_FORMS.map(f => (
+                                <button key={f} type="button"
+                                    onClick={() => setForm(p => ({ ...p, legal_form: f }))}
+                                    className={clsx(
+                                        'text-[11px] font-semibold px-2.5 py-1 rounded-md border transition-all',
+                                        form.legal_form === f
+                                            ? 'bg-[#1B4D4F] text-white border-[#1B4D4F]'
+                                            : 'border-slate-200 text-slate-500 hover:border-[#1B4D4F] hover:text-[#1B4D4F]'
+                                    )}
+                                >{f}</button>
+                            ))}
                         </div>
                     </div>
-                );
-            case 1:
-                return (
-                    <div className="space-y-6 animate-fadeIn">
-                        <div className="bg-amber-50 p-4 border-l-4 border-amber-400 rounded-r-md flex gap-3">
-                            <FaInfoCircle className="text-amber-500 mt-1 shrink-0" />
+                </div>
+            </div>
+
+            <div className="h-px bg-slate-100" />
+
+            {/* Address */}
+            <div className="space-y-3">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Geschäftsadresse</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <SelectField
+                        label="Land" name="address_country" value={form.address_country}
+                        onChange={set} options={COUNTRIES} className="col-span-2"
+                    />
+                    <Field
+                        label="Straße" name="address_street" value={form.address_street} onChange={set}
+                        placeholder="Musterstraße" required error={errors.address_street} autoComplete="street-address"
+                    />
+                    <Field
+                        label="Hausnummer" name="address_house_no" value={form.address_house_no}
+                        onChange={set} placeholder="12 a"
+                    />
+                    <Field
+                        label="PLZ" name="address_zip" value={form.address_zip} onChange={set}
+                        placeholder="10115" required error={errors.address_zip} autoComplete="postal-code"
+                    />
+                    <Field
+                        label="Stadt" name="address_city" value={form.address_city} onChange={set}
+                        placeholder="Berlin" required error={errors.address_city} autoComplete="address-level2"
+                    />
+                </div>
+            </div>
+        </div>,
+
+        // Step 1 – Finanzen
+        <div className="space-y-6" key="s1">
+            <div className="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-100 px-4 py-3">
+                <ShieldCheck size={15} className="text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                    Diese Angaben sind <strong>optional</strong>, aber für GoBD-konforme Rechnungen und DATEV-Exporte
+                    benötigt. Sie können sie auch später unter <em>Einstellungen → Unternehmen</em> ergänzen.
+                </p>
+            </div>
+
+            <div className="space-y-3">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Bankverbindung</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <Field
+                        label="Kreditinstitut" name="bank_name" value={form.bank_name} onChange={set}
+                        placeholder="z. B. Sparkasse Berlin" className="col-span-2"
+                    />
+                    <Field
+                        label="IBAN" name="bank_iban" value={form.bank_iban} onChange={set}
+                        placeholder="DE89 3704 0044 0532 0130 00" className="col-span-2"
+                        error={errors.bank_iban}
+                        helpText="Wird auf Rechnungen für Zahlungseingänge angezeigt. Automatische Formatierung."
+                    />
+                    <Field
+                        label="BIC / SWIFT" name="bank_bic" value={form.bank_bic} onChange={set}
+                        placeholder="COBADEFFXXX" className="col-span-2"
+                    />
+                </div>
+            </div>
+
+            <div className="h-px bg-slate-100" />
+
+            <div className="space-y-3">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Steuerdaten</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <Field
+                        label="Zuständiges Finanzamt" name="tax_office" value={form.tax_office} onChange={set}
+                        placeholder="z. B. Finanzamt Berlin-Mitte" className="col-span-2"
+                    />
+                    <Field
+                        label="Steuernummer" name="tax_number" value={form.tax_number} onChange={set}
+                        placeholder="12/345/67890"
+                        helpText="Vom Finanzamt erteilte Steuernummer."
+                    />
+                    <Field
+                        label="USt-IdNr." name="vat_id" value={form.vat_id} onChange={set}
+                        placeholder="DE123456789"
+                        helpText="Für EU-Geschäfte mit Reverse Charge."
+                    />
+                </div>
+            </div>
+        </div>,
+
+        // Step 2 – Paket
+        <div className="space-y-5" key="s2">
+            <p className="text-sm text-slate-500">
+                Wählen Sie Ihr Paket. Sie können jederzeit wechseln.
+            </p>
+
+            <div className="grid grid-cols-3 gap-3">
+                {PLANS.map(plan => {
+                    const active = form.subscription_plan === plan.id;
+                    return (
+                        <button
+                            key={plan.id} type="button"
+                            onClick={() => setForm(p => ({ ...p, subscription_plan: plan.id }))}
+                            className={clsx(
+                                'relative text-left rounded-xl border-2 p-5 transition-all duration-200 outline-none group',
+                                active
+                                    ? 'border-[#1B4D4F] bg-[#1B4D4F]/[0.03]'
+                                    : 'border-slate-200 bg-white hover:border-slate-300'
+                            )}
+                        >
+                            {'badge' in plan && (
+                                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest bg-[#9BCB56] text-[#1B4D4F] px-2 py-0.5 rounded-full whitespace-nowrap">
+                                    {plan.badge}
+                                </span>
+                            )}
+                            {active && (
+                                <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#1B4D4F] flex items-center justify-center">
+                                    <Check size={10} className="text-white" strokeWidth={3} />
+                                </span>
+                            )}
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{plan.name}</p>
+                            <div className="flex items-baseline gap-0.5 mb-1">
+                                <span className="text-2xl font-black text-[#1B4D4F]">{plan.price}€</span>
+                                <span className="text-[11px] text-slate-400 font-medium">/Mo.</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mb-4">{plan.hint}</p>
+                            <ul className="space-y-1.5">
+                                {plan.features.map((f, i) => (
+                                    <li key={i} className="flex items-start gap-1.5 text-[11px] text-slate-600 font-medium">
+                                        <Check size={9} className="text-[#9BCB56] shrink-0 mt-0.5" strokeWidth={3} />{f}
+                                    </li>
+                                ))}
+                            </ul>
+                        </button>
+                    );
+                })}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Enterprise-Lizenz</p>
+                <Field
+                    label="Lizenzschlüssel (optional)" name="license_key" value={form.license_key} onChange={set}
+                    placeholder="VBA-1234-XXXX-XXXX"
+                    helpText="Enterprise-Features werden nach Eingabe automatisch freigeschaltet."
+                />
+            </div>
+        </div>,
+    ];
+
+    // ─── Render ────────────────────────────────────────────────────────────────
+    return (
+        <div className="min-h-screen bg-[#F4F7F6] flex items-center justify-center p-4 sm:p-6">
+            <div className="w-full max-w-5xl rounded-2xl shadow-2xl shadow-slate-900/10 overflow-hidden flex bg-white">
+
+                {/* ── Left hero ──────────────────────────────────────────────── */}
+                <div className="hidden lg:flex w-[38%] shrink-0 flex-col bg-[#1B4D4F] relative overflow-hidden">
+                    {/* Decorative blobs */}
+                    <div className="absolute -top-24 -left-24 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#9BCB56]/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute top-1/2 -right-16 w-48 h-48 bg-white/4 rounded-full blur-2xl pointer-events-none" />
+
+                    <div className="relative z-10 flex flex-col h-full p-10">
+                        {/* Logo */}
+                        <div className="flex items-center gap-3 mb-14">
+                            <div className="w-9 h-9 rounded-lg bg-[#9BCB56]/20 border border-[#9BCB56]/30 flex items-center justify-center">
+                                <span className="text-[#9BCB56] font-black text-sm leading-none">TO</span>
+                            </div>
                             <div>
-                                <p className="text-sm font-bold text-amber-800">Compliance & Finanzen</p>
-                                <p className="text-xs text-amber-800/70">Diese Angaben werden für Rechnungen, DATEV-Exporte und Finanzamtsmeldungen verwendet.</p>
+                                <p className="text-white font-black text-base leading-none tracking-tight">TransOffice</p>
+                                <p className="text-[#9BCB56]/70 text-[10px] font-bold tracking-widest uppercase mt-0.5">Einrichtung</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-5">
-                            <Field
-                                label="Bankname / Institut" name="bank_name"
-                                value={formData.bank_name} onChange={handleChange}
-                                placeholder="z.B. Deutsche Bank, Sparkasse..."
-                                className="col-span-2"
-                            />
-                            <Field
-                                label="IBAN (International Bank Account Number)" name="bank_iban"
-                                value={formData.bank_iban} onChange={handleChange}
-                                placeholder="DE89 3... (wird automatisch formatiert)"
-                                className="col-span-2"
-                                error={stepErrors.some(e => e.includes('IBAN'))}
-                                helpText="Wird auf allen Ihren Rechnungen für Zahlungseingänge angezeigt."
-                            />
-                            <Field
-                                label="BIC / SWIFT-Code" name="bank_bic"
-                                value={formData.bank_bic} onChange={handleChange}
-                                placeholder="COBADEFFXXX"
-                            />
-                            <Field
-                                label="Zuständiges Finanzamt" name="tax_office"
-                                value={formData.tax_office} onChange={handleChange}
-                                placeholder="z.B. Berlin-Mitte"
-                            />
-
-                            <div className="col-span-2 h-px bg-slate-100 my-2 shadow-[0_1px_0_white]"></div>
-
-                            <Field
-                                label="Steuernummer" name="tax_number"
-                                value={formData.tax_number} onChange={handleChange}
-                                placeholder="12/345/67890"
-                            />
-                            <Field
-                                label="USt-IdNr. (VAT ID)" name="vat_id"
-                                value={formData.vat_id} onChange={handleChange}
-                                placeholder="DE123456789"
-                                helpText="Erforderlich für EU-Geschäfte (Reverse Charge)."
-                            />
-                        </div>
-                    </div>
-                );
-            case 2:
-                return (
-                    <div className="space-y-8 animate-fadeIn text-center">
-                        <div className="max-w-md mx-auto">
-                            <h3 className="text-lg font-bold text-slate-800 mb-2">Wählen Sie Ihr Paket</h3>
-                            <p className="text-xs text-slate-500 leading-relaxed">
-                                Profitieren Sie von vollem Funktionsumfang passend zu Ihrer Unternehmensgröße.
-                                Sie können jederzeit flexibel wechseln.
+                        {/* Headline */}
+                        <div className="mb-10">
+                            <h2 className="text-2xl font-black text-white leading-tight tracking-tight mb-3">
+                                Ihr digitales Übersetzungsbüro wartet.
+                            </h2>
+                            <p className="text-sm text-white/50 leading-relaxed">
+                                Wenige Angaben genügen — in 3 Schritten startklar.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-5 pt-4">
+                        {/* Feature list */}
+                        <div className="space-y-5 flex-1">
                             {[
-                                { id: 'basic', name: 'Standard', price: '49€', features: ['5 Projekte/Monat', '1 Benutzer', 'E-Mail-Support'] },
-                                { id: 'pro', name: 'Professional', price: '99€', features: ['Unbegrenzt Projekte', '5 Benutzer', 'DATEV-Export', 'Prio-Support'] },
-                                { id: 'premium', name: 'Premium', price: '199€', features: ['Inkl. aller Features', 'Unlimitierte User', 'API-Schnittstelle', 'Account Manager'] }
-                            ].map((p) => (
-                                <div
-                                    key={p.id}
-                                    onClick={() => setFormData(prev => ({ ...prev, subscription_plan: p.id }))}
-                                    className={clsx(
-                                        "relative p-6 border-2 rounded-lg cursor-pointer transition-all duration-300 transform",
-                                        formData.subscription_plan === p.id
-                                            ? "border-brand-primary bg-white shadow-xl -translate-y-2"
-                                            : "border-slate-100 hover:border-slate-200 hover:bg-slate-50"
-                                    )}
-                                >
-                                    {formData.subscription_plan === p.id && (
-                                        <div className="absolute top-0 right-0 p-2 transform translate-x-1/3 -translate-y-1/3">
-                                            <FaCheckCircle className="text-brand-primary bg-white rounded-full text-2xl shadow-sm" />
-                                        </div>
-                                    )}
-                                    <div className="text-[10px] tracking-[0.2em] font-black text-slate-400 uppercase mb-2">{p.name}</div>
-                                    <div className="text-2xl font-black text-brand-primary">{p.price}</div>
-                                    <div className="text-[10px] text-slate-400 mt-0.5 mb-6">/ MONAT</div>
-
-                                    <div className="text-left space-y-2.5">
-                                        {p.features.map((f, i) => (
-                                            <div key={i} className="flex items-center gap-2 text-[11px] font-medium text-slate-600">
-                                                <FaCheckCircle className="text-brand-accent text-xs shrink-0" /> {f}
-                                            </div>
-                                        ))}
+                                { icon: FileText, title: 'GoBD-konforme Rechnungen', desc: 'ZUGFeRD, DATEV-Export inklusive' },
+                                { icon: Globe,    title: 'Projekte & Kunden', desc: 'Von der Anfrage bis zur Rechnung' },
+                                { icon: Users,    title: 'Partner-Portal', desc: 'Übersetzer nahtlos einbinden' },
+                            ].map(({ icon: Icon, title, desc }) => (
+                                <div key={title} className="flex items-start gap-3.5">
+                                    <div className="w-8 h-8 rounded-lg bg-white/8 flex items-center justify-center shrink-0">
+                                        <Icon size={15} className="text-[#9BCB56]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-white text-sm font-semibold leading-none mb-1">{title}</p>
+                                        <p className="text-white/40 text-[11px]">{desc}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="bg-slate-50 border border-slate-100 p-6 rounded-lg max-w-lg mx-auto mt-8">
-                            <div className="flex items-center justify-center gap-3 mb-4">
-                                <div className="h-px bg-slate-200 w-12"></div>
-                                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Enterprise Lizenz</span>
-                                <div className="h-px bg-slate-200 w-12"></div>
-                            </div>
-                            <Field
-                                label="Haben Sie einen Lizenzschlüssel?" name="license_key"
-                                value={formData.license_key} onChange={handleChange}
-                                placeholder="VBA-1234-XXXX-XXXX"
-                                className="text-left"
-                            />
+                        {/* Footer */}
+                        <div className="pt-8 border-t border-white/10 flex items-center gap-1.5">
+                            <ShieldCheck size={12} className="text-[#9BCB56] shrink-0" />
+                            <p className="text-[11px] text-white/30 leading-relaxed">
+                                SSL-verschlüsselt · DSGVO-konform · Made in Germany
+                            </p>
                         </div>
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-[#F4F7F6] flex items-center justify-center p-6 text-slate-800 font-sans">
-            <div className="w-full max-w-5xl grid grid-cols-12 rounded-xl shadow-2xl overflow-hidden bg-white min-h-[700px]">
-
-                {/* Left Sidebar - Progress */}
-                <div className="col-span-12 lg:col-span-4 bg-brand-primary p-10 text-white flex flex-col justify-between relative overflow-hidden">
-                    <div className="absolute -top-20 -left-20 w-64 h-64 bg-brand-accent/20 rounded-full blur-3xl"></div>
-                    <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
-
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-16 group">
-                            <div className="w-12 h-12 bg-white/10 group-hover:bg-brand-accent/20 rounded-lg flex items-center justify-center backdrop-blur-md transition-colors duration-500 border border-white/20">
-                                <FaCertificate className="text-brand-accent text-2xl" />
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-black tracking-tight leading-none text-white m-0">TransOffice</h2>
-                                <span className="text-[10px] tracking-[0.3em] font-bold text-brand-accent uppercase">Enterprise Portal</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-10">
-                            {steps.map((step, i) => (
-                                <div key={i} className={clsx(
-                                    "flex items-start gap-4 transition-all duration-500 border-l-2 pl-6 relative py-1",
-                                    currentStep === i ? "border-brand-accent" : "border-white/10"
-                                )}>
-                                    <div className={clsx(
-                                        "absolute left-0 -translate-x-1/2 top-2 w-3 h-3 rounded-full border-2 transition-all duration-500 shadow-sm",
-                                        currentStep > i ? "bg-brand-accent border-brand-accent scale-110" :
-                                            currentStep === i ? "bg-white border-white scale-125" : "bg-brand-primary border-white/20"
-                                    )}></div>
-
-                                    <div className="flex flex-col">
-                                        <span className={clsx(
-                                            "text-[9px] font-black uppercase tracking-widest mb-1 transition-colors duration-300",
-                                            currentStep === i ? "text-brand-accent" : "text-white/40"
-                                        )}>
-                                            Phase 0{i + 1}
-                                        </span>
-                                        <span className={clsx(
-                                            "text-base font-bold transition-all duration-300",
-                                            currentStep === i ? "text-white translate-x-1" : "text-white/60"
-                                        )}>
-                                            {step.title}
-                                        </span>
-                                        <span className="text-[10px] text-white/40 mt-1">{step.description}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="relative z-10 p-5 bg-white/5 rounded-lg backdrop-blur-sm border border-white/10 mt-12">
-                        <p className="text-[11px] text-white/70 leading-relaxed">
-                            <FaInfoCircle className="inline mr-2 text-brand-accent" />
-                            Sämtliche Firmendaten unterliegen strengen Datenschutz-Richtlinien und sind SSL-verschlüsselt.
-                        </p>
                     </div>
                 </div>
 
-                {/* Right Side - Form */}
-                <div className="col-span-12 lg:col-span-8 p-10 lg:p-14 flex flex-col relative overflow-hidden">
-                    <div className="flex justify-between items-start mb-12">
-                        <div className="flex-1">
-                            <div className="text-[10px] font-black text-brand-primary/40 uppercase tracking-[0.4em] mb-2 font-display">
-                                Konfiguration
-                            </div>
-                            <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-tight">
-                                {currentStep === 0 && "Willkommen bei TransOffice"}
-                                {currentStep === 1 && "Finanzielle Compliance"}
-                                {currentStep === 2 && "Abonnement-Planung"}
+                {/* ── Right form ─────────────────────────────────────────────── */}
+                <div className="flex-1 flex flex-col min-h-[700px]">
+
+                    {/* Step bar */}
+                    <div className="flex items-center px-10 pt-8 pb-6 gap-2">
+                        {STEPS.map(({ label, icon: Icon }, i) => {
+                            const done = i < step;
+                            const active = i === step;
+                            return (
+                                <div key={i} className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div className={clsx(
+                                        'flex items-center gap-2 transition-all duration-300',
+                                        active ? 'opacity-100' : done ? 'opacity-80' : 'opacity-35'
+                                    )}>
+                                        <div className={clsx(
+                                            'w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all duration-300',
+                                            done ? 'bg-[#9BCB56]' : active ? 'bg-[#1B4D4F]' : 'bg-slate-100'
+                                        )}>
+                                            {done
+                                                ? <Check size={12} className="text-white" strokeWidth={3} />
+                                                : <Icon size={12} className={active ? 'text-white' : 'text-slate-400'} />
+                                            }
+                                        </div>
+                                        <span className={clsx(
+                                            'text-[11px] font-bold whitespace-nowrap hidden sm:block',
+                                            active ? 'text-[#1B4D4F]' : 'text-slate-400'
+                                        )}>{label}</span>
+                                    </div>
+                                    {i < STEPS.length - 1 && (
+                                        <div className="flex-1 h-px mx-2 transition-colors duration-300"
+                                            style={{ background: done ? '#9BCB56' : '#e2e8f0' }} />
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Form */}
+                    <div className="flex-1 overflow-y-auto px-10 pb-4">
+
+                        {/* Heading */}
+                        <div className="mb-6">
+                            <h1 className="text-xl font-black text-slate-800 tracking-tight">
+                                {['Ihr Unternehmen', 'Bank & Steuern', 'Paket wählen'][step]}
                             </h1>
-                            <div className="h-1.5 w-16 bg-brand-accent mt-4 rounded-full"></div>
+                            <p className="text-sm text-slate-400 mt-0.5">
+                                {[
+                                    'Stammdaten und Geschäftsadresse Ihrer Firma.',
+                                    'Bankverbindung und steuerliche Angaben.',
+                                    'Wählen Sie das passende Abonnement.',
+                                ][step]}
+                            </p>
                         </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-xl font-black text-slate-200">0{currentStep + 1}<span className="text-sm font-bold text-slate-300 mx-1">/</span>0{steps.length}</span>
+
+                        {submitError && (
+                            <div className="mb-5 flex items-start gap-2.5 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+                                <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                                <p className="text-sm text-red-700 font-medium">{submitError}</p>
+                            </div>
+                        )}
+
+                        <div key={step} className="animate-fadeIn">
+                            {stepContent[step]}
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="bg-red-50 text-red-700 p-4 rounded-lg text-xs font-bold border border-red-100 mb-8 animate-shake flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center shrink-0">!</div>
-                            {error}
-                        </div>
-                    )}
+                    {/* Navigation */}
+                    <div className="px-10 py-6 border-t border-slate-100 flex items-center justify-between">
+                        <button
+                            type="button" onClick={back} disabled={step === 0}
+                            className={clsx(
+                                'flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all',
+                                step === 0
+                                    ? 'invisible'
+                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                            )}
+                        >
+                            <ChevronLeft size={14} /> Zurück
+                        </button>
 
-                    {stepErrors.length > 0 && (
-                        <div className="bg-red-50 text-red-700 p-5 rounded-lg text-xs border border-red-100 mb-8 animate-shake">
-                            <div className="font-black uppercase tracking-wider mb-2 flex items-center gap-2">
-                                <FaAsterisk className="text-red-500" /> Korrektur erforderlich
+                        <div className="flex items-center gap-3">
+                            {/* mini dots */}
+                            <div className="flex items-center gap-1">
+                                {STEPS.map((_, i) => (
+                                    <div key={i} className={clsx(
+                                        'rounded-full transition-all duration-300',
+                                        i === step ? 'w-4 h-1.5 bg-[#1B4D4F]'
+                                            : i < step ? 'w-1.5 h-1.5 bg-[#9BCB56]'
+                                                : 'w-1.5 h-1.5 bg-slate-200'
+                                    )} />
+                                ))}
                             </div>
-                            <ul className="list-disc list-inside space-y-1 opacity-90 font-medium">
-                                {stepErrors.map((err, i) => <li key={i}>{err}</li>)}
-                            </ul>
-                        </div>
-                    )}
 
-                    <form className="flex-1 flex flex-col" onSubmit={(e) => e.preventDefault()}>
-                        <div className="mb-12 flex-1">
-                            {renderStep()}
+                            {step < 2 ? (
+                                <button
+                                    type="button" onClick={next}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#1B4D4F] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#163e40] transition-colors group shadow-sm"
+                                >
+                                    Weiter <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                                </button>
+                            ) : (
+                                <button
+                                    type="button" onClick={submit} disabled={loading}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#9BCB56] text-[#1B4D4F] text-xs font-black uppercase tracking-wider rounded-lg hover:brightness-105 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? 'Wird eingerichtet…' : <><Rocket size={13} /> Jetzt starten</>}
+                                </button>
+                            )}
                         </div>
-
-                        <div className="flex justify-between items-center pt-10 border-t border-slate-100 mt-auto">
-                            <button
-                                type="button"
-                                onClick={handleBack}
-                                disabled={currentStep === 0}
-                                className={clsx(
-                                    "px-6 py-3 rounded-lg text-xs font-bold transition-all flex items-center gap-2 uppercase tracking-widest border border-transparent",
-                                    currentStep === 0 ? "opacity-0 pointer-events-none" : "hover:bg-slate-50 text-slate-400 hover:text-slate-600 hover:border-slate-200"
-                                )}
-                            >
-                                <FaChevronLeft /> Zurück
-                            </button>
-
-                            <div className="flex items-center gap-4">
-                                {currentStep < steps.length - 1 ? (
-                                    <button
-                                        type="button"
-                                        onClick={handleNext}
-                                        className="px-10 py-4 bg-brand-primary text-white rounded-lg text-xs font-black shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/95 hover:shadow-xl transition-all flex items-center gap-3 uppercase tracking-widest group"
-                                    >
-                                        Nächster Schritt <FaChevronRight className="group-hover:translate-x-1 transition-transform" />
-                                    </button>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={handleSubmit}
-                                        disabled={isLoading}
-                                        className="px-12 py-5 bg-brand-accent text-brand-primary rounded-lg text-sm font-black shadow-xl shadow-brand-accent/20 hover:scale-[1.02] active:scale-95 hover:shadow-2xl transition-all flex items-center gap-3 uppercase tracking-[0.15em]"
-                                    >
-                                        {isLoading ? "Wird finalisiert..." : <>Setup abschließen <FaRocket /></>}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
 
             <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fadeIn { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } 20%, 40%, 60%, 80% { transform: translateX(4px); } }
-        .animate-shake { animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1B4D4F20; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #1B4D4F40; }
-        
-        .bg-brand-primary { background-color: ${brandColors['brand-primary']}; }
-        .text-brand-primary { color: ${brandColors['brand-primary']}; }
-        .border-brand-primary { border-color: ${brandColors['brand-primary']}; }
-        
-        .bg-brand-accent { background-color: ${brandColors['brand-accent']}; }
-        .text-brand-accent { color: ${brandColors['brand-accent']}; }
-        .border-brand-accent { border-color: ${brandColors['brand-accent']}; }
-      `}</style>
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(8px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
+            `}</style>
         </div>
     );
-};
-
-export default OnboardingPage;
+}

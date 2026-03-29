@@ -1,73 +1,55 @@
-# React + TypeScript + Vite
+# Translator Office - Frontend (React)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Überblick
+Dieses Frontend ist eine React-SPA (Single Page Application), die mit **Vite** gebaut wurde. Es nutzt **Tailwind CSS** für das Styling und **TanStack Query** (React Query) für das State-Management und API-Aufrufe.
 
-Currently, two official plugins are available:
+## Architektur & Coding-Guidelines (Für Entwickler & KI)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. Komponentengröße & Struktur
+*   **Maximal 300 Zeilen**: Komponenten, die größer als 300 Zeilen sind, müssen in kleinere Teilkomponenten aufgeteilt werden.
+*   **Seiten-Struktur**: Komplexe Seiten (z.B. `Inbox`, `ProjectDetail`) sollten einen eigenen Ordner in `src/pages/[PageName]/` haben, mit:
+    *   `index.tsx`: Die Hauptseite.
+    *   `components/`: Seiten-spezifische UI-Komponenten.
+    *   `hooks/`: Seiten-spezifische Logik (Queries/Mutationen).
+*   **UI-Komponenten**: Basiskomponenten liegen in `src/components/ui/` (Shadcn-basiert).
 
-## React Compiler
+### 2. State-Management & API
+*   Nutze **TanStack Query** für alle Server-Daten.
+*   API-Services befinden sich in `src/api/services/`.
+*   Verwende **Zustand** für globalen Client-State nur, wenn absolut notwendig.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 3. Internationalisierung (i18n)
+*   Alle Texte müssen über `useTranslation()` (i18next) übersetzt werden.
+*   Übersetzungsdateien befinden sich in `src/locales/[de|en]/*.json`.
 
-## Expanding the ESLint configuration
+### 4. Styling
+*   Nutze ausschließlich **Tailwind CSS** utility classes.
+*   Nutze `clsx` oder `tailwind-merge` für bedingte Klassen.
+*   Halte das Design konsistent zum "Business-Look" (Dunkelgrün `#003333`, Brand-Primary `#1B4D4F`).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Entwicklung
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Installation
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Dev-Server starten
+```bash
+npm run dev
 ```
+
+### Build erstellen
+```bash
+npm run build
+```
+
+## Verzeichnisstruktur
+- `src/api`: Axios-Konfiguration und API-Services.
+- `src/components`: Wiederverwendbare Komponenten (ui, common, layout).
+- `src/hooks`: Globale React Hooks.
+- `src/pages`: Alle Anwendungsseiten.
+- `src/context`: React Contexts (Auth, etc.).
+- `src/types`: TypeScript Interfaces & Types.

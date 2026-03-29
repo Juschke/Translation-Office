@@ -1,10 +1,11 @@
-﻿import { useState, useMemo, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { openBlobInNewTab } from '../utils/download';
 import { format, formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { mapProjectResponse } from '../utils/projectDataMapper';
 import { useProjectModals } from '../hooks/useProjectModals';
+import { useProjectFinancials } from '../hooks/useProjectFinancials';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { FaArrowLeft, FaEdit, FaFlag, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
@@ -515,57 +516,7 @@ const ProjectDetail = () => {
     });
 
 
-    const financials = useMemo(() => {
-        if (!projectData) return {
-            netTotal: 0,
-            taxTotal: 0,
-            grossTotal: 0,
-            partnerTotal: 0,
-            margin: 0,
-            marginPercent: 0,
-            paid: 0,
-            open: 0,
-            extraTotal: 0
-        };
-
-        const positions = projectData.positions || [];
-        const payments = projectData.payments || [];
-
-        const extraNet = (projectData.isCertified ? 5 : 0) +
-            (projectData.hasApostille ? 15 : 0) +
-            (projectData.isExpress ? 15 : 0) +
-            (projectData.classification === 'ja' || projectData.classification === (true as any) ? 15 : 0) +
-            ((projectData.copies || 0) * (Number(projectData.copyPrice) || 5));
-
-        const positionsNet = positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.customerTotal) || 0), 0);
-        const netTotal = positionsNet + extraNet;
-        const taxTotal = netTotal * 0.19;
-        const grossTotal = netTotal + taxTotal;
-
-        const partnerTotal = positions.reduce((sum: number, pos: any) => {
-            const amount = parseFloat(pos.amount) || 0;
-            const rate = parseFloat(pos.partnerRate) || 0;
-            const qty = parseFloat(pos.quantity) || 1;
-            return sum + (amount * rate * qty);
-        }, 0);
-
-        const margin = netTotal - partnerTotal;
-        const marginPercent = netTotal > 0 ? (margin / netTotal) * 100 : 0;
-        const paid = payments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
-        const open = grossTotal - paid;
-
-        return {
-            netTotal,
-            taxTotal,
-            grossTotal,
-            partnerTotal,
-            margin,
-            marginPercent,
-            paid,
-            open,
-            extraTotal: extraNet
-        };
-    }, [projectData]);
+    const financials = useProjectFinancials(projectData);
 
     if (isLoading) return <TableSkeleton rows={10} columns={5} />;
     if (error || !projectData) return <div className="p-10 text-center text-red-500">Fehler beim Laden des Projekts.</div>;

@@ -1,3 +1,0 @@
-PROJEKTSPEZIFIKATION: TRANSLATER OFFICE (TMS)
-Technologie: Laravel 10+, React 18, TailwindCSS
-
