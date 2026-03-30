@@ -55,7 +55,7 @@ const Field = ({
                 'placeholder:text-slate-300',
                 error
                     ? 'border-red-300 bg-red-50 text-red-800 focus:ring-2 focus:ring-red-100'
-                    : 'border-slate-200 bg-white text-slate-800 focus:border-[#1B4D4F] focus:ring-2 focus:ring-[#1B4D4F]/8'
+                    : 'border-slate-200 bg-white text-slate-800 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/[0.08]'
             )}
         />
         {error ? (
@@ -84,7 +84,7 @@ const SelectField = ({
         </label>
         <select
             id={name} name={name} value={value} onChange={onChange}
-            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-800 outline-none transition-all focus:border-[#1B4D4F] focus:ring-2 focus:ring-[#1B4D4F]/8 cursor-pointer appearance-none"
+            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-800 outline-none transition-all focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/[0.08] cursor-pointer appearance-none"
             style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
@@ -199,7 +199,7 @@ export default function OnboardingPage() {
             {/* Company */}
             <div className="space-y-3">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Firmenstammdaten</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field
                         label="Firmenname" name="company_name" value={form.company_name} onChange={set}
                         placeholder="z. B. Lingua Franca GmbH" required className="col-span-2"
@@ -211,7 +211,7 @@ export default function OnboardingPage() {
                         <input
                             name="legal_form" value={form.legal_form} onChange={set}
                             placeholder="z. B. GmbH, UG, Einzelunternehmen"
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-800 placeholder:text-slate-300 outline-none focus:border-[#1B4D4F] focus:ring-2 focus:ring-[#1B4D4F]/8 transition-all"
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-800 placeholder:text-slate-300 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/[0.08] transition-all"
                         />
                         <div className="flex flex-wrap gap-1.5 pt-1">
                             {LEGAL_FORMS.map(f => (
@@ -220,8 +220,8 @@ export default function OnboardingPage() {
                                     className={clsx(
                                         'text-[11px] font-semibold px-2.5 py-1 rounded-md border transition-all',
                                         form.legal_form === f
-                                            ? 'bg-[#1B4D4F] text-white border-[#1B4D4F]'
-                                            : 'border-slate-200 text-slate-500 hover:border-[#1B4D4F] hover:text-[#1B4D4F]'
+                                            ? 'bg-brand-primary text-white border-brand-primary'
+                                            : 'border-slate-200 text-slate-500 hover:border-brand-primary hover:text-brand-primary'
                                     )}
                                 >{f}</button>
                             ))}
@@ -235,7 +235,7 @@ export default function OnboardingPage() {
             {/* Address */}
             <div className="space-y-3">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Geschäftsadresse</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <SelectField
                         label="Land" name="address_country" value={form.address_country}
                         onChange={set} options={COUNTRIES} className="col-span-2"
@@ -272,7 +272,7 @@ export default function OnboardingPage() {
 
             <div className="space-y-3">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Bankverbindung</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field
                         label="Kreditinstitut" name="bank_name" value={form.bank_name} onChange={set}
                         placeholder="z. B. Sparkasse Berlin" className="col-span-2"
@@ -294,7 +294,7 @@ export default function OnboardingPage() {
 
             <div className="space-y-3">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Steuerdaten</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field
                         label="Zuständiges Finanzamt" name="tax_office" value={form.tax_office} onChange={set}
                         placeholder="z. B. Finanzamt Berlin-Mitte" className="col-span-2"
@@ -319,7 +319,7 @@ export default function OnboardingPage() {
                 Wählen Sie Ihr Paket. Sie können jederzeit wechseln.
             </p>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {PLANS.map(plan => {
                     const active = form.subscription_plan === plan.id;
                     return (
@@ -329,23 +329,23 @@ export default function OnboardingPage() {
                             className={clsx(
                                 'relative text-left rounded-xl border-2 p-5 transition-all duration-200 outline-none group',
                                 active
-                                    ? 'border-[#1B4D4F] bg-[#1B4D4F]/[0.03]'
+                                    ? 'border-brand-primary bg-brand-primary/[0.03]'
                                     : 'border-slate-200 bg-white hover:border-slate-300'
                             )}
                         >
                             {'badge' in plan && (
-                                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest bg-[#9BCB56] text-[#1B4D4F] px-2 py-0.5 rounded-full whitespace-nowrap">
+                                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest bg-[#9BCB56] text-brand-primary px-2 py-0.5 rounded-full whitespace-nowrap">
                                     {plan.badge}
                                 </span>
                             )}
                             {active && (
-                                <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#1B4D4F] flex items-center justify-center">
+                                <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center">
                                     <Check size={10} className="text-white" strokeWidth={3} />
                                 </span>
                             )}
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{plan.name}</p>
                             <div className="flex items-baseline gap-0.5 mb-1">
-                                <span className="text-2xl font-black text-[#1B4D4F]">{plan.price}€</span>
+                                <span className="text-2xl font-black text-brand-primary">{plan.price}€</span>
                                 <span className="text-[11px] text-slate-400 font-medium">/Mo.</span>
                             </div>
                             <p className="text-[11px] text-slate-400 mb-4">{plan.hint}</p>
@@ -378,7 +378,7 @@ export default function OnboardingPage() {
             <div className="w-full max-w-5xl rounded-2xl shadow-2xl shadow-slate-900/10 overflow-hidden flex bg-white">
 
                 {/* ── Left hero ──────────────────────────────────────────────── */}
-                <div className="hidden lg:flex w-[38%] shrink-0 flex-col bg-[#1B4D4F] relative overflow-hidden">
+                <div className="hidden lg:flex w-[38%] shrink-0 flex-col bg-brand-primary relative overflow-hidden">
                     {/* Decorative blobs */}
                     <div className="absolute -top-24 -left-24 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
                     <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#9BCB56]/10 rounded-full blur-3xl pointer-events-none" />
@@ -451,7 +451,7 @@ export default function OnboardingPage() {
                                     )}>
                                         <div className={clsx(
                                             'w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all duration-300',
-                                            done ? 'bg-[#9BCB56]' : active ? 'bg-[#1B4D4F]' : 'bg-slate-100'
+                                            done ? 'bg-[#9BCB56]' : active ? 'bg-brand-primary' : 'bg-slate-100'
                                         )}>
                                             {done
                                                 ? <Check size={12} className="text-white" strokeWidth={3} />
@@ -460,7 +460,7 @@ export default function OnboardingPage() {
                                         </div>
                                         <span className={clsx(
                                             'text-[11px] font-bold whitespace-nowrap hidden sm:block',
-                                            active ? 'text-[#1B4D4F]' : 'text-slate-400'
+                                            active ? 'text-brand-primary' : 'text-slate-400'
                                         )}>{label}</span>
                                     </div>
                                     {i < STEPS.length - 1 && (
@@ -477,7 +477,7 @@ export default function OnboardingPage() {
 
                         {/* Heading */}
                         <div className="mb-6">
-                            <h1 className="text-xl font-black text-slate-800 tracking-tight">
+                            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
                                 {['Ihr Unternehmen', 'Bank & Steuern', 'Paket wählen'][step]}
                             </h1>
                             <p className="text-sm text-slate-400 mt-0.5">
@@ -521,7 +521,7 @@ export default function OnboardingPage() {
                                 {STEPS.map((_, i) => (
                                     <div key={i} className={clsx(
                                         'rounded-full transition-all duration-300',
-                                        i === step ? 'w-4 h-1.5 bg-[#1B4D4F]'
+                                        i === step ? 'w-4 h-1.5 bg-brand-primary'
                                             : i < step ? 'w-1.5 h-1.5 bg-[#9BCB56]'
                                                 : 'w-1.5 h-1.5 bg-slate-200'
                                     )} />
@@ -531,14 +531,14 @@ export default function OnboardingPage() {
                             {step < 2 ? (
                                 <button
                                     type="button" onClick={next}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#1B4D4F] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#163e40] transition-colors group shadow-sm"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-brand-primary/80 transition-colors group shadow-sm"
                                 >
                                     Weiter <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
                                 </button>
                             ) : (
                                 <button
                                     type="button" onClick={submit} disabled={loading}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#9BCB56] text-[#1B4D4F] text-xs font-black uppercase tracking-wider rounded-lg hover:brightness-105 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#9BCB56] text-brand-primary text-xs font-black uppercase tracking-wider rounded-lg hover:brightness-105 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {loading ? 'Wird eingerichtet…' : <><Rocket size={13} /> Jetzt starten</>}
                                 </button>

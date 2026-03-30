@@ -17,7 +17,7 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
         <div className="col-span-12 md:col-span-8 flex flex-col gap-1.5">
             <div className="flex gap-3">
                 <div className="flex flex-col gap-0.5 flex-1">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-1">Präfix</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Präfix</span>
                     <input
                         type="text"
                         value={formData[prefixKey] || ''}
@@ -27,7 +27,7 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
                     />
                 </div>
                 <div className="flex flex-col gap-0.5 flex-1">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-1">Start-Nummer</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Start-Nummer</span>
                     <input
                         type="number"
                         value={formData[startKey] || ''}
@@ -37,7 +37,7 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
                     />
                 </div>
                 <div className="flex flex-col gap-0.5 w-20 items-center shrink-0">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Jahr</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Jahr</span>
                     <div className="h-8 flex items-center justify-center">
                         <Switch
                             checked={formData[showYearKey] || false}
@@ -50,8 +50,8 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
 
             <div className="bg-slate-50 border border-slate-100 rounded-sm px-2 py-1 flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-slate-400">
-                    <FaEye className="text-[9px]" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest italic leading-none">Vorschau:</span>
+                    <FaEye className="text-[10px]" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest italic leading-none">Vorschau:</span>
                 </div>
                 <span className="text-xs font-mono font-bold text-slate-900 tracking-tight leading-none">{preview}</span>
             </div>
@@ -157,7 +157,7 @@ const NumberCircleSettingsTab = () => {
                     variant="default"
                     onClick={handleSave}
                     disabled={updateMutation.isPending}
-                    className="px-5 h-8 text-[11px] font-medium flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90 transition shadow-sm border-brand-primary"
+                    className="flex items-center gap-2"
                 >
                     <FaSave /> {updateMutation.isPending ? 'Speichert...' : 'Speichern'}
                 </Button>

@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { userService } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { Button } from '../components/ui/button';
 import TableSkeleton from '../components/common/TableSkeleton';
 
 type Role = 'manager' | 'employee';
@@ -136,13 +137,12 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                 <button type="button" onClick={onCancel} className="px-4 py-2 text-sm border border-slate-200 rounded-sm hover:bg-slate-50">
                     Abbrechen
                 </button>
-                <button
+                <Button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 text-sm bg-brand-primary text-white font-bold rounded-sm hover:bg-brand-primary/90 disabled:opacity-50 transition shadow-sm"
                 >
                     {loading ? 'Speichern…' : isEdit ? 'Speichern' : 'Hinzufügen'}
-                </button>
+                </Button>
             </div>
         </form>
     );
@@ -203,12 +203,12 @@ const Team: React.FC = () => {
                     <p className="text-sm text-slate-500 mt-0.5 hidden sm:block">Verwalten Sie die Benutzer Ihres Mandanten.</p>
                 </div>
                 <div className="shrink-0">
-                    <button
+                    <Button
                         onClick={() => setModal({ type: 'add' })}
-                        className="flex items-center justify-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-sm text-sm font-bold hover:bg-brand-primary/90 shadow-sm transition"
+                        className="flex items-center gap-2"
                     >
                         <FaPlus className="text-xs" /> <span className="hidden xs:inline">Mitarbeiter hinzufügen</span><span className="xs:hidden">Hinzufügen</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 

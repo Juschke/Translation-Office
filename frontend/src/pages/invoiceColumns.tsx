@@ -8,8 +8,7 @@ import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 export interface BuildInvoiceColumnsParams {
     t: (key: string, options?: any) => string;
     setPreviewInvoice: (inv: any) => void;
-    setInvoiceToEdit: (inv: any) => void;
-    setIsNewInvoiceOpen: (v: boolean) => void;
+    onEditInvoice: (inv: any) => void;
     issueMutation: any;
     cancelMutation: any;
     markAsPaidMutation: any;
@@ -31,8 +30,7 @@ export interface BuildInvoiceColumnsParams {
 export function buildInvoiceColumns({
     t,
     setPreviewInvoice,
-    setInvoiceToEdit,
-    setIsNewInvoiceOpen,
+    onEditInvoice,
     issueMutation,
     cancelMutation,
     markAsPaidMutation,
@@ -156,7 +154,7 @@ export function buildInvoiceColumns({
                     {
                         key: 'mgmt_header',
                         type: 'group' as const,
-                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">{t('common.management')}</span>,
+                        label: <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.management')}</span>,
                         children: [
                             {
                                 key: 'view',
@@ -166,16 +164,16 @@ export function buildInvoiceColumns({
                             },
                             ...(inv.status === 'draft' ? [{
                                 key: 'edit',
-                                icon: <FaPen className="text-teal-500" />,
+                                icon: <FaPen className="text-brand-primary" />,
                                 label: <span className="text-xs">{t('actions.edit')}</span>,
-                                onClick: () => { setInvoiceToEdit(inv); setIsNewInvoiceOpen(true); },
+                                onClick: () => onEditInvoice(inv),
                             }] : []),
                         ]
                     },
                     {
                         key: 'fin_header',
                         type: 'group' as const,
-                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">{t('common.finance')}</span>,
+                        label: <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.finance')}</span>,
                         children: [
                             ...(inv.status === 'cancelled' ? [{
                                 key: 'archive',
@@ -208,7 +206,7 @@ export function buildInvoiceColumns({
                     {
                         key: 'docs_header',
                         type: 'group' as const,
-                        label: <span className="text-[9px] font-bold text-[#1B4D4F] uppercase tracking-widest pl-1">{t('common.documents')}</span>,
+                        label: <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.documents')}</span>,
                         children: [
                             {
                                 key: 'print',
@@ -239,7 +237,7 @@ export function buildInvoiceColumns({
                     ...(inv.status === 'draft' ? [{
                         key: 'danger_header',
                         type: 'group' as const,
-                        label: <span className="text-[9px] font-bold text-red-500 uppercase tracking-widest pl-1">{t('common.danger_zone')}</span>,
+                        label: <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest pl-1">{t('common.danger_zone')}</span>,
                         children: [
                             {
                                 key: 'delete',
@@ -272,7 +270,7 @@ export function buildInvoiceColumns({
                                     setConfirmAction(() => () => issueMutation.mutate(inv.id));
                                     setIsConfirmOpen(true);
                                 }}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-[#1B4D4F]/5 text-[#1B4D4F] hover:bg-[#1B4D4F]/10 border border-[#1B4D4F]/20 rounded-sm text-[10px] font-bold uppercase tracking-tight transition-all shadow-sm"
+                                className="flex items-center gap-1.5 px-2 py-1 bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/20 rounded-sm text-[10px] font-bold uppercase tracking-tight transition-all shadow-sm"
                                 title={t('invoices.actions.issue') || "Ausstellen (GoBD)"}
                             >
                                 <FaStamp className="text-xs" />
@@ -301,7 +299,7 @@ export function buildInvoiceColumns({
                             placement="bottomRight"
                         >
                             <button
-                                className="p-1 px-1.5 rounded-sm hover:bg-slate-100 text-slate-400 hover:text-[#1B4D4F] transition-all border border-transparent hover:border-slate-200"
+                                className="p-1 px-1.5 rounded-sm hover:bg-slate-100 text-slate-400 hover:text-brand-primary transition-all border border-transparent hover:border-slate-200"
                                 title={t('common.more_actions')}
                             >
                                 <FaEllipsisV className="text-[10px]" />

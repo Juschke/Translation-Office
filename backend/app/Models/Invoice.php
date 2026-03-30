@@ -96,6 +96,9 @@ class Invoice extends Model
         // --- Project Snapshot ---
         'snapshot_project_name',
         'snapshot_project_number',
+
+        'intro_text',
+        'footer_text',
     ];
 
     protected $casts = [

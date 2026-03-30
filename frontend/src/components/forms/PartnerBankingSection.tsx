@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { IMaskInput } from 'react-imask';
 import Input from '../common/Input';

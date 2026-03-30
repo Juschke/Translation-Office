@@ -38,7 +38,7 @@ const NotificationDropdown = ({
 
             {/* Notification Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-sm border border-brand-primary/10 z-50 text-brand-text origin-top-right animate-slideUp">
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-sm border border-brand-primary/10 z-[9999] text-brand-text origin-top-right animate-slideUp">
                     <div className="p-3 border-b border-slate-100 font-semibold text-sm flex justify-between">
                         <span>Benachrichtigungen</span>
                         <button

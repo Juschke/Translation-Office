@@ -42,7 +42,7 @@ const ProfileMenu = ({
 
             {/* Profile Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-200 z-50 text-slate-800 origin-top-right animate-slideUp">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-200 z-[9999999] text-slate-800 origin-top-right animate-slideUp">
                     <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-[10px] text-white font-bold shrink-0 shadow-sm uppercase">
                             {initials}

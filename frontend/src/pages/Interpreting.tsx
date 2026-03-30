@@ -284,7 +284,6 @@ const Interpreting = () => {
                 <div className="flex gap-2 shrink-0">
                     <Button
                         onClick={() => setIsProjectSelectionOpen(true)}
-                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('interpreting.new_assignment')}</span><span className="inline sm:hidden">{t('interpreting.new_short')}</span>
                     </Button>
@@ -292,25 +291,22 @@ const Interpreting = () => {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label={t('interpreting.kpi.upcoming')} value={stats.upcoming} icon={<FaCalendarAlt />} iconColor="text-blue-600" />
+                <KPICard label={t('interpreting.kpi.upcoming')} value={stats.upcoming} icon={<FaCalendarAlt />} />
                 <KPICard
                     label={t('interpreting.kpi.completed')}
                     value={stats.completed}
                     icon={<FaCheckCircle />}
-                    iconColor="text-emerald-600"
                 />
                 <KPICard
                     label={t('interpreting.kpi.active_interpreters')}
                     value={stats.uniquePartners}
                     icon={<FaUserTie />}
-                    iconColor="text-brand-primary"
                     subValue={t('interpreting.kpi.deployed_partners')}
                 />
                 <KPICard
                     label={t('interpreting.kpi.this_month')}
                     value={stats.thisMonth}
                     icon={<FaHandshake />}
-                    iconColor="text-amber-600"
                     subValue={t('interpreting.kpi.assignments')}
                 />
             </div>

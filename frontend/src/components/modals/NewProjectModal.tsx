@@ -698,7 +698,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     };
 
     return (
-        <div className="fixed inset-0 bg-[#003333]/40 z-50 flex items-start justify-center backdrop-blur-sm transition-all overflow-hidden h-screen w-screen">
+        <div className="fixed inset-0 bg-brand-primary/40 z-50 flex items-start justify-center backdrop-blur-sm transition-all overflow-hidden h-screen w-screen">
             <div className="bg-white w-full h-full flex flex-col relative animate-fadeInUp shadow-2xl" onClick={e => e.stopPropagation()}>
                 {/* Loading Overlay */}
                 {isLoading && (
@@ -1244,7 +1244,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white"
                                             )}
                                         >
-                                            <FaPlus className="text-[9px]" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                                            <FaPlus className="text-[10px]" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
                                         </Button>
                                     </div>
 

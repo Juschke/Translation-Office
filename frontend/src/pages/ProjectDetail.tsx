@@ -16,7 +16,6 @@ import NewProjectModal from '../components/modals/NewProjectModal';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import FileUploadModal from '../components/modals/FileUploadModal';
-import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
 import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
@@ -24,7 +23,7 @@ import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import EmailComposeModal from '../components/modals/EmailComposeModal';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectService, invoiceService, customerService, partnerService } from '../api/services';
+import { projectService, customerService, partnerService } from '../api/services';
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
 import { Button } from '../components/ui/button';
@@ -182,7 +181,6 @@ const ProjectDetail = () => {
         isPartnerModalOpen, setIsPartnerModalOpen,
         isEditModalOpen, setIsEditModalOpen,
         isUploadModalOpen, setIsUploadModalOpen,
-        isInvoiceModalOpen, setIsInvoiceModalOpen,
         isPaymentModalOpen, setIsPaymentModalOpen,
         isCustomerSearchOpen, setIsCustomerSearchOpen,
         isCustomerEditModalOpen, setIsCustomerEditModalOpen,
@@ -501,19 +499,6 @@ const ProjectDetail = () => {
         await uploadFileMutation.mutateAsync({ files: newFiles, onProgress });
     };
 
-    const invoiceMutation = useMutation({
-        mutationFn: invoiceService.create,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            queryClient.invalidateQueries({ queryKey: ['projects', id] });
-            setIsInvoiceModalOpen(false);
-            toast.success(t('messages.invoice_created_success'));
-            navigate('/invoices');
-        },
-        onError: () => {
-            toast.error(t('messages.invoice_creation_error'));
-        }
-    });
 
 
     const financials = useProjectFinancials(projectData);
@@ -587,7 +572,7 @@ const ProjectDetail = () => {
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end mt-4 md:mt-0">
                                 <Button
                                     onClick={() => navigate(`/projects/${id}/edit`)}
-                                    className="bg-brand-primary hover:bg-brand-primary/90 text-white px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                    className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-none justify-center"
                                 >
                                     <FaEdit /> Bearbeiten
                                 </Button>
@@ -626,7 +611,7 @@ const ProjectDetail = () => {
 
                                     {isActionsOpen && (
                                         <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-sm shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-1">
-                                            <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
+                                            <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
                                             <button
                                                 onClick={() => { handleDownloadConfirmation('order_confirmation'); setIsActionsOpen(false); }}
                                                 className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
@@ -646,7 +631,7 @@ const ProjectDetail = () => {
                                                 <FaFilePdf className="text-red-400 shrink-0" /> Dolmetscherbestätigung
                                             </button>
 
-                                            <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-100 mt-1">Rechnung</div>
+                                            <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-100 mt-1">Rechnung</div>
                                             {(() => {
                                                 const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
                                                 return activeInvoice ? (
@@ -658,7 +643,7 @@ const ProjectDetail = () => {
                                                     </button>
                                                 ) : (
                                                     <button
-                                                        onClick={() => { setIsInvoiceModalOpen(true); setIsActionsOpen(false); }}
+                                                        onClick={() => { navigate(`/invoices/new?project_id=${id}`); setIsActionsOpen(false); }}
                                                         className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
                                                     >
                                                         <FaFileInvoiceDollar className="text-slate-400 shrink-0" /> Rechnung erstellen
@@ -746,15 +731,15 @@ const ProjectDetail = () => {
                                     className={clsx(
                                         "py-4 px-1 text-sm font-medium transition-all relative flex items-center gap-2.5 border-b-2 -mb-[1px]",
                                         isActive
-                                            ? 'border-[#1B4D4F] text-[#1B4D4F] font-bold'
+                                            ? 'border-brand-primary text-brand-primary font-bold'
                                             : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200'
                                     )}
                                 >
-                                    {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
-                                    {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
-                                    {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
-                                    {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
-                                    {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-[#1B4D4F]" : "text-slate-300")} />}
+                                    {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
+                                    {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
+                                    {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
+                                    {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
+                                    {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
 
                                     {tab === 'overview' ? 'Stammdaten' :
                                         tab === 'files' ? 'Dokumente' :
@@ -764,7 +749,7 @@ const ProjectDetail = () => {
                                     {tab !== 'overview' && tab !== 'history' && (
                                         <span className={clsx(
                                             "px-1.5 py-0.5 rounded-sm text-[10px] font-bold transition-colors",
-                                            isActive ? "bg-[#1B4D4F] text-white" : "bg-slate-100 text-slate-500"
+                                            isActive ? "bg-brand-primary text-white" : "bg-slate-100 text-slate-500"
                                         )}>
                                             {badgeCount}
                                         </span>
@@ -796,7 +781,7 @@ const ProjectDetail = () => {
                                         className={clsx(
                                             "px-6 py-4 text-sm font-medium flex items-center gap-4 transition-all rounded-sm mx-2 my-1",
                                             isActive
-                                                ? 'bg-slate-50 text-[#1B4D4F] font-bold  border-[#1B4D4F]'
+                                                ? 'bg-slate-50 text-brand-primary font-bold  border-brand-primary'
                                                 : 'text-slate-500 hover:bg-slate-50/50 hover:text-slate-700'
                                         )}
                                     >
@@ -894,6 +879,7 @@ const ProjectDetail = () => {
                             setPaymentDeleteConfirm({ isOpen: true, paymentId, amount: payment?.amount || '0' });
                         }}
                         isPendingSave={updateProjectMutation.isPending}
+                        onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
                     />
                 )}
 
@@ -943,7 +929,6 @@ const ProjectDetail = () => {
                 isLoading={updateProjectMutation.isPending}
             />
             <FileUploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleFileUpload} />
-            <NewInvoiceModal isOpen={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} onSubmit={(data) => invoiceMutation.mutate(data)} project={{ ...projectData, financials }} isLoading={invoiceMutation.isPending} />
             <PaymentModal
                 isOpen={isPaymentModalOpen}
                 initialData={editingPayment}

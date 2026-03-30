@@ -169,7 +169,7 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Benutzer',
             accessor: (change: any) => (
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[9px] font-black text-slate-700 shadow-inner uppercase">
+                    <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-700 shadow-inner uppercase">
                         {change.user[0]}
                     </div>
                     <span className="font-bold text-slate-600 text-[11px]">{change.user}</span>
@@ -183,12 +183,12 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Aktion',
             accessor: (change: any) => (
                 <div className="flex flex-col">
-                    <span className={clsx("px-2 py-0.5 rounded-sm text-[9px] font-black uppercase tracking-tight border shadow-sm w-fit",
+                    <span className={clsx("px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-tight border shadow-sm w-fit",
                         change.eventColor, change.eventBg, change.eventBorder
                     )}>
                         {change.eventLabel}
                     </span>
-                    <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter mt-0.5 ml-1">{change.subjectType}</span>
+                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter mt-0.5 ml-1">{change.subjectType}</span>
                 </div>
             ),
             sortable: true,
@@ -199,7 +199,7 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Objekt / Feld',
             accessor: (change: any) => (
                 <div className="flex items-center gap-2">
-                    <FaTag className="text-slate-300 text-[9px]" />
+                    <FaTag className="text-slate-300 text-[10px]" />
                     <span className="font-bold text-slate-700 text-[11px] uppercase tracking-tighter">{change.objectField}</span>
                 </div>
             ),
@@ -239,7 +239,7 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
                 extraControls={
                     <div className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-200 rounded-[3px] shadow-sm">
                         <FaHistory className="text-slate-400 text-xs" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#1B4D4F]">Detail-Protokoll</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-brand-primary">Detail-Protokoll</span>
                     </div>
                 }
             />

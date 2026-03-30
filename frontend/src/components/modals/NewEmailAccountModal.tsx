@@ -93,7 +93,7 @@ const NewEmailAccountModal: React.FC<NewEmailAccountModalProps> = ({ isOpen, onC
  <FaUser className="text-slate-700" /> Konto-Details
  </label>
 
- <div className="grid grid-cols-2 gap-4">
+ <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
  <div className="col-span-2">
  <Input
  label="Konto-Bezeichnung *"

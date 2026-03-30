@@ -111,8 +111,8 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
             {showTwoFactor ? (
                 <>
                     <div className="text-center mb-6">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-teal-100 mb-3">
-                            <FaShieldAlt className="h-7 w-7 text-teal-700" />
+                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-brand-primary/10 mb-3">
+                            <FaShieldAlt className="h-7 w-7 text-brand-primary" />
                         </div>
                         <h3 className="text-lg font-semibold text-slate-900">2FA Bestätigung</h3>
                         <p className="text-sm text-slate-600 mt-1">
@@ -137,7 +137,7 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
                                 autoFocus
                                 value={twoFactorCode}
                                 onChange={(e) => setTwoFactorCode(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                                 placeholder="000 000"
                             />
                         </div>
@@ -173,7 +173,7 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                                 placeholder="name@beispiel.de"
                             />
                         </div>
@@ -186,7 +186,7 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
                             </label>
                             <a
                                 href="/forgot-password"
-                                className="text-sm font-medium text-teal-700 hover:text-teal-600"
+                                className="text-sm font-medium text-brand-primary hover:text-brand-primary/80"
                             >
                                 Vergessen?
                             </a>
@@ -203,7 +203,7 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -215,7 +215,7 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
                 type="submit"
                 disabled={isLoading}
                 className={clsx(
-                    "w-full flex justify-center items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-[#1B4D4F] hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all",
+                    "w-full flex justify-center items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all",
                     isLoading && "opacity-70 cursor-not-allowed"
                 )}
             >
@@ -317,7 +317,7 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                         placeholder="Max Mustermann"
                     />
                 </div>
@@ -339,7 +339,7 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                         placeholder="max@firma.de"
                     />
                 </div>
@@ -361,7 +361,7 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                         required
                         value={formData.password}
                         onChange={handleChange}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                         placeholder="Mindestens 8 Zeichen"
                     />
                 </div>
@@ -383,7 +383,7 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                         required
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                         placeholder="Passwort wiederholen"
                     />
                 </div>
@@ -393,7 +393,7 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                 type="submit"
                 disabled={isLoading}
                 className={clsx(
-                    "w-full flex justify-center items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-[#1B4D4F] hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all",
+                    "w-full flex justify-center items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all",
                     isLoading && "opacity-70 cursor-not-allowed"
                 )}
             >
@@ -412,9 +412,9 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
 
             <p className="text-xs text-center text-slate-500 mt-4">
                 Mit der Registrierung stimmen Sie unseren{' '}
-                <a href="#" className="text-teal-700 hover:underline">Nutzungsbedingungen</a>
+                <a href="#" className="text-brand-primary hover:underline">Nutzungsbedingungen</a>
                 {' '}und der{' '}
-                <a href="#" className="text-teal-700 hover:underline">Datenschutzerklärung</a> zu.
+                <a href="#" className="text-brand-primary hover:underline">Datenschutzerklärung</a> zu.
             </p>
         </form>
     );

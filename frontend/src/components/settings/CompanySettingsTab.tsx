@@ -11,6 +11,7 @@ import CountrySelect from '../common/CountrySelect';
 import SearchableSelect from '../common/SearchableSelect';
 import { IMaskInput } from 'react-imask';
 import { Switch } from '../ui/switch';
+import { Button } from '../ui/button';
 import { TimePicker } from 'antd';
 import dayjs from 'dayjs';
 // @ts-ignore
@@ -388,13 +389,14 @@ const CompanySettingsTab = () => {
                     <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded-sm"><FaBuilding /></div>
                     <h3 className="text-sm font-medium text-slate-800">Unternehmensdaten</h3>
                 </div>
-                <button
+                <Button
+                    variant="default"
                     onClick={handleSaveCompany}
                     disabled={updateCompanyMutation.isPending}
-                    className="flex items-center gap-2 px-6 py-2 bg-brand-primary text-white text-xs font-medium hover:bg-brand-primary/90 transition shadow-sm disabled:opacity-50 rounded-sm"
+                    className="flex items-center gap-2"
                 >
                     <FaSave /> {updateCompanyMutation.isPending ? t('settings.saving') : t('settings.save')}
-                </button>
+                </Button>
             </div>
 
             <div className="p-8">

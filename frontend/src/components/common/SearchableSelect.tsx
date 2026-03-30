@@ -19,12 +19,13 @@ interface SearchableSelectProps {
     preserveOrder?: boolean;
     maxVisibleItems?: number;
     roundedSide?: 'left' | 'right' | 'both' | 'none';
+    disabled?: boolean;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
     isMulti = false, onAddNew, onSearch, id, preserveOrder = false,
-    maxVisibleItems = 2, roundedSide = 'both'
+    maxVisibleItems = 2, roundedSide = 'both', disabled = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -123,6 +124,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }, [isOpen, updateCoords]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (disabled) return;
         if (!isOpen) {
             if (e.key === 'Enter' || e.key === 'ArrowDown') {
                 setIsOpen(true);
@@ -322,13 +324,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     roundedSide === 'left' && "rounded-l-sm",
                     roundedSide === 'right' && "rounded-r-sm",
                     roundedSide === 'none' && "rounded-none",
-                    error ? "border-red-700 ring-2 ring-red-700/10" : "border-slate-300 hover:border-slate-400",
                     isOpen ? "border-slate-900 ring-2 ring-slate-950/10 shadow-sm" : "shadow-sm",
+                    disabled ? "bg-slate-50 border-slate-200 cursor-not-allowed opacity-60" : "bg-white",
                     className
                 )}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => !disabled && setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
-                tabIndex={0}
+                tabIndex={disabled ? -1 : 0}
             >
                 <div className="flex flex-wrap items-center gap-1.5 overflow-hidden py-1 max-w-[calc(100%-40px)]">
                     {values.length > 0 ? (
@@ -363,7 +365,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                    {!isMulti && value && (
+                    {!isMulti && value && !disabled && (
                         <FaTimes
                             className="text-slate-300 hover:text-red-500 cursor-pointer text-xs transition-colors"
                             onClick={(e) => {

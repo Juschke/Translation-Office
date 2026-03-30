@@ -240,7 +240,7 @@ const Calendar = () => {
                         </span>
                     </div>
                     {time && (
-                        <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded-sm">
+                        <span className="text-[10px] font-bold text-slate-500 whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded-sm">
                             {time}
                         </span>
                     )}
@@ -253,7 +253,7 @@ const Calendar = () => {
                         </div>
                     )}
                     {langPair && (
-                        <div className="inline-flex items-center gap-1.5 text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-sm transition-all w-fit">
+                        <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-sm transition-all w-fit">
                             <span>{langPair}</span>
                         </div>
                     )}
@@ -460,7 +460,7 @@ const Calendar = () => {
                                                     {p.project_number || `ID ${p.id}`}
                                                 </span>
                                                 <span className={clsx(
-                                                    "px-1.5 py-0.5 rounded-sm text-[9px] font-bold uppercase shrink-0",
+                                                    "px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase shrink-0",
                                                     p.priority === 'high' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
                                                 )}>
                                                     {p.priority === 'high' ? '⚡ Express' : 'Standard'}
@@ -470,7 +470,7 @@ const Calendar = () => {
                                                 {p.project_name}
                                             </h4>
                                             <div className="mt-1 flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
-                                                <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500">
+                                                <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
                                                     {(p.customer?.company_name || p.customer?.first_name || 'P').charAt(0)}
                                                 </div>
                                                 <span className="text-[10px] text-slate-600 font-medium truncate">
@@ -534,7 +534,7 @@ const Calendar = () => {
                                                     {roleDE}
                                                 </span>
                                                 {u.email && (
-                                                    <span className="text-[9px] text-slate-400 truncate">
+                                                    <span className="text-[10px] text-slate-400 truncate">
                                                         {u.email}
                                                     </span>
                                                 )}

@@ -125,7 +125,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
             >
                 <div className="flex-1 flex items-center px-4 gap-4">
                     <div className="flex flex-col gap-0.5 min-w-[80px]">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                             {project.project_number || `P-${project.id}`}
                         </span>
                         <span className="text-xs font-bold text-slate-800">
@@ -209,13 +209,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                                         <div className="flex items-center gap-2">
                                             <h3 className="font-bold text-slate-800 text-[12px] uppercase tracking-wider">{section.title}</h3>
                                             <span className={clsx(
-                                                "px-1.5 py-0.5 rounded-full text-[10px] font-black",
+                                                "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
                                                 isCollapsed ? "bg-slate-200 text-slate-500" : "bg-brand-primary/10 text-brand-primary"
                                             )}>
                                                 {sectionProjects.length}
                                             </span>
                                         </div>
-                                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none">
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none">
                                             Schritt {idx + 1} des Prozesses
                                         </span>
                                     </div>
@@ -236,14 +236,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
 
                             {/* Cards Section - Horizontal row inside vertical step if open */}
                             {!isCollapsed && (
-                                <div className="bg-[#fcfcfc] border-t border-[#f1f5f9] min-h-[80px]">
+                                <div className="bg-white border-t border-slate-100 min-h-[80px]">
                                     {sectionProjects.length > 0 ? (
-                                        <div className="flex flex-col divide-y divide-[#f1f5f9]">
+                                        <div className="flex flex-col divide-y divide-slate-100">
                                             {sectionProjects.map(renderCard)}
                                         </div>
                                     ) : (
                                         <div className="h-20 flex items-center justify-center border-dashed border-2 border-slate-100 m-2 rounded-[2px] opacity-40">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">Bereit für Aufträge</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300 italic">Bereit für Aufträge</span>
                                         </div>
                                     )}
                                 </div>

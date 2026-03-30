@@ -75,6 +75,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     formatFileSize,
     onUpload,
 }) => {
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [isDragging, setIsDragging] = useState(false);
     const [uploadQueue, setUploadQueue] = useState<any[]>([]);
@@ -120,8 +121,8 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
     // Multi-select helpers
     const allFilteredIds = allFilteredFiles.map((f: any) => f.id as string);
-    const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedIds.has(id));
-    const someSelected = allFilteredIds.some(id => selectedIds.has(id));
+    const allSelected = allFilteredIds.length > 0 && allFilteredIds.every((id: string) => selectedIds.has(id));
+    const someSelected = allFilteredIds.some((id: string) => selectedIds.has(id));
 
     const toggleSelect = (id: string) => {
         setSelectedIds(prev => {
@@ -135,7 +136,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
         if (allSelected) {
             setSelectedIds(prev => {
                 const next = new Set(prev);
-                allFilteredIds.forEach(id => next.delete(id));
+                allFilteredIds.forEach((id: string) => next.delete(id));
                 return next;
             });
         } else {
@@ -268,7 +269,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                     </div>
                                     {f.status === 'saved' ? <FaCheckCircle className="text-emerald-500 text-xs shrink-0" /> :
                                         f.status === 'error' ? <FaExclamationCircle className="text-red-500 text-xs shrink-0" /> :
-                                            <span className="text-[9px] font-mono text-slate-400 shrink-0">{f.progress}%</span>}
+                                            <span className="text-[10px] font-mono text-slate-400 shrink-0">{f.progress}%</span>}
                                 </div>
                                 <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
                                     <div
@@ -346,7 +347,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
                     {/* Bottom Row: Filter Badges */}
                     <div className="px-4 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar bg-white/30">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-2 shrink-0">Filter:</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2 shrink-0">Filter:</span>
                         <div className="flex items-center gap-1.5">
                             {FILTERS.map(({ value, label }) => {
                                 const count = filterCount(value);
@@ -356,14 +357,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                         key={value}
                                         onClick={() => setActiveFilter(value)}
                                         className={clsx(
-                                            'px-3 py-1.5 rounded-sm text-[9px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all border whitespace-nowrap',
+                                            'px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all border whitespace-nowrap',
                                             isActive
                                                 ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
                                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'
                                         )}
                                     >
                                         {label}
-                                        <span className={clsx('rounded-sm px-1.5 py-0.5 text-[8px] font-mono leading-none',
+                                        <span className={clsx('rounded-sm px-1.5 py-0.5 text-[10px] font-mono leading-none',
                                             isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 font-bold'
                                         )}>{count}</span>
                                     </button>
@@ -382,7 +383,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                             </span>
                             <div className="w-px h-4 bg-brand-primary/20" />
                             <div className="flex items-center gap-1">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-1">Verschieben nach:</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">Verschieben nach:</span>
                                 {(['source', 'target', 'reference', 'delivery'] as FileType[]).map(type => (
                                     <button
                                         key={type}
@@ -390,7 +391,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                             onBulkMove(Array.from(selectedIds), type);
                                             setSelectedIds(new Set());
                                         }}
-                                        className="px-2 py-1 rounded-sm text-[8px] font-bold uppercase tracking-widest bg-white border border-slate-200 text-slate-500 hover:border-brand-primary hover:text-brand-primary hover:shadow-sm transition-all"
+                                        className="px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-widest bg-white border border-slate-200 text-slate-500 hover:border-brand-primary hover:text-brand-primary hover:shadow-sm transition-all"
                                     >
                                         {FILE_TYPE_CONFIG[type].short}
                                     </button>
@@ -402,14 +403,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                             {selectedFiles.length > 1 ? (
                                 <button
                                     onClick={() => onBulkDownloadZip(Array.from(selectedIds))}
-                                    className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-[9px] font-bold uppercase tracking-widest"
+                                    className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                                 >
                                     <FaDownload className="text-[8px]" /> ZIP herunterladen
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => { handleDownloadFile(selectedFiles[0]); }}
-                                    className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-[9px] font-bold uppercase tracking-widest"
+                                    className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                                 >
                                     <FaDownload className="text-[8px]" /> Herunterladen
                                 </button>
@@ -424,14 +425,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                     }
                                     setSelectedIds(new Set());
                                 }}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-[9px] font-bold uppercase tracking-widest"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
                                 <FaTrashAlt className="text-[8px]" /> Löschen
                             </button>
 
                             <button
                                 onClick={() => setSelectedIds(new Set())}
-                                className="text-[9px] font-bold text-slate-400 hover:text-slate-600 px-2 py-1.5 uppercase tracking-widest"
+                                className="text-[10px] font-bold text-slate-400 hover:text-slate-600 px-2 py-1.5 uppercase tracking-widest"
                             >
                                 Abbrechen
                             </button>
@@ -447,7 +448,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                     >
                         <FaCloudUploadAlt className="text-5xl text-slate-200" />
                         <div className="text-center">
-                            <p className="text-[13px] font-black text-slate-400 uppercase tracking-widest">
+                            <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest">
                                 {searchQuery ? `Keine Ergebnisse für «${searchQuery}»` : 'Keine Dokumente vorhanden'}
                             </p>
                             {!searchQuery && <p className="text-xs text-slate-300 mt-1">Dateien hierher ziehen oder klicken zum Hochladen</p>}
@@ -488,18 +489,18 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                         className="absolute top-2 left-2 w-3.5 h-3.5 accent-brand-primary cursor-pointer"
                                     />
                                     {/* Type badge */}
-                                    <span className={clsx('absolute top-2 right-2 px-1.5 py-0.5 rounded-sm text-[7px] font-black border', cfg.bg)}>
+                                    <span className={clsx('absolute top-2 right-2 px-1.5 py-0.5 rounded-sm text-[7px] font-bold border', cfg.bg)}>
                                         {cfg.short.charAt(0)}
                                     </span>
                                     {/* Actions — always visible */}
                                     <div className="absolute bottom-1.5 right-1.5 flex gap-0.5">
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-brand-primary bg-white/90 border border-slate-100"
                                             onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }} title="Herunterladen">
-                                            <FaDownload className="text-[9px]" />
+                                            <FaDownload className="text-[10px]" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500 bg-white/90 border border-slate-100"
                                             onClick={(e) => { e.stopPropagation(); setDeleteFileConfirm({ isOpen: true, fileId: file.id, fileName: name }); }} title={t('actions.delete')}>
-                                            <FaTrashAlt className="text-[9px]" />
+                                            <FaTrashAlt className="text-[10px]" />
                                         </Button>
                                     </div>
                                     <div className="mt-4 opacity-80">
@@ -508,7 +509,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                     <p className="text-[10px] font-bold text-slate-700 text-center line-clamp-2 break-all w-full leading-tight">
                                         {name}
                                     </p>
-                                    <p className="text-[9px] text-slate-400 font-mono -mt-1">
+                                    <p className="text-[10px] text-slate-400 font-mono -mt-1">
                                         {formatFileSize(file.size || 0)}
                                     </p>
                                 </div>
@@ -556,7 +557,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                                 />
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className={clsx('px-1.5 py-0.5 rounded-sm text-[8px] font-black uppercase border', cfg.bg)}>
+                                                <span className={clsx('px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase border', cfg.bg)}>
                                                     {cfg.short}
                                                 </span>
                                             </td>
@@ -621,7 +622,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 <div className="fixed inset-0 bg-black/30 z-[9998] flex items-center justify-center backdrop-blur-[2px] animate-in fade-in duration-150">
                     <div className="bg-white rounded-sm border border-slate-200 shadow-2xl w-full max-w-sm mx-4">
                         <div className="px-6 py-5 border-b border-slate-100">
-                            <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Dokumenttyp wählen</p>
+                            <p className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Dokumenttyp wählen</p>
                             <p className="text-xs text-slate-400 mt-1">
                                 {pendingFiles.length === 1 ? `«${pendingFiles[0].name}»` : `${pendingFiles.length} Dateien`}
                             </p>

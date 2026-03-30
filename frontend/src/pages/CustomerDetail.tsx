@@ -294,7 +294,7 @@ const CustomerDetail = () => {
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-50">
                                 <div>
                                     <span className="text-xs text-slate-400 block mb-0.5 font-medium">Vorjahr</span>
                                     <span className="text-sm font-medium text-slate-600">
@@ -309,7 +309,7 @@ const CustomerDetail = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-50">
                                 <div>
                                     <span className="text-xs text-slate-400 block mb-0.5 font-medium">Projekte Gesamt</span>
                                     <div className="flex items-center gap-1.5">

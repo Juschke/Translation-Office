@@ -20,8 +20,11 @@ interface ConfirmModalProps {
     title: string;
     message: string;
     confirmLabel?: string;
+    confirmText?: string;
     cancelLabel?: string;
+    cancelText?: string;
     variant?: 'danger' | 'warning' | 'info';
+    type?: 'danger' | 'warning' | 'info';
     isLoading?: boolean;
     children?: React.ReactNode;
 }
@@ -32,16 +35,23 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     onConfirm,
     title,
     message,
-    confirmLabel = 'Bestätigen',
-    cancelLabel = 'Abbrechen',
-    variant = 'info',
+    confirmLabel,
+    confirmText,
+    cancelLabel,
+    cancelText,
+    variant,
+    type,
     isLoading = false,
     children
 }) => {
+    const activeConfirmLabel = confirmText || confirmLabel || 'Bestätigen';
+    const activeCancelLabel = cancelText || cancelLabel || 'Abbrechen';
+    const activeVariant = type || variant || 'info';
+
     const variantStyles = {
         danger: 'bg-red-600 hover:bg-red-700 text-white',
-        warning: 'bg-amber-500 hover:bg-amber-600 text-white inline-flex items-center justify-center whitespace-nowrap rounded-sm text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-        info: 'bg-brand-primary hover:bg-brand-primary/90 text-white inline-flex items-center justify-center whitespace-nowrap rounded-sm text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        warning: 'bg-amber-500 hover:bg-amber-600 text-white',
+        info: 'bg-brand-primary hover:bg-brand-primary/90 text-white',
     };
 
     return (
@@ -56,7 +66,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 </div>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={onClose} disabled={isLoading}>
-                        {cancelLabel}
+                        {activeCancelLabel}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={(e) => {
@@ -64,9 +74,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             onConfirm();
                         }}
                         disabled={isLoading}
-                        className={cn(variantStyles[variant])}
+                        className={cn(variantStyles[activeVariant])}
                     >
-                        {isLoading ? 'Verarbeitet...' : confirmLabel}
+                        {isLoading ? 'Verarbeitet...' : activeConfirmLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

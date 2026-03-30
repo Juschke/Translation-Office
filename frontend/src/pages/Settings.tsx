@@ -1,6 +1,9 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FaBuilding, FaDatabase, FaHistory, FaFileInvoice, FaBell, FaListOl } from 'react-icons/fa';
+import {
+    FaBuilding, FaDatabase, FaHistory, FaFileInvoice, FaBell, FaHashtag,
+    FaLanguage, FaFileAlt, FaGlobe, FaEnvelopeOpenText, FaTag, FaRuler, FaMoneyBillWave, FaCheck
+} from 'react-icons/fa';
 import CompanySettingsTab from '../components/settings/CompanySettingsTab';
 import InvoiceSettingsTab from '../components/settings/InvoiceSettingsTab';
 import NumberCircleSettingsTab from '../components/settings/NumberCircleSettingsTab';
@@ -10,12 +13,23 @@ import NotificationSettingsTab from '../components/settings/NotificationSettings
 
 const TAB_META: Record<string, { label: string; icon: React.ElementType; description: string }> = {
     company: { label: 'Unternehmen', icon: FaBuilding, description: 'Firmenangaben, Logo und E-Mail-Konten.' },
-    objects: { label: 'Nummernkreise', icon: FaListOl, description: 'ID-Präfixe und Startnummern.' },
+    objects: { label: 'Nummernkreise', icon: FaHashtag, description: 'ID-Präfixe und Startnummern.' },
     invoice: { label: 'Rechnungen', icon: FaFileInvoice, description: 'Layout, Texte und Steuern.' },
     master_data: { label: 'Stammdaten', icon: FaDatabase, description: 'Sprachen, Leistungen, Kategorien.' },
     notifications: { label: 'Benachrichtigungen', icon: FaBell, description: 'Steuerung der System-E-Mails.' },
-    audit: { label: 'Protokoll', icon: FaHistory, description: 'Systemaktivitäten & Änderungen.' },
+    audit: { label: 'Aktivitäten', icon: FaHistory, description: 'Systemaktivitäten & Änderungen.' },
 };
+
+const MASTER_DATA_SUBTABS = [
+    { id: 'languages', label: 'Sprachen', icon: FaLanguage },
+    { id: 'doc_types', label: 'Dokumententypen', icon: FaFileAlt },
+    { id: 'services', label: 'Leistungen', icon: FaGlobe },
+    { id: 'email_templates', label: 'E-Mail-Vorlagen', icon: FaEnvelopeOpenText },
+    { id: 'specializations', label: 'Fachgebiete', icon: FaTag },
+    { id: 'units', label: 'Einheiten', icon: FaRuler },
+    { id: 'currencies', label: 'Währungen', icon: FaMoneyBillWave },
+    { id: 'project_statuses', label: 'Projekt-Status', icon: FaCheck },
+];
 
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
@@ -37,20 +51,47 @@ const Settings: React.FC = () => {
                         <nav className="flex flex-col">
                             {Object.entries(TAB_META).map(([id, item]) => {
                                 const Icon = item.icon;
+                                const isMasterData = id === 'master_data';
+                                const isActive = activeTab === id;
+
                                 return (
-                                    <Link
-                                        key={id}
-                                        to={`/settings?tab=${id}`}
-                                        className={clsx(
-                                            "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-l-2",
-                                            activeTab === id
-                                                ? "bg-brand-primary/5 text-brand-primary border-brand-primary"
-                                                : "text-slate-600 hover:bg-slate-50 border-transparent"
+                                    <React.Fragment key={id}>
+                                        <Link
+                                            to={`/settings?tab=${id}`}
+                                            className={clsx(
+                                                "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-l-2",
+                                                isActive
+                                                    ? "bg-brand-primary/5 text-brand-primary border-brand-primary"
+                                                    : "text-slate-600 hover:bg-slate-50 border-transparent"
+                                            )}
+                                        >
+                                            <Icon className={clsx("w-4 h-4", isActive ? "text-brand-primary" : "text-slate-400")} />
+                                            <span>{item.label}</span>
+                                        </Link>
+
+                                        {/* Sub-items for Master Data */}
+                                        {isMasterData && isActive && (
+                                            <div className="bg-slate-50/50 py-1">
+                                                {MASTER_DATA_SUBTABS.map(sub => (
+                                                    <Link
+                                                        key={sub.id}
+                                                        to={`/settings?tab=master_data&sub=${sub.id}`}
+                                                        className={clsx(
+                                                            "flex items-center gap-3 pl-10 pr-4 py-2 text-[13px] font-medium transition-colors border-l-2",
+                                                            searchParams.get('sub') === sub.id || (!searchParams.get('sub') && sub.id === 'languages')
+                                                                ? "text-brand-primary border-brand-primary bg-brand-primary/5"
+                                                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100 border-transparent"
+                                                        )}
+                                                    >
+                                                        <div className="w-6 h-6 rounded-sm bg-slate-100 flex items-center justify-center shrink-0">
+                                                            <sub.icon className={clsx("w-3.5 h-3.5", (searchParams.get('sub') === sub.id || (!searchParams.get('sub') && sub.id === 'languages')) ? "text-brand-primary" : "text-slate-400")} />
+                                                        </div>
+                                                        <span>{sub.label}</span>
+                                                    </Link>
+                                                ))}
+                                            </div>
                                         )}
-                                    >
-                                        <Icon className={clsx("w-4 h-4", activeTab === id ? "text-brand-primary" : "text-slate-400")} />
-                                        <span>{item.label}</span>
-                                    </Link>
+                                    </React.Fragment>
                                 );
                             })}
                         </nav>

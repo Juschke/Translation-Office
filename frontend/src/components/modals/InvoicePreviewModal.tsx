@@ -160,7 +160,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                 }}
                                 className="h-8 px-3 rounded flex items-center gap-2 bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaPaperPlane className="text-[9px]" />
+                                <FaPaperPlane className="text-[10px]" />
                                 Mahnung
                             </button>
                         )}
@@ -178,7 +178,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                 }}
                                 className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaBan className="text-[9px]" />
+                                <FaBan className="text-[10px]" />
                                 {isCreditNote ? 'Gutschrift stornieren' : 'Stornieren'}
                             </button>
                         )}
@@ -195,7 +195,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                 }}
                                 className="h-8 px-3 rounded flex items-center gap-2 bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaArchive className="text-[9px]" />
+                                <FaArchive className="text-[10px]" />
                                 Archivieren
                             </button>
                         )}
@@ -212,7 +212,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                 }}
                                 className="h-8 px-4 rounded flex items-center gap-2 bg-brand-primary text-white hover:bg-brand-primary/90 transition-colors text-[10px] font-bold uppercase tracking-widest shadow-none"
                             >
-                                <FaStamp className="text-[9px]" />
+                                <FaStamp className="text-[10px]" />
                                 Ausstellen
                             </button>
                         )}
@@ -229,7 +229,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                 }}
                                 className="h-8 px-3 rounded flex items-center gap-2 bg-white text-red-500 border border-red-100 hover:bg-red-50 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaTrash className="text-[9px]" />
+                                <FaTrash className="text-[10px]" />
                                 Löschen
                             </button>
                         )}
@@ -247,7 +247,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                     {isFetchingPreview ? (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Generiere Vorschau...</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Generiere Vorschau...</span>
                         </div>
                     ) : (
                         <div className="w-full h-full">

@@ -54,7 +54,7 @@ const ForgotPassword = () => {
                     </div>
                     <Link
                         to="/auth"
-                        className="inline-flex items-center justify-center gap-2 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors"
+                        className="inline-flex items-center justify-center gap-2 text-sm font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
                     >
                         <FaArrowLeft className="w-3 h-3" /> {t('auth.back_to_login')}
                     </Link>
@@ -86,7 +86,7 @@ const ForgotPassword = () => {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                                className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                                 placeholder="name@beispiel.de"
                             />
                         </div>
@@ -96,7 +96,7 @@ const ForgotPassword = () => {
                         type="submit"
                         disabled={isLoading || !email}
                         className={clsx(
-                            "w-full flex justify-center items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-[#1B4D4F] hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all",
+                            "w-full flex justify-center items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all",
                             (isLoading || !email) && "opacity-70 cursor-not-allowed"
                         )}
                     >

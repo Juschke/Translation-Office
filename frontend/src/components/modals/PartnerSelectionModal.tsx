@@ -270,7 +270,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                         <tr>
                                             <td colSpan={7} className="py-12 text-center">
                                                 <div className="flex flex-col items-center gap-2 text-slate-400">
-                                                    <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                                                    <div className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
                                                     <span className="text-xs font-medium">Partner werden geladen...</span>
                                                 </div>
                                             </td>
@@ -286,7 +286,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                             <tr
                                                 className={clsx(
                                                     "transition-all group cursor-pointer border-b border-transparent",
-                                                    expandedPartnerId === p.id ? "bg-teal-50/30" : "hover:bg-slate-50/80"
+                                                    expandedPartnerId === p.id ? "bg-brand-primary/[0.03]" : "hover:bg-slate-50/80"
                                                 )}
                                                 onClick={() => setExpandedPartnerId(expandedPartnerId === p.id ? null : p.id)}
                                             >

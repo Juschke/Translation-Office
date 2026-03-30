@@ -107,6 +107,8 @@ class InvoiceController extends Controller
             'service_period' => 'nullable|string',
             'tax_exemption' => 'nullable|string|in:none,§19_ustg,reverse_charge',
             'leitweg_id' => 'nullable|string',
+            'intro_text' => 'nullable|string',
+            'footer_text' => 'nullable|string',
             'items' => 'nullable|array',
             'items.*.description' => 'required|string',
             'items.*.quantity' => 'required|numeric',
@@ -168,6 +170,8 @@ class InvoiceController extends Controller
                         'notes' => $validated['notes'] ?? null,
                         'status' => Invoice::STATUS_DRAFT,
                         'is_locked' => false,
+                        'intro_text' => $validated['intro_text'] ?? null,
+                        'footer_text' => $validated['footer_text'] ?? null,
 
                         // --- Customer snapshot (§ 14 UStG Pflichtangaben) ---
                         'snapshot_customer_name' => $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name),
@@ -295,6 +299,8 @@ class InvoiceController extends Controller
             'service_period' => 'nullable|string',
             'tax_exemption' => 'nullable|string|in:none,§19_ustg,reverse_charge',
             'leitweg_id' => 'nullable|string',
+            'intro_text' => 'nullable|string',
+            'footer_text' => 'nullable|string',
             'status' => 'string|in:draft',
             'items' => 'nullable|array',
             'items.*.description' => 'required|string',
@@ -692,7 +698,7 @@ class InvoiceController extends Controller
 
             $tempPdf = $tempDir . '/zugferd_' . uniqid() . '.pdf';
             Log::info("Merging ZUGFeRD into temporary PDF: {$tempPdf}");
-            
+
             /** @var mixed $documentBuilder */
             ZugferdLaravel::buildMergedPdfByDocumentBuilder($documentBuilder, $pdfContent, $tempPdf);
 
@@ -724,11 +730,11 @@ class InvoiceController extends Controller
 
         // Fetch seller contact details — TenantSetting first, Tenant model as fallback
         $tenantModel = \App\Models\Tenant::find($invoice->tenant_id);
-    
+
         // BT-43 / BR-DE-7 (Contact Email) - MUST be provided for XRechnung
         $sellerEmail = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'company_email')->value('value')
             ?: ($tenantModel?->email ?? null);
-            
+
         // BT-42 / BR-DE-6 (Contact Phone) - MUST be provided for XRechnung
         $sellerPhone = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->where('key', 'phone')->value('value')
             ?: ($tenantModel?->phone ?? null);
@@ -738,7 +744,7 @@ class InvoiceController extends Controller
         if (!$sellerEmail || !filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)) {
             $sellerEmail = 'info@translation-office.de'; // Generic but valid fallback for compliance
         }
-        
+
         // BR-DE-27: BT-42 must have at least 3 digits
         if (!$sellerPhone || strlen(preg_replace('/[^0-9]/', '', $sellerPhone)) < 3) {
             $sellerPhone = '+49 123 456789'; // Safe fallback for compliance

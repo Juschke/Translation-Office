@@ -46,7 +46,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                             )}
                         >
                             {selectedId === mail.id && (
-                                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#1B4D4F]" />
+                                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-primary" />
                             )}
                             <div className="flex items-start gap-3 min-w-0">
                                 <div className="pt-2 shrink-0" onClick={e => e.stopPropagation()}>
@@ -55,7 +55,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                         onChange={() => onSelectMail(mail.id)}
                                     />
                                 </div>
-                                <div className="w-8 h-8 rounded-sm bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm border border-[#123a3c]">
+                                <div className="w-8 h-8 rounded-sm bg-brand-primary text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm border border-brand-primary/80">
                                     {initial}
                                 </div>
                                 <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -70,7 +70,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                         >
                                             {senderLabel}
                                         </span>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight shrink-0">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight shrink-0">
                                             {mail.full_time?.split(',')[0]}
                                         </span>
                                     </div>

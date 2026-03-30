@@ -1,7 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { FaCheckCircle, FaInfoCircle, FaCalculator } from 'react-icons/fa';
-import { Button } from '../ui/button';
+import { FaInfoCircle, FaCalculator } from 'react-icons/fa';
 import ProjectPositionsTable from '../modals/ProjectPositionsTable';
 import type { ExtraServiceRow } from '../modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../modals/ProjectPaymentsTable';
@@ -15,6 +13,7 @@ interface ProjectFinancesTabProps {
     onEditPayment?: (payment: any) => void;
     onDeletePayment?: (id: string) => void;
     isPendingSave: boolean;
+    onCreateInvoice?: () => void;
 }
 
 const ProjectFinancesTab = ({
@@ -24,6 +23,7 @@ const ProjectFinancesTab = ({
     onEditPayment,
     onDeletePayment,
     isPendingSave,
+    onCreateInvoice,
 }: ProjectFinancesTabProps) => {
     const [positions, setPositions] = useState<ProjectPosition[]>(() => {
         if (projectData.positions && Array.isArray(projectData.positions)) {
@@ -204,7 +204,7 @@ const ProjectFinancesTab = ({
                 {/* Left Column: Calculation & Payments */}
                 <div className="flex-1 space-y-6 flex flex-col">
                     {/* Positions Table Container */}
-                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                             <div className="flex items-center gap-3">
                                 <FaCalculator className="text-slate-400 text-sm" />
@@ -214,22 +214,11 @@ const ProjectFinancesTab = ({
                                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 border border-amber-100 rounded text-amber-600">
                                             <FaInfoCircle size={10} />
                                             <span className="text-[10px] font-bold uppercase tracking-tight">Gesperrt</span>
-                                            <span className="text-[9px] font-medium opacity-70">({activeInvoice.invoice_number})</span>
+                                            <span className="text-[10px] font-medium opacity-70">({activeInvoice.invoice_number})</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
-                            {!isLocked && (
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={handleSave}
-                                    disabled={isPendingSave}
-                                    className="h-8 px-4 font-bold text-[10px] uppercase tracking-wider bg-brand-primary hover:bg-brand-primary/90 rounded shadow-none"
-                                >
-                                    <FaCheckCircle size={9} /> Speichern
-                                </Button>
-                            )}
                         </div>
 
                         <div className="p-4 flex-1">
@@ -240,12 +229,14 @@ const ProjectFinancesTab = ({
                                 extraRows={extraRows}
                                 onToggleExtra={handleToggleExtra}
                                 onUpdateExtraQty={handleUpdateExtraQty}
+                                onSave={isLocked ? undefined : handleSave}
+                                isSaving={isPendingSave}
                             />
                         </div>
                     </div>
 
                     {/* Payments section */}
-                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4 overflow-hidden">
+                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm p-4 overflow-hidden">
                         <ProjectPaymentsTable
                             payments={projectData.payments || []}
                             onAddPayment={onRecordPayment}
@@ -276,6 +267,8 @@ const ProjectFinancesTab = ({
                         classification={extras.classification ? 'ja' : 'nein'}
                         copies={extras.copies}
                         copyPrice={extras.copyPrice.toString()}
+                        isLocked={isLocked}
+                        onCreateInvoice={onCreateInvoice}
                     />
                 </div>
             </div>

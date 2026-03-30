@@ -80,7 +80,7 @@ export const GuestProjectDetails: React.FC<GuestProjectDetailsProps> = ({ projec
                         )}
                         <div className="flex justify-between text-sm font-semibold pt-3 border-t-2 border-slate-200">
                             <span className="text-slate-900">Gesamtbetrag (Netto)</span>
-                            <span className="text-[#1B4D4F] text-lg">{formatCurrency(project.price_total, project.currency)}</span>
+                            <span className="text-brand-primary text-lg">{formatCurrency(project.price_total, project.currency)}</span>
                         </div>
                     </div>
                 </div>

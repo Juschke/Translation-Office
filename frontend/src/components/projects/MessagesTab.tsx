@@ -153,7 +153,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-slate-800">{personName}</span>
                             <span className={clsx(
-                                "text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
+                                "text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
                                 chatMode === 'customer' ? "bg-brand-primary text-white" : "bg-blue-500 text-white"
                             )}>
                                 {chatMode === 'customer' ? 'Kunde' : 'Partner'}
@@ -165,7 +165,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
 
                 <div className="flex items-center gap-2">
                     <div className="hidden lg:flex items-center gap-2 mr-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 min-w-[300px]">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Portal:</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Portal:</span>
                         <div className="flex-1">
                             <input
                                 readOnly
@@ -175,7 +175,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                                         : 'Kein Link'
                                 }
                                 onClick={(e) => (e.target as HTMLInputElement).select()}
-                                className="w-full bg-transparent border-none rounded-sm px-1 py-0.5 text-[9px] text-slate-400 font-medium outline-none cursor-default"
+                                className="w-full bg-transparent border-none rounded-sm px-1 py-0.5 text-[10px] text-slate-400 font-medium outline-none cursor-default"
                             />
                         </div>
                         <div className="flex items-center gap-1">
@@ -195,7 +195,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                                 size="sm"
                                 onClick={handleSendGuestLink}
                                 disabled={isGeneratingToken}
-                                className="h-6 px-2 text-[8px] font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm flex items-center gap-1"
+                                className="h-6 px-2 text-[10px] font-bold flex items-center gap-1"
                             >
                                 {isGeneratingToken ? (
                                     <span className="animate-spin">○</span>
@@ -211,7 +211,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                         variant="ghost"
                         size="sm"
                         onClick={() => setChatMode(chatMode === 'customer' ? 'partner' : 'customer')}
-                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-brand-primary hover:bg-slate-50 transition-all rounded-full h-8 px-4"
+                        className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-brand-primary hover:bg-slate-50 transition-all rounded-full h-8 px-4"
                     >
                         <FaExchangeAlt size={9} />
                         Wechseln
@@ -251,7 +251,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                                 >
                                     {msg.file ? (
                                         <div className="flex flex-col gap-2 min-w-[200px]">
-                                            <div className="flex items-center gap-3 p-2 bg-black/5 rounded-lg border border-black/5">
+                                            <div className="flex items-center gap-3 p-2 bg-black/5 rounded-sm border border-black/5">
                                                 <div className={clsx("text-2xl", getFileIcon(msg.file.extension).color)}>
                                                     {(() => {
                                                         const { icon: Icon } = getFileIcon(msg.file.extension);
@@ -262,7 +262,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                                                     <span className="font-bold truncate text-[11px] leading-tight">
                                                         {msg.file.original_name}
                                                     </span>
-                                                    <span className="text-[9px] text-slate-500 font-medium">
+                                                    <span className="text-[10px] text-slate-500 font-medium">
                                                         {formatBytes(msg.file.file_size)}
                                                     </span>
                                                 </div>
@@ -271,7 +271,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 px-2 text-[10px] bg-white/50 hover:bg-white flex items-center gap-1.5 font-bold text-slate-600 rounded-lg"
+                                                    className="h-7 px-2 text-[10px] bg-white/50 hover:bg-white flex items-center gap-1.5 font-bold text-slate-600 rounded-sm"
                                                     onClick={() => handleFilePreview(msg.file)}
                                                 >
                                                     <FaEye size={10} /> Vorschau
@@ -279,7 +279,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 px-2 text-[10px] bg-white/50 hover:bg-white flex items-center gap-1.5 font-bold text-slate-600 rounded-lg"
+                                                    className="h-7 px-2 text-[10px] bg-white/50 hover:bg-white flex items-center gap-1.5 font-bold text-slate-600 rounded-sm"
                                                     onClick={() => handleFileDownload(msg.file)}
                                                 >
                                                     <FaDownload size={10} /> Download
@@ -290,7 +290,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                                         <div className="whitespace-pre-wrap break-words pr-12 pb-3">{msg.content}</div>
                                     )}
                                     <div className="absolute bottom-1 right-1.5 flex items-center gap-1">
-                                        <span className="text-[9px] text-slate-400 font-medium">
+                                        <span className="text-[10px] text-slate-400 font-medium">
                                             {new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                         {isMe && <span className="text-sky-400 text-[10px] font-bold">✓✓</span>}
@@ -330,7 +330,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                             size="icon"
                             onClick={handleSendMessage}
                             disabled={!newMessage.trim()}
-                            className="absolute right-1.5 top-1.5 w-8 h-8 rounded-full bg-brand-primary hover:bg-brand-primary/90 shadow-sm"
+                            className="absolute right-1.5 top-1.5 w-8 h-8 rounded-full"
                         >
                             <FaPaperPlane className="text-xs" />
                         </Button>
@@ -346,12 +346,12 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
                 )}>
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col">
-                            <span className={clsx("text-[8px] font-black uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>Gesamt (Brutto)</span>
+                            <span className={clsx("text-[10px] font-bold uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>Gesamt (Brutto)</span>
                             <span className="text-xs font-bold tabular-nums">{(financials.grossTotal || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
                         </div>
                         <div className="w-px h-6 bg-current opacity-10"></div>
                         <div className="flex flex-col">
-                            <span className={clsx("text-[8px] font-black uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>Geleistet</span>
+                            <span className={clsx("text-[10px] font-bold uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>Geleistet</span>
                             <span className={clsx("text-xs font-bold tabular-nums", !isPaid && financials?.paid > 0 ? "text-emerald-600" : "")}>
                                 {(financials.paid || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                             </span>
@@ -360,7 +360,7 @@ const MessagesTab = ({ projectData, projectId, financials }: MessagesTabProps) =
 
                     <div className="flex items-center gap-2">
                         <div className="flex flex-col items-end">
-                            <span className={clsx("text-[8px] font-black uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>
+                            <span className={clsx("text-[10px] font-bold uppercase tracking-widest", isPaid ? "text-emerald-100" : "text-slate-400")}>
                                 {isPaid ? 'STATUS' : 'OFFEN'}
                             </span>
                             <span className="text-xs font-bold tabular-nums uppercase">

@@ -396,7 +396,7 @@ const Billing = () => {
                                     <FaCreditCard className="absolute left-3 top-2.5 text-slate-400" />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-500 mb-1.5">Gültig bis</label>
                                     <input name="card_expiry" type="text" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm outline-none focus:border-slate-900 transition-colors text-center" placeholder="MM/JJ" required />

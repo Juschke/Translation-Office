@@ -538,7 +538,7 @@ body,
   background: linear-gradient(to bottom, #f5f5f5 0%, #e8e8e8 100%) !important;
   border-bottom: 2px solid #c8c8c8 !important;
   border-right: 1px solid #ddd !important;
-  color: #1B4D4F !important;
+  color: var(--color-primary) !important;
   font-size: 10px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
@@ -568,7 +568,7 @@ body,
 .dt-column-resizer:hover,
 .dt-column-resizer.is-resizing {
   background: rgba(27, 77, 79, 0.1) !important;
-  border-right: 2px solid #1B4D4F;
+  border-right: 2px solid var(--color-primary);
 }
 
 .dt-column-resizing {
@@ -623,7 +623,7 @@ body,
 /* Sort icons — active = teal, inactive = gray */
 .ant-table-wrapper .ant-table-column-sorter-up.active,
 .ant-table-wrapper .ant-table-column-sorter-down.active {
-  color: #1B4D4F !important;
+  color: var(--color-primary) !important;
 }
 
 .ant-table-wrapper .ant-table-column-sorter-up:not(.active),
@@ -639,17 +639,17 @@ body,
 
 /* ── ANTD TABLE CHECKBOXES — brand teal ── */
 .ant-table-wrapper .ant-checkbox-checked .ant-checkbox-inner {
-  background-color: #1B4D4F !important;
-  border-color: #1B4D4F !important;
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
 }
 
 .ant-table-wrapper .ant-checkbox-indeterminate .ant-checkbox-inner::after {
-  background-color: #1B4D4F !important;
+  background-color: var(--color-primary) !important;
 }
 
 .ant-table-wrapper .ant-checkbox-wrapper:hover .ant-checkbox-inner,
 .ant-table-wrapper .ant-checkbox:hover .ant-checkbox-inner {
-  border-color: #1B4D4F !important;
+  border-color: var(--color-primary) !important;
 }
 
 /* Fix checkbox column header padding */
@@ -701,18 +701,18 @@ body,
 
 /* ── LOADING SPINNER — brand teal ── */
 .ant-spin-dot-item {
-  background-color: #1B4D4F !important;
+  background-color: var(--color-primary) !important;
 }
 
 .ant-spin-text {
-  color: #1B4D4F !important;
+  color: var(--color-primary) !important;
   font-size: 12px !important;
   font-weight: 600 !important;
 }
 
 /* ── PAGINATION ── */
 .ant-pagination-item-active {
-  background: linear-gradient(to bottom, #235e62, #1B4D4F) !important;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 85%, #fff), var(--color-primary)) !important;
   border-color: #133d3f !important;
 }
 
@@ -778,7 +778,7 @@ body,
 .ant-btn-default:not(.ant-btn-dangerous):not(:disabled):hover {
   background: linear-gradient(to bottom, #fff 0%, #e0e0e0 100%) !important;
   border-color: #adadad !important;
-  color: #1B4D4F !important;
+  color: var(--color-primary) !important;
 }
 
 .ant-btn-default:not(.ant-btn-dangerous):not(:disabled):active {
@@ -795,18 +795,18 @@ body,
 }
 
 .ant-select-selector:hover {
-  border-color: #1B4D4F !important;
+  border-color: var(--color-primary) !important;
 }
 
 .ant-select-focused .ant-select-selector {
-  border-color: #1B4D4F !important;
+  border-color: var(--color-primary) !important;
   box-shadow: 0 0 0 2px rgba(27, 77, 79, 0.12) !important;
 }
 
 /* ── SELECT DROPDOWN OPTIONS — brand teal ── */
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
   background-color: #eaf4f3 !important;
-  color: #1B4D4F !important;
+  color: var(--color-primary) !important;
   font-weight: 600 !important;
 }
 

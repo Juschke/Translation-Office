@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FaSave, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaSave, FaPlus, FaTrash, FaPalette } from 'react-icons/fa';
 import clsx from 'clsx';
 import { settingsService } from '../../api/services';
 import Input from '../common/Input';
@@ -161,7 +161,7 @@ const InvoiceSettingsTab = () => {
                     onClick={handleSave}
                     disabled={updateMutation.isPending}
                     isLoading={updateMutation.isPending}
-                    className="px-6 py-2 text-xs font-medium flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90 transition shadow-sm border-brand-primary"
+                    className="flex items-center gap-2"
                 >
                     <FaSave /> {updateMutation.isPending ? t('settings.saving') : t('settings.save')}
                 </Button>
@@ -310,7 +310,7 @@ const InvoiceSettingsTab = () => {
                                 {/* Add new tax rate */}
                                 <div className="border border-dashed border-slate-200 rounded-sm p-4">
                                     <h5 className="text-xs font-medium text-slate-400 mb-3">Neuen Steuersatz hinzufügen</h5>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <Input
                                             placeholder="Satz (%)"
                                             type="number"
@@ -473,7 +473,7 @@ const InvoiceSettingsTab = () => {
                                         {formData.footer_style === 'standard' && (
                                             <div className="bg-slate-50 p-4 rounded-sm border border-slate-200">
                                                 <span className="text-xs text-slate-400 block mb-2">Vorschau der Standard-Fußzeile:</span>
-                                                <div className="grid grid-cols-3 gap-4 text-xs text-slate-500 border-t border-slate-200 pt-3">
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-500 border-t border-slate-200 pt-3">
                                                     <div>
                                                         <strong className="text-slate-600 block mb-1">Anschrift</strong>
                                                         {companyData?.company_name || 'Firma'}<br />
@@ -533,7 +533,7 @@ const InvoiceSettingsTab = () => {
                             label="Rechnungs-Layout"
                             description="Wählen Sie eines der drei verfügbaren Layouts. Das Layout bestimmt die grundlegende Struktur Ihrer Rechnungs-PDF."
                         >
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {[
                                     {
                                         id: 'din5008',

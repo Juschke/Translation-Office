@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowRight, FaChevronLeft, FaChevronRight, FaEnvelope, FaBolt, FaExclamationTriangle } from 'react-icons/fa';
 import clsx from 'clsx';
@@ -169,7 +168,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     {p.partner.company_name || `${p.partner.first_name} ${p.partner.last_name}`}
                                                 </span>
                                                 <div className="flex items-center gap-1.5">
-                                                    <FaEnvelope className="text-[9px] text-slate-300" />
+                                                    <FaEnvelope className="text-[10px] text-slate-300" />
                                                     <span className="text-[10px] text-slate-400 truncate max-w-[130px]">
                                                         {p.partner.email}
                                                     </span>
@@ -191,7 +190,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     {(p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'DE').toUpperCase()}
                                                 </span>
                                             </div>
-                                            <FaArrowRight className="text-[9px] text-slate-300" />
+                                            <FaArrowRight className="text-[10px] text-slate-300" />
                                             <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded-sm border border-slate-100">
                                                 <img
                                                     src={getFlagUrl(p.target_language?.iso_code || p.targetLanguage?.iso_code || 'en')}

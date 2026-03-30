@@ -13,7 +13,7 @@ const InboxHeader = ({ onSync, isSyncing, onCompose }: InboxHeaderProps) => {
     return (
         <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-200 gap-4">
             <div className="min-w-0">
-                <h1 className="text-xl font-semibold text-slate-800 truncate">Email Management</h1>
+                <h1 className="text-xl font-semibold text-slate-800 truncate">E-Mail</h1>
                 <p className="text-slate-400 text-xs font-medium hidden sm:block">Zentrale Verwaltung</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">

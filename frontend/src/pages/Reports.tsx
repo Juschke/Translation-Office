@@ -270,7 +270,7 @@ const Reports = () => {
                     <Button
                         variant="default"
                         onClick={() => setAppliedDateRange(dateRange)}
-                        className="px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 shrink-0 h-[38px]"
+                        className="flex items-center justify-center gap-2 shrink-0"
                     >
                         <FaFilter className="text-xs" /> {t('common.show')}
                     </Button>
@@ -307,25 +307,21 @@ const Reports = () => {
                             label={t('reports.kpi.total_revenue')}
                             value={fmt(kpis?.revenue ?? 0)}
                             icon={<FaEuroSign />}
-                            iconColor="text-slate-900"
                         />
                         <KPICard
                             label={t('reports.kpi.avg_margin')}
                             value={`${kpis?.margin ?? 0} %`}
                             icon={<FaPercentage />}
-                            iconColor="text-emerald-600"
                         />
                         <KPICard
                             label={t('reports.kpi.jobs')}
                             value={`${kpis?.jobs ?? 0}`}
                             icon={<FaLayerGroup />}
-                            iconColor="text-blue-600"
                         />
                         <KPICard
                             label={t('reports.kpi.growth')}
                             value={`${(kpis?.growth ?? 0) > 0 ? '+' : ''}${kpis?.growth ?? 0} %`}
                             icon={<FaChartLine />}
-                            iconColor="text-indigo-600"
                             subValue={t('reports.kpi.vs_period')}
                         />
                     </div>
@@ -355,7 +351,7 @@ const Reports = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                         <div className="bg-white p-5 rounded-sm shadow-sm border border-slate-200">
                             <h3 className="text-xs font-medium text-slate-600 flex items-center gap-2 mb-4">
-                                <FaTasks className="text-teal-500" /> Umsatz nach Sprache
+                                <FaTasks className="text-brand-primary" /> Umsatz nach Sprache
                             </h3>
                             {(langDist?.revenue?.length ?? 0) > 0 ? (
                                 <div className="h-[260px]">

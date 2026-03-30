@@ -89,7 +89,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                                 onClick={handlePrint}
                                 className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaPrint className="text-[9px]" />
+                                <FaPrint className="text-[10px]" />
                                 Drucken
                             </button>
                         )}
@@ -98,7 +98,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                             onClick={() => window.open(file.url, '_blank')}
                             className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                         >
-                            <FaExternalLinkAlt className="text-[9px]" />
+                            <FaExternalLinkAlt className="text-[10px]" />
                             <span className="hidden sm:inline">Neuer Tab</span>
                         </button>
 
@@ -106,7 +106,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                             onClick={onDownload}
                             className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                         >
-                            <FaDownload className="text-[9px]" />
+                            <FaDownload className="text-[10px]" />
                             <span className="hidden sm:inline">Laden</span>
                         </button>
 
@@ -115,7 +115,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                                 onClick={() => { onClose(); onDelete(); }}
                                 className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
                             >
-                                <FaTrashAlt className="text-[9px]" />
+                                <FaTrashAlt className="text-[10px]" />
                                 <span className="hidden sm:inline">Löschen</span>
                             </button>
                         )}

@@ -10,6 +10,7 @@ import CustomerDetail from './pages/CustomerDetail';
 import Partners from './pages/Partners';
 import PartnerDetail from './pages/PartnerDetail';
 import Invoices from './pages/Invoices';
+import NewInvoice from './pages/NewInvoice';
 import GuestProjectView from './pages/GuestProjectView';
 
 import Inbox from './pages/Inbox';
@@ -80,6 +81,8 @@ function App() {
                             <Route path="/partners" element={<Partners />} />
                             <Route path="/partners/:id" element={<PartnerDetail />} />
                             <Route path="/invoices" element={<RoleGuard minRole="manager"><Invoices /></RoleGuard>} />
+                            <Route path="/invoices/new" element={<RoleGuard minRole="manager"><NewInvoice /></RoleGuard>} />
+                            <Route path="/invoices/:id/edit" element={<RoleGuard minRole="manager"><NewInvoice /></RoleGuard>} />
                             <Route path="/inbox" element={<RoleGuard minRole="manager"><Inbox /></RoleGuard>} />
                             <Route path="/reports" element={<RoleGuard minRole="manager"><Reports /></RoleGuard>} />
                             <Route path="/notifications" element={<Notifications />} />

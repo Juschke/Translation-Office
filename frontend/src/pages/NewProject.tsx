@@ -524,9 +524,9 @@ const NewProject = () => {
                                     <table className="w-full text-left border-collapse">
                                         <thead className="sticky top-0 bg-white border-b border-slate-200">
                                             <tr>
-                                                <th className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Partner</th>
-                                                <th className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Sprachen</th>
-                                                <th className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right w-16">Wählen</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Partner</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Sprachen</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right w-16">Wählen</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
@@ -540,7 +540,7 @@ const NewProject = () => {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-2">
-                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-[9px] font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
+                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-[10px] font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
                                                     </td>
                                                     <td className="px-4 py-2 text-right">
                                                         <div className={clsx('inline-flex items-center justify-center w-5 h-5 rounded-full border transition', translator === p.id.toString() ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200 text-transparent')}>

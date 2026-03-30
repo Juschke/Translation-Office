@@ -274,7 +274,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     onChange={(e) => handleChange('name_native', e.target.value)}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">ISO Code <span className="text-red-500">*</span></label>
                                     <input
@@ -316,7 +316,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     error={errors.category}
                                 />
                             </div>
-                            <div className="grid grid-cols-3 gap-4 pb-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-2">
                                 <div className="space-y-1.5 col-span-1">
                                     <label className="block text-xs font-medium text-slate-400">{t('fields.code')}</label>
                                     <input
@@ -346,7 +346,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {/* Service Fields */}
                     {type === 'services' && (
                         <>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="space-y-1.5 col-span-2">
                                     <label className="block text-xs font-medium text-slate-400">Leistungs-Name <span className="text-red-500">*</span></label>
                                     <input
@@ -370,7 +370,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Einheit</label>
                                     <select
@@ -417,7 +417,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {/* Unit Fields */}
                     {type === 'units' && (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5 col-span-2">
                                     <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
                                     <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Normseite" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
@@ -449,7 +449,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {/* Currency Fields */}
                     {type === 'currencies' && (
                         <>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Code (ISO) <span className="text-red-500">*</span></label>
                                     <input id="code" type="text" maxLength={3} className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all uppercase", errors.code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="EUR" value={formData.code || ''} onChange={(e) => handleChange('code', e.target.value.toUpperCase())} />

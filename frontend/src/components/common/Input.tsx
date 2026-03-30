@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/select';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> {
  label?: string;
+ tooltip?: string;
  error?: boolean;
  helperText?: string;
  startIcon?: ReactNode;
@@ -19,6 +20,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTe
 
 const Input: React.FC<InputProps> = ({
  label,
+ tooltip,
  error,
  helperText,
  startIcon,
@@ -35,6 +37,7 @@ const Input: React.FC<InputProps> = ({
  return (
  <Textarea
  label={label}
+ tooltip={tooltip}
  error={error}
  helperText={helperText}
  containerClassName={containerClassName}
@@ -43,11 +46,12 @@ const Input: React.FC<InputProps> = ({
  />
  );
  }
-
+ 
  if (isSelect) {
  return (
  <Select
  label={label}
+ tooltip={tooltip}
  error={error}
  helperText={helperText}
  containerClassName={containerClassName}
@@ -58,10 +62,11 @@ const Input: React.FC<InputProps> = ({
  </Select>
  );
  }
-
+ 
  return (
  <ShadcnInput
  label={label}
+ tooltip={tooltip}
  error={error}
  helperText={helperText}
  startIcon={startIcon}

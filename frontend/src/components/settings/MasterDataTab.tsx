@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import {
-    FaPlus, FaTrash, FaGlobe, FaEdit, FaEnvelopeOpenText, FaLanguage, FaFileAlt, FaTag, FaRuler, FaMoneyBillWave, FaCheck
+    FaPlus, FaTrash, FaEdit
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { Button } from '../ui/button';
@@ -116,43 +116,21 @@ const MasterDataTab = () => {
 
     return (
         <>
-            <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden flex flex-col h-full animate-fadeIn">
+            <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden flex flex-col h-full min-h-[500px] sm:min-h-0 animate-fadeIn">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0 sticky top-0 z-20">
                     <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 italic">
                         {t(`settings.master_data.${masterTab === 'languages' ? 'language_config' : masterTab === 'doc_types' ? 'doc_categories' : masterTab === 'services' ? 'service_catalog' : masterTab === 'email_templates' ? 'email_templates' : masterTab === 'specializations' ? 'specializations' : masterTab === 'units' ? 'units' : masterTab === 'currencies' ? 'currencies' : 'project_statuses'}`)}
                     </h3>
-                    <Button variant="default" size="sm" onClick={() => handleOpenModal()} className="shrink-0 flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90 transition shadow-sm border-brand-primary">
+                    <Button variant="default" size="sm" onClick={() => handleOpenModal()} className="shrink-0 flex items-center gap-2">
                         <FaPlus className="text-[10px]" /> {t('settings.master_data.add_new')}
                     </Button>
                 </div>
 
-                {/* Submenu / Category Tabs */}
-                <div className="px-6 py-3 border-b border-slate-100 bg-white flex flex-wrap items-center gap-1 shrink-0">
-                    {(['languages', 'doc_types', 'services', 'email_templates', 'specializations', 'units', 'currencies', 'project_statuses'] as const).map(tab_key => {
-                        const Icon = tab_key === 'languages' ? FaLanguage : tab_key === 'doc_types' ? FaFileAlt : tab_key === 'services' ? FaGlobe : tab_key === 'email_templates' ? FaEnvelopeOpenText : tab_key === 'specializations' ? FaTag : tab_key === 'units' ? FaRuler : tab_key === 'currencies' ? FaMoneyBillWave : FaCheck;
-                        const isActive = masterTab === tab_key;
 
-                        return (
-                            <button
-                                key={tab_key}
-                                onClick={() => setMasterTab(tab_key)}
-                                className={clsx(
-                                    'flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition rounded-sm border shrink-0',
-                                    isActive
-                                        ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
-                                        : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 border-slate-200'
-                                )}
-                            >
-                                <Icon className={clsx("w-3 h-3 transition-colors", isActive ? "text-white/90" : "text-slate-400")} />
-                                {t(`settings.tabs.${tab_key}`)}
-                            </button>
-                        );
-                    })}
-                </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 overflow-x-auto min-h-[500px]">
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ minHeight: '530px' }}>
                     {masterTab === 'languages' && (isLanguagesLoading ? <TableSkeleton rows={5} columns={6} /> : <DataTable isLoading={isLanguagesLoading} data={languages} columns={[
                         { id: 'name', header: t('fields.name'), accessor: (l: any) => <span className="font-medium text-slate-800 text-sm">{l.name_internal}</span> },
                         { id: 'code', header: t('settings.master_data.code_iso'), accessor: (l: any) => <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 border border-slate-100 rounded-sm">{l.iso_code}</span>, className: 'w-32' },

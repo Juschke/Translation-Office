@@ -1,15 +1,15 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionService } from '@/api/services';
 import type { CurrentSubscriptionResponse, UpgradeRequest } from '@/types/subscription';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select } from 'antd';
 import { FaCrown, FaCheckCircle, FaExclamationTriangle, FaClock, FaRocket } from 'react-icons/fa';
-import { Spin, Modal, Form, Select, Input, message } from 'antd';
+import toast from 'react-hot-toast';
 import clsx from 'clsx';
-
-const { TextArea } = Input;
 
 const PLAN_INFO = {
   free: {
@@ -49,7 +49,11 @@ const STATUS_CONFIG = {
 const SubscriptionTab: React.FC = () => {
   const queryClient = useQueryClient();
   const [upgradeModalOpen, setUpgradeModalOpen] = React.useState(false);
-  const [form] = Form.useForm();
+  const [upgradeForm, setUpgradeForm] = React.useState<{ plan: string; billing_cycle: string; message: string }>({
+    plan: '',
+    billing_cycle: '',
+    message: '',
+  });
 
   const { data, isLoading, error } = useQuery<CurrentSubscriptionResponse>({
     queryKey: ['subscription'],
@@ -59,20 +63,29 @@ const SubscriptionTab: React.FC = () => {
   const upgradeMutation = useMutation({
     mutationFn: (values: UpgradeRequest) => subscriptionService.requestUpgrade(values),
     onSuccess: () => {
-      message.success('Ihre Upgrade-Anfrage wurde erfolgreich übermittelt!');
+      toast.success('Ihre Upgrade-Anfrage wurde erfolgreich übermittelt!');
       setUpgradeModalOpen(false);
-      form.resetFields();
+      setUpgradeForm({ plan: '', billing_cycle: '', message: '' });
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
     },
     onError: () => {
-      message.error('Fehler beim Senden der Upgrade-Anfrage');
+      toast.error('Fehler beim Senden der Upgrade-Anfrage');
     },
   });
 
+  const handleUpgrade = () => {
+    if (!upgradeForm.plan || !upgradeForm.billing_cycle) {
+      toast.error('Bitte wählen Sie Plan und Abrechnungszyklus');
+      return;
+    }
+    upgradeMutation.mutate(upgradeForm as UpgradeRequest);
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spin size="large" />
+      <div className="flex items-center justify-center h-96 gap-3 text-slate-400">
+        <div className="w-5 h-5 border-4 border-slate-200 border-t-brand-primary rounded-full animate-spin" />
+        <span className="text-sm font-medium">Lade Abonnement...</span>
       </div>
     );
   }
@@ -93,22 +106,11 @@ const SubscriptionTab: React.FC = () => {
 
   const formatDate = (date: string | null) => {
     if (!date) return 'Nicht verfügbar';
-    return new Date(date).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    return new Date(date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  const formatEur = (cents: number) => {
-    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
-  };
-
-  const handleUpgrade = () => {
-    form.validateFields().then((values) => {
-      upgradeMutation.mutate(values);
-    });
-  };
+  const formatEur = (cents: number) =>
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 
   return (
     <div className="space-y-6">
@@ -150,9 +152,7 @@ const SubscriptionTab: React.FC = () => {
               <div className="text-sm text-slate-500">
                 pro {subscription.billing_cycle === 'monthly' ? 'Monat' : 'Jahr'}
               </div>
-              <div className="text-xs text-slate-400 mt-1">
-                inkl. {subscription.vat_rate_percent}% MwSt.
-              </div>
+              <div className="text-xs text-slate-400 mt-1">inkl. {subscription.vat_rate_percent}% MwSt.</div>
             </div>
           </div>
 
@@ -184,10 +184,9 @@ const SubscriptionTab: React.FC = () => {
             </ul>
           </div>
 
-          {/* Upgrade Button */}
           {subscription.plan !== 'enterprise' && (
-            <Button onClick={() => setUpgradeModalOpen(true)} className="w-full sm:w-auto">
-              <FaRocket className="mr-2" />
+            <Button onClick={() => setUpgradeModalOpen(true)} className="w-full sm:w-auto flex items-center gap-2">
+              <FaRocket className="text-xs" />
               Plan upgraden
             </Button>
           )}
@@ -197,43 +196,27 @@ const SubscriptionTab: React.FC = () => {
       {/* Usage Statistics */}
       <div className="rounded-sm border border-slate-200 shadow-sm bg-white p-6">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Nutzungsstatistiken</h3>
-
         <div className="space-y-6">
-          {/* Users */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-slate-700">Benutzer</span>
-              <span className="text-sm text-slate-600">
-                {usage.users_count} / {usage.users_limit ?? '∞'}
-              </span>
+              <span className="text-sm text-slate-600">{usage.users_count} / {usage.users_limit ?? '∞'}</span>
             </div>
-            <Progress
-              value={usage.users_limit ? (usage.users_count / usage.users_limit) * 100 : 0}
-              className="h-2"
-            />
+            <Progress value={usage.users_limit ? (usage.users_count / usage.users_limit) * 100 : 0} className="h-2" />
             {usage.users_limit && usage.users_remaining !== null && usage.users_remaining <= 2 && (
               <p className="text-xs text-orange-600 mt-1">⚠️ Nur noch {usage.users_remaining} Plätze verfügbar</p>
             )}
           </div>
-
-          {/* Projects */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-slate-700">Projekte</span>
-              <span className="text-sm text-slate-600">
-                {usage.projects_count} / {usage.projects_limit ?? '∞'}
-              </span>
+              <span className="text-sm text-slate-600">{usage.projects_count} / {usage.projects_limit ?? '∞'}</span>
             </div>
-            <Progress
-              value={usage.projects_limit ? (usage.projects_count / usage.projects_limit) * 100 : 0}
-              className="h-2"
-            />
+            <Progress value={usage.projects_limit ? (usage.projects_count / usage.projects_limit) * 100 : 0} className="h-2" />
             {usage.projects_limit && usage.projects_remaining !== null && usage.projects_remaining <= 10 && (
               <p className="text-xs text-orange-600 mt-1">⚠️ Nur noch {usage.projects_remaining} Projekte verfügbar</p>
             )}
           </div>
-
-          {/* Storage (wenn definiert) */}
           {subscription.max_storage_gb && (
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -248,7 +231,6 @@ const SubscriptionTab: React.FC = () => {
       {/* Billing Period */}
       <div className="rounded-sm border border-slate-200 shadow-sm bg-white p-6">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Abrechnungsinformationen</h3>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-slate-500">Gestartet am:</span>
@@ -257,7 +239,7 @@ const SubscriptionTab: React.FC = () => {
           <div>
             <span className="text-slate-500">Aktueller Zeitraum:</span>
             <p className="font-medium text-slate-800">
-              {formatDate(subscription.current_period_start)} - {formatDate(subscription.current_period_end)}
+              {formatDate(subscription.current_period_start)} – {formatDate(subscription.current_period_end)}
             </p>
           </div>
           <div>
@@ -283,53 +265,66 @@ const SubscriptionTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Upgrade Modal */}
-      <Modal
-        title="Plan upgraden"
-        open={upgradeModalOpen}
-        onCancel={() => setUpgradeModalOpen(false)}
-        footer={[
-          <Button key="cancel" variant="outline" onClick={() => setUpgradeModalOpen(false)}>
-            Abbrechen
-          </Button>,
-          <Button key="submit" onClick={handleUpgrade} isLoading={upgradeMutation.isPending}>
-            Anfrage senden
-          </Button>,
-        ]}
-      >
-        <Form form={form} layout="vertical" className="mt-4">
-          <Form.Item
-            label="Neuer Plan"
-            name="plan"
-            rules={[{ required: true, message: 'Bitte wählen Sie einen Plan' }]}
-          >
-            <Select placeholder="Plan auswählen">
-              {subscription.plan !== 'starter' && <Select.Option value="starter">Starter</Select.Option>}
-              {subscription.plan !== 'professional' && <Select.Option value="professional">Professional</Select.Option>}
-              {subscription.plan !== 'enterprise' && <Select.Option value="enterprise">Enterprise</Select.Option>}
-            </Select>
-          </Form.Item>
+      {/* Upgrade Dialog */}
+      <Dialog open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Plan upgraden</DialogTitle>
+          </DialogHeader>
 
-          <Form.Item
-            label="Abrechnungszyklus"
-            name="billing_cycle"
-            rules={[{ required: true, message: 'Bitte wählen Sie einen Zyklus' }]}
-          >
-            <Select placeholder="Zyklus auswählen">
-              <Select.Option value="monthly">Monatlich</Select.Option>
-              <Select.Option value="yearly">Jährlich (2 Monate gratis)</Select.Option>
-            </Select>
-          </Form.Item>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Neuer Plan *</label>
+              <Select
+                className="w-full"
+                placeholder="Plan auswählen"
+                value={upgradeForm.plan || undefined}
+                onChange={(val) => setUpgradeForm(f => ({ ...f, plan: val }))}
+              >
+                {subscription.plan !== 'starter' && <Select.Option value="starter">Starter</Select.Option>}
+                {subscription.plan !== 'professional' && <Select.Option value="professional">Professional</Select.Option>}
+                {subscription.plan !== 'enterprise' && <Select.Option value="enterprise">Enterprise</Select.Option>}
+              </Select>
+            </div>
 
-          <Form.Item label="Nachricht (optional)" name="message">
-            <TextArea rows={3} placeholder="Zusätzliche Informationen oder Wünsche..." />
-          </Form.Item>
-        </Form>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Abrechnungszyklus *</label>
+              <Select
+                className="w-full"
+                placeholder="Zyklus auswählen"
+                value={upgradeForm.billing_cycle || undefined}
+                onChange={(val) => setUpgradeForm(f => ({ ...f, billing_cycle: val }))}
+              >
+                <Select.Option value="monthly">Monatlich</Select.Option>
+                <Select.Option value="yearly">Jährlich (2 Monate gratis)</Select.Option>
+              </Select>
+            </div>
 
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-sm text-sm text-blue-800">
-          ℹ️ Ihre Upgrade-Anfrage wird an unser Team gesendet. Wir werden uns in Kürze bei Ihnen melden.
-        </div>
-      </Modal>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Nachricht (optional)</label>
+              <Textarea
+                rows={3}
+                placeholder="Zusätzliche Informationen oder Wünsche..."
+                value={upgradeForm.message}
+                onChange={(e) => setUpgradeForm(f => ({ ...f, message: e.target.value }))}
+              />
+            </div>
+
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-sm text-sm text-blue-800">
+              ℹ️ Ihre Upgrade-Anfrage wird an unser Team gesendet. Wir werden uns in Kürze bei Ihnen melden.
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="secondary" onClick={() => setUpgradeModalOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleUpgrade} disabled={upgradeMutation.isPending} className="flex items-center gap-2">
+              {upgradeMutation.isPending ? 'Sendet...' : 'Anfrage senden'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

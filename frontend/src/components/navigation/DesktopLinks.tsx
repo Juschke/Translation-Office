@@ -22,11 +22,14 @@ interface DesktopLinksProps {
     dashboardData: any;
     unreadEmails: number;
     hasMinRole: (role: UserRole) => boolean;
-    isContactsOpen: boolean;
-    setIsContactsOpen: (open: boolean) => void;
+    isCustomersOpen: boolean;
+    setIsCustomersOpen: (open: boolean) => void;
+    isPartnersOpen: boolean;
+    setIsPartnersOpen: (open: boolean) => void;
     isSettingsOpen: boolean;
     setIsSettingsOpen: (open: boolean) => void;
-    contactsRef: React.RefObject<HTMLDivElement | null>;
+    customersRef: React.RefObject<HTMLDivElement | null>;
+    partnersRef: React.RefObject<HTMLDivElement | null>;
     settingsRef: React.RefObject<HTMLDivElement | null>;
     navigate: (path: string) => void;
     setIsProfileOpen: (open: boolean) => void;
@@ -38,11 +41,14 @@ const DesktopLinks = ({
     dashboardData,
     unreadEmails,
     hasMinRole,
-    isContactsOpen,
-    setIsContactsOpen,
+    isCustomersOpen,
+    setIsCustomersOpen,
+    isPartnersOpen,
+    setIsPartnersOpen,
     isSettingsOpen,
     setIsSettingsOpen,
-    contactsRef,
+    customersRef,
+    partnersRef,
     settingsRef,
     navigate,
     setIsProfileOpen,
@@ -53,7 +59,7 @@ const DesktopLinks = ({
     const isActive = (path: string) => location.pathname === path;
 
     const navLinkClass = (path: string, activeOverride?: boolean) => clsx(
-        "px-2 sm:px-3 py-4 text-sm font-semibold border-b-2 transition h-full flex items-center gap-1.5",
+        "px-2 sm:px-2.5 py-4 text-[13px] font-semibold border-b-2 transition h-full flex items-center gap-1.5",
         (activeOverride !== undefined ? activeOverride : isActive(path))
             ? "border-white text-white"
             : "border-transparent text-emerald-100/60 hover:text-white"
@@ -82,12 +88,6 @@ const DesktopLinks = ({
                     <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
                         <div className="flex flex-col gap-1">
                             <span className="font-semibold text-sm">Dashboard</span>
-                            {dashboardData?.stats?.deadlines_today > 0 && (
-                                <div className="flex items-center gap-2 text-xs text-rose-400">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
-                                    {dashboardData?.stats?.deadlines_today} Termine Heute
-                                </div>
-                            )}
                         </div>
                     </TooltipContent>
                 </Tooltip>
@@ -101,15 +101,7 @@ const DesktopLinks = ({
                         </Link>
                     </TooltipTrigger>
                     <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-sm">Projekte</span>
-                            {dashboardData?.stats?.open_projects > 0 && (
-                                <div className="flex items-center gap-2 text-xs text-slate-400">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
-                                    {dashboardData?.stats?.open_projects} offene Projekte
-                                </div>
-                            )}
-                        </div>
+                        <span className="font-semibold text-sm">Projekte</span>
                     </TooltipContent>
                 </Tooltip>
 
@@ -117,33 +109,36 @@ const DesktopLinks = ({
                     <TooltipTrigger asChild>
                         <Link to="/documents" className={navLinkClass("/documents")}>
                             <FaFileAlt className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">Dateien</span>
+                            <span className="hidden lg:inline">{t('nav.documents')}</span>
                             {dashboardData?.stats?.total_files > 0 && (
-                                <NavBadge count={dashboardData.stats.total_files} label="Dateien" activeColor="bg-brand-primary" />
+                                <NavBadge count={dashboardData.stats.total_files} label="Dokumente" activeColor="bg-brand-primary" />
                             )}
                         </Link>
                     </TooltipTrigger>
                     <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <span className="font-semibold text-sm">Dateien</span>
+                        <span className="font-semibold text-sm">Dokumente</span>
                     </TooltipContent>
                 </Tooltip>
 
-                <div className="relative h-full" ref={contactsRef}>
+                {/* Kunden Dropdown */}
+                <div className="relative h-full" ref={customersRef}>
                     <button
                         onClick={() => {
-                            setIsContactsOpen(!isContactsOpen);
+                            setIsCustomersOpen(!isCustomersOpen);
+                            setIsPartnersOpen(false);
                             setIsProfileOpen(false);
                             setIsNotifOpen(false);
+                            setIsSettingsOpen(false);
                         }}
-                        className={navLinkClass("", isContactsOpen || location.pathname.startsWith('/customers') || location.pathname.startsWith('/partners') || location.pathname.startsWith('/interpreting'))}
+                        className={navLinkClass("", isCustomersOpen || location.pathname.startsWith('/customers'))}
                     >
                         <FaUsers className="text-base lg:hidden" />
-                        <span className="hidden lg:inline">{t('nav.contacts')}</span>
-                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isContactsOpen && "rotate-180")} />
+                        <span className="hidden lg:inline">{t('nav.customers')}</span>
+                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isCustomersOpen && "rotate-180")} />
                     </button>
 
-                    {isContactsOpen && (
-                        <div className="absolute left-0 mt-0 w-48 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 animate-slideUp overflow-hidden">
+                    {isCustomersOpen && (
+                        <div className="absolute left-0 mt-0 w-48 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
                             <div className="py-1">
                                 <Link
                                     to="/customers"
@@ -162,7 +157,31 @@ const DesktopLinks = ({
                                         </span>
                                     )}
                                 </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
+                {/* Partner Dropdown */}
+                <div className="relative h-full" ref={partnersRef}>
+                    <button
+                        onClick={() => {
+                            setIsPartnersOpen(!isPartnersOpen);
+                            setIsCustomersOpen(false);
+                            setIsProfileOpen(false);
+                            setIsNotifOpen(false);
+                            setIsSettingsOpen(false);
+                        }}
+                        className={navLinkClass("", isPartnersOpen || location.pathname.startsWith('/partners') || location.pathname.startsWith('/interpreting'))}
+                    >
+                        <FaUserTie className="text-base lg:hidden" />
+                        <span className="hidden lg:inline">{t('nav.partners')}</span>
+                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isPartnersOpen && "rotate-180")} />
+                    </button>
+
+                    {isPartnersOpen && (
+                        <div className="absolute left-0 mt-0 w-48 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
+                            <div className="py-1">
                                 <Link
                                     to="/partners"
                                     className={clsx(
@@ -258,11 +277,11 @@ const DesktopLinks = ({
                     <TooltipTrigger asChild>
                         <Link to="/calendar" className={navLinkClass("/calendar")}>
                             <FaCalendarAlt className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">Kalender</span>
+                            <span className="hidden lg:inline">{t('nav.calendar')}</span>
                         </Link>
                     </TooltipTrigger>
                     <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <span className="font-semibold text-sm">Kalender</span>
+                        <span className="font-semibold text-sm">{t('nav.calendar')}</span>
                     </TooltipContent>
                 </Tooltip>
 
@@ -271,11 +290,11 @@ const DesktopLinks = ({
                         <TooltipTrigger asChild>
                             <Link to="/reports" className={navLinkClass("/reports")}>
                                 <FaChartBar className="text-base lg:hidden" />
-                                <span className="hidden lg:inline">Auswertung</span>
+                                <span className="hidden lg:inline">{t('nav.reports')}</span>
                             </Link>
                         </TooltipTrigger>
                         <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                            <span className="font-semibold text-sm">Auswertung</span>
+                            <span className="font-semibold text-sm">{t('nav.reports')}</span>
                         </TooltipContent>
                     </Tooltip>
                 )}
@@ -285,19 +304,20 @@ const DesktopLinks = ({
                         <button
                             onClick={() => {
                                 setIsSettingsOpen(!isSettingsOpen);
-                                setIsContactsOpen(false);
+                                setIsCustomersOpen(false);
+                                setIsPartnersOpen(false);
                                 setIsProfileOpen(false);
                                 setIsNotifOpen(false);
                             }}
                             className={navLinkClass("", isSettingsOpen || location.pathname.startsWith('/settings'))}
                         >
                             <FaCog className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">Einstellungen</span>
+                            <span className="hidden lg:inline">{t('nav.settings')}</span>
                             <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isSettingsOpen && "rotate-180")} />
                         </button>
 
                         {isSettingsOpen && (
-                            <div className="absolute right-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 animate-slideUp overflow-visible">
+                            <div className="absolute right-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-visible">
                                 <div className="py-1">
                                     {SETTINGS_TABS.map((tab, i) => (
                                         <div key={tab.id} className="relative group/tab">
@@ -305,7 +325,7 @@ const DesktopLinks = ({
                                                 onClick={() => { navigate(`/settings?tab=${tab.id}`); setIsSettingsOpen(false); }}
                                                 className={clsx(
                                                     "w-full px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors text-left",
-                                                    i > 0 && tab.id === 'audit' && "border-t border-slate-100 mt-1",
+                                                    i > 0 && tab.id === 'audit' && "mt-1",
                                                     location.pathname === '/settings' && new URLSearchParams(location.search).get('tab') === tab.id
                                                         ? "text-brand-primary bg-slate-50"
                                                         : "text-slate-700"
@@ -322,7 +342,7 @@ const DesktopLinks = ({
 
                                             {/* Sub-menu for Master Data on hover */}
                                             {tab.id === 'master_data' && (
-                                                <div className="absolute left-full top-0 ml-[1px] w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-50 text-slate-800 opacity-0 invisible group-hover/tab:opacity-100 group-hover/tab:visible transition-all duration-200 transform translate-x-2 group-hover/tab:translate-x-0">
+                                                <div className="absolute left-full top-0 ml-[1px] w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 opacity-0 invisible group-hover/tab:opacity-100 group-hover/tab:visible transition-all duration-200 transform translate-x-2 group-hover/tab:translate-x-0">
                                                     <div className="py-1">
                                                         <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">
                                                             {t('settings.tabs.master_data')}
@@ -343,9 +363,11 @@ const DesktopLinks = ({
                                                                     navigate(`/settings?tab=master_data&sub=${subItem.id}`);
                                                                     setIsSettingsOpen(false);
                                                                 }}
-                                                                className="w-full px-4 py-2 text-sm font-medium flex items-center gap-3 hover:bg-slate-50 text-slate-600 hover:text-brand-primary transition-colors text-left"
+                                                                className="w-full px-4 py-2 text-sm font-medium flex items-center gap-3 hover:bg-slate-100/50 text-slate-600 hover:text-brand-primary transition-colors text-left"
                                                             >
-                                                                <subItem.icon className="text-slate-400 w-3 h-3 group-hover/tab:text-brand-primary" />
+                                                                <div className="w-6 h-6 rounded-sm bg-slate-100 flex items-center justify-center shrink-0">
+                                                                    <subItem.icon className="text-slate-400 w-3 h-3 group-hover/tab:text-brand-primary" />
+                                                                </div>
                                                                 <span>{subItem.label}</span>
                                                             </button>
                                                         ))}

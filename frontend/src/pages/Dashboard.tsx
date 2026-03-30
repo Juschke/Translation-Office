@@ -6,11 +6,10 @@ import {
 } from 'react-icons/fa';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
-import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { dashboardService, projectService, invoiceService, customerService, partnerService } from '../api/services';
+import { dashboardService, projectService, customerService, partnerService } from '../api/services';
 import RecentProjects from '../components/dashboard/RecentProjects';
 import DashboardSkeleton from '../components/common/DashboardSkeleton';
 import KPICard from '../components/common/KPICard';
@@ -23,7 +22,6 @@ const Dashboard = () => {
     // Modal States
     const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
     const [isNewPartnerModalOpen, setIsNewPartnerModalOpen] = useState(false);
-    const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
 
     const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
         queryKey: ['dashboard', 'stats'],
@@ -60,17 +58,6 @@ const Dashboard = () => {
         }
     });
 
-    const createInvoiceMutation = useMutation({
-        mutationFn: (data: any) => invoiceService.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            setIsNewInvoiceModalOpen(false);
-            toast.success(t('dashboard.messages.invoice_created'));
-        },
-        onError: () => {
-            toast.error(t('dashboard.messages.invoice_create_error'));
-        }
-    });
 
     const stats = dashboardData?.stats || {
         open_projects: 0,
@@ -147,7 +134,6 @@ const Dashboard = () => {
                             label={t('dashboard.kpi.deadlines_today')}
                             value={stats.deadlines_today}
                             icon={<FaClock />}
-                            iconColor="text-red-600"
                             subValue={stats.deadlines_today > 0 ? t('dashboard.kpi.needs_review') : t('dashboard.kpi.everything_on_track')}
                             onClick={() => navigate('/projects')}
                         />
@@ -155,7 +141,6 @@ const Dashboard = () => {
                             label={t('dashboard.kpi.revenue')}
                             value={stats.monthly_revenue.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' })}
                             icon={<FaEuroSign />}
-                            iconColor="text-green-600"
                             subValue={t('dashboard.kpi.revenue_vs_period', { trend: stats.revenue_trend >= 0 ? `+${stats.revenue_trend}` : stats.revenue_trend })}
                             onClick={() => navigate('/reports')}
                         />
@@ -163,7 +148,6 @@ const Dashboard = () => {
                             label={t('dashboard.kpi.unread_mails')}
                             value={stats.unread_emails}
                             icon={<FaEnvelope />}
-                            iconColor={stats.unread_emails > 0 ? "text-slate-700" : "text-slate-400"}
                             subValue={stats.unread_emails > 0 ? t('dashboard.kpi.new_messages', { count: stats.unread_emails }) : t('dashboard.kpi.no_new_mails')}
                             onClick={() => navigate('/inbox')}
                         />
@@ -299,12 +283,6 @@ const Dashboard = () => {
                 isOpen={isNewPartnerModalOpen}
                 onClose={() => setIsNewPartnerModalOpen(false)}
                 onSubmit={(data: any) => createPartnerMutation.mutate(data)}
-            />
-            <NewInvoiceModal
-                isOpen={isNewInvoiceModalOpen}
-                onClose={() => setIsNewInvoiceModalOpen(false)}
-                onSubmit={(data: any) => createInvoiceMutation.mutate(data)}
-                isLoading={createInvoiceMutation.isPending}
             />
         </div>
     );

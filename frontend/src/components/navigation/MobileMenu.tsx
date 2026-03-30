@@ -33,7 +33,7 @@ const MobileMenu = ({
     const menuItems = [
         { path: '/', label: 'Dashboard', icon: <FaHome />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute" },
         { path: '/projects', label: 'Projekte', icon: <FaLayerGroup />, count: dashboardData?.stats?.open_projects, badgeLabel: "Offene Projekte" },
-        { path: '/documents', label: 'Dateien', icon: <FaFileAlt />, count: dashboardData?.stats?.total_files, badgeLabel: "Dateien Gesamt" },
+        { path: '/documents', label: 'Dokumente', icon: <FaFileAlt />, count: dashboardData?.stats?.total_files, badgeLabel: "Dokumente Gesamt" },
         { path: '/customers', label: 'Kunden', icon: <FaUsers />, count: dashboardData?.stats?.active_customers, badgeLabel: "Aktive Kunden", color: "bg-slate-500" },
         { path: '/partners', label: 'Partner', icon: <FaUserTie />, count: dashboardData?.stats?.active_partners, badgeLabel: "Aktive Partner", color: "bg-slate-500" },
         { path: '/interpreting', label: 'Dolmetscher', icon: <FaCommentDots />, count: dashboardData?.stats?.active_interpreting, badgeLabel: "Anstehende Einsätze", color: "bg-slate-500" },

@@ -424,7 +424,6 @@ const Partners = () => {
                 <div className="flex gap-2 shrink-0">
                     <Button
                         onClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
-                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('partners.new_partner')}</span><span className="inline sm:hidden">{t('partners.new_short')}</span>
                     </Button>
@@ -437,17 +436,15 @@ const Partners = () => {
                     label={t('partners.kpi.partner_costs')}
                     value={partnerFinancials.totalCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
                     icon={<FaEuroSign />}
-                    iconColor="text-rose-600"
                     subValue={t('partners.kpi.avg_per_project', { amount: partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) })}
                 />
                 <KPICard
                     label={t('partners.kpi.quality_average')}
                     value={`${partnerQuality.toFixed(1)} / 5.0`}
                     icon={<FaStar />}
-                    iconColor="text-amber-500"
                     subValue={t('partners.kpi.rating_sub')}
                 />
-                <KPICard label={t('partners.kpi.collaboration')} value={stats?.collaboration_count || 0} icon={<FaHandshake />} iconColor="text-green-600" subValue={t('partners.kpi.projects_this_month')} />
+                <KPICard label={t('partners.kpi.collaboration')} value={stats?.collaboration_count || 0} icon={<FaHandshake />} subValue={t('partners.kpi.projects_this_month')} />
             </div>
 
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">

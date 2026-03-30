@@ -180,6 +180,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projects",
+    "documents": "Documents",
     "customers": "Customers",
     "partners": "Partners",
     "invoices": "Invoices",

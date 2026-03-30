@@ -12,6 +12,7 @@ interface MailDetailPanelProps {
 }
 
 const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDetailPanelProps) => {
+    const { t } = useTranslation();
     if (!mail) return null;
 
     return (
@@ -28,13 +29,13 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                     <div className="flex items-center gap-1.5">
                         <button
                             onClick={() => onReply(mail)}
-                            className="h-8 px-3 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-[#1B4D4F] active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
+                            className="h-8 px-3 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-brand-primary active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
                         >
                             <FaReply size={10} /> Antworten
                         </button>
                         <button
                             onClick={() => onForward(mail)}
-                            className="h-8 px-3 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-[#1B4D4F] active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
+                            className="h-8 px-3 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-brand-primary active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
                         >
                             <FaForward size={10} /> Weiterleiten
                         </button>
@@ -68,7 +69,7 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                         </h2>
 
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-sm bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white flex items-center justify-center font-bold text-sm shrink-0 mt-1 shadow-sm border border-[#123a3c]">
+                            <div className="w-10 h-10 rounded-sm bg-brand-primary text-white flex items-center justify-center font-bold text-sm shrink-0 mt-1 shadow-sm border border-brand-primary/80">
                                 {mail.from.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -84,7 +85,7 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                                     </span>
                                 </div>
                                 <div className="text-[11px] font-medium text-slate-500 flex items-center gap-2">
-                                    <span className="uppercase tracking-widest text-[9px] opacity-70">AN</span>
+                                    <span className="uppercase tracking-widest text-[10px] opacity-70">AN</span>
                                     <span className="truncate">
                                         {mail.to_emails?.join(', ') || mail.target_email || 'Empfänger unbekannt'}
                                     </span>
@@ -106,7 +107,7 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                     {/* Attachments */}
                     {mail.attachments && mail.attachments.length > 0 && (
                         <div className="mt-16 pt-10 border-t border-slate-100">
-                            <h4 className="text-[10px] font-black text-slate-900 mb-6 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <h4 className="text-[10px] font-bold text-slate-900 mb-6 uppercase tracking-[0.2em] flex items-center gap-2">
                                 <FaPaperclip className="text-slate-400" /> ANHÄNGE ({mail.attachments.length})
                             </h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -122,7 +123,7 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                                             <div className="text-[11px] font-bold text-slate-700 truncate group-hover:text-slate-900 transition-colors mb-0.5">
                                                 {at.name}
                                             </div>
-                                            <div className="text-[9px] text-slate-400 font-black tracking-widest uppercase">
+                                            <div className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">
                                                 {(at.size / 1024).toFixed(0)} KB
                                             </div>
                                         </div>

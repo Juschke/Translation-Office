@@ -380,7 +380,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
               {/* Kontaktdaten Section */}
               <div>
                 <h4 className="text-xs font-semibold text-slate-800 mb-4">Kontaktdaten</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Common Salutation for both types */}
                   <div className="col-span-2">
 

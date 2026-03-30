@@ -377,7 +377,6 @@ const Customers = () => {
                 <div className="flex gap-2 shrink-0">
                     <Button
                         onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
-                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('customers.new_customer')}</span><span className="inline sm:hidden">{t('customers.new_short')}</span>
                     </Button>
@@ -386,13 +385,12 @@ const Customers = () => {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <KPICard label={t('customers.kpi.total_customers')} value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
-                <KPICard label={t('customers.kpi.new_entries')} value={newCustomersCount} icon={<FaUserPlus />} iconColor="text-indigo-600" subValue={t('customers.kpi.last_30_days')} />
-                <KPICard label={t('customers.kpi.top_customer')} value={stats?.top_customer || '-'} icon={<FaBriefcase />} iconColor="text-blue-600" subValue={t('customers.kpi.top_customer_sub')} />
+                <KPICard label={t('customers.kpi.new_entries')} value={newCustomersCount} icon={<FaUserPlus />} subValue={t('customers.kpi.last_30_days')} />
+                <KPICard label={t('customers.kpi.top_customer')} value={stats?.top_customer || '-'} icon={<FaBriefcase />} subValue={t('customers.kpi.top_customer_sub')} />
                 <KPICard
                     label={t('customers.kpi.revenue_ytd')}
                     value={formatCurrency(stats?.total_revenue_ytd || 0)}
                     icon={<FaChartLine />}
-                    iconColor="text-green-600"
                     trend={stats?.revenue_trend !== undefined ? {
                         value: `${stats.revenue_trend > 0 ? '+' : ''}${stats.revenue_trend}%`,
                         label: t('customers.kpi.vs_last_year'),

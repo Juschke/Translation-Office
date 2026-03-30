@@ -245,7 +245,7 @@ const Profile = () => {
                                 <p className="text-xs text-slate-400 font-medium mt-0.5">Wählen Sie Ihre bevorzugte Sprache.</p>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <button
                                 onClick={() => changeLanguage('de')}
                                 className={clsx(
@@ -412,13 +412,12 @@ const Profile = () => {
                                                         className="flex-1 text-center text-xl font-semibold border border-slate-300 rounded-sm py-2 focus:border-slate-900 outline-none"
                                                         maxLength={6}
                                                     />
-                                                    <button
+                                                    <Button
                                                         onClick={handleConfirm2FA}
                                                         disabled={twoFactorCode.length < 6 || isLoading}
-                                                        className="px-6 bg-brand-primary text-white font-bold text-xs rounded-sm hover:bg-brand-primary/90 disabled:opacity-50 transition-all shadow-sm"
                                                     >
                                                         {t('profile.confirm')}
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>

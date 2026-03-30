@@ -131,7 +131,7 @@ const Documents = () => {
             header: t('common.type') || 'Typ',
             accessor: (file: any) => (
                 <div className="flex flex-col gap-1">
-                    <Badge variant={file.type === 'target' ? 'success' : 'default'} className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0 w-fit">
+                    <Badge variant={file.type === 'target' ? 'success' : 'default'} className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0 w-fit">
                         {file.type === 'target' ? 'Ausspielung' : 'Eingang'}
                     </Badge>
                     <span className="text-[10px] text-slate-400 font-mono tabular-nums">
@@ -239,7 +239,7 @@ const Documents = () => {
             {/* Header Section */}
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Dateien</h1>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Dokumente</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">Zentrale Verwaltung aller Projektdokumente und Lieferungen</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -255,32 +255,24 @@ const Documents = () => {
                     label="Dateien Gesamt"
                     value={totalCount}
                     icon={<FaFileAlt />}
-                    iconColor="text-brand-primary"
-                    iconBg="bg-brand-primary/5"
                     subValue="Indexierte Dokumente"
                 />
                 <KPICard
                     label="Speicherplatz"
                     value={formatFileSize(totalSize)}
                     icon={<FaHdd />}
-                    iconColor="text-blue-600"
-                    iconBg="bg-blue-50"
                     subValue="Belegter Speicher"
                 />
                 <KPICard
                     label="Quell-Dokumente"
                     value={sourceFilesCount}
                     icon={<FaInbox />}
-                    iconColor="text-amber-600"
-                    iconBg="bg-amber-50"
                     subValue="Eingänge von Kunden"
                 />
                 <KPICard
                     label="Ausspielungen"
                     value={targetFilesCount}
                     icon={<FaCheckCircle />}
-                    iconColor="text-emerald-600"
-                    iconBg="bg-emerald-50"
                     subValue="Gelieferte Dateien"
                 />
             </div>

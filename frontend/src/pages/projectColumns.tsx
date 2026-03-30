@@ -88,7 +88,7 @@ export function buildProjectColumns({
                             <div className="flex items-center gap-1.5 overflow-hidden">
                                 {p.customer?.email && (
                                     <div className="flex items-center gap-1 min-w-0">
-                                        <FaEnvelope className="text-[9px] text-slate-300 shrink-0" />
+                                        <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
                                         <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.customer.email}>{p.customer.email}</span>
                                     </div>
                                 )}
@@ -121,7 +121,7 @@ export function buildProjectColumns({
                             <span className="font-semibold text-slate-800 truncate group-hover/part:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
                             {p.partner.email && (
                                 <div className="flex items-center gap-1 min-w-0 mt-0.5">
-                                    <FaEnvelope className="text-[9px] text-slate-300 shrink-0" />
+                                    <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
                                     <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.partner.email}>{p.partner.email}</span>
                                 </div>
                             )}
@@ -204,7 +204,7 @@ export function buildProjectColumns({
                             <span className="whitespace-nowrap">{date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
                             <span className="text-slate-400 text-[10px] opacity-70">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                        <span className={`px-1 py-0 rounded-[2px] text-[9px] font-bold border w-fit uppercase ${badgeColor}`}>{label}</span>
+                        <span className={`px-1 py-0 rounded-[2px] text-[10px] font-bold border w-fit uppercase ${badgeColor}`}>{label}</span>
                     </div>
                 );
             },

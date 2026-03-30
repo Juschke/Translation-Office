@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck, FaChevronDown } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck, FaChevronDown, FaSave } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
 import { Button } from '../ui/button';
@@ -26,9 +26,11 @@ interface ProjectPositionsTableProps {
     extraRows?: ExtraServiceRow[];
     onToggleExtra?: (key: string) => void;
     onUpdateExtraQty?: (key: string, qty: number) => void;
+    onSave?: () => void;
+    isSaving?: boolean;
 }
 
-const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stk', 'Minuten', 'Tage'];
+const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stück', 'Minuten', 'Tage'];
 
 const EMPTY_POSITION = (): ProjectPosition => ({
     id: Date.now().toString(),
@@ -58,11 +60,11 @@ const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = f
         align === 'right' ? 'text-right' : 'text-left',
         invalid
             ? 'border-red-300 text-red-500 placeholder:text-red-300'
-            : 'border-transparent text-slate-700 placeholder:text-slate-300 hover:border-slate-200 focus:border-[#1B4D4F]',
+            : 'border-transparent text-slate-700 placeholder:text-slate-300 hover:border-slate-200 focus:border-brand-primary',
     );
 
 /* ─── Generic Mini Dropdown ─── */
-const MiniDropdown = ({ value, options, onChange, disabled, width = '140px' }: { value: string; options: { value: string; label: string }[]; onChange: (val: string) => void; disabled?: boolean; width?: string }) => {
+export const MiniDropdown = ({ value, options, onChange, disabled, width = '140px' }: { value: string; options: { value: string; label: string }[]; onChange: (val: string) => void; disabled?: boolean; width?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
@@ -82,7 +84,10 @@ const MiniDropdown = ({ value, options, onChange, disabled, width = '140px' }: {
     useEffect(() => {
         if (isOpen) {
             updateCoords();
-            const handleScroll = () => setIsOpen(false);
+            const handleScroll = (e: Event) => {
+                if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) return;
+                setIsOpen(false);
+            };
             window.addEventListener('scroll', handleScroll, true);
             window.addEventListener('resize', updateCoords);
             return () => {
@@ -142,9 +147,9 @@ const MiniDropdown = ({ value, options, onChange, disabled, width = '140px' }: {
                                 type="button"
                                 onClick={() => handleSelect(o.value)}
                                 className={clsx(
-                                    'w-full text-left px-3 py-2 text-xs font-medium transition-colors border-b border-slate-50 last:border-0',
+                                    ' text-left px-3 py-2 text-xs font-medium transition-colors border-b border-slate-50 last:border-0',
                                     value === o.value
-                                        ? 'bg-slate-100 text-slate-900 border-l-2 border-[#1B4D4F]'
+                                        ? 'bg-slate-100 text-slate-900 border-l-2 border-brand-primary'
                                         : 'text-slate-700 hover:bg-slate-50'
                                 )}
                             >
@@ -159,6 +164,16 @@ const MiniDropdown = ({ value, options, onChange, disabled, width = '140px' }: {
     );
 };
 
+/* ─── Helper: filter decimal input (digits + single comma, no letters/negatives) ─── */
+const filterDecimalInput = (raw: string): string => {
+    let v = raw.replace(/[^0-9,]/g, '');
+    const ci = v.indexOf(',');
+    if (ci !== -1) v = v.slice(0, ci + 1) + v.slice(ci + 1).replace(/,/g, '');
+    return v;
+};
+const toEnglish = (v: string) => v.replace(',', '.');
+const toGerman = (v: string) => v.replace('.', ',');
+
 const ProjectPositionsTable = ({
     positions,
     setPositions,
@@ -166,6 +181,8 @@ const ProjectPositionsTable = ({
     extraRows = [],
     onToggleExtra,
     onUpdateExtraQty,
+    onSave,
+    isSaving,
 }: ProjectPositionsTableProps) => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
@@ -230,7 +247,18 @@ const ProjectPositionsTable = ({
     return (
         <div className="bg-white">
             {!disabled && (
-                <div className="relative flex justify-end px-3 py-2 border-b border-slate-100">
+                <div className="relative flex justify-end gap-2 px-3 py-2 border-b border-slate-100">
+                    {onSave && (
+                        <Button
+                            onClick={onSave}
+                            disabled={isSaving}
+                            className="h-8 px-4 text-xs font-bold"
+                            variant="default"
+                        >
+                            <FaSave className="text-[10px] mr-1.5" />
+                            {isSaving ? 'Speichern…' : 'Speichern'}
+                        </Button>
+                    )}
                     <Button
                         onClick={() => { setCatalogOpen(o => !o); setShowCreate(false); setSearch(''); }}
                         className="h-8 px-4 text-xs font-bold"
@@ -269,19 +297,19 @@ const ProjectPositionsTable = ({
                                         <button
                                             key={item.id}
                                             onClick={() => addFromCatalog(item)}
-                                            className="w-full text-left px-3 py-2.5 flex items-center justify-between hover:bg-[#1B4D4F]/5 transition-colors border-b border-slate-50 last:border-0 group/item"
+                                            className="w-full text-left px-3 py-2.5 flex items-center justify-between hover:bg-brand-primary/5 transition-colors border-b border-slate-50 last:border-0 group/item"
                                         >
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-semibold text-slate-700 group-hover/item:text-[#1B4D4F] transition-colors">
+                                                <span className="text-xs font-semibold text-slate-700 group-hover/item:text-brand-primary transition-colors">
                                                     {item.name}
                                                 </span>
                                                 {item.service_code && (
-                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{item.service_code}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.service_code}</span>
                                                 )}
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-xs font-bold text-slate-700">{fmt2(item.base_price)} €</div>
-                                                <div className="text-[9px] text-slate-400">/ {item.unit}</div>
+                                                <div className="text-[10px] text-slate-400">/ {item.unit}</div>
                                             </div>
                                         </button>
                                     ))
@@ -292,27 +320,27 @@ const ProjectPositionsTable = ({
                                 {!showCreate ? (
                                     <button
                                         onClick={() => setShowCreate(true)}
-                                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-[#1B4D4F] hover:bg-slate-100 transition-colors"
+                                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-brand-primary hover:bg-slate-100 transition-colors"
                                     >
-                                        <FaPlus className="text-[9px]" />
+                                        <FaPlus className="text-[10px]" />
                                         Neue Leistung anlegen
                                     </button>
                                 ) : (
                                     <div className="p-3 space-y-2.5 bg-white">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Schnellanlage</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Schnellanlage</p>
                                         <input
                                             type="text"
                                             placeholder="Bezeichnung *"
                                             autoFocus
                                             value={newSvc.name}
                                             onChange={e => setNewSvc(s => ({ ...s, name: e.target.value }))}
-                                            className="w-full text-xs border-b-2 border-slate-200 focus:border-[#1B4D4F] bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
+                                            className="w-full text-xs border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
                                         />
                                         <div className="flex gap-2">
                                             <select
                                                 value={newSvc.unit}
                                                 onChange={e => setNewSvc(s => ({ ...s, unit: e.target.value }))}
-                                                className="flex-1 text-xs border-b-2 border-slate-200 focus:border-[#1B4D4F] bg-transparent outline-none pb-px text-slate-600 transition-colors"
+                                                className="flex-1 text-xs border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-600 transition-colors"
                                             >
                                                 {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                             </select>
@@ -324,7 +352,7 @@ const ProjectPositionsTable = ({
                                                     placeholder="0,00"
                                                     value={newSvc.base_price}
                                                     onChange={e => setNewSvc(s => ({ ...s, base_price: e.target.value }))}
-                                                    className="w-20 text-right text-xs font-mono border-b-2 border-slate-200 focus:border-[#1B4D4F] bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
+                                                    className="w-20 text-right text-xs font-mono border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
                                                 />
                                                 <span className="text-xs text-slate-400 pb-px">€</span>
                                             </div>
@@ -363,12 +391,12 @@ const ProjectPositionsTable = ({
                 <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
                         <tr className="border-b border-slate-200 bg-slate-50/30">
-                            <th className="px-2 py-1.5 w-7 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400">#</th>
-                            <th className="px-2 py-1.5 min-w-[180px] text-[9px] font-bold uppercase tracking-wider text-slate-400">Bezeichnung</th>
-                            <th className="px-2 py-1.5 w-24 text-right text-[9px] font-bold uppercase tracking-wider text-slate-400">Menge</th>
-                            <th className="px-2 py-1.5 w-24 text-right text-[9px] font-bold uppercase tracking-wider text-slate-400">Einheit</th>
-                            <th className="px-2 py-1.5 w-44 text-right text-[9px] font-bold uppercase tracking-wider text-slate-400">Einzelpreis €</th>
-                            <th className="px-2 py-1.5 w-28 text-right text-[9px] font-bold uppercase tracking-wider text-slate-500 italic">Gesamt €</th>
+                            <th className="px-2 py-1.5 w-7 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">#</th>
+                            <th className="px-2 py-1.5 min-w-[180px] text-[10px] font-bold uppercase tracking-wider text-slate-400">Bezeichnung</th>
+                            <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Menge</th>
+                            <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einheit</th>
+                            <th className="px-2 py-1.5 w-44 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einzelpreis €</th>
+                            <th className="px-2 py-1.5 w-28 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500 italic">Gesamt €</th>
                             <th className="px-2 py-1.5 w-8"></th>
                         </tr>
                     </thead>
@@ -395,14 +423,16 @@ const ProjectPositionsTable = ({
 
                                     <td className="px-3 py-2.5">
                                         <input
-                                            type="number"
+                                            type="text"
+                                            inputMode="decimal"
                                             disabled={disabled}
-                                            step="0.01"
-                                            min="0"
                                             className={inlineInput(qtyInvalid, 'right', true)}
-                                            value={pos.quantity}
-                                            onChange={e => update(index, { quantity: e.target.value })}
-                                            onBlur={e => update(index, { quantity: (parseFloat(e.target.value) || 0).toFixed(2) })}
+                                            value={toGerman(pos.quantity)}
+                                            onChange={e => {
+                                                const filtered = filterDecimalInput(e.target.value);
+                                                update(index, { quantity: toEnglish(filtered) });
+                                            }}
+                                            onBlur={e => update(index, { quantity: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
                                         />
                                     </td>
 
@@ -420,14 +450,16 @@ const ProjectPositionsTable = ({
                                     <td className="px-3 py-2.5">
                                         <div className="flex items-center justify-end gap-2 pr-1">
                                             <input
-                                                type="number"
+                                                type="text"
+                                                inputMode="decimal"
                                                 disabled={disabled}
-                                                step="0.01"
-                                                min="0"
                                                 className={clsx(inlineInput(rateInvalid, 'right', true), 'w-24')}
-                                                value={pos.customerRate}
-                                                onChange={e => update(index, { customerRate: e.target.value })}
-                                                onBlur={e => update(index, { customerRate: (parseFloat(e.target.value) || 0).toFixed(2) })}
+                                                value={toGerman(pos.customerRate)}
+                                                onChange={e => {
+                                                    const filtered = filterDecimalInput(e.target.value);
+                                                    update(index, { customerRate: toEnglish(filtered) });
+                                                }}
+                                                onBlur={e => update(index, { customerRate: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
                                             />
                                             <MiniDropdown
                                                 value={pos.customerMode === 'flat' ? 'flat' : 'rate'}
@@ -522,7 +554,7 @@ const ProjectPositionsTable = ({
                         onClick={() => setPositions([...positions, EMPTY_POSITION()])}
                         className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-600 border border-dashed border-slate-300 rounded-sm hover:border-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-colors"
                     >
-                        <FaPlus className="text-[9px]" />
+                        <FaPlus className="text-[10px]" />
                         Position hinzufügen
                     </button>
                 </div>

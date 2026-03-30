@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
-import { FaCheckCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaFileInvoiceDollar } from 'react-icons/fa';
+import { Button } from '../ui/button';
 
 interface ProjectFinancialSidebarProps {
     creationDate: string;
@@ -20,6 +20,8 @@ interface ProjectFinancialSidebarProps {
     classification: string;
     copies: number;
     copyPrice: string;
+    isLocked?: boolean;
+    onCreateInvoice?: () => void;
 }
 
 const ProjectFinancialSidebar = ({
@@ -39,6 +41,8 @@ const ProjectFinancialSidebar = ({
     classification,
     copies,
     copyPrice,
+    isLocked,
+    onCreateInvoice,
 }: ProjectFinancialSidebarProps) => (
     <div className="w-full lg:w-72 bg-white border border-slate-200 rounded-lg shadow-sm font-sans divide-y divide-slate-100 flex flex-col">
         {/* Section: Calculation */}
@@ -102,7 +106,7 @@ const ProjectFinancialSidebar = ({
                         ? "bg-emerald-50 border-emerald-100 text-emerald-700"
                         : "bg-white border-slate-100 text-slate-700"
                 )}>
-                    <span className="text-[9px] font-bold uppercase tracking-tight opacity-50">
+                    <span className="text-[10px] font-bold uppercase tracking-tight opacity-50">
                         Restbetrag
                     </span>
                     <span className="text-base font-bold tracking-tight">
@@ -116,7 +120,7 @@ const ProjectFinancialSidebar = ({
         <div className="p-5 space-y-3">
             <div className="flex justify-between items-center">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Projektmarge</span>
-                <span className={clsx("text-[10px] font-black px-1.5 py-0.5 rounded", profit >= 0 ? "bg-slate-100 text-slate-600" : "bg-red-50 text-red-600")}>
+                <span className={clsx("text-[10px] font-bold px-1.5 py-0.5 rounded", profit >= 0 ? "bg-slate-100 text-slate-600" : "bg-red-50 text-red-600")}>
                     {profitMargin.toFixed(1)}%
                 </span>
             </div>
@@ -137,9 +141,21 @@ const ProjectFinancialSidebar = ({
         </div>
 
         {/* Footer: Metadata */}
-        <div className="px-5 py-3 bg-slate-50/50 flex justify-between text-[9px] text-slate-400 font-medium">
-            <span>Erstellt: {creationDate}</span>
-            <span>PM: {projectManager}</span>
+        <div className="px-5 py-3 bg-slate-50/50 space-y-4">
+            {!isLocked && onCreateInvoice && (
+                <Button
+                    onClick={onCreateInvoice}
+                    className="w-full py-5 flex items-center justify-center gap-2"
+                >
+                    <FaFileInvoiceDollar />
+                    Rechnung erstellen
+                </Button>
+            )}
+
+            <div className="flex justify-between text-[10px] text-slate-400 font-medium italic">
+                <span>Erstellt: {creationDate}</span>
+                <span>PM: {projectManager}</span>
+            </div>
         </div>
     </div>
 );

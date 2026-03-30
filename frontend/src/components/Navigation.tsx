@@ -19,7 +19,8 @@ const Navigation = () => {
     const queryClient = useQueryClient();
 
     // Menu States
-    const [isContactsOpen, setIsContactsOpen] = useState(false);
+    const [isCustomersOpen, setIsCustomersOpen] = useState(false);
+    const [isPartnersOpen, setIsPartnersOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -27,7 +28,8 @@ const Navigation = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Refs for Click-Outside
-    const contactsRef = useRef<HTMLDivElement>(null);
+    const customersRef = useRef<HTMLDivElement>(null);
+    const partnersRef = useRef<HTMLDivElement>(null);
     const settingsRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
@@ -38,7 +40,8 @@ const Navigation = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
-            if (contactsRef.current && !contactsRef.current.contains(target)) setIsContactsOpen(false);
+            if (customersRef.current && !customersRef.current.contains(target)) setIsCustomersOpen(false);
+            if (partnersRef.current && !partnersRef.current.contains(target)) setIsPartnersOpen(false);
             if (settingsRef.current && !settingsRef.current.contains(target)) setIsSettingsOpen(false);
             if (profileRef.current && !profileRef.current.contains(target)) setIsProfileOpen(false);
             if (notifRef.current && !notifRef.current.contains(target)) setIsNotifOpen(false);
@@ -54,7 +57,8 @@ const Navigation = () => {
         setIsMobileMenuOpen(false);
         setIsProfileOpen(false);
         setIsNotifOpen(false);
-        setIsContactsOpen(false);
+        setIsCustomersOpen(false);
+        setIsPartnersOpen(false);
         setIsSettingsOpen(false);
         setIsLangOpen(false);
     }, [location]);
@@ -102,13 +106,13 @@ const Navigation = () => {
     const pendingNotifications = notifications.filter((n: any) => !n.read_at).length;
 
     return (
-        <nav ref={navRef} className="bg-[#003333] text-white border-b border-white/10 flex-none sticky top-0 z-30 transition-all shadow-md">
+        <nav ref={navRef} className="bg-brand-primary text-white border-b border-white/10 flex-none sticky top-0 z-30 transition-all shadow-md">
             <div className="w-full px-4 sm:px-6">
                 <div className="flex items-center justify-between h-12">
                     {/* Left Side: Logo + Main Menu */}
                     <div className="flex items-center h-full gap-4 lg:gap-6">
                         <Link to="/" className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
-                            <div className="bg-white w-8 h-8 rounded-sm flex items-center justify-center font-bold text-[#003333] shadow-sm">TO</div>
+                            <div className="bg-white w-8 h-8 rounded-sm flex items-center justify-center font-bold text-brand-primary shadow-sm">TO</div>
                             <span className="font-bold text-base tracking-tight hidden lg:inline text-white">Translator Office</span>
                         </Link>
 
@@ -117,11 +121,14 @@ const Navigation = () => {
                             dashboardData={dashboardData}
                             unreadEmails={unreadEmails}
                             hasMinRole={hasMinRole}
-                            isContactsOpen={isContactsOpen}
-                            setIsContactsOpen={setIsContactsOpen}
+                            isCustomersOpen={isCustomersOpen}
+                            setIsCustomersOpen={setIsCustomersOpen}
+                            isPartnersOpen={isPartnersOpen}
+                            setIsPartnersOpen={setIsPartnersOpen}
                             isSettingsOpen={isSettingsOpen}
                             setIsSettingsOpen={setIsSettingsOpen}
-                            contactsRef={contactsRef}
+                            customersRef={customersRef}
+                            partnersRef={partnersRef}
                             settingsRef={settingsRef}
                             navigate={navigate}
                             setIsProfileOpen={setIsProfileOpen}

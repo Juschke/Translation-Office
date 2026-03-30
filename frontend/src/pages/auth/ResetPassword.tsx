@@ -82,7 +82,7 @@ const ResetPassword = () => {
                     </div>
                     <Link
                         to="/auth"
-                        className="inline-block w-full px-4 py-2.5 bg-[#1B4D4F] text-white text-sm font-semibold rounded-lg hover:bg-teal-800 transition-all"
+                        className="inline-block w-full px-4 py-2.5 bg-brand-primary text-white text-sm font-semibold rounded-lg hover:bg-brand-primary/90 transition-all"
                     >
                        {t('auth.login_now')}
                     </Link>
@@ -121,7 +121,7 @@ const ResetPassword = () => {
                             required
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                            className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                             placeholder="Mindestens 8 Zeichen"
                             autoComplete="new-password"
                             disabled={!!error}
@@ -144,7 +144,7 @@ const ResetPassword = () => {
                             required
                             value={formData.password_confirmation}
                             onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
-                            className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                            className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                             placeholder="Passwort wiederholen"
                             autoComplete="new-password"
                             disabled={!!error}
@@ -156,7 +156,7 @@ const ResetPassword = () => {
                     type="submit"
                     disabled={isLoading || !!error || !formData.password || !formData.token}
                     className={clsx(
-                        "w-full flex justify-center items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-[#1B4D4F] hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all",
+                        "w-full flex justify-center items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all",
                         (isLoading || !!error || !formData.password || !formData.token) && "opacity-70 cursor-not-allowed"
                     )}
                 >
@@ -177,7 +177,7 @@ const ResetPassword = () => {
                     <div className="text-center">
                         <Link
                             to="/forgot-password"
-                            className="text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors"
+                            className="text-sm font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
                         >
                             {t('auth.send_reset_link')}
                         </Link>

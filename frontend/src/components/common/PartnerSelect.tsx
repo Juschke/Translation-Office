@@ -270,7 +270,7 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
               {/* Stammdaten Section */}
               <div>
                 <h4 className="text-xs font-semibold text-slate-800 mb-4 uppercase tracking-wider">Kontaktdaten</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Salutation - Alone in row */}
                   <div className="col-span-2">
                     <div className="flex flex-col gap-2 w-full">

@@ -219,8 +219,8 @@ const EmailComposeModal = ({
                             <ScrollArea className="flex-1">
                                 <div className="p-8 pb-32 space-y-1">
                                     {/* Sender Field */}
-                                    <div className="flex items-center gap-4 py-2 border-b border-slate-100 group focus-within:border-[#1B4D4F]/30 transition-colors">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-[#1B4D4F] transition-colors">VON</span>
+                                    <div className="flex items-center gap-4 py-2 border-b border-slate-100 group focus-within:border-brand-primary/30 transition-colors">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-brand-primary transition-colors">VON</span>
                                         <select
                                             value={selectedAccount?.id}
                                             onChange={(e) => setSelectedAccount(accounts.find((a: any) => a.id === parseInt(e.target.value)))}
@@ -233,8 +233,8 @@ const EmailComposeModal = ({
                                     </div>
 
                                     {/* Recipient Field */}
-                                    <div className="flex items-start gap-4 py-2 border-b border-slate-100 group focus-within:border-[#1B4D4F]/30 transition-colors z-50">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-[#1B4D4F] transition-colors pt-1.5 shrink-0">AN</span>
+                                    <div className="flex items-start gap-4 py-2 border-b border-slate-100 group focus-within:border-brand-primary/30 transition-colors z-50">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-brand-primary transition-colors pt-1.5 shrink-0">AN</span>
                                         <div className="flex-1 min-w-0">
                                             {projectDetails && (
                                                 <div className="flex gap-1.5 mb-1.5 flex-wrap">
@@ -246,7 +246,7 @@ const EmailComposeModal = ({
                                                                 "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
                                                                 composeTo === projectDetails.customer.email
                                                                     ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-                                                                    : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                                                    : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-brand-primary hover:text-brand-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                             )}
                                                         >
                                                             Kunde: {projectDetails.customer.company_name
@@ -262,7 +262,7 @@ const EmailComposeModal = ({
                                                                 "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
                                                                 composeTo === (projectDetails.partner?.email || projectDetails.translator?.email)
                                                                     ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-                                                                    : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                                                    : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-brand-primary hover:text-brand-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                             )}
                                                         >
                                                             Partner: {projectDetails.partner?.company_name ||
@@ -313,8 +313,8 @@ const EmailComposeModal = ({
                                     </div>
 
                                     {/* Subject Field */}
-                                    <div className="flex items-center gap-4 py-2 border-b border-slate-100 group focus-within:border-[#1B4D4F]/30 transition-colors">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-[#1B4D4F] transition-colors">BETREFF</span>
+                                    <div className="flex items-center gap-4 py-2 border-b border-slate-100 group focus-within:border-brand-primary/30 transition-colors">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 group-focus-within:text-brand-primary transition-colors">BETREFF</span>
                                         <input
                                             value={composeSubject}
                                             onChange={(e) => setComposeSubject(e.target.value)}
@@ -348,7 +348,7 @@ const EmailComposeModal = ({
                                             <button
                                                 onClick={() => setIsComposePreview(false)}
                                                 className={clsx(
-                                                    "px-3 py-1 text-[9px] font-bold rounded-sm transition-all",
+                                                    "px-3 py-1 text-[10px] font-bold rounded-sm transition-all",
                                                     !isComposePreview ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                                                 )}
                                             >
@@ -357,7 +357,7 @@ const EmailComposeModal = ({
                                             <button
                                                 onClick={() => setIsComposePreview(true)}
                                                 className={clsx(
-                                                    "px-3 py-1 text-[9px] font-bold rounded-sm transition-all",
+                                                    "px-3 py-1 text-[10px] font-bold rounded-sm transition-all",
                                                     isComposePreview ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                                                 )}
                                             >
@@ -376,7 +376,7 @@ const EmailComposeModal = ({
                                                         "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
                                                         isHtmlMode
                                                             ? "bg-slate-800 text-white border-slate-900"
-                                                            : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                                            : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-brand-primary hover:text-brand-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                     )}
                                                 >
                                                     <FaCode size={8} /> {isHtmlMode ? 'Editor Modus' : 'HTML Code'}
@@ -390,7 +390,7 @@ const EmailComposeModal = ({
                                                             "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
                                                             isVarPickerOpen
                                                                 ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-                                                                : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                                                : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-brand-primary hover:text-brand-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                         )}
                                                     >
                                                         <FaSearchPlus size={8} /> Variable wählen
@@ -405,7 +405,7 @@ const EmailComposeModal = ({
                                                             "px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border transition-all flex items-center gap-1.5",
                                                             isSignaturePickerOpen
                                                                 ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-                                                                : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                                                : "bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-brand-primary hover:text-brand-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                         )}
                                                     >
                                                         <FaSignature size={8} /> Signatur wählen
@@ -416,7 +416,7 @@ const EmailComposeModal = ({
                                                     <button
                                                         type="button"
                                                         onClick={() => setIsProjectFilesModalOpen(true)}
-                                                        className="px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] transition-all flex items-center gap-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                                        className="px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-brand-primary hover:text-brand-primary transition-all flex items-center gap-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                     >
                                                         <FaLayerGroup size={8} /> Projekt-Dateien
                                                     </button>
@@ -425,7 +425,7 @@ const EmailComposeModal = ({
                                                 <button
                                                     type="button"
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className="px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-[#1B4D4F] hover:text-[#1B4D4F] transition-all flex items-center gap-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                                    className="px-2.5 py-1 rounded-[3px] text-[10px] font-semibold border bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 border-[#ccc] hover:border-brand-primary hover:text-brand-primary transition-all flex items-center gap-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
                                                 >
                                                     <FaPaperclip size={8} /> Hochladen
                                                 </button>
@@ -469,7 +469,7 @@ const EmailComposeModal = ({
                                                             return (
                                                                 <div key={group}>
                                                                     {!varSearch && (
-                                                                        <div className="px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b border-slate-100">
+                                                                        <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b border-slate-100">
                                                                             {group}
                                                                         </div>
                                                                     )}
@@ -547,7 +547,7 @@ const EmailComposeModal = ({
                                                                     <div className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">{s.name}</div>
                                                                     <div className="text-[10px] text-slate-400 font-medium line-clamp-1">{s.content.replace(/<[^>]*>/g, '')}</div>
                                                                 </div>
-                                                                {s.is_default && <span className="text-[8px] font-bold bg-brand-primary/10 text-brand-primary px-1 rounded-sm">DEFAULT</span>}
+                                                                {s.is_default && <span className="text-[10px] font-bold bg-brand-primary/10 text-brand-primary px-1 rounded-sm">DEFAULT</span>}
                                                             </button>
                                                         ));
                                                     })()}
@@ -613,7 +613,7 @@ const EmailComposeModal = ({
                                         <div className="pt-8 space-y-3">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Anhänge</span>
-                                                <Badge variant="secondary" className="text-[9px] font-bold px-1.5 py-0">{composeAttachments.length}</Badge>
+                                                <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">{composeAttachments.length}</Badge>
                                             </div>
                                             <div className="grid grid-cols-2 gap-2">
                                                 {composeAttachments.map((f, i) => (
@@ -622,7 +622,7 @@ const EmailComposeModal = ({
                                                             <FaPaperclip className="text-slate-400 text-[10px]" />
                                                             <div className="overflow-hidden">
                                                                 <div className="text-[11px] font-bold text-slate-700 truncate">{f.name}</div>
-                                                                <div className="text-[9px] text-slate-400 uppercase font-bold tracking-tight">{formatFileSize(f.size)}</div>
+                                                                <div className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">{formatFileSize(f.size)}</div>
                                                             </div>
                                                         </div>
                                                         <button onClick={() => removeAttachment(i)} className="text-slate-300 hover:text-red-500 p-2">
@@ -657,7 +657,7 @@ const EmailComposeModal = ({
                         </div>
 
                         {/* Templates Sidebar */}
-                        <div className="w-[300px] border-l border-slate-100 bg-slate-50/50 flex flex-col shrink-0 overflow-hidden">
+                        <div className="w-64 sm:w-72 lg:w-[300px] border-l border-slate-100 bg-slate-50/50 flex flex-col shrink-0 overflow-hidden">
                             <ScrollArea className="flex-1">
                                 <div className="px-4 py-6 space-y-6">
                                     <div className="flex items-center justify-between mb-4">
@@ -665,7 +665,7 @@ const EmailComposeModal = ({
                                             <FaFileAlt className="text-slate-400" /> VORLAGEN
                                         </h4>
                                         {templates.length > 0 && (
-                                            <span className="text-[9px] font-bold bg-slate-200/50 text-slate-500 px-1.5 py-0.5 rounded-full border border-slate-200">
+                                            <span className="text-[10px] font-bold bg-slate-200/50 text-slate-500 px-1.5 py-0.5 rounded-full border border-slate-200">
                                                 {templates.length}
                                             </span>
                                         )}
@@ -736,7 +736,7 @@ const EmailComposeModal = ({
                                                     </div>
                                                 </div>
                                                 {isAlreadyAttached && (
-                                                    <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-sm flex items-center gap-1.5">
+                                                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-sm flex items-center gap-1.5">
                                                         <FaCheckCircle size={10} /> ANGEHÄNGT
                                                     </span>
                                                 )}

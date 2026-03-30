@@ -560,7 +560,6 @@ const Projects = () => {
                 <div className="flex gap-2 shrink-0">
                     <Button
                         onClick={() => navigate('/projects/new')}
-                        className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold shadow-sm flex items-center justify-center gap-2 transition"
                     >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('projects.new_project')}</span><span className="inline sm:hidden">{t('projects.new_short')}</span>
                     </Button>
@@ -572,32 +571,24 @@ const Projects = () => {
                     label={t('projects.kpi.active_projects')}
                     value={activeProjectsCount}
                     icon={<FaLayerGroup />}
-                    iconColor="text-blue-600"
-                    iconBg="bg-blue-50"
                     subValue={t('projects.kpi.active_count_sub', { total: totalProjectsCount })}
                 />
                 <KPICard
                     label={t('projects.kpi.open_assignments')}
                     value={unassignedCount}
                     icon={<FaUserTimes />}
-                    iconColor={unassignedCount > 0 ? "text-amber-600" : "text-slate-400"}
-                    iconBg={unassignedCount > 0 ? "bg-amber-50" : "bg-slate-50"}
                     subValue={unassignedCount > 0 ? t('projects.kpi.unassigned') : t('projects.kpi.all_assigned')}
                 />
                 <KPICard
                     label={t('projects.kpi.profitability')}
                     value={marginPercentage > 0 ? `${marginPercentage.toFixed(1)}%` : '0%'}
                     icon={<FaChartPie />}
-                    iconColor="text-emerald-600"
-                    iconBg="bg-emerald-50"
                     subValue={t('projects.kpi.margin_sub', { amount: totalMargin.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) })}
                 />
                 <KPICard
                     label={t('projects.kpi.deadline_alarm')}
                     value={urgencyCount}
                     icon={<FaExclamationTriangle />}
-                    iconColor={urgencyCount > 0 ? "text-rose-600" : "text-slate-400"}
-                    iconBg={urgencyCount > 0 ? "bg-rose-50" : "bg-slate-50"}
                     subValue={urgencyCount > 0 ? t('projects.kpi.overdue') : t('projects.kpi.on_track')}
                 />
             </div>

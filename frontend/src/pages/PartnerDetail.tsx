@@ -14,7 +14,6 @@ import NewPartnerModal from '../components/modals/NewPartnerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Button } from '../components/ui/button';
-import clsx from 'clsx';
 
 const PartnerDetail = () => {
     const { t } = useTranslation();
@@ -65,7 +64,7 @@ const PartnerDetail = () => {
                         >
                             <FaArrowLeft />
                         </button>
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-sm bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg md:text-xl font-medium border border-indigo-100 shadow-sm shrink-0">
+                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-sm bg-brand-primary/10 text-brand-primary flex items-center justify-center text-lg md:text-xl font-medium border border-brand-primary/20 shadow-sm shrink-0">
                             {initials}
                         </div>
                         <div className="min-w-0">

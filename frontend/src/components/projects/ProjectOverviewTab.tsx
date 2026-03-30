@@ -522,7 +522,7 @@ const ProjectOverviewTab = ({
                                     <>
                                         {sourceFiles.length > 0 && (
                                             <div className="space-y-2">
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Quelldateien</span>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Quelldateien</span>
                                                 <div className="flex flex-col gap-1.5">
                                                     {sourceFiles.map((file: any) => (
                                                         <button
@@ -535,7 +535,7 @@ const ProjectOverviewTab = ({
                                                             </div>
                                                             <div className="flex flex-col min-w-0 flex-1">
                                                                 <span className="text-[10px] font-bold text-slate-700 truncate group-hover:text-emerald-700">{file.name}</span>
-                                                                <span className="text-[9px] text-slate-400 font-medium">{formatFileSize(file.size)}</span>
+                                                                <span className="text-[10px] text-slate-400 font-medium">{formatFileSize(file.size)}</span>
                                                             </div>
                                                             <FaExternalLinkAlt className="text-[8px] text-slate-200 group-hover:text-emerald-400 transition-colors" />
                                                         </button>
@@ -546,7 +546,7 @@ const ProjectOverviewTab = ({
 
                                         {targetFiles.length > 0 && (
                                             <div className="space-y-2">
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Übersetzungen</span>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Übersetzungen</span>
                                                 <div className="flex flex-col gap-1.5">
                                                     {targetFiles.map((file: any) => (
                                                         <button
@@ -559,7 +559,7 @@ const ProjectOverviewTab = ({
                                                             </div>
                                                             <div className="flex flex-col min-w-0 flex-1">
                                                                 <span className="text-[10px] font-bold text-slate-700 truncate group-hover:text-blue-700">{file.name}</span>
-                                                                <span className="text-[9px] text-slate-400 font-medium">{formatFileSize(file.size)}</span>
+                                                                <span className="text-[10px] text-slate-400 font-medium">{formatFileSize(file.size)}</span>
                                                             </div>
                                                             <FaCheckCircle className="text-[8px] text-slate-200 group-hover:text-blue-400 transition-colors" />
                                                         </button>
@@ -570,7 +570,7 @@ const ProjectOverviewTab = ({
 
                                         {activeInvoice && (
                                             <div className="space-y-2">
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Abrechnung</span>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Abrechnung</span>
                                                 <button
                                                     onClick={() => setPreviewInvoice(activeInvoice)}
                                                     className="flex items-center gap-3 p-2 bg-white border border-slate-100 rounded-sm hover:border-purple-200 hover:bg-purple-50/20 transition-all group text-left w-full"
@@ -580,7 +580,7 @@ const ProjectOverviewTab = ({
                                                     </div>
                                                     <div className="flex flex-col min-w-0 flex-1">
                                                         <span className="text-[10px] font-bold text-slate-700 truncate group-hover:text-purple-700">{activeInvoice.invoice_number}</span>
-                                                        <span className="text-[9px] text-slate-400 font-medium">Rechnung (PDF)</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium">Rechnung (PDF)</span>
                                                     </div>
                                                     <FaExternalLinkAlt className="text-[8px] text-slate-200 group-hover:text-purple-400 transition-colors" />
                                                 </button>

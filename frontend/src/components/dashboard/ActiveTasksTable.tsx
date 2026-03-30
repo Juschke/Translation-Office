@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { FaClock, FaExclamationCircle } from 'react-icons/fa';
 import clsx from 'clsx';

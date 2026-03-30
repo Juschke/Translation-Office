@@ -128,7 +128,7 @@
       "master_data_desc": "Sprachen, Leistungen, Kategorien.",
       "notifications": "Benachrichtigungen",
       "notifications_desc": "Steuerung der System-E-Mails.",
-      "audit": "Systemprotokoll",
+      "audit": "Aktivitäten",
       "audit_log": "Protokoll",
       "audit_log_desc": "Systemaktivitäten & Änderungen.",
       "languages": "Sprachen",
@@ -199,12 +199,13 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projekte",
+    "documents": "Dokumente",
     "customers": "Kunden",
     "partners": "Partner",
     "invoices": "Rechnungen",
     "inbox": "E-Mail",
     "settings": "Einstellungen",
-    "reports": "Berichte",
+    "reports": "Auswertung",
     "contacts": "Kontakte",
     "interpreters": "Dolmetscher",
     "calendar": "Kalender",
@@ -372,7 +373,7 @@
     "update_project": "Projekt Aktualisieren"
   },
   "customers": {
-    "title": "Kundenstamm",
+    "title": "Kunden",
     "subtitle": "Zentralverwaltung aller Auftraggeber und Rechnungsadressen.",
     "new_customer": "Neuer Kunde",
     "new_short": "Neu",
@@ -497,7 +498,7 @@
     "type_filter_authority": "Behörde"
   },
   "partners": {
-    "title": "Partnernetzwerk",
+    "title": "Partner",
     "subtitle": "Verwaltung externer Übersetzer, Dolmetscher und Agenturen.",
     "new_partner": "Neuer Partner",
     "new_short": "Neu",
@@ -801,7 +802,7 @@
     }
   },
   "interpreting": {
-    "title": "Dolmetschereinsätze",
+    "title": "Dolmetscher",
     "subtitle": "Zentrale Verwaltung aller Vor-Ort und Online Dolmetschtertermine.",
     "new_assignment": "Neuer Einsatz",
     "new_short": "Neu",
@@ -841,7 +842,7 @@
     }
   },
   "reports": {
-    "title": "Berichte",
+    "title": "Auswertung",
     "subtitle": "Analysen & Auswertungen",
     "analytics": "Analysen",
     "export": "Bericht exportieren",

@@ -95,7 +95,7 @@ export const GuestMessagesSection: React.FC<GuestMessagesSectionProps> = ({
                                     className={clsx(
                                         'px-4 py-2.5 rounded-sm text-sm shadow-sm',
                                         !msg.user_id
-                                            ? 'bg-[#1B4D4F] text-white rounded-br-none'
+                                            ? 'bg-brand-primary text-white rounded-br-none'
                                             : 'bg-slate-100 text-slate-800 rounded-bl-none'
                                     )}
                                 >
@@ -145,7 +145,7 @@ export const GuestMessagesSection: React.FC<GuestMessagesSectionProps> = ({
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder="Nachricht..."
-                            className="w-full h-9 pl-3 pr-10 rounded-full border border-slate-200 focus:border-[#1B4D4F] focus:ring-1 focus:ring-[#1B4D4F] outline-none shadow-sm text-sm"
+                            className="w-full h-9 pl-3 pr-10 rounded-full border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none shadow-sm text-sm"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -158,7 +158,7 @@ export const GuestMessagesSection: React.FC<GuestMessagesSectionProps> = ({
                             size="icon"
                             onClick={handleSendMessage}
                             disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                            className="absolute right-1 top-1 h-7 w-7 bg-[#1B4D4F] text-white rounded-full flex items-center justify-center hover:bg-[#2a6b6e] transition shadow-sm"
+                            className="absolute right-1 top-1 h-7 w-7 bg-brand-primary text-white rounded-full flex items-center justify-center hover:bg-brand-primary/90 transition shadow-sm"
                         >
                             <FaPaperPlane className="text-xs" />
                         </Button>

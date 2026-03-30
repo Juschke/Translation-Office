@@ -94,7 +94,7 @@ const NewEmailTemplateModal: React.FC<NewEmailTemplateModalProps> = ({ isOpen, o
  <FaFileAlt className="text-slate-700" /> Vorlagendetails
  </label>
 
- <div className="grid grid-cols-2 gap-4">
+ <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
  <div className="col-span-1">
  <Input
  label="Vorlagen-Name *"

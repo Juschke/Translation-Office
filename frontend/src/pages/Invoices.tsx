@@ -15,7 +15,6 @@ import { Button } from '../components/ui/button';
 import DataTable, { type FilterDef } from '../components/common/DataTable';
 import KPICard from '../components/common/KPICard';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
-import NewInvoiceModal from '../components/modals/NewInvoiceModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService, externalCostService } from '../api/services';
 import TableSkeleton from '../components/common/TableSkeleton';
@@ -36,7 +35,6 @@ const Invoices = () => {
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
-    const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
 
     const exportRef = useRef<HTMLDivElement>(null);
 
@@ -53,14 +51,11 @@ const Invoices = () => {
 
     useEffect(() => {
         if (location.state?.openNewModal) {
-            setIsNewInvoiceOpen(true);
-            // Clear location state to prevent modal from reopening on refresh or navigation
-            navigate(location.pathname, { replace: true, state: {} });
+            navigate('/invoices/new', { replace: true });
         }
-    }, [location.state, navigate, location.pathname]);
+    }, [location.state, navigate]);
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const [invoiceToEdit, setInvoiceToEdit] = useState<any>(null);
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
 
@@ -84,31 +79,6 @@ const Invoices = () => {
         }),
     });
 
-    const createMutation = useMutation({
-        mutationFn: invoiceService.create,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            setIsNewInvoiceOpen(false);
-            setInvoiceToEdit(null);
-            toast.success(t('invoices.messages.create_success'));
-        },
-        onError: () => {
-            toast.error(t('invoices.messages.create_error'));
-        }
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: (args: { id: number, data: any }) => invoiceService.update(args.id, args.data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['invoices'] });
-            setIsNewInvoiceOpen(false);
-            setInvoiceToEdit(null);
-            toast.success(t('invoices.messages.update_success'));
-        },
-        onError: () => {
-            toast.error(t('invoices.messages.update_error'));
-        }
-    });
 
     const deleteMutation = useMutation({
         mutationFn: invoiceService.delete,
@@ -351,8 +321,7 @@ const Invoices = () => {
     const columns = buildInvoiceColumns({
         t,
         setPreviewInvoice,
-        setInvoiceToEdit,
-        setIsNewInvoiceOpen,
+        onEditInvoice: (inv: any) => navigate(`/invoices/${inv.id}/edit`),
         issueMutation,
         cancelMutation,
         markAsPaidMutation,
@@ -550,7 +519,7 @@ const Invoices = () => {
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <Button
-                        onClick={() => setIsNewInvoiceOpen(true)}
+                        onClick={() => navigate(statusFilter === 'credit_notes' ? '/invoices/new?type=credit_note' : '/invoices/new')}
                         className={clsx(
                             "text-white font-bold shadow-sm flex items-center justify-center gap-2 transition px-4 py-2",
                             statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-brand-primary hover:bg-brand-primary/90"
@@ -648,23 +617,6 @@ const Invoices = () => {
 
             <InvoicePreviewModal isOpen={!!previewInvoice} onClose={() => setPreviewInvoice(null)} invoice={previewInvoice} />
 
-            <NewInvoiceModal
-                isOpen={isNewInvoiceOpen}
-                onClose={() => {
-                    setIsNewInvoiceOpen(false);
-                    setInvoiceToEdit(null);
-                }}
-                onSubmit={(data: any) => {
-                    if (invoiceToEdit) {
-                        updateMutation.mutate({ id: invoiceToEdit.id, data });
-                    } else {
-                        createMutation.mutate(data);
-                    }
-                }}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-                invoice={invoiceToEdit}
-                defaultType={statusFilter === 'credit_notes' ? 'credit_note' : 'invoice'}
-            />
 
             <ConfirmModal
                 isOpen={isConfirmOpen}

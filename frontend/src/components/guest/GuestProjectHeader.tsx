@@ -58,7 +58,7 @@ export const GuestProjectHeader: React.FC<GuestProjectHeaderProps> = ({ project,
     return (
         <div className="rounded-sm border border-slate-200 shadow-sm bg-white overflow-hidden">
             {/* Header mit Brand-Gradient */}
-            <div className="bg-gradient-to-r from-[#1B4D4F] to-[#2a6b6e] px-4 sm:px-6 md:px-8 py-6 text-white">
+            <div className="bg-gradient-to-r from-brand-primary to-brand-primary/80 px-4 sm:px-6 md:px-8 py-6 text-white">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex-1">
                         <h1 className="text-xl sm:text-2xl font-bold">{project.project_name}</h1>

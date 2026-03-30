@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import Input from '../common/Input';
 import type { PartnerFormData } from './partnerTypes';
 

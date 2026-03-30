@@ -7,7 +7,7 @@ import { useEmailCompose } from '../hooks/useEmailCompose';
 import MailListPanel from '../components/inbox/MailListPanel';
 import MailDetailPanel from '../components/inbox/MailDetailPanel';
 import MailResourceTable from '../components/inbox/MailResourceTable';
-import { FaTrashAlt } from 'react-icons/fa';
+import { FaTrashAlt, FaPlus, FaSyncAlt } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import NewEmailAccountModal from '../components/modals/NewEmailAccountModal';
@@ -15,9 +15,9 @@ import NewEmailTemplateModal from '../components/modals/NewEmailTemplateModal';
 import EmailComposeModal from '../components/modals/EmailComposeModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { BulkActions } from '../components/common/BulkActions';
+import { Button } from '../components/ui/button';
 
 // Sub-components
-import InboxHeader from './Inbox/components/InboxHeader';
 import InboxSidebar from './Inbox/components/InboxSidebar';
 
 const CommunicationHub = () => {
@@ -127,13 +127,37 @@ const CommunicationHub = () => {
     );
 
     return (
-        <div className="flex flex-col h-full gap-0 fade-in bg-white border border-slate-200 shadow-sm">
-            <InboxHeader
-                onSync={() => syncMutation.mutate()}
-                isSyncing={syncMutation.isPending}
-                onCompose={() => setIsComposeOpen(true)}
-            />
+        <div className="flex flex-col gap-6 fade-in pb-10">
 
+            {/* ── Seitenkopf ── */}
+            <div className="flex justify-between items-center gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">E-Mail</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">Zentrale Postverwaltung aller ein- und ausgehenden Nachrichten</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                        variant="secondary"
+                        onClick={() => syncMutation.mutate()}
+                        disabled={syncMutation.isPending}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold"
+                    >
+                        <FaSyncAlt className={clsx("text-xs", syncMutation.isPending && "animate-spin")} />
+                        <span className="hidden sm:inline">{syncMutation.isPending ? 'Synchronisiert...' : 'E-Mails abrufen'}</span>
+                    </Button>
+                    <Button
+                        onClick={() => setIsComposeOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold"
+                    >
+                        <FaPlus className="text-xs" />
+                        <span className="hidden sm:inline">E-Mail schreiben</span>
+                        <span className="sm:hidden">Neu</span>
+                    </Button>
+                </div>
+            </div>
+
+            {/* ── Inbox-Container ── */}
+            <div className="flex flex-col bg-white border border-slate-200 shadow-sm rounded-sm overflow-hidden" style={{ minHeight: '600px' }}>
             <div className="flex-1 flex overflow-hidden">
                 <InboxSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -241,6 +265,7 @@ const CommunicationHub = () => {
                         </div>
                     )}
                 </div>
+            </div>
             </div>
 
             {/* Modals */}

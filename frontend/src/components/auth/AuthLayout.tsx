@@ -11,7 +11,7 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
     return (
         <div className="min-h-screen flex">
             {/* Left Side - Hero Image & Branding */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#1B4D4F] via-teal-700 to-teal-900 relative overflow-hidden">
+            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-primary via-teal-700 to-teal-900 relative overflow-hidden">
                 {/* Background Image Placeholder - Replace src with your image */}
                 <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: 'url(/auth-hero-placeholder.jpg)' }}></div>
 
