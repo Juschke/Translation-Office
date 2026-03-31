@@ -9,12 +9,13 @@ import {
 } from 'react-icons/fa';
 import TableSkeleton from '../components/common/TableSkeleton';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Button } from '../components/ui/button';
 import PartnerBillingTab from '../components/partners/PartnerBillingTab';
+import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
 
 const PartnerDetail = () => {
     const { t } = useTranslation();
@@ -31,6 +32,15 @@ const PartnerDetail = () => {
         queryFn: () => partnerService.getById(parseInt(id!)),
         enabled: !!id
     });
+
+    const { updateTab } = useWorkspaceTabs();
+
+    useEffect(() => {
+        if (partner) {
+            const partnerName = partner.company || `${partner.first_name} ${partner.last_name}`;
+            updateTab(`partner_detail_${id}`, { label: `Partner: ${partnerName}` });
+        }
+    }, [partner, id, updateTab]);
 
     const updateMutation = useMutation({
         mutationFn: (data: any) => partnerService.update(parseInt(id!), data),
@@ -134,11 +144,10 @@ const PartnerDetail = () => {
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                            activeTab === tab
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
                                 ? 'border-[#1B4D4F] text-[#1B4D4F]'
                                 : 'border-transparent text-slate-500 hover:text-slate-700'
-                        }`}
+                            }`}
                     >
                         {tab === 'stammdaten' ? 'Stammdaten' : 'Abrechnung'}
                     </button>
@@ -152,179 +161,179 @@ const PartnerDetail = () => {
 
             {/* Stammdaten Tab */}
             {activeTab === 'stammdaten' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-                {/* Main Column */}
-                <div className="lg:col-span-2 space-y-6">
+                    {/* Main Column */}
+                    <div className="lg:col-span-2 space-y-6">
 
-                    {/* Stammdaten Card */}
-                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                            <h3 className="font-medium text-slate-700 flex items-center gap-2">
-                                <FaFileContract className="text-slate-600" /> Stammdatenblatt
-                            </h3>
-                        </div>
-
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
-
-                            {/* Section: Kontakt */}
-                            <div className="space-y-4">
-                                <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Kontaktinformationen</h4>
-
-                                <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
-                                    <span className="text-slate-500 font-medium">Firma</span>
-                                    <span className="text-slate-800 font-semibold">{partner.company || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Vorname</span>
-                                    <span className="text-slate-800">{partner.first_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Nachname</span>
-                                    <span className="text-slate-800 font-medium">{partner.last_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium mt-2">Email</span>
-                                    <span className="text-slate-700 mt-2 hover:underline cursor-pointer">{partner.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Telefon</span>
-                                    <span className="text-slate-800">{partner.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    {partner.additional_phones?.length > 0 && (
-                                        <>
-                                            <span className="text-slate-500 font-medium">Weitere Tel.</span>
-                                            <span className="text-slate-800">{partner.additional_phones.join(', ')}</span>
-                                        </>
-                                    )}
-                                </div>
+                        {/* Stammdaten Card */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <h3 className="font-medium text-slate-700 flex items-center gap-2">
+                                    <FaFileContract className="text-slate-600" /> Stammdatenblatt
+                                </h3>
                             </div>
 
-                            {/* Section: Adresse */}
-                            <div className="space-y-4">
-                                <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Anschrift</h4>
+                            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
 
-                                <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
-                                    <span className="text-slate-500 font-medium">Straße</span>
-                                    <span className="text-slate-800">{partner.street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                {/* Section: Kontakt */}
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Kontaktinformationen</h4>
 
-                                    <span className="text-slate-500 font-medium">PLZ</span>
-                                    <span className="text-slate-800">{partner.zip || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Stadt</span>
-                                    <span className="text-slate-800">{partner.city || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Land</span>
-                                    <span className="text-slate-800">
-                                        {partner.country === 'DE' ? 'Deutschland' :
-                                            partner.country === 'AT' ? 'Österreich' :
-                                                partner.country === 'CH' ? 'Schweiz' :
-                                                    partner.country || <span className="text-slate-400 italic">Keine Angabe</span>}
-                                    </span>
-                                </div>
-
-                                <div className="mt-6 pt-4 border-t border-slate-50">
-                                    <h4 className="text-xs font-medium text-slate-400 mb-3">Zahlungsdaten</h4>
                                     <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
-                                        <span className="text-slate-500 font-medium">IBAN</span>
-                                        <span className="text-slate-800">{partner.iban || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium">Firma</span>
+                                        <span className="text-slate-800 font-semibold">{partner.company || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
 
-                                        <span className="text-slate-500 font-medium">BIC</span>
-                                        <span className="text-slate-800">{partner.bic || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium">Vorname</span>
+                                        <span className="text-slate-800">{partner.first_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
 
-                                        <span className="text-slate-500 font-medium">Bank</span>
-                                        <span className="text-slate-800">{partner.bank_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium">Nachname</span>
+                                        <span className="text-slate-800 font-medium">{partner.last_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
 
-                                        <span className="text-slate-500 font-medium mt-2">Steuer-Nr.</span>
-                                        <span className="text-slate-800 mt-2">{partner.tax_id || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium mt-2">Email</span>
+                                        <span className="text-slate-700 mt-2 hover:underline cursor-pointer">{partner.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
 
-                                        <span className="text-slate-500 font-medium">USt-IdNr.</span>
-                                        <span className="text-slate-800">{partner.vat_id || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium">Telefon</span>
+                                        <span className="text-slate-800">{partner.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        {partner.additional_phones?.length > 0 && (
+                                            <>
+                                                <span className="text-slate-500 font-medium">Weitere Tel.</span>
+                                                <span className="text-slate-800">{partner.additional_phones.join(', ')}</span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
+
+                                {/* Section: Adresse */}
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Anschrift</h4>
+
+                                    <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
+                                        <span className="text-slate-500 font-medium">Straße</span>
+                                        <span className="text-slate-800">{partner.street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        <span className="text-slate-500 font-medium">PLZ</span>
+                                        <span className="text-slate-800">{partner.zip || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        <span className="text-slate-500 font-medium">Stadt</span>
+                                        <span className="text-slate-800">{partner.city || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        <span className="text-slate-500 font-medium">Land</span>
+                                        <span className="text-slate-800">
+                                            {partner.country === 'DE' ? 'Deutschland' :
+                                                partner.country === 'AT' ? 'Österreich' :
+                                                    partner.country === 'CH' ? 'Schweiz' :
+                                                        partner.country || <span className="text-slate-400 italic">Keine Angabe</span>}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-6 pt-4 border-t border-slate-50">
+                                        <h4 className="text-xs font-medium text-slate-400 mb-3">Zahlungsdaten</h4>
+                                        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
+                                            <span className="text-slate-500 font-medium">IBAN</span>
+                                            <span className="text-slate-800">{partner.iban || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">BIC</span>
+                                            <span className="text-slate-800">{partner.bic || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">Bank</span>
+                                            <span className="text-slate-800">{partner.bank_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium mt-2">Steuer-Nr.</span>
+                                            <span className="text-slate-800 mt-2">{partner.tax_id || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">USt-IdNr.</span>
+                                            <span className="text-slate-800">{partner.vat_id || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
 
+                            {/* Memo / Notes */}
+                            <div className="p-6 border-t border-slate-100 bg-slate-50/30">
+                                <h4 className="text-xs font-medium text-slate-400 mb-2">Interne Notizen</h4>
+                                <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
+                                    {partner.notes || <span className="italic text-slate-400">Keine Notizen hinterlegt.</span>}
+                                </p>
+                            </div>
                         </div>
 
-                        {/* Memo / Notes */}
-                        <div className="p-6 border-t border-slate-100 bg-slate-50/30">
-                            <h4 className="text-xs font-medium text-slate-400 mb-2">Interne Notizen</h4>
-                            <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
-                                {partner.notes || <span className="italic text-slate-400">Keine Notizen hinterlegt.</span>}
-                            </p>
+                        {/* Recent Projects Card */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <h3 className="font-medium text-slate-700 flex items-center gap-2">
+                                    <FaBriefcase className="text-slate-600" /> Letzte Projekte
+                                </h3>
+                            </div>
+                            <div>
+                                <RecentPartnerProjects partnerId={id!} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Recent Projects Card */}
-                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                            <h3 className="font-medium text-slate-700 flex items-center gap-2">
-                                <FaBriefcase className="text-slate-600" /> Letzte Projekte
-                            </h3>
+                    {/* Side Panel */}
+                    <div className="space-y-6">
+
+                        {/* Statistics Card */}
+                        <PartnerStats partnerId={id!} />
+
+                        {/* Skills Card */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                                <h4 className="text-xs font-medium text-slate-500">Qualifikationen</h4>
+                            </div>
+                            <div className="p-5 space-y-5">
+                                <div>
+                                    <label className="text-xs font-medium text-slate-400 block mb-2">Sprachpaare</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {partner.languages && partner.languages.length > 0 ? (
+                                            partner.languages.map((lang: string, i: number) => (
+                                                <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-sm text-xs font-medium shadow-sm">
+                                                    <img src={getFlagUrl(lang)} className="w-4 h-3 object-cover rounded-sm" alt={lang} />
+                                                    {getLanguageName(lang)}
+                                                </span>
+                                            ))
+                                        ) : <span className="text-xs text-slate-400 italic">Keine Sprachen angegeben</span>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-medium text-slate-400 block mb-2">Fachgebiete</label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {partner.domains && partner.domains.length > 0 ? (
+                                            partner.domains.map((domain: string, i: number) => (
+                                                <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-sm text-sm font-medium border border-slate-200">
+                                                    {domain}
+                                                </span>
+                                            ))
+                                        ) : <span className="text-xs text-slate-400 italic">Keine Angabe</span>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-medium text-slate-400 block mb-2">Preise / Raten</label>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-xs border-b border-slate-50 pb-1">
+                                            <span className="text-slate-500">Wortpreis</span>
+                                            <span className="font-brand font-medium text-slate-700">{partner.unit_rates?.word ? parseFloat(partner.unit_rates.word).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs border-b border-slate-50 pb-1">
+                                            <span className="text-slate-500">Zeilenpreis</span>
+                                            <span className="font-brand font-medium text-slate-700">{partner.unit_rates?.line ? parseFloat(partner.unit_rates.line).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-slate-500">Stundensatz</span>
+                                            <span className="font-brand font-medium text-slate-700">{partner.hourly_rate ? parseFloat(partner.hourly_rate).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <RecentPartnerProjects partnerId={id!} />
-                        </div>
+
                     </div>
                 </div>
-
-                {/* Side Panel */}
-                <div className="space-y-6">
-
-                    {/* Statistics Card */}
-                    <PartnerStats partnerId={id!} />
-
-                    {/* Skills Card */}
-                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-                            <h4 className="text-xs font-medium text-slate-500">Qualifikationen</h4>
-                        </div>
-                        <div className="p-5 space-y-5">
-                            <div>
-                                <label className="text-xs font-medium text-slate-400 block mb-2">Sprachpaare</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {partner.languages && partner.languages.length > 0 ? (
-                                        partner.languages.map((lang: string, i: number) => (
-                                            <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-sm text-xs font-medium shadow-sm">
-                                                <img src={getFlagUrl(lang)} className="w-4 h-3 object-cover rounded-sm" alt={lang} />
-                                                {getLanguageName(lang)}
-                                            </span>
-                                        ))
-                                    ) : <span className="text-xs text-slate-400 italic">Keine Sprachen angegeben</span>}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-xs font-medium text-slate-400 block mb-2">Fachgebiete</label>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {partner.domains && partner.domains.length > 0 ? (
-                                        partner.domains.map((domain: string, i: number) => (
-                                            <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-sm text-sm font-medium border border-slate-200">
-                                                {domain}
-                                            </span>
-                                        ))
-                                    ) : <span className="text-xs text-slate-400 italic">Keine Angabe</span>}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-xs font-medium text-slate-400 block mb-2">Preise / Raten</label>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-xs border-b border-slate-50 pb-1">
-                                        <span className="text-slate-500">Wortpreis</span>
-                                        <span className="font-brand font-medium text-slate-700">{partner.unit_rates?.word ? parseFloat(partner.unit_rates.word).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs border-b border-slate-50 pb-1">
-                                        <span className="text-slate-500">Zeilenpreis</span>
-                                        <span className="font-brand font-medium text-slate-700">{partner.unit_rates?.line ? parseFloat(partner.unit_rates.line).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-500">Stundensatz</span>
-                                        <span className="font-brand font-medium text-slate-700">{partner.hourly_rate ? parseFloat(partner.hourly_rate).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
             )} {/* end stammdaten tab */}
 
             <NewPartnerModal

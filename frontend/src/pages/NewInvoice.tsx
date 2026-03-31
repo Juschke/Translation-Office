@@ -21,8 +21,6 @@ const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stück'
 
 /* ─── UI Styling Tokens (Matching Project Style) ─── */
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
-const SECTION_NUM = 'w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm';
-const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
 const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = false) =>
     clsx(
@@ -897,12 +895,9 @@ const NewInvoice = () => {
                         </section>
 
                         {/* Section: Belegpositionen */}
-                        <section className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden mb-8">
-                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
-                                <div className="flex items-center gap-3">
-                                    <div className={SECTION_NUM}>04</div>
-                                    <h3 className={SECTION_TITLE}>Leistungsübersicht</h3>
-                                </div>
+                        <section className="bg-transparent space-y-2 mb-8">
+                            <div className="flex justify-between items-center mb-1">
+                                <h3 className="text-sm font-bold text-slate-800 ml-1">Leistungsübersicht</h3>
                                 <div className="flex items-center gap-2">
                                     <Button
                                         ref={catalogButtonRef}
@@ -913,214 +908,217 @@ const NewInvoice = () => {
                                     >
                                         <FaBook className="mr-1.5" /> LEISTUNGSKATALOG
                                     </Button>
-
-                                    {catalogOpen && createPortal(
-                                        <div
-                                            ref={catalogDropdownRef}
-                                            className="fixed z-[9999] w-80 border border-slate-200 rounded-sm bg-white shadow-2xl overflow-hidden animate-fadeIn"
-                                            style={{
-                                                top: coords.top,
-                                                left: coords.left,
-                                                pointerEvents: 'auto'
-                                            }}
-                                        >
-                                            <div className="border-b border-slate-100 bg-white relative shrink-0">
-                                                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
-                                                <input
-                                                    ref={catalogSearchRef}
-                                                    type="text"
-                                                    placeholder="Leistung suchen…"
-                                                    autoFocus
-                                                    value={search}
-                                                    onChange={e => setSearch(e.target.value)}
-                                                    className="w-full pl-9 pr-8 py-2.5 border-none text-xs focus:outline-none text-slate-700 placeholder:text-slate-400"
-                                                />
-                                                {search && (
-                                                    <FaTimes
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 cursor-pointer text-xs"
-                                                        onClick={() => setSearch('')}
-                                                    />
-                                                )}
-                                            </div>
-                                            <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                                                {activeServices.length > 0 ? (
-                                                    activeServices.map((s: any) => (
-                                                        <button
-                                                            key={s.id}
-                                                            type="button"
-                                                            onClick={() => addService(s)}
-                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-slate-50 border-b border-slate-50 last:border-0 group transition-colors flex justify-between items-center"
-                                                        >
-                                                            <div className="flex flex-col">
-                                                                <span className="font-bold text-slate-700 group-hover:text-brand-primary">{s.name}</span>
-                                                                <span className="text-[10px] text-slate-400 uppercase tracking-widest">{s.unit || 'Stk.'}</span>
-                                                            </div>
-                                                            <div className="text-right flex flex-col font-mono text-[10px] text-slate-500">
-                                                                <span>{(parseFloat(s.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
-                                                            </div>
-                                                        </button>
-                                                    ))
-                                                ) : (
-                                                    <div className="p-4 text-center text-xs text-slate-400 italic">Keine Leistungen gefunden</div>
-                                                )}
-                                            </div>
-                                        </div>,
-                                        document.body
-                                    )}
                                 </div>
                             </div>
+                            <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden">
+                                <div className={clsx(SECTION_HEADER, 'px-6 pt-5 hidden')}></div>
 
-                            <div className="p-0 overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[1000px]">
-                                    <thead>
-                                        <tr className="bg-slate-50/50 border-b border-slate-100/50">
-                                            <th className="px-3 py-2 w-10 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">#</th>
-                                            <th className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Beschreibung</th>
-                                            <th className="px-3 py-2 w-20 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menge</th>
-                                            <th className="px-3 py-2 w-32 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Einheit</th>
-                                            <th className="px-3 py-2 w-36 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Einzelpreis (€)</th>
-                                            <th className="px-3 py-2 w-24 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">MwSt.</th>
-                                            <th className="px-3 py-2 w-36 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rabatt</th>
-                                            <th className="px-3 py-2 w-32 text-right text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Gesamt (€)</th>
-                                            <th className="px-3 py-2 w-10"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {items.map((item, idx) => (
-                                            <tr key={item.id} className="group hover:bg-slate-50/30 transition-colors">
-                                                <td className="px-3 py-3 text-center text-[10px] font-bold text-slate-300">
-                                                    {idx + 1}
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <input
-                                                        type="text"
-                                                        value={item.description}
-                                                        placeholder="Leistungsbeschreibung..."
-                                                        className={inlineInput(item.description.trim() === '')}
-                                                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <input
-                                                        type="text"
-                                                        inputMode="decimal"
-                                                        value={toGerman(String(item.quantity || ''))}
-                                                        className={inlineInput((parseFloat(item.quantity) || 0) <= 0, 'right', true)}
-                                                        onChange={(e) => {
-                                                            const filtered = filterDecimalInput(e.target.value);
-                                                            updateItem(item.id, 'quantity', toEnglish(filtered));
-                                                        }}
-                                                        onBlur={(e) => updateItem(item.id, 'quantity', (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2))}
-                                                    />
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <div className="flex justify-end">
-                                                        <MiniDropdown
-                                                            value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
-                                                            options={UNITS.map(u => ({ value: u, label: u }))}
-                                                            onChange={(val: string) => updateItem(item.id, 'unit', val)}
+                                {catalogOpen && createPortal(
+                                    <div
+                                        ref={catalogDropdownRef}
+                                        className="fixed z-[9999] w-80 border border-slate-200 rounded-sm bg-white shadow-2xl overflow-hidden animate-fadeIn"
+                                        style={{
+                                            top: coords.top,
+                                            left: coords.left,
+                                            pointerEvents: 'auto'
+                                        }}
+                                    >
+                                        <div className="border-b border-slate-100 bg-white relative shrink-0">
+                                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                                            <input
+                                                ref={catalogSearchRef}
+                                                type="text"
+                                                placeholder="Leistung suchen…"
+                                                autoFocus
+                                                value={search}
+                                                onChange={e => setSearch(e.target.value)}
+                                                className="w-full pl-9 pr-8 py-2.5 border-none text-xs focus:outline-none text-slate-700 placeholder:text-slate-400"
+                                            />
+                                            {search && (
+                                                <FaTimes
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 cursor-pointer text-xs"
+                                                    onClick={() => setSearch('')}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                                            {activeServices.length > 0 ? (
+                                                activeServices.map((s: any) => (
+                                                    <button
+                                                        key={s.id}
+                                                        type="button"
+                                                        onClick={() => addService(s)}
+                                                        className="w-full text-left px-4 py-2 text-xs hover:bg-slate-50 border-b border-slate-50 last:border-0 group transition-colors flex justify-between items-center"
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-slate-700 group-hover:text-brand-primary">{s.name}</span>
+                                                            <span className="text-[10px] text-slate-400 uppercase tracking-widest">{s.unit || 'Stk.'}</span>
+                                                        </div>
+                                                        <div className="text-right flex flex-col font-mono text-[10px] text-slate-500">
+                                                            <span>{(parseFloat(s.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                                                        </div>
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="p-4 text-center text-xs text-slate-400 italic">Keine Leistungen gefunden</div>
+                                            )}
+                                        </div>
+                                    </div>,
+                                    document.body
+                                )}
+
+                                <div className="p-0 overflow-x-auto">
+                                    <table className="w-full text-left border-collapse min-w-[1000px]">
+                                        <thead>
+                                            <tr className="bg-slate-50/50 border-b border-slate-100/50">
+                                                <th className="px-3 py-2 w-10 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">#</th>
+                                                <th className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Beschreibung</th>
+                                                <th className="px-3 py-2 w-20 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menge</th>
+                                                <th className="px-3 py-2 w-32 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Einheit</th>
+                                                <th className="px-3 py-2 w-36 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Einzelpreis (€)</th>
+                                                <th className="px-3 py-2 w-24 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">MwSt.</th>
+                                                <th className="px-3 py-2 w-36 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rabatt</th>
+                                                <th className="px-3 py-2 w-32 text-right text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Gesamt (€)</th>
+                                                <th className="px-3 py-2 w-10"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {items.map((item, idx) => (
+                                                <tr key={item.id} className="group hover:bg-slate-50/30 transition-colors">
+                                                    <td className="px-3 py-3 text-center text-[10px] font-bold text-slate-300">
+                                                        {idx + 1}
+                                                    </td>
+                                                    <td className="px-3 py-3">
+                                                        <input
+                                                            type="text"
+                                                            value={item.description}
+                                                            placeholder="Leistungsbeschreibung..."
+                                                            className={inlineInput(item.description.trim() === '')}
+                                                            onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                                                         />
-                                                    </div>
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <input
-                                                        type="text"
-                                                        inputMode="decimal"
-                                                        value={toGerman(String(item.price || ''))}
-                                                        className={inlineInput(false, 'right', true)}
-                                                        onChange={(e) => {
-                                                            const filtered = filterDecimalInput(e.target.value);
-                                                            updateItem(item.id, 'price', toEnglish(filtered));
-                                                        }}
-                                                        onBlur={(e) => updateItem(item.id, 'price', (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2))}
-                                                    />
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <div className="flex justify-end">
-                                                        <MiniDropdown
-                                                            value={item.tax_rate?.toString() || '19.00'}
-                                                            options={[
-                                                                { value: '19.00', label: '19%' },
-                                                                { value: '7.00', label: '7%' },
-                                                                { value: '0.00', label: '0%' }
-                                                            ]}
-                                                            onChange={(val) => updateItem(item.id, 'tax_rate', val)}
-                                                            width="80px"
-                                                        />
-                                                    </div>
-                                                </td>
-                                                <td className="px-3 py-3">
-                                                    <div className="flex items-center justify-end gap-1.5">
+                                                    </td>
+                                                    <td className="px-3 py-3">
                                                         <input
                                                             type="text"
                                                             inputMode="decimal"
-                                                            value={toGerman(String(item.discount_percent || '0'))}
-                                                            className={clsx(inlineInput(false, 'right', true), 'w-14')}
+                                                            value={toGerman(String(item.quantity || ''))}
+                                                            className={inlineInput((parseFloat(item.quantity) || 0) <= 0, 'right', true)}
                                                             onChange={(e) => {
                                                                 const filtered = filterDecimalInput(e.target.value);
-                                                                updateItem(item.id, 'discount_percent', toEnglish(filtered));
+                                                                updateItem(item.id, 'quantity', toEnglish(filtered));
                                                             }}
+                                                            onBlur={(e) => updateItem(item.id, 'quantity', (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2))}
                                                         />
-                                                        <MiniDropdown
-                                                            value={item.discount_mode || 'percent'}
-                                                            options={[
-                                                                { value: 'percent', label: '%' },
-                                                                { value: 'fixed', label: '€' }
-                                                            ]}
-                                                            onChange={(val) => updateItem(item.id, 'discount_mode', val)}
-                                                            width="60px"
+                                                    </td>
+                                                    <td className="px-3 py-3">
+                                                        <div className="flex justify-end">
+                                                            <MiniDropdown
+                                                                value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
+                                                                options={UNITS.map(u => ({ value: u, label: u }))}
+                                                                onChange={(val: string) => updateItem(item.id, 'unit', val)}
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-3 py-3">
+                                                        <input
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            value={toGerman(String(item.price || ''))}
+                                                            className={inlineInput(false, 'right', true)}
+                                                            onChange={(e) => {
+                                                                const filtered = filterDecimalInput(e.target.value);
+                                                                updateItem(item.id, 'price', toEnglish(filtered));
+                                                            }}
+                                                            onBlur={(e) => updateItem(item.id, 'price', (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2))}
                                                         />
-                                                    </div>
-                                                </td>
-                                                <td className="px-3 py-3 text-right">
-                                                    <span className="font-bold text-[11px] text-slate-800 tabular-nums">
-                                                        {fmtEur(item.total)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-3 py-3 text-center">
-                                                    <button
-                                                        onClick={() => removeItem(item.id)}
-                                                        className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-all opacity-0 group-hover:opacity-100"
-                                                    >
-                                                        <FaTrash size={10} />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                    </td>
+                                                    <td className="px-3 py-3">
+                                                        <div className="flex justify-end">
+                                                            <MiniDropdown
+                                                                value={item.tax_rate?.toString() || '19.00'}
+                                                                options={[
+                                                                    { value: '19.00', label: '19%' },
+                                                                    { value: '7.00', label: '7%' },
+                                                                    { value: '0.00', label: '0%' }
+                                                                ]}
+                                                                onChange={(val) => updateItem(item.id, 'tax_rate', val)}
+                                                                width="80px"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-3 py-3">
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                            <input
+                                                                type="text"
+                                                                inputMode="decimal"
+                                                                value={toGerman(String(item.discount_percent || '0'))}
+                                                                className={clsx(inlineInput(false, 'right', true), 'w-14')}
+                                                                onChange={(e) => {
+                                                                    const filtered = filterDecimalInput(e.target.value);
+                                                                    updateItem(item.id, 'discount_percent', toEnglish(filtered));
+                                                                }}
+                                                            />
+                                                            <MiniDropdown
+                                                                value={item.discount_mode || 'percent'}
+                                                                options={[
+                                                                    { value: 'percent', label: '%' },
+                                                                    { value: 'fixed', label: '€' }
+                                                                ]}
+                                                                onChange={(val) => updateItem(item.id, 'discount_mode', val)}
+                                                                width="60px"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right">
+                                                        <span className="font-bold text-[11px] text-slate-800 tabular-nums">
+                                                            {fmtEur(item.total)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3 py-3 text-center">
+                                                        <button
+                                                            onClick={() => removeItem(item.id)}
+                                                            className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-all opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <FaTrash size={10} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
 
-                                {/* Table Footer: Center Add Button */}
-                                <div className="border-t border-dashed border-slate-200 flex justify-center py-4 bg-slate-50/20">
-                                    <button
-                                        onClick={addItem}
-                                        className="flex items-center gap-1.5 px-6 py-2 text-[11px] font-bold text-slate-500 border border-dashed border-slate-300 rounded-md hover:border-brand-primary hover:text-brand-primary hover:bg-white transition-all shadow-sm"
-                                    >
-                                        <FaPlus className="text-[10px]" /> POSITION HINZUFÜGEN
-                                    </button>
-                                </div>
-
-                                {/* Summary Block (Integrated into table area) */}
-                                {items.length > 0 && (
-                                    <div className="border-t-2 border-slate-100 bg-slate-50/30 p-6 space-y-2">
-                                        <div className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
-                                            <span className="uppercase tracking-widest text-[10px] font-bold text-slate-400">Summe Netto</span>
-                                            <span className="text-slate-700 tabular-nums">{fmtEur(computedFinancials.amount_net)}</span>
-                                        </div>
-                                        {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
-                                            <div key={rate} className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
-                                                <span className="uppercase tracking-widest text-[10px] font-bold text-slate-400">MwSt. {parseFloat(rate)}%</span>
-                                                <span className="text-slate-600 tabular-nums">{fmtEur(amount as number)}</span>
-                                            </div>
-                                        ))}
-                                        <div className="flex justify-between items-center pt-3 mt-2 border-t border-slate-200 max-w-md ml-auto">
-                                            <span className="uppercase tracking-widest text-xs font-black text-slate-900">Gesamtbetrag</span>
-                                            <span className="text-lg font-black text-brand-primary tabular-nums italic">
-                                                {fmtEur(computedFinancials.amount_gross)}
-                                            </span>
-                                        </div>
+                                    {/* Table Footer: Center Add Button */}
+                                    <div className="border-t border-dashed border-slate-200 flex justify-center py-4 bg-slate-50/20">
+                                        <button
+                                            onClick={addItem}
+                                            className="flex items-center gap-1.5 px-6 py-2 text-[11px] font-bold text-slate-500 border border-dashed border-slate-300 rounded-md hover:border-brand-primary hover:text-brand-primary hover:bg-white transition-all shadow-sm"
+                                        >
+                                            <FaPlus className="text-[10px]" /> POSITION HINZUFÜGEN
+                                        </button>
                                     </div>
-                                )}
+
+                                    {/* Summary Block (Integrated into table area) */}
+                                    {items.length > 0 && (
+                                        <div className="border-t-2 border-slate-100 bg-slate-50/30 p-6 space-y-2">
+                                            <div className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
+                                                <span className="uppercase tracking-widest text-[10px] font-bold text-slate-400">Summe Netto</span>
+                                                <span className="text-slate-700 tabular-nums">{fmtEur(computedFinancials.amount_net)}</span>
+                                            </div>
+                                            {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
+                                                <div key={rate} className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
+                                                    <span className="uppercase tracking-widest text-[10px] font-bold text-slate-400">MwSt. {parseFloat(rate)}%</span>
+                                                    <span className="text-slate-600 tabular-nums">{fmtEur(amount as number)}</span>
+                                                </div>
+                                            ))}
+                                            <div className="flex justify-between items-center pt-3 mt-2 border-t border-slate-200 max-w-md ml-auto">
+                                                <span className="uppercase tracking-widest text-xs font-black text-slate-900">Gesamtbetrag</span>
+                                                <span className="text-lg font-black text-brand-primary tabular-nums italic">
+                                                    {fmtEur(computedFinancials.amount_gross)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </section>
 
@@ -1250,7 +1248,7 @@ const NewInvoice = () => {
                             </div>
                         </section>
                     </div>
-                </div>
+                </div >
             </div >
 
             {/* ── Action Footer Bar (Simplified & Relative) ── */}

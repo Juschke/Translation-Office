@@ -154,7 +154,7 @@ const ProjectFinancialSidebar = ({
 
             <div className="flex justify-between text-[10px] text-slate-400 font-medium italic">
                 <span>Erstellt: {creationDate}</span>
-                <span>PM: {projectManager}</span>
+                <span>Mitarbeiter: {projectManager}</span>
             </div>
         </div>
     </div>

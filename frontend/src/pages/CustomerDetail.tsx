@@ -7,12 +7,13 @@ import {
     FaFileContract, FaChartLine
 } from 'react-icons/fa';
 import TableSkeleton from '../components/common/TableSkeleton';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Button } from '../components/ui/button';
+import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
 import clsx from 'clsx';
 
 const CustomerDetail = () => {
@@ -30,7 +31,14 @@ const CustomerDetail = () => {
         enabled: !!id
     });
 
+    const { updateTab } = useWorkspaceTabs();
 
+    useEffect(() => {
+        if (customer) {
+            const customerName = customer.company_name || `${customer.first_name} ${customer.last_name}`;
+            updateTab(`customer_detail_${id}`, { label: `Kunde: ${customerName}` });
+        }
+    }, [customer, id, updateTab]);
 
     const updateMutation = useMutation({
         mutationFn: (data: any) => customerService.update(parseInt(id!), data),
@@ -53,8 +61,6 @@ const CustomerDetail = () => {
 
     const name = customer.company_name || `${customer.first_name} ${customer.last_name}`;
     const initials = (customer.company_name?.substring(0, 2) || (customer.first_name?.[0] || '') + (customer.last_name?.[0] || 'C')).toUpperCase();
-
-
 
     return (
         <div className="flex flex-col gap-6 fade-in pb-10">
@@ -327,10 +333,6 @@ const CustomerDetail = () => {
                             </div>
                         </div>
                     </div>
-
-
-
-
                 </div>
             </div>
 
@@ -339,7 +341,6 @@ const CustomerDetail = () => {
                 onClose={() => setIsEditModalOpen(false)}
                 onSubmit={(data) => updateMutation.mutate(data)}
                 initialData={customer}
-            // isLoading={updateMutation.isPending} // Not supported by NewCustomerModal yet
             />
 
             <ConfirmModal
@@ -367,7 +368,6 @@ const RecentProjectsList = ({ customerId }: { customerId: string }) => {
     if (isLoading) return <div className="p-6 text-center text-slate-400 text-xs">Lade Projekte...</div>;
     if (!projects || projects.length === 0) return <div className="p-6 text-center text-slate-400 text-xs italic">Keine Projekte vorhanden.</div>;
 
-    // Use projects.data if paginated, or projects if array
     const list = Array.isArray(projects) ? projects : (projects.data || []);
 
     return (

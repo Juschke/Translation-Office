@@ -29,6 +29,7 @@ import { customerService, partnerService, settingsService, projectService } from
 import type { ProjectPosition } from '../components/modals/projectType';
 import ProjectPositionsTable from '../components/modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../components/modals/ProjectPaymentsTable';
+import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
 import { Button } from '../components/ui/button';
 import {
     Tooltip,
@@ -42,7 +43,7 @@ const LABEL_CLASS = 'text-[13px] font-medium text-slate-500 flex items-center ga
 const INPUT_WRAP = 'flex-1 min-w-0';
 const ROW_CLASS = 'flex items-start gap-4 py-3 border-b border-slate-50';
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
-const SECTION_NUM = 'w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm';
+const SECTION_NUM = 'w-7 h-7 rounded-md bg-brand-primary text-white flex items-center justify-center text-xs font-bold shadow-sm';
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
 const getStatusOptions = (t: any) => [
@@ -199,10 +200,22 @@ const NewProject = () => {
     const displayNr = useMemo(() => {
         if (initialData?.project_number) return initialData.project_number;
         const prefix = companyData?.project_id_prefix || 'P';
-        const datePart = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
-        const nextNum = companyData?.project_start_number || '0001';
-        return `${prefix}-${datePart}-${nextNum}`;
-    }, [initialData?.project_number, companyData]);
+        const year = new Date().getFullYear().toString();
+        const yearPrefix = `${prefix}-${year}-`;
+
+        const list = Array.isArray(projectsData) ? projectsData : [];
+        const yearProjects = list.filter((p: any) => (p.project_number || '').startsWith(yearPrefix));
+
+        let maxNum = 0;
+        yearProjects.forEach((p: any) => {
+            const part = p.project_number.replace(yearPrefix, '');
+            const n = parseInt(part);
+            if (!isNaN(n) && n > maxNum) maxNum = n;
+        });
+
+        const nextIndex = Math.max(maxNum + 1, parseInt(companyData?.project_start_number || '1'));
+        return `${yearPrefix}${String(nextIndex).padStart(4, '0')}`;
+    }, [initialData?.project_number, companyData, projectsData]);
 
     // ── Position calculations ──
     useEffect(() => {
@@ -227,6 +240,14 @@ const NewProject = () => {
         setPartnerPrice(updated.reduce((s, p) => s + parseFloat(p.partnerTotal || '0'), 0).toFixed(2));
         setTotalPrice(updated.reduce((s, p) => s + parseFloat(p.customerTotal || '0'), 0).toFixed(2));
     }, [positions]);
+
+    // Sync Workspace Tab Title
+    const { updateTab } = useWorkspaceTabs();
+    useEffect(() => {
+        const tabId = isEditing ? `project_edit_${id}` : 'project_new';
+        const prefix = isEditing ? 'Bearbeiten: ' : 'Neu: ';
+        updateTab(tabId, { label: `${prefix}${name || (isEditing ? '...' : 'Neues Projekt')}` });
+    }, [name, isEditing, id, updateTab]);
 
     // Auto-generate name
     useEffect(() => {
@@ -404,7 +425,6 @@ const NewProject = () => {
                             <h1 className="text-lg font-semibold text-slate-800 tracking-tight">
                                 {isEditing ? 'Projekt bearbeiten' : 'Neues Projekt erfassen'}
                             </h1>
-                            <span className="text-xs text-slate-400 font-medium">Nr: {displayNr}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -708,8 +728,9 @@ const NewProject = () => {
                             <h4 className="text-xs font-semibold text-slate-500">Meta Info</h4>
                         </div>
                         <div className="space-y-2 text-xs">
-                            <div className="flex justify-between"><span className="text-slate-400">Erstellt:</span><span className="font-medium text-slate-700">{initialData?.createdAt || new Date().toLocaleDateString('de-DE')}</span></div>
-                            <div className="flex justify-between"><span className="text-slate-400">Manager:</span><span className="font-medium text-slate-700">{initialData?.pm || 'Admin'}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Projekt-Nr:</span><span className="font-bold text-slate-900">{displayNr}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Erstellt:</span><span className="font-medium text-slate-700">{initialData?.created_at ? dayjs(initialData.created_at).format('DD.MM.YYYY') : dayjs().format('DD.MM.YYYY')}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Mitarbeiter:</span><span className="font-medium text-slate-700">{initialData?.creator?.name || initialData?.pm || 'System'}</span></div>
                         </div>
                     </div>
 

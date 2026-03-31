@@ -27,6 +27,7 @@ import { projectService, customerService, partnerService } from '../api/services
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
 import { Button } from '../components/ui/button';
+import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
 
 
 import TableSkeleton from '../components/common/TableSkeleton';
@@ -215,7 +216,7 @@ const ProjectDetail = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isActionsOpen]);
 
-    // Comprehensive Project State
+    const { updateTab } = useWorkspaceTabs();
     const [projectData, setProjectData] = useState<ProjectData | null>(null);
 
     const { data: projectResponse, isLoading, error } = useQuery({
@@ -228,8 +229,12 @@ const ProjectDetail = () => {
         if (projectResponse) {
             const mapped = mapProjectResponse(projectResponse) as ProjectData;
             setProjectData(mapped);
+
+            // Update workspace tab title
+            const tabTitle = mapped.project_number ? `${mapped.project_number} - ${mapped.name}` : mapped.name;
+            updateTab(`project_detail_${id}`, { label: tabTitle });
         }
-    }, [projectResponse]);
+    }, [projectResponse, id, updateTab]);
 
     const getDeadlineStatus = () => {
         if (!projectData?.due) return { label: t('calendar.no_date'), color: 'bg-slate-50 text-slate-400 border-slate-100', icon: <FaClock /> };

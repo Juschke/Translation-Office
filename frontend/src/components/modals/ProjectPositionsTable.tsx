@@ -461,16 +461,7 @@ const ProjectPositionsTable = ({
                                                 }}
                                                 onBlur={e => update(index, { customerRate: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
                                             />
-                                            <MiniDropdown
-                                                value={pos.customerMode === 'flat' ? 'flat' : 'rate'}
-                                                options={[
-                                                    { value: 'rate', label: '/ Einh.' },
-                                                    { value: 'flat', label: 'Pausch.' }
-                                                ]}
-                                                onChange={v => update(index, { customerMode: v })}
-                                                disabled={disabled}
-                                                width="100px"
-                                            />
+
                                         </div>
                                     </td>
 
@@ -484,7 +475,7 @@ const ProjectPositionsTable = ({
                                         {!disabled && positions.length > 1 ? (
                                             <button
                                                 onClick={() => setPositions(positions.filter(p => p.id !== pos.id))}
-                                                className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
+                                                className="p-1.5 text-slate-200  rounded-sm transition-colors opacity-0 group-hover:opacity-100"
                                                 title={t('actions.delete')}
                                             >
                                                 <FaTrash className="text-[10px]" />

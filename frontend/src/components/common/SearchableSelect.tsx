@@ -171,7 +171,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const dropdownContent = (
         <div
             ref={dropdownRef}
-            className="fixed z-[9999] bg-white border border-slate-200 shadow-sm overflow-hidden animate-fadeIn searchable-select-dropdown flex flex-col"
+            className="fixed z-[9999] bg-white border border-slate-200 shadow-xl overflow-hidden animate-fadeIn searchable-select-dropdown flex flex-col"
             style={{
                 top: coords.top,
                 left: coords.left,
@@ -218,7 +218,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     <>
                         {groupedOptions.sortedGroups.map(group => (
                             <div key={group.name}>
-                                <div className="px-4 py-1.5 bg-white text-xs font-semibold text-slate-400 tracking-[0.15em] border-y border-slate-100/50">
+                                <div className="px-4 py-1.5 bg-white text-xs font-semibold text-slate-400 tracking-[0.15em] border-y border-slate-50/50">
                                     {group.name}
                                 </div>
                                 {group.items.map((opt) => {
@@ -329,7 +329,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     roundedSide === 'left' && "rounded-l-sm",
                     roundedSide === 'right' && "rounded-r-sm",
                     roundedSide === 'none' && "rounded-none",
-                    isOpen ? "border-slate-900 ring-2 ring-slate-950/10 shadow-sm" : "shadow-sm",
+                    isOpen ? "border-brand-primary ring-2 ring-brand-primary/10 shadow-sm" : "border-slate-200 shadow-sm",
                     disabled ? "bg-slate-50 border-slate-200 cursor-not-allowed opacity-60" : "bg-white",
                     className
                 )}

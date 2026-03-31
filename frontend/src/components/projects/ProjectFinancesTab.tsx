@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 import { FaInfoCircle, FaCalculator } from 'react-icons/fa';
 import ProjectPositionsTable from '../modals/ProjectPositionsTable';
 import type { ExtraServiceRow } from '../modals/ProjectPositionsTable';
@@ -250,8 +252,8 @@ const ProjectFinancesTab = ({
                 {/* Right Column: Financial Summary Sidebar */}
                 <div className="xl:w-80 flex flex-col gap-6">
                     <ProjectFinancialSidebar
-                        creationDate={projectData.createdAt || new Date(projectData.created_at || Date.now()).toLocaleDateString('de-DE')}
-                        projectManager={projectData.pm || 'System'}
+                        creationDate={format(new Date(projectData.created_at || projectData.createdAtRaw || Date.now()), 'dd.MM.yyyy', { locale: de })}
+                        projectManager={projectData.creator?.name || projectData.pm || 'System'}
                         baseNet={financials.baseNet}
                         extraCosts={financials.extraTotal}
                         calcNet={financials.netTotal}
