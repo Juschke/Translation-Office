@@ -14,6 +14,7 @@ import NewPartnerModal from '../components/modals/NewPartnerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Button } from '../components/ui/button';
+import PartnerBillingTab from '../components/partners/PartnerBillingTab';
 
 const PartnerDetail = () => {
     const { t } = useTranslation();
@@ -23,6 +24,7 @@ const PartnerDetail = () => {
     const queryClient = useQueryClient();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'stammdaten' | 'abrechnung'>('stammdaten');
 
     const { data: partner, isLoading } = useQuery({
         queryKey: ['partners', id],
@@ -126,6 +128,30 @@ const PartnerDetail = () => {
                 </div>
             </div>
 
+            {/* Tab Navigation */}
+            <div className="flex gap-1 border-b border-slate-200">
+                {(['stammdaten', 'abrechnung'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                            activeTab === tab
+                                ? 'border-[#1B4D4F] text-[#1B4D4F]'
+                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        {tab === 'stammdaten' ? 'Stammdaten' : 'Abrechnung'}
+                    </button>
+                ))}
+            </div>
+
+            {/* Abrechnung Tab */}
+            {activeTab === 'abrechnung' && (
+                <PartnerBillingTab partnerId={Number(id)} />
+            )}
+
+            {/* Stammdaten Tab */}
+            {activeTab === 'stammdaten' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
                 {/* Main Column */}
@@ -299,6 +325,7 @@ const PartnerDetail = () => {
 
                 </div>
             </div>
+            )} {/* end stammdaten tab */}
 
             <NewPartnerModal
                 isOpen={isEditModalOpen}

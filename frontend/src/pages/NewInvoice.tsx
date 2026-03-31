@@ -1,22 +1,103 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useLayoutEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-    FaPlus, FaTrash, FaSave, FaArrowLeft
+    FaPlus, FaTrash, FaSave, FaArrowLeft, FaBook, FaSearch, FaTimes, FaChevronDown
 } from 'react-icons/fa';
 import Input from '../components/common/Input';
 import { Button } from '../components/ui/button';
 import SearchableSelect from '../components/common/SearchableSelect';
-import { MiniDropdown } from '../components/modals/ProjectPositionsTable';
 import CountrySelect from '../components/common/CountrySelect';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { projectService, settingsService, invoiceService, customerService } from '../api/services';
 import CustomerSelect from '../components/common/CustomerSelect';
+import NewCustomerModal from '../components/modals/NewCustomerModal';
 
 const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stück', 'Minuten', 'Tage'];
+
+/* ─── UI Styling Tokens (Matching Project Style) ─── */
+const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
+const SECTION_NUM = 'w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm';
+const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
+
+const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = false) =>
+    clsx(
+        'w-full bg-transparent outline-none border-b-2 pb-px transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+        mono ? 'font-mono text-xs' : 'font-medium text-xs',
+        align === 'right' ? 'text-right' : 'text-left',
+        invalid
+            ? 'border-red-300 text-red-500 placeholder:text-red-300'
+            : 'border-transparent text-slate-700 placeholder:text-slate-300 hover:border-slate-200 focus:border-brand-primary',
+    );
+
+const filterDecimalInput = (raw: string): string => {
+    let v = raw.replace(/[^0-9,]/g, '');
+    const ci = v.indexOf(',');
+    if (ci !== -1) v = v.slice(0, ci + 1) + v.slice(ci + 1).replace(/,/g, '');
+    return v;
+};
+const toEnglish = (v: string) => v.replace(',', '.');
+const toGerman = (v: string) => v.replace('.', ',');
+
+/* ─── MiniDropdown for the inline table cells (re-implemented as the shared file is missing) ─── */
+const MiniDropdown = ({ value, options, onChange, align = 'right', width }: { value: string, options: any[], onChange: (v: string) => void, align?: 'left' | 'right', width?: string }) => {
+    const [open, setOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const handleDown = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleDown);
+        return () => document.removeEventListener('mousedown', handleDown);
+    }, [open]);
+
+    return (
+        <div ref={containerRef} className="relative inline-block text-right">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-sm transition-all uppercase tracking-wider h-7"
+            >
+                {options.find(o => o.value === value)?.label || value}
+                <FaChevronDown className={clsx("text-[8px] transition-transform", open && "rotate-180")} />
+            </button>
+
+            {open && (
+                <div
+                    className={clsx(
+                        "absolute z-[100] mt-1 bg-white border border-slate-200 rounded-sm shadow-xl overflow-hidden animate-in fade-in zoom-in-95",
+                        align === 'right' ? 'right-0' : 'left-0'
+                    )}
+                    style={width ? { width } : { width: '8rem' }}
+                >
+                    <div className="flex flex-col py-1">
+                        {options.map((o) => (
+                            <button
+                                key={o.value}
+                                type="button"
+                                onClick={() => { onChange(o.value); setOpen(false); }}
+                                className={clsx(
+                                    "w-full text-left px-3 py-2 text-[10px] font-bold transition-colors border-b border-slate-50 last:border-0",
+                                    value === o.value ? "bg-slate-100 text-brand-primary" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                )}
+                            >
+                                {o.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const NewInvoice = () => {
     const navigate = useNavigate();
@@ -29,7 +110,16 @@ const NewInvoice = () => {
     const preselectedProjectId = searchParams.get('project_id') || '';
 
     const [selectedProjectId, setSelectedProjectId] = useState<string>(preselectedProjectId);
-    const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
+    const [editingCustomer, setEditingCustomer] = useState<any>(null);
+    const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [catalogOpen, setCatalogOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+    const catalogButtonRef = useRef<HTMLButtonElement>(null);
+    const catalogDropdownRef = useRef<HTMLDivElement>(null);
+    const catalogSearchRef = useRef<HTMLInputElement>(null);
+    const lastAutoPaymentText = useRef('');
+    const lastAutoIntroText = useRef('');
 
     const [formData, setFormData] = useState({
         type: defaultType,
@@ -44,7 +134,7 @@ const NewInvoice = () => {
         currency: 'EUR',
         status: 'draft',
         notes: '',
-        intro_text: 'Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihren Auftrag und das damit verbundene Vertrauen. Anbei erhalten Sie die Rechnung über die von uns erbrachten Leistungen.',
+        intro_text: '',
         footer_text: '',
         project_id: '',
         customer_id: '',
@@ -54,6 +144,7 @@ const NewInvoice = () => {
         leitweg_id: '',
         customer_reference: '',
         salutation: '',
+        payment_text: '',
     });
 
     const [items, setItems] = useState<any[]>([]);
@@ -164,12 +255,21 @@ const NewInvoice = () => {
         }));
     }, [customersResponse]);
 
-    const serviceOptions = useMemo(() => {
-        return (Array.isArray(services) ? services : []).map((s: any) => ({
-            value: s.id.toString(),
-            label: `${s.name} (${(parseFloat(s.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € / ${s.unit || 'Stk'})`,
-        }));
-    }, [services]);
+    const handleEditCustomer = (custId: string) => {
+        const list = customersResponse?.data || customersResponse || [];
+        const cust = (list as any[]).find(c => c.id.toString() === custId);
+        if (cust) {
+            setEditingCustomer(cust);
+            setShowCustomerModal(true);
+        }
+    };
+
+    const activeServices = useMemo(() => {
+        return (Array.isArray(services) ? services : []).filter(
+            (s: any) => s.status === 'active' &&
+                (search === '' || s.name.toLowerCase().includes(search.toLowerCase())),
+        );
+    }, [services, search]);
 
     const activeProject = useMemo(() => {
         if (selectedProjectId) {
@@ -225,17 +325,18 @@ const NewInvoice = () => {
                 intro_text: inv.intro_text || '',
                 footer_text: inv.footer_text || '',
                 salutation: (inv as any).salutation || '',
+                payment_text: (inv as any).payment_text || '',
             });
             if (inv.items) {
                 setItems(inv.items.map((i: any) => ({
                     id: i.id || Math.random().toString(36).substr(2, 9),
                     description: i.description,
-                    quantity: i.quantity,
+                    quantity: (parseFloat(i.quantity) || 0).toFixed(2),
                     unit: i.unit,
-                    price: i.unit_price_cents ? i.unit_price_cents / 100 : i.price,
-                    total: i.total_cents ? i.total_cents / 100 : i.total,
+                    price: (i.unit_price_cents ? i.unit_price_cents / 100 : i.price || 0).toFixed(2),
+                    total: (i.total_cents ? i.total_cents / 100 : i.total || 0).toFixed(2),
                     price_mode: i.price_mode || 'unit',
-                    discount_percent: i.discount_percent || 0,
+                    discount_percent: (parseFloat(i.discount_percent) || 0).toFixed(2),
                     tax_rate: i.tax_rate !== undefined ? i.tax_rate : inv.tax_rate || '19.00',
                 })));
             }
@@ -277,12 +378,12 @@ const NewInvoice = () => {
                     return {
                         id: p.id || Math.random().toString(36).substr(2, 9),
                         description: p.description || p.name || 'Position',
-                        quantity: qty,
+                        quantity: qty.toFixed(2),
                         unit: p.unit || 'Wörter',
-                        price,
-                        total,
+                        price: price.toFixed(2),
+                        total: total.toFixed(2),
                         price_mode: mode,
-                        discount_percent: 0,
+                        discount_percent: '0.00',
                         tax_rate: formData.tax_rate || '19.00',
                     };
                 });
@@ -328,8 +429,113 @@ const NewInvoice = () => {
         }
     }, [activeProject]);
 
+    // ── project_id mit selectedProjectId synchron halten ─────────────────────
+    useEffect(() => {
+        if (selectedProjectId) {
+            setFormData(prev => ({ ...prev, project_id: selectedProjectId }));
+        }
+    }, [selectedProjectId]);
+
+    const updateCatalogCoords = useCallback(() => {
+        if (catalogButtonRef.current) {
+            const rect = catalogButtonRef.current.getBoundingClientRect();
+            setCoords({
+                top: rect.bottom + 4,
+                left: Math.max(rect.right - 320, 10),
+                width: 320
+            });
+        }
+    }, []);
+
+    useLayoutEffect(() => {
+        if (catalogOpen) {
+            updateCatalogCoords();
+            const closeOnScroll = (e: Event) => {
+                if (catalogDropdownRef.current && catalogDropdownRef.current.contains(e.target as Node)) return;
+                setCatalogOpen(false);
+            };
+            window.addEventListener('scroll', closeOnScroll, true);
+            window.addEventListener('resize', updateCatalogCoords);
+            return () => {
+                window.removeEventListener('scroll', closeOnScroll, true);
+                window.removeEventListener('resize', updateCatalogCoords);
+            };
+        }
+    }, [catalogOpen, updateCatalogCoords]);
+
+    useEffect(() => {
+        if (catalogOpen) setTimeout(() => catalogSearchRef.current?.focus(), 50);
+    }, [catalogOpen]);
+
+    // ── Texte & Steuern basierend auf Kunde/Wahl aktualisieren ─────────────
+    useEffect(() => {
+        if (!isEditMode && activeCustomer) {
+            const salutation = activeCustomer.salutation || 'Sehr geehrte Damen und Herren';
+            let greeting = salutation;
+            if (salutation.toLowerCase().includes('geehrte')) {
+                greeting = `${salutation} ${activeCustomer.contact_person || (activeCustomer.last_name ? activeCustomer.last_name : '')}`;
+            }
+
+            const newIntro = `${greeting},\n\nwir bedanken uns für den Auftrag und erlauben uns, die folgenden Leistungen in Rechnung zu stellen:`;
+
+            setFormData(prev => {
+                const shouldUpdate = !prev.intro_text || prev.intro_text === lastAutoIntroText.current;
+                if (shouldUpdate) {
+                    lastAutoIntroText.current = newIntro;
+                    return { ...prev, intro_text: newIntro, customer_id: activeCustomer.id?.toString() || prev.customer_id };
+                }
+                return { ...prev, customer_id: activeCustomer.id?.toString() || prev.customer_id };
+            });
+        }
+    }, [activeCustomer, isEditMode]);
+
+    // Zahlungsbedingungen basierend auf Kunde & Datum
+    useEffect(() => {
+        if (!isEditMode && activeCustomer) {
+            const days = activeCustomer.payment_terms_days !== undefined ? parseInt(activeCustomer.payment_terms_days) : 14;
+            const newDueDate = dayjs(formData.date).add(days, 'day').format('YYYY-MM-DD');
+            const newPaymentText = days === 0
+                ? `Zahlbar sofort nach Erhalt der Rechnung ohne Abzug.`
+                : `Zahlbar innerhalb von ${days} Tagen bis zum ${fmtDate(newDueDate)} ohne Abzug.`;
+
+            setFormData(prev => {
+                const shouldUpdate = !prev.payment_text || prev.payment_text === lastAutoPaymentText.current;
+                if (shouldUpdate) {
+                    lastAutoPaymentText.current = newPaymentText;
+                    return { ...prev, payment_text: newPaymentText, due_date: newDueDate };
+                }
+                return prev;
+            });
+        }
+    }, [activeCustomer, formData.date, isEditMode]);
+
+    useEffect(() => {
+        if (formData.tax_exemption === '§19_ustg') {
+            setFormData(prev => ({
+                ...prev,
+                tax_rate: '0.00',
+                footer_text: 'Umsatzsteuerbefreit gemäß Kleinunternehmerregelung (§ 19 UStG).'
+            }));
+        } else if (formData.tax_exemption === 'reverse_charge') {
+            setFormData(prev => ({
+                ...prev,
+                tax_rate: '0.00',
+                footer_text: 'Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge gem. § 13b UStG).'
+            }));
+        } else if (formData.tax_exemption === 'none' && parseFloat(formData.tax_rate) === 0) {
+            setFormData(prev => ({ ...prev, tax_rate: '19.00' }));
+        }
+    }, [formData.tax_exemption]);
+
+    // ── customer_id aus geladenem Projekt befüllen (falls noch leer) ──────────
+    useEffect(() => {
+        if (activeProject?.customer_id && !formData.customer_id) {
+            setFormData(prev => ({ ...prev, customer_id: activeProject.customer_id.toString() }));
+        }
+    }, [activeProject]);
+
     // ── Item-Verwaltung ────────────────────────────────────────────────────────
-    const addItem = () => setItems(prev => [...prev, { id: Date.now().toString(), description: '', quantity: 1, unit: 'Wörter', price: 0, total: 0, price_mode: 'unit', discount_percent: 0, tax_rate: formData.tax_rate || '19.00' }]);
+    const addItem = () => setItems(prev => [...prev, { id: Date.now().toString(), description: '', quantity: '1.00', unit: 'Wörter', price: '0.00', total: 0, price_mode: 'unit', discount_percent: '0.00', tax_rate: formData.tax_rate || '19.00' }]);
     const removeItem = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
     const parseDecimal = (v: any) => parseFloat(String(v).replace(',', '.')) || 0;
 
@@ -354,72 +560,20 @@ const NewInvoice = () => {
         }));
     };
 
-    const addService = (serviceId: string) => {
-        const service = (services as any[]).find((s: any) => s.id.toString() === serviceId);
-        if (service) setItems(prev => [...prev, {
+    const addService = (service: any) => {
+        setItems(prev => [...prev, {
             id: Date.now().toString(),
             description: service.name,
-            quantity: 1,
+            quantity: '1.00',
             unit: service.unit || 'Wörter',
-            price: parseFloat(service.base_price) || 0,
-            total: parseFloat(service.base_price) || 0,
+            price: (parseFloat(service.base_price) || 0).toFixed(2),
+            total: (parseFloat(service.base_price) || 0).toFixed(2),
             price_mode: 'unit',
-            discount_percent: 0,
+            discount_percent: '0.00',
             tax_rate: formData.tax_rate || '19.00'
         }]);
-    };
-
-    // ── Inline-Cell-Editing ────────────────────────────────────────────────────
-    const filterDecimalInvoice = (raw: string): string => {
-        let v = raw.replace(/[^0-9,]/g, '');
-        const ci = v.indexOf(',');
-        if (ci !== -1) v = v.slice(0, ci + 1) + v.slice(ci + 1).replace(/,/g, '');
-        return v;
-    };
-
-    const renderItemCell = (id: string, field: string, value: string, type: 'text' | 'number' = 'text', className: string = '') => {
-        const isEditing = editingCell?.id === id && editingCell?.field === field;
-        const isNumeric = type === 'number';
-
-        if (isEditing) {
-            return (
-                <input
-                    autoFocus
-                    type="text"
-                    inputMode={isNumeric ? 'decimal' : 'text'}
-                    defaultValue={isNumeric ? String(value).replace('.', ',') : value}
-                    className={clsx('w-full bg-white border-2 border-slate-900 rounded-sm px-2 py-1 outline-none text-xs font-medium shadow-sm', className)}
-                    onChange={isNumeric ? (e) => { e.target.value = filterDecimalInvoice(e.target.value); } : undefined}
-                    onBlur={(e) => {
-                        const raw = e.target.value;
-                        updateItem(id, field, isNumeric ? String(parseDecimal(raw)) : raw);
-                        setEditingCell(null);
-                    }}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            const raw = (e.target as HTMLInputElement).value;
-                            updateItem(id, field, isNumeric ? String(parseDecimal(raw)) : raw);
-                            setEditingCell(null);
-                        }
-                        if (e.key === 'Escape') setEditingCell(null);
-                    }}
-                />
-            );
-        }
-
-        const displayValue = isNumeric
-            ? (parseDecimal(value)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-            : value;
-
-        return (
-            <div
-                onClick={() => setEditingCell({ id, field })}
-                className={clsx('cursor-pointer hover:bg-slate-50 hover:text-slate-900 px-2 py-1 rounded-sm transition', className)}
-                title="Klicken zum Bearbeiten"
-            >
-                {displayValue || '-'}
-            </div>
-        );
+        setCatalogOpen(false);
+        setSearch('');
     };
 
     // ── Hilfsfunktionen ────────────────────────────────────────────────────────
@@ -523,7 +677,7 @@ const NewInvoice = () => {
                         {/* Section: Projekt Verknüpfung */}
                         <section className="bg-transparent space-y-2 mb-8">
                             <h3 className="text-sm font-bold text-slate-800 ml-1">Projekt-Zuordnung</h3>
-                            <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
+                            <div className="bg-white p-6 rounded-sm border border-slate-200/60 shadow-sm">
                                 <div className="max-w-xl space-y-1.5">
                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Projekt verknüpfen (empfohlen)</label>
                                     <SearchableSelect
@@ -552,7 +706,7 @@ const NewInvoice = () => {
                         {/* Section: Kundenangaben (Single Card with 2-Column Grid) */}
                         <section className="bg-transparent space-y-2 mb-8">
                             <h3 className="text-sm font-bold text-slate-800 ml-1">Kundenangaben</h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 bg-white p-6 rounded-sm border border-slate-200/60 shadow-sm">
                                 {/* Left Column: Address */}
                                 <div className="space-y-4">
 
@@ -609,6 +763,17 @@ const NewInvoice = () => {
                                         onChange={() => { }}
                                         className="w-full"
                                     />
+                                    {activeCustomer && (
+                                        <div className="flex justify-end mt-2 animate-fadeIn">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleEditCustomer(activeCustomer.id.toString())}
+                                                className="text-[12px] font-bold text-brand-primary hover:underline transition-colors flex items-center gap-1 px-3 py-1.5 "
+                                            >
+                                                Kunde bearbeiten
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Right Column: Metadata */}
@@ -666,7 +831,7 @@ const NewInvoice = () => {
                         {/* Section: Kopfbereich (Belegtitel) */}
                         <section className="bg-transparent space-y-2 mb-8">
                             <h3 className="text-sm font-bold text-slate-800 ml-1">Kopfbereich</h3>
-                            <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm space-y-6">
+                            <div className="bg-white p-6 rounded-sm border border-slate-200/60 shadow-sm space-y-6">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Belegtitel</label>
                                     <select
@@ -732,159 +897,230 @@ const NewInvoice = () => {
                         </section>
 
                         {/* Section: Belegpositionen */}
-                        <section className="bg-transparent space-y-2 mb-8">
-                            <div className="flex justify-between items-center ml-1">
-                                <h3 className="text-sm font-bold text-slate-800">Leistungsübersicht</h3>
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={addItem}
-                                    className="h-8 text-[11px] font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm"
-                                >
-                                    <FaPlus className="mr-1.5 text-[10px]" /> Position hinzufügen
-                                </Button>
-                            </div>
-                            <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                                <div className="p-6 pb-0 space-y-4">
-                                    <div className="w-full lg:w-1/2">
-                                        <SearchableSelect
-                                            label="Aus Dienstleistungskatalog hinzufügen"
-                                            placeholder="Suchen Sie nach vordefinierten Leistungen..."
-                                            options={serviceOptions}
-                                            value=""
-                                            onChange={(val) => { if (val) addService(val); }}
-                                        />
-                                    </div>
+                        <section className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden mb-8">
+                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
+                                <div className="flex items-center gap-3">
+                                    <div className={SECTION_NUM}>04</div>
+                                    <h3 className={SECTION_TITLE}>Leistungsübersicht</h3>
                                 </div>
-                                <div className="p-0 overflow-x-auto">
-                                    <table className="w-full text-left border-collapse min-w-[900px]">
-                                        <thead>
-                                            <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                                <th className="px-4 py-2 w-12 text-center">#</th>
-                                                <th className="px-4 py-2">Beschreibung</th>
-                                                <th className="px-4 py-2 w-20 text-right">Menge</th>
-                                                <th className="px-4 py-2 w-24 text-right">Einheit</th>
-                                                <th className="px-4 py-2 w-24 text-right">Preis (€)</th>
-                                                <th className="px-4 py-2 w-20 text-right">Steuer</th>
-                                                <th className="px-4 py-2 w-20 text-right">Rabatt</th>
-                                                <th className="px-4 py-2 w-32 text-right">Gesamtpreis</th>
-                                                <th className="px-4 py-2 w-10"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {items.map((item, idx) => (
-                                                <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                    <td className="px-4 py-2 text-center text-[10px] font-mono text-slate-300">
-                                                        {idx + 1}
-                                                    </td>
-                                                    <td className="px-4 py-2">
-                                                        {renderItemCell(item.id, 'description', item.description, 'text', 'text-xs font-medium text-slate-700 w-full bg-transparent border-none')}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        {renderItemCell(item.id, 'quantity', String(item.quantity), 'number', 'text-right font-mono text-[11px] text-slate-600 border-none')}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex justify-end">
-                                                            <MiniDropdown
-                                                                value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
-                                                                options={UNITS.map(u => ({ value: u, label: u }))}
-                                                                onChange={(val: string) => updateItem(item.id, 'unit', val)}
-                                                                width="25px"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            {renderItemCell(item.id, 'price', String(item.price), 'number', 'text-right font-mono text-[11px] text-slate-900 font-semibold border-none')}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex justify-end items-center">
-                                                            <MiniDropdown
-                                                                value={item.tax_rate?.toString() || '19.00'}
-                                                                options={[
-                                                                    { value: '19.00', label: '19%' },
-                                                                    { value: '7.00', label: '7%' },
-                                                                    { value: '0.00', label: '0%' }
-                                                                ]}
-                                                                onChange={(val: string) => updateItem(item.id, 'tax_rate', val)}
-                                                                width="25px"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex justify-end items-center gap-1">
-                                                            <div className="flex-1 min-w-[30px]">
-                                                                {renderItemCell(item.id, 'discount_percent', String(item.discount_percent || '0'), 'number', 'text-right font-mono text-[11px] text-slate-400 border-none')}
-                                                            </div>
-                                                            <MiniDropdown
-                                                                value={item.discount_mode || 'percent'}
-                                                                options={[
-                                                                    { value: 'percent', label: '%' },
-                                                                    { value: 'fixed', label: '€' }
-                                                                ]}
-                                                                onChange={(val: string) => updateItem(item.id, 'discount_mode', val)}
-                                                                width="25px"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums text-[11px]">
-                                                        {fmtEur(item.total)}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-center">
-                                                        <button
-                                                            onClick={() => removeItem(item.id)}
-                                                            className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
-                                                        >
-                                                            <FaTrash size={10} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {items.length === 0 && (
-                                                <tr>
-                                                    <td colSpan={9} className="px-4 py-12 text-center text-slate-400 italic text-sm">
-                                                        Fügen Sie Leistungen über den Katalog oder eine manuelle Zeile hinzu.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        {items.length > 0 && (
-                                            <tfoot className="border-t-2 border-slate-100 italic">
-                                                <tr className="bg-slate-50/50">
-                                                    <td colSpan={7} className="px-4 py-1.5 text-right text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                                        Summe Netto
-                                                    </td>
-                                                    <td className="px-4 py-1.5 text-right font-black text-slate-800 tabular-nums text-xs bg-slate-100/50">
-                                                        {fmtEur(computedFinancials.amount_net)}
-                                                    </td>
-                                                    <td></td>
-                                                </tr>
-                                                {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
-                                                    <tr key={rate} className="bg-slate-50/50">
-                                                        <td colSpan={7} className="px-4 py-1 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                            zzgl. Umsatzsteuer {parseFloat(rate)}%
-                                                        </td>
-                                                        <td className="px-4 py-1 text-right font-mono text-slate-600 tabular-nums text-[11px] bg-white border-b border-slate-50">
-                                                            {fmtEur(amount as number)}
-                                                        </td>
-                                                        <td></td>
-                                                    </tr>
-                                                ))}
-                                            </tfoot>
-                                        )}
-                                    </table>
-                                    <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex justify-center">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={addItem}
-                                            className="h-9 text-xs font-bold border-brand-primary/30 text-brand-primary hover:text-white hover:bg-brand-primary bg-brand-primary/5 shadow-sm px-8"
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        ref={catalogButtonRef}
+                                        variant="default"
+                                        size="sm"
+                                        className={clsx("h-8 text-[11px] font-bold", catalogOpen && "ring-2 ring-brand-primary ring-offset-1")}
+                                        onClick={() => { setCatalogOpen(!catalogOpen); setSearch(''); }}
+                                    >
+                                        <FaBook className="mr-1.5" /> LEISTUNGSKATALOG
+                                    </Button>
+
+                                    {catalogOpen && createPortal(
+                                        <div
+                                            ref={catalogDropdownRef}
+                                            className="fixed z-[9999] w-80 border border-slate-200 rounded-sm bg-white shadow-2xl overflow-hidden animate-fadeIn"
+                                            style={{
+                                                top: coords.top,
+                                                left: coords.left,
+                                                pointerEvents: 'auto'
+                                            }}
                                         >
-                                            <FaPlus className="mr-2 text-[10px]" /> Position hinzufügen
-                                        </Button>
-                                    </div>
+                                            <div className="border-b border-slate-100 bg-white relative shrink-0">
+                                                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                                                <input
+                                                    ref={catalogSearchRef}
+                                                    type="text"
+                                                    placeholder="Leistung suchen…"
+                                                    autoFocus
+                                                    value={search}
+                                                    onChange={e => setSearch(e.target.value)}
+                                                    className="w-full pl-9 pr-8 py-2.5 border-none text-xs focus:outline-none text-slate-700 placeholder:text-slate-400"
+                                                />
+                                                {search && (
+                                                    <FaTimes
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 cursor-pointer text-xs"
+                                                        onClick={() => setSearch('')}
+                                                    />
+                                                )}
+                                            </div>
+                                            <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                                                {activeServices.length > 0 ? (
+                                                    activeServices.map((s: any) => (
+                                                        <button
+                                                            key={s.id}
+                                                            type="button"
+                                                            onClick={() => addService(s)}
+                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-slate-50 border-b border-slate-50 last:border-0 group transition-colors flex justify-between items-center"
+                                                        >
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-slate-700 group-hover:text-brand-primary">{s.name}</span>
+                                                                <span className="text-[10px] text-slate-400 uppercase tracking-widest">{s.unit || 'Stk.'}</span>
+                                                            </div>
+                                                            <div className="text-right flex flex-col font-mono text-[10px] text-slate-500">
+                                                                <span>{(parseFloat(s.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                                                            </div>
+                                                        </button>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-4 text-center text-xs text-slate-400 italic">Keine Leistungen gefunden</div>
+                                                )}
+                                            </div>
+                                        </div>,
+                                        document.body
+                                    )}
                                 </div>
+                            </div>
+
+                            <div className="p-0 overflow-x-auto">
+                                <table className="w-full text-left border-collapse min-w-[1000px]">
+                                    <thead>
+                                        <tr className="bg-slate-50/50 border-b border-slate-100/50">
+                                            <th className="px-3 py-2 w-10 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">#</th>
+                                            <th className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Beschreibung</th>
+                                            <th className="px-3 py-2 w-20 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menge</th>
+                                            <th className="px-3 py-2 w-32 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Einheit</th>
+                                            <th className="px-3 py-2 w-36 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Einzelpreis (€)</th>
+                                            <th className="px-3 py-2 w-24 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">MwSt.</th>
+                                            <th className="px-3 py-2 w-36 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rabatt</th>
+                                            <th className="px-3 py-2 w-32 text-right text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Gesamt (€)</th>
+                                            <th className="px-3 py-2 w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {items.map((item, idx) => (
+                                            <tr key={item.id} className="group hover:bg-slate-50/30 transition-colors">
+                                                <td className="px-3 py-3 text-center text-[10px] font-bold text-slate-300">
+                                                    {idx + 1}
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <input
+                                                        type="text"
+                                                        value={item.description}
+                                                        placeholder="Leistungsbeschreibung..."
+                                                        className={inlineInput(item.description.trim() === '')}
+                                                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={toGerman(String(item.quantity || ''))}
+                                                        className={inlineInput((parseFloat(item.quantity) || 0) <= 0, 'right', true)}
+                                                        onChange={(e) => {
+                                                            const filtered = filterDecimalInput(e.target.value);
+                                                            updateItem(item.id, 'quantity', toEnglish(filtered));
+                                                        }}
+                                                        onBlur={(e) => updateItem(item.id, 'quantity', (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2))}
+                                                    />
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <div className="flex justify-end">
+                                                        <MiniDropdown
+                                                            value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
+                                                            options={UNITS.map(u => ({ value: u, label: u }))}
+                                                            onChange={(val: string) => updateItem(item.id, 'unit', val)}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={toGerman(String(item.price || ''))}
+                                                        className={inlineInput(false, 'right', true)}
+                                                        onChange={(e) => {
+                                                            const filtered = filterDecimalInput(e.target.value);
+                                                            updateItem(item.id, 'price', toEnglish(filtered));
+                                                        }}
+                                                        onBlur={(e) => updateItem(item.id, 'price', (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2))}
+                                                    />
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <div className="flex justify-end">
+                                                        <MiniDropdown
+                                                            value={item.tax_rate?.toString() || '19.00'}
+                                                            options={[
+                                                                { value: '19.00', label: '19%' },
+                                                                { value: '7.00', label: '7%' },
+                                                                { value: '0.00', label: '0%' }
+                                                            ]}
+                                                            onChange={(val) => updateItem(item.id, 'tax_rate', val)}
+                                                            width="80px"
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        <input
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            value={toGerman(String(item.discount_percent || '0'))}
+                                                            className={clsx(inlineInput(false, 'right', true), 'w-14')}
+                                                            onChange={(e) => {
+                                                                const filtered = filterDecimalInput(e.target.value);
+                                                                updateItem(item.id, 'discount_percent', toEnglish(filtered));
+                                                            }}
+                                                        />
+                                                        <MiniDropdown
+                                                            value={item.discount_mode || 'percent'}
+                                                            options={[
+                                                                { value: 'percent', label: '%' },
+                                                                { value: 'fixed', label: '€' }
+                                                            ]}
+                                                            onChange={(val) => updateItem(item.id, 'discount_mode', val)}
+                                                            width="60px"
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-3 text-right">
+                                                    <span className="font-bold text-[11px] text-slate-800 tabular-nums">
+                                                        {fmtEur(item.total)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-3 text-center">
+                                                    <button
+                                                        onClick={() => removeItem(item.id)}
+                                                        className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-all opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        <FaTrash size={10} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Table Footer: Center Add Button */}
+                                <div className="border-t border-dashed border-slate-200 flex justify-center py-4 bg-slate-50/20">
+                                    <button
+                                        onClick={addItem}
+                                        className="flex items-center gap-1.5 px-6 py-2 text-[11px] font-bold text-slate-500 border border-dashed border-slate-300 rounded-md hover:border-brand-primary hover:text-brand-primary hover:bg-white transition-all shadow-sm"
+                                    >
+                                        <FaPlus className="text-[10px]" /> POSITION HINZUFÜGEN
+                                    </button>
+                                </div>
+
+                                {/* Summary Block (Integrated into table area) */}
+                                {items.length > 0 && (
+                                    <div className="border-t-2 border-slate-100 bg-slate-50/30 p-6 space-y-2">
+                                        <div className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
+                                            <span className="uppercase tracking-widest text-[10px] font-bold text-slate-400">Summe Netto</span>
+                                            <span className="text-slate-700 tabular-nums">{fmtEur(computedFinancials.amount_net)}</span>
+                                        </div>
+                                        {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
+                                            <div key={rate} className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
+                                                <span className="uppercase tracking-widest text-[10px] font-bold text-slate-400">MwSt. {parseFloat(rate)}%</span>
+                                                <span className="text-slate-600 tabular-nums">{fmtEur(amount as number)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="flex justify-between items-center pt-3 mt-2 border-t border-slate-200 max-w-md ml-auto">
+                                            <span className="uppercase tracking-widest text-xs font-black text-slate-900">Gesamtbetrag</span>
+                                            <span className="text-lg font-black text-brand-primary tabular-nums italic">
+                                                {fmtEur(computedFinancials.amount_gross)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </section>
 
@@ -892,17 +1128,18 @@ const NewInvoice = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <section className="bg-transparent space-y-2 h-full">
                                 <h4 className="text-sm font-bold text-slate-800 ml-1">Zahlungsbedingungen</h4>
-                                <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-5">
+                                <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm p-5">
                                     <textarea
                                         className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
                                         placeholder="Z.B. Zahlbar innerhalb von 14 Tagen..."
-                                        defaultValue={`Zahlbar innerhalb von 14 Tagen bis zum ${fmtDate(formData.due_date)} ohne Abzug.`}
+                                        value={formData.payment_text}
+                                        onChange={e => setFormData({ ...formData, payment_text: e.target.value })}
                                     />
                                 </div>
                             </section>
                             <section className="bg-transparent space-y-2 h-full">
                                 <h4 className="text-sm font-bold text-slate-800 ml-1">Freitext (Fußzeile)</h4>
-                                <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-5">
+                                <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm p-5">
                                     <textarea
                                         className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
                                         placeholder="Optionaler abschließender Text (z.B. Vielen Dank für Ihren Auftrag!)"
@@ -920,7 +1157,7 @@ const NewInvoice = () => {
                         {/* Beleg-Historie & Meta (Zusätzliche Infos) */}
                         <section className="bg-transparent space-y-2">
                             <h4 className="text-sm font-bold text-slate-800 ml-1">Zusätzliche Infos</h4>
-                            <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 space-y-4">
+                            <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm p-6 space-y-4">
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-xs">
                                         <span className="text-slate-400">Status</span>
@@ -941,16 +1178,16 @@ const NewInvoice = () => {
                         {/* Summary Card */}
                         <section className="bg-transparent space-y-2">
                             <h3 className="text-sm font-bold text-slate-800 ml-1">Zusammenfassung</h3>
-                            <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                            <div className="bg-white p-6 rounded-sm border border-slate-200/60 shadow-sm overflow-hidden">
                                 <div className="space-y-4">
                                     {/* 1. Netto Summe (Basis) */}
-                                    <div className="flex justify-between items-center h-8 text-sm text-slate-500">
-                                        <span>Netto-Summe</span>
+                                    <div className="flex justify-between items-center h-2 text-sm text-slate-500">
+                                        <span>Netto</span>
                                         <span className="font-mono text-slate-900">{fmtEur(computedFinancials.amount_net)}</span>
                                     </div>
 
                                     {/* 2. Editable Adjustments */}
-                                    <div className="space-y-1">
+                                    <div className="pt-2 border-t border-slate-100 space-y-1">
                                         <div className="flex justify-between items-center h-8 text-sm text-slate-500 group">
                                             <span className="group-hover:text-slate-700 transition-colors">Versandkosten</span>
                                             <div className="flex items-center gap-0 font-mono text-slate-900 border-b border-transparent hover:border-slate-200 transition-all">
@@ -960,7 +1197,7 @@ const NewInvoice = () => {
                                                     onChange={e => setFormData({ ...formData, shipping: e.target.value })}
                                                     className="w-20 bg-transparent border-none p-0 text-right focus:outline-none focus:ring-0 font-mono text-slate-900"
                                                 />
-                                                <span className="ml-1 italic text-slate-400">€</span>
+                                                <span className="font-mono text-slate-900">€</span>
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center h-8 text-sm text-slate-500 group">
@@ -972,17 +1209,7 @@ const NewInvoice = () => {
                                                     onChange={e => setFormData({ ...formData, discount: e.target.value })}
                                                     className="w-16 bg-transparent border-none p-0 text-right focus:outline-none focus:ring-0 font-mono text-slate-900"
                                                 />
-                                                <div className="ml-1 min-w-[25px]">
-                                                    <MiniDropdown
-                                                        value={formData.discount_mode}
-                                                        options={[
-                                                            { value: 'fixed', label: '€' },
-                                                            { value: 'percent', label: '%' }
-                                                        ]}
-                                                        onChange={v => setFormData({ ...formData, discount_mode: v as any })}
-                                                        width="25px"
-                                                    />
-                                                </div>
+                                                <span className="font-mono text-slate-900">€</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1024,10 +1251,10 @@ const NewInvoice = () => {
                         </section>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* ── Action Footer Bar (Simplified & Relative) ── */}
-            <div className="mt-12 flex justify-end items-center gap-3 pt-8 border-t border-slate-200">
+            < div className="mt-12 flex justify-end items-center gap-3 pt-8 border-t border-slate-200" >
                 <Button
                     variant="outline"
                     onClick={() => navigate('/invoices')}
@@ -1050,9 +1277,36 @@ const NewInvoice = () => {
                     <FaSave className="text-[10px]" />
                     {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen übernehmen' : 'Beleg jetzt buchen')}
                 </Button>
-            </div>
-        </div>
+            </div >
+            <NewCustomerModal
+                isOpen={showCustomerModal}
+                onClose={() => {
+                    setShowCustomerModal(false);
+                    setEditingCustomer(null);
+                }}
+                initialData={editingCustomer}
+                onSubmit={(d) => {
+                    if (editingCustomer) {
+                        customerService.update(editingCustomer.id, d).then(() => {
+                            queryClient.invalidateQueries({ queryKey: ['customers'] });
+                            setShowCustomerModal(false);
+                            setEditingCustomer(null);
+                            toast.success('Kunde aktualisiert');
+                        });
+                    } else {
+                        // This logic is already handled by CustomerSelect's quick add, 
+                        // but if we trigger it from here for a "New" mode:
+                        customerService.create(d).then((res) => {
+                            queryClient.invalidateQueries({ queryKey: ['customers'] });
+                            setFormData(prev => ({ ...prev, customer_id: res.id.toString() }));
+                            setShowCustomerModal(false);
+                            toast.success('Kunde angelegt');
+                        });
+                    }
+                }}
+            />
+        </div >
     );
-};
+}
 
 export default NewInvoice;

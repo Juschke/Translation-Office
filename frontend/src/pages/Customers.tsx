@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
     FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaUserPlus, FaArchive
@@ -25,9 +25,37 @@ const Customers = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
-    const [typeFilter, setTypeFilter] = useState('all');
+    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>(() => {
+        const p = searchParams.get('view');
+        return (p === 'archive' || p === 'trash') ? p : 'active';
+    });
+    const [typeFilter, setTypeFilter] = useState(() => searchParams.get('type') || 'all');
+
+    const updateSearchParams = (updates: Record<string, string | null>) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            for (const [key, value] of Object.entries(updates)) {
+                if (value === null) {
+                    next.delete(key);
+                } else {
+                    next.set(key, value);
+                }
+            }
+            return next;
+        }, { replace: true });
+    };
+
+    const handleSetStatusView = (v: 'active' | 'archive' | 'trash') => {
+        setStatusView(v);
+        updateSearchParams({ view: v === 'active' ? null : v });
+    };
+
+    const handleSetTypeFilter = (v: string) => {
+        setTypeFilter(v);
+        updateSearchParams({ type: v === 'all' ? null : v });
+    };
     const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<any>(null);
@@ -67,7 +95,7 @@ const Customers = () => {
         queryFn: customerService.getAll
     });
 
-    const { data: stats } = useQuery({
+    const { data: stats, isLoading: statsLoading } = useQuery({
         queryKey: ['customerStats'],
         queryFn: customerService.getStats
     });
@@ -292,7 +320,7 @@ const Customers = () => {
             header: '',
             accessor: (c: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.details')}><FaEye /></button>
+                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.details')} aria-label={t('actions.details')}><FaEye /></button>
                     <button onClick={async () => {
                         setEditingCustomer(c);
                         setIsModalOpen(true);
@@ -305,13 +333,13 @@ const Customers = () => {
                         } finally {
                             setIsDetailLoading(false);
                         }
-                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit /></button>
+                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')} aria-label={t('actions.edit')}><FaEdit /></button>
                     <button onClick={() => {
                         setCustomerToDelete(c.id);
                         setConfirmTitle(t('customers.status.deleted'));
                         setConfirmMessage(t('customers.confirm.delete_message', { count: 1 }));
                         setIsConfirmOpen(true);
-                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')}><FaTrash /></button>
+                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')} aria-label={t('actions.delete')}><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -321,17 +349,17 @@ const Customers = () => {
 
     const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0);
     const resetFilters = () => {
-        setStatusView('active');
-        setTypeFilter('all');
+        handleSetStatusView('active');
+        handleSetTypeFilter('all');
     };
 
     const tableFilters: FilterDef[] = [
         {
-            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('all'); },
+            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { handleSetStatusView(v as 'active' | 'archive' | 'trash'); handleSetTypeFilter('all'); },
             options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
         },
         ...(statusView === 'active' ? [{
-            id: 'type', label: t('customers.filters.type'), type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
+            id: 'type', label: t('customers.filters.type'), type: 'select' as const, value: typeFilter, onChange: (v: any) => handleSetTypeFilter(v),
             options: [
                 { value: 'all', label: t('customers.filters.types.all') },
                 { value: 'Firma', label: t('customers.filters.types.company') },
@@ -383,21 +411,29 @@ const Customers = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label={t('customers.kpi.total_customers')} value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
-                <KPICard label={t('customers.kpi.new_entries')} value={newCustomersCount} icon={<FaUserPlus />} subValue={t('customers.kpi.last_30_days')} />
-                <KPICard label={t('customers.kpi.top_customer')} value={stats?.top_customer || '-'} icon={<FaBriefcase />} subValue={t('customers.kpi.top_customer_sub')} />
-                <KPICard
-                    label={t('customers.kpi.revenue_ytd')}
-                    value={formatCurrency(stats?.total_revenue_ytd || 0)}
-                    icon={<FaChartLine />}
-                    trend={stats?.revenue_trend !== undefined ? {
-                        value: `${stats.revenue_trend > 0 ? '+' : ''}${stats.revenue_trend}%`,
-                        label: t('customers.kpi.vs_last_year'),
-                        isPositive: stats.revenue_trend >= 0
-                    } : undefined}
-                />
-            </div>
+            {statsLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="animate-pulse bg-slate-100 rounded-sm h-20" />
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <KPICard label={t('customers.kpi.total_customers')} value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
+                    <KPICard label={t('customers.kpi.new_entries')} value={newCustomersCount} icon={<FaUserPlus />} subValue={t('customers.kpi.last_30_days')} />
+                    <KPICard label={t('customers.kpi.top_customer')} value={stats?.top_customer || '-'} icon={<FaBriefcase />} subValue={t('customers.kpi.top_customer_sub')} />
+                    <KPICard
+                        label={t('customers.kpi.revenue_ytd')}
+                        value={formatCurrency(stats?.total_revenue_ytd || 0)}
+                        icon={<FaChartLine />}
+                        trend={stats?.revenue_trend !== undefined ? {
+                            value: `${stats.revenue_trend > 0 ? '+' : ''}${stats.revenue_trend}%`,
+                            label: t('customers.kpi.vs_last_year'),
+                            isPositive: stats.revenue_trend >= 0
+                        } : undefined}
+                    />
+                </div>
+            )}
 
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <DataTable

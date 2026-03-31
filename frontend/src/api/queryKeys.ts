@@ -27,12 +27,15 @@ export const queryKeys = {
     all: () => ['partners'] as const,
     detail: (id: number | string) => ['partners', id] as const,
     stats: () => ['partnerStats'] as const,
+    billing: (id: number | string) => ['partner-billing', id] as const,
   },
 
   /** Projekt-Queries */
   projects: {
     all: () => ['projects'] as const,
     active: () => ['projects', 'active'] as const,
+    /** Nur für Dashboard-Vorschau — separater Key, damit Dashboard-Invalidierungen nicht die Projektliste treffen */
+    recent: () => ['projects', 'recent'] as const,
     detail: (id: number | string) => ['projects', id] as const,
     activities: (id: number | string) => ['project-activities', id] as const,
     guest: (token: string) => ['guest_project', token] as const,
@@ -47,8 +50,10 @@ export const queryKeys = {
   mails: {
     inbox: () => ['mails', 'inbox'] as const,
     sent: () => ['mails', 'sent'] as const,
+    trash: () => ['mails', 'trash'] as const,
     accounts: () => ['mail', 'accounts'] as const,
     templates: () => ['mail', 'templates'] as const,
+    signatures: () => ['mail', 'signatures'] as const,
     all: () => ['mails'] as const,
   },
 
@@ -59,6 +64,10 @@ export const queryKeys = {
     languages: () => ['settings', 'languages'] as const,
     docTypes: () => ['settings', 'docTypes'] as const,
     services: () => ['settings', 'services'] as const,
+    specializations: () => ['settings', 'specializations'] as const,
+    units: () => ['settings', 'units'] as const,
+    currencies: () => ['settings', 'currencies'] as const,
+    projectStatuses: () => ['settings', 'projectStatuses'] as const,
     emailTemplates: () => ['emailTemplates'] as const,
   },
 

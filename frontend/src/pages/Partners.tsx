@@ -64,7 +64,7 @@ const Partners = () => {
         queryFn: partnerService.getAll
     });
 
-    const { data: stats } = useQuery({
+    const { data: stats, isLoading: statsLoading } = useQuery({
         queryKey: ['partnerStats'],
         queryFn: partnerService.getStats
     });
@@ -355,7 +355,7 @@ const Partners = () => {
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('common.details')}><FaEye /></button>
+                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('common.details')} aria-label={t('common.details')}><FaEye /></button>
                     <button onClick={async () => {
                         setEditingPartner(p);
                         setIsModalOpen(true);
@@ -368,8 +368,8 @@ const Partners = () => {
                         } finally {
                             setIsDetailLoading(false);
                         }
-                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit /></button>
-                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')}><FaTrash /></button>
+                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')} aria-label={t('actions.edit')}><FaEdit /></button>
+                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')} aria-label={t('actions.delete')}><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -379,7 +379,7 @@ const Partners = () => {
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
             <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded-sm text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white flex items-center gap-2 shadow-sm transition">
-                <FaDownload /> Export
+                <FaDownload /> Exportieren
             </button>
             {isExportOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
@@ -430,22 +430,30 @@ const Partners = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label={t('partners.kpi.active_partners')} value={activePartnersCount} icon={<FaUserTie />} />
-                <KPICard
-                    label={t('partners.kpi.partner_costs')}
-                    value={partnerFinancials.totalCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                    icon={<FaEuroSign />}
-                    subValue={t('partners.kpi.avg_per_project', { amount: partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) })}
-                />
-                <KPICard
-                    label={t('partners.kpi.quality_average')}
-                    value={`${partnerQuality.toFixed(1)} / 5.0`}
-                    icon={<FaStar />}
-                    subValue={t('partners.kpi.rating_sub')}
-                />
-                <KPICard label={t('partners.kpi.collaboration')} value={stats?.collaboration_count || 0} icon={<FaHandshake />} subValue={t('partners.kpi.projects_this_month')} />
-            </div>
+            {statsLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="animate-pulse bg-slate-100 rounded-sm h-20" />
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <KPICard label={t('partners.kpi.active_partners')} value={activePartnersCount} icon={<FaUserTie />} />
+                    <KPICard
+                        label={t('partners.kpi.partner_costs')}
+                        value={partnerFinancials.totalCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                        icon={<FaEuroSign />}
+                        subValue={t('partners.kpi.avg_per_project', { amount: partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) })}
+                    />
+                    <KPICard
+                        label={t('partners.kpi.quality_average')}
+                        value={`${partnerQuality.toFixed(1)} / 5.0`}
+                        icon={<FaStar />}
+                        subValue={t('partners.kpi.rating_sub')}
+                    />
+                    <KPICard label={t('partners.kpi.collaboration')} value={stats?.collaboration_count || 0} icon={<FaHandshake />} subValue={t('partners.kpi.projects_this_month')} />
+                </div>
+            )}
 
             <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
                 <DataTable
@@ -549,8 +557,8 @@ const Partners = () => {
                         });
                     }
                 }}
-                title={t('partners.messages.delete_success')}
-                message={t('customers.confirm.delete_message', { count: 1 })}
+                title="Partner löschen"
+                description="Sind Sie sicher, dass Sie diesen Partner löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
                 isLoading={deleteMutation.isPending}
             />
         </div >

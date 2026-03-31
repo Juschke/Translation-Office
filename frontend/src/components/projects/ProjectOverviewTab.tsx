@@ -16,6 +16,7 @@ interface ProjectOverviewTabProps {
     handlePreviewFile: (file: any) => Promise<void>;
     setPreviewInvoice: (invoice: any) => void;
     onSendEmail?: (recipientType: 'customer' | 'partner') => void;
+    onCreateInvoice?: () => void;
 }
 
 const ProjectOverviewTab = ({
@@ -32,6 +33,7 @@ const ProjectOverviewTab = ({
     handlePreviewFile,
     setPreviewInvoice,
     onSendEmail,
+    onCreateInvoice,
 }: ProjectOverviewTabProps) => {
     const sourceFiles = (projectData.files || []).filter((f: any) => f.type === 'source');
     const targetFiles = (projectData.files || []).filter((f: any) => f.type === 'target');
@@ -584,6 +586,25 @@ const ProjectOverviewTab = ({
                                                     </div>
                                                     <FaExternalLinkAlt className="text-[8px] text-slate-200 group-hover:text-purple-400 transition-colors" />
                                                 </button>
+                                            </div>
+                                        )}
+
+                                        {!activeInvoice && ['delivered', 'invoiced'].includes(projectData?.status) && onCreateInvoice && (
+                                            <div className="border border-teal-200 bg-teal-50 rounded-sm p-3 flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <FaFileInvoiceDollar className="text-teal-500 shrink-0 text-sm" />
+                                                    <span className="text-[11px] font-bold text-teal-800 leading-tight">
+                                                        Projekt abgeschlossen — Rechnung noch nicht erstellt
+                                                    </span>
+                                                </div>
+                                                <Button
+                                                    variant="default"
+                                                    size="sm"
+                                                    onClick={onCreateInvoice}
+                                                    className="shrink-0 h-7 px-3 text-[10px] uppercase font-bold tracking-tight"
+                                                >
+                                                    Rechnung erstellen
+                                                </Button>
                                             </div>
                                         )}
                                     </>

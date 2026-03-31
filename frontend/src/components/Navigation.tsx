@@ -167,6 +167,8 @@ const Navigation = () => {
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="p-2 text-white hover:text-emerald-400 xl:hidden"
+                            aria-label="Menü öffnen"
+                            aria-expanded={isMobileMenuOpen}
                         >
                             <div className="w-5 h-4 flex flex-col justify-between">
                                 <span className={clsx("h-0.5 bg-current transition-all", isMobileMenuOpen ? "rotate-45 translate-y-1.5" : "")}></span>

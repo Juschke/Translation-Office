@@ -22,6 +22,16 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
     const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    const [currencies, setCurrencies] = useState<any[]>([]);
+
+    useEffect(() => {
+        settingsService.getCurrencies().then(setCurrencies);
+    }, []);
+
+    const currencySymbol = React.useMemo(() => {
+        const def = currencies.find(c => c.is_default);
+        return def ? def.symbol : '€';
+    }, [currencies]);
 
     const availableVariables = [
         { label: 'Auftragsnummer', value: '{offer_number}' },
@@ -305,16 +315,27 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {type === 'doc_types' && (
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <SearchableSelect
-                                    id="category"
-                                    label="Kategorie"
-                                    placeholder="Wählen oder neu suchen..."
-                                    options={categories}
-                                    value={formData.category || ''}
-                                    onChange={(val) => handleChange('category', val)}
-                                    onAddNew={() => setIsAddCategoryModalOpen(true)}
-                                    error={errors.category}
-                                />
+                                <label className="block text-xs font-medium text-slate-400">Kategorie <span className="text-red-500">*</span></label>
+                                <div className="flex">
+                                    <SearchableSelect
+                                        id="category"
+                                        placeholder="Wählen oder suchen..."
+                                        options={categories}
+                                        value={formData.category || ''}
+                                        onChange={(val) => handleChange('category', val)}
+                                        error={errors.category}
+                                        roundedSide="left"
+                                        className="flex-1"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddCategoryModalOpen(true)}
+                                        className="h-9 w-10 flex items-center justify-center bg-brand-primary text-white rounded-r-sm hover:brightness-95 transition shadow-sm"
+                                        title="Kategorien verwalten"
+                                    >
+                                        <FaPlus className="text-xs" />
+                                    </button>
+                                </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-2">
                                 <div className="space-y-1.5 col-span-1">
@@ -385,17 +406,54 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                         <option value="Pauschal">Pauschal</option>
                                     </select>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="block text-xs font-medium text-slate-400">Basispreis (€) <span className="text-red-500">*</span></label>
-                                    <input
-                                        id="base_price"
-                                        type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.base_price ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
-                                        placeholder="0.12"
-                                        value={formData.base_price || ''}
-                                        onChange={(e) => handleChange('base_price', e.target.value)}
-                                    />
+                                <div className="space-y-1.5 flex-1">
+                                    <label className="block text-xs font-medium text-slate-400">Basispreis ({currencySymbol}) <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <input
+                                            id="base_price"
+                                            type="text"
+                                            className={clsx("w-full h-11 pl-3 pr-8 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.base_price ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                            placeholder="0.12"
+                                            value={formData.base_price || ''}
+                                            onChange={(e) => handleChange('base_price', e.target.value)}
+                                        />
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none uppercase">
+                                            {currencySymbol}
+                                        </div>
+                                    </div>
                                 </div>
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-medium text-slate-400 font-bold uppercase tracking-widest">Extra-Leistung</label>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleChange('is_extra', !formData.is_extra)}
+                                            className={clsx(
+                                                "w-10 h-5 rounded-full relative transition-colors duration-200",
+                                                formData.is_extra ? "bg-emerald-500" : "bg-slate-200"
+                                            )}
+                                        >
+                                            <div className={clsx(
+                                                "absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm",
+                                                formData.is_extra ? "left-6" : "left-1"
+                                            )} />
+                                        </button>
+                                        <span className={clsx("text-xs font-bold", formData.is_extra ? "text-emerald-600" : "text-slate-400")}>
+                                            {formData.is_extra ? 'JA' : 'NEIN'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5 mt-4">
+                                <label className="block text-xs font-medium text-slate-400">Kurzbeschreibung (Tooltip)</label>
+                                <textarea
+                                    className="w-full min-h-[60px] p-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white"
+                                    placeholder="Wird als Tooltip in der Projektmaske angezeigt..."
+                                    value={formData.description || ''}
+                                    onChange={(e) => handleChange('description', e.target.value)}
+                                />
+                                <p className="text-[10px] text-slate-400 italic">Erscheint als Schnell-Option in der Projektmaske, wenn "Extra-Leistung" aktiviert ist.</p>
                             </div>
                         </>
                     )}
@@ -592,33 +650,78 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                 <div className="fixed inset-0 bg-slate-900/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
                     <div className="bg-white rounded-sm shadow-sm w-full max-w-sm overflow-hidden animate-scaleIn">
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                            <h4 className="font-medium text-slate-800 text-xs">Neue Kategorie</h4>
+                            <h4 className="font-medium text-slate-800 text-xs text-brand-primary flex items-center gap-2">
+                                <FaTag /> Kategorien verwalten
+                            </h4>
                             <button onClick={() => setIsAddCategoryModalOpen(false)} className="text-slate-400 hover:text-slate-600"><FaTimes /></button>
                         </div>
-                        <div className="p-6">
-                            <label className="block text-xs font-medium text-slate-400 mb-2">Name der Kategorie</label>
-                            <input
-                                autoFocus
-                                type="text"
-                                className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm"
-                                placeholder="z.B. Medizinische Dokumente"
-                                value={newCategoryName}
-                                onChange={(e) => setNewCategoryName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddNewCategory()}
-                            />
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-slate-400">Neue Kategorie hinzufügen</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        className="flex-1 h-9 px-3 border border-slate-200 rounded-sm outline-none focus:border-slate-900 text-sm bg-slate-50 focus:bg-white transition-all shadow-sm"
+                                        placeholder="z.B. Marketing"
+                                        value={newCategoryName}
+                                        onChange={(e) => setNewCategoryName(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddNewCategory()}
+                                    />
+                                    <button
+                                        onClick={handleAddNewCategory}
+                                        className="h-9 px-3 bg-brand-primary text-white rounded-sm text-xs font-medium hover:brightness-95 flex items-center gap-2 shadow-sm"
+                                    >
+                                        <FaPlus />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <label className="block text-xs font-medium text-slate-400 mb-2">Bestehende Kategorien</label>
+                                <div className="max-h-48 overflow-y-auto pr-1 flex flex-wrap gap-2">
+                                    {categories.length > 0 ? (
+                                        categories.map((cat) => (
+                                            <div
+                                                key={cat.value}
+                                                className={clsx(
+                                                    "group flex items-center gap-2 px-2.5 py-1 rounded-sm border text-xs font-medium transition cursor-pointer",
+                                                    formData.category === cat.value
+                                                        ? "bg-brand-primary/10 border-brand-primary text-brand-primary"
+                                                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                                                )}
+                                                onClick={() => {
+                                                    handleChange('category', cat.value);
+                                                    setIsAddCategoryModalOpen(false);
+                                                }}
+                                            >
+                                                {cat.label}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setCategories(prev => prev.filter(c => c.value !== cat.value));
+                                                        if (formData.category === cat.value) handleChange('category', '');
+                                                    }}
+                                                    className="text-[10px] text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                                                >
+                                                    <FaTimes />
+                                                </button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="w-full py-4 text-center border border-dashed border-slate-200 rounded-sm italic text-slate-400 text-xs">
+                                            Keine Kategorien vorhanden
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-slate-50 px-6 py-4 flex justify-end gap-2">
+                        <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end">
                             <button
                                 onClick={() => setIsAddCategoryModalOpen(false)}
-                                className="px-4 py-2 text-xs font-medium text-slate-500"
+                                className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 transition"
                             >
-                                Abbrechen
-                            </button>
-                            <button
-                                onClick={handleAddNewCategory}
-                                className="px-4 py-2 bg-slate-900 text-white rounded-sm text-xs font-medium flex items-center gap-2"
-                            >
-                                <FaPlus className="text-xs" /> Hinzufügen
+                                Schließen
                             </button>
                         </div>
                     </div>

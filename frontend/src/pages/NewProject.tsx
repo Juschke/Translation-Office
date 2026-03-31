@@ -26,7 +26,7 @@ import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { customerService, partnerService, settingsService, projectService } from '../api/services';
-import type { ProjectPosition } from '../components/modals/projectTypes';
+import type { ProjectPosition } from '../components/modals/projectType';
 import ProjectPositionsTable from '../components/modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../components/modals/ProjectPaymentsTable';
 import { Button } from '../components/ui/button';

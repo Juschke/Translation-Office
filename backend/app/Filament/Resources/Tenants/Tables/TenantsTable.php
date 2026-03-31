@@ -21,33 +21,7 @@ class TenantsTable
                 TextColumn::make('company_name')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('legal_form')
-                    ->searchable(),
-                TextColumn::make('address_street')
-                    ->searchable(),
-                TextColumn::make('address_house_no')
-                    ->searchable(),
-                TextColumn::make('address_zip')
-                    ->searchable(),
                 TextColumn::make('address_city')
-                    ->searchable(),
-                TextColumn::make('address_country')
-                    ->searchable(),
-                TextColumn::make('tax_number')
-                    ->searchable(),
-                TextColumn::make('vat_id')
-                    ->searchable(),
-                TextColumn::make('tax_office')
-                    ->searchable(),
-                TextColumn::make('bank_name')
-                    ->searchable(),
-                TextColumn::make('bank_iban')
-                    ->searchable(),
-                TextColumn::make('bank_bic')
-                    ->searchable(),
-                TextColumn::make('bank_code')
-                    ->searchable(),
-                TextColumn::make('bank_account_holder')
                     ->searchable(),
                 TextColumn::make('domain')
                     ->searchable(),
@@ -55,10 +29,23 @@ class TenantsTable
                     ->badge(),
                 IconColumn::make('is_active')
                     ->boolean(),
-                TextColumn::make('subscription_plan')
-                    ->searchable(),
-                TextColumn::make('license_key')
-                    ->searchable(),
+                TextColumn::make('subscription.plan')
+                    ->label('Abo')
+                    ->badge()
+                    ->placeholder('-'),
+                TextColumn::make('subscription.status')
+                    ->label('Abo-Status')
+                    ->badge()
+                    ->placeholder('-'),
+                TextColumn::make('users_count')
+                    ->label('Benutzer')
+                    ->sortable(),
+                TextColumn::make('projects_count')
+                    ->label('Projekte')
+                    ->sortable(),
+                TextColumn::make('tenant_invoices_count')
+                    ->label('Rechnungen')
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -72,11 +59,18 @@ class TenantsTable
                 TextColumn::make('email')
                     ->label('Email address')
                     ->searchable(),
-                TextColumn::make('opening_hours')
-                    ->searchable(),
+                TextColumn::make('website')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\SelectFilter::make('status')
+                    ->options([
+                        'active' => 'Active',
+                        'inactive' => 'Inactive',
+                    ]),
+                \Filament\Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Aktiv'),
             ])
             ->recordActions([
                 ViewAction::make(),

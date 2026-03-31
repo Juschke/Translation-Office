@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaTimes, FaPlus, FaTrash, FaEnvelope, FaExclamationTriangle, FaExternalLinkAlt, FaInfoCircle } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { customerService, settingsService } from '../../api/services';
@@ -278,7 +277,11 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        if (name === 'payment_terms_days' && value !== '') {
+            const num = parseInt(value);
+            if (num < 0) value = '0';
+        }
         setFormData((prev: CustomerFormData) => ({ ...prev, [name]: value }));
         setTouched((prev: Record<string, boolean>) => ({ ...prev, [name]: true }));
     };
@@ -726,6 +729,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 tooltip="Standardfrist in Tagen nach Rechnungsdatum, z.B. 14 oder 30"
                                                 name="payment_terms_days"
                                                 type="number"
+                                                min={0}
                                                 value={formData.payment_terms_days}
                                                 onChange={handleChange}
                                                 placeholder="14"

@@ -26,7 +26,7 @@ import PaymentModal from './PaymentModal';
 import NewDocTypeModal from './NewDocTypeModal';
 import NewMasterDataModal from './NewMasterDataModal';
 import { Label } from '../ui/label';
-import type { ProjectPosition } from './projectTypes';
+import type { ProjectPosition } from './projectType';
 import ProjectPositionsTable from './ProjectPositionsTable';
 import ProjectPaymentsTable from './ProjectPaymentsTable';
 import ProjectFinancialSidebar from './ProjectFinancialSidebar';

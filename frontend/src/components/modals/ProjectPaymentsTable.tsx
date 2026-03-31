@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { FaInfoCircle, FaTrash, FaEuroSign, FaPlus } from 'react-icons/fa';
+import { Tooltip } from 'antd';
 import { Button } from '../ui/button';
 import clsx from 'clsx';
 
@@ -53,6 +54,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 whitespace-nowrap">Datum & Uhrzeit</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-32 text-right">Betrag (Brutto)</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-40">Zahlmittel</th>
+                            <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-44">Anmerkung</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-48">Mitarbeiter</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-20 text-center">Aktion</th>
                         </tr>
@@ -71,6 +73,17 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                                 </td>
                                 <td className="px-4 py-2 text-xs font-medium text-slate-600">
                                     {p.payment_method}
+                                </td>
+                                <td className="px-4 py-2 text-xs font-medium text-slate-500 max-w-[176px]">
+                                    {p.note ? (
+                                        <Tooltip title={p.note} placement="top">
+                                            <span className="truncate block cursor-default">
+                                                {p.note.length > 40 ? `${p.note.substring(0, 40)}…` : p.note}
+                                            </span>
+                                        </Tooltip>
+                                    ) : (
+                                        <span className="text-slate-300">–</span>
+                                    )}
                                 </td>
                                 <td className="px-4 py-2 text-xs font-medium text-slate-500">
                                     <div className="flex items-center gap-2">

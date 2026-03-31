@@ -1,6 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
-import { FaPaperclip, FaTrashAlt } from 'react-icons/fa';
+import { FaPaperclip, FaTrashAlt, FaSyncAlt, FaFolderOpen } from 'react-icons/fa';
 import Checkbox from '../common/Checkbox';
 
 interface MailListPanelProps {
@@ -8,13 +7,15 @@ interface MailListPanelProps {
     folder: string;
     onView: (mail: any) => void;
     onDelete: (id: number) => void;
+    onArchive?: (id: number) => void;
+    onRestore?: (id: number) => void;
     selectedId?: number;
     selectedMails: number[];
     onSelectMail: (id: number) => void;
     onSelectAll: () => void;
 }
 
-const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMails, onSelectMail, onSelectAll }: MailListPanelProps) => (
+const MailListPanel = ({ mails, folder, onView, onDelete, onArchive, onRestore, selectedId, selectedMails, onSelectMail, onSelectAll }: MailListPanelProps) => (
     <div className="flex-1 flex flex-col min-h-0 bg-white">
         {mails.length > 0 && (
             <div className="px-3 py-2 border-b border-[#c8c8c8] border-b-2 flex items-center bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] shrink-0">
@@ -97,15 +98,41 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 self-center" />
                                             )}
                                         </div>
-                                        <button
-                                            onClick={e => {
-                                                e.stopPropagation();
-                                                onDelete(mail.id);
-                                            }}
-                                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-500 transition-all rounded-sm"
-                                        >
-                                            <FaTrashAlt size={10} />
-                                        </button>
+                                        <div className="flex gap-2 items-center opacity-0 group-hover:opacity-100 transition-all">
+                                            {folder === 'trash' ? (
+                                                <button
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        onRestore?.(mail.id);
+                                                    }}
+                                                    className="p-1 text-slate-300 hover:text-emerald-500 transition-all rounded-sm"
+                                                    title="Wiederherstellen"
+                                                >
+                                                    <FaSyncAlt size={10} />
+                                                </button>
+                                            ) : folder !== 'archive' && (
+                                                <button
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        onArchive?.(mail.id);
+                                                    }}
+                                                    className="p-1 text-slate-300 hover:text-amber-500 transition-all rounded-sm"
+                                                    title="Archivieren"
+                                                >
+                                                    <FaFolderOpen size={10} />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    onDelete(mail.id);
+                                                }}
+                                                className="p-1 text-slate-300 hover:text-red-500 transition-all rounded-sm"
+                                                title={folder === 'trash' ? 'Endgültig löschen' : 'Löschen'}
+                                            >
+                                                <FaTrashAlt size={10} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

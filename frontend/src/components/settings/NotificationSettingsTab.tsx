@@ -98,21 +98,33 @@ const NotificationSettingsTab = () => {
     }
 
     return (
-        <div className="flex flex-col gap-6 animate-fadeIn">
+        <div className="flex flex-col gap-6 animate-fadeIn ">
             <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
-                    <FaBell className="text-slate-500" />
-                    <h3 className="text-sm font-medium text-slate-800">{t('notifications.settings.title')}</h3>
-                    <p className="text-xs text-slate-400 ml-auto">{t('notifications.settings.subtitle')}</p>
+                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <FaBell className="text-slate-500" />
+                        <h3 className="text-sm font-medium text-slate-800">{t('notifications.settings.title')}</h3>
+                        <p className="text-xs text-slate-400 italic ml-2 hidden sm:inline-block">{t('notifications.settings.subtitle')}</p>
+                    </div>
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => mutation.mutate(settings)}
+                        disabled={mutation.isPending}
+                        isLoading={mutation.isPending}
+                        className="px-4 py-2 text-xs font-medium flex items-center gap-2 shrink-0"
+                    >
+                        <FaSave /> {mutation.isPending ? t('notifications.settings.saving') : t('notifications.settings.save')}
+                    </Button>
                 </div>
 
                 <div className="divide-y divide-slate-100">
                     {/* Header row */}
-                    <div className="grid grid-cols-[1fr_100px_100px_120px] gap-4 px-6 py-2.5 bg-slate-50 border-b border-slate-200">
+                    <div className="grid grid-cols-[1fr_80px_80px_160px] gap-4 px-6 py-2.5 bg-slate-50 border-b border-slate-200">
                         <span className="text-xs font-medium text-slate-400">{t('notifications.settings.event')}</span>
-                        <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5 justify-center"><FaEnvelope className="text-xs" /> {t('notifications.settings.email')}</span>
-                        <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5 justify-center"><FaDesktop className="text-xs" /> {t('notifications.settings.app')}</span>
-                        <span className="text-xs font-medium text-slate-400 text-center">{t('notifications.settings.lead_time')}</span>
+                        <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5 justify-end"><FaEnvelope className="text-xs" /> {t('notifications.settings.email')}</span>
+                        <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5 justify-end"><FaDesktop className="text-xs" /> {t('notifications.settings.app')}</span>
+                        <span className="text-xs font-medium text-slate-400 text-right">{t('notifications.settings.lead_time')}</span>
                     </div>
 
                     {GROUPS.map(group => (
@@ -123,17 +135,17 @@ const NotificationSettingsTab = () => {
                             {group.events.map(event => {
                                 const entry = settings[event.key as keyof NotifSettings];
                                 return (
-                                    <div key={event.key} className="grid grid-cols-[1fr_100px_100px_120px] gap-4 px-6 py-3.5 items-center hover:bg-slate-50/50 transition-colors">
+                                    <div key={event.key} className="grid grid-cols-[1fr_80px_80px_160px] gap-4 px-6 py-3.5 items-center hover:bg-slate-50/50 transition-colors">
                                         <span className="text-sm text-slate-700">{event.label}</span>
-                                        <div className="flex justify-center">
+                                        <div className="flex justify-end">
                                             <Toggle value={entry.email} onChange={v => setField(event.key, 'email', v)} />
                                         </div>
-                                        <div className="flex justify-center">
+                                        <div className="flex justify-end">
                                             <Toggle value={entry.app} onChange={v => setField(event.key, 'app', v)} />
                                         </div>
-                                        <div className="flex justify-center">
+                                        <div className="flex justify-start">
                                             {event.hasDays ? (
-                                                <div className="flex items-center gap-1.5">
+                                                <div className="flex items-center gap-2">
                                                     <input
                                                         type="number"
                                                         min={1}
@@ -142,10 +154,10 @@ const NotificationSettingsTab = () => {
                                                         value={entry.days_before ?? 3}
                                                         onChange={e => setField(event.key, 'days_before', parseInt(e.target.value) || 1)}
                                                     />
-                                                    <span className="text-xs text-slate-400">{event.daysLabel}</span>
+                                                    <span className="text-xs text-slate-400 whitespace-nowrap">{event.daysLabel}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-xs text-slate-300">–</span>
+                                                <span className="text-xs text-slate-300 pr-4">–</span>
                                             )}
                                         </div>
                                     </div>
@@ -162,7 +174,7 @@ const NotificationSettingsTab = () => {
                     onClick={() => mutation.mutate(settings)}
                     disabled={mutation.isPending}
                     isLoading={mutation.isPending}
-                    className="px-6 py-2.5 text-xs font-medium flex items-center gap-2"
+                    className="px-6 py-2.5 text-xs font-medium flex items-center gap-2 mr-4 mb-8"
                 >
                     <FaSave /> {mutation.isPending ? t('notifications.settings.saving') : t('notifications.settings.save')}
                 </Button>

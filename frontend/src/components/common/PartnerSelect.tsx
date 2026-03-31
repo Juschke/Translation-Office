@@ -495,7 +495,7 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
                 <Button
                   onClick={handleQuickAddSubmit}
                   disabled={createPartnerMutation.isPending}
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/20 shadow-lg transition-all active:scale-[0.98]"
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/20 shadow-sm transition-all active:scale-[0.98]"
                 >
                   <FaPlus className="text-xs" />
                   {createPartnerMutation.isPending ? 'Speichern...' : 'Hinzufügen'}

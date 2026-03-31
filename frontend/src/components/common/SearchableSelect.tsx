@@ -86,7 +86,12 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         return list;
     }, [groupedOptions]);
 
-    const values = useMemo(() => Array.isArray(value) ? value : [value].filter(Boolean), [value]);
+    const values = useMemo(() => {
+        const rawValues = Array.isArray(value) ? value : [value];
+        return rawValues.filter(v =>
+            v !== undefined && v !== null && (v !== "" || options.some(o => o.value === ""))
+        );
+    }, [value, options]);
 
     const handleSelect = (val: string) => {
         if (isMulti) {
@@ -366,13 +371,19 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
                     {!isMulti && value && !disabled && (
-                        <FaTimes
-                            className="text-slate-300 hover:text-red-500 cursor-pointer text-xs transition-colors"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelect('');
-                            }}
-                        />
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelect('');
+                                }}
+                                className="p-1 text-slate-300 hover:text-red-500 transition-colors focus:outline-none"
+                                title="Auswahl entfernen"
+                            >
+                                <FaTimes className="text-[10px]" />
+                            </button>
+                        </div>
                     )}
                     <FaChevronDown className={clsx("text-slate-400 text-xs transition-transform", isOpen ? 'rotate-180' : '')} />
                 </div>

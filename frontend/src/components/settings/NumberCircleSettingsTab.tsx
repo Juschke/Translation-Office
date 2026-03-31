@@ -8,6 +8,10 @@ import { Switch } from '../ui/switch';
 
 // To avoid losing focus on input during re-renders,
 // components must be defined OUTSIDE the parent component and ideally memoized.
+const toBool = (v: any, def: boolean = false) => {
+    if (v === undefined || v === null) return def;
+    return v === true || v === '1' || v === 'true';
+};
 const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formData, handleChange, preview }: any) => (
     <div className="py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50/30 px-4 -mx-4 transition-colors rounded-sm grid grid-cols-12 gap-4 items-center">
         <div className="col-span-12 md:col-span-4 flex flex-col justify-center h-full">
@@ -95,25 +99,25 @@ const NumberCircleSettingsTab = () => {
             setFormData({
                 customer_id_prefix: companyData.customer_id_prefix || 'K',
                 customer_start_number: companyData.customer_start_number || '1',
-                customer_show_year: companyData.customer_show_year ?? false,
+                customer_show_year: toBool(companyData.customer_show_year, false),
                 partner_id_prefix: companyData.partner_id_prefix || 'P',
                 partner_start_number: companyData.partner_start_number || '1',
-                partner_show_year: companyData.partner_show_year ?? false,
+                partner_show_year: toBool(companyData.partner_show_year, false),
                 project_id_prefix: companyData.project_id_prefix || 'PR',
                 project_start_number: companyData.project_start_number || '1',
-                project_show_year: companyData.project_show_year ?? true,
+                project_show_year: toBool(companyData.project_show_year, true),
                 appointment_id_prefix: companyData.appointment_id_prefix || 'A',
                 appointment_start_number: companyData.appointment_start_number || '1',
-                appointment_show_year: companyData.appointment_show_year ?? true,
+                appointment_show_year: toBool(companyData.appointment_show_year, true),
                 offer_id_prefix: companyData.offer_id_prefix || 'AG',
                 offer_start_number: companyData.offer_start_number || '1',
-                offer_show_year: companyData.offer_show_year ?? true,
+                offer_show_year: toBool(companyData.offer_show_year, true),
                 invoice_prefix: companyData.invoice_prefix || 'RE',
                 invoice_start_number: companyData.invoice_start_number || '1',
-                invoice_show_year: companyData.invoice_show_year ?? true,
+                invoice_show_year: toBool(companyData.invoice_show_year, true),
                 credit_note_prefix: companyData.credit_note_prefix || 'GS',
                 credit_note_start_number: companyData.credit_note_start_number || '1',
-                credit_note_show_year: companyData.credit_note_show_year ?? true
+                credit_note_show_year: toBool(companyData.credit_note_show_year, true)
             });
         }
     }, [companyData]);
@@ -127,7 +131,30 @@ const NumberCircleSettingsTab = () => {
         onError: () => toast.error('Fehler beim Speichern.')
     });
 
-    const handleSave = useCallback(() => updateMutation.mutate(formData), [formData, updateMutation]);
+    const handleSave = useCallback(() => {
+        // Check for duplicate prefixes
+        const circles = [
+            { name: 'Kunden', p: formData.customer_id_prefix },
+            { name: 'Partner', p: formData.partner_id_prefix },
+            { name: 'Projekte', p: formData.project_id_prefix },
+            { name: 'Termine', p: formData.appointment_id_prefix },
+            { name: 'Angebote', p: formData.offer_id_prefix },
+            { name: 'Rechnungen', p: formData.invoice_prefix },
+            { name: 'Gutschriften', p: formData.credit_note_prefix }
+        ];
+
+        // Find duplicates
+        for (let i = 0; i < circles.length; i++) {
+            for (let j = i + 1; j < circles.length; j++) {
+                if (circles[i].p && circles[i].p === circles[j].p) {
+                    toast.error(`Kritischer Konflikt: Die Präfixe für "${circles[i].name}" und "${circles[j].name}" sind identisch ("${circles[i].p}"). Bitte verwenden Sie für jeden Bereich ein eindeutiges Präfix, um Überschneidungen zu vermeiden.`);
+                    return;
+                }
+            }
+        }
+
+        updateMutation.mutate(formData);
+    }, [formData, updateMutation]);
     const handleChange = useCallback((field: string, value: any) => {
         setFormData((prev: any) => ({ ...prev, [field]: value }));
     }, []);

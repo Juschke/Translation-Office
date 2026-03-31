@@ -6,9 +6,9 @@ import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck, FaChevronDown, FaSave } from
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
 import { Button } from '../ui/button';
-import type { ProjectPosition } from './projectTypes';
+import type { ProjectPosition } from './projectType';
 
-export type { ProjectPosition } from './projectTypes';
+export type { ProjectPosition } from './projectType';
 
 export interface ExtraServiceRow {
     key: string;

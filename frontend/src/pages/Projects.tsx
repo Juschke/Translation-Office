@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth, subMonths, startOfYear, subYears, isWithinInterval } from 'date-fns';
 import {
     FaPlus, FaFileCsv,
@@ -15,7 +15,6 @@ import { buildProjectColumns } from './projectColumns';
 import clsx from 'clsx';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
-import NewProjectModal from '../components/modals/NewProjectModal';
 import KPICard from '../components/common/KPICard';
 import DataTable, { type FilterDef } from '../components/common/DataTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,29 +33,76 @@ const Projects = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
-    const [filter, setFilter] = useState('all');
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>(() => {
+        const p = searchParams.get('view');
+        return (p === 'archive' || p === 'trash') ? p : 'active';
+    });
+
+    const [filter, setFilter] = useState(() => searchParams.get('status') || 'all');
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
-    const [editingProject, setEditingProject] = useState<any>(null);
     const [viewFilesProject, setViewFilesProject] = useState<any>(null);
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
-    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'kanban'>(() => {
+        const p = searchParams.get('mode');
+        return p === 'kanban' ? 'kanban' : 'list';
+    });
     const [advancedFilters, setAdvancedFilters] = useState<any>({
         customerId: '',
         partnerId: '',
-        sourceLanguageId: '',
-        targetLanguageId: '',
+        sourceLanguageId: searchParams.get('src') || '',
+        targetLanguageId: searchParams.get('tgt') || '',
         dateRange: 'all',
         projectSearch: '',
         deadlineDate: '',
         deadlineRange: 'all',
-        priority: 'all',
+        priority: searchParams.get('priority') || 'all',
         certified: 'all',
         apostille: 'all',
     });
+
+    const updateSearchParams = (updates: Record<string, string | null>) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            for (const [key, value] of Object.entries(updates)) {
+                if (value === null) {
+                    next.delete(key);
+                } else {
+                    next.set(key, value);
+                }
+            }
+            return next;
+        }, { replace: true });
+    };
+
+    const handleSetStatusView = (v: 'active' | 'archive' | 'trash') => {
+        setStatusView(v);
+        updateSearchParams({ view: v === 'active' ? null : v });
+    };
+
+    const handleSetFilter = (v: string) => {
+        setFilter(v);
+        updateSearchParams({ status: v === 'all' ? null : v });
+    };
+
+    const handleSetViewMode = (v: 'list' | 'kanban') => {
+        setViewMode(v);
+        updateSearchParams({ mode: v === 'list' ? null : v });
+    };
+
+    const handleSetAdvancedFilters = (updater: (prev: any) => any) => {
+        setAdvancedFilters((prev: any) => {
+            const next = updater(prev);
+            updateSearchParams({
+                src: next.sourceLanguageId || null,
+                tgt: next.targetLanguageId || null,
+                priority: next.priority === 'all' ? null : next.priority,
+            });
+            return next;
+        });
+    };
 
     const exportRef = useRef<HTMLDivElement>(null);
 
@@ -70,21 +116,19 @@ const Projects = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        if (location.state?.openNewModal) {
-            setIsModalOpen(true);
-            // Clear location state to prevent modal from reopening on refresh or navigation
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location.state, navigate, location.pathname]);
-
-    // deleted/archived states removed in favor of filter
-
+    const queryClient = useQueryClient();
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [projectToDelete, setProjectToDelete] = useState<string | string[] | null>(null);
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
-    const queryClient = useQueryClient();
+
+    const handleCreateProject = () => {
+        navigate('/projects/new');
+    };
+
+    const handleEditProject = (project: any) => {
+        navigate(`/projects/${project.id}/edit`);
+    };
 
     // Listen to real-time project updates
     useEffect(() => {
@@ -126,19 +170,6 @@ const Projects = () => {
         queryFn: settingsService.getLanguages
     });
 
-    const createMutation = useMutation({
-        mutationFn: projectService.create,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            setIsModalOpen(false);
-            toast.success(t('projects.messages.create_success'));
-        },
-        onError: () => {
-            toast.error(t('projects.messages.create_error'));
-        }
-    });
-
     const updateMutation = useMutation({
         mutationFn: (data: any) => projectService.update(data.id, data),
         onMutate: async (updatedProject) => {
@@ -160,8 +191,6 @@ const Projects = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            setIsModalOpen(false);
-            setEditingProject(null);
             toast.success(t('projects.messages.update_success'));
         },
         onError: (_err, _updatedProject, context: any) => {
@@ -424,9 +453,6 @@ const Projects = () => {
         setIsExportOpen(false);
     };
 
-    const handleEditProject = async (p: any) => {
-        navigate(`/projects/${p.id}/edit`);
-    };
 
     const columns = buildProjectColumns({
         navigate,
@@ -436,7 +462,7 @@ const Projects = () => {
             setViewFilesProject(p);
             setIsFilesModalOpen(true);
         },
-        setIsModalOpen: (val) => { if (!val) setIsModalOpen(false); },
+        setIsModalOpen: () => { },
         setProjectToDelete,
         setConfirmTitle,
         setConfirmMessage,
@@ -449,26 +475,26 @@ const Projects = () => {
 
     const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (filter !== 'all' ? 1 : 0) + Object.values(advancedFilters).filter(v => v && v !== 'all').length;
     const resetFilters = () => {
-        setStatusView('active');
-        setFilter('all');
-        setAdvancedFilters({
+        handleSetStatusView('active');
+        handleSetFilter('all');
+        handleSetAdvancedFilters(() => ({
             customerId: '', partnerId: '', sourceLanguageId: '', targetLanguageId: '',
             dateRange: 'all', projectSearch: '', deadlineDate: '',
             deadlineRange: 'all', priority: 'all', certified: 'all', apostille: 'all',
-        });
+        }));
     };
 
     const tableFilters = useMemo(() => {
         const filters: FilterDef[] = [
             {
-                id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setFilter('all'); },
+                id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { handleSetStatusView(v as 'active' | 'archive' | 'trash'); handleSetFilter('all'); },
                 options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
             }
         ];
 
         if (statusView === 'active') {
             filters.push({
-                id: 'filter', label: t('projects.filters.quick_filter'), type: 'select' as const, value: filter, onChange: (v: any) => setFilter(v),
+                id: 'filter', label: t('projects.filters.quick_filter'), type: 'select' as const, value: filter, onChange: (v: any) => handleSetFilter(v),
                 options: [
                     { value: 'all', label: t('projects.filters.status_tabs.all') },
                     { value: 'offer', label: t('projects.filters.status_tabs.offer') },
@@ -483,7 +509,7 @@ const Projects = () => {
 
         filters.push(
             {
-                id: 'priority', label: t('projects.filters.priority.label'), type: 'select' as const, value: advancedFilters.priority || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, priority: v })),
+                id: 'priority', label: t('projects.filters.priority.label'), type: 'select' as const, value: advancedFilters.priority || 'all', onChange: (v: any) => handleSetAdvancedFilters((prev: any) => ({ ...prev, priority: v })),
                 options: [
                     { value: 'all', label: t('projects.filters.priority.all') },
                     { value: 'low', label: t('projects.filters.priority.standard') },
@@ -501,11 +527,11 @@ const Projects = () => {
                 options: [{ value: '', label: t('projects.filters.partners.all') }, ...partners.map((p: any) => ({ value: p.id, label: (p.company || `${p.first_name || ''} ${p.last_name || ''}`).trim() }))]
             },
             {
-                id: 'sourceLang', label: t('projects.filters.languages.source'), type: 'select' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
+                id: 'sourceLang', label: t('projects.filters.languages.source'), type: 'select' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => handleSetAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
                 options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
             },
             {
-                id: 'targetLang', label: t('projects.filters.languages.target'), type: 'select' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
+                id: 'targetLang', label: t('projects.filters.languages.target'), type: 'select' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => handleSetAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
                 options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
             },
             {
@@ -535,7 +561,7 @@ const Projects = () => {
         <div className="flex items-center gap-2">
             <div className="relative group z-50" ref={exportRef}>
                 <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
-                    <FaDownload /> Export
+                    <FaDownload /> Exportieren
                 </button>
                 {isExportOpen && (
                     <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
@@ -596,7 +622,7 @@ const Projects = () => {
             <div className="flex justify-end -mb-2">
                 <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-hidden">
                     <button
-                        onClick={() => setViewMode('list')}
+                        onClick={() => handleSetViewMode('list')}
                         className={clsx(
                             "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all rounded-sm",
                             viewMode === 'list'
@@ -608,7 +634,7 @@ const Projects = () => {
                         <FaListUl className="text-xs" />
                     </button>
                     <button
-                        onClick={() => setViewMode('kanban')}
+                        onClick={() => handleSetViewMode('kanban')}
                         className={clsx(
                             "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all rounded-sm",
                             viewMode === 'kanban'
@@ -666,19 +692,6 @@ const Projects = () => {
                 )}
             </div >
 
-            <NewProjectModal
-                isOpen={isModalOpen}
-                onClose={() => { setIsModalOpen(false); setEditingProject(null); }}
-                onSubmit={(data) => {
-                    if (editingProject) {
-                        updateMutation.mutate({ ...data, id: editingProject.id });
-                    } else {
-                        createMutation.mutate(data);
-                    }
-                }}
-                initialData={editingProject}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-            />
 
             <ProjectFilesModal
                 isOpen={isFilesModalOpen}

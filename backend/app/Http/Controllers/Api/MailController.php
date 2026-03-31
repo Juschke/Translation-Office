@@ -155,6 +155,50 @@ class MailController extends Controller
 
         return response()->json(['message' => 'Mail deleted']);
     }
+
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required|exists:mails,id',
+        ]);
+
+        $mails = Mail::whereIn('id', $validated['ids'])->get();
+
+        foreach ($mails as $mail) {
+            if ($mail->folder === 'trash') {
+                $mail->delete();
+            } else {
+                $mail->update(['folder' => 'trash']);
+            }
+        }
+
+        return response()->json(['message' => count($validated['ids']) . ' Mails gelöscht']);
+    }
+
+    public function archive(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required|exists:mails,id',
+        ]);
+
+        Mail::whereIn('id', $validated['ids'])->update(['folder' => 'archive']);
+
+        return response()->json(['message' => count($validated['ids']) . ' Mails archiviert']);
+    }
+
+    public function restore(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required|exists:mails,id',
+        ]);
+
+        Mail::whereIn('id', $validated['ids'])->update(['folder' => 'inbox']);
+
+        return response()->json(['message' => count($validated['ids']) . ' Mails wiederhergestellt']);
+    }
     public function sync(Request $request)
     {
         $tenantId = $request->user()->tenant_id ?? 1;

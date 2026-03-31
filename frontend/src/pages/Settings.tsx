@@ -40,7 +40,7 @@ const Settings: React.FC = () => {
     const meta = TAB_META[activeTab] ?? TAB_META['company'];
 
     return (
-        <div className="max-w-7xl mx-auto fade-in p-4 pb-20">
+        <div className="max-w-[1600px] mx-auto fade-in p-4 pb-20">
             <div className="flex flex-col lg:flex-row gap-8">
                 {/* Sidebar Navigation */}
                 <aside className="w-full lg:w-64 shrink-0">
@@ -110,7 +110,7 @@ const Settings: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm min-h-[500px]">
+                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
                         {activeTab === 'company' && <CompanySettingsTab />}
                         {activeTab === 'objects' && <NumberCircleSettingsTab />}
                         {activeTab === 'invoice' && <InvoiceSettingsTab />}

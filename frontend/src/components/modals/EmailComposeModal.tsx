@@ -5,11 +5,12 @@ import toast from 'react-hot-toast';
 import { mailService, projectService, customerService } from '../../api/services';
 import { useEmailCompose } from '../../hooks/useEmailCompose';
 import { useEmailVariables } from '../../hooks/useEmailVariables';
+import { substituteVariables, findUnreplacedPlaceholders } from '../../lib/templateUtils';
 import Checkbox from '../common/Checkbox';
 import {
     FaPaperPlane, FaTimes, FaPaperclip, FaFileAlt, FaEye,
     FaProjectDiagram, FaSearchPlus, FaCode, FaCheckCircle, FaLayerGroup,
-    FaSignature,
+    FaSignature, FaExclamationTriangle,
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import ReactQuill from 'react-quill-new';
@@ -125,6 +126,44 @@ const EmailComposeModal = ({
     }, [accounts, selectedAccount]);
 
     const { ALL_VARIABLES, VAR_GROUPS, getPreviewHtml } = useEmailVariables();
+
+    /**
+     * Build a context variable map from the currently linked project so we can
+     * determine which {{placeholders}} remain unreplaced after template application.
+     */
+    const projectContextVars = useMemo<Record<string, string>>(() => {
+        if (!projectDetails) return {} as Record<string, string>;
+        const p = projectDetails as any;
+        const custName = p.customer?.company_name || (p.customer?.first_name ? `${p.customer.first_name} ${p.customer.last_name}` : '');
+        return {
+            customer_name: custName,
+            contact_person: p.customer?.contact_person || (p.customer?.first_name ? `${p.customer.first_name} ${p.customer.last_name}` : ''),
+            customer_email: p.customer?.email || '',
+            project_number: p.project_number || '',
+            project_name: p.project_name || p.name || '',
+            project_status: p.status || '',
+            source_language: p.source_language?.name || '',
+            target_language: p.target_language?.name || '',
+            deadline: p.deadline ? new Date(p.deadline).toLocaleDateString('de-DE') : '',
+            document_type: p.document_type?.name || '',
+            priority: p.priority || '',
+            price_net: p.price_total ? `${parseFloat(p.price_total).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €` : '',
+            partner_name: p.partner?.company_name || (p.partner?.first_name ? `${p.partner.first_name} ${p.partner.last_name}` : '') || p.translator?.name || '',
+            partner_email: p.partner?.email || p.translator?.email || '',
+        };
+    }, [projectDetails]);
+
+    /**
+     * Count how many {{placeholders}} remain in the current body after substituting
+     * available project context. Used to show the info banner.
+     */
+    const unreplacedPlaceholders = useMemo<string[]>(() => {
+        if (!composeBody) return [];
+        const substituted = substituteVariables(composeBody, projectContextVars);
+        // Strip HTML tags before searching so we don't flag false positives in markup
+        const text = substituted.replace(/<[^>]*>/g, '');
+        return findUnreplacedPlaceholders(text);
+    }, [composeBody, projectContextVars]);
 
     const contactSuggestions = useMemo(() => {
         const list: any[] = [];
@@ -555,6 +594,28 @@ const EmailComposeModal = ({
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Unreplaced placeholder banner */}
+                                    {unreplacedPlaceholders.length > 0 && (
+                                        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-sm bg-amber-50 border border-amber-200 text-[11px] text-amber-800 mt-1 mb-0">
+                                            <FaExclamationTriangle size={12} className="shrink-0 mt-0.5 text-amber-500" />
+                                            <span>
+                                                <span className="font-bold">
+                                                    Vorlage enthält {unreplacedPlaceholders.length}{' '}
+                                                    {unreplacedPlaceholders.length === 1 ? 'nicht ersetzten Platzhalter' : 'nicht ersetzte Platzhalter'}:
+                                                </span>{' '}
+                                                {unreplacedPlaceholders.map((k, i) => (
+                                                    <span key={k}>
+                                                        <code className="font-mono bg-amber-100 px-1 rounded text-amber-900">{`{{${k}}}`}</code>
+                                                        {i < unreplacedPlaceholders.length - 1 && ', '}
+                                                    </span>
+                                                ))}
+                                                {selectedProjectId
+                                                    ? ' — Werte aus verknüpftem Projekt wurden berücksichtigt.'
+                                                    : ' — Projekt verknüpfen um mehr Platzhalter zu befüllen.'}
+                                            </span>
+                                        </div>
+                                    )}
 
                                     {/* Editor Content */}
                                     <div className="min-h-[500px] border border-slate-100 rounded-sm overflow-hidden mt-2 relative flex flex-col">

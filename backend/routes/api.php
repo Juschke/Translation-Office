@@ -128,6 +128,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('mails', [\App\Http\Controllers\Api\MailController::class, 'index']);
         Route::post('mails/send', [\App\Http\Controllers\Api\MailController::class, 'send']);
         Route::post('mails/sync', [\App\Http\Controllers\Api\MailController::class, 'sync']);
+        Route::post('mails/bulk-delete', [\App\Http\Controllers\Api\MailController::class, 'bulkDelete']);
+        Route::post('mails/archive', [\App\Http\Controllers\Api\MailController::class, 'archive']);
+        Route::post('mails/restore', [\App\Http\Controllers\Api\MailController::class, 'restore']);
         Route::post('mails/{id}/read', [\App\Http\Controllers\Api\MailController::class, 'markAsRead']);
         Route::delete('mails/{id}', [\App\Http\Controllers\Api\MailController::class, 'destroy']);
 
@@ -144,6 +147,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Partner management
         Route::apiResource('partners', App\Http\Controllers\Api\PartnerController::class);
         Route::get('/partners/stats', [App\Http\Controllers\Api\PartnerController::class, 'stats']);
+        Route::get('/partners/{partner}/billing', [App\Http\Controllers\Api\PartnerController::class, 'billing']);
+        Route::post('/partners/{partner}/projects/{project}/mark-paid', [App\Http\Controllers\Api\PartnerController::class, 'markPartnerPaid']);
 
         // External Costs
         Route::get('external-costs/stats', [\App\Http\Controllers\Api\ExternalCostController::class, 'stats']);

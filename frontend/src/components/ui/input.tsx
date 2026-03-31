@@ -16,11 +16,18 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ({ className, type, label, tooltip, error, helperText, startIcon, endIcon, onEndIconClick, containerClassName, ...props }, ref) => {
+        const inputId = React.useId()
+        const errorId = React.useId()
+        const isRequired = props.required
+
         return (
             <div className={cn("w-full", containerClassName)}>
                 {label && (
-                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                    <label htmlFor={inputId} className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
                         {label}
+                        {isRequired && (
+                            <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>
+                        )}
                         {tooltip && (
                             <TooltipProvider delayDuration={200}>
                                 <Tooltip>
@@ -44,6 +51,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         </div>
                     )}
                     <input
+                        id={inputId}
                         type={type}
                         className={cn(
                             "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
@@ -57,6 +65,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                             endIcon && "pr-9",
                             className
                         )}
+                        aria-required={isRequired ? "true" : undefined}
+                        aria-describedby={helperText ? errorId : undefined}
                         ref={ref}
                         {...props}
                     />
@@ -73,7 +83,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     )}
                 </div>
                 {helperText && (
-                    <p className={cn("mt-1 text-xs", error ? "text-red-500" : "text-slate-500")}>
+                    <p id={errorId} className={cn("mt-1 text-xs", error ? "text-red-500" : "text-slate-500")}>
                         {helperText}
                     </p>
                 )}

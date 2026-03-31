@@ -109,7 +109,8 @@ export const ConfirmationProvider: React.FC<{ children: ReactNode }> = ({ childr
  title={activeConfig.title || defaultConfig.title}
  message={activeConfig.message}
  confirmText={activeConfig.confirmText || defaultConfig.confirmText}
- cancelText={activeConfig.cancelText} // If undefined, modal won't show it
+ cancelText={activeConfig.cancelText}
+ hideCancelButton={activeConfig.cancelText === undefined}
  variant={activeConfig.variant || defaultConfig.variant}
  isLoading={isLoading}
  />

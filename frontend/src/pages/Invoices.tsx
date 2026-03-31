@@ -450,7 +450,7 @@ const Invoices = () => {
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
             <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
-                <FaDownload /> Export
+                <FaDownload /> Exportieren
             </button>
             {isExportOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-sm border border-slate-100 z-[100] overflow-hidden animate-fadeIn">

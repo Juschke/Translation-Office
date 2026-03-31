@@ -29,6 +29,12 @@ const InboxSidebar = ({ activeTab, setActiveTab }: InboxSidebarProps) => {
                             label="Gesendet"
                         />
                         <MailTabButton
+                            active={activeTab === 'archive'}
+                            onClick={() => setActiveTab('archive')}
+                            icon={<FaFolderOpen className="" />}
+                            label="Archiv"
+                        />
+                        <MailTabButton
                             active={activeTab === 'trash'}
                             onClick={() => setActiveTab('trash')}
                             icon={<FaTrashAlt />}

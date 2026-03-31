@@ -4,7 +4,7 @@ import ProjectPositionsTable from '../modals/ProjectPositionsTable';
 import type { ExtraServiceRow } from '../modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../modals/ProjectPaymentsTable';
 import ProjectFinancialSidebar from '../modals/ProjectFinancialSidebar';
-import type { ProjectPosition } from '../modals/projectTypes';
+import type { ProjectPosition } from '../modals/projectType';
 
 interface ProjectFinancesTabProps {
     projectData: any;

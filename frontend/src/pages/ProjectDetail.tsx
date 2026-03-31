@@ -830,6 +830,7 @@ const ProjectDetail = () => {
                         setIsPartnerEditModalOpen={setIsPartnerEditModalOpen}
                         handlePreviewFile={handlePreviewFile}
                         setPreviewInvoice={setPreviewInvoice}
+                        onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
                         onSendEmail={(recipientType) => {
                             const to = recipientType === 'partner'
                                 ? (projectData.translator?.email || '')

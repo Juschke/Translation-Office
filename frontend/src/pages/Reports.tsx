@@ -12,6 +12,7 @@ import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import 'dayjs/locale/de';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 dayjs.locale('de');
 
@@ -28,21 +29,75 @@ const STATUS_COLORS = [
 
 const Reports = () => {
     const { t } = useTranslation();
-    const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([
-        dayjs().subtract(5, 'month').startOf('month'),
-        dayjs().endOf('day')
-    ]);
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    const [appliedDateRange, setAppliedDateRange] = useState(dateRange);
+    const defaultStart = dayjs().subtract(5, 'month').startOf('month');
+    const defaultEnd = dayjs().endOf('day');
+
+    const initTab = (): 'analytics' | 'finance' => {
+        const p = searchParams.get('tab');
+        return p === 'finance' ? 'finance' : 'analytics';
+    };
+
+    const initSubTab = (): 'tax' | 'profitability' | 'opos' | 'bwa' => {
+        const p = searchParams.get('sub');
+        if (p === 'profitability' || p === 'opos' || p === 'bwa') return p;
+        return 'tax';
+    };
+
+    const initFrom = (): dayjs.Dayjs => {
+        const p = searchParams.get('from');
+        return p ? dayjs(p) : defaultStart;
+    };
+
+    const initTo = (): dayjs.Dayjs => {
+        const p = searchParams.get('to');
+        return p ? dayjs(p) : defaultEnd;
+    };
+
+    const [activeTab, setActiveTab] = useState<'analytics' | 'finance'>(initTab);
+    const [financeSubTab, setFinanceSubTab] = useState<'tax' | 'profitability' | 'opos' | 'bwa'>(initSubTab);
+
+    const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([initFrom(), initTo()]);
+    const [appliedDateRange, setAppliedDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([initFrom(), initTo()]);
     const [startDate, endDate] = appliedDateRange;
+
+    const updateSearchParams = (updates: Record<string, string | null>) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            for (const [key, value] of Object.entries(updates)) {
+                if (value === null) {
+                    next.delete(key);
+                } else {
+                    next.set(key, value);
+                }
+            }
+            return next;
+        }, { replace: true });
+    };
+
+    const handleSetActiveTab = (tab: 'analytics' | 'finance') => {
+        setActiveTab(tab);
+        updateSearchParams({ tab: tab === 'analytics' ? null : tab });
+    };
+
+    const handleSetFinanceSubTab = (sub: 'tax' | 'profitability' | 'opos' | 'bwa') => {
+        setFinanceSubTab(sub);
+        updateSearchParams({ sub: sub === 'tax' ? null : sub });
+    };
+
+    const handleApplyDateRange = () => {
+        setAppliedDateRange(dateRange);
+        updateSearchParams({
+            from: dateRange[0] ? dateRange[0].format('YYYY-MM-DD') : null,
+            to: dateRange[1] ? dateRange[1].format('YYYY-MM-DD') : null,
+        });
+    };
 
     const queryParams = {
         startDate: startDate ? startDate.format('YYYY-MM-DD') : undefined,
         endDate: endDate ? endDate.format('YYYY-MM-DD') : undefined
     };
-
-    const [activeTab, setActiveTab] = useState<'analytics' | 'finance'>('analytics');
-    const [financeSubTab, setFinanceSubTab] = useState<'tax' | 'profitability' | 'opos' | 'bwa'>('tax');
 
     const { data: summary, isLoading: isSummaryLoading } = useQuery({
         queryKey: ['reports', 'summary', queryParams],
@@ -269,7 +324,7 @@ const Reports = () => {
                     </div>
                     <Button
                         variant="default"
-                        onClick={() => setAppliedDateRange(dateRange)}
+                        onClick={handleApplyDateRange}
                         className="flex items-center justify-center gap-2 shrink-0"
                     >
                         <FaFilter className="text-xs" /> {t('common.show')}
@@ -280,7 +335,7 @@ const Reports = () => {
             {/* Tab Navigation */}
             <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 self-start">
                 <button
-                    onClick={() => setActiveTab('analytics')}
+                    onClick={() => handleSetActiveTab('analytics')}
                     className={clsx(
                         "px-5 py-2 text-sm font-medium transition-all rounded-[1px] flex items-center gap-2",
                         activeTab === 'analytics' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
@@ -289,7 +344,7 @@ const Reports = () => {
                     <FaChartLine /> Grafische Analyse
                 </button>
                 <button
-                    onClick={() => setActiveTab('finance')}
+                    onClick={() => handleSetActiveTab('finance')}
                     className={clsx(
                         "px-5 py-2 text-sm font-medium transition-all rounded-[1px] flex items-center gap-2",
                         activeTab === 'finance' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
@@ -400,7 +455,7 @@ const Reports = () => {
                                 </h3>
                                 <div className="flex gap-4 mt-2">
                                     <button
-                                        onClick={() => setFinanceSubTab('tax')}
+                                        onClick={() => handleSetFinanceSubTab('tax')}
                                         className={clsx(
                                             "text-xs font-semibold pb-1 border-b-2 transition-all",
                                             financeSubTab === 'tax' ? "text-slate-700 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"
@@ -409,7 +464,7 @@ const Reports = () => {
                                         USt.-Voranmeldung
                                     </button>
                                     <button
-                                        onClick={() => setFinanceSubTab('profitability')}
+                                        onClick={() => handleSetFinanceSubTab('profitability')}
                                         className={clsx(
                                             "text-xs font-semibold pb-1 border-b-2 transition-all",
                                             financeSubTab === 'profitability' ? "text-slate-700 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"
@@ -418,7 +473,7 @@ const Reports = () => {
                                         Rentabilitäts-Analyse
                                     </button>
                                     <button
-                                        onClick={() => setFinanceSubTab('opos')}
+                                        onClick={() => handleSetFinanceSubTab('opos')}
                                         className={clsx(
                                             "text-xs font-semibold pb-1 border-b-2 transition-all",
                                             financeSubTab === 'opos' ? "text-slate-700 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"
@@ -427,7 +482,7 @@ const Reports = () => {
                                         OPOS
                                     </button>
                                     <button
-                                        onClick={() => setFinanceSubTab('bwa')}
+                                        onClick={() => handleSetFinanceSubTab('bwa')}
                                         className={clsx(
                                             "text-xs font-semibold pb-1 border-b-2 transition-all",
                                             financeSubTab === 'bwa' ? "text-slate-700 border-slate-900" : "text-slate-400 border-transparent hover:text-slate-600"

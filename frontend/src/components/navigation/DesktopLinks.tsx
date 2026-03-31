@@ -131,6 +131,8 @@ const DesktopLinks = ({
                             setIsSettingsOpen(false);
                         }}
                         className={navLinkClass("", isCustomersOpen || location.pathname.startsWith('/customers'))}
+                        aria-haspopup="true"
+                        aria-expanded={isCustomersOpen}
                     >
                         <FaUsers className="text-base lg:hidden" />
                         <span className="hidden lg:inline">{t('nav.customers')}</span>
@@ -173,6 +175,8 @@ const DesktopLinks = ({
                             setIsSettingsOpen(false);
                         }}
                         className={navLinkClass("", isPartnersOpen || location.pathname.startsWith('/partners') || location.pathname.startsWith('/interpreting'))}
+                        aria-haspopup="true"
+                        aria-expanded={isPartnersOpen}
                     >
                         <FaUserTie className="text-base lg:hidden" />
                         <span className="hidden lg:inline">{t('nav.partners')}</span>
@@ -310,6 +314,8 @@ const DesktopLinks = ({
                                 setIsNotifOpen(false);
                             }}
                             className={navLinkClass("", isSettingsOpen || location.pathname.startsWith('/settings'))}
+                            aria-haspopup="true"
+                            aria-expanded={isSettingsOpen}
                         >
                             <FaCog className="text-base lg:hidden" />
                             <span className="hidden lg:inline">{t('nav.settings')}</span>

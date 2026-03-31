@@ -118,6 +118,11 @@ class Subscription extends Model
         return $this->belongsTo(Tenant::class);
     }
 
+    public function tenantInvoices()
+    {
+        return $this->hasMany(TenantInvoice::class)->orderByDesc('invoice_date');
+    }
+
     // ─── Helper Methods ──────────────────────────────────────────────
 
     /**
