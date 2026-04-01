@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,12 +8,12 @@ import {
     FaSearch, FaCheck, FaTimes, FaArrowLeft, FaSave,
     FaInfoCircle, FaQuestionCircle
 } from 'react-icons/fa';
-import SearchableSelect from '../components/common/SearchableSelect';
 import CustomerSelect from '../components/common/CustomerSelect';
 import DocumentTypeSelect from '../components/common/DocumentTypeSelect';
 import PartnerSelect from '../components/common/PartnerSelect';
 import LanguageSelect from '../components/common/LanguageSelect';
 import Input from '../components/common/Input';
+import ProjectStatusSelect from '../components/common/ProjectStatusSelect';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
@@ -47,12 +47,12 @@ const SECTION_NUM = 'w-7 h-7 rounded-md bg-brand-primary text-white flex items-c
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
 const getStatusOptions = (t: any) => [
-    { value: 'offer', label: t('project.status_offer'), group: t('project.step_1') },
-    { value: 'in_progress', label: t('project.status_in_progress'), group: t('project.step_2') },
-    { value: 'ready_for_pickup', label: t('project.status_ready_for_pickup'), group: t('project.step_3') },
-    { value: 'delivered', label: t('project.status_delivered'), group: t('project.step_3') },
-    { value: 'invoiced', label: t('project.status_invoiced'), group: t('project.step_4') },
-    { value: 'completed', label: t('project.status_completed'), group: t('project.step_4') }
+    { value: 'offer', label: t('project.status_offer') },
+    { value: 'in_progress', label: t('project.status_in_progress') },
+    { value: 'ready_for_pickup', label: t('project.status_ready_for_pickup') },
+    { value: 'delivered', label: t('project.status_delivered') },
+    { value: 'invoiced', label: t('project.status_invoiced') },
+    { value: 'completed', label: t('project.status_completed') }
 ];
 
 /* ─── Tooltip Helper ─── */
@@ -88,19 +88,20 @@ const FormRow = ({ label, required, tooltip, children, error, id }: {
 const NewProject = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { updateTab, activeTabId, tabs, closeTab } = useWorkspaceTabs();
     const { id } = useParams();
     const isEditing = !!id;
     const queryClient = useQueryClient();
 
     // ── Get status options with translations ──
-    const statusOptions = getStatusOptions(t);
+
 
     // ── States ──
     const [name, setName] = useState('');
     const [customer, setCustomer] = useState('');
     const [deadline, setDeadline] = useState('');
-    const [source, setSource] = useState('de-DE');
-    const [target, setTarget] = useState<string[]>(['en-US']);
+    const [source, setSource] = useState('');
+    const [target, setTarget] = useState<string[]>([]);
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
     const [status, setStatus] = useState('offer');
     const [withTax, setWithTax] = useState(true);
@@ -116,7 +117,7 @@ const NewProject = () => {
     const [copyPrice, setCopyPrice] = useState('5.00');
     const [positions, setPositions] = useState<ProjectPosition[]>([{
         id: Date.now().toString(), description: 'Übersetzung',
-        unit: 'Normzeile', amount: '1.00', quantity: '1.00', partnerRate: '0.00', partnerMode: 'unit',
+        unit: 'Normzeile', amount: '0.00', quantity: '1.00', partnerRate: '0.00', partnerMode: 'unit',
         partnerTotal: '0.00', customerRate: '0.00', customerTotal: '0.00',
         customerMode: 'rate', marginType: 'markup', marginPercent: '0.00'
     }]);
@@ -128,6 +129,7 @@ const NewProject = () => {
     const [notes, setNotes] = useState('');
     const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
     const [partnerSearch, setPartnerSearch] = useState('');
+    const [isManualName, setIsManualName] = useState(false);
 
     // UI modals
     const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -176,6 +178,16 @@ const NewProject = () => {
         label: `${p.company_name || `${p.first_name} ${p.last_name}`} (${p.display_id || p.id}) - ${p.address_city || ''}`
     })), [partnersData]);
 
+    const { data: dbStatuses } = useQuery({ queryKey: ['settings', 'projectStatuses'], queryFn: settingsService.getProjectStatuses });
+
+    const combinedStatusOptions = useMemo(() => {
+        const defaults = getStatusOptions(t);
+        const customs = (dbStatuses || []).map((s: any) => ({ value: s.key || s.id.toString(), label: s.name }));
+        // Filter out customs that might overlap with defaults by key/value
+        const filteredCustoms = customs.filter((c: any) => !defaults.some(d => d.value === c.value));
+        return [...defaults, ...filteredCustoms];
+    }, [t, dbStatuses]);
+
     const { matchingPartners, otherPartners } = useMemo(() => {
         if (!Array.isArray(partnersData)) return { matchingPartners: [], otherPartners: [] };
         const src = source?.toLowerCase().split('-')[0];
@@ -200,14 +212,15 @@ const NewProject = () => {
     const displayNr = useMemo(() => {
         if (initialData?.project_number) return initialData.project_number;
         const prefix = companyData?.project_id_prefix || 'P';
+        const showYear = companyData?.project_show_year ?? true;
         const year = new Date().getFullYear().toString();
-        const yearPrefix = `${prefix}-${year}-`;
+        const yearPrefix = showYear ? `${prefix}-${year}-` : `${prefix}-`;
 
         const list = Array.isArray(projectsData) ? projectsData : [];
-        const yearProjects = list.filter((p: any) => (p.project_number || '').startsWith(yearPrefix));
+        const activeProjects = list.filter((p: any) => p.project_number && p.project_number.startsWith(yearPrefix));
 
         let maxNum = 0;
-        yearProjects.forEach((p: any) => {
+        activeProjects.forEach((p: any) => {
             const part = p.project_number.replace(yearPrefix, '');
             const n = parseInt(part);
             if (!isNaN(n) && n > maxNum) maxNum = n;
@@ -242,80 +255,147 @@ const NewProject = () => {
     }, [positions]);
 
     // Sync Workspace Tab Title
-    const { updateTab } = useWorkspaceTabs();
     useEffect(() => {
         const tabId = isEditing ? `project_edit_${id}` : 'project_new';
         const prefix = isEditing ? 'Bearbeiten: ' : 'Neu: ';
-        updateTab(tabId, { label: `${prefix}${name || (isEditing ? '...' : 'Neues Projekt')}` });
-    }, [name, isEditing, id, updateTab]);
-
-    // Auto-generate name
-    useEffect(() => {
-        if (!isEditing && source && target && Array.isArray(projectsData)) {
-            const targetArray = Array.isArray(target) ? target : [target];
-            const cs = source.split('-')[0].toLowerCase();
-            const ct = targetArray[0]?.split('-')[0].toLowerCase() || 'xx';
-            const now = new Date();
-            const dp = String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
-            const base = `${cs}_${ct}_${dp}`.toUpperCase();
-            const list = Array.isArray(projectsData) ? projectsData : [];
-            const cnt = list.filter((p: any) => (p.project_name || '').toUpperCase().startsWith(base)).length;
-            setName(`${base}_${String(cnt + 1).padStart(2, '0')}`);
-        }
-    }, [source, target, projectsData, isEditing]);
+        const projectLabel = isEditing ? (initialData?.project_number || name || '...') : (displayNr || 'Neues Projekt');
+        updateTab(tabId, { label: `${prefix}${projectLabel}` });
+    }, [name, isEditing, id, displayNr, initialData, updateTab]);
 
     // Load initial data for editing
     useEffect(() => {
         if (initialData) {
-            setName(initialData.name || initialData.project_name || '');
-            setCustomer(initialData.customer_id?.toString() || '');
-            setDeadline(initialData.due || initialData.deadline || '');
-            setSource(initialData.source || initialData.source_language?.iso_code?.split('-')[0] || 'de');
-            let targetLangs: string[] = ['en'];
-            if (initialData.target_languages?.length) {
-                targetLangs = initialData.target_languages.map((l: any) => l.iso_code || l);
-            } else if (initialData.target) {
-                targetLangs = Array.isArray(initialData.target) ? initialData.target : [initialData.target];
-            } else if (initialData.target_language?.iso_code) {
-                targetLangs = [initialData.target_language.iso_code];
+            const mapped = initialData;
+            const pName = mapped.project_name || mapped.name || '';
+            setName(pName);
+            setIsManualName(!!pName);
+            setCustomer(mapped.customer_id?.toString() || '');
+            setDeadline(mapped.deadline || '');
+            setSource(mapped.source_language?.iso_code || mapped.source_lang?.iso_code || 'de-DE');
+            const targets = Array.isArray(mapped.target_languages)
+                ? mapped.target_languages.map((l: any) => l.iso_code)
+                : (mapped.target_language?.iso_code ? [mapped.target_language.iso_code] : ['en-US']);
+            setTarget(targets);
+            setPriority(mapped.priority || 'low');
+            setStatus(mapped.status || 'offer');
+            setIsCertified(mapped.is_certified === 1 || mapped.is_certified === true);
+            setCertifiedQty(mapped.certified_count || 1);
+            setHasApostille(mapped.has_apostille === 1 || mapped.has_apostille === true);
+            setApostilleQty(mapped.apostille_count || 1);
+            setIsExpress(mapped.is_express === 1 || mapped.is_express === true);
+            setExpressQty(mapped.express_count || 1);
+            setClassification(mapped.classification ? 'ja' : 'nein');
+            setClassificationQty(mapped.classification_count || 1);
+            setCopies(mapped.copies_count || 0);
+            setCopyPrice((mapped.copy_price || 5).toFixed(2));
+            setWithTax(mapped.tax_rate > 0);
+            if (mapped.document_type_id) {
+                const docIds = [mapped.document_type_id.toString()];
+                if (Array.isArray(mapped.additional_doc_types)) {
+                    docIds.push(...mapped.additional_doc_types.map((id: any) => id.toString()));
+                }
+                setDocType(docIds);
             }
-            setTarget(targetLangs);
-            setPriority(initialData.priority || 'medium');
-            setStatus(initialData.status || 'draft');
-            setIsCertified(initialData.isCertified || !!initialData.is_certified);
-            setCertifiedQty(initialData.certified_count || 1);
-            setHasApostille(initialData.hasApostille || !!initialData.has_apostille);
-            setApostilleQty(initialData.apostille_count || 1);
-            setIsExpress(initialData.isExpress || !!initialData.is_express);
-            setExpressQty(initialData.express_count || 1);
-            setClassification(initialData.classification === 'ja' || initialData.classification === true ? 'ja' : 'nein');
-            setClassificationQty(initialData.classification_count || 1);
-            setCopies(initialData.copies || initialData.copies_count || 0);
-            setCopyPrice(String(initialData.copyPrice || initialData.copy_price || '5'));
-            const dt: string[] = [];
-            if (initialData.document_type_id) dt.push(initialData.document_type_id.toString());
-            if (initialData.additional_doc_types?.length) dt.push(...initialData.additional_doc_types.map((x: any) => x.toString()));
-            setDocType([...new Set(dt)]);
-            setTranslator(initialData.partner?.id?.toString() || '');
-            if (initialData.positions?.length) {
-                setPositions(initialData.positions.map((p: any) => ({ ...p, id: p.id.toString(), unit: p.unit || 'Normzeile', partnerRate: p.partner_rate || p.partnerRate || '0', customerRate: p.customer_rate || p.customerRate || '0', partnerMode: p.partner_mode || 'unit', customerMode: p.customer_mode || 'unit' })));
+            if (mapped.partner_id) setTranslator(mapped.partner_id.toString());
+            if (Array.isArray(mapped.positions) && mapped.positions.length > 0) {
+                const pos = mapped.positions.map((p: any) => ({
+                    id: p.id?.toString() || Date.now().toString() + Math.random(),
+                    description: p.description,
+                    unit: p.unit,
+                    amount: (p.amount || 0).toFixed(2),
+                    quantity: (p.quantity || 1).toFixed(2),
+                    partnerRate: (p.partner_rate || 0).toFixed(2),
+                    partnerMode: p.partner_mode || 'unit',
+                    partnerTotal: (p.partner_total || 0).toFixed(2),
+                    customerRate: (p.customer_rate || 0).toFixed(2),
+                    customerMode: p.customer_mode || 'rate',
+                    customerTotal: (p.customer_total || 0).toFixed(2),
+                    marginType: p.margin_type || 'markup',
+                    marginPercent: (p.margin_percent || 0).toFixed(2)
+                }));
+                setPositions(pos);
             }
-            if (initialData.payments?.length) setPayments(initialData.payments.map((p: any) => ({ ...p, id: p.id?.toString() || Date.now().toString() })));
-            else if (initialData.down_payment && parseFloat(initialData.down_payment) > 0) setPayments([{ id: Date.now().toString(), amount: initialData.down_payment.toString(), payment_date: initialData.down_payment_date || new Date().toISOString(), payment_method: 'Überweisung', note: 'Anzahlung' }]);
-            else setPayments([]);
-            setNotes(initialData.notes || '');
+            if (Array.isArray(mapped.payments)) setPayments(mapped.payments);
+            setNotes(mapped.notes || '');
         }
     }, [initialData]);
+    // Dynamic Project Name based on languages & counters
+    useEffect(() => {
+        if (!isManualName && source && target && target.length > 0) {
+            const srcCode = source.split('-')[0].toUpperCase();
+            const trgCode = target[0].split('-')[0].toUpperCase();
+            const now = new Date();
+            const yy = now.getFullYear().toString().slice(-2);
+            const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+            const yyMm = `${yy}${mm}`;
+            const prefix = `${srcCode}-${trgCode}${yyMm}-`;
+
+            // Calculate next number
+            const list = Array.isArray(projectsData) ? projectsData : [];
+            const related = list.filter((p: any) => (p.project_name || p.name || '').startsWith(prefix));
+
+            let maxNum = 0;
+            related.forEach((p: any) => {
+                const nameStr = p.project_name || p.name || '';
+                const parts = nameStr.split('-');
+                const lastPart = parts[parts.length - 1];
+                const n = parseInt(lastPart);
+                if (!isNaN(n) && n > maxNum) maxNum = n;
+            });
+
+            const nextNum = (maxNum + 1).toString().padStart(2, '0');
+            setName(`${prefix}${nextNum}`);
+        }
+    }, [source, target, isManualName, projectsData]);
+
+    // ── Dirty State Logic ──
+    const currentValuesStr = JSON.stringify([name, customer, deadline, source, JSON.stringify(target), priority, status, withTax, isCertified, certifiedQty, hasApostille, apostilleQty, isExpress, expressQty, classification, classificationQty, copies, copyPrice, JSON.stringify(positions), JSON.stringify(docType), translator, notes]);
+    const initialValuesStr = useRef(currentValuesStr);
+
+    const resetDirtyState = useCallback((newData?: string) => {
+        initialValuesStr.current = newData || currentValuesStr;
+        if (activeTabId) updateTab(activeTabId, { isDirty: false });
+    }, [currentValuesStr, activeTabId, updateTab]);
+
+    useEffect(() => {
+        const hasChanged = currentValuesStr !== initialValuesStr.current;
+        if (activeTabId) {
+            updateTab(activeTabId, { isDirty: hasChanged });
+        }
+    }, [currentValuesStr, activeTabId, updateTab]);
+
+    // Update initialValuesStr when initialData loads
+    useEffect(() => {
+        if (isEditing && initialData) {
+            // After data is loaded and set to state, we should wait one tick or just use currentValuesStr
+            // Since this effect runs when initialData changes, and we have a separate effect to sync states,
+            // we might need to be careful. But standard approach is to reset once states are populated.
+            resetDirtyState(currentValuesStr);
+        } else if (!isEditing) {
+            // For new project, we might want to capture the "clean" default state
+            // But usually the first render already did that.
+        }
+    }, [initialData, isEditing, resetDirtyState, currentValuesStr]);
 
     // ── Mutations ──
     const createMutation = useMutation({
         mutationFn: projectService.create,
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['projects'] }); toast.success('Projekt erfolgreich erstellt'); navigate('/projects'); },
+        onSuccess: () => {
+            resetDirtyState();
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            toast.success('Projekt erfolgreich erstellt');
+            navigate('/projects');
+        },
         onError: () => toast.error('Fehler beim Erstellen')
     });
     const updateMutation = useMutation({
         mutationFn: (data: any) => projectService.update(data.id, data),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['projects'] }); toast.success('Projekt aktualisiert'); navigate(`/projects/${id}`); },
+        onSuccess: () => {
+            resetDirtyState();
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            toast.success('Projekt aktualisiert');
+            navigate(`/projects/${id}`);
+        },
         onError: () => toast.error('Fehler beim Aktualisieren')
     });
     const createCustomerMutation = useMutation({
@@ -356,6 +436,7 @@ const NewProject = () => {
         const targetArray = Array.isArray(target) ? target : [target];
         if (!targetArray.length || !targetArray[0]) { errors.push('Zielsprache ist erforderlich'); errSet.add('target'); }
         if (!docType.length) { errors.push('Dokumentenart ist ein Pflichtfeld'); errSet.add('docType'); }
+        if (!status) { errors.push('Status ist ein Pflichtfeld'); errSet.add('status'); }
         if (!translator) { errors.push('Übersetzer ist ein Pflichtfeld'); errSet.add('translator'); }
         setValidationErrors(errSet);
         if (errors.length > 0) {
@@ -390,10 +471,32 @@ const NewProject = () => {
         else createMutation.mutate(payload);
     };
 
+    const handleCancel = () => {
+        if (activeTabId) {
+            const currentTab = tabs.find(t => t.id === activeTabId);
+            if (currentTab?.isDirty) {
+                setConfirmConfig({
+                    isOpen: true,
+                    title: 'Änderungen verwerfen?',
+                    message: 'Sie haben ungespeicherte Änderungen. Möchten Sie diese wirklich verwerfen und den Tab schließen?',
+                    type: 'danger',
+                    confirmLabel: 'Schließen & Verwerfen',
+                    onConfirm: () => {
+                        closeTab(activeTabId);
+                    }
+                });
+            } else {
+                closeTab(activeTabId);
+            }
+        } else {
+            navigate('/projects');
+        }
+    };
+
     const isSaving = createMutation.isPending || updateMutation.isPending;
     const renderActionButtons = () => (
         <>
-            <Button variant="secondary" onClick={() => navigate('/projects')} className="h-9 px-4 text-xs font-semibold">
+            <Button variant="secondary" onClick={handleCancel} className="h-9 px-4 text-xs font-semibold">
                 <FaTimes className="mr-1.5" /> Abbrechen
             </Button>
             <Button onClick={handleSubmit} disabled={isSaving} className="h-9 px-6 text-xs font-bold">
@@ -418,7 +521,7 @@ const NewProject = () => {
             <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-6 shadow-sm">
                 <div className="flex items-center justify-between max-w-6xl mx-auto">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => navigate('/projects')} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition">
+                        <button onClick={handleCancel} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition">
                             <FaArrowLeft />
                         </button>
                         <div>
@@ -457,8 +560,15 @@ const NewProject = () => {
                             <h3 className={SECTION_TITLE}>Basis-Daten</h3>
                         </div>
                         <div className="px-6 pb-5">
-                            <FormRow label="Projektname" tooltip="Wird automatisch generiert aus Sprachpaar und Datum. Leerzeichen werden durch Unterstriche ersetzt.">
-                                <Input placeholder="z.B. DE_EN_260326_01" value={name} onChange={e => setName(e.target.value)} />
+                            <FormRow label="Projektname" tooltip="Wird automatisch aus den Sprachen generiert. Manuelle Eingaben deaktivieren die Automatik.">
+                                <Input
+                                    placeholder="z.B. Deutsch -> Englisch"
+                                    value={name}
+                                    onChange={e => {
+                                        setName(e.target.value);
+                                        setIsManualName(true);
+                                    }}
+                                />
                             </FormRow>
                             <FormRow label="Dokumentenart" required tooltip="Art des zu übersetzenden Dokuments. Mehrfachauswahl möglich." error={validationErrors.has('docType')} id="field-docType">
                                 <DocumentTypeSelect
@@ -469,8 +579,8 @@ const NewProject = () => {
                                     isMulti={true}
                                 />
                             </FormRow>
-                            <FormRow label="Status" tooltip="Aktueller Bearbeitungsstatus des Projekts." error={validationErrors.has('status')} id="field-status">
-                                <SearchableSelect options={statusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} preserveOrder={true} />
+                            <FormRow label="Status" required tooltip="Aktueller Bearbeitungsstatus des Projekts." error={validationErrors.has('status')} id="field-status">
+                                <ProjectStatusSelect options={combinedStatusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} />
                             </FormRow>
                             <FormRow label="Liefertermin" tooltip="Geplanter Abgabetermin inkl. Uhrzeit.">
                                 <DatePicker showTime format="DD.MM.YYYY HH:mm" value={deadline ? dayjs(deadline) : null}
@@ -634,13 +744,27 @@ const NewProject = () => {
                                     <label className="text-xs font-medium text-slate-400 mb-1 block">Anzahl Kopien</label>
                                     <div className="flex items-center h-9 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm">
                                         <button onClick={() => setCopies(Math.max(0, copies - 1))} className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100"><FaMinus className="text-xs" /></button>
-                                        <input type="number" value={copies} onChange={e => setCopies(Math.max(0, parseInt(e.target.value) || 0))} className="flex-1 w-full h-full text-center text-sm font-medium text-slate-700 outline-none" />
+                                        <input
+                                            type="number"
+                                            value={copies}
+                                            onChange={e => setCopies(Math.max(0, parseInt(e.target.value) || 0))}
+                                            onFocus={(e) => { if (copies === 0) e.target.value = ''; }}
+                                            className="flex-1 w-full h-full text-center text-sm font-medium text-slate-700 outline-none"
+                                        />
                                         <button onClick={() => setCopies(copies + 1)} className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100"><FaPlus className="text-xs" /></button>
                                     </div>
                                 </div>
                                 <div className="col-span-4">
                                     <label className="text-xs font-medium text-slate-400 mb-1 block">Preis / Kopie</label>
-                                    <Input type="number" step="0.01" value={copyPrice} onChange={e => setCopyPrice(e.target.value)} onBlur={() => setCopyPrice(parseFloat(copyPrice).toFixed(2))} containerClassName="h-9" />
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={copyPrice}
+                                        onChange={e => setCopyPrice(e.target.value)}
+                                        onFocus={() => { if (parseFloat(copyPrice) === 0) setCopyPrice(''); }}
+                                        onBlur={() => setCopyPrice(parseFloat(copyPrice || '0').toFixed(2))}
+                                        containerClassName="h-9"
+                                    />
                                 </div>
                                 <div className="col-span-4 flex items-end pb-1.5">
                                     <span className="text-xs text-slate-400 italic">Summe: <span className="text-slate-800 font-medium">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span></span>

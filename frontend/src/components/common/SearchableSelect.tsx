@@ -309,9 +309,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             onAddNew();
                             setIsOpen(false);
                         }}
-                        className="w-full"
+                        className="w-full h-9 py-2.5 text-[11px] font-bold bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm border-none flex items-center justify-center gap-2 rounded-sm"
                     >
-                        <FaPlus className="text-xs text-brand-primary" />
+                        <FaPlus className="text-[10px]" />
+                        <span className="uppercase tracking-wider">Neu anlegen</span>
                     </Button>
                 </div>
             )}
@@ -370,18 +371,20 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                    {!isMulti && value && !disabled && (
-                        <div className="flex items-center gap-1.5">
+                    {values.length > 0 && !disabled && (
+                        <div className="flex items-center gap-1.5 border-r border-slate-100 pr-1.5">
                             <button
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleSelect('');
+                                    if (isMulti) onChange([]);
+                                    else handleSelect('');
                                 }}
-                                className="p-1 text-slate-300 hover:text-red-500 transition-colors focus:outline-none"
-                                title="Auswahl entfernen"
+                                className="p-1 px-1.5 text-slate-300 hover:text-red-500 transition-colors focus:outline-none flex items-center gap-1.5 group"
+                                title={isMulti ? "Alle entfernen" : "Auswahl entfernen"}
                             >
-                                <FaTimes className="text-[10px]" />
+                                {isMulti && values.length > 0 && <span className="text-[9px] font-bold uppercase tracking-widest text-slate-300 group-hover:text-red-400">Clear</span>}
+                                <FaTimes className={clsx(isMulti ? "text-[8px]" : "text-[10px]")} />
                             </button>
                         </div>
                     )}

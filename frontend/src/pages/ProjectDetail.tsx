@@ -231,7 +231,7 @@ const ProjectDetail = () => {
             setProjectData(mapped);
 
             // Update workspace tab title
-            const tabTitle = mapped.project_number ? `${mapped.project_number} - ${mapped.name}` : mapped.name;
+            const tabTitle = mapped.project_number || `#${mapped.id}`;
             updateTab(`project_detail_${id}`, { label: tabTitle });
         }
     }, [projectResponse, id, updateTab]);
@@ -534,7 +534,7 @@ const ProjectDetail = () => {
             {/* Project Header Container */}
             <div className="bg-white border-b border-slate-200 shadow-sm">
                 <div className="max-w-[1800px] mx-auto">
-                    <div className="px-3 sm:px-4  py-4">
+                    <div className="px-3 sm:px-4 py-4">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div className="flex items-center gap-4">
                                 <Button
@@ -548,27 +548,25 @@ const ProjectDetail = () => {
 
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <div className="w-12 h-12 rounded-sm bg-white text-slate-700 flex items-center justify-center text-xl font-semibold border border-slate-200 shadow-sm shrink-0">
-                                        {projectData.name.substring(0, 2).toUpperCase()}
+                                        <FaFileAlt className="text-slate-300" />
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                            <div className="flex flex-wrap items-baseline gap-2 mb-1">
-                                                <span className="text-sm font-bold text-slate-400 font-mono tracking-tight bg-slate-100 px-2 py-0.5 rounded-sm border border-slate-200">
-                                                    {projectData.project_number || `#${projectData.id}`}
-                                                </span>
-                                                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
-                                                    {projectData.name || 'Unbenanntes Projekt'}
-                                                </h1>
-                                            </div>
-
-                                            {projectData.priority !== 'low' && (
-                                                <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0",
-                                                    projectData.priority === 'express' ? "bg-red-50 text-red-600 border-red-100" : "bg-orange-50 text-orange-600 border-orange-100"
-                                                )}>
-                                                    {projectData.priority === 'express' ? <FaBolt /> : <FaFlag />}
-                                                    <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-3 flex-wrap">
+                                                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
+                                                        {projectData.project_number || `#${projectData.id}`}
+                                                    </h1>
+                                                    {projectData.priority !== 'low' && (
+                                                        <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0",
+                                                            projectData.priority === 'express' ? "bg-red-50 text-red-600 border-red-100" : "bg-orange-50 text-orange-600 border-orange-100"
+                                                        )}>
+                                                            {projectData.priority === 'express' ? <FaBolt /> : <FaFlag />}
+                                                            <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -766,61 +764,63 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Mobile Tab Menu Overlay */}
-                {isTabMenuOpen && (
-                    <div className="md:hidden border-t border-slate-100 bg-white animate-fadeIn">
-                        <div className="flex flex-col">
-                            {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
-                                let badgeCount = 0;
-                                if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                                if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                                if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
-                                const isActive = activeTab === tab;
+                {
+                    isTabMenuOpen && (
+                        <div className="md:hidden border-t border-slate-100 bg-white animate-fadeIn">
+                            <div className="flex flex-col">
+                                {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
+                                    let badgeCount = 0;
+                                    if (tab === 'files') badgeCount = projectData?.files?.length || 0;
+                                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                                    if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
+                                    const isActive = activeTab === tab;
 
-                                return (
-                                    <button
-                                        key={tab}
-                                        onClick={() => {
-                                            setActiveTab(tab);
-                                            setIsTabMenuOpen(false);
-                                        }}
-                                        className={clsx(
-                                            "px-6 py-4 text-sm font-medium flex items-center gap-4 transition-all rounded-sm mx-2 my-1",
-                                            isActive
-                                                ? 'bg-slate-50 text-brand-primary font-bold  border-brand-primary'
-                                                : 'text-slate-500 hover:bg-slate-50/50 hover:text-slate-700'
-                                        )}
-                                    >
-                                        {tab === 'overview' && <FaInfoCircle className="text-base" />}
-                                        {tab === 'files' && <FaFileAlt className="text-base" />}
-                                        {tab === 'finances' && <FaFileInvoiceDollar className="text-base" />}
-                                        {tab === 'messages' && <FaComments className="text-base" />}
-                                        {tab === 'history' && <FaClock className="text-base" />}
+                                    return (
+                                        <button
+                                            key={tab}
+                                            onClick={() => {
+                                                setActiveTab(tab);
+                                                setIsTabMenuOpen(false);
+                                            }}
+                                            className={clsx(
+                                                "px-6 py-4 text-sm font-medium flex items-center gap-4 transition-all rounded-sm mx-2 my-1",
+                                                isActive
+                                                    ? 'bg-slate-50 text-brand-primary font-bold  border-brand-primary'
+                                                    : 'text-slate-500 hover:bg-slate-50/50 hover:text-slate-700'
+                                            )}
+                                        >
+                                            {tab === 'overview' && <FaInfoCircle className="text-base" />}
+                                            {tab === 'files' && <FaFileAlt className="text-base" />}
+                                            {tab === 'finances' && <FaFileInvoiceDollar className="text-base" />}
+                                            {tab === 'messages' && <FaComments className="text-base" />}
+                                            {tab === 'history' && <FaClock className="text-base" />}
 
-                                        <span className="flex-1 text-left">
-                                            {tab === 'overview' ? 'Stammdaten' :
-                                                tab === 'files' ? 'Dateien' :
-                                                    tab === 'finances' ? 'Kalkulation & Marge' :
-                                                        tab === 'history' ? 'Historie' : 'Kommunikation'}
-                                        </span>
-
-                                        {tab !== 'overview' && tab !== 'history' && (
-                                            <span className={clsx(
-                                                "px-2 py-0.5 rounded-full text-xs font-medium",
-                                                isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
-                                            )}>
-                                                {badgeCount}
+                                            <span className="flex-1 text-left">
+                                                {tab === 'overview' ? 'Stammdaten' :
+                                                    tab === 'files' ? 'Dateien' :
+                                                        tab === 'finances' ? 'Kalkulation & Marge' :
+                                                            tab === 'history' ? 'Historie' : 'Kommunikation'}
                                             </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
+
+                                            {tab !== 'overview' && tab !== 'history' && (
+                                                <span className={clsx(
+                                                    "px-2 py-0.5 rounded-full text-xs font-medium",
+                                                    isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
+                                                )}>
+                                                    {badgeCount}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+            </div >
 
             {/* Main Content Area */}
-            <div className="flex-1 max-w-[1800px] mx-auto w-full py-4 sm:py-8 transition-all duration-300">
+            < div className="flex-1 max-w-[1800px] mx-auto w-full py-4 sm:py-8 transition-all duration-300" >
                 {activeTab === 'overview' && (
                     <ProjectOverviewTab
                         projectData={projectData}
@@ -851,54 +851,62 @@ const ProjectDetail = () => {
                     />
                 )}
 
-                {activeTab === 'files' && (
-                    <ProjectFilesTab
-                        projectData={projectData}
-                        setIsUploadModalOpen={setIsUploadModalOpen}
-                        handlePreviewFile={handlePreviewFile}
-                        handleDownloadFile={handleDownloadFile}
-                        setDeleteFileConfirm={setDeleteFileConfirm}
-                        toggleFileType={toggleFileType}
-                        onRenameFile={handleRenameFile}
-                        onMoveFile={handleMoveFile}
-                        onBulkMove={handleBulkFilesMove}
-                        onBulkDownloadZip={handleBulkFilesDownloadZip}
-                        formatFileSize={formatFileSize}
-                        onUpload={handleFileUpload}
-                    />
-                )}
+                {
+                    activeTab === 'files' && (
+                        <ProjectFilesTab
+                            projectData={projectData}
+                            setIsUploadModalOpen={setIsUploadModalOpen}
+                            handlePreviewFile={handlePreviewFile}
+                            handleDownloadFile={handleDownloadFile}
+                            setDeleteFileConfirm={setDeleteFileConfirm}
+                            toggleFileType={toggleFileType}
+                            onRenameFile={handleRenameFile}
+                            onMoveFile={handleMoveFile}
+                            onBulkMove={handleBulkFilesMove}
+                            onBulkDownloadZip={handleBulkFilesDownloadZip}
+                            formatFileSize={formatFileSize}
+                            onUpload={handleFileUpload}
+                        />
+                    )
+                }
 
-                {activeTab === 'finances' && projectData && (
-                    <ProjectFinancesTab
-                        projectData={projectData}
-                        onSavePositions={(positions, extras) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
-                        onRecordPayment={() => {
-                            setEditingPayment(null);
-                            setIsPaymentModalOpen(true);
-                        }}
-                        onEditPayment={(payment) => {
-                            setEditingPayment(payment);
-                            setIsPaymentModalOpen(true);
-                        }}
-                        onDeletePayment={(paymentId) => {
-                            const payment = (projectData.payments || []).find((p: any) => p.id === paymentId);
-                            setPaymentDeleteConfirm({ isOpen: true, paymentId, amount: payment?.amount || '0' });
-                        }}
-                        isPendingSave={updateProjectMutation.isPending}
-                        onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
-                    />
-                )}
+                {
+                    activeTab === 'finances' && projectData && (
+                        <ProjectFinancesTab
+                            projectData={projectData}
+                            onSavePositions={(positions, extras) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
+                            onRecordPayment={() => {
+                                setEditingPayment(null);
+                                setIsPaymentModalOpen(true);
+                            }}
+                            onEditPayment={(payment) => {
+                                setEditingPayment(payment);
+                                setIsPaymentModalOpen(true);
+                            }}
+                            onDeletePayment={(paymentId) => {
+                                const payment = (projectData.payments || []).find((p: any) => p.id === paymentId);
+                                setPaymentDeleteConfirm({ isOpen: true, paymentId, amount: payment?.amount || '0' });
+                            }}
+                            isPendingSave={updateProjectMutation.isPending}
+                            onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
+                        />
+                    )
+                }
 
-                {activeTab === 'messages' && (
-                    <div className="mb-10 animate-fadeIn">
-                        <MessagesTab projectData={projectData} projectId={id!} financials={financials} />
-                    </div>
-                )}
+                {
+                    activeTab === 'messages' && (
+                        <div className="mb-10 animate-fadeIn">
+                            <MessagesTab projectData={projectData} projectId={id!} financials={financials} />
+                        </div>
+                    )
+                }
 
-                {activeTab === 'history' && (
-                    <HistoryTab projectId={id!} />
-                )}
-            </div>
+                {
+                    activeTab === 'history' && (
+                        <HistoryTab projectId={id!} />
+                    )
+                }
+            </div >
 
             <CustomerSelectionModal
                 isOpen={isCustomerSearchOpen}

@@ -16,6 +16,8 @@ import clsx from 'clsx';
 import { projectService, settingsService, invoiceService, customerService } from '../api/services';
 import CustomerSelect from '../components/common/CustomerSelect';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
+import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stück', 'Minuten', 'Tage'];
 
@@ -99,6 +101,7 @@ const MiniDropdown = ({ value, options, onChange, align = 'right', width }: { va
 
 const NewInvoice = () => {
     const navigate = useNavigate();
+    const { updateTab, activeTabId, tabs, closeTab } = useWorkspaceTabs();
     const { id } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
     const queryClient = useQueryClient();
@@ -118,6 +121,7 @@ const NewInvoice = () => {
     const catalogSearchRef = useRef<HTMLInputElement>(null);
     const lastAutoPaymentText = useRef('');
     const lastAutoIntroText = useRef('');
+    const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
 
     const [formData, setFormData] = useState({
         type: defaultType,
@@ -146,6 +150,20 @@ const NewInvoice = () => {
     });
 
     const [items, setItems] = useState<any[]>([]);
+
+    // ── Dirty State Logic ──
+    const currentValuesStr = JSON.stringify({ formData, items, selectedProjectId });
+    const initialValuesStr = useRef(currentValuesStr);
+
+    useEffect(() => {
+        const hasChanged = currentValuesStr !== initialValuesStr.current;
+        if (activeTabId) updateTab(activeTabId, { isDirty: hasChanged });
+    }, [currentValuesStr, activeTabId, updateTab]);
+
+    const resetDirtyState = useCallback((newData?: any) => {
+        initialValuesStr.current = JSON.stringify(newData || { formData, items, selectedProjectId });
+        if (activeTabId) updateTab(activeTabId, { isDirty: false });
+    }, [formData, items, selectedProjectId, activeTabId, updateTab]);
 
     // ── Queries ──────────────────────────────────────────────────────────────
     const { data: existingInvoice, isLoading: isLoadingInvoice } = useQuery({
@@ -179,6 +197,7 @@ const NewInvoice = () => {
     const createMutation = useMutation({
         mutationFn: invoiceService.create,
         onSuccess: () => {
+            resetDirtyState();
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             toast.success('Rechnung erfolgreich erstellt');
             navigate('/invoices');
@@ -189,6 +208,7 @@ const NewInvoice = () => {
     const updateMutation = useMutation({
         mutationFn: (data: any) => invoiceService.update(Number(id), data),
         onSuccess: () => {
+            resetDirtyState();
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             toast.success('Rechnung erfolgreich aktualisiert');
             navigate('/invoices');
@@ -325,21 +345,27 @@ const NewInvoice = () => {
                 salutation: (inv as any).salutation || '',
                 payment_text: (inv as any).payment_text || '',
             });
-            if (inv.items) {
-                setItems(inv.items.map((i: any) => ({
-                    id: i.id || Math.random().toString(36).substr(2, 9),
-                    description: i.description,
-                    quantity: (parseFloat(i.quantity) || 0).toFixed(2),
-                    unit: i.unit,
-                    price: (i.unit_price_cents ? i.unit_price_cents / 100 : i.price || 0).toFixed(2),
-                    total: (i.total_cents ? i.total_cents / 100 : i.total || 0).toFixed(2),
-                    price_mode: i.price_mode || 'unit',
-                    discount_percent: (parseFloat(i.discount_percent) || 0).toFixed(2),
-                    tax_rate: i.tax_rate !== undefined ? i.tax_rate : inv.tax_rate || '19.00',
-                })));
-            }
+            const loadedItems = inv.items ? inv.items.map((i: any) => ({
+                id: i.id || Math.random().toString(36).substr(2, 9),
+                description: i.description,
+                quantity: (parseFloat(i.quantity) || 0).toFixed(2),
+                unit: i.unit,
+                price: (i.unit_price_cents ? i.unit_price_cents / 100 : i.price || 0).toFixed(2),
+                total: (i.total_cents ? i.total_cents / 100 : i.total || 0).toFixed(2),
+                price_mode: i.price_mode || 'unit',
+                discount_percent: (parseFloat(i.discount_percent) || 0).toFixed(2),
+                tax_rate: i.tax_rate !== undefined ? i.tax_rate : inv.tax_rate || '19.00',
+            })) : [];
+            if (inv.items) setItems(loadedItems);
+
+            // Set initial state for dirty check after loading
+            resetDirtyState({
+                formData: { ...formData, ...inv, date: inv.date?.split('T')[0] },
+                items: loadedItems,
+                selectedProjectId: inv.project_id?.toString() || ''
+            });
         }
-    }, [isEditMode, existingInvoice]);
+    }, [isEditMode, existingInvoice, resetDirtyState]);
 
     // ── Init für neuen Beleg ──────────────────────────────────────────────────
     useEffect(() => {
@@ -597,6 +623,28 @@ const NewInvoice = () => {
         }
     };
 
+    const handleCancel = () => {
+        if (activeTabId) {
+            const currentTab = tabs.find(t => t.id === activeTabId);
+            if (currentTab?.isDirty) {
+                setConfirmConfig({
+                    isOpen: true,
+                    title: 'Änderungen verwerfen?',
+                    message: 'Sie haben ungespeicherte Änderungen. Möchten Sie diese wirklich verwerfen und den Tab schließen?',
+                    type: 'danger',
+                    confirmLabel: 'Schließen & Verwerfen',
+                    onConfirm: () => {
+                        closeTab(activeTabId);
+                    }
+                });
+            } else {
+                closeTab(activeTabId);
+            }
+        } else {
+            navigate('/invoices');
+        }
+    };
+
     if (isEditMode && isLoadingInvoice) {
         return (
             <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
@@ -611,7 +659,7 @@ const NewInvoice = () => {
             <div className="relative  bg-white border-b border-slate-200 px-6 py-6 flex justify-between items-center shadow-sm">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => navigate('/invoices')}
+                        onClick={handleCancel}
                         className="p-2 text-slate-400 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-100"
                     >
                         <FaArrowLeft />
@@ -628,7 +676,7 @@ const NewInvoice = () => {
                 <div className="flex items-center gap-3">
                     <Button
                         variant="outline"
-                        onClick={() => navigate('/invoices')}
+                        onClick={handleCancel}
                         className="px-6 h-10 text-xs font-bold bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
                     >
                         Abbrechen
@@ -1255,7 +1303,7 @@ const NewInvoice = () => {
             < div className="mt-12 flex justify-end items-center gap-3 pt-8 border-t border-slate-200" >
                 <Button
                     variant="outline"
-                    onClick={() => navigate('/invoices')}
+                    onClick={handleCancel}
                     className="px-5 h-9 text-xs font-semibold border-slate-200 text-slate-500 hover:bg-slate-50 uppercase tracking-wider"
                 >
                     Abbrechen
@@ -1303,6 +1351,7 @@ const NewInvoice = () => {
                     }
                 }}
             />
+            <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig((p: any) => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
         </div >
     );
 }

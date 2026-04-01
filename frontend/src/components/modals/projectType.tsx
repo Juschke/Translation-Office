@@ -12,4 +12,5 @@ export interface ProjectPosition {
     customerMode: string;      // 'rate' | 'flat' | 'unit' (margin-based)
     marginType: string;        // 'markup' | 'markdown'
     marginPercent: string;
+    taxRate?: string;
 }

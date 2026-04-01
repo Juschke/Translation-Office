@@ -8,13 +8,16 @@ export interface WorkspaceTab {
     type?: string;
     closable?: boolean;
     active?: boolean;
+    isDirty?: boolean;
 }
 
 interface WorkspaceTabsContextType {
     tabs: WorkspaceTab[];
     activeTabId: string | null;
     openTab: (tab: Omit<WorkspaceTab, 'active'>) => void;
-    closeTab: (id: string) => void;
+    closeTab: (id: string, force?: boolean) => void;
+    closeAllTabs: (force?: boolean) => void;
+    closeOtherTabs: (id: string, force?: boolean) => void;
     setActiveTab: (id: string) => void;
     updateTab: (id: string, updates: Partial<Omit<WorkspaceTab, 'id'>>) => void;
 }
@@ -57,7 +60,14 @@ export const WorkspaceTabsProvider: React.FC<{ children: React.ReactNode }> = ({
         navigate(tab.path);
     }, [navigate]);
 
-    const closeTab = useCallback((id: string) => {
+    const closeTab = useCallback((id: string, force: boolean = false) => {
+        const tabToClose = tabs.find(t => t.id === id);
+        if (tabToClose?.isDirty && !force) {
+            if (!window.confirm(`Die Seite "${tabToClose.label}" hat ungespeicherte Änderungen. Möchten Sie sie wirklich schließen?`)) {
+                return;
+            }
+        }
+
         setTabs(prev => {
             const index = prev.findIndex(t => t.id === id);
             if (index === -1) return prev;
@@ -78,7 +88,19 @@ export const WorkspaceTabsProvider: React.FC<{ children: React.ReactNode }> = ({
 
             return newTabs;
         });
-    }, [activeTabId, navigate]);
+    }, [activeTabId, navigate, tabs]);
+
+    const closeAllTabs = useCallback((force: boolean = false) => {
+        const dirtyTabs = tabs.filter(t => t.isDirty);
+        if (dirtyTabs.length > 0 && !force) {
+            if (!window.confirm("Es gibt Tabs mit ungespeicherten Änderungen. Möchten Sie wirklich alle Tabs schließen?")) {
+                return;
+            }
+        }
+        setTabs([]);
+        setActiveTabId(null);
+        navigate('/');
+    }, [tabs, navigate]);
 
     const setActiveTab = useCallback((id: string) => {
         const tab = tabs.find(t => t.id === id);
@@ -89,7 +111,18 @@ export const WorkspaceTabsProvider: React.FC<{ children: React.ReactNode }> = ({
     }, [tabs, navigate]);
 
     const updateTab = useCallback((id: string, updates: Partial<Omit<WorkspaceTab, 'id'>>) => {
-        setTabs(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+        setTabs(prev => {
+            const tab = prev.find(t => t.id === id);
+            if (!tab) return prev;
+
+            // Optimization: check if anything actually changed
+            const keys = Object.keys(updates) as (keyof typeof updates)[];
+            const hasChanged = keys.some(key => tab[key] !== updates[key]);
+
+            if (!hasChanged) return prev;
+
+            return prev.map(t => t.id === id ? { ...t, ...updates } : t);
+        });
     }, []);
 
     // Update active tab based on current URL and auto-create tabs for specific routes
@@ -143,8 +176,21 @@ export const WorkspaceTabsProvider: React.FC<{ children: React.ReactNode }> = ({
         }
     }, [location.pathname]);
 
+    const closeOtherTabs = useCallback((id: string, force: boolean = false) => {
+        const otherDirtyTabs = tabs.filter(t => t.id !== id && t.isDirty);
+        if (otherDirtyTabs.length > 0 && !force) {
+            if (!window.confirm("Einige andere Tabs haben ungespeicherte Änderungen. Möchten Sie wirklich alle anderen Tabs schließen?")) {
+                return;
+            }
+        }
+        setTabs(prev => prev.filter(t => t.id === id));
+        setActiveTabId(id);
+        const tab = tabs.find(t => t.id === id);
+        if (tab) navigate(tab.path);
+    }, [tabs, navigate]);
+
     return (
-        <WorkspaceTabsContext.Provider value={{ tabs, activeTabId, openTab, closeTab, setActiveTab, updateTab }}>
+        <WorkspaceTabsContext.Provider value={{ tabs, activeTabId, openTab, closeTab, closeAllTabs, closeOtherTabs, setActiveTab, updateTab }}>
             {children}
         </WorkspaceTabsContext.Provider>
     );

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -7,12 +6,12 @@ import {
     FaFlag, FaClock, FaBolt,
     FaSearch, FaCheck, FaTimes
 } from 'react-icons/fa';
-import SearchableSelect from '../common/SearchableSelect';
 import CustomerSelect from '../common/CustomerSelect';
 import DocumentTypeSelect from '../common/DocumentTypeSelect';
 import PartnerSelect from '../common/PartnerSelect';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
+import ProjectStatusSelect from '../common/ProjectStatusSelect';
 import PartnerSelectionModal from './PartnerSelectionModal';
 import CustomerSelectionModal from './CustomerSelectionModal';
 import NewCustomerModal from './NewCustomerModal';
@@ -42,16 +41,15 @@ interface NewProjectModalProps {
 }
 
 const statusOptions = [
-    { value: 'offer', label: 'Neu / Angebot', group: 'Schritt 1: Angebot' },
-    { value: 'in_progress', label: 'In Bearbeitung', group: 'Schritt 2: Produktion' },
-    { value: 'ready_for_pickup', label: 'Abholbereit', group: 'Schritt 3: Lieferung' },
-    { value: 'delivered', label: 'Geliefert / Versendet', group: 'Schritt 3: Lieferung' },
-    { value: 'invoiced', label: 'Rechnung gestellt', group: 'Schritt 4: Abschluss' },
-    { value: 'completed', label: 'Projekt abgeschlossen', group: 'Schritt 4: Abschluss' }
+    { value: 'offer', label: 'Neu / Angebot' },
+    { value: 'in_progress', label: 'In Bearbeitung' },
+    { value: 'ready_for_pickup', label: 'Abholbereit' },
+    { value: 'delivered', label: 'Geliefert / Versendet' },
+    { value: 'invoiced', label: 'Rechnung gestellt' },
+    { value: 'completed', label: 'Projekt abgeschlossen' }
 ];
 
 const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
-    const { t } = useTranslation();
     const queryClient = useQueryClient();
 
     // Basic States
@@ -156,6 +154,18 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         queryFn: settingsService.getCompany,
         enabled: isOpen
     });
+
+    const { data: dbStatuses } = useQuery({
+        queryKey: ['settings', 'projectStatuses'],
+        queryFn: settingsService.getProjectStatuses,
+        enabled: isOpen
+    });
+
+    const combinedStatusOptions = useMemo(() => {
+        const customs = (dbStatuses || []).map((s: any) => ({ value: s.key || s.id.toString(), label: s.name }));
+        const filteredCustoms = customs.filter((c: any) => !statusOptions.some(d => d.value === c.value));
+        return [...statusOptions, ...filteredCustoms];
+    }, [dbStatuses]);
 
     const displayNr = useMemo(() => {
         if (initialData?.project_number) return initialData.project_number;
@@ -523,6 +533,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             errors.push("Übersetzer ist ein Pflichtfeld");
             newErrorSet.add('translator');
         }
+        if (!status) {
+            errors.push("Status ist ein Pflichtfeld");
+            newErrorSet.add('status');
+        }
 
         const hasActiveInvoice = initialData?.invoices?.some((inv: any) => inv.status !== 'cancelled') ||
             initialData?.invoices_count > 0;
@@ -800,13 +814,13 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
 
                                         <div className="col-span-12 md:col-span-6" id="field-container-status">
-                                            <SearchableSelect
-                                                label="Status"
-                                                options={statusOptions}
+                                            <Label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Status <span className="text-red-500 font-bold">*</span></Label>
+                                            <ProjectStatusSelect
+                                                options={combinedStatusOptions}
                                                 value={status}
                                                 onChange={setStatus}
                                                 error={validationErrors.has('status')}
-                                                preserveOrder={true}
+                                                placeholder="Status auswählen..."
                                             />
                                         </div>
 

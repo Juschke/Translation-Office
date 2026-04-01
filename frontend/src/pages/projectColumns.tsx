@@ -50,11 +50,11 @@ export function buildProjectColumns({
             ),
             accessor: (p: any) => (
                 <div className="flex flex-col cursor-pointer group/link w-fit">
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[150px]" title={p.project_name || `Projekt #${p.id}`}>
-                        {p.project_name || <span className="text-slate-400 italic font-normal text-xs">Unbenannt</span>}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-mono tracking-tighter group-hover/link:text-brand-primary transition">
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[150px]" title={p.project_number || `Projekt #${p.id}`}>
                         {p.project_number || `#${p.id}`}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium tracking-tight group-hover/link:text-brand-primary transition truncate max-w-[150px]" title={p.project_name || 'Unbenannt'}>
+                        {p.project_name || <span className="italic opacity-50">Unbenannt</span>}
                     </span>
                 </div>
             ),
@@ -114,7 +114,7 @@ export function buildProjectColumns({
                 const name = p.partner.company || `${salutation}${p.partner.first_name} ${p.partner.last_name}`;
                 return (
                     <div className="flex items-center gap-2 max-w-[200px] group/part cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/part:border-brand-primary/30 transition-colors">
+                        <div className="w-7 h-7 bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/part:border-indigo-200 transition-colors">
                             {getInitials(name)}
                         </div>
                         <div className="flex flex-col leading-snug overflow-hidden">

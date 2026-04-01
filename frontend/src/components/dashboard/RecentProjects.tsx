@@ -157,25 +157,35 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                     </td>
                                     <td className="px-4 py-2">
                                         {p.partner ? (
-                                            <div className="flex flex-col">
-                                                <span
-                                                    onClick={() => p.partner?.id && navigate(`/partners/${p.partner.id}`)}
-                                                    className={clsx(
-                                                        "text-xs font-medium text-slate-700 transition",
-                                                        p.partner?.id ? "cursor-pointer hover:underline hover:text-slate-900" : ""
-                                                    )}
-                                                >
-                                                    {p.partner.company_name || `${p.partner.first_name} ${p.partner.last_name}`}
-                                                </span>
-                                                <div className="flex items-center gap-1.5">
-                                                    <FaEnvelope className="text-[10px] text-slate-300" />
-                                                    <span className="text-[10px] text-slate-400 truncate max-w-[130px]">
-                                                        {p.partner.email}
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-7 h-7 rounded-sm bg-indigo-50 text-indigo-700 flex items-center justify-center text-[10px] font-bold border border-indigo-100 shrink-0">
+                                                    {getInitials(p.partner.company_name || `${p.partner.first_name} ${p.partner.last_name}`)}
+                                                </div>
+                                                <div className="flex flex-col min-w-0">
+                                                    <span
+                                                        onClick={() => p.partner?.id && navigate(`/partners/${p.partner.id}`)}
+                                                        className={clsx(
+                                                            "text-xs font-bold text-slate-700 whitespace-nowrap transition",
+                                                            p.partner?.id ? "cursor-pointer hover:underline hover:text-slate-900" : ""
+                                                        )}
+                                                    >
+                                                        {p.partner.company_name || `${p.partner.first_name} ${p.partner.last_name}`}
                                                     </span>
+                                                    <div className="flex items-center gap-1.5 overflow-hidden">
+                                                        <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
+                                                        <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.partner.email}>
+                                                            {p.partner.email}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <span className="text-[10px] text-slate-400 italic">Nicht zugewiesen</span>
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-7 h-7 rounded-sm bg-slate-50 text-slate-300 flex items-center justify-center text-[10px] border border-slate-100 border-dashed shrink-0 italic">
+                                                    ?
+                                                </div>
+                                                <span className="text-[10px] text-slate-400 italic">Nicht zugewiesen</span>
+                                            </div>
                                         )}
                                     </td>
                                     <td className="px-4 py-2">

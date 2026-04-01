@@ -17,6 +17,7 @@ export interface ExtraServiceRow {
     unit: string;
     unitPrice: number;
     total: number;
+    taxRate?: string;
 }
 
 interface ProjectPositionsTableProps {
@@ -25,7 +26,7 @@ interface ProjectPositionsTableProps {
     disabled?: boolean;
     extraRows?: ExtraServiceRow[];
     onToggleExtra?: (key: string) => void;
-    onUpdateExtraQty?: (key: string, qty: number) => void;
+    onUpdateExtra?: (key: string, patch: any) => void;
     onSave?: () => void;
     isSaving?: boolean;
 }
@@ -36,7 +37,7 @@ const EMPTY_POSITION = (): ProjectPosition => ({
     id: Date.now().toString(),
     description: '',
     unit: 'Normzeile',
-    amount: '1.00',
+    amount: '0.00',
     quantity: '1.00',
     partnerRate: '0.00',
     partnerMode: 'unit',
@@ -46,17 +47,18 @@ const EMPTY_POSITION = (): ProjectPosition => ({
     customerTotal: '0.00',
     marginType: 'markup',
     marginPercent: '0.00',
+    taxRate: '19.00',
 });
 
-const EMPTY_SERVICE = () => ({ name: '', unit: 'Normzeile', base_price: '' });
+const EMPTY_SERVICE = () => ({ name: '', unit: 'Normzeile', base_price: '0.00' });
 
 const fmt2 = (v: string | number) =>
     (parseFloat(v as string) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = false) =>
     clsx(
-        'w-full bg-transparent outline-none border-b-2 pb-px transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
-        mono ? 'font-mono text-xs' : 'font-medium text-xs',
+        'w-full bg-transparent outline-none transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 border-b-2 font-medium text-xs',
+        mono && 'font-mono text-xs',
         align === 'right' ? 'text-right' : 'text-left',
         invalid
             ? 'border-red-300 text-red-500 placeholder:text-red-300'
@@ -64,7 +66,7 @@ const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = f
     );
 
 /* ─── Generic Mini Dropdown ─── */
-export const MiniDropdown = ({ value, options, onChange, disabled, width = '140px' }: { value: string; options: { value: string; label: string }[]; onChange: (val: string) => void; disabled?: boolean; width?: string }) => {
+export const MiniDropdown = ({ value, options, onChange, disabled, width }: { value: string; options: { value: string; label: string }[]; onChange: (val: string) => void; disabled?: boolean; width?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
@@ -74,7 +76,7 @@ export const MiniDropdown = ({ value, options, onChange, disabled, width = '140p
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
             setCoords({
-                top: rect.bottom + 4,
+                top: rect.bottom,
                 left: rect.left,
                 width: rect.width
             });
@@ -133,24 +135,24 @@ export const MiniDropdown = ({ value, options, onChange, disabled, width = '140p
             {isOpen && createPortal(
                 <div
                     ref={dropdownRef}
-                    className="fixed z-[9999] bg-white border border-slate-200 shadow-xl rounded-sm overflow-hidden animate-fadeIn"
+                    className="fixed z-[9999] bg-white border border-slate-200 shadow-xl rounded-b-sm overflow-hidden animate-fadeIn"
                     style={{
                         top: coords.top,
                         left: coords.left,
-                        minWidth: width
+                        minWidth: width || 'fit-content'
                     }}
                 >
-                    <div className="max-h-48 overflow-y-auto">
+                    <div className="flex flex-col py-0.5 min-w-max">
                         {options.map((o) => (
                             <button
                                 key={o.value}
                                 type="button"
                                 onClick={() => handleSelect(o.value)}
                                 className={clsx(
-                                    ' text-left px-3 py-2 text-xs font-medium transition-colors border-b border-slate-50 last:border-0',
+                                    'whitespace-nowrap text-left px-3 py-1.5 text-[10px] font-bold transition-colors border-b border-slate-50 last:border-0',
                                     value === o.value
-                                        ? 'bg-slate-100 text-slate-900 border-l-2 border-brand-primary'
-                                        : 'text-slate-700 hover:bg-slate-50'
+                                        ? 'bg-slate-50 text-brand-primary'
+                                        : 'text-slate-600 hover:bg-slate-50'
                                 )}
                             >
                                 {o.label}
@@ -172,7 +174,10 @@ const filterDecimalInput = (raw: string): string => {
     return v;
 };
 const toEnglish = (v: string) => v.replace(',', '.');
-const toGerman = (v: string) => v.replace('.', ',');
+const toGerman = (v: string) => {
+    const num = parseFloat(v.replace(',', '.')) || 0;
+    return num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 const ProjectPositionsTable = ({
     positions,
@@ -180,7 +185,7 @@ const ProjectPositionsTable = ({
     disabled,
     extraRows = [],
     onToggleExtra,
-    onUpdateExtraQty,
+    onUpdateExtra,
     onSave,
     isSaving,
 }: ProjectPositionsTableProps) => {
@@ -223,8 +228,8 @@ const ProjectPositionsTable = ({
             id: Date.now().toString(),
             description: item.name,
             unit: UNITS.includes(item.unit) ? item.unit : 'Normzeile',
-            amount: '1.00',
-            quantity: '1.00',
+            amount: '0.00',
+            quantity: '0.00',
             partnerRate: '0.00',
             partnerMode: 'unit',
             partnerTotal: '0.00',
@@ -233,6 +238,7 @@ const ProjectPositionsTable = ({
             customerTotal: '0.00',
             marginType: 'markup',
             marginPercent: '0.00',
+            taxRate: (item.tax_rate || '19.00').toString(),
         };
         setPositions([...positions, newPos]);
         setCatalogOpen(false);
@@ -395,16 +401,15 @@ const ProjectPositionsTable = ({
                             <th className="px-2 py-1.5 min-w-[180px] text-[10px] font-bold uppercase tracking-wider text-slate-400">Bezeichnung</th>
                             <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Menge</th>
                             <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einheit</th>
-                            <th className="px-2 py-1.5 w-44 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einzelpreis €</th>
+                            <th className="px-2 py-1.5 w-32 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einzelpreis €</th>
+                            <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">MwSt %</th>
                             <th className="px-2 py-1.5 w-28 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500 italic">Gesamt €</th>
                             <th className="px-2 py-1.5 w-8"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {positions.map((pos, index) => {
-                            const qtyInvalid = !disabled && (parseFloat(pos.quantity) || 0) <= 0;
                             const descInvalid = !disabled && pos.description.trim() === '';
-                            const rateInvalid = !disabled && (parseFloat(pos.customerRate) || 0) <= 0;
 
                             return (
                                 <tr key={pos.id} className="group border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
@@ -426,8 +431,13 @@ const ProjectPositionsTable = ({
                                             type="text"
                                             inputMode="decimal"
                                             disabled={disabled}
-                                            className={inlineInput(qtyInvalid, 'right', true)}
+                                            className={inlineInput(false, 'right', true)}
                                             value={toGerman(pos.quantity)}
+                                            onFocus={() => {
+                                                if (parseFloat(toEnglish(pos.quantity)) === 0) {
+                                                    update(index, { quantity: '' });
+                                                }
+                                            }}
                                             onChange={e => {
                                                 const filtered = filterDecimalInput(e.target.value);
                                                 update(index, { quantity: toEnglish(filtered) });
@@ -448,20 +458,40 @@ const ProjectPositionsTable = ({
                                     </td>
 
                                     <td className="px-3 py-2.5">
-                                        <div className="flex items-center justify-end gap-2 pr-1">
+                                        <div className="flex items-center justify-end gap-1.5">
                                             <input
                                                 type="text"
                                                 inputMode="decimal"
                                                 disabled={disabled}
-                                                className={clsx(inlineInput(rateInvalid, 'right', true), 'w-24')}
+                                                className={clsx(inlineInput(false, 'right', true), 'w-24')}
                                                 value={toGerman(pos.customerRate)}
+                                                onFocus={() => {
+                                                    if (parseFloat(toEnglish(pos.customerRate)) === 0) {
+                                                        update(index, { customerRate: '' });
+                                                    }
+                                                }}
                                                 onChange={e => {
                                                     const filtered = filterDecimalInput(e.target.value);
                                                     update(index, { customerRate: toEnglish(filtered) });
                                                 }}
                                                 onBlur={e => update(index, { customerRate: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
                                             />
+                                            <span className="text-[10px] font-bold text-slate-400 pb-px shrink-0">€</span>
+                                        </div>
+                                    </td>
 
+                                    <td className="px-3 py-2.5">
+                                        <div className="flex justify-end">
+                                            <MiniDropdown
+                                                value={pos.taxRate || '19.00'}
+                                                options={[
+                                                    { value: '19.00', label: '19%' },
+                                                    { value: '7.00', label: '7%' },
+                                                    { value: '0.00', label: '0%' },
+                                                ]}
+                                                onChange={taxRate => update(index, { taxRate })}
+                                                disabled={disabled}
+                                            />
                                         </div>
                                     </td>
 
@@ -497,29 +527,95 @@ const ProjectPositionsTable = ({
                                     {positions.length + extraIndex + 1}
                                 </td>
                                 <td className="px-3 py-2.5">
-                                    <span className="text-xs font-medium text-slate-500 italic">{row.description}</span>
+                                    {!disabled && onUpdateExtra ? (
+                                        <input
+                                            type="text"
+                                            className={inlineInput()}
+                                            value={row.description}
+                                            onChange={e => onUpdateExtra(row.key, { description: e.target.value })}
+                                        />
+                                    ) : (
+                                        <span className="text-xs font-medium text-slate-500 italic">{row.description}</span>
+                                    )}
                                 </td>
                                 <td className="px-3 py-2.5">
-                                    {!disabled && onUpdateExtraQty ? (
+                                    {!disabled && onUpdateExtra ? (
                                         <input
-                                            type="number"
-                                            step="1"
-                                            min="1"
+                                            type="text"
+                                            inputMode="decimal"
                                             className={inlineInput(false, 'right', true)}
-                                            value={row.quantity}
-                                            onChange={e => onUpdateExtraQty(row.key, Math.max(1, parseInt(e.target.value) || 1))}
-                                            onBlur={e => onUpdateExtraQty(row.key, Math.max(1, parseInt(e.target.value) || 1))}
+                                            value={toGerman(row.quantity.toString())}
+                                            onFocus={() => {
+                                                if (row.quantity === 0) {
+                                                    onUpdateExtra(row.key, { quantity: '' });
+                                                }
+                                            }}
+                                            onChange={e => {
+                                                const filtered = filterDecimalInput(e.target.value);
+                                                onUpdateExtra(row.key, { quantity: parseFloat(toEnglish(filtered)) || 0 });
+                                            }}
+                                            onBlur={e => onUpdateExtra(row.key, { quantity: parseFloat(toEnglish(e.target.value)) || 0 })}
                                         />
                                     ) : (
                                         <span className="font-mono text-xs text-slate-500 tabular-nums block text-right">{row.quantity}</span>
                                     )}
                                 </td>
-                                <td className="px-3 py-2.5 text-right text-xs text-slate-400">{row.unit}</td>
-                                <td className="px-3 py-2.5 text-right font-mono text-xs text-slate-500 tabular-nums">
-                                    {fmt2(row.unitPrice)} €
+                                <td className="px-3 py-2.5 text-right">
+                                    <div className="flex justify-end">
+                                        <MiniDropdown
+                                            value={row.unit}
+                                            options={UNITS.map(u => ({ value: u, label: u }))}
+                                            onChange={unit => onUpdateExtra?.(row.key, { unit })}
+                                            disabled={disabled || !onUpdateExtra}
+                                        />
+                                    </div>
+                                </td>
+                                <td className="px-3 py-2.5">
+                                    {!disabled && onUpdateExtra ? (
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                className={clsx(inlineInput(false, 'right', true), 'w-24')}
+                                                value={toGerman(row.unitPrice.toString())}
+                                                onFocus={() => {
+                                                    if (row.unitPrice === 0) {
+                                                        onUpdateExtra(row.key, { unitPrice: '' });
+                                                    }
+                                                }}
+                                                onChange={e => {
+                                                    const filtered = filterDecimalInput(e.target.value);
+                                                    onUpdateExtra(row.key, { unitPrice: parseFloat(toEnglish(filtered)) || 0 });
+                                                }}
+                                                onBlur={e => onUpdateExtra(row.key, { unitPrice: parseFloat(toEnglish(e.target.value)) || 0 })}
+                                            />
+                                            <span className="text-[10px] font-bold text-slate-400 pb-px shrink-0">€</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <span className="font-mono text-xs text-slate-500 tabular-nums">{fmt2(row.unitPrice)}</span>
+                                            <span className="text-[10px] font-bold text-slate-400">€</span>
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="px-3 py-2.5">
+                                    <div className="flex justify-end">
+                                        <MiniDropdown
+                                            value={row.taxRate || '19.00'}
+                                            options={[
+                                                { value: '19.00', label: '19%' },
+                                                { value: '7.00', label: '7%' },
+                                                { value: '0.00', label: '0%' },
+                                            ]}
+                                            onChange={taxRate => onUpdateExtra?.(row.key, { taxRate })}
+                                            disabled={disabled}
+                                        />
+                                    </div>
                                 </td>
                                 <td className="px-3 py-2.5 text-right">
-                                    <span className="font-bold text-xs text-slate-700 tabular-nums">{fmt2(row.total)} €</span>
+                                    <span className="font-bold text-xs text-slate-800 tabular-nums">
+                                        {fmt2(row.total)} €
+                                    </span>
                                 </td>
                                 <td className="px-2 py-2.5 text-center">
                                     {!disabled && (
