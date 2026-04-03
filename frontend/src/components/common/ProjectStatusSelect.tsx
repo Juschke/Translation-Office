@@ -94,7 +94,7 @@ const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({
                     {isExpanded && (
                         <div className="p-4 space-y-4" ref={formRef}>
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Neuer Status</label>
+                                <label className="block text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Neuer Status</label>
                                 <Input
                                     placeholder="z.B. Wartet auf Feedback"
                                     value={newName}

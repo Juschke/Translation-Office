@@ -122,10 +122,6 @@ const Projects = () => {
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
 
-    const handleCreateProject = () => {
-        navigate('/projects/new');
-    };
-
     const handleEditProject = (project: any) => {
         navigate(`/projects/${project.id}/edit`);
     };

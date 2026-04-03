@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import {
     FaTimes, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel,
     FaFileImage, FaFileArchive, FaDownload, FaInbox, FaCheckCircle
@@ -109,7 +108,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                                                         <span className="text-sm font-bold text-slate-700 truncate leading-snug group-hover:text-brand-primary transition-colors">
                                                             {file.original_name}
                                                         </span>
-                                                        <span className="text-[10px] text-slate-400 font-mono">
+                                                        <span className="text-2xs text-slate-400 font-mono">
                                                             VER {file.version} • {formatFileSize(file.file_size || 0)} • {format(new Date(file.created_at), 'dd.MM.yy', { locale: de })}
                                                         </span>
                                                     </div>
@@ -144,7 +143,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                                                         <span className="text-sm font-bold text-slate-700 truncate leading-snug group-hover:text-emerald-600 transition-colors">
                                                             {file.original_name}
                                                         </span>
-                                                        <span className="text-[10px] text-slate-400 font-mono">
+                                                        <span className="text-2xs text-slate-400 font-mono">
                                                             VER {file.version} • {formatFileSize(file.file_size || 0)} • {format(new Date(file.created_at), 'dd.MM.yy', { locale: de })}
                                                         </span>
                                                     </div>

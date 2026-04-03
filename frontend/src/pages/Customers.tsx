@@ -1,14 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
     FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaUserPlus, FaArchive
 } from 'react-icons/fa';
 
 
-import NewCustomerModal from '../components/modals/NewCustomerModal';
 import KPICard from '../components/common/KPICard';
 import StatusBadge from '../components/common/StatusBadge';
 import DataTable, { type FilterDef } from '../components/common/DataTable';
@@ -24,9 +23,7 @@ import { useTranslation } from 'react-i18next';
 const Customers = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>(() => {
         const p = searchParams.get('view');
         return (p === 'archive' || p === 'trash') ? p : 'active';
@@ -58,9 +55,6 @@ const Customers = () => {
     };
     const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
-    const [editingCustomer, setEditingCustomer] = useState<any>(null);
-    const [isDetailLoading, setIsDetailLoading] = useState(false);
-
     const exportRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -73,14 +67,6 @@ const Customers = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        if (location.state?.openNewModal) {
-            setIsModalOpen(true);
-            setEditingCustomer(null);
-            // Clear location state to prevent modal from reopening on refresh or navigation
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location.state, navigate, location.pathname]);
     // deleted/archived states removed in favor of typeFilter
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -100,32 +86,6 @@ const Customers = () => {
         queryFn: customerService.getStats
     });
 
-    const createMutation = useMutation({
-        mutationFn: customerService.create,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['customers'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            setIsModalOpen(false);
-            toast.success(t('customers.messages.create_success'));
-        },
-        onError: () => {
-            toast.error(t('customers.messages.create_error'));
-        }
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: (data: any) => customerService.update(data.id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['customers'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            setIsModalOpen(false);
-            setEditingCustomer(null);
-            toast.success(t('customers.messages.update_success'));
-        },
-        onError: () => {
-            toast.error(t('customers.messages.update_error'));
-        }
-    });
 
     const deleteMutation = useMutation({
         mutationFn: customerService.delete,
@@ -321,19 +281,7 @@ const Customers = () => {
             accessor: (c: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.details')} aria-label={t('actions.details')}><FaEye /></button>
-                    <button onClick={async () => {
-                        setEditingCustomer(c);
-                        setIsModalOpen(true);
-                        setIsDetailLoading(true);
-                        try {
-                            const fullData = await customerService.getById(c.id);
-                            setEditingCustomer(fullData);
-                        } catch (err) {
-                            // Error already handled by axios interceptor
-                        } finally {
-                            setIsDetailLoading(false);
-                        }
-                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')} aria-label={t('actions.edit')}><FaEdit /></button>
+                    <button onClick={() => navigate(`/customers/${c.id}/edit`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')} aria-label={t('actions.edit')}><FaEdit /></button>
                     <button onClick={() => {
                         setCustomerToDelete(c.id);
                         setConfirmTitle(t('customers.status.deleted'));
@@ -404,7 +352,7 @@ const Customers = () => {
                 </div>
                 <div className="flex gap-2 shrink-0">
                     <Button
-                        onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
+                        onClick={() => navigate('/customers/new')}
                     >
                         <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('customers.new_customer')}</span><span className="inline sm:hidden">{t('customers.new_short')}</span>
                     </Button>
@@ -443,7 +391,7 @@ const Customers = () => {
                     searchPlaceholder={t('customers.search_placeholder')}
                     searchFields={['company_name', 'contact_person', 'email']}
                     actions={actions}
-                    onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
+                    onAddClick={() => navigate('/customers/new')}
                     selectable
                     selectedIds={selectedCustomers}
                     onSelectionChange={(ids) => setSelectedCustomers(ids as number[])}
@@ -518,24 +466,6 @@ const Customers = () => {
                 />
             </div>
 
-            <NewCustomerModal
-                isOpen={isModalOpen}
-                onClose={() => { setIsModalOpen(false); setEditingCustomer(null); }}
-                onSubmit={(data) => {
-                    if (editingCustomer) {
-                        updateMutation.mutate({ ...data, id: editingCustomer.id });
-                    } else {
-                        createMutation.mutate(data);
-                    }
-                }}
-                initialData={editingCustomer || (
-                    typeFilter === 'Firma' ? { type: 'company' } as any :
-                        typeFilter === 'Privat' ? { type: 'private' } as any :
-                            typeFilter === 'Behörde' ? { type: 'authority' } as any :
-                                undefined
-                )}
-                isLoading={isDetailLoading || updateMutation.isPending}
-            />
 
             <ConfirmModal
                 isOpen={isConfirmOpen}

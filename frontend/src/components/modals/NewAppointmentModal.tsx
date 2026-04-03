@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaTimes, FaCalendarAlt } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
 import Input from '../common/Input';
@@ -152,7 +151,7 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
                             </div>
                             <div className="flex flex-col items-center gap-1">
                                 <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
-                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
+                                <p className="text-2xs text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
                             </div>
                         </div>
                     </div>
@@ -215,7 +214,7 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Beginn *</label>
+                            <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Beginn *</label>
                             <DatePicker
                                 showTime
                                 format="DD.MM.YYYY HH:mm"
@@ -226,7 +225,7 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ende</label>
+                            <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Ende</label>
                             <DatePicker
                                 showTime
                                 format="DD.MM.YYYY HH:mm"

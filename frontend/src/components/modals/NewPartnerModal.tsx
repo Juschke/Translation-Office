@@ -113,7 +113,7 @@ const NewPartnerModal: React.FC<NewPartnerModalProps> = ({ isOpen, onClose, onSu
                             </div>
                             <div className="flex flex-col items-center gap-1">
                                 <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
-                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
+                                <p className="text-2xs text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
                             </div>
                         </div>
                     </div>

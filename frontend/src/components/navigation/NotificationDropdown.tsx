@@ -61,7 +61,7 @@ const NotificationDropdown = ({
                                     onClick={() => onNotificationClick(n)}
                                     className={clsx(
                                         "block p-3 hover:bg-slate-50 border-b border-slate-50 cursor-pointer text-left border-l-2",
-                                        !n.read_at ? "bg-teal-50 border-l-[#1B4D4F]" : "bg-transparent border-l-transparent"
+                                        !n.read_at ? "bg-brand-primary/5 border-l-brand-primary" : "bg-transparent border-l-transparent"
                                     )}
                                 >
                                     <div className="flex justify-between items-center mb-1">

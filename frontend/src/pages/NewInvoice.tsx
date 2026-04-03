@@ -17,7 +17,7 @@ import { projectService, settingsService, invoiceService, customerService } from
 import CustomerSelect from '../components/common/CustomerSelect';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
-import ConfirmDialog from '../components/common/ConfirmDialog';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stück', 'Minuten', 'Tage'];
 
@@ -64,7 +64,7 @@ const MiniDropdown = ({ value, options, onChange, align = 'right', width }: { va
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-sm transition-all uppercase tracking-wider h-7"
+                className="flex items-center gap-1.5 px-2 py-1 text-2xs font-bold text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-sm transition-all uppercase tracking-wider h-7"
             >
                 {options.find(o => o.value === value)?.label || value}
                 <FaChevronDown className={clsx("text-[8px] transition-transform", open && "rotate-180")} />
@@ -85,7 +85,7 @@ const MiniDropdown = ({ value, options, onChange, align = 'right', width }: { va
                                 type="button"
                                 onClick={() => { onChange(o.value); setOpen(false); }}
                                 className={clsx(
-                                    "w-full text-left px-3 py-2 text-[10px] font-bold transition-colors border-b border-slate-50 last:border-0",
+                                    "w-full text-left px-3 py-2 text-2xs font-bold transition-colors border-b border-slate-50 last:border-0",
                                     value === o.value ? "bg-slate-100 text-brand-primary" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                                 )}
                             >
@@ -326,10 +326,10 @@ const NewInvoice = () => {
                 date: inv.date ? inv.date.split('T')[0] : dayjs().format('YYYY-MM-DD'),
                 due_date: inv.due_date ? inv.due_date.split('T')[0] : '',
                 delivery_date: inv.delivery_date ? inv.delivery_date.split('T')[0] : '',
-                shipping: (inv.shipping_cents ? inv.shipping_cents / 100 : inv.shipping || 0).toFixed(2),
-                discount: (inv.discount_cents ? inv.discount_cents / 100 : inv.discount || 0).toFixed(2),
+                shipping: (inv.shipping_cents ? inv.shipping_cents / 100 : parseFloat(inv.shipping) || 0).toFixed(2),
+                discount: (inv.discount_cents ? inv.discount_cents / 100 : parseFloat(inv.discount) || 0).toFixed(2),
                 discount_mode: (inv.discount_mode || 'fixed') as 'fixed' | 'percent',
-                paid_amount: (inv.paid_amount_cents ? inv.paid_amount_cents / 100 : inv.paid_amount || 0).toFixed(2),
+                paid_amount: (inv.paid_amount_cents ? inv.paid_amount_cents / 100 : parseFloat(inv.paid_amount) || 0).toFixed(2),
                 currency: inv.currency || 'EUR',
                 status: inv.status,
                 notes: inv.notes || '',
@@ -350,8 +350,8 @@ const NewInvoice = () => {
                 description: i.description,
                 quantity: (parseFloat(i.quantity) || 0).toFixed(2),
                 unit: i.unit,
-                price: (i.unit_price_cents ? i.unit_price_cents / 100 : i.price || 0).toFixed(2),
-                total: (i.total_cents ? i.total_cents / 100 : i.total || 0).toFixed(2),
+                price: (i.unit_price_cents ? i.unit_price_cents / 100 : parseFloat(i.price) || 0).toFixed(2),
+                total: (i.total_cents ? i.total_cents / 100 : parseFloat(i.total) || 0).toFixed(2),
                 price_mode: i.price_mode || 'unit',
                 discount_percent: (parseFloat(i.discount_percent) || 0).toFixed(2),
                 tax_rate: i.tax_rate !== undefined ? i.tax_rate : inv.tax_rate || '19.00',
@@ -708,7 +708,7 @@ const NewInvoice = () => {
                         disabled={!formData.customer_id || items.length === 0 || isLoading}
                         className="px-5 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm flex items-center gap-2"
                     >
-                        <FaSave className="text-[10px]" />
+                        <FaSave className="text-2xs" />
                         {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen speichern' : 'Beleg jetzt buchen')}
                     </Button>
                 </div>
@@ -742,7 +742,7 @@ const NewInvoice = () => {
                                             }
                                         }}
                                     />
-                                    <p className="text-[10px] text-slate-400 italic">Durch die Auswahl eines Projekts werden Leistungen und Kundendaten automatisch übernommen.</p>
+                                    <p className="text-2xs text-slate-400 italic">Durch die Auswahl eines Projekts werden Leistungen und Kundendaten automatisch übernommen.</p>
                                 </div>
                             </div>
                         </section>
@@ -879,7 +879,7 @@ const NewInvoice = () => {
                             <h3 className="text-sm font-bold text-slate-800 ml-1">Kopfbereich</h3>
                             <div className="bg-white p-6 rounded-sm border border-slate-200/60 shadow-sm space-y-6">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Belegtitel</label>
+                                    <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Belegtitel</label>
                                     <select
                                         className="w-full h-11 border-slate-200 border text-base font-medium focus:border-brand-primary outline-none rounded-md px-4 bg-white"
                                         value={formData.type}
@@ -892,7 +892,7 @@ const NewInvoice = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Steuersatz</label>
+                                        <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Steuersatz</label>
                                         <select
                                             className="w-full h-11 border-slate-200 border text-sm font-medium focus:border-slate-800 outline-none rounded-md px-4 bg-white"
                                             value={formData.tax_exemption === 'none' ? formData.tax_rate : formData.tax_exemption}
@@ -911,7 +911,7 @@ const NewInvoice = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Leitweg-ID</label>
+                                        <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Leitweg-ID</label>
                                         <Input
                                             value={formData.leitweg_id}
                                             onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
@@ -920,7 +920,7 @@ const NewInvoice = () => {
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Kundenreferenz</label>
+                                        <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Kundenreferenz</label>
                                         <Input
                                             value={formData.customer_reference}
                                             onChange={e => setFormData({ ...formData, customer_reference: e.target.value })}
@@ -931,7 +931,7 @@ const NewInvoice = () => {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Einleitungstext</label>
+                                    <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Einleitungstext</label>
                                     <textarea
                                         className="w-full min-h-[100px] border border-slate-200 rounded-md p-4 text-sm focus:border-brand-primary outline-none transition-colors bg-white shadow-sm"
                                         placeholder="Vielen Dank für Ihren Auftrag..."
@@ -1000,9 +1000,9 @@ const NewInvoice = () => {
                                                     >
                                                         <div className="flex flex-col">
                                                             <span className="font-bold text-slate-700 group-hover:text-brand-primary">{s.name}</span>
-                                                            <span className="text-[10px] text-slate-400 uppercase tracking-widest">{s.unit || 'Stk.'}</span>
+                                                            <span className="text-2xs text-slate-400 uppercase tracking-widest">{s.unit || 'Stk.'}</span>
                                                         </div>
-                                                        <div className="text-right flex flex-col font-mono text-[10px] text-slate-500">
+                                                        <div className="text-right flex flex-col font-mono text-2xs text-slate-500">
                                                             <span>{(parseFloat(s.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
                                                         </div>
                                                     </button>
@@ -1019,21 +1019,21 @@ const NewInvoice = () => {
                                     <table className="w-full text-left border-collapse min-w-[1000px]">
                                         <thead>
                                             <tr className="bg-slate-50/50 border-b border-slate-100/50">
-                                                <th className="px-3 py-2 w-10 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">#</th>
-                                                <th className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Beschreibung</th>
-                                                <th className="px-3 py-2 w-20 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menge</th>
-                                                <th className="px-3 py-2 w-32 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Einheit</th>
-                                                <th className="px-3 py-2 w-36 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Einzelpreis (€)</th>
-                                                <th className="px-3 py-2 w-24 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">MwSt.</th>
-                                                <th className="px-3 py-2 w-36 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rabatt</th>
-                                                <th className="px-3 py-2 w-32 text-right text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Gesamt (€)</th>
+                                                <th className="px-3 py-2 w-10 text-center text-2xs font-bold text-slate-400 uppercase tracking-widest">#</th>
+                                                <th className="px-3 py-2 text-2xs font-bold text-slate-400 uppercase tracking-widest">Beschreibung</th>
+                                                <th className="px-3 py-2 w-20 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">Menge</th>
+                                                <th className="px-3 py-2 w-32 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">Einheit</th>
+                                                <th className="px-3 py-2 w-36 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">Einzelpreis (€)</th>
+                                                <th className="px-3 py-2 w-24 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">MwSt.</th>
+                                                <th className="px-3 py-2 w-36 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">Rabatt</th>
+                                                <th className="px-3 py-2 w-32 text-right text-2xs font-bold text-slate-500 uppercase tracking-widest italic">Gesamt (€)</th>
                                                 <th className="px-3 py-2 w-10"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {items.map((item, idx) => (
                                                 <tr key={item.id} className="group hover:bg-slate-50/30 transition-colors">
-                                                    <td className="px-3 py-3 text-center text-[10px] font-bold text-slate-300">
+                                                    <td className="px-3 py-3 text-center text-2xs font-bold text-slate-300">
                                                         {idx + 1}
                                                     </td>
                                                     <td className="px-3 py-3">
@@ -1141,7 +1141,7 @@ const NewInvoice = () => {
                                             onClick={addItem}
                                             className="flex items-center gap-1.5 px-6 py-2 text-[11px] font-bold text-slate-500 border border-dashed border-slate-300 rounded-md hover:border-brand-primary hover:text-brand-primary hover:bg-white transition-all shadow-sm"
                                         >
-                                            <FaPlus className="text-[10px]" /> POSITION HINZUFÜGEN
+                                            <FaPlus className="text-2xs" /> POSITION HINZUFÜGEN
                                         </button>
                                     </div>
 
@@ -1149,12 +1149,12 @@ const NewInvoice = () => {
                                     {items.length > 0 && (
                                         <div className="border-t-2 border-slate-100 bg-slate-50/30 p-6 space-y-2">
                                             <div className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
-                                                <span className="uppercase tracking-widest text-[10px] font-bold text-slate-400">Summe Netto</span>
+                                                <span className="uppercase tracking-widest text-2xs font-bold text-slate-400">Summe Netto</span>
                                                 <span className="text-slate-700 tabular-nums">{fmtEur(computedFinancials.amount_net)}</span>
                                             </div>
                                             {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
                                                 <div key={rate} className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
-                                                    <span className="uppercase tracking-widest text-[10px] font-bold text-slate-400">MwSt. {parseFloat(rate)}%</span>
+                                                    <span className="uppercase tracking-widest text-2xs font-bold text-slate-400">MwSt. {parseFloat(rate)}%</span>
                                                     <span className="text-slate-600 tabular-nums">{fmtEur(amount as number)}</span>
                                                 </div>
                                             ))}
@@ -1207,7 +1207,7 @@ const NewInvoice = () => {
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-xs">
                                         <span className="text-slate-400">Status</span>
-                                        <span className="font-bold text-brand-primary uppercase text-[10px] tracking-wider">{formData.status === 'draft' ? 'Entwurf' : formData.status}</span>
+                                        <span className="font-bold text-brand-primary uppercase text-2xs tracking-wider">{formData.status === 'draft' ? 'Entwurf' : formData.status}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-slate-400">Währung</span>
@@ -1286,7 +1286,7 @@ const NewInvoice = () => {
                                         </div>
 
                                         <div className="flex justify-between items-center text-sm font-bold text-slate-800">
-                                            <span className="uppercase tracking-tight text-[10px]">Restforderung</span>
+                                            <span className="uppercase tracking-tight text-2xs">Restforderung</span>
                                             <span className="text-lg tabular-nums">
                                                 {fmtEur(computedFinancials.amount_due)}
                                             </span>
@@ -1320,7 +1320,7 @@ const NewInvoice = () => {
                     disabled={!formData.customer_id || items.length === 0 || isLoading}
                     className="px-8 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm uppercase tracking-wider flex items-center gap-2"
                 >
-                    <FaSave className="text-[10px]" />
+                    <FaSave className="text-2xs" />
                     {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen übernehmen' : 'Beleg jetzt buchen')}
                 </Button>
             </div >
@@ -1351,7 +1351,7 @@ const NewInvoice = () => {
                     }
                 }}
             />
-            <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig((p: any) => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
+            <ConfirmModal isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig((p: any) => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
         </div >
     );
 }

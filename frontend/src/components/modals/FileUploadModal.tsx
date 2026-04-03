@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaCloudUploadAlt, FaTimes, FaTrash, FaCamera } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -20,7 +19,6 @@ const DOC_TYPES: { value: DocType; label: string; color: string }[] = [
 ];
 
 const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) => {
-    const { t } = useTranslation();
     const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);

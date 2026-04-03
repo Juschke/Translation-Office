@@ -311,7 +311,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         }}
                         className="w-full h-9 py-2.5 text-[11px] font-bold bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm border-none flex items-center justify-center gap-2 rounded-sm"
                     >
-                        <FaPlus className="text-[10px]" />
+                        <FaPlus className="text-2xs" />
                         <span className="uppercase tracking-wider">Neu anlegen</span>
                     </Button>
                 </div>
@@ -383,8 +383,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                 className="p-1 px-1.5 text-slate-300 hover:text-red-500 transition-colors focus:outline-none flex items-center gap-1.5 group"
                                 title={isMulti ? "Alle entfernen" : "Auswahl entfernen"}
                             >
-                                {isMulti && values.length > 0 && <span className="text-[9px] font-bold uppercase tracking-widest text-slate-300 group-hover:text-red-400">Clear</span>}
-                                <FaTimes className={clsx(isMulti ? "text-[8px]" : "text-[10px]")} />
+                                <FaTimes className="text-2xs" />
                             </button>
                         </div>
                     )}

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaCalendar, FaArrowRight, FaFileInvoice, FaTools, FaBoxOpen, FaFlagCheckered, FaEdit, FaChevronDown, FaChevronUp, FaArrowDown } from 'react-icons/fa';
 import clsx from 'clsx';
 import { format } from 'date-fns';
@@ -125,7 +124,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
             >
                 <div className="flex-1 flex items-center px-4 gap-4">
                     <div className="flex flex-col gap-0.5 min-w-[80px]">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        <span className="text-2xs font-bold text-slate-400 uppercase tracking-tighter">
                             {project.project_number || `P-${project.id}`}
                         </span>
                         <span className="text-xs font-bold text-slate-800">
@@ -143,14 +142,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                                 <FaArrowRight className="text-[7px] text-slate-300" />
                                 <img src={getFlagUrl(targetCode)} className="w-3 h-2 object-cover rounded-[1px]" alt="" />
                             </div>
-                            <span className="text-[10px] text-slate-400 truncate flex-1">
+                            <span className="text-2xs text-slate-400 truncate flex-1">
                                 {project.customer?.company_name || `${project.customer?.first_name} ${project.customer?.last_name}`}
                             </span>
                         </div>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 pr-2">
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-2xs text-slate-400 font-bold uppercase whitespace-nowrap">
                             <FaCalendar size={10} className="opacity-50" />
                             <span>{project.deadline ? format(new Date(project.deadline), 'dd.MM', { locale: de }) : '-'}</span>
                         </div>
@@ -209,13 +208,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                                         <div className="flex items-center gap-2">
                                             <h3 className="font-bold text-slate-800 text-[12px] uppercase tracking-wider">{section.title}</h3>
                                             <span className={clsx(
-                                                "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+                                                "px-1.5 py-0.5 rounded-full text-2xs font-bold",
                                                 isCollapsed ? "bg-slate-200 text-slate-500" : "bg-brand-primary/10 text-brand-primary"
                                             )}>
                                                 {sectionProjects.length}
                                             </span>
                                         </div>
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none">
+                                        <span className="text-2xs text-slate-400 font-bold uppercase tracking-[0.2em] leading-none">
                                             Schritt {idx + 1} des Prozesses
                                         </span>
                                     </div>
@@ -243,7 +242,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projects, onProjectClick, onS
                                         </div>
                                     ) : (
                                         <div className="h-20 flex items-center justify-center border-dashed border-2 border-slate-100 m-2 rounded-[2px] opacity-40">
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300 italic">Bereit für Aufträge</span>
+                                            <span className="text-2xs font-bold uppercase tracking-widest text-slate-300 italic">Bereit für Aufträge</span>
                                         </div>
                                     )}
                                 </div>

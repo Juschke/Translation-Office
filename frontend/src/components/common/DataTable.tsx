@@ -351,7 +351,7 @@ const DataTable = <T extends { id: string | number }>({
                                                     </option>
                                                 ))}
                                             </select>
-                                            <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none" />
+                                            <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-2xs text-slate-400 pointer-events-none" />
                                         </div>
                                     ) : (
                                         <input
@@ -371,7 +371,7 @@ const DataTable = <T extends { id: string | number }>({
                                     onClick={() => { onResetFilters(); setIsFilterOpen(false); }}
                                     className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center gap-1.5"
                                 >
-                                    <FaUndo className="text-[10px]" /> Filter zurücksetzen
+                                    <FaUndo className="text-2xs" /> Filter zurücksetzen
                                 </button>
                             </div>
                         )}
@@ -413,7 +413,7 @@ const DataTable = <T extends { id: string | number }>({
                             <FaFilter className="text-sm" />
                             {activeFilterCount ? (
                                 <span className={clsx(
-                                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center border",
+                                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-2xs font-bold flex items-center justify-center border",
                                     isFilterOpen
                                         ? "bg-white text-[#1B4D4F] border-transparent"
                                         : "bg-rose-500 text-white border-rose-600 shadow-sm"
@@ -537,7 +537,7 @@ const DataTable = <T extends { id: string | number }>({
                             ))}
                             <option value={ALL_SENTINEL}>Alle anzeigen</option>
                         </select>
-                        <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none" />
+                        <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-2xs text-slate-400 pointer-events-none" />
                     </div>
                 </div>
 
@@ -615,10 +615,10 @@ const DataTable = <T extends { id: string | number }>({
                         ))}
                     </div>
                     <div className="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{visibleColumns.size} Aktiv</span>
+                        <span className="text-2xs font-bold text-slate-400 uppercase tracking-tight">{visibleColumns.size} Aktiv</span>
                         <button
                             onClick={() => setIsSettingsOpen(false)}
-                            className="text-[10px] font-bold text-brand-primary uppercase tracking-widest hover:underline"
+                            className="text-2xs font-bold text-brand-primary uppercase tracking-widest hover:underline"
                         >
                             Schließen
                         </button>

@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 

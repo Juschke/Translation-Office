@@ -47,7 +47,7 @@ const ProjectFinancialSidebar = ({
     <div className="w-full lg:w-72 bg-white border border-slate-200 rounded-lg shadow-sm font-sans divide-y divide-slate-100 flex flex-col">
         {/* Section: Calculation */}
         <div className="p-5 space-y-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Kalkulation</h4>
+            <h4 className="text-2xs font-bold text-slate-400 uppercase tracking-widest mb-4">Kalkulation</h4>
 
             <div className="space-y-2">
                 <div className="flex justify-between text-xs text-slate-600">
@@ -58,11 +58,11 @@ const ProjectFinancialSidebar = ({
                 {/* Extras - Minimalist */}
                 {(isCertified || hasApostille || isExpress || classification === 'ja' || copies > 0) && (
                     <div className="space-y-1.5 pl-1.5 border-l border-slate-100">
-                        {isCertified && <div className="flex justify-between text-[10px] text-slate-400"><span>Beglaubigung</span><span>5,00 €</span></div>}
-                        {hasApostille && <div className="flex justify-between text-[10px] text-slate-400"><span>Apostille</span><span>15,00 €</span></div>}
-                        {isExpress && <div className="flex justify-between text-[10px] text-slate-400"><span>Express</span><span>15,00 €</span></div>}
-                        {classification === 'ja' && <div className="flex justify-between text-[10px] text-slate-400"><span>Klassifizierung</span><span>15,00 €</span></div>}
-                        {copies > 0 && <div className="flex justify-between text-[10px] text-slate-400"><span>Kopien ({copies}x)</span><span>{(copies * Number(copyPrice)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span></div>}
+                        {isCertified && <div className="flex justify-between text-2xs text-slate-400"><span>Beglaubigung</span><span>5,00 €</span></div>}
+                        {hasApostille && <div className="flex justify-between text-2xs text-slate-400"><span>Apostille</span><span>15,00 €</span></div>}
+                        {isExpress && <div className="flex justify-between text-2xs text-slate-400"><span>Express</span><span>15,00 €</span></div>}
+                        {classification === 'ja' && <div className="flex justify-between text-2xs text-slate-400"><span>Klassifizierung</span><span>15,00 €</span></div>}
+                        {copies > 0 && <div className="flex justify-between text-2xs text-slate-400"><span>Kopien ({copies}x)</span><span>{(copies * Number(copyPrice)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span></div>}
                     </div>
                 )}
             </div>
@@ -72,7 +72,7 @@ const ProjectFinancialSidebar = ({
                     <span>Zwischensumme</span>
                     <span>{calcNet.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
-                <div className="flex justify-between text-[10px] text-slate-400">
+                <div className="flex justify-between text-2xs text-slate-400">
                     <span>MwSt. (19%)</span>
                     <span>{calcTax.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
@@ -88,13 +88,13 @@ const ProjectFinancialSidebar = ({
         {/* Section: Payment Status */}
         <div className="p-5 space-y-3 bg-slate-50/30">
             <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Zahlung</span>
+                <span className="text-2xs font-bold text-slate-400 uppercase tracking-widest">Zahlung</span>
                 {remainingBalance <= 0.01 && <FaCheckCircle className="text-emerald-500" size={12} />}
             </div>
 
             <div className="space-y-2">
                 {totalPaid > 0 && (
-                    <div className="flex justify-between text-[10px] font-medium text-emerald-600">
+                    <div className="flex justify-between text-2xs font-medium text-emerald-600">
                         <span>Bereits bezahlt</span>
                         <span>-{totalPaid.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                     </div>
@@ -106,7 +106,7 @@ const ProjectFinancialSidebar = ({
                         ? "bg-emerald-50 border-emerald-100 text-emerald-700"
                         : "bg-white border-slate-100 text-slate-700"
                 )}>
-                    <span className="text-[10px] font-bold uppercase tracking-tight opacity-50">
+                    <span className="text-2xs font-bold uppercase tracking-tight opacity-50">
                         Restbetrag
                     </span>
                     <span className="text-base font-bold tracking-tight">
@@ -119,8 +119,8 @@ const ProjectFinancialSidebar = ({
         {/* Section: Profit */}
         <div className="p-5 space-y-3">
             <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Projektmarge</span>
-                <span className={clsx("text-[10px] font-bold px-1.5 py-0.5 rounded", profit >= 0 ? "bg-slate-100 text-slate-600" : "bg-red-50 text-red-600")}>
+                <span className="text-2xs font-bold text-slate-400 uppercase tracking-widest">Projektmarge</span>
+                <span className={clsx("text-2xs font-bold px-1.5 py-0.5 rounded", profit >= 0 ? "bg-slate-100 text-slate-600" : "bg-red-50 text-red-600")}>
                     {profitMargin.toFixed(1)}%
                 </span>
             </div>
@@ -152,7 +152,7 @@ const ProjectFinancialSidebar = ({
                 </Button>
             )}
 
-            <div className="flex justify-between text-[10px] text-slate-400 font-medium italic">
+            <div className="flex justify-between text-2xs text-slate-400 font-medium italic">
                 <span>Erstellt: {creationDate}</span>
                 <span>Mitarbeiter: {projectManager}</span>
             </div>

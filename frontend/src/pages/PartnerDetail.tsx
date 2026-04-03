@@ -145,7 +145,7 @@ const PartnerDetail = () => {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
-                                ? 'border-[#1B4D4F] text-[#1B4D4F]'
+                                ? 'border-brand-primary text-brand-primary'
                                 : 'border-transparent text-slate-500 hover:text-slate-700'
                             }`}
                     >

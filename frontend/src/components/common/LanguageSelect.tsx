@@ -226,7 +226,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 className="p-1 text-slate-300 hover:text-red-500 transition-colors focus:outline-none"
                                 title="Auswahl leeren"
                             >
-                                <FaTimes className="text-[10px]" />
+                                <FaTimes className="text-2xs" />
                             </button>
                         </div>
                     )}
@@ -276,7 +276,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                         "w-4 h-4 border rounded-sm flex items-center justify-center transition-all",
                                         filteredOptions.every((o: LanguageOption) => values.includes(o.code)) ? "bg-brand-primary border-brand-primary" : "border-slate-300 bg-white group-hover:border-slate-400"
                                     )}>
-                                        {filteredOptions.every((o: LanguageOption) => values.includes(o.code)) && <FaCheck className="text-white text-[10px]" />}
+                                        {filteredOptions.every((o: LanguageOption) => values.includes(o.code)) && <FaCheck className="text-white text-2xs" />}
                                     </div>
 
                                 </div>
@@ -284,7 +284,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                     <button
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); onChange([]); }}
-                                        className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-wider transition-colors"
+                                        className="text-2xs font-bold text-slate-400 hover:text-red-500 uppercase tracking-wider transition-colors"
                                     >
                                         Aufheben
                                     </button>
@@ -341,7 +341,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 }}
                                 className="w-full py-2.5 text-[11px] font-bold bg-brand-primary text-white  transition shadow-sm border-none flex items-center justify-center gap-2 rounded-sm"
                             >
-                                <FaPlus className="text-[10px]" />
+                                <FaPlus className="text-2xs" />
                                 <span className="uppercase tracking-wider">Sprache hinzufügen</span>
                             </Button>
                         </div>

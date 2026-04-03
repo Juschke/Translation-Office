@@ -74,13 +74,13 @@ export function buildProjectColumns({
                 const name = p.customer?.company_name || `${salutation}${p.customer?.first_name} ${p.customer?.last_name}` || 'Unbekannt';
                 return (
                     <div className="flex items-center gap-2 max-w-[200px] group/cust cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/cust:border-brand-primary/30 transition-colors">
+                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-2xs font-semibold shrink-0 shadow-sm rounded-sm group-hover/cust:border-brand-primary/30 transition-colors">
                             {getInitials(name)}
                         </div>
                         <div className="flex flex-col leading-snug overflow-hidden">
                             <span className="font-semibold text-slate-800 truncate group-hover/cust:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
                             {(p.customer?.address_street || p.customer?.address_city) && (
-                                <div className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight mb-0.5">
+                                <div className="text-2xs text-slate-400 truncate max-w-[150px] leading-tight mb-0.5">
                                     {p.customer.address_street}{p.customer.address_street && (p.customer.address_zip || p.customer.address_city) ? ', ' : ''}
                                     {p.customer.address_zip} {p.customer.address_city}
                                 </div>
@@ -88,8 +88,8 @@ export function buildProjectColumns({
                             <div className="flex items-center gap-1.5 overflow-hidden">
                                 {p.customer?.email && (
                                     <div className="flex items-center gap-1 min-w-0">
-                                        <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
-                                        <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.customer.email}>{p.customer.email}</span>
+                                        <FaEnvelope className="text-2xs text-slate-300 shrink-0" />
+                                        <span className="text-2xs text-slate-400 truncate tracking-tight" title={p.customer.email}>{p.customer.email}</span>
                                     </div>
                                 )}
                             </div>
@@ -114,15 +114,15 @@ export function buildProjectColumns({
                 const name = p.partner.company || `${salutation}${p.partner.first_name} ${p.partner.last_name}`;
                 return (
                     <div className="flex items-center gap-2 max-w-[200px] group/part cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                        <div className="w-7 h-7 bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/part:border-indigo-200 transition-colors">
+                        <div className="w-7 h-7 bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-2xs font-semibold shrink-0 shadow-sm rounded-sm group-hover/part:border-indigo-200 transition-colors">
                             {getInitials(name)}
                         </div>
                         <div className="flex flex-col leading-snug overflow-hidden">
                             <span className="font-semibold text-slate-800 truncate group-hover/part:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
                             {p.partner.email && (
                                 <div className="flex items-center gap-1 min-w-0 mt-0.5">
-                                    <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
-                                    <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.partner.email}>{p.partner.email}</span>
+                                    <FaEnvelope className="text-2xs text-slate-300 shrink-0" />
+                                    <span className="text-2xs text-slate-400 truncate tracking-tight" title={p.partner.email}>{p.partner.email}</span>
                                 </div>
                             )}
                         </div>
@@ -202,9 +202,9 @@ export function buildProjectColumns({
                     <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1 text-xs font-medium text-slate-700">
                             <span className="whitespace-nowrap">{date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
-                            <span className="text-slate-400 text-[10px] opacity-70">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-slate-400 text-2xs opacity-70">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                        <span className={`px-1 py-0 rounded-[2px] text-[10px] font-bold border w-fit uppercase ${badgeColor}`}>{label}</span>
+                        <span className={`px-1 py-0 rounded-[2px] text-2xs font-bold border w-fit uppercase ${badgeColor}`}>{label}</span>
                     </div>
                 );
             },

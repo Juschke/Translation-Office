@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
     FaTimes, FaDownload, FaExternalLinkAlt, FaPrint,
     FaTrashAlt, FaFilePdf, FaFileWord, FaFileExcel,
@@ -30,7 +29,6 @@ const getFileIcon = (name: string) => {
 };
 
 const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FilePreviewModalProps) => {
-    const { t } = useTranslation();
     const [imgLoaded, setImgLoaded] = useState(false);
     const imgRef = useRef<HTMLImageElement>(null);
 
@@ -79,7 +77,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                             <h2 className="text-sm font-bold text-slate-800 truncate max-w-sm" title={name}>
                                 {name}
                             </h2>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Datei-Vorschau</p>
+                            <p className="text-2xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Datei-Vorschau</p>
                         </div>
                     </div>
 
@@ -87,35 +85,35 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                         {canPrint && (
                             <button
                                 onClick={handlePrint}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-2xs font-bold uppercase tracking-widest"
                             >
-                                <FaPrint className="text-[10px]" />
+                                <FaPrint className="text-2xs" />
                                 Drucken
                             </button>
                         )}
 
                         <button
                             onClick={() => window.open(file.url, '_blank')}
-                            className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                            className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-2xs font-bold uppercase tracking-widest"
                         >
-                            <FaExternalLinkAlt className="text-[10px]" />
+                            <FaExternalLinkAlt className="text-2xs" />
                             <span className="hidden sm:inline">Neuer Tab</span>
                         </button>
 
                         <button
                             onClick={onDownload}
-                            className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                            className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-2xs font-bold uppercase tracking-widest"
                         >
-                            <FaDownload className="text-[10px]" />
+                            <FaDownload className="text-2xs" />
                             <span className="hidden sm:inline">Laden</span>
                         </button>
 
                         {onDelete && (
                             <button
                                 onClick={() => { onClose(); onDelete(); }}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-2xs font-bold uppercase tracking-widest"
                             >
-                                <FaTrashAlt className="text-[10px]" />
+                                <FaTrashAlt className="text-2xs" />
                                 <span className="hidden sm:inline">Löschen</span>
                             </button>
                         )}
@@ -138,7 +136,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                             {!imgLoaded && (
                                 <div className="absolute flex flex-col items-center gap-3 text-slate-400">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400" />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest">Laden...</span>
+                                    <span className="text-2xs font-bold uppercase tracking-widest">Laden...</span>
                                 </div>
                             )}
                             <img

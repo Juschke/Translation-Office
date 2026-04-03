@@ -18,7 +18,7 @@ const FieldTip = ({ text }: { text: string }) => (
         <Tooltip>
             <TooltipTrigger asChild>
                 <span className="text-slate-300 hover:text-slate-500 transition cursor-help">
-                    <FaInfoCircle className="text-[10px]" />
+                    <FaInfoCircle className="text-2xs" />
                 </span>
             </TooltipTrigger>
             <TooltipContent>
@@ -413,7 +413,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             </div>
                             <div className="flex flex-col items-center gap-1">
                                 <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
-                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
+                                <p className="text-2xs text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
                             </div>
                         </div>
                     </div>
@@ -453,14 +453,14 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                     <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
                                                         {d.company_name || `${d.first_name} ${d.last_name}`}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-400 font-medium">
+                                                    <span className="text-2xs text-slate-400 font-medium">
                                                         ID: {d.id} • {d.email || 'Keine E-Mail'} • {d.phone || 'Kein Telefon'}
                                                     </span>
                                                 </div>
                                                 <Link
                                                     to={`/customers/${d.id}`}
                                                     target="_blank"
-                                                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded-sm text-[10px] font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                                                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded-sm text-2xs font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
                                                 >
                                                     <FaExternalLinkAlt size={10} />
                                                     DATENSATZ ÖFFNEN
@@ -635,7 +635,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 ))}
                                                 {formData.additional_emails.length < 3 && (
                                                     <button type="button" onClick={() => addField('additional_emails')} className="text-xs text-slate-400 font-medium flex items-center gap-1.5 hover:text-slate-700 transition-colors py-1 ml-1">
-                                                        <FaPlus className="text-[10px]" /> Weitere E-Mail
+                                                        <FaPlus className="text-2xs" /> Weitere E-Mail
                                                     </button>
                                                 )}
                                             </div>
@@ -673,7 +673,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 ))}
                                                 {formData.additional_phones.length < 3 && (
                                                     <button type="button" onClick={() => addField('additional_phones')} className="text-xs text-slate-400 font-medium flex items-center gap-1.5 hover:text-slate-700 transition-colors py-1 ml-1">
-                                                        <FaPlus className="text-[10px]" /> Weitere Nummer
+                                                        <FaPlus className="text-2xs" /> Weitere Nummer
                                                     </button>
                                                 )}
                                             </div>

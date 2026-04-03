@@ -175,7 +175,7 @@ const Notifications = () => {
                             {count > 0 && (
                                 <span
                                     className={clsx(
-                                        'px-1.5 py-0.5 rounded-sm text-[10px] font-semibold min-w-[18px] text-center',
+                                        'px-1.5 py-0.5 rounded-sm text-2xs font-semibold min-w-[18px] text-center',
                                         isActive
                                             ? 'bg-[var(--color-primary)] text-white'
                                             : 'bg-slate-100 text-slate-500'
@@ -218,7 +218,7 @@ const Notifications = () => {
                                             className={clsx(
                                                 'p-4 hover:bg-slate-50 transition-colors flex gap-3 items-start group cursor-pointer border-l-2',
                                                 !notification.read_at
-                                                    ? 'bg-teal-50 border-l-[#1B4D4F]'
+                                                    ? 'bg-brand-primary/5 border-l-brand-primary'
                                                     : 'border-l-transparent'
                                             )}
                                         >

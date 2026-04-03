@@ -72,7 +72,7 @@ const VariableHelper: React.FC<VariableHelperProps> = ({ onInsert }) => {
         return {
             key: group,
             label: (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                <span className="text-2xs font-bold uppercase tracking-widest text-slate-500">
                     {GROUP_LABELS[group]}
                 </span>
             ),
@@ -86,7 +86,7 @@ const VariableHelper: React.FC<VariableHelperProps> = ({ onInsert }) => {
                             onClick={() => onInsert(v.key)}
                             className="flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-sm border border-slate-200 bg-white text-left hover:border-slate-900 hover:bg-slate-50 transition-all group"
                         >
-                            <span className="text-[10px] font-medium text-slate-600 group-hover:text-slate-900 leading-tight truncate">
+                            <span className="text-2xs font-medium text-slate-600 group-hover:text-slate-900 leading-tight truncate">
                                 {v.label}
                             </span>
                             <FaPlus size={7} className="text-slate-400 group-hover:text-slate-700 shrink-0" />
@@ -100,10 +100,10 @@ const VariableHelper: React.FC<VariableHelperProps> = ({ onInsert }) => {
     return (
         <div className="border border-slate-200 rounded-sm overflow-hidden">
             <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <span className="text-2xs font-bold text-slate-500 uppercase tracking-widest">
                     Verfügbare Variablen
                 </span>
-                <span className="ml-2 text-[10px] text-slate-400">
+                <span className="ml-2 text-2xs text-slate-400">
                     — Klicken zum Einfügen an Cursor-Position
                 </span>
             </div>
@@ -146,7 +146,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ subject, body }) => {
 
             {/* Subject preview */}
             <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="text-2xs font-bold text-slate-400 uppercase tracking-widest">
                     Betreff-Vorschau
                 </span>
                 <div
@@ -157,7 +157,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ subject, body }) => {
 
             {/* Body preview */}
             <div className="space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="text-2xs font-bold text-slate-400 uppercase tracking-widest">
                     Nachrichten-Vorschau
                 </span>
                 <div
@@ -170,12 +170,12 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ subject, body }) => {
 
             {/* Example values legend */}
             <details className="group">
-                <summary className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer select-none hover:text-slate-600 transition-colors">
+                <summary className="text-2xs font-bold text-slate-400 uppercase tracking-widest cursor-pointer select-none hover:text-slate-600 transition-colors">
                     Verwendete Beispielwerte anzeigen
                 </summary>
                 <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 pl-2">
                     {ALL_VARIABLES.map(v => (
-                        <div key={v.key} className="flex items-baseline gap-2 text-[10px]">
+                        <div key={v.key} className="flex items-baseline gap-2 text-2xs">
                             <code className="font-mono text-slate-400 shrink-0">{`{{${v.key}}}`}</code>
                             <span className="text-slate-600 truncate">{v.example}</span>
                         </div>

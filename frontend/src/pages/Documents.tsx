@@ -99,7 +99,7 @@ const Documents = () => {
                         <span className="text-[13px] font-bold text-slate-800 truncate leading-tight">
                             {file.original_name}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono mt-0.5 uppercase tracking-tighter">
+                        <span className="text-2xs text-slate-400 font-mono mt-0.5 uppercase tracking-tighter">
                             VER {file.version} • {file.extension}
                         </span>
                     </div>
@@ -116,10 +116,10 @@ const Documents = () => {
                     className="flex flex-col hover:text-brand-primary transition-colors group"
                 >
                     <span className="text-xs font-bold text-slate-700 truncate flex items-center gap-2 group-hover:text-brand-primary">
-                        <FaFolder className="text-[10px] opacity-20" />
+                        <FaFolder className="text-2xs opacity-20" />
                         {file.project?.project_number}
                     </span>
-                    <span className="text-[10px] text-slate-500 truncate pl-4">
+                    <span className="text-2xs text-slate-500 truncate pl-4">
                         {file.project?.project_name}
                     </span>
                 </Link>
@@ -131,10 +131,10 @@ const Documents = () => {
             header: t('common.type') || 'Typ',
             accessor: (file: any) => (
                 <div className="flex flex-col gap-1">
-                    <Badge variant={file.type === 'target' ? 'success' : 'default'} className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0 w-fit">
+                    <Badge variant={file.type === 'target' ? 'success' : 'default'} className="text-2xs font-bold uppercase tracking-widest px-1.5 py-0 w-fit">
                         {file.type === 'target' ? 'Ausspielung' : 'Eingang'}
                     </Badge>
-                    <span className="text-[10px] text-slate-400 font-mono tabular-nums">
+                    <span className="text-2xs text-slate-400 font-mono tabular-nums">
                         {formatFileSize(file.file_size || 0)}
                     </span>
                 </div>
@@ -147,10 +147,10 @@ const Documents = () => {
             accessor: (file: any) => (
                 <div className="flex flex-col">
                     <span className="text-[11px] font-bold text-slate-700 flex items-center gap-2">
-                        <FaUser className="text-[10px] opacity-20" />
+                        <FaUser className="text-2xs opacity-20" />
                         {file.uploader?.name || 'System'}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">
+                    <span className="text-2xs text-slate-400 font-medium">
                         {format(new Date(file.created_at), 'dd.MM.yyyy HH:mm', { locale: de })}
                     </span>
                 </div>
@@ -178,7 +178,7 @@ const Documents = () => {
                         onClick={() => navigate(`/projects/${file.project_id}`)}
                         title={t('projects.actions.view_details') || "Projekt öffnen"}
                     >
-                        <FaExternalLinkAlt className="text-[10px]" />
+                        <FaExternalLinkAlt className="text-2xs" />
                     </Button>
                     <Button
                         variant="ghost"

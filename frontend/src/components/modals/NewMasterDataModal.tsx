@@ -417,7 +417,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                             value={formData.base_price || ''}
                                             onChange={(e) => handleChange('base_price', e.target.value)}
                                         />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none uppercase">
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-2xs font-bold text-slate-400 pointer-events-none uppercase">
                                             {currencySymbol}
                                         </div>
                                     </div>
@@ -453,7 +453,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     value={formData.description || ''}
                                     onChange={(e) => handleChange('description', e.target.value)}
                                 />
-                                <p className="text-[10px] text-slate-400 italic">Erscheint als Schnell-Option in der Projektmaske, wenn "Extra-Leistung" aktiviert ist.</p>
+                                <p className="text-2xs text-slate-400 italic">Erscheint als Schnell-Option in der Projektmaske, wenn "Extra-Leistung" aktiviert ist.</p>
                             </div>
                         </>
                     )}
@@ -604,7 +604,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Key (Interner Code) <span className="text-red-500">*</span></label>
                                 <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all font-mono", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. in_progress" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
-                                <p className="text-[10px] text-slate-400">Dienet der internen Identifikation (z.B. f_bearbeitung). Keine Leerstellen.</p>
+                                <p className="text-2xs text-slate-400">Dienet der internen Identifikation (z.B. f_bearbeitung). Keine Leerstellen.</p>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Anzeigename <span className="text-red-500">*</span></label>
@@ -614,7 +614,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <label className="block text-xs font-medium text-slate-400">Stil (Tailwind Klassen)</label>
                                 <input type="text" className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white" placeholder="bg-blue-50 text-blue-700 border-blue-200" value={formData.style || ''} onChange={(e) => handleChange('style', e.target.value)} />
                                 <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-[10px] text-slate-400">Vorschau:</span>
+                                    <span className="text-2xs text-slate-400">Vorschau:</span>
                                     <span className={clsx('px-2.5 py-0.5 rounded-sm text-xs font-semibold border tracking-tight', formData.style || 'bg-slate-50 text-slate-400 border-slate-200')}>
                                         {formData.label || 'Vorschau'}
                                     </span>
@@ -702,7 +702,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                                         setCategories(prev => prev.filter(c => c.value !== cat.value));
                                                         if (formData.category === cat.value) handleChange('category', '');
                                                     }}
-                                                    className="text-[10px] text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                                                    className="text-2xs text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
                                                 >
                                                     <FaTimes />
                                                 </button>

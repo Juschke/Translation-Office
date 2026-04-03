@@ -284,8 +284,8 @@ const ProjectFinancesTab = ({
                                     {isLocked && (
                                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 border border-amber-100 rounded text-amber-600">
                                             <FaInfoCircle size={10} />
-                                            <span className="text-[10px] font-bold uppercase tracking-tight">Gesperrt</span>
-                                            <span className="text-[10px] font-medium opacity-70">({activeInvoice.invoice_number})</span>
+                                            <span className="text-2xs font-bold uppercase tracking-tight">Gesperrt</span>
+                                            <span className="text-2xs font-medium opacity-70">({activeInvoice.invoice_number})</span>
                                         </div>
                                     )}
                                 </div>

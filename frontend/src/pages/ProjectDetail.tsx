@@ -16,7 +16,7 @@ import NewProjectModal from '../components/modals/NewProjectModal';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import FileUploadModal from '../components/modals/FileUploadModal';
-import ConfirmModal from '../components/modals/ConfirmModal';
+import ConfirmModal from '../components/common/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
 import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
@@ -609,12 +609,12 @@ const ProjectDetail = () => {
                                         onClick={() => setIsActionsOpen(v => !v)}
                                         className="w-full px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
                                     >
-                                        Mehr Aktionen <FaChevronDown className={clsx('text-[10px] transition-transform', isActionsOpen && 'rotate-180')} />
+                                        Mehr Aktionen <FaChevronDown className={clsx('text-2xs transition-transform', isActionsOpen && 'rotate-180')} />
                                     </Button>
 
                                     {isActionsOpen && (
                                         <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-sm shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-1">
-                                            <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
+                                            <div className="px-3 py-1.5 text-2xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
                                             <button
                                                 onClick={() => { handleDownloadConfirmation('order_confirmation'); setIsActionsOpen(false); }}
                                                 className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
@@ -634,7 +634,7 @@ const ProjectDetail = () => {
                                                 <FaFilePdf className="text-red-400 shrink-0" /> Dolmetscherbestätigung
                                             </button>
 
-                                            <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-100 mt-1">Rechnung</div>
+                                            <div className="px-3 py-1.5 text-2xs font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-100 mt-1">Rechnung</div>
                                             {(() => {
                                                 const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
                                                 return activeInvoice ? (
@@ -662,7 +662,7 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Meta Info Bar */}
-                <div className="flex items-center gap-4 sm:gap-6 text-[10px] sm:text-xs text-slate-400 flex-wrap border-t border-slate-50 px-3 sm:px-4 md:px-8 py-3 bg-slate-50/20">
+                <div className="flex items-center gap-4 sm:gap-6 text-2xs sm:text-xs text-slate-400 flex-wrap border-t border-slate-50 px-3 sm:px-4 md:px-8 py-3 bg-slate-50/20">
                     <div className="flex items-center gap-2">
                         <span>Projekt: <span className="text-slate-600 font-medium">{projectData.project_number || projectData.id}</span></span>
                     </div>
@@ -751,7 +751,7 @@ const ProjectDetail = () => {
 
                                     {tab !== 'overview' && tab !== 'history' && (
                                         <span className={clsx(
-                                            "px-1.5 py-0.5 rounded-sm text-[10px] font-bold transition-colors",
+                                            "px-1.5 py-0.5 rounded-sm text-2xs font-bold transition-colors",
                                             isActive ? "bg-brand-primary text-white" : "bg-slate-100 text-slate-500"
                                         )}>
                                             {badgeCount}

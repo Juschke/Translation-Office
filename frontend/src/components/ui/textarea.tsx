@@ -30,7 +30,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <span className="text-slate-300 hover:text-slate-500 transition cursor-help">
-                                            <FaInfoCircle className="text-[10px]" />
+                                            <FaInfoCircle className="text-2xs" />
                                         </span>
                                     </TooltipTrigger>
                                     <TooltipContent>

@@ -334,7 +334,7 @@ export default function OnboardingPage() {
                             )}
                         >
                             {'badge' in plan && (
-                                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest bg-[#9BCB56] text-brand-primary px-2 py-0.5 rounded-full whitespace-nowrap">
+                                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-2xs font-bold uppercase tracking-widest bg-[#9BCB56] text-brand-primary px-2 py-0.5 rounded-full whitespace-nowrap">
                                     {plan.badge}
                                 </span>
                             )}
@@ -343,7 +343,7 @@ export default function OnboardingPage() {
                                     <Check size={10} className="text-white" strokeWidth={3} />
                                 </span>
                             )}
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{plan.name}</p>
+                            <p className="text-2xs font-bold uppercase tracking-widest text-slate-400 mb-2">{plan.name}</p>
                             <div className="flex items-baseline gap-0.5 mb-1">
                                 <span className="text-2xl font-black text-brand-primary">{plan.price}€</span>
                                 <span className="text-[11px] text-slate-400 font-medium">/Mo.</span>
@@ -392,7 +392,7 @@ export default function OnboardingPage() {
                             </div>
                             <div>
                                 <p className="text-white font-black text-base leading-none tracking-tight">TransOffice</p>
-                                <p className="text-[#9BCB56]/70 text-[10px] font-bold tracking-widest uppercase mt-0.5">Einrichtung</p>
+                                <p className="text-[#9BCB56]/70 text-2xs font-bold tracking-widest uppercase mt-0.5">Einrichtung</p>
                             </div>
                         </div>
 

@@ -21,7 +21,7 @@ import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import NewDocTypeModal from '../components/modals/NewDocTypeModal';
 import NewMasterDataModal from '../components/modals/NewMasterDataModal';
 import PaymentModal from '../components/modals/PaymentModal';
-import ConfirmDialog from '../components/common/ConfirmDialog';
+import ConfirmModal from '../components/common/ConfirmModal';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
@@ -287,7 +287,7 @@ const NewProject = () => {
             setClassification(mapped.classification ? 'ja' : 'nein');
             setClassificationQty(mapped.classification_count || 1);
             setCopies(mapped.copies_count || 0);
-            setCopyPrice((mapped.copy_price || 5).toFixed(2));
+            setCopyPrice((parseFloat(mapped.copy_price) || 5).toFixed(2));
             setWithTax(mapped.tax_rate > 0);
             if (mapped.document_type_id) {
                 const docIds = [mapped.document_type_id.toString()];
@@ -302,16 +302,16 @@ const NewProject = () => {
                     id: p.id?.toString() || Date.now().toString() + Math.random(),
                     description: p.description,
                     unit: p.unit,
-                    amount: (p.amount || 0).toFixed(2),
-                    quantity: (p.quantity || 1).toFixed(2),
-                    partnerRate: (p.partner_rate || 0).toFixed(2),
+                    amount: (parseFloat(p.amount) || 0).toFixed(2),
+                    quantity: (parseFloat(p.quantity) || 1).toFixed(2),
+                    partnerRate: (parseFloat(p.partner_rate) || 0).toFixed(2),
                     partnerMode: p.partner_mode || 'unit',
-                    partnerTotal: (p.partner_total || 0).toFixed(2),
-                    customerRate: (p.customer_rate || 0).toFixed(2),
+                    partnerTotal: (parseFloat(p.partner_total) || 0).toFixed(2),
+                    customerRate: (parseFloat(p.customer_rate) || 0).toFixed(2),
                     customerMode: p.customer_mode || 'rate',
-                    customerTotal: (p.customer_total || 0).toFixed(2),
+                    customerTotal: (parseFloat(p.customer_total) || 0).toFixed(2),
                     marginType: p.margin_type || 'markup',
-                    marginPercent: (p.margin_percent || 0).toFixed(2)
+                    marginPercent: (parseFloat(p.margin_percent) || 0).toFixed(2)
                 }));
                 setPositions(pos);
             }
@@ -654,9 +654,9 @@ const NewProject = () => {
                                     <table className="w-full text-left border-collapse">
                                         <thead className="sticky top-0 bg-white border-b border-slate-200">
                                             <tr>
-                                                <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Partner</th>
-                                                <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Sprachen</th>
-                                                <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right w-16">Wählen</th>
+                                                <th className="px-4 py-2.5 text-2xs font-bold uppercase tracking-widest text-slate-400">Partner</th>
+                                                <th className="px-4 py-2.5 text-2xs font-bold uppercase tracking-widest text-slate-400">Sprachen</th>
+                                                <th className="px-4 py-2.5 text-2xs font-bold uppercase tracking-widest text-slate-400 text-right w-16">Wählen</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
@@ -665,16 +665,16 @@ const NewProject = () => {
                                                     onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}>
                                                     <td className="px-4 py-2">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded-sm bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
+                                                            <div className="w-6 h-6 rounded-sm bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-2xs font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
                                                             <span className="text-xs font-medium text-slate-700">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-2">
-                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-[10px] font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
+                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-2xs font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
                                                     </td>
                                                     <td className="px-4 py-2 text-right">
                                                         <div className={clsx('inline-flex items-center justify-center w-5 h-5 rounded-full border transition', translator === p.id.toString() ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200 text-transparent')}>
-                                                            <FaCheck className="text-[10px]" />
+                                                            <FaCheck className="text-2xs" />
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -710,11 +710,11 @@ const NewProject = () => {
                                                 <div className={clsx('w-8 h-4 rounded-full relative transition-colors', opt.enabled ? 'bg-emerald-500' : 'bg-slate-300')}>
                                                     <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', opt.enabled ? 'left-4' : 'left-0.5')} />
                                                 </div>
-                                                <span className={clsx('text-[10px] font-bold', opt.enabled ? 'text-emerald-600' : 'text-slate-400')}>{opt.enabled ? 'JA' : 'NEIN'}</span>
+                                                <span className={clsx('text-2xs font-bold', opt.enabled ? 'text-emerald-600' : 'text-slate-400')}>{opt.enabled ? 'JA' : 'NEIN'}</span>
                                             </div>
                                             {opt.enabled && (
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] text-slate-400 font-medium">Menge:</span>
+                                                    <span className="text-2xs text-slate-400 font-medium">Menge:</span>
                                                     <input
                                                         type="number"
                                                         min="1"
@@ -790,7 +790,7 @@ const NewProject = () => {
                             <div className="flex items-center gap-3">
                                 <div className={SECTION_NUM}>07</div>
                                 <h3 className={SECTION_TITLE}>Anzahlungen / Teilzahlungen</h3>
-                                <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
+                                <span className="bg-slate-100 text-slate-600 text-2xs font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
                                     {payments.length}
                                 </span>
                             </div>
@@ -907,7 +907,7 @@ const NewProject = () => {
             <NewDocTypeModal isOpen={showDocTypeModal} onClose={() => setShowDocTypeModal(false)} onSubmit={(d) => createDocTypeMutation.mutate(d)} isLoading={createDocTypeMutation.isPending} />
             <NewMasterDataModal isOpen={isLanguageModalOpen} onClose={() => setIsLanguageModalOpen(false)} onSubmit={(d) => createLanguageMutation.mutate(d)} type="languages" />
             <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={(p) => { if (editingPayment) setPayments(payments.map(x => x.id === p.id ? p : x)); else setPayments([...payments, p]); setIsPaymentModalOpen(false); setEditingPayment(null); }} initialData={editingPayment} totalAmount={calcGross} />
-            <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig((p: any) => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
+            <ConfirmModal isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig((p: any) => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
         </div>
     );
 };

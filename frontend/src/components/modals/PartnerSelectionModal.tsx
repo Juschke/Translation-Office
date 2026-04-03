@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import StatusBadge from '../common/StatusBadge';
 import { FaTimes, FaSearch, FaStar, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
@@ -296,7 +295,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                                         <div className="flex flex-col">
                                                             <div className="font-medium text-slate-900 text-sm group-hover:text-brand-primary transition leading-tight">{p.name}</div>
                                                             {expandedPartnerId !== p.id && (
-                                                                <div className="text-xs text-slate-400 font-mediumer flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                     Details anzeigen <span className="w-1 h-1 bg-slate-200 rounded-full"></span> {p.company}
                                                                 </div>
                                                             )}

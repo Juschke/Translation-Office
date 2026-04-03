@@ -30,7 +30,7 @@ const LanguageSwitcher = ({
                 <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-100/60 group-hover:text-emerald-100 transition-colors">
                     {i18n.language.toUpperCase().substring(0, 2)}
                 </span>
-                <FaChevronDown className={clsx("text-[10px] text-emerald-100/40 transition-transform group-hover:text-emerald-100/60", isOpen && "rotate-180")} />
+                <FaChevronDown className={clsx("text-2xs text-emerald-100/40 transition-transform group-hover:text-emerald-100/60", isOpen && "rotate-180")} />
             </button>
 
             {/* Language Dropdown */}

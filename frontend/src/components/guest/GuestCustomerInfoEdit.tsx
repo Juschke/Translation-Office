@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaEdit, FaTimes, FaCheck } from 'react-icons/fa';
 import { Button } from '../ui/button';
-import ConfirmModal from '../modals/ConfirmModal';
+import ConfirmModal from '../common/ConfirmModal';
 import toast from 'react-hot-toast';
 import { guestService } from '@/api/services';
 

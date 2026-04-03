@@ -124,7 +124,7 @@ export const MiniDropdown = ({ value, options, onChange, disabled, width }: { va
                 disabled={disabled}
                 onClick={() => !disabled && setIsOpen(o => !o)}
                 className={clsx(
-                    'px-2 py-0.5 text-[10px] font-semibold text-slate-600 border border-slate-200 rounded-sm transition-colors flex items-center justify-between gap-1.5 hover:border-slate-300 hover:bg-slate-50 min-w-fit whitespace-nowrap',
+                    'px-2 py-0.5 text-2xs font-semibold text-slate-600 border border-slate-200 rounded-sm transition-colors flex items-center justify-between gap-1.5 hover:border-slate-300 hover:bg-slate-50 min-w-fit whitespace-nowrap',
                     disabled && 'opacity-40 cursor-not-allowed'
                 )}
             >
@@ -149,7 +149,7 @@ export const MiniDropdown = ({ value, options, onChange, disabled, width }: { va
                                 type="button"
                                 onClick={() => handleSelect(o.value)}
                                 className={clsx(
-                                    'whitespace-nowrap text-left px-3 py-1.5 text-[10px] font-bold transition-colors border-b border-slate-50 last:border-0',
+                                    'whitespace-nowrap text-left px-3 py-1.5 text-2xs font-bold transition-colors border-b border-slate-50 last:border-0',
                                     value === o.value
                                         ? 'bg-slate-50 text-brand-primary'
                                         : 'text-slate-600 hover:bg-slate-50'
@@ -261,7 +261,7 @@ const ProjectPositionsTable = ({
                             className="h-8 px-4 text-xs font-bold"
                             variant="default"
                         >
-                            <FaSave className="text-[10px] mr-1.5" />
+                            <FaSave className="text-2xs mr-1.5" />
                             {isSaving ? 'Speichern…' : 'Speichern'}
                         </Button>
                     )}
@@ -270,7 +270,7 @@ const ProjectPositionsTable = ({
                         className="h-8 px-4 text-xs font-bold"
                         variant="default"
                     >
-                        <FaBook className="text-[10px] mr-1.5" />
+                        <FaBook className="text-2xs mr-1.5" />
                         Leistungskatalog
                     </Button>
 
@@ -289,7 +289,7 @@ const ProjectPositionsTable = ({
                                     onClick={() => setCatalogOpen(false)}
                                     className="text-slate-400 hover:text-slate-600 transition-colors"
                                 >
-                                    <FaTimes className="text-[10px]" />
+                                    <FaTimes className="text-2xs" />
                                 </button>
                             </div>
 
@@ -310,12 +310,12 @@ const ProjectPositionsTable = ({
                                                     {item.name}
                                                 </span>
                                                 {item.service_code && (
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.service_code}</span>
+                                                    <span className="text-2xs font-bold text-slate-400 uppercase tracking-wider">{item.service_code}</span>
                                                 )}
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-xs font-bold text-slate-700">{fmt2(item.base_price)} €</div>
-                                                <div className="text-[10px] text-slate-400">/ {item.unit}</div>
+                                                <div className="text-2xs text-slate-400">/ {item.unit}</div>
                                             </div>
                                         </button>
                                     ))
@@ -328,12 +328,12 @@ const ProjectPositionsTable = ({
                                         onClick={() => setShowCreate(true)}
                                         className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-brand-primary hover:bg-slate-100 transition-colors"
                                     >
-                                        <FaPlus className="text-[10px]" />
+                                        <FaPlus className="text-2xs" />
                                         Neue Leistung anlegen
                                     </button>
                                 ) : (
                                     <div className="p-3 space-y-2.5 bg-white">
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Schnellanlage</p>
+                                        <p className="text-2xs font-bold uppercase tracking-widest text-slate-400">Schnellanlage</p>
                                         <input
                                             type="text"
                                             placeholder="Bezeichnung *"
@@ -397,13 +397,13 @@ const ProjectPositionsTable = ({
                 <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
                         <tr className="border-b border-slate-200 bg-slate-50/30">
-                            <th className="px-2 py-1.5 w-7 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">#</th>
-                            <th className="px-2 py-1.5 min-w-[180px] text-[10px] font-bold uppercase tracking-wider text-slate-400">Bezeichnung</th>
-                            <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Menge</th>
-                            <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einheit</th>
-                            <th className="px-2 py-1.5 w-32 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einzelpreis €</th>
-                            <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">MwSt %</th>
-                            <th className="px-2 py-1.5 w-28 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500 italic">Gesamt €</th>
+                            <th className="px-2 py-1.5 w-7 text-center text-2xs font-bold uppercase tracking-wider text-slate-400">#</th>
+                            <th className="px-2 py-1.5 min-w-[180px] text-2xs font-bold uppercase tracking-wider text-slate-400">Bezeichnung</th>
+                            <th className="px-2 py-1.5 w-24 text-right text-2xs font-bold uppercase tracking-wider text-slate-400">Menge</th>
+                            <th className="px-2 py-1.5 w-24 text-right text-2xs font-bold uppercase tracking-wider text-slate-400">Einheit</th>
+                            <th className="px-2 py-1.5 w-32 text-right text-2xs font-bold uppercase tracking-wider text-slate-400">Einzelpreis €</th>
+                            <th className="px-2 py-1.5 w-24 text-right text-2xs font-bold uppercase tracking-wider text-slate-400">MwSt %</th>
+                            <th className="px-2 py-1.5 w-28 text-right text-2xs font-bold uppercase tracking-wider text-slate-500 italic">Gesamt €</th>
                             <th className="px-2 py-1.5 w-8"></th>
                         </tr>
                     </thead>
@@ -476,7 +476,7 @@ const ProjectPositionsTable = ({
                                                 }}
                                                 onBlur={e => update(index, { customerRate: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
                                             />
-                                            <span className="text-[10px] font-bold text-slate-400 pb-px shrink-0">€</span>
+                                            <span className="text-2xs font-bold text-slate-400 pb-px shrink-0">€</span>
                                         </div>
                                     </td>
 
@@ -508,11 +508,11 @@ const ProjectPositionsTable = ({
                                                 className="p-1.5 text-slate-200  rounded-sm transition-colors opacity-0 group-hover:opacity-100"
                                                 title={t('actions.delete')}
                                             >
-                                                <FaTrash className="text-[10px]" />
+                                                <FaTrash className="text-2xs" />
                                             </button>
                                         ) : (
                                             <span className="p-1.5 block text-slate-100">
-                                                <FaTrash className="text-[10px]" />
+                                                <FaTrash className="text-2xs" />
                                             </span>
                                         )}
                                     </td>
@@ -589,12 +589,12 @@ const ProjectPositionsTable = ({
                                                 }}
                                                 onBlur={e => onUpdateExtra(row.key, { unitPrice: parseFloat(toEnglish(e.target.value)) || 0 })}
                                             />
-                                            <span className="text-[10px] font-bold text-slate-400 pb-px shrink-0">€</span>
+                                            <span className="text-2xs font-bold text-slate-400 pb-px shrink-0">€</span>
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-end gap-1.5">
                                             <span className="font-mono text-xs text-slate-500 tabular-nums">{fmt2(row.unitPrice)}</span>
-                                            <span className="text-[10px] font-bold text-slate-400">€</span>
+                                            <span className="text-2xs font-bold text-slate-400">€</span>
                                         </div>
                                     )}
                                 </td>
@@ -624,7 +624,7 @@ const ProjectPositionsTable = ({
                                             className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
                                             title="Deaktivieren"
                                         >
-                                            <FaTrash className="text-[10px]" />
+                                            <FaTrash className="text-2xs" />
                                         </button>
                                     )}
                                 </td>
@@ -641,7 +641,7 @@ const ProjectPositionsTable = ({
                         onClick={() => setPositions([...positions, EMPTY_POSITION()])}
                         className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-600 border border-dashed border-slate-300 rounded-sm hover:border-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-colors"
                     >
-                        <FaPlus className="text-[10px]" />
+                        <FaPlus className="text-2xs" />
                         Position hinzufügen
                     </button>
                 </div>

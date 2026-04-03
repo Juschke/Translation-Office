@@ -331,12 +331,12 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                             {/* Section 1: Einsatzdetails */}
                             <div className="space-y-4">
                                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">1</div>
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-2xs">1</div>
                                     Einsatzdetails
                                 </h3>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Dolmetscher / Partner</Label>
+                                    <Label className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Dolmetscher / Partner</Label>
                                     <SearchableSelect
                                         value={interpreterId}
                                         onChange={setInterpreterId}
@@ -347,7 +347,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Termin - Datum & Uhrzeit</Label>
+                                    <Label className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Termin - Datum & Uhrzeit</Label>
                                     <div className="relative">
                                         <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
                                         <DatePicker
@@ -372,12 +372,12 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                             {/* Section 2: Einsatzort */}
                             <div className="space-y-4">
                                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">2</div>
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-2xs">2</div>
                                     Einsatzort
                                 </h3>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Einsatzort (Name der Einrichtung / Firma)</Label>
+                                    <Label className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Einsatzort (Name der Einrichtung / Firma)</Label>
                                     <Input
                                         startIcon={<FaMapMarkerAlt className="text-slate-400" />}
                                         value={location}
@@ -408,13 +408,13 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                             {/* Section 3: Referenzdaten */}
                             <div className="space-y-4">
                                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">3</div>
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-2xs">3</div>
                                     Referenzdaten
                                 </h3>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Zeichen (Referenz)</Label>
+                                        <Label className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Zeichen (Referenz)</Label>
                                         <Input
                                             startIcon={<FaUserEdit className="text-slate-400" />}
                                             value={customerReference}
@@ -425,7 +425,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Schreiben vom</Label>
+                                        <Label className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Schreiben vom</Label>
                                         <div className="relative">
                                             <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
                                             <DatePicker
@@ -443,7 +443,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                 </div>
 
                                 <div className="space-y-1.5 pt-2">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Unser Zeichen (Projekt-Nr)</Label>
+                                    <Label className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Unser Zeichen (Projekt-Nr)</Label>
                                     <Input
                                         startIcon={<FaInfoCircle className="text-slate-400" />}
                                         value={projectNumber}

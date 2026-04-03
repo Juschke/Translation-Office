@@ -136,7 +136,7 @@ const DesktopLinks = ({
                     >
                         <FaUsers className="text-base lg:hidden" />
                         <span className="hidden lg:inline">{t('nav.customers')}</span>
-                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isCustomersOpen && "rotate-180")} />
+                        <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isCustomersOpen && "rotate-180")} />
                     </button>
 
                     {isCustomersOpen && (
@@ -154,7 +154,7 @@ const DesktopLinks = ({
                                         <span>{t('nav.customers')}</span>
                                     </div>
                                     {dashboardData?.stats?.active_customers > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-2xs font-bold">
                                             {dashboardData.stats.active_customers}
                                         </span>
                                     )}
@@ -180,7 +180,7 @@ const DesktopLinks = ({
                     >
                         <FaUserTie className="text-base lg:hidden" />
                         <span className="hidden lg:inline">{t('nav.partners')}</span>
-                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isPartnersOpen && "rotate-180")} />
+                        <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isPartnersOpen && "rotate-180")} />
                     </button>
 
                     {isPartnersOpen && (
@@ -198,7 +198,7 @@ const DesktopLinks = ({
                                         <span>{t('nav.partners')}</span>
                                     </div>
                                     {dashboardData?.stats?.active_partners > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-2xs font-bold">
                                             {dashboardData.stats.active_partners}
                                         </span>
                                     )}
@@ -216,7 +216,7 @@ const DesktopLinks = ({
                                         <span>Dolmetscher</span>
                                     </div>
                                     {dashboardData?.stats?.active_interpreting > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-2xs font-bold">
                                             {dashboardData.stats.active_interpreting}
                                         </span>
                                     )}
@@ -319,7 +319,7 @@ const DesktopLinks = ({
                         >
                             <FaCog className="text-base lg:hidden" />
                             <span className="hidden lg:inline">{t('nav.settings')}</span>
-                            <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isSettingsOpen && "rotate-180")} />
+                            <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isSettingsOpen && "rotate-180")} />
                         </button>
 
                         {isSettingsOpen && (
@@ -342,7 +342,7 @@ const DesktopLinks = ({
                                                     <span>{tab.label}</span>
                                                 </div>
                                                 {tab.id === 'master_data' && (
-                                                    <FaChevronDown className="text-[10px] -rotate-90 opacity-80 ml-2 text-slate-400 group-hover/tab:text-brand-primary transition-colors" />
+                                                    <FaChevronDown className="text-2xs -rotate-90 opacity-80 ml-2 text-slate-400 group-hover/tab:text-brand-primary transition-colors" />
                                                 )}
                                             </button>
 
@@ -350,7 +350,7 @@ const DesktopLinks = ({
                                             {tab.id === 'master_data' && (
                                                 <div className="absolute left-full top-0 ml-[1px] w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 opacity-0 invisible group-hover/tab:opacity-100 group-hover/tab:visible transition-all duration-200 transform translate-x-2 group-hover/tab:translate-x-0">
                                                     <div className="py-1">
-                                                        <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">
+                                                        <div className="px-4 py-1.5 text-2xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">
                                                             {t('settings.tabs.master_data')}
                                                         </div>
                                                         {[
