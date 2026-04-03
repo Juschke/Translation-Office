@@ -7,7 +7,7 @@ import {
     FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaStar,
     FaUserTie, FaFileContract, FaBriefcase, FaChartLine
 } from 'react-icons/fa';
-import TableSkeleton from '../components/common/TableSkeleton';
+import DetailSkeleton from '../components/common/DetailSkeleton';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
 import { useState, useMemo, useEffect } from 'react';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
@@ -58,7 +58,7 @@ const PartnerDetail = () => {
         }
     });
 
-    if (isLoading) return <TableSkeleton rows={5} columns={2} />;
+    if (isLoading) return <DetailSkeleton />;
     if (!partner) return <div className="p-10 text-center text-slate-500">{t('empty.partner_not_found')}</div>;
 
     const name = partner.company || `${partner.first_name} ${partner.last_name}`;

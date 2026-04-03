@@ -30,7 +30,7 @@ import { Button } from '../components/ui/button';
 import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
 
 
-import TableSkeleton from '../components/common/TableSkeleton';
+import DetailSkeleton from '../components/common/DetailSkeleton';
 import FilePreviewModal from '../components/modals/FilePreviewModal';
 import HistoryTab from '../components/projects/HistoryTab';
 import MessagesTab from '../components/projects/MessagesTab';
@@ -510,7 +510,7 @@ const ProjectDetail = () => {
 
     const financials = useProjectFinancials(projectData);
 
-    if (isLoading) return <TableSkeleton rows={10} columns={5} />;
+    if (isLoading) return <DetailSkeleton />;
     if (error || !projectData) return <div className="p-10 text-center text-red-500">Fehler beim Laden des Projekts.</div>;
 
     const sourceLang = getLanguageInfo(projectData.source, projectData.source_language);

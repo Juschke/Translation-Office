@@ -6,7 +6,7 @@ import {
     FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaBriefcase,
     FaFileContract, FaChartLine
 } from 'react-icons/fa';
-import TableSkeleton from '../components/common/TableSkeleton';
+import DetailSkeleton from '../components/common/DetailSkeleton';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
@@ -56,7 +56,7 @@ const CustomerDetail = () => {
         }
     });
 
-    if (isLoading) return <TableSkeleton rows={5} columns={2} />;
+    if (isLoading) return <DetailSkeleton />;
     if (!customer) return <div className="p-10 text-center text-slate-500">Kunde nicht gefunden</div>;
 
     const name = customer.company_name || `${customer.first_name} ${customer.last_name}`;

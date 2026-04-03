@@ -16,6 +16,7 @@ import EmailComposeModal from '../components/modals/EmailComposeModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { BulkActions } from '../components/common/BulkActions';
 import { Button } from '../components/ui/button';
+import MailSkeleton from '../components/common/MailSkeleton';
 
 // Sub-components
 import InboxSidebar from './Inbox/components/InboxSidebar';
@@ -153,12 +154,7 @@ const CommunicationHub = () => {
         || (activeTab === 'archive' && isLoadingArchive)
         || (activeTab === 'trash' && isLoadingTrash);
 
-    if (isLoadingActive) return (
-        <div className="p-10 text-center font-medium text-slate-400 flex items-center justify-center gap-3">
-            <div className="w-5 h-5 border-4 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-            <span>Lade E-Mails...</span>
-        </div>
-    );
+    if (isLoadingActive) return <MailSkeleton />;
 
     return (
         <div className="flex flex-col gap-6 fade-in pb-10">
