@@ -53,272 +53,274 @@ const PartnerDetail = () => {
     const initials = (partner.first_name?.[0] || '') + (partner.last_name?.[0] || 'P');
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10">
-            {/* Header */}
-            <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-4 md:p-6">
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3 md:gap-4">
-                        <button
-                            onClick={() => location.state?.from ? navigate(location.state.from) : navigate('/partners')}
-                            className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
-                        >
-                            <FaArrowLeft />
-                        </button>
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-sm bg-brand-primary/10 text-brand-primary flex items-center justify-center text-lg md:text-xl font-medium border border-brand-primary/20 shadow-sm shrink-0">
-                            {initials}
-                        </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h1 className="text-lg md:text-2xl font-medium text-slate-800 truncate">{name}</h1>
-                                <StatusBadge status={partner.status || 'active'} type="partner" />
+        <div className="flex-1 flex flex-col overflow-hidden fade-in bg-slate-50/20">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-8">
+                {/* Header */}
+                <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-4 md:p-6 mb-6">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-3 md:gap-4">
+                            <button
+                                onClick={() => location.state?.from ? navigate(location.state.from) : navigate('/partners')}
+                                className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
+                            >
+                                <FaArrowLeft />
+                            </button>
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-sm bg-brand-primary/10 text-brand-primary flex items-center justify-center text-lg md:text-xl font-medium border border-brand-primary/20 shadow-sm shrink-0">
+                                {initials}
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
-                                <span className="flex items-center gap-1"><FaUserTie className="text-slate-400" /> {partner.type === 'translator' ? t('partners.type_translator') : partner.type === 'interpreter' ? t('partners.type_interpreter') : partner.type === 'agency' ? t('partners.type_agency') : partner.type === 'trans_interp' ? t('partners.type_trans_interp') : partner.type || t('partners.type_unknown')}</span>
-                                {partner.email && <span className="flex items-center gap-1 truncate"><FaEnvelope className="text-slate-400" /> {partner.email}</span>}
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-lg md:text-2xl font-medium text-slate-800 truncate">{name}</h1>
+                                    <StatusBadge status={partner.status || 'active'} type="partner" />
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
+                                    <span className="flex items-center gap-1"><FaUserTie className="text-slate-400" /> {partner.type === 'translator' ? t('partners.type_translator') : partner.type === 'interpreter' ? t('partners.type_interpreter') : partner.type === 'agency' ? t('partners.type_agency') : partner.type === 'trans_interp' ? t('partners.type_trans_interp') : partner.type || t('partners.type_unknown')}</span>
+                                    {partner.email && <span className="flex items-center gap-1 truncate"><FaEnvelope className="text-slate-400" /> {partner.email}</span>}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 flex-wrap ml-0 md:ml-auto border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
-                        <Button
-                            variant="secondary"
-                            onClick={() => navigate('/inbox', { state: { compose: true, to: partner.email, subject: `Anfrage: ${name}` } })}
-                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
-                        >
-                            <FaEnvelope /> E-Mail
-                        </Button>
-                        <Button
-                            variant="default"
-                            onClick={() => setIsEditModalOpen(true)}
-                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
-                        >
-                            <FaEdit /> Bearbeiten
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={() => setIsConfirmOpen(true)}
-                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
-                        >
-                            <FaTrash /> Löschen
-                        </Button>
-                    </div>
+                        <div className="flex items-center gap-2 flex-wrap ml-0 md:ml-auto border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
+                            <Button
+                                variant="secondary"
+                                onClick={() => navigate('/inbox', { state: { compose: true, to: partner.email, subject: `Anfrage: ${name}` } })}
+                                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaEnvelope /> E-Mail
+                            </Button>
+                            <Button
+                                variant="default"
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaEdit /> Bearbeiten
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => setIsConfirmOpen(true)}
+                                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaTrash /> Löschen
+                            </Button>
+                        </div>
 
-                    {/* Meta Info Bar */}
-                    <div className="flex items-center gap-6 text-xs text-slate-400 flex-wrap border-t border-slate-100 pt-3 mt-1">
-                        <div className="flex items-center gap-2">
-                            <span>Partner-ID: <span className="text-slate-600 font-medium">{partner.display_id}</span></span>
-                        </div>
-                        <span className="text-slate-200">•</span>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            <span>Erstellt am <span className="text-slate-600">{new Date(partner.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span></span>
-                        </div>
-                        <span className="text-slate-200">•</span>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                            <span>Zuletzt geändert: <span className="text-slate-600">{new Date(partner.updated_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span></span>
-                        </div>
-                        <span className="text-slate-200">•</span>
-                        <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1">Bewertung: <span className="text-amber-500 font-medium flex items-center gap-0.5">{partner.rating || '0.0'} <FaStar className="text-xs" /></span></span>
+                        {/* Meta Info Bar */}
+                        <div className="flex items-center gap-6 text-xs text-slate-400 flex-wrap border-t border-slate-100 pt-3 mt-1">
+                            <div className="flex items-center gap-2">
+                                <span>Partner-ID: <span className="text-slate-600 font-medium">{partner.display_id}</span></span>
+                            </div>
+                            <span className="text-slate-200">•</span>
+                            <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                <span>Erstellt am <span className="text-slate-600">{new Date(partner.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span></span>
+                            </div>
+                            <span className="text-slate-200">•</span>
+                            <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                <span>Zuletzt geändert: <span className="text-slate-600">{new Date(partner.updated_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span></span>
+                            </div>
+                            <span className="text-slate-200">•</span>
+                            <div className="flex items-center gap-2">
+                                <span className="flex items-center gap-1">Bewertung: <span className="text-amber-500 font-medium flex items-center gap-0.5">{partner.rating || '0.0'} <FaStar className="text-xs" /></span></span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-                {/* Main Column */}
-                <div className="lg:col-span-2 space-y-6">
+                    {/* Main Column */}
+                    <div className="lg:col-span-2 space-y-6">
 
-                    {/* Stammdaten Card */}
-                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                            <h3 className="font-medium text-slate-700 flex items-center gap-2">
-                                <FaFileContract className="text-slate-600" /> Stammdatenblatt
-                            </h3>
-                        </div>
-
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
-
-                            {/* Section: Kontakt */}
-                            <div className="space-y-4">
-                                <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Kontaktinformationen</h4>
-
-                                <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
-                                    <span className="text-slate-500 font-medium">Firma</span>
-                                    <span className="text-slate-800 font-semibold">{partner.company || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Vorname</span>
-                                    <span className="text-slate-800">{partner.first_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Nachname</span>
-                                    <span className="text-slate-800 font-medium">{partner.last_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium mt-2">Email</span>
-                                    <span className="text-slate-700 mt-2 hover:underline cursor-pointer">{partner.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Telefon</span>
-                                    <span className="text-slate-800">{partner.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    {partner.additional_phones?.length > 0 && (
-                                        <>
-                                            <span className="text-slate-500 font-medium">Weitere Tel.</span>
-                                            <span className="text-slate-800">{partner.additional_phones.join(', ')}</span>
-                                        </>
-                                    )}
-                                </div>
+                        {/* Stammdaten Card */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <h3 className="font-medium text-slate-700 flex items-center gap-2">
+                                    <FaFileContract className="text-slate-600" /> Stammdatenblatt
+                                </h3>
                             </div>
 
-                            {/* Section: Adresse */}
-                            <div className="space-y-4">
-                                <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Anschrift</h4>
+                            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
 
-                                <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
-                                    <span className="text-slate-500 font-medium">Straße</span>
-                                    <span className="text-slate-800">{partner.street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                {/* Section: Kontakt */}
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Kontaktinformationen</h4>
 
-                                    <span className="text-slate-500 font-medium">PLZ</span>
-                                    <span className="text-slate-800">{partner.zip || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Stadt</span>
-                                    <span className="text-slate-800">{partner.city || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Land</span>
-                                    <span className="text-slate-800">
-                                        {partner.country === 'DE' ? 'Deutschland' :
-                                            partner.country === 'AT' ? 'Österreich' :
-                                                partner.country === 'CH' ? 'Schweiz' :
-                                                    partner.country || <span className="text-slate-400 italic">Keine Angabe</span>}
-                                    </span>
-                                </div>
-
-                                <div className="mt-6 pt-4 border-t border-slate-50">
-                                    <h4 className="text-xs font-medium text-slate-400 mb-3">Zahlungsdaten</h4>
                                     <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
-                                        <span className="text-slate-500 font-medium">IBAN</span>
-                                        <span className="text-slate-800">{partner.iban || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium">Firma</span>
+                                        <span className="text-slate-800 font-semibold">{partner.company || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
 
-                                        <span className="text-slate-500 font-medium">BIC</span>
-                                        <span className="text-slate-800">{partner.bic || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium">Vorname</span>
+                                        <span className="text-slate-800">{partner.first_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
 
-                                        <span className="text-slate-500 font-medium">Bank</span>
-                                        <span className="text-slate-800">{partner.bank_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium">Nachname</span>
+                                        <span className="text-slate-800 font-medium">{partner.last_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
 
-                                        <span className="text-slate-500 font-medium mt-2">Steuer-Nr.</span>
-                                        <span className="text-slate-800 mt-2">{partner.tax_id || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium mt-2">Email</span>
+                                        <span className="text-slate-700 mt-2 hover:underline cursor-pointer">{partner.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
 
-                                        <span className="text-slate-500 font-medium">USt-IdNr.</span>
-                                        <span className="text-slate-800">{partner.vat_id || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        <span className="text-slate-500 font-medium">Telefon</span>
+                                        <span className="text-slate-800">{partner.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        {partner.additional_phones?.length > 0 && (
+                                            <>
+                                                <span className="text-slate-500 font-medium">Weitere Tel.</span>
+                                                <span className="text-slate-800">{partner.additional_phones.join(', ')}</span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
+
+                                {/* Section: Adresse */}
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Anschrift</h4>
+
+                                    <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
+                                        <span className="text-slate-500 font-medium">Straße</span>
+                                        <span className="text-slate-800">{partner.street || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        <span className="text-slate-500 font-medium">PLZ</span>
+                                        <span className="text-slate-800">{partner.zip || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        <span className="text-slate-500 font-medium">Stadt</span>
+                                        <span className="text-slate-800">{partner.city || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        <span className="text-slate-500 font-medium">Land</span>
+                                        <span className="text-slate-800">
+                                            {partner.country === 'DE' ? 'Deutschland' :
+                                                partner.country === 'AT' ? 'Österreich' :
+                                                    partner.country === 'CH' ? 'Schweiz' :
+                                                        partner.country || <span className="text-slate-400 italic">Keine Angabe</span>}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-6 pt-4 border-t border-slate-50">
+                                        <h4 className="text-xs font-medium text-slate-400 mb-3">Zahlungsdaten</h4>
+                                        <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
+                                            <span className="text-slate-500 font-medium">IBAN</span>
+                                            <span className="text-slate-800">{partner.iban || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">BIC</span>
+                                            <span className="text-slate-800">{partner.bic || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">Bank</span>
+                                            <span className="text-slate-800">{partner.bank_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium mt-2">Steuer-Nr.</span>
+                                            <span className="text-slate-800 mt-2">{partner.tax_id || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                            <span className="text-slate-500 font-medium">USt-IdNr.</span>
+                                            <span className="text-slate-800">{partner.vat_id || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
 
+                            {/* Memo / Notes */}
+                            <div className="p-6 border-t border-slate-100 bg-slate-50/30">
+                                <h4 className="text-xs font-medium text-slate-400 mb-2">Interne Notizen</h4>
+                                <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
+                                    {partner.notes || <span className="italic text-slate-400">Keine Notizen hinterlegt.</span>}
+                                </p>
+                            </div>
                         </div>
 
-                        {/* Memo / Notes */}
-                        <div className="p-6 border-t border-slate-100 bg-slate-50/30">
-                            <h4 className="text-xs font-medium text-slate-400 mb-2">Interne Notizen</h4>
-                            <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
-                                {partner.notes || <span className="italic text-slate-400">Keine Notizen hinterlegt.</span>}
-                            </p>
+                        {/* Recent Projects Card */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <h3 className="font-medium text-slate-700 flex items-center gap-2">
+                                    <FaBriefcase className="text-slate-600" /> Letzte Projekte
+                                </h3>
+                            </div>
+                            <div>
+                                <RecentPartnerProjects partnerId={id!} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Recent Projects Card */}
-                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                            <h3 className="font-medium text-slate-700 flex items-center gap-2">
-                                <FaBriefcase className="text-slate-600" /> Letzte Projekte
-                            </h3>
+                    {/* Side Panel */}
+                    <div className="space-y-6">
+
+                        {/* Statistics Card */}
+                        <PartnerStats partnerId={id!} />
+
+                        {/* Skills Card */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                                <h4 className="text-xs font-medium text-slate-500">Qualifikationen</h4>
+                            </div>
+                            <div className="p-5 space-y-5">
+                                <div>
+                                    <label className="text-xs font-medium text-slate-400 block mb-2">Sprachpaare</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {partner.languages && partner.languages.length > 0 ? (
+                                            partner.languages.map((lang: string, i: number) => (
+                                                <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-sm text-xs font-medium shadow-sm">
+                                                    <img src={getFlagUrl(lang)} className="w-4 h-3 object-cover rounded-sm" alt={lang} />
+                                                    {getLanguageName(lang)}
+                                                </span>
+                                            ))
+                                        ) : <span className="text-xs text-slate-400 italic">Keine Sprachen angegeben</span>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-medium text-slate-400 block mb-2">Fachgebiete</label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {partner.domains && partner.domains.length > 0 ? (
+                                            partner.domains.map((domain: string, i: number) => (
+                                                <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-sm text-sm font-medium border border-slate-200">
+                                                    {domain}
+                                                </span>
+                                            ))
+                                        ) : <span className="text-xs text-slate-400 italic">Keine Angabe</span>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-medium text-slate-400 block mb-2">Preise / Raten</label>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-xs border-b border-slate-50 pb-1">
+                                            <span className="text-slate-500">Wortpreis</span>
+                                            <span className="font-brand font-medium text-slate-700">{partner.unit_rates?.word ? parseFloat(partner.unit_rates.word).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs border-b border-slate-50 pb-1">
+                                            <span className="text-slate-500">Zeilenpreis</span>
+                                            <span className="font-brand font-medium text-slate-700">{partner.unit_rates?.line ? parseFloat(partner.unit_rates.line).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-slate-500">Stundensatz</span>
+                                            <span className="font-brand font-medium text-slate-700">{partner.hourly_rate ? parseFloat(partner.hourly_rate).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <RecentPartnerProjects partnerId={id!} />
-                        </div>
+
                     </div>
                 </div>
 
-                {/* Side Panel */}
-                <div className="space-y-6">
+                <NewPartnerModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onSubmit={(data) => updateMutation.mutate(data)}
+                    initialData={partner}
+                    isLoading={updateMutation.isPending}
+                />
 
-                    {/* Statistics Card */}
-                    <PartnerStats partnerId={id!} />
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={() => deleteMutation.mutate(parseInt(id!))}
+                    title="Partner löschen"
+                    message={`Möchten Sie den Partner "${name}" wirklich löschen?`}
+                    isLoading={deleteMutation.isPending}
+                />
 
-                    {/* Skills Card */}
-                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-                            <h4 className="text-xs font-medium text-slate-500">Qualifikationen</h4>
-                        </div>
-                        <div className="p-5 space-y-5">
-                            <div>
-                                <label className="text-xs font-medium text-slate-400 block mb-2">Sprachpaare</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {partner.languages && partner.languages.length > 0 ? (
-                                        partner.languages.map((lang: string, i: number) => (
-                                            <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-sm text-xs font-medium shadow-sm">
-                                                <img src={getFlagUrl(lang)} className="w-4 h-3 object-cover rounded-sm" alt={lang} />
-                                                {getLanguageName(lang)}
-                                            </span>
-                                        ))
-                                    ) : <span className="text-xs text-slate-400 italic">Keine Sprachen angegeben</span>}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-xs font-medium text-slate-400 block mb-2">Fachgebiete</label>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {partner.domains && partner.domains.length > 0 ? (
-                                        partner.domains.map((domain: string, i: number) => (
-                                            <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-sm text-sm font-medium border border-slate-200">
-                                                {domain}
-                                            </span>
-                                        ))
-                                    ) : <span className="text-xs text-slate-400 italic">Keine Angabe</span>}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-xs font-medium text-slate-400 block mb-2">Preise / Raten</label>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-xs border-b border-slate-50 pb-1">
-                                        <span className="text-slate-500">Wortpreis</span>
-                                        <span className="font-brand font-medium text-slate-700">{partner.unit_rates?.word ? parseFloat(partner.unit_rates.word).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs border-b border-slate-50 pb-1">
-                                        <span className="text-slate-500">Zeilenpreis</span>
-                                        <span className="font-brand font-medium text-slate-700">{partner.unit_rates?.line ? parseFloat(partner.unit_rates.line).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-500">Stundensatz</span>
-                                        <span className="font-brand font-medium text-slate-700">{partner.hourly_rate ? parseFloat(partner.hourly_rate).toFixed(2) + ' €' : <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
+                {/* Spacer for bottom padding */}
+                <div className="h-32" />
             </div>
-
-            <NewPartnerModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                onSubmit={(data) => updateMutation.mutate(data)}
-                initialData={partner}
-                isLoading={updateMutation.isPending}
-            />
-
-            <ConfirmModal
-                isOpen={isConfirmOpen}
-                onClose={() => setIsConfirmOpen(false)}
-                onConfirm={() => deleteMutation.mutate(parseInt(id!))}
-                title="Partner löschen"
-                message={`Möchten Sie den Partner "${name}" wirklich löschen?`}
-                isLoading={deleteMutation.isPending}
-            />
-
-            {/* Spacer for bottom padding */}
-            <div className="h-32" />
         </div>
     );
 };

@@ -21,7 +21,12 @@ const AppLayout = () => {
 
             {/* Main Content */}
             <main className="flex-1 overflow-hidden relative">
-                <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+                {/* 
+                    We removed the global overflow-y-auto here to allow pages 
+                    to control their own scrolling (e.g. fixed headers with scrollable tables).
+                    Pages should now use overflow-y-auto if they want to scroll the whole content.
+                */}
+                <div className="absolute inset-0 overflow-hidden flex flex-col">
                     <Outlet />
                 </div>
             </main>

@@ -235,62 +235,64 @@ const Documents = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10">
-            {/* Header Section */}
-            <div className="flex justify-between items-center gap-4">
-                <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Dokumente</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Zentrale Verwaltung aller Projektdokumente und Lieferungen</p>
+        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <div className="flex flex-col gap-6 h-full overflow-hidden fade-in">
+                {/* Header Section */}
+                <div className="flex justify-between items-center gap-4">
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Dokumente</h1>
+                        <p className="text-slate-500 text-sm hidden sm:block">Zentrale Verwaltung aller Projektdokumente und Lieferungen</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-tight h-9 px-4 border-slate-200 hover:bg-slate-50 transition-all">
+                            <FaCloudUploadAlt className="text-slate-400" /> List Export
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                    <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-tight h-9 px-4 border-slate-200 hover:bg-slate-50 transition-all">
-                        <FaCloudUploadAlt className="text-slate-400" /> List Export
-                    </Button>
+
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <KPICard
+                        label="Dateien Gesamt"
+                        value={totalCount}
+                        icon={<FaFileAlt />}
+                        subValue="Indexierte Dokumente"
+                    />
+                    <KPICard
+                        label="Speicherplatz"
+                        value={formatFileSize(totalSize)}
+                        icon={<FaHdd />}
+                        subValue="Belegter Speicher"
+                    />
+                    <KPICard
+                        label="Quell-Dokumente"
+                        value={sourceFilesCount}
+                        icon={<FaInbox />}
+                        subValue="Eingänge von Kunden"
+                    />
+                    <KPICard
+                        label="Ausspielungen"
+                        value={targetFilesCount}
+                        icon={<FaCheckCircle />}
+                        subValue="Gelieferte Dateien"
+                    />
                 </div>
-            </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KPICard
-                    label="Dateien Gesamt"
-                    value={totalCount}
-                    icon={<FaFileAlt />}
-                    subValue="Indexierte Dokumente"
-                />
-                <KPICard
-                    label="Speicherplatz"
-                    value={formatFileSize(totalSize)}
-                    icon={<FaHdd />}
-                    subValue="Belegter Speicher"
-                />
-                <KPICard
-                    label="Quell-Dokumente"
-                    value={sourceFilesCount}
-                    icon={<FaInbox />}
-                    subValue="Eingänge von Kunden"
-                />
-                <KPICard
-                    label="Ausspielungen"
-                    value={targetFilesCount}
-                    icon={<FaCheckCircle />}
-                    subValue="Gelieferte Dateien"
-                />
-            </div>
-
-            {/* Table Section */}
-            <div className="flex-1 flex flex-col min-h-[500px] relative z-0">
-                <DataTable
-                    data={filteredFiles}
-                    columns={columns}
-                    isLoading={isLoading}
-                    filters={filters}
-                    onResetFilters={onResetFilters}
-                    activeFilterCount={(typeFilter !== 'all' ? 1 : 0) + (extFilter !== 'all' ? 1 : 0)}
-                    searchPlaceholder="Nach Dateiname oder Erweiterung suchen..."
-                    searchFields={['original_name', 'extension']}
-                    pageSize={25}
-                    onRowClick={(file) => navigate(`/projects/${file.project_id}`)}
-                />
+                {/* Table Section */}
+                <div className="flex-1 flex flex-col min-h-[500px] relative z-0">
+                    <DataTable
+                        data={filteredFiles}
+                        columns={columns}
+                        isLoading={isLoading}
+                        filters={filters}
+                        onResetFilters={onResetFilters}
+                        activeFilterCount={(typeFilter !== 'all' ? 1 : 0) + (extFilter !== 'all' ? 1 : 0)}
+                        searchPlaceholder="Nach Dateiname oder Erweiterung suchen..."
+                        searchFields={['original_name', 'extension']}
+                        pageSize={25}
+                        onRowClick={(file) => navigate(`/projects/${file.project_id}`)}
+                    />
+                </div>
             </div>
         </div>
     );

@@ -155,6 +155,39 @@ class MailController extends Controller
 
         return response()->json(['message' => 'Mail deleted']);
     }
+
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:mails,id',
+        ]);
+
+        $ids = $validated['ids'];
+
+        // Mails already in trash should be permanently deleted (well, soft-deleted from DB in this case)
+        Mail::whereIn('id', $ids)->where('folder', 'trash')->delete();
+
+        // Mails not in trash should be moved to trash
+        Mail::whereIn('id', $ids)->where('folder', '!=', 'trash')->update(['folder' => 'trash']);
+
+        return response()->json(['message' => 'Mails deleted successfully']);
+    }
+
+    public function bulkRestore(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:mails,id',
+        ]);
+
+        $ids = $validated['ids'];
+
+        // Move items from trash back to inbox
+        Mail::whereIn('id', $ids)->where('folder', 'trash')->update(['folder' => 'inbox']);
+
+        return response()->json(['message' => 'Mails restored successfully']);
+    }
     public function sync(Request $request)
     {
         $tenantId = $request->user()->tenant_id ?? 1;

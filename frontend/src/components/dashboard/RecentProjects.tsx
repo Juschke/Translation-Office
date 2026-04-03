@@ -70,7 +70,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                 filter === 'urgent' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-red-600'
                             )}
                         >
-                            <FaExclamationTriangle className="text-[10px]" /> Dringend
+                            Dringend <FaExclamationTriangle className="text-[10px]" />
                         </button>
                         <button
                             onClick={() => { setFilter('express'); setPage(1); }}
@@ -79,7 +79,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                 filter === 'express' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-600'
                             )}
                         >
-                            <FaBolt className="text-[10px]" /> Express
+                            Express <FaBolt className="text-[10px]" />
                         </button>
                     </div>
                 </div>
@@ -98,7 +98,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                             <th className="px-4 py-3 border-b border-slate-100">Projekt</th>
                             <th className="px-4 py-3 border-b border-slate-100">Kunde</th>
                             <th className="px-4 py-3 border-b border-slate-100">Partner</th>
-                            <th className="px-4 py-3 border-b border-slate-100">Sprachen</th>
+                            <th className="px-4 py-3 border-b border-slate-100 text-center">Sprachen</th>
                             <th className="px-4 py-3 border-b border-slate-100 text-right">Dateien</th>
                             <th className="px-4 py-3 border-b border-slate-100 text-right">Netto-Preis</th>
                             <th className="px-4 py-3 border-b border-slate-100 text-right">Deadline</th>
@@ -116,17 +116,15 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                             return (
                                 <tr
                                     key={p.id}
-                                    className="hover:bg-slate-50/50 transition"
+                                    onClick={() => navigate(`/projects/${p.id}`)}
+                                    className="hover:bg-slate-50 transition cursor-pointer group"
                                 >
                                     <td className="px-4 py-2">
-                                        <div
-                                            onClick={() => navigate(`/projects/${p.id}`)}
-                                            className="flex flex-col cursor-pointer group/link w-fit"
-                                        >
-                                            <span className="text-xs font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[150px]">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold text-slate-800 group-hover:text-brand-primary group-hover:underline transition truncate max-w-[150px]">
                                                 {p.project_name || p.name}
                                             </span>
-                                            <span className="text-[10px] text-slate-400 font-mono tracking-tighter group-hover/link:text-brand-primary transition">
+                                            <span className="text-[10px] text-slate-400 font-mono tracking-tighter group-hover:text-brand-primary transition">
                                                 {p.project_number || `#${p.id}`}
                                             </span>
                                         </div>
@@ -138,7 +136,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                             </div>
                                             <div className="flex flex-col min-w-0">
                                                 <span
-                                                    onClick={() => p.customer?.id && navigate(`/customers/${p.customer.id}`)}
+                                                    onClick={(e) => { e.stopPropagation(); p.customer?.id && navigate(`/customers/${p.customer.id}`); }}
                                                     className={clsx(
                                                         "font-bold text-slate-700 whitespace-nowrap text-xs transition",
                                                         p.customer?.id ? "cursor-pointer hover:underline hover:text-slate-900" : ""
@@ -155,23 +153,31 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-4 py-2 text-xs">
                                         {p.partner ? (
-                                            <div className="flex flex-col">
-                                                <span
-                                                    onClick={() => p.partner?.id && navigate(`/partners/${p.partner.id}`)}
-                                                    className={clsx(
-                                                        "text-xs font-medium text-slate-700 transition",
-                                                        p.partner?.id ? "cursor-pointer hover:underline hover:text-slate-900" : ""
-                                                    )}
-                                                >
-                                                    {p.partner.company_name || `${p.partner.first_name} ${p.partner.last_name}`}
-                                                </span>
-                                                <div className="flex items-center gap-1.5">
-                                                    <FaEnvelope className="text-[10px] text-slate-300" />
-                                                    <span className="text-[10px] text-slate-400 truncate max-w-[130px]">
-                                                        {p.partner.email}
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-7 h-7 rounded-sm bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold border border-slate-200 shrink-0">
+                                                    {getInitials(p.partner.company || `${p.partner.first_name} ${p.partner.last_name}`)}
+                                                </div>
+                                                <div className="flex flex-col min-w-0">
+                                                    <span
+                                                        onClick={(e) => { e.stopPropagation(); p.partner?.id && navigate(`/partners/${p.partner.id}`); }}
+                                                        className={clsx(
+                                                            "font-bold text-slate-700 whitespace-nowrap text-xs transition",
+                                                            p.partner?.id ? "cursor-pointer hover:underline hover:text-slate-900" : ""
+                                                        )}
+                                                    >
+                                                        {p.partner.company || `${p.partner.first_name} ${p.partner.last_name}`}
                                                     </span>
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                                            <FaEnvelope className="text-slate-300 shrink-0" />
+                                                            <span className="truncate max-w-[130px]">{p.partner.email}</span>
+                                                        </div>
+                                                        {p.partner.phone && (
+                                                            <span className="text-[10px] text-slate-400 font-medium">{p.partner.phone}</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ) : (
@@ -179,7 +185,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                         )}
                                     </td>
                                     <td className="px-4 py-2">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center justify-center gap-2.5">
                                             <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded-sm border border-slate-100">
                                                 <img
                                                     src={getFlagUrl(p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'de')}
@@ -187,7 +193,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     alt="Src"
                                                 />
                                                 <span className="text-[10px] font-bold text-slate-600">
-                                                    {(p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'DE').toUpperCase()}
+                                                    {(p.source_language?.name_internal || p.sourceLanguage?.name_internal || p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'DE')}
                                                 </span>
                                             </div>
                                             <FaArrowRight className="text-[10px] text-slate-300" />
@@ -198,7 +204,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     alt="Tgt"
                                                 />
                                                 <span className="text-[10px] font-bold text-slate-600">
-                                                    {(p.target_language?.iso_code || p.targetLanguage?.iso_code || 'EN').toUpperCase()}
+                                                    {(p.target_language?.name_internal || p.targetLanguage?.name_internal || p.target_language?.iso_code || p.targetLanguage?.iso_code || 'EN')}
                                                 </span>
                                             </div>
                                         </div>

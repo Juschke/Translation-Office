@@ -454,9 +454,9 @@ const NewInvoice = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F0F2F5] pb-12">
+        <div className="flex-1 flex flex-col overflow-hidden max-h-screen">
             {/* ── Top Navigation Bar ── */}
-            <div className="relative  bg-white border-b border-slate-200 px-6 py-6 flex justify-between items-center shadow-sm">
+            <div className="relative bg-white border-b border-slate-200 px-6 py-6 flex justify-between items-center shadow-sm z-10 shrink-0">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => navigate('/invoices')}
@@ -514,542 +514,544 @@ const NewInvoice = () => {
                 </div>
             </div>
 
-            <div className="max-w-[1400px] mx-auto px-4 py-8">
-                <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#F0F2F5] py-8">
+                <div className="max-w-[1400px] mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-                    {/* ── Main Content Area (Left) ── */}
-                    <div className="flex-1 space-y-6 w-full">
+                        {/* ── Main Content Area (Left) ── */}
+                        <div className="flex-1 space-y-6 w-full">
 
-                        {/* Section: Projekt Verknüpfung */}
-                        <section className="bg-transparent space-y-2 mb-8">
-                            <h3 className="text-sm font-bold text-slate-800 ml-1">Projekt-Zuordnung</h3>
-                            <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
-                                <div className="max-w-xl space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Projekt verknüpfen (empfohlen)</label>
-                                    <SearchableSelect
-                                        placeholder="Suchen Sie nach einem Projekt (Name oder Nummer)..."
-                                        options={projectOptions}
-                                        value={selectedProjectId}
-                                        onChange={(val) => {
-                                            setSelectedProjectId(val);
-                                            const proj = (projects as any[]).find(p => p.id.toString() === val);
-                                            if (proj) {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    customer_id: proj.customer_id?.toString() || proj.customer?.id?.toString() || '',
-                                                    project_id: val
-                                                }));
-                                            }
-                                        }}
-                                    />
-                                    <p className="text-[10px] text-slate-400 italic">Durch die Auswahl eines Projekts werden Leistungen und Kundendaten automatisch übernommen.</p>
-                                </div>
-                            </div>
-                        </section>
-
-
-
-                        {/* Section: Kundenangaben (Single Card with 2-Column Grid) */}
-                        <section className="bg-transparent space-y-2 mb-8">
-                            <h3 className="text-sm font-bold text-slate-800 ml-1">Kundenangaben</h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
-                                {/* Left Column: Address */}
-                                <div className="space-y-4">
-
-                                    <div className="space-y-3">
-                                        <CustomerSelect
-                                            options={customerOptions}
-                                            value={formData.customer_id}
-                                            onChange={(val) => setFormData(prev => ({ ...prev, customer_id: val }))}
-                                            placeholder="Kunden suchen oder neu anlegen..."
+                            {/* Section: Projekt Verknüpfung */}
+                            <section className="bg-transparent space-y-2 mb-8">
+                                <h3 className="text-sm font-bold text-slate-800 ml-1">Projekt-Zuordnung</h3>
+                                <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
+                                    <div className="max-w-xl space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Projekt verknüpfen (empfohlen)</label>
+                                        <SearchableSelect
+                                            placeholder="Suchen Sie nach einem Projekt (Name oder Nummer)..."
+                                            options={projectOptions}
+                                            value={selectedProjectId}
+                                            onChange={(val) => {
+                                                setSelectedProjectId(val);
+                                                const proj = (projects as any[]).find(p => p.id.toString() === val);
+                                                if (proj) {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        customer_id: proj.customer_id?.toString() || proj.customer?.id?.toString() || '',
+                                                        project_id: val
+                                                    }));
+                                                }
+                                            }}
                                         />
-                                    </div>
-                                    <Input
-                                        placeholder="Anrede / Name / Firma"
-                                        value={activeCustomer ? `${activeCustomer.salutation || ''} ${activeCustomer.company_name || `${activeCustomer.first_name || ''} ${activeCustomer.last_name || ''}`.trim()}`.trim() : ''}
-                                        readOnly
-                                        className="h-11 bg-white border-slate-200"
-                                    />
-                                    <Input
-                                        placeholder="Adresszusatz"
-                                        value={activeCustomer?.address_zusatz || ''}
-                                        readOnly
-                                        className="h-11 bg-white border-slate-200"
-                                    />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Input
-                                            placeholder="Straße"
-                                            value={activeCustomer?.address_street || ''}
-                                            readOnly
-                                            className="h-11 bg-white border-slate-200 col-span-3"
-                                        />
-                                        <Input
-                                            placeholder="Nr."
-                                            value={activeCustomer?.address_house_no || ''}
-                                            readOnly
-                                            className="h-11 bg-white border-slate-200 col-span-1"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Input
-                                            placeholder="PLZ"
-                                            value={activeCustomer?.address_zip || ''}
-                                            readOnly
-                                            className="h-11 bg-white border-slate-200 col-span-1"
-                                        />
-                                        <Input
-                                            placeholder="Ort"
-                                            value={activeCustomer?.address_city || ''}
-                                            readOnly
-                                            className="h-11 bg-white border-slate-200 col-span-3"
-                                        />
-                                    </div>
-                                    <CountrySelect
-                                        value={activeCustomer?.address_country || 'Deutschland'}
-                                        onChange={() => { }}
-                                        className="w-full"
-                                    />
-                                </div>
-
-                                {/* Right Column: Metadata */}
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Rechnungsnummer</label>
-                                        <Input
-                                            value={formData.invoice_number || ''}
-                                            placeholder="automatisch"
-                                            readOnly
-                                            className="h-11 bg-white border-slate-200 text-slate-500 italic"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Kundennummer</label>
-                                        <Input
-                                            value={customerDisplayNo}
-                                            readOnly
-                                            className="h-11 bg-slate-50 border-slate-200 font-mono text-slate-500"
-                                            placeholder="–"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Datum</label>
-                                        <DatePicker
-                                            format="DD.MM.YYYY"
-                                            value={formData.date ? dayjs(formData.date) : null}
-                                            onChange={(val) => setFormData({ ...formData, date: val ? val.format('YYYY-MM-DD') : '' })}
-                                            className="h-11 w-full rounded-md border-slate-200 bg-white"
-                                            placeholder="15.07.2025"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Zahlungsziel</label>
-                                        <DatePicker
-                                            format="DD.MM.YYYY"
-                                            value={formData.due_date ? dayjs(formData.due_date) : null}
-                                            onChange={(val) => setFormData({ ...formData, due_date: val ? val.format('YYYY-MM-DD') : '' })}
-                                            className="h-11 w-full rounded-md border-slate-200 bg-white"
-                                            placeholder="Zahlbar bis..."
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Leistungszeitraum</label>
-                                        <Input
-                                            value={formData.service_period}
-                                            onChange={e => setFormData({ ...formData, service_period: e.target.value })}
-                                            className="h-11 bg-white"
-                                        />
+                                        <p className="text-[10px] text-slate-400 italic">Durch die Auswahl eines Projekts werden Leistungen und Kundendaten automatisch übernommen.</p>
                                     </div>
                                 </div>
-                            </div>
-                        </section>
+                            </section>
 
-                        {/* Section: Kopfbereich (Belegtitel) */}
-                        <section className="bg-transparent space-y-2 mb-8">
-                            <h3 className="text-sm font-bold text-slate-800 ml-1">Kopfbereich</h3>
-                            <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm space-y-6">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Belegtitel</label>
-                                    <select
-                                        className="w-full h-11 border-slate-200 border text-base font-medium focus:border-brand-primary outline-none rounded-md px-4 bg-white"
-                                        value={formData.type}
-                                        disabled
-                                    >
-                                        <option value="invoice">Rechnung</option>
-                                        <option value="credit_note">Gutschrift</option>
-                                    </select>
+
+
+                            {/* Section: Kundenangaben (Single Card with 2-Column Grid) */}
+                            <section className="bg-transparent space-y-2 mb-8">
+                                <h3 className="text-sm font-bold text-slate-800 ml-1">Kundenangaben</h3>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
+                                    {/* Left Column: Address */}
+                                    <div className="space-y-4">
+
+                                        <div className="space-y-3">
+                                            <CustomerSelect
+                                                options={customerOptions}
+                                                value={formData.customer_id}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, customer_id: val }))}
+                                                placeholder="Kunden suchen oder neu anlegen..."
+                                            />
+                                        </div>
+                                        <Input
+                                            placeholder="Anrede / Name / Firma"
+                                            value={activeCustomer ? `${activeCustomer.salutation || ''} ${activeCustomer.company_name || `${activeCustomer.first_name || ''} ${activeCustomer.last_name || ''}`.trim()}`.trim() : ''}
+                                            readOnly
+                                            className="h-11 bg-white border-slate-200"
+                                        />
+                                        <Input
+                                            placeholder="Adresszusatz"
+                                            value={activeCustomer?.address_zusatz || ''}
+                                            readOnly
+                                            className="h-11 bg-white border-slate-200"
+                                        />
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Input
+                                                placeholder="Straße"
+                                                value={activeCustomer?.address_street || ''}
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 col-span-3"
+                                            />
+                                            <Input
+                                                placeholder="Nr."
+                                                value={activeCustomer?.address_house_no || ''}
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 col-span-1"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Input
+                                                placeholder="PLZ"
+                                                value={activeCustomer?.address_zip || ''}
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 col-span-1"
+                                            />
+                                            <Input
+                                                placeholder="Ort"
+                                                value={activeCustomer?.address_city || ''}
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 col-span-3"
+                                            />
+                                        </div>
+                                        <CountrySelect
+                                            value={activeCustomer?.address_country || 'Deutschland'}
+                                            onChange={() => { }}
+                                            className="w-full"
+                                        />
+                                    </div>
+
+                                    {/* Right Column: Metadata */}
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Rechnungsnummer</label>
+                                            <Input
+                                                value={formData.invoice_number || ''}
+                                                placeholder="automatisch"
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 text-slate-500 italic"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Kundennummer</label>
+                                            <Input
+                                                value={customerDisplayNo}
+                                                readOnly
+                                                className="h-11 bg-slate-50 border-slate-200 font-mono text-slate-500"
+                                                placeholder="–"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Datum</label>
+                                            <DatePicker
+                                                format="DD.MM.YYYY"
+                                                value={formData.date ? dayjs(formData.date) : null}
+                                                onChange={(val) => setFormData({ ...formData, date: val ? val.format('YYYY-MM-DD') : '' })}
+                                                className="h-11 w-full rounded-md border-slate-200 bg-white"
+                                                placeholder="15.07.2025"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Zahlungsziel</label>
+                                            <DatePicker
+                                                format="DD.MM.YYYY"
+                                                value={formData.due_date ? dayjs(formData.due_date) : null}
+                                                onChange={(val) => setFormData({ ...formData, due_date: val ? val.format('YYYY-MM-DD') : '' })}
+                                                className="h-11 w-full rounded-md border-slate-200 bg-white"
+                                                placeholder="Zahlbar bis..."
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Leistungszeitraum</label>
+                                            <Input
+                                                value={formData.service_period}
+                                                onChange={e => setFormData({ ...formData, service_period: e.target.value })}
+                                                className="h-11 bg-white"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
+                            </section>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Section: Kopfbereich (Belegtitel) */}
+                            <section className="bg-transparent space-y-2 mb-8">
+                                <h3 className="text-sm font-bold text-slate-800 ml-1">Kopfbereich</h3>
+                                <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm space-y-6">
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Steuersatz</label>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Belegtitel</label>
                                         <select
-                                            className="w-full h-11 border-slate-200 border text-sm font-medium focus:border-slate-800 outline-none rounded-md px-4 bg-white"
-                                            value={formData.tax_exemption === 'none' ? formData.tax_rate : formData.tax_exemption}
-                                            onChange={e => {
-                                                const v = e.target.value;
-                                                if (v === '19.00' || v === '7.00') setFormData({ ...formData, tax_exemption: 'none', tax_rate: v });
-                                                else setFormData({ ...formData, tax_exemption: v, tax_rate: '0.00' });
-                                            }}>
-                                            <option value="19.00">19% MWSt (Standard)</option>
-                                            <option value="7.00">7% MWSt</option>
-                                            <option value="§19_ustg">Steuerbefreit (§ 19 UStG)</option>
-                                            <option value="reverse_charge">Steuerbefreit (Reverse Charge)</option>
+                                            className="w-full h-11 border-slate-200 border text-base font-medium focus:border-brand-primary outline-none rounded-md px-4 bg-white"
+                                            value={formData.type}
+                                            disabled
+                                        >
+                                            <option value="invoice">Rechnung</option>
+                                            <option value="credit_note">Gutschrift</option>
                                         </select>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Steuersatz</label>
+                                            <select
+                                                className="w-full h-11 border-slate-200 border text-sm font-medium focus:border-slate-800 outline-none rounded-md px-4 bg-white"
+                                                value={formData.tax_exemption === 'none' ? formData.tax_rate : formData.tax_exemption}
+                                                onChange={e => {
+                                                    const v = e.target.value;
+                                                    if (v === '19.00' || v === '7.00') setFormData({ ...formData, tax_exemption: 'none', tax_rate: v });
+                                                    else setFormData({ ...formData, tax_exemption: v, tax_rate: '0.00' });
+                                                }}>
+                                                <option value="19.00">19% MWSt (Standard)</option>
+                                                <option value="7.00">7% MWSt</option>
+                                                <option value="§19_ustg">Steuerbefreit (§ 19 UStG)</option>
+                                                <option value="reverse_charge">Steuerbefreit (Reverse Charge)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Leitweg-ID</label>
+                                            <Input
+                                                value={formData.leitweg_id}
+                                                onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
+                                                className="h-11 bg-white"
+                                                placeholder="z.B. 0101-12345-67"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Kundenreferenz</label>
+                                            <Input
+                                                value={formData.customer_reference}
+                                                onChange={e => setFormData({ ...formData, customer_reference: e.target.value })}
+                                                className="h-11 bg-white"
+                                                placeholder="z.B. Bestellnummer / Projektname"
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Leitweg-ID</label>
-                                        <Input
-                                            value={formData.leitweg_id}
-                                            onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
-                                            className="h-11 bg-white"
-                                            placeholder="z.B. 0101-12345-67"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Kundenreferenz</label>
-                                        <Input
-                                            value={formData.customer_reference}
-                                            onChange={e => setFormData({ ...formData, customer_reference: e.target.value })}
-                                            className="h-11 bg-white"
-                                            placeholder="z.B. Bestellnummer / Projektname"
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Einleitungstext</label>
+                                        <textarea
+                                            className="w-full min-h-[100px] border border-slate-200 rounded-md p-4 text-sm focus:border-brand-primary outline-none transition-colors bg-white shadow-sm"
+                                            placeholder="Vielen Dank für Ihren Auftrag..."
+                                            value={formData.intro_text}
+                                            onChange={e => setFormData({ ...formData, intro_text: e.target.value })}
                                         />
                                     </div>
                                 </div>
+                            </section>
 
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Einleitungstext</label>
-                                    <textarea
-                                        className="w-full min-h-[100px] border border-slate-200 rounded-md p-4 text-sm focus:border-brand-primary outline-none transition-colors bg-white shadow-sm"
-                                        placeholder="Vielen Dank für Ihren Auftrag..."
-                                        value={formData.intro_text}
-                                        onChange={e => setFormData({ ...formData, intro_text: e.target.value })}
-                                    />
+                            {/* Section: Belegpositionen */}
+                            <section className="bg-transparent space-y-2 mb-8">
+                                <div className="flex justify-between items-center ml-1">
+                                    <h3 className="text-sm font-bold text-slate-800">Leistungsübersicht</h3>
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={addItem}
+                                        className="h-8 text-[11px] font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm"
+                                    >
+                                        <FaPlus className="mr-1.5 text-[10px]" /> Position hinzufügen
+                                    </Button>
                                 </div>
-                            </div>
-                        </section>
-
-                        {/* Section: Belegpositionen */}
-                        <section className="bg-transparent space-y-2 mb-8">
-                            <div className="flex justify-between items-center ml-1">
-                                <h3 className="text-sm font-bold text-slate-800">Leistungsübersicht</h3>
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={addItem}
-                                    className="h-8 text-[11px] font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm"
-                                >
-                                    <FaPlus className="mr-1.5 text-[10px]" /> Position hinzufügen
-                                </Button>
-                            </div>
-                            <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                                <div className="p-6 pb-0 space-y-4">
-                                    <div className="w-full lg:w-1/2">
-                                        <SearchableSelect
-                                            label="Aus Dienstleistungskatalog hinzufügen"
-                                            placeholder="Suchen Sie nach vordefinierten Leistungen..."
-                                            options={serviceOptions}
-                                            value=""
-                                            onChange={(val) => { if (val) addService(val); }}
-                                        />
+                                <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                                    <div className="p-6 pb-0 space-y-4">
+                                        <div className="w-full lg:w-1/2">
+                                            <SearchableSelect
+                                                label="Aus Dienstleistungskatalog hinzufügen"
+                                                placeholder="Suchen Sie nach vordefinierten Leistungen..."
+                                                options={serviceOptions}
+                                                value=""
+                                                onChange={(val) => { if (val) addService(val); }}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="p-0 overflow-x-auto">
-                                    <table className="w-full text-left border-collapse min-w-[900px]">
-                                        <thead>
-                                            <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                                <th className="px-4 py-2 w-12 text-center">#</th>
-                                                <th className="px-4 py-2">Beschreibung</th>
-                                                <th className="px-4 py-2 w-20 text-right">Menge</th>
-                                                <th className="px-4 py-2 w-24 text-right">Einheit</th>
-                                                <th className="px-4 py-2 w-24 text-right">Preis (€)</th>
-                                                <th className="px-4 py-2 w-20 text-right">Steuer</th>
-                                                <th className="px-4 py-2 w-20 text-right">Rabatt</th>
-                                                <th className="px-4 py-2 w-32 text-right">Gesamtpreis</th>
-                                                <th className="px-4 py-2 w-10"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {items.map((item, idx) => (
-                                                <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                    <td className="px-4 py-2 text-center text-[10px] font-mono text-slate-300">
-                                                        {idx + 1}
-                                                    </td>
-                                                    <td className="px-4 py-2">
-                                                        {renderItemCell(item.id, 'description', item.description, 'text', 'text-xs font-medium text-slate-700 w-full bg-transparent border-none')}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        {renderItemCell(item.id, 'quantity', String(item.quantity), 'number', 'text-right font-mono text-[11px] text-slate-600 border-none')}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex justify-end">
-                                                            <MiniDropdown
-                                                                value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
-                                                                options={UNITS.map(u => ({ value: u, label: u }))}
-                                                                onChange={(val: string) => updateItem(item.id, 'unit', val)}
-                                                                width="25px"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            {renderItemCell(item.id, 'price', String(item.price), 'number', 'text-right font-mono text-[11px] text-slate-900 font-semibold border-none')}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex justify-end items-center">
-                                                            <MiniDropdown
-                                                                value={item.tax_rate?.toString() || '19.00'}
-                                                                options={[
-                                                                    { value: '19.00', label: '19%' },
-                                                                    { value: '7.00', label: '7%' },
-                                                                    { value: '0.00', label: '0%' }
-                                                                ]}
-                                                                onChange={(val: string) => updateItem(item.id, 'tax_rate', val)}
-                                                                width="25px"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex justify-end items-center gap-1">
-                                                            <div className="flex-1 min-w-[30px]">
-                                                                {renderItemCell(item.id, 'discount_percent', String(item.discount_percent || '0'), 'number', 'text-right font-mono text-[11px] text-slate-400 border-none')}
-                                                            </div>
-                                                            <MiniDropdown
-                                                                value={item.discount_mode || 'percent'}
-                                                                options={[
-                                                                    { value: 'percent', label: '%' },
-                                                                    { value: 'fixed', label: '€' }
-                                                                ]}
-                                                                onChange={(val: string) => updateItem(item.id, 'discount_mode', val)}
-                                                                width="25px"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums text-[11px]">
-                                                        {fmtEur(item.total)}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-center">
-                                                        <button
-                                                            onClick={() => removeItem(item.id)}
-                                                            className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
-                                                        >
-                                                            <FaTrash size={10} />
-                                                        </button>
-                                                    </td>
+                                    <div className="p-0 overflow-x-auto">
+                                        <table className="w-full text-left border-collapse min-w-[900px]">
+                                            <thead>
+                                                <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                                    <th className="px-4 py-2 w-12 text-center">#</th>
+                                                    <th className="px-4 py-2">Beschreibung</th>
+                                                    <th className="px-4 py-2 w-20 text-right">Menge</th>
+                                                    <th className="px-4 py-2 w-24 text-right">Einheit</th>
+                                                    <th className="px-4 py-2 w-24 text-right">Preis (€)</th>
+                                                    <th className="px-4 py-2 w-20 text-right">Steuer</th>
+                                                    <th className="px-4 py-2 w-20 text-right">Rabatt</th>
+                                                    <th className="px-4 py-2 w-32 text-right">Gesamtpreis</th>
+                                                    <th className="px-4 py-2 w-10"></th>
                                                 </tr>
-                                            ))}
-                                            {items.length === 0 && (
-                                                <tr>
-                                                    <td colSpan={9} className="px-4 py-12 text-center text-slate-400 italic text-sm">
-                                                        Fügen Sie Leistungen über den Katalog oder eine manuelle Zeile hinzu.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        {items.length > 0 && (
-                                            <tfoot className="border-t-2 border-slate-100 italic">
-                                                <tr className="bg-slate-50/50">
-                                                    <td colSpan={7} className="px-4 py-1.5 text-right text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                                        Summe Netto
-                                                    </td>
-                                                    <td className="px-4 py-1.5 text-right font-black text-slate-800 tabular-nums text-xs bg-slate-100/50">
-                                                        {fmtEur(computedFinancials.amount_net)}
-                                                    </td>
-                                                    <td></td>
-                                                </tr>
-                                                {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
-                                                    <tr key={rate} className="bg-slate-50/50">
-                                                        <td colSpan={7} className="px-4 py-1 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                            zzgl. Umsatzsteuer {parseFloat(rate)}%
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50">
+                                                {items.map((item, idx) => (
+                                                    <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
+                                                        <td className="px-4 py-2 text-center text-[10px] font-mono text-slate-300">
+                                                            {idx + 1}
                                                         </td>
-                                                        <td className="px-4 py-1 text-right font-mono text-slate-600 tabular-nums text-[11px] bg-white border-b border-slate-50">
-                                                            {fmtEur(amount as number)}
+                                                        <td className="px-4 py-2">
+                                                            {renderItemCell(item.id, 'description', item.description, 'text', 'text-xs font-medium text-slate-700 w-full bg-transparent border-none')}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            {renderItemCell(item.id, 'quantity', String(item.quantity), 'number', 'text-right font-mono text-[11px] text-slate-600 border-none')}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <div className="flex justify-end">
+                                                                <MiniDropdown
+                                                                    value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
+                                                                    options={UNITS.map(u => ({ value: u, label: u }))}
+                                                                    onChange={(val: string) => updateItem(item.id, 'unit', val)}
+                                                                    width="25px"
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                {renderItemCell(item.id, 'price', String(item.price), 'number', 'text-right font-mono text-[11px] text-slate-900 font-semibold border-none')}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <div className="flex justify-end items-center">
+                                                                <MiniDropdown
+                                                                    value={item.tax_rate?.toString() || '19.00'}
+                                                                    options={[
+                                                                        { value: '19.00', label: '19%' },
+                                                                        { value: '7.00', label: '7%' },
+                                                                        { value: '0.00', label: '0%' }
+                                                                    ]}
+                                                                    onChange={(val: string) => updateItem(item.id, 'tax_rate', val)}
+                                                                    width="25px"
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <div className="flex justify-end items-center gap-1">
+                                                                <div className="flex-1 min-w-[30px]">
+                                                                    {renderItemCell(item.id, 'discount_percent', String(item.discount_percent || '0'), 'number', 'text-right font-mono text-[11px] text-slate-400 border-none')}
+                                                                </div>
+                                                                <MiniDropdown
+                                                                    value={item.discount_mode || 'percent'}
+                                                                    options={[
+                                                                        { value: 'percent', label: '%' },
+                                                                        { value: 'fixed', label: '€' }
+                                                                    ]}
+                                                                    onChange={(val: string) => updateItem(item.id, 'discount_mode', val)}
+                                                                    width="25px"
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums text-[11px]">
+                                                            {fmtEur(item.total)}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-center">
+                                                            <button
+                                                                onClick={() => removeItem(item.id)}
+                                                                className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                                                            >
+                                                                <FaTrash size={10} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {items.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={9} className="px-4 py-12 text-center text-slate-400 italic text-sm">
+                                                            Fügen Sie Leistungen über den Katalog oder eine manuelle Zeile hinzu.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                            {items.length > 0 && (
+                                                <tfoot className="border-t-2 border-slate-100 italic">
+                                                    <tr className="bg-slate-50/50">
+                                                        <td colSpan={7} className="px-4 py-1.5 text-right text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                                            Summe Netto
+                                                        </td>
+                                                        <td className="px-4 py-1.5 text-right font-black text-slate-800 tabular-nums text-xs bg-slate-100/50">
+                                                            {fmtEur(computedFinancials.amount_net)}
                                                         </td>
                                                         <td></td>
                                                     </tr>
-                                                ))}
-                                            </tfoot>
-                                        )}
-                                    </table>
-                                    <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex justify-center">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={addItem}
-                                            className="h-9 text-xs font-bold border-brand-primary/30 text-brand-primary hover:text-white hover:bg-brand-primary bg-brand-primary/5 shadow-sm px-8"
-                                        >
-                                            <FaPlus className="mr-2 text-[10px]" /> Position hinzufügen
-                                        </Button>
+                                                    {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
+                                                        <tr key={rate} className="bg-slate-50/50">
+                                                            <td colSpan={7} className="px-4 py-1 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                                zzgl. Umsatzsteuer {parseFloat(rate)}%
+                                                            </td>
+                                                            <td className="px-4 py-1 text-right font-mono text-slate-600 tabular-nums text-[11px] bg-white border-b border-slate-50">
+                                                                {fmtEur(amount as number)}
+                                                            </td>
+                                                            <td></td>
+                                                        </tr>
+                                                    ))}
+                                                </tfoot>
+                                            )}
+                                        </table>
+                                        <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex justify-center">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={addItem}
+                                                className="h-9 text-xs font-bold border-brand-primary/30 text-brand-primary hover:text-white hover:bg-brand-primary bg-brand-primary/5 shadow-sm px-8"
+                                            >
+                                                <FaPlus className="mr-2 text-[10px]" /> Position hinzufügen
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </section>
+                            </section>
 
-                        {/* Section: Zahlungsbedingungen & Footer */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <section className="bg-transparent space-y-2 h-full">
-                                <h4 className="text-sm font-bold text-slate-800 ml-1">Zahlungsbedingungen</h4>
-                                <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-5">
-                                    <textarea
-                                        className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
-                                        placeholder="Z.B. Zahlbar innerhalb von 14 Tagen..."
-                                        defaultValue={`Zahlbar innerhalb von 14 Tagen bis zum ${fmtDate(formData.due_date)} ohne Abzug.`}
-                                    />
+                            {/* Section: Zahlungsbedingungen & Footer */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <section className="bg-transparent space-y-2 h-full">
+                                    <h4 className="text-sm font-bold text-slate-800 ml-1">Zahlungsbedingungen</h4>
+                                    <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-5">
+                                        <textarea
+                                            className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
+                                            placeholder="Z.B. Zahlbar innerhalb von 14 Tagen..."
+                                            defaultValue={`Zahlbar innerhalb von 14 Tagen bis zum ${fmtDate(formData.due_date)} ohne Abzug.`}
+                                        />
+                                    </div>
+                                </section>
+                                <section className="bg-transparent space-y-2 h-full">
+                                    <h4 className="text-sm font-bold text-slate-800 ml-1">Freitext (Fußzeile)</h4>
+                                    <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-5">
+                                        <textarea
+                                            className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
+                                            placeholder="Optionaler abschließender Text (z.B. Vielen Dank für Ihren Auftrag!)"
+                                            value={formData.footer_text}
+                                            onChange={e => setFormData({ ...formData, footer_text: e.target.value })}
+                                        />
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+                        {/* ── Sidebar (Right) ── */}
+                        <div className="w-full lg:w-96 space-y-6 sticky top-24">
+
+                            {/* Beleg-Historie & Meta (Zusätzliche Infos) */}
+                            <section className="bg-transparent space-y-2">
+                                <h4 className="text-sm font-bold text-slate-800 ml-1">Zusätzliche Infos</h4>
+                                <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 space-y-4">
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-slate-400">Status</span>
+                                            <span className="font-bold text-brand-primary uppercase text-[10px] tracking-wider">{formData.status === 'draft' ? 'Entwurf' : formData.status}</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-slate-400">Währung</span>
+                                            <span className="font-bold">{formData.currency}</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs pt-3 border-t border-slate-50">
+                                            <span className="text-slate-400">Erstellt am</span>
+                                            <span className="font-medium text-slate-600">{fmtDate(formData.date)}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
-                            <section className="bg-transparent space-y-2 h-full">
-                                <h4 className="text-sm font-bold text-slate-800 ml-1">Freitext (Fußzeile)</h4>
-                                <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-5">
-                                    <textarea
-                                        className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
-                                        placeholder="Optionaler abschließender Text (z.B. Vielen Dank für Ihren Auftrag!)"
-                                        value={formData.footer_text}
-                                        onChange={e => setFormData({ ...formData, footer_text: e.target.value })}
-                                    />
+
+                            {/* Summary Card */}
+                            <section className="bg-transparent space-y-2">
+                                <h3 className="text-sm font-bold text-slate-800 ml-1">Zusammenfassung</h3>
+                                <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                                    <div className="space-y-4">
+                                        {/* 1. Netto Summe (Basis) */}
+                                        <div className="flex justify-between items-center h-8 text-sm text-slate-500">
+                                            <span>Netto-Summe</span>
+                                            <span className="font-mono text-slate-900">{fmtEur(computedFinancials.amount_net)}</span>
+                                        </div>
+
+                                        {/* 2. Editable Adjustments */}
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between items-center h-8 text-sm text-slate-500 group">
+                                                <span className="group-hover:text-slate-700 transition-colors">Versandkosten</span>
+                                                <div className="flex items-center gap-0 font-mono text-slate-900 border-b border-transparent hover:border-slate-200 transition-all">
+                                                    <input
+                                                        type="number"
+                                                        value={formData.shipping}
+                                                        onChange={e => setFormData({ ...formData, shipping: e.target.value })}
+                                                        className="w-20 bg-transparent border-none p-0 text-right focus:outline-none focus:ring-0 font-mono text-slate-900"
+                                                    />
+                                                    <span className="ml-1 italic text-slate-400">€</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-center h-8 text-sm text-slate-500 group">
+                                                <span className="group-hover:text-slate-700 transition-colors">Rabatt</span>
+                                                <div className="flex items-center gap-0 font-mono text-slate-900 border-b border-transparent hover:border-slate-200 transition-all">
+                                                    <input
+                                                        type="number"
+                                                        value={formData.discount}
+                                                        onChange={e => setFormData({ ...formData, discount: e.target.value })}
+                                                        className="w-16 bg-transparent border-none p-0 text-right focus:outline-none focus:ring-0 font-mono text-slate-900"
+                                                    />
+                                                    <div className="ml-1 min-w-[25px]">
+                                                        <MiniDropdown
+                                                            value={formData.discount_mode}
+                                                            options={[
+                                                                { value: 'fixed', label: '€' },
+                                                                { value: 'percent', label: '%' }
+                                                            ]}
+                                                            onChange={(v: string) => setFormData({ ...formData, discount_mode: v as any })}
+                                                            width="25px"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 3. Tax Breakdown */}
+                                        <div className="pt-2 border-t border-slate-100 space-y-1">
+                                            <div className="flex justify-between items-center h-8 text-sm text-slate-600">
+                                                <span>Umsatzsteuer {parseFloat(formData.tax_rate)}%</span>
+                                                <span className="font-mono text-slate-900">{fmtEur(computedFinancials.amount_tax)}</span>
+                                            </div>
+                                            {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
+                                                parseFloat(rate) !== parseFloat(formData.tax_rate) && (
+                                                    <div key={rate} className="flex justify-between items-center h-5 text-[11px] text-slate-400 italic">
+                                                        <span>davon {parseFloat(rate)}% MwSt</span>
+                                                        <span className="font-mono">{fmtEur(amount as number)}</span>
+                                                    </div>
+                                                )
+                                            ))}
+                                        </div>
+
+                                        {/* 4. Final Totals */}
+                                        <div className="pt-4 mt-2 border-t-2 border-slate-100 space-y-3">
+                                            <div className="flex justify-between items-center text-sm font-bold text-slate-800">
+                                                <span>Gesamtbetrag</span>
+                                                <span className="text-lg tabular-nums">
+                                                    {fmtEur(computedFinancials.amount_gross)}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-sm font-bold text-slate-800">
+                                                <span className="uppercase tracking-tight text-[10px]">Restforderung</span>
+                                                <span className="text-lg tabular-nums">
+                                                    {fmtEur(computedFinancials.amount_due)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
                         </div>
                     </div>
-
-                    {/* ── Sidebar (Right) ── */}
-                    <div className="w-full lg:w-96 space-y-6 sticky top-24">
-
-                        {/* Beleg-Historie & Meta (Zusätzliche Infos) */}
-                        <section className="bg-transparent space-y-2">
-                            <h4 className="text-sm font-bold text-slate-800 ml-1">Zusätzliche Infos</h4>
-                            <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 space-y-4">
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-slate-400">Status</span>
-                                        <span className="font-bold text-brand-primary uppercase text-[10px] tracking-wider">{formData.status === 'draft' ? 'Entwurf' : formData.status}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-slate-400">Währung</span>
-                                        <span className="font-bold">{formData.currency}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs pt-3 border-t border-slate-50">
-                                        <span className="text-slate-400">Erstellt am</span>
-                                        <span className="font-medium text-slate-600">{fmtDate(formData.date)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Summary Card */}
-                        <section className="bg-transparent space-y-2">
-                            <h3 className="text-sm font-bold text-slate-800 ml-1">Zusammenfassung</h3>
-                            <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                                <div className="space-y-4">
-                                    {/* 1. Netto Summe (Basis) */}
-                                    <div className="flex justify-between items-center h-8 text-sm text-slate-500">
-                                        <span>Netto-Summe</span>
-                                        <span className="font-mono text-slate-900">{fmtEur(computedFinancials.amount_net)}</span>
-                                    </div>
-
-                                    {/* 2. Editable Adjustments */}
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between items-center h-8 text-sm text-slate-500 group">
-                                            <span className="group-hover:text-slate-700 transition-colors">Versandkosten</span>
-                                            <div className="flex items-center gap-0 font-mono text-slate-900 border-b border-transparent hover:border-slate-200 transition-all">
-                                                <input
-                                                    type="number"
-                                                    value={formData.shipping}
-                                                    onChange={e => setFormData({ ...formData, shipping: e.target.value })}
-                                                    className="w-20 bg-transparent border-none p-0 text-right focus:outline-none focus:ring-0 font-mono text-slate-900"
-                                                />
-                                                <span className="ml-1 italic text-slate-400">€</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between items-center h-8 text-sm text-slate-500 group">
-                                            <span className="group-hover:text-slate-700 transition-colors">Rabatt</span>
-                                            <div className="flex items-center gap-0 font-mono text-slate-900 border-b border-transparent hover:border-slate-200 transition-all">
-                                                <input
-                                                    type="number"
-                                                    value={formData.discount}
-                                                    onChange={e => setFormData({ ...formData, discount: e.target.value })}
-                                                    className="w-16 bg-transparent border-none p-0 text-right focus:outline-none focus:ring-0 font-mono text-slate-900"
-                                                />
-                                                <div className="ml-1 min-w-[25px]">
-                                                    <MiniDropdown
-                                                        value={formData.discount_mode}
-                                                        options={[
-                                                            { value: 'fixed', label: '€' },
-                                                            { value: 'percent', label: '%' }
-                                                        ]}
-                                                        onChange={v => setFormData({ ...formData, discount_mode: v as any })}
-                                                        width="25px"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* 3. Tax Breakdown */}
-                                    <div className="pt-2 border-t border-slate-100 space-y-1">
-                                        <div className="flex justify-between items-center h-8 text-sm text-slate-600">
-                                            <span>Umsatzsteuer {parseFloat(formData.tax_rate)}%</span>
-                                            <span className="font-mono text-slate-900">{fmtEur(computedFinancials.amount_tax)}</span>
-                                        </div>
-                                        {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
-                                            parseFloat(rate) !== parseFloat(formData.tax_rate) && (
-                                                <div key={rate} className="flex justify-between items-center h-5 text-[11px] text-slate-400 italic">
-                                                    <span>davon {parseFloat(rate)}% MwSt</span>
-                                                    <span className="font-mono">{fmtEur(amount as number)}</span>
-                                                </div>
-                                            )
-                                        ))}
-                                    </div>
-
-                                    {/* 4. Final Totals */}
-                                    <div className="pt-4 mt-2 border-t-2 border-slate-100 space-y-3">
-                                        <div className="flex justify-between items-center text-sm font-bold text-slate-800">
-                                            <span>Gesamtbetrag</span>
-                                            <span className="text-lg tabular-nums">
-                                                {fmtEur(computedFinancials.amount_gross)}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center text-sm font-bold text-slate-800">
-                                            <span className="uppercase tracking-tight text-[10px]">Restforderung</span>
-                                            <span className="text-lg tabular-nums">
-                                                {fmtEur(computedFinancials.amount_due)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
                 </div>
-            </div>
 
-            {/* ── Action Footer Bar (Simplified & Relative) ── */}
-            <div className="mt-12 flex justify-end items-center gap-3 pt-8 border-t border-slate-200">
-                <Button
-                    variant="outline"
-                    onClick={() => navigate('/invoices')}
-                    className="px-5 h-9 text-xs font-semibold border-slate-200 text-slate-500 hover:bg-slate-50 uppercase tracking-wider"
-                >
-                    Abbrechen
-                </Button>
-                <Button
-                    onClick={() => handleSubmit('draft')}
-                    disabled={!formData.customer_id || isLoading}
-                    className="px-5 h-9 text-xs font-bold border-brand-primary/20 text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 uppercase tracking-wider"
-                >
-                    Als Entwurf speichern
-                </Button>
-                <Button
-                    onClick={() => handleSubmit('issued')}
-                    disabled={!formData.customer_id || items.length === 0 || isLoading}
-                    className="px-8 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm uppercase tracking-wider flex items-center gap-2"
-                >
-                    <FaSave className="text-[10px]" />
-                    {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen übernehmen' : 'Beleg jetzt buchen')}
-                </Button>
+                {/* ── Action Footer Bar (Simplified & Relative) ── */}
+                <div className="mt-12 flex justify-end items-center gap-3 pt-8 border-t border-slate-200">
+                    <Button
+                        variant="outline"
+                        onClick={() => navigate('/invoices')}
+                        className="px-5 h-9 text-xs font-semibold border-slate-200 text-slate-500 hover:bg-slate-50 uppercase tracking-wider"
+                    >
+                        Abbrechen
+                    </Button>
+                    <Button
+                        onClick={() => handleSubmit('draft')}
+                        disabled={!formData.customer_id || isLoading}
+                        className="px-5 h-9 text-xs font-bold border-brand-primary/20 text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 uppercase tracking-wider"
+                    >
+                        Als Entwurf speichern
+                    </Button>
+                    <Button
+                        onClick={() => handleSubmit('issued')}
+                        disabled={!formData.customer_id || items.length === 0 || isLoading}
+                        className="px-8 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm uppercase tracking-wider flex items-center gap-2"
+                    >
+                        <FaSave className="text-[10px]" />
+                        {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen übernehmen' : 'Beleg jetzt buchen')}
+                    </Button>
+                </div>
             </div>
         </div>
     );

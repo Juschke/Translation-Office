@@ -263,336 +263,337 @@ const Calendar = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6 fade-in h-[calc(100vh-140px)]">
-            <div className="flex justify-between items-center gap-4">
-                <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('calendar.title')}</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">{t('calendar.subtitle')}</p>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                    <Button
-                        onClick={() => { setEditingAppointment({ type: 'interpreting' }); setSelectedDate(new Date()); setIsModalOpen(true); }}
-                        className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
-                    >
-                        <FaPlus className="text-xs text-brand-primary" /> {t('calendar.new_interpreting')}
-                    </Button>
-                    <Button
-                        onClick={() => { setEditingAppointment(null); setSelectedDate(new Date()); setIsModalOpen(true); }}
-                        variant="default" className="font-bold flex items-center justify-center gap-2 text-xs sm:text-sm"
-                    >
-                        <FaPlus className="text-xs" /> {t('calendar.new_appointment')}
-                    </Button>
-                </div>
-            </div>
-
-            {/* Main Content Area with Sidebar */}
-            <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
-                <div className="flex-1 bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col p-4 relative z-0 min-h-[600px] lg:min-h-0">
-                    <div className="absolute top-4 right-4 z-10 flex bg-slate-100 p-1 rounded-md border border-slate-200 shadow-sm">
-                        <button
-                            onClick={() => { setView('dayGridMonth'); calendarRef.current?.getApi().changeView('dayGridMonth'); }}
-                            className={clsx(
-                                "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
-                                view === 'dayGridMonth'
-                                    ? "bg-white text-slate-800 shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                            )}
-                        >
-                            {t('calendar.view.month')}
-                        </button>
-                        <button
-                            onClick={() => { setView('timeGridWeek'); calendarRef.current?.getApi().changeView('timeGridWeek'); }}
-                            className={clsx(
-                                "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
-                                view === 'timeGridWeek'
-                                    ? "bg-white text-slate-800 shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                            )}
-                        >
-                            {t('calendar.view.week')}
-                        </button>
-                        <button
-                            onClick={() => { setView('timeGridDay'); calendarRef.current?.getApi().changeView('timeGridDay'); }}
-                            className={clsx(
-                                "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
-                                view === 'timeGridDay'
-                                    ? "bg-white text-slate-800 shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-                            )}
-                        >
-                            {t('calendar.view.day')}
-                        </button>
+        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
+                <div className="flex justify-between items-center gap-4">
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('calendar.title')}</h1>
+                        <p className="text-slate-500 text-sm hidden sm:block">{t('calendar.subtitle')}</p>
                     </div>
-                    {isLoading && (
-                        <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+                    <div className="flex gap-2 flex-wrap">
+                        <Button
+                            onClick={() => { setEditingAppointment({ type: 'interpreting' }); setSelectedDate(new Date()); setIsModalOpen(true); }}
+                            className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold shadow-sm flex items-center justify-center gap-2 transition text-xs sm:text-sm"
+                        >
+                            <FaPlus className="text-xs text-brand-primary" /> {t('calendar.new_interpreting')}
+                        </Button>
+                        <Button
+                            onClick={() => { setEditingAppointment(null); setSelectedDate(new Date()); setIsModalOpen(true); }}
+                            variant="default" className="font-bold flex items-center justify-center gap-2 text-xs sm:text-sm"
+                        >
+                            <FaPlus className="text-xs" /> {t('calendar.new_appointment')}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Main Content Area with Sidebar */}
+                <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
+                    <div className="flex-1 bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col p-4 relative z-0 min-h-[600px] lg:min-h-0">
+                        <div className="absolute top-4 right-4 z-10 flex bg-slate-100 p-1 rounded-md border border-slate-200 shadow-sm">
+                            <button
+                                onClick={() => { setView('dayGridMonth'); calendarRef.current?.getApi().changeView('dayGridMonth'); }}
+                                className={clsx(
+                                    "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
+                                    view === 'dayGridMonth'
+                                        ? "bg-white text-slate-800 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                                )}
+                            >
+                                {t('calendar.view.month')}
+                            </button>
+                            <button
+                                onClick={() => { setView('timeGridWeek'); calendarRef.current?.getApi().changeView('timeGridWeek'); }}
+                                className={clsx(
+                                    "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
+                                    view === 'timeGridWeek'
+                                        ? "bg-white text-slate-800 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                                )}
+                            >
+                                {t('calendar.view.week')}
+                            </button>
+                            <button
+                                onClick={() => { setView('timeGridDay'); calendarRef.current?.getApi().changeView('timeGridDay'); }}
+                                className={clsx(
+                                    "px-3 sm:px-4 py-1.5 text-xs font-semibold transition-all rounded-sm whitespace-nowrap",
+                                    view === 'timeGridDay'
+                                        ? "bg-white text-slate-800 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                                )}
+                            >
+                                {t('calendar.view.day')}
+                            </button>
                         </div>
-                    )}
+                        {isLoading && (
+                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+                            </div>
+                        )}
 
-                    <FullCalendar
-                        ref={calendarRef}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                        initialView={view}
-                        locales={[deLocale]}
-                        locale={i18n.language}
-                        headerToolbar={{
-                            left: 'prev,next today',
-                            center: 'title',
-                            right: ''
-                        }}
-                        events={events.map((ev: any) => ({
-                            ...ev,
-                            className: `event-type-${ev.extendedProps?.type || 'appointment'}`
-                        })).filter((ev: any) => {
-                            if (calendarTab === 'all') return true;
-                            if (calendarTab === 'staff') return ['staff', 'vacation', 'interpreting'].includes(ev.extendedProps.type);
-                            return true;
-                        })}
-                        editable={true}
-                        droppable={true}
-                        eventReceive={(info) => {
-                            // Handle dropped staff or project
-                            const eventId = info.event.id;
-                            if (eventId.startsWith('temp_staff_')) {
-                                const userId = eventId.replace('temp_staff_', '');
-                                const user = users.find((u: any) => u.id === Number(userId));
-                                if (user) {
-                                    const start = info.event.start || new Date();
-                                    const end = info.event.end || dayjs(start).add(2, 'hour').toDate();
+                        <FullCalendar
+                            ref={calendarRef}
+                            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                            initialView={view}
+                            locales={[deLocale]}
+                            locale={i18n.language}
+                            headerToolbar={{
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: ''
+                            }}
+                            events={events.map((ev: any) => ({
+                                ...ev,
+                                className: `event-type-${ev.extendedProps?.type || 'appointment'}`
+                            })).filter((ev: any) => {
+                                if (calendarTab === 'all') return true;
+                                if (calendarTab === 'staff') return ['staff', 'vacation', 'interpreting'].includes(ev.extendedProps.type);
+                                return true;
+                            })}
+                            editable={true}
+                            droppable={true}
+                            eventReceive={(info) => {
+                                // Handle dropped staff or project
+                                const eventId = info.event.id;
+                                if (eventId.startsWith('temp_staff_')) {
+                                    const userId = eventId.replace('temp_staff_', '');
+                                    const user = users.find((u: any) => u.id === Number(userId));
+                                    if (user) {
+                                        const start = info.event.start || new Date();
+                                        const end = info.event.end || dayjs(start).add(2, 'hour').toDate();
 
-                                    setEditingAppointment({
-                                        type: 'staff',
-                                        title: `Einsatz: ${user.first_name} ${user.last_name}`,
-                                        user_id: Number(userId),
-                                        start_date: start,
-                                        end_date: end
-                                    });
-                                    setSelectedDate(start);
-                                    setIsModalOpen(true);
+                                        setEditingAppointment({
+                                            type: 'staff',
+                                            title: `Einsatz: ${user.first_name} ${user.last_name}`,
+                                            user_id: Number(userId),
+                                            start_date: start,
+                                            end_date: end
+                                        });
+                                        setSelectedDate(start);
+                                        setIsModalOpen(true);
+                                    }
+                                    info.event.remove();
                                 }
-                                info.event.remove();
-                            }
-                        }}
-                        eventDrop={(info) => {
-                            const { type, project_id, appointment_id } = info.event.extendedProps;
-                            const newStart = info.event.start?.toISOString();
-                            const newEnd = info.event.end?.toISOString();
+                            }}
+                            eventDrop={(info) => {
+                                const { type, project_id, appointment_id } = info.event.extendedProps;
+                                const newStart = info.event.start?.toISOString();
+                                const newEnd = info.event.end?.toISOString();
 
-                            if (type === 'project' && project_id && newStart) {
-                                updateProjectMutation.mutate({ id: project_id.toString(), deadline: newStart });
-                            } else if (type === 'appointment' && appointment_id && newStart) {
-                                updateMutation.mutate({ id: appointment_id, start_date: newStart, end_date: newEnd });
-                            }
-                        }}
-                        eventResize={(info) => {
-                            const { type, appointment_id } = info.event.extendedProps;
-                            const newStart = info.event.start?.toISOString();
-                            const newEnd = info.event.end?.toISOString();
-                            if (type === 'appointment' && appointment_id && newStart) {
-                                updateMutation.mutate({ id: appointment_id, start_date: newStart, end_date: newEnd });
-                            }
-                        }}
-                        selectable={true}
-                        select={handleDateSelect}
-                        eventClick={handleEventClick}
-                        eventContent={renderEventContent}
-                        datesSet={(arg) => {
-                            if (dateRange?.start !== arg.startStr || dateRange?.end !== arg.endStr) {
-                                setDateRange({ start: arg.startStr, end: arg.endStr });
-                            }
-                        }}
-                        height="100%"
-                        dayMaxEvents={4}
-                        eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-                        slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-                    />
-                </div>
+                                if (type === 'project' && project_id && newStart) {
+                                    updateProjectMutation.mutate({ id: project_id.toString(), deadline: newStart });
+                                } else if (type === 'appointment' && appointment_id && newStart) {
+                                    updateMutation.mutate({ id: appointment_id, start_date: newStart, end_date: newEnd });
+                                }
+                            }}
+                            eventResize={(info) => {
+                                const { type, appointment_id } = info.event.extendedProps;
+                                const newStart = info.event.start?.toISOString();
+                                const newEnd = info.event.end?.toISOString();
+                                if (type === 'appointment' && appointment_id && newStart) {
+                                    updateMutation.mutate({ id: appointment_id, start_date: newStart, end_date: newEnd });
+                                }
+                            }}
+                            selectable={true}
+                            select={handleDateSelect}
+                            eventClick={handleEventClick}
+                            eventContent={renderEventContent}
+                            datesSet={(arg) => {
+                                if (dateRange?.start !== arg.startStr || dateRange?.end !== arg.endStr) {
+                                    setDateRange({ start: arg.startStr, end: arg.endStr });
+                                }
+                            }}
+                            height="100%"
+                            dayMaxEvents={4}
+                            eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+                            slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+                        />
+                    </div>
 
-                {/* Sidebar Side */}
-                <div className="w-full lg:w-80 flex flex-col gap-4 shrink-0 h-auto lg:h-full max-h-[500px] lg:max-h-full">
-                    {calendarTab === 'all' ? (
-                        <div className="bg-white rounded-sm border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
-                                        {t('calendar.sidebar.unassigned_projects')}
-                                    </h3>
-                                    <span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-sm">
-                                        {unassignedProjects.length}
-                                    </span>
-                                </div>
-                                <div className="relative">
-                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]" />
-                                    <input
-                                        type="text"
-                                        placeholder={t('calendar.sidebar.search_project')}
-                                        value={projectSearch}
-                                        onChange={(e) => setProjectSearch(e.target.value)}
-                                        className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:ring-2 focus:ring-brand-primary/10 transition-all outline-none"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-slate-50/10" id="unassigned-projects-list">
-                                {unassignedProjects.map((p: any) => (
-                                    <div
-                                        key={p.id}
-                                        data-id={p.id}
-                                        data-title={p.project_number || p.project_name}
-                                        className="project-drag-item p-3 bg-white border border-slate-200 rounded-sm hover:border-brand-primary transition-all cursor-move group shadow-sm hover:shadow-md active:cursor-grabbing active:opacity-50"
-                                        onClick={() => {
-                                            setEditingAppointment({
-                                                title: p.project_name,
-                                                project_id: p.id,
-                                                customer_id: p.customer_id,
-                                                partner_id: p.partner_id,
-                                                type: 'meeting',
-                                                description: `Termin für Projekt: ${p.project_number || p.id}`
-                                            });
-                                            setSelectedDate(p.deadline ? new Date(p.deadline) : new Date());
-                                            setIsModalOpen(true);
-                                        }}
-                                    >
-                                        <div className="flex flex-col gap-1.5">
-                                            <div className="flex justify-between items-start gap-2">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                                    {p.project_number || `ID ${p.id}`}
-                                                </span>
-                                                <span className={clsx(
-                                                    "px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase shrink-0",
-                                                    p.priority === 'high' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
-                                                )}>
-                                                    {p.priority === 'high' ? '⚡ Express' : 'Standard'}
-                                                </span>
-                                            </div>
-                                            <h4 className="text-xs font-semibold text-slate-800 line-clamp-2 group-hover:text-brand-primary transition-colors leading-tight">
-                                                {p.project_name}
-                                            </h4>
-                                            <div className="mt-1 flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
-                                                <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                                    {(p.customer?.company_name || p.customer?.first_name || 'P').charAt(0)}
-                                                </div>
-                                                <span className="text-[10px] text-slate-600 font-medium truncate">
-                                                    {p.customer?.company_name || `${p.customer?.first_name || ''} ${p.customer?.last_name || ''}`.trim() || 'Privatkunde'}
-                                                </span>
-                                            </div>
-                                        </div>
+                    {/* Sidebar Side */}
+                    <div className="w-full lg:w-80 flex flex-col gap-4 shrink-0 h-auto lg:h-full max-h-[500px] lg:max-h-full">
+                        {calendarTab === 'all' ? (
+                            <div className="bg-white rounded-sm border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
+                                            {t('calendar.sidebar.unassigned_projects')}
+                                        </h3>
+                                        <span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-sm">
+                                            {unassignedProjects.length}
+                                        </span>
                                     </div>
-                                ))}
-                                {unassignedProjects.length === 0 && (
-                                    <div className="p-8 flex flex-col items-center justify-center text-center text-slate-400">
-                                        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                                            <FaSearch className="text-2xl text-slate-300" />
-                                        </div>
-                                        <p className="text-xs font-medium">{t('calendar.sidebar.no_projects')}</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">{t('calendar.sidebar.all_planned')}</p>
+                                    <div className="relative">
+                                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]" />
+                                        <input
+                                            type="text"
+                                            placeholder={t('calendar.sidebar.search_project')}
+                                            value={projectSearch}
+                                            onChange={(e) => setProjectSearch(e.target.value)}
+                                            className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:ring-2 focus:ring-brand-primary/10 transition-all outline-none"
+                                        />
                                     </div>
-                                )}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="bg-white rounded-sm border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                                <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-3">
-                                    <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
-                                    {t('calendar.sidebar.staff_title')}
-                                </h3>
-                                <div className="relative">
-                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]" />
-                                    <input
-                                        type="text"
-                                        placeholder={t('calendar.sidebar.search_staff')}
-                                        value={userSearch}
-                                        onChange={(e) => setUserSearch(e.target.value)}
-                                        className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:ring-2 focus:ring-brand-primary/10 transition-all outline-none"
-                                    />
                                 </div>
-                            </div>
 
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-slate-50/10" id="staff-list">
-                                {filteredUsers.map((u: any) => {
-                                    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                                    const initials = `${String(u.first_name || '').charAt(0)}${String(u.last_name || '').charAt(0)}`.toUpperCase();
-                                    const roleDE = roleTranslations[u.role] || roleTranslations['user'];
-
-                                    return (
+                                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-slate-50/10" id="unassigned-projects-list">
+                                    {unassignedProjects.map((p: any) => (
                                         <div
-                                            key={u.id}
-                                            data-id={u.id}
-                                            data-name={fullName}
-                                            className="staff-drag-item p-3 bg-white border border-slate-200 rounded-sm flex items-center gap-3 hover:border-brand-primary hover:shadow-md transition-all group cursor-move active:cursor-grabbing active:opacity-50"
+                                            key={p.id}
+                                            data-id={p.id}
+                                            data-title={p.project_number || p.project_name}
+                                            className="project-drag-item p-3 bg-white border border-slate-200 rounded-sm hover:border-brand-primary transition-all cursor-move group shadow-sm hover:shadow-md active:cursor-grabbing active:opacity-50"
+                                            onClick={() => {
+                                                setEditingAppointment({
+                                                    title: p.project_name,
+                                                    project_id: p.id,
+                                                    customer_id: p.customer_id,
+                                                    partner_id: p.partner_id,
+                                                    type: 'meeting',
+                                                    description: `Termin für Projekt: ${p.project_number || p.id}`
+                                                });
+                                                setSelectedDate(p.deadline ? new Date(p.deadline) : new Date());
+                                                setIsModalOpen(true);
+                                            }}
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:ring-2 group-hover:ring-brand-primary/30 transition-all uppercase shrink-0">
-                                                {initials}
-                                            </div>
-                                            <div className="flex flex-col min-w-0 flex-1">
-                                                <span className="text-xs font-bold text-slate-800 truncate group-hover:text-brand-primary transition-colors">
-                                                    {fullName}
-                                                </span>
-                                                <span className="text-[10px] font-medium text-slate-500 truncate">
-                                                    {roleDE}
-                                                </span>
-                                                {u.email && (
-                                                    <span className="text-[10px] text-slate-400 truncate">
-                                                        {u.email}
+                                            <div className="flex flex-col gap-1.5">
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                                        {p.project_number || `ID ${p.id}`}
                                                     </span>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setEditingAppointment({
-                                                            type: 'vacation',
-                                                            user_id: u.id,
-                                                            title: `Urlaub: ${fullName}`
-                                                        });
-                                                        setSelectedDate(new Date());
-                                                        setIsModalOpen(true);
-                                                    }}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-sm bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
-                                                    title="Urlaub"
-                                                >
-                                                    <FaUmbrellaBeach className="text-[10px]" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setEditingAppointment({
-                                                            type: 'interpreting',
-                                                            user_id: u.id,
-                                                            title: `Einsatz: ${fullName}`
-                                                        });
-                                                        setSelectedDate(new Date());
-                                                        setIsModalOpen(true);
-                                                    }}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-sm bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                                                    title="Dolmetscher"
-                                                >
-                                                    <FaMicrophone className="text-[10px]" />
-                                                </button>
+                                                    <span className={clsx(
+                                                        "px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase shrink-0",
+                                                        p.priority === 'high' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
+                                                    )}>
+                                                        {p.priority === 'high' ? '⚡ Express' : 'Standard'}
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-xs font-semibold text-slate-800 line-clamp-2 group-hover:text-brand-primary transition-colors leading-tight">
+                                                    {p.project_name}
+                                                </h4>
+                                                <div className="mt-1 flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
+                                                    <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                                        {(p.customer?.company_name || p.customer?.first_name || 'P').charAt(0)}
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 font-medium truncate">
+                                                        {p.customer?.company_name || `${p.customer?.first_name || ''} ${p.customer?.last_name || ''}`.trim() || 'Privatkunde'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                    );
-                                })}
-                                {filteredUsers.length === 0 && (
-                                    <div className="p-8 flex flex-col items-center justify-center text-center text-slate-400">
-                                        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                                            <FaSearch className="text-2xl text-slate-300" />
+                                    ))}
+                                    {unassignedProjects.length === 0 && (
+                                        <div className="p-8 flex flex-col items-center justify-center text-center text-slate-400">
+                                            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                                                <FaSearch className="text-2xl text-slate-300" />
+                                            </div>
+                                            <p className="text-xs font-medium">{t('calendar.sidebar.no_projects')}</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">{t('calendar.sidebar.all_planned')}</p>
                                         </div>
-                                        <p className="text-xs font-medium">{t('calendar.sidebar.no_staff')}</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">{t('calendar.sidebar.try_another_search')}</p>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
+                        ) : (
+                            <div className="bg-white rounded-sm border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                                    <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-3">
+                                        <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
+                                        {t('calendar.sidebar.staff_title')}
+                                    </h3>
+                                    <div className="relative">
+                                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]" />
+                                        <input
+                                            type="text"
+                                            placeholder={t('calendar.sidebar.search_staff')}
+                                            value={userSearch}
+                                            onChange={(e) => setUserSearch(e.target.value)}
+                                            className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:ring-2 focus:ring-brand-primary/10 transition-all outline-none"
+                                        />
+                                    </div>
+                                </div>
 
-                        </div>
-                    )}
+                                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-slate-50/10" id="staff-list">
+                                    {filteredUsers.map((u: any) => {
+                                        const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                                        const initials = `${String(u.first_name || '').charAt(0)}${String(u.last_name || '').charAt(0)}`.toUpperCase();
+                                        const roleDE = roleTranslations[u.role] || roleTranslations['user'];
+
+                                        return (
+                                            <div
+                                                key={u.id}
+                                                data-id={u.id}
+                                                data-name={fullName}
+                                                className="staff-drag-item p-3 bg-white border border-slate-200 rounded-sm flex items-center gap-3 hover:border-brand-primary hover:shadow-md transition-all group cursor-move active:cursor-grabbing active:opacity-50"
+                                            >
+                                                <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:ring-2 group-hover:ring-brand-primary/30 transition-all uppercase shrink-0">
+                                                    {initials}
+                                                </div>
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <span className="text-xs font-bold text-slate-800 truncate group-hover:text-brand-primary transition-colors">
+                                                        {fullName}
+                                                    </span>
+                                                    <span className="text-[10px] font-medium text-slate-500 truncate">
+                                                        {roleDE}
+                                                    </span>
+                                                    {u.email && (
+                                                        <span className="text-[10px] text-slate-400 truncate">
+                                                            {u.email}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditingAppointment({
+                                                                type: 'vacation',
+                                                                user_id: u.id,
+                                                                title: `Urlaub: ${fullName}`
+                                                            });
+                                                            setSelectedDate(new Date());
+                                                            setIsModalOpen(true);
+                                                        }}
+                                                        className="w-7 h-7 flex items-center justify-center rounded-sm bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+                                                        title="Urlaub"
+                                                    >
+                                                        <FaUmbrellaBeach className="text-[10px]" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditingAppointment({
+                                                                type: 'interpreting',
+                                                                user_id: u.id,
+                                                                title: `Einsatz: ${fullName}`
+                                                            });
+                                                            setSelectedDate(new Date());
+                                                            setIsModalOpen(true);
+                                                        }}
+                                                        className="w-7 h-7 flex items-center justify-center rounded-sm bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
+                                                        title="Dolmetscher"
+                                                    >
+                                                        <FaMicrophone className="text-[10px]" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {filteredUsers.length === 0 && (
+                                        <div className="p-8 flex flex-col items-center justify-center text-center text-slate-400">
+                                            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                                                <FaSearch className="text-2xl text-slate-300" />
+                                            </div>
+                                            <p className="text-xs font-medium">{t('calendar.sidebar.no_staff')}</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">{t('calendar.sidebar.try_another_search')}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            <style>{`
+                <style>{`
                 .fc {
                     --fc-border-color: #f1f5f9;
                     --fc-today-bg-color: #f8fafc;
@@ -721,20 +722,21 @@ const Calendar = () => {
             `}</style>
 
 
-            <NewAppointmentModal
-                isOpen={isModalOpen}
-                onClose={() => { setIsModalOpen(false); setEditingAppointment(null); }}
-                onSubmit={(data: any) => {
-                    if (editingAppointment?.id) {
-                        updateMutation.mutate({ ...data, id: editingAppointment.id });
-                    } else {
-                        createMutation.mutate(data);
-                    }
-                }}
-                initialDate={selectedDate}
-                initialData={editingAppointment}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-            />
+                <NewAppointmentModal
+                    isOpen={isModalOpen}
+                    onClose={() => { setIsModalOpen(false); setEditingAppointment(null); }}
+                    onSubmit={(data: any) => {
+                        if (editingAppointment?.id) {
+                            updateMutation.mutate({ ...data, id: editingAppointment.id });
+                        } else {
+                            createMutation.mutate(data);
+                        }
+                    }}
+                    initialDate={selectedDate}
+                    initialData={editingAppointment}
+                    isLoading={createMutation.isPending || updateMutation.isPending}
+                />
+            </div>
         </div>
     );
 };

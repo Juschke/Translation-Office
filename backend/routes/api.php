@@ -128,6 +128,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('mails', [\App\Http\Controllers\Api\MailController::class, 'index']);
         Route::post('mails/send', [\App\Http\Controllers\Api\MailController::class, 'send']);
         Route::post('mails/sync', [\App\Http\Controllers\Api\MailController::class, 'sync']);
+        Route::post('mails/bulk-delete', [\App\Http\Controllers\Api\MailController::class, 'bulkDelete']);
+        Route::post('mails/bulk-restore', [\App\Http\Controllers\Api\MailController::class, 'bulkRestore']);
         Route::post('mails/{id}/read', [\App\Http\Controllers\Api\MailController::class, 'markAsRead']);
         Route::delete('mails/{id}', [\App\Http\Controllers\Api\MailController::class, 'destroy']);
 

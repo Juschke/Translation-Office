@@ -33,7 +33,7 @@ import TableSkeleton from '../components/common/TableSkeleton';
 import FilePreviewModal from '../components/modals/FilePreviewModal';
 import HistoryTab from '../components/projects/HistoryTab';
 import MessagesTab from '../components/projects/MessagesTab';
-import ProjectOverviewTab from '../components/projects/ProjectOverviewTab';
+import ProjectOverviewTabNew from '../components/projects/ProjectOverviewTabNew';
 import ProjectFilesTab from '../components/projects/ProjectFilesTab';
 import ProjectFinancesTab from '../components/projects/ProjectFinancesTab';
 
@@ -525,11 +525,11 @@ const ProjectDetail = () => {
     };
 
     return (
-        <div className="flex flex-col fade-in min-h-screen bg-slate-50/30">
-            {/* Project Header Container */}
-            <div className="bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-[1800px] mx-auto">
-                    <div className="px-3 sm:px-4  py-4">
+        <div className="flex-1 flex flex-col overflow-hidden fade-in bg-slate-50/30">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                {/* Project Header Container */}
+                <div className="bg-white border-b border-slate-200 shadow-sm">
+                    <div className="max-w-[1800px] mx-auto px-3 sm:px-4 py-4">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div className="flex items-center gap-4">
                                 <Button
@@ -658,112 +658,67 @@ const ProjectDetail = () => {
                     </div>
                 </div>
 
-                {/* Meta Info Bar */}
-                <div className="flex items-center gap-4 sm:gap-6 text-[10px] sm:text-xs text-slate-400 flex-wrap border-t border-slate-50 px-3 sm:px-4 md:px-8 py-3 bg-slate-50/20">
-                    <div className="flex items-center gap-2">
-                        <span>Projekt: <span className="text-slate-600 font-medium">{projectData.project_number || projectData.id}</span></span>
-                    </div>
-                    <span className="text-slate-200 hidden sm:block">•</span>
-                    <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-                        <span className="flex items-center gap-1 flex-wrap">
-                            Erstellt am <span className="text-slate-600 font-medium">
-                                {projectData.createdAtRaw ? (
-                                    `${format(new Date(projectData.createdAtRaw), 'dd.MM.yyyy, HH:mm', { locale: de })} Uhr`
-                                ) : projectData.createdAt}
-                            </span>
-                            {projectData.createdAtRaw && <span className="text-slate-400 font-normal">({formatDistanceToNow(new Date(projectData.createdAtRaw), { addSuffix: true, locale: de })})</span>}
-                            {projectData.creator && <span>von <span className="text-slate-600 font-medium">{projectData.creator.name}</span></span>}
-                        </span>
-                    </div>
-                    <span className="text-slate-200 hidden sm:block">•</span>
-                    <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
-                        <span className="flex items-center gap-1 flex-wrap">
-                            Zuletzt geändert: <span className="text-slate-600 font-medium">
-                                {projectData.updatedAtRaw ? (
-                                    `${format(new Date(projectData.updatedAtRaw), 'dd.MM.yyyy, HH:mm', { locale: de })} Uhr`
-                                ) : projectData.updatedAt}
-                            </span>
-                            {projectData.updatedAtRaw && <span className="text-slate-400 font-normal">({formatDistanceToNow(new Date(projectData.updatedAtRaw), { addSuffix: true, locale: de })})</span>}
-                            {projectData.editor && <span>von <span className="text-slate-600 font-medium">{projectData.editor.name}</span></span>}
-                        </span>
+                {/* Meta Info Bar - Inlaid Gray Stripe */}
+                <div className="border-t border-slate-100 bg-white">
+                    <div className="max-w-[1800px] mx-auto px-3 sm:px-4 py-3">
+                        <div className="flex items-center gap-4 sm:gap-6 text-[10px] sm:text-xs text-slate-400 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <span>Projekt: <span className="text-slate-600 font-medium">{projectData.project_number || projectData.id}</span></span>
+                            </div>
+                            <span className="text-slate-200 hidden sm:block">•</span>
+                            <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                                <span className="flex items-center gap-1 flex-wrap">
+                                    Erstellt am <span className="text-slate-600 font-medium">
+                                        {projectData.createdAtRaw ? (
+                                            `${format(new Date(projectData.createdAtRaw), 'dd.MM.yyyy, HH:mm', { locale: de })} Uhr`
+                                        ) : projectData.createdAt}
+                                    </span>
+                                    {projectData.createdAtRaw && <span className="text-slate-400 font-normal">({formatDistanceToNow(new Date(projectData.createdAtRaw), { addSuffix: true, locale: de })})</span>}
+                                    {projectData.creator && <span>von <span className="text-slate-600 font-medium">{projectData.creator.name}</span></span>}
+                                </span>
+                            </div>
+                            <span className="text-slate-200 hidden sm:block">•</span>
+                            <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
+                                <span className="flex items-center gap-1 flex-wrap">
+                                    Zuletzt geändert: <span className="text-slate-600 font-medium">
+                                        {projectData.updatedAtRaw ? (
+                                            `${format(new Date(projectData.updatedAtRaw), 'dd.MM.yyyy, HH:mm', { locale: de })} Uhr`
+                                        ) : projectData.updatedAt}
+                                    </span>
+                                    {projectData.updatedAtRaw && <span className="text-slate-400 font-normal">({formatDistanceToNow(new Date(projectData.updatedAtRaw), { addSuffix: true, locale: de })})</span>}
+                                    {projectData.editor && <span>von <span className="text-slate-600 font-medium">{projectData.editor.name}</span></span>}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Tabs Navigation */}
-                <div className="px-3 sm:px-4 md:px-8 border-b border-slate-200 flex items-center justify-between md:justify-start">
-                    <div className="md:hidden flex-1 py-3">
-                        <button
-                            onClick={() => setIsTabMenuOpen(!isTabMenuOpen)}
-                            className="flex items-center gap-3 text-slate-600 font-semibold text-sm hover:text-slate-700 transition-colors w-full"
-                        >
-                            <div className="w-4 h-3 flex flex-col justify-between">
-                                <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "rotate-45 translate-y-1" : "")}></span>
-                                <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "opacity-0" : "")}></span>
-                                <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "-rotate-45 -translate-y-1.5" : "")}></span>
-                            </div>
-                            <span>Menü: {
-                                activeTab === 'overview' ? 'Stammdaten' :
-                                    activeTab === 'files' ? 'Dateien' :
-                                        activeTab === 'finances' ? 'Kalkulation & Marge' :
-                                            activeTab === 'history' ? 'Historie' : 'Kommunikation'
-                            }</span>
-                            <FaChevronDown className={clsx("ml-auto transition-transform", isTabMenuOpen && "rotate-180")} />
-                        </button>
-                    </div>
+                <div className="border-t border-slate-100 bg-white">
+                    <div className="max-w-[1800px] mx-auto px-3 sm:px-4 flex items-center justify-between md:justify-start">
+                        <div className="md:hidden flex-1 py-3">
+                            <button
+                                onClick={() => setIsTabMenuOpen(!isTabMenuOpen)}
+                                className="flex items-center gap-3 text-slate-600 font-semibold text-sm hover:text-slate-700 transition-colors w-full"
+                            >
+                                <div className="w-4 h-3 flex flex-col justify-between">
+                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "rotate-45 translate-y-1" : "")}></span>
+                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "opacity-0" : "")}></span>
+                                    <span className={clsx("h-0.5 bg-current transition-all", isTabMenuOpen ? "-rotate-45 -translate-y-1.5" : "")}></span>
+                                </div>
+                                <span>Menü: {
+                                    activeTab === 'overview' ? 'Stammdaten' :
+                                        activeTab === 'files' ? 'Dateien' :
+                                            activeTab === 'finances' ? 'Kalkulation & Marge' :
+                                                activeTab === 'history' ? 'Historie' : 'Kommunikation'
+                                }</span>
+                                <FaChevronDown className={clsx("ml-auto transition-transform", isTabMenuOpen && "rotate-180")} />
+                            </button>
+                        </div>
 
-                    <div className="hidden md:flex gap-8">
-                        {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
-                            let badgeCount = 0;
-                            if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                            if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                            if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
-                            const isActive = activeTab === tab;
-
-                            return (
-                                <button
-                                    key={tab}
-                                    onClick={() => {
-                                        setActiveTab(tab);
-                                        setIsTabMenuOpen(false);
-                                    }}
-                                    className={clsx(
-                                        "py-4 px-1 text-sm font-medium transition-all relative flex items-center gap-2.5 border-b-2 -mb-[1px]",
-                                        isActive
-                                            ? 'border-brand-primary text-brand-primary font-bold'
-                                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200'
-                                    )}
-                                >
-                                    {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
-                                    {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
-                                    {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
-                                    {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
-                                    {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
-
-                                    {tab === 'overview' ? 'Stammdaten' :
-                                        tab === 'files' ? 'Dokumente' :
-                                            tab === 'finances' ? 'Kalkulation' :
-                                                tab === 'history' ? 'Historie' : 'Kommunikation'}
-
-                                    {tab !== 'overview' && tab !== 'history' && (
-                                        <span className={clsx(
-                                            "px-1.5 py-0.5 rounded-sm text-[10px] font-bold transition-colors",
-                                            isActive ? "bg-brand-primary text-white" : "bg-slate-100 text-slate-500"
-                                        )}>
-                                            {badgeCount}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Mobile Tab Menu Overlay */}
-                {isTabMenuOpen && (
-                    <div className="md:hidden border-t border-slate-100 bg-white animate-fadeIn">
-                        <div className="flex flex-col">
+                        <div className="hidden md:flex gap-8">
                             {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
                                 let badgeCount = 0;
                                 if (tab === 'files') badgeCount = projectData?.files?.length || 0;
@@ -779,29 +734,27 @@ const ProjectDetail = () => {
                                             setIsTabMenuOpen(false);
                                         }}
                                         className={clsx(
-                                            "px-6 py-4 text-sm font-medium flex items-center gap-4 transition-all rounded-sm mx-2 my-1",
+                                            "py-4 px-1 text-sm font-medium transition-all relative flex items-center gap-2.5 border-b-2 -mb-[1px]",
                                             isActive
-                                                ? 'bg-slate-50 text-brand-primary font-bold  border-brand-primary'
-                                                : 'text-slate-500 hover:bg-slate-50/50 hover:text-slate-700'
+                                                ? 'border-brand-primary text-brand-primary font-bold'
+                                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200'
                                         )}
                                     >
-                                        {tab === 'overview' && <FaInfoCircle className="text-base" />}
-                                        {tab === 'files' && <FaFileAlt className="text-base" />}
-                                        {tab === 'finances' && <FaFileInvoiceDollar className="text-base" />}
-                                        {tab === 'messages' && <FaComments className="text-base" />}
-                                        {tab === 'history' && <FaClock className="text-base" />}
+                                        {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
+                                        {tab === 'files' && <FaFileAlt className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
+                                        {tab === 'finances' && <FaFileInvoiceDollar className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
+                                        {tab === 'messages' && <FaComments className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
+                                        {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
 
-                                        <span className="flex-1 text-left">
-                                            {tab === 'overview' ? 'Stammdaten' :
-                                                tab === 'files' ? 'Dateien' :
-                                                    tab === 'finances' ? 'Kalkulation & Marge' :
-                                                        tab === 'history' ? 'Historie' : 'Kommunikation'}
-                                        </span>
+                                        {tab === 'overview' ? 'Stammdaten' :
+                                            tab === 'files' ? 'Dokumente' :
+                                                tab === 'finances' ? 'Kalkulation' :
+                                                    tab === 'history' ? 'Historie' : 'Kommunikation'}
 
                                         {tab !== 'overview' && tab !== 'history' && (
                                             <span className={clsx(
-                                                "px-2 py-0.5 rounded-full text-xs font-medium",
-                                                isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
+                                                "px-1.5 py-0.5 rounded-sm text-[10px] font-bold transition-colors",
+                                                isActive ? "bg-brand-primary text-white" : "bg-slate-100 text-slate-500"
                                             )}>
                                                 {badgeCount}
                                             </span>
@@ -811,87 +764,147 @@ const ProjectDetail = () => {
                             })}
                         </div>
                     </div>
-                )}
-            </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 max-w-[1800px] mx-auto w-full py-4 sm:py-8 transition-all duration-300">
-                {activeTab === 'overview' && (
-                    <ProjectOverviewTab
-                        projectData={projectData}
-                        sourceLang={sourceLang}
-                        targetLang={targetLang}
-                        deadlineStatus={deadlineStatus}
-                        navigate={navigate}
-                        locationPathname={location.pathname}
-                        setIsCustomerSearchOpen={setIsCustomerSearchOpen}
-                        setIsPartnerModalOpen={setIsPartnerModalOpen}
-                        setIsCustomerEditModalOpen={setIsCustomerEditModalOpen}
-                        setIsPartnerEditModalOpen={setIsPartnerEditModalOpen}
-                        handlePreviewFile={handlePreviewFile}
-                        setPreviewInvoice={setPreviewInvoice}
-                        onSendEmail={(recipientType) => {
-                            const to = recipientType === 'partner'
-                                ? (projectData.translator?.email || '')
-                                : (projectData.customer?.email || '');
+                    {/* Mobile Tab Menu Overlay */}
+                    {isTabMenuOpen && (
+                        <div className="md:hidden border-t border-slate-100 bg-white animate-fadeIn">
+                            <div className="flex flex-col">
+                                {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
+                                    let badgeCount = 0;
+                                    if (tab === 'files') badgeCount = projectData?.files?.length || 0;
+                                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                                    if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
+                                    const isActive = activeTab === tab;
 
-                            setEmailComposeData({
-                                to,
-                                subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
-                                recipientType
-                            });
-                            setIsEmailComposeOpen(true);
-                        }}
-                    />
-                )}
+                                    return (
+                                        <button
+                                            key={tab}
+                                            onClick={() => {
+                                                setActiveTab(tab);
+                                                setIsTabMenuOpen(false);
+                                            }}
+                                            className={clsx(
+                                                "px-6 py-4 text-sm font-medium flex items-center gap-4 transition-all rounded-sm mx-2 my-1",
+                                                isActive
+                                                    ? 'bg-slate-50 text-brand-primary font-bold  border-brand-primary'
+                                                    : 'text-slate-500 hover:bg-slate-50/50 hover:text-slate-700'
+                                            )}
+                                        >
+                                            {tab === 'overview' && <FaInfoCircle className="text-base" />}
+                                            {tab === 'files' && <FaFileAlt className="text-base" />}
+                                            {tab === 'finances' && <FaFileInvoiceDollar className="text-base" />}
+                                            {tab === 'messages' && <FaComments className="text-base" />}
+                                            {tab === 'history' && <FaClock className="text-base" />}
 
-                {activeTab === 'files' && (
-                    <ProjectFilesTab
-                        projectData={projectData}
-                        setIsUploadModalOpen={setIsUploadModalOpen}
-                        handlePreviewFile={handlePreviewFile}
-                        handleDownloadFile={handleDownloadFile}
-                        setDeleteFileConfirm={setDeleteFileConfirm}
-                        toggleFileType={toggleFileType}
-                        onRenameFile={handleRenameFile}
-                        onMoveFile={handleMoveFile}
-                        onBulkMove={handleBulkFilesMove}
-                        onBulkDownloadZip={handleBulkFilesDownloadZip}
-                        formatFileSize={formatFileSize}
-                        onUpload={handleFileUpload}
-                    />
-                )}
+                                            <span className="flex-1 text-left">
+                                                {tab === 'overview' ? 'Stammdaten' :
+                                                    tab === 'files' ? 'Dateien' :
+                                                        tab === 'finances' ? 'Kalkulation & Marge' :
+                                                            tab === 'history' ? 'Historie' : 'Kommunikation'}
+                                            </span>
 
-                {activeTab === 'finances' && projectData && (
-                    <ProjectFinancesTab
-                        projectData={projectData}
-                        onSavePositions={(positions, extras) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
-                        onRecordPayment={() => {
-                            setEditingPayment(null);
-                            setIsPaymentModalOpen(true);
-                        }}
-                        onEditPayment={(payment) => {
-                            setEditingPayment(payment);
-                            setIsPaymentModalOpen(true);
-                        }}
-                        onDeletePayment={(paymentId) => {
-                            const payment = (projectData.payments || []).find((p: any) => p.id === paymentId);
-                            setPaymentDeleteConfirm({ isOpen: true, paymentId, amount: payment?.amount || '0' });
-                        }}
-                        isPendingSave={updateProjectMutation.isPending}
-                        onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
-                    />
-                )}
+                                            {tab !== 'overview' && tab !== 'history' && (
+                                                <span className={clsx(
+                                                    "px-2 py-0.5 rounded-full text-xs font-medium",
+                                                    isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
+                                                )}>
+                                                    {badgeCount}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
 
-                {activeTab === 'messages' && (
-                    <div className="mb-10 animate-fadeIn">
-                        <MessagesTab projectData={projectData} projectId={id!} financials={financials} />
-                    </div>
-                )}
+                {/* Main Content Area */}
+                <div className="flex-1 max-w-[1800px] mx-auto w-full px-3 sm:px-4 py-4 sm:py-8 transition-all duration-300">
+                    {activeTab === "overview" && (
+            <ProjectOverviewTabNew
+                projectData={projectData}
+                sourceLang={sourceLang}
+                targetLang={targetLang}
+                deadlineStatus={deadlineStatus}
+                navigate={navigate}
+                locationPathname={location.pathname}
+                setIsCustomerSearchOpen={setIsCustomerSearchOpen}
+                setIsPartnerModalOpen={setIsPartnerModalOpen}
+                setIsCustomerEditModalOpen={setIsCustomerEditModalOpen}
+                setIsPartnerEditModalOpen={setIsPartnerEditModalOpen}
+                handlePreviewFile={handlePreviewFile}
+                setPreviewInvoice={setPreviewInvoice}
+                onSendEmail={(recipientType) => {
+                    const to = recipientType === 'partner'
+                        ? (projectData.translator?.email || '')
+                        : (projectData.customer?.email || '');
 
-                {activeTab === 'history' && (
-                    <HistoryTab projectId={id!} />
-                )}
+                    setEmailComposeData({
+                        to,
+                        subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
+                        recipientType
+                    });
+                    setIsEmailComposeOpen(true);
+                }}
+            />
+        )}
+
+{
+    activeTab === 'files' && (
+        <ProjectFilesTab
+            projectData={projectData}
+            setIsUploadModalOpen={setIsUploadModalOpen}
+            handlePreviewFile={handlePreviewFile}
+            handleDownloadFile={handleDownloadFile}
+            setDeleteFileConfirm={setDeleteFileConfirm}
+            toggleFileType={toggleFileType}
+            onRenameFile={handleRenameFile}
+            onMoveFile={handleMoveFile}
+            onBulkMove={handleBulkFilesMove}
+            onBulkDownloadZip={handleBulkFilesDownloadZip}
+            formatFileSize={formatFileSize}
+            onUpload={handleFileUpload}
+        />
+    )
+}
+
+{
+    activeTab === 'finances' && projectData && (
+        <ProjectFinancesTab
+            projectData={projectData}
+            onSavePositions={(positions, extras) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
+            onRecordPayment={() => {
+                setEditingPayment(null);
+                setIsPaymentModalOpen(true);
+            }}
+            onEditPayment={(payment) => {
+                setEditingPayment(payment);
+                setIsPaymentModalOpen(true);
+            }}
+            onDeletePayment={(paymentId) => {
+                const payment = (projectData.payments || []).find((p: any) => p.id === paymentId);
+                setPaymentDeleteConfirm({ isOpen: true, paymentId, amount: payment?.amount || '0' });
+            }}
+            isPendingSave={updateProjectMutation.isPending}
+            onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
+        />
+    )
+}
+
+{
+    activeTab === 'messages' && (
+        <div className="mb-10 animate-fadeIn">
+            <MessagesTab projectData={projectData} projectId={id!} financials={financials} />
+        </div>
+    )
+}
+
+{
+    activeTab === 'history' && (
+        <HistoryTab projectId={id!} />
+    )
+}
             </div>
 
             <CustomerSelectionModal
@@ -1055,8 +1068,8 @@ const ProjectDetail = () => {
                 to={emailComposeData.to}
                 subject={emailComposeData.subject}
             />
-        </div >
+        </div>
+        </div>
     );
 };
-
 export default ProjectDetail;

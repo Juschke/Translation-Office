@@ -21,7 +21,7 @@ class DashboardController extends Controller
 
         $startDate = ($startDateStr && $startDateStr !== 'undefined' && $startDateStr !== 'null')
             ? Carbon::parse($startDateStr)->startOfDay()
-            : Carbon::now()->startOfMonth();
+            : Carbon::now()->startOfYear();
 
         $endDate = ($endDateStr && $endDateStr !== 'undefined' && $endDateStr !== 'null')
             ? Carbon::parse($endDateStr)->endOfDay()
@@ -33,16 +33,15 @@ class DashboardController extends Controller
         $data = Cache::remember($cacheKey, 600, function () use ($startDate, $endDate, $tenantId) {
             $today = Carbon::today();
 
-            // 1. Project Counts (filtered by date if provided)
+            // 1. Project Counts (Global current status, NOT filtered by period for OPEN projects)
             $openProjectsCount = Project::whereIn('status', ['offer', 'in_progress', 'review', 'ready_for_pickup'])
-                ->whereBetween('created_at', [$startDate, $endDate])
                 ->count();
 
             $deadlinesTodayCount = Project::whereDate('deadline', $today)
                 ->whereIn('status', ['offer', 'pending', 'draft', 'in_progress', 'review', 'ready_for_pickup'])
                 ->count();
 
-            // 2. Revenue
+            // 2. Revenue for the period
             $monthlyRevenue = Project::whereBetween('created_at', [$startDate, $endDate])
                 ->sum('price_total');
 
@@ -63,14 +62,11 @@ class DashboardController extends Controller
             $activeCustomersCount = Customer::count();
             $activePartnersCount = Partner::count();
 
-            $upcomingInterpretingCount = \App\Models\Appointment::where('type', 'interpreting')
-                ->where('start_date', '>=', $today)
-                ->count();
-
             // 5. Invoice stats
             $unpaidInvoicesCount = \App\Models\Invoice::whereIn('status', ['pending', 'overdue'])->count();
             $overdueInvoicesCount = \App\Models\Invoice::where('status', 'overdue')->count();
-            // 6. Interpreting counts (upcoming assignments)
+
+            // 6. Interpreting counts (upcoming assignments) - Global
             $activeInterpretingCount = \App\Models\Appointment::where('type', 'interpreting')
                 ->where('start_date', '>=', $today)
                 ->count();
@@ -78,13 +74,14 @@ class DashboardController extends Controller
             // 7. External Costs (Fremdkosten) for current period
             $externalCosts = \App\Models\ExternalCost::whereBetween('date', [$startDate, $endDate])
                 ->sum('amount_cents') / 100;
-            // 4. Recent Projects
+
+            // 4. Recent Projects (Global)
             $recentProjects = Project::with(['customer', 'sourceLanguage', 'targetLanguage'])
                 ->latest()
                 ->limit(5)
                 ->get();
 
-            // 5. Language Stats (Aggregated for Dashboard)
+            // 5. Language Stats (Aggregated for Dashboard period)
             $targetLanguageStats = Project::join('languages', 'projects.target_lang_id', '=', 'languages.id')
                 ->select('languages.name_internal as label', DB::raw('SUM(projects.price_total) as value'))
                 ->whereBetween('projects.created_at', [$startDate, $endDate])
@@ -113,7 +110,6 @@ class DashboardController extends Controller
                     'active_partners' => $activePartnersCount,
                     'unpaid_invoices' => $unpaidInvoicesCount,
                     'overdue_invoices' => $overdueInvoicesCount,
-                    'upcoming_interpreting' => $upcomingInterpretingCount,
                     'unread_emails' => \App\Models\Mail::where('folder', 'inbox')->where('is_read', false)->count(),
                     'active_interpreting' => $activeInterpretingCount,
                     'external_costs' => (float) $externalCosts,
@@ -124,7 +120,9 @@ class DashboardController extends Controller
                 'period' => [
                     'start' => $startDate->toDateString(),
                     'end' => $endDate->toDateString(),
-                    'label' => $startDate->translatedFormat('F Y')
+                    'label' => $startDate->year === $endDate->year && $startDate->month === 1 && $startDate->day === 1 && $endDate->month === 12
+                        ? (string) $startDate->year
+                        : $startDate->translatedFormat('d.m.Y') . ' - ' . $endDate->translatedFormat('d.m.Y')
                 ],
                 'recent_projects' => $recentProjects,
                 'source_language_revenue' => $sourceLanguageStats,
