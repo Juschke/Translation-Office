@@ -154,7 +154,7 @@ export function buildInvoiceColumns({
                     {
                         key: 'mgmt_header',
                         type: 'group' as const,
-                        label: <span className="text-2xs font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.management')}</span>,
+                        label: <span className="text-sm font-bold text-brand-primary pl-1">{t('common.management')}</span>,
                         children: [
                             {
                                 key: 'view',
@@ -173,7 +173,7 @@ export function buildInvoiceColumns({
                     {
                         key: 'fin_header',
                         type: 'group' as const,
-                        label: <span className="text-2xs font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.finance')}</span>,
+                        label: <span className="text-sm font-bold text-brand-primary pl-1">{t('common.finance')}</span>,
                         children: [
                             ...(inv.status === 'cancelled' ? [{
                                 key: 'archive',
@@ -206,7 +206,7 @@ export function buildInvoiceColumns({
                     {
                         key: 'docs_header',
                         type: 'group' as const,
-                        label: <span className="text-2xs font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.documents')}</span>,
+                        label: <span className="text-sm font-bold text-brand-primary pl-1">{t('common.documents')}</span>,
                         children: [
                             {
                                 key: 'print',
@@ -237,7 +237,7 @@ export function buildInvoiceColumns({
                     ...(inv.status === 'draft' ? [{
                         key: 'danger_header',
                         type: 'group' as const,
-                        label: <span className="text-2xs font-bold text-red-500 uppercase tracking-widest pl-1">{t('common.danger_zone')}</span>,
+                        label: <span className="text-sm font-bold text-red-500 pl-1">{t('common.danger_zone')}</span>,
                         children: [
                             {
                                 key: 'delete',
@@ -270,7 +270,7 @@ export function buildInvoiceColumns({
                                     setConfirmAction(() => () => issueMutation.mutate(inv.id));
                                     setIsConfirmOpen(true);
                                 }}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/20 rounded-sm text-2xs font-bold uppercase tracking-tight transition-all shadow-sm"
+                                className="flex items-center gap-1.5 px-2 py-1 bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/20 rounded-sm text-sm font-bold transition-all shadow-sm"
                                 title={t('invoices.actions.issue') || "Ausstellen (GoBD)"}
                             >
                                 <FaStamp className="text-xs" />
@@ -282,7 +282,7 @@ export function buildInvoiceColumns({
                             <button
                                 onClick={() => markAsPaidMutation.mutate(inv.id)}
                                 disabled={markAsPaidMutation.isPending}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-sm text-2xs font-bold uppercase tracking-tight transition-all shadow-sm disabled:opacity-40"
+                                className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-sm text-sm font-bold transition-all shadow-sm disabled:opacity-40"
                                 title={t('invoices.actions.paid')}
                             >
                                 <FaCheck className="text-xs" />
@@ -302,7 +302,7 @@ export function buildInvoiceColumns({
                                 className="p-1 px-1.5 rounded-sm hover:bg-slate-100 text-slate-400 hover:text-brand-primary transition-all border border-transparent hover:border-slate-200"
                                 title={t('common.more_actions')}
                             >
-                                <FaEllipsisV className="text-2xs" />
+                                <FaEllipsisV className="text-sm" />
                             </button>
                         </Dropdown>
                     </div>

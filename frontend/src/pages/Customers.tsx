@@ -194,6 +194,15 @@ const Customers = () => {
 
     const columns = [
         {
+            id: 'display_id',
+            header: 'ID',
+            accessor: (c: any) => <span className="text-xs font-semibold text-slate-500">{c.display_id}</span>,
+            sortable: true,
+            sortKey: 'display_id',
+            width: '80px',
+            defaultVisible: true
+        },
+        {
             id: 'company',
             header: t('customers.table.company'),
             accessor: (c: any) => (
@@ -203,11 +212,7 @@ const Customers = () => {
                     </div>
                     <div className="flex flex-col min-w-0">
                         <span className="font-semibold text-slate-800 truncate">{c.company_name || `${c.first_name} ${c.last_name}`}</span>
-                        <div className="flex gap-2">
-                            <span className="text-xs text-slate-400 font-medium">ID: {c.display_id}</span>
-                            <span className="text-xs text-slate-300">•</span>
-                            <span className="text-xs text-slate-500 font-medium">{c.type}</span>
-                        </div>
+                        <span className="text-xs text-slate-500 font-medium">{c.type === 'company' ? t('customers.type_company_label') : c.type === 'authority' ? t('customers.type_authority_label') : t('customers.type_private_label')}</span>
                     </div>
                 </div>
             ),
@@ -220,7 +225,6 @@ const Customers = () => {
             accessor: (c: any) => (
                 <div className="flex flex-col">
                     <span className="font-medium text-slate-700">{c.contact_person || `${c.first_name} ${c.last_name}`}</span>
-                    <span className="text-xs text-slate-500">{c.email}</span>
                 </div>
             ),
             sortable: true,
@@ -244,6 +248,14 @@ const Customers = () => {
             accessor: (c: any) => <span className="text-slate-600">{c.phone || '-'}</span>,
             sortable: true,
             sortKey: 'phone'
+        },
+        {
+            id: 'email',
+            header: 'E-Mail',
+            accessor: (c: any) => <span className="text-slate-600 text-xs">{c.email || '-'}</span>,
+            sortable: true,
+            sortKey: 'email',
+            defaultVisible: true
         },
         {
             id: 'projects_count',
@@ -347,7 +359,7 @@ const Customers = () => {
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('customers.title')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">{t('customers.title')}</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">{t('customers.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">

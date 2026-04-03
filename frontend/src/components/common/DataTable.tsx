@@ -7,16 +7,18 @@ import clsx from 'clsx';
 import Switch from './Switch';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
 import TableSkeleton from './TableSkeleton';
+import SearchableSelect from './SearchableSelect';
 import { Button } from '../ui/button';
 
 export interface FilterDef {
     id: string;
     label: string;
-    type: 'select' | 'text' | 'date';
-    options?: { value: string | number; label: string }[];
+    type: 'select' | 'text' | 'date' | 'searchable';
+    options?: { value: string | number; label: string; icon?: string; group?: string }[];
     value: any;
     onChange: (val: any) => void;
     placeholder?: string;
+    isMulti?: boolean;
 }
 
 interface Column<T> {
@@ -341,7 +343,7 @@ const DataTable = <T extends { id: string | number }>({
                                     {filter.type === 'select' ? (
                                         <div className="relative">
                                             <select
-                                                className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                                className="w-full h-9 text-xs border border-[#ccc] rounded-none px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
                                                 value={filter.value}
                                                 onChange={e => filter.onChange(e.target.value)}
                                             >
@@ -353,13 +355,22 @@ const DataTable = <T extends { id: string | number }>({
                                             </select>
                                             <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-2xs text-slate-400 pointer-events-none" />
                                         </div>
+                                    ) : filter.type === 'searchable' ? (
+                                        <SearchableSelect
+                                            options={filter.options as any || []}
+                                            value={filter.value}
+                                            onChange={filter.onChange}
+                                            placeholder={filter.placeholder}
+                                            isMulti={filter.isMulti}
+                                            className="h-9 text-xs"
+                                        />
                                     ) : (
                                         <input
                                             type={filter.type}
                                             value={filter.value}
                                             onChange={e => filter.onChange(e.target.value)}
                                             placeholder={filter.placeholder}
-                                            className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] focus:border-[#1B4D4F] outline-none transition"
+                                            className="w-full h-9 text-xs border border-[#ccc] rounded-none px-2.5 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] focus:border-[#1B4D4F] outline-none transition"
                                         />
                                     )}
                                 </div>
@@ -369,7 +380,7 @@ const DataTable = <T extends { id: string | number }>({
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => { onResetFilters(); setIsFilterOpen(false); }}
-                                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center gap-1.5"
+                                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-none hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center gap-1.5"
                                 >
                                     <FaUndo className="text-2xs" /> Filter zurücksetzen
                                 </button>
@@ -615,10 +626,10 @@ const DataTable = <T extends { id: string | number }>({
                         ))}
                     </div>
                     <div className="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                        <span className="text-2xs font-bold text-slate-400 uppercase tracking-tight">{visibleColumns.size} Aktiv</span>
+                        <span className="text-2xs font-bold text-slate-400 tracking-tight">{visibleColumns.size} Aktiv</span>
                         <button
                             onClick={() => setIsSettingsOpen(false)}
-                            className="text-2xs font-bold text-brand-primary uppercase tracking-widest hover:underline"
+                            className="text-2xs font-bold text-brand-primary tracking-tight hover:underline"
                         >
                             Schließen
                         </button>

@@ -37,8 +37,8 @@ type FilterTab = 'all' | 'unread' | 'success' | 'warning' | 'info';
 const TYPE_ICON: Record<NotificationData['type'], React.ReactNode> = {
     success: <FaCheckCircle className="text-emerald-500 w-4 h-4 flex-shrink-0" />,
     warning: <FaExclamationTriangle className="text-amber-500 w-4 h-4 flex-shrink-0" />,
-    error:   <FaTimesCircle className="text-red-500 w-4 h-4 flex-shrink-0" />,
-    info:    <FaInfoCircle className="text-blue-500 w-4 h-4 flex-shrink-0" />,
+    error: <FaTimesCircle className="text-red-500 w-4 h-4 flex-shrink-0" />,
+    info: <FaInfoCircle className="text-blue-500 w-4 h-4 flex-shrink-0" />,
 };
 
 function getDateGroup(dateStr: string): string {
@@ -52,11 +52,11 @@ function getDateGroup(dateStr: string): string {
 const DATE_GROUP_ORDER = ['Heute', 'Gestern', 'Diese Woche', 'Aelter'];
 
 const FILTER_TABS: { key: FilterTab; label: string }[] = [
-    { key: 'all',     label: 'Alle' },
-    { key: 'unread',  label: 'Ungelesen' },
+    { key: 'all', label: 'Alle' },
+    { key: 'unread', label: 'Ungelesen' },
     { key: 'success', label: 'Erfolg' },
     { key: 'warning', label: 'Warnung' },
-    { key: 'info',    label: 'Info' },
+    { key: 'info', label: 'Info' },
 ];
 
 const Notifications = () => {
@@ -153,12 +153,12 @@ const Notifications = () => {
                         tab.key === 'all'
                             ? (notifications as Notification[]).length
                             : tab.key === 'unread'
-                            ? unreadCount
-                            : tab.key === 'info'
-                            ? (notifications as Notification[]).filter(
-                                  (n) => n.data.type === 'info' || n.data.type === 'error'
-                              ).length
-                            : (notifications as Notification[]).filter((n) => n.data.type === tab.key).length;
+                                ? unreadCount
+                                : tab.key === 'info'
+                                    ? (notifications as Notification[]).filter(
+                                        (n) => n.data.type === 'info' || n.data.type === 'error'
+                                    ).length
+                                    : (notifications as Notification[]).filter((n) => n.data.type === tab.key).length;
 
                     return (
                         <button
@@ -175,7 +175,7 @@ const Notifications = () => {
                             {count > 0 && (
                                 <span
                                     className={clsx(
-                                        'px-1.5 py-0.5 rounded-sm text-2xs font-semibold min-w-[18px] text-center',
+                                        'px-1.5 py-0.5 rounded-sm text-sm font-semibold min-w-[18px] text-center',
                                         isActive
                                             ? 'bg-[var(--color-primary)] text-white'
                                             : 'bg-slate-100 text-slate-500'
@@ -205,7 +205,7 @@ const Notifications = () => {
                             <div key={group}>
                                 {/* Date group header */}
                                 <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
-                                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <span className="text-xs font-semibold text-slate-400">
                                         {group}
                                     </span>
                                 </div>

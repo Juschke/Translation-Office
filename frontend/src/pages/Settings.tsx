@@ -45,9 +45,6 @@ const Settings: React.FC = () => {
                 {/* Sidebar Navigation */}
                 <aside className="w-full lg:w-64 shrink-0">
                     <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden sticky top-20">
-                        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-                            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Einstellungen</h2>
-                        </div>
                         <nav className="flex flex-col">
                             {Object.entries(TAB_META).map(([id, item]) => {
                                 const Icon = item.icon;
@@ -83,9 +80,6 @@ const Settings: React.FC = () => {
                                                                 : "text-slate-500 hover:text-slate-700 hover:bg-slate-100 border-transparent"
                                                         )}
                                                     >
-                                                        <div className="w-6 h-6 rounded-sm bg-slate-100 flex items-center justify-center shrink-0">
-                                                            <sub.icon className={clsx("w-3.5 h-3.5", (searchParams.get('sub') === sub.id || (!searchParams.get('sub') && sub.id === 'languages')) ? "text-brand-primary" : "text-slate-400")} />
-                                                        </div>
                                                         <span>{sub.label}</span>
                                                     </Link>
                                                 ))}

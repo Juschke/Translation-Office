@@ -150,6 +150,9 @@ const CustomerDetail = () => {
                                 <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Kontaktinformationen</h4>
 
                                 <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
+                                    <span className="text-slate-500 font-medium">Kunden-ID</span>
+                                    <span className="text-slate-800 font-semibold">{customer.display_id}</span>
+
                                     {customer.type !== 'private' && (
                                         <>
                                             <span className="text-slate-500 font-medium">{customer.type === 'authority' ? t('customers.type_authority_label') : t('customers.type_company_label')}</span>
@@ -166,16 +169,6 @@ const CustomerDetail = () => {
                                     <span className="text-slate-500 font-medium">Nachname</span>
                                     <span className="text-slate-800 font-medium">{customer.last_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
 
-                                    <span className="text-slate-500 font-medium mt-2">E-Mail</span>
-                                    <span className="text-slate-700 mt-2 hover:underline cursor-pointer">{customer.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
-
-                                    {customer.additional_emails?.length > 0 && (
-                                        <>
-                                            <span className="text-slate-500 font-medium">Weitere E-Mails</span>
-                                            <span className="text-slate-800">{customer.additional_emails.join(', ')}</span>
-                                        </>
-                                    )}
-
                                     <span className="text-slate-500 font-medium">Telefon</span>
                                     <span className="text-slate-800">{customer.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
 
@@ -183,6 +176,16 @@ const CustomerDetail = () => {
                                         <>
                                             <span className="text-slate-500 font-medium">Weitere Tel.</span>
                                             <span className="text-slate-800">{customer.additional_phones.join(', ')}</span>
+                                        </>
+                                    )}
+
+                                    <span className="text-slate-500 font-medium">E-Mail</span>
+                                    <span className="text-slate-700 hover:underline cursor-pointer">{customer.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
+
+                                    {customer.additional_emails?.length > 0 && (
+                                        <>
+                                            <span className="text-slate-500 font-medium">Weitere E-Mails</span>
+                                            <span className="text-slate-800">{customer.additional_emails.join(', ')}</span>
                                         </>
                                     )}
 
@@ -373,7 +376,7 @@ const RecentProjectsList = ({ customerId }: { customerId: string }) => {
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-                <thead className="bg-transparent text-slate-500 text-xs font-medium tracking-wider">
+                <thead className="bg-transparent text-slate-500 text-xs font-medium">
                     <tr>
                         <th className="px-6 py-3 border-b border-slate-100">Projekt</th>
                         <th className="px-6 py-3 border-b border-slate-100">Status</th>

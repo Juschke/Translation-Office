@@ -19,7 +19,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                 <div className="flex items-center gap-3">
                     <FaEuroSign className="text-slate-400 text-sm" />
                     <h4 className="text-sm font-medium text-slate-800">Anzahlungen / Teilzahlungen</h4>
-                    <span className="bg-white border border-slate-200 text-slate-600 text-2xs font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
+                    <span className="bg-white border border-slate-200 text-slate-600 text-sm font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
                         {payments.length}
                     </span>
                 </div>
@@ -29,12 +29,9 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                         size="sm"
                         onClick={onAddPayment}
                         disabled={disabledAdd}
-                        className={clsx(
-                            "h-7 px-3 text-2xs uppercase font-bold tracking-tight shadow-none rounded flex items-center gap-1.5",
-                            disabledAdd ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white"
-                        )}
+                        className={clsx("h-7 px-3 text-sm font-bold shadow-none rounded flex items-center gap-1.5", disabledAdd ?"bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" :"bg-brand-primary hover:bg-brand-primary/90 text-white" )}
                     >
-                        <FaPlus className="text-2xs" /> {disabledAdd ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                        <FaPlus className="text-sm" /> {disabledAdd ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
                     </Button>
                 )}
             </div>
@@ -61,7 +58,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                     <tbody className="divide-y divide-slate-100">
                         {payments.map((p, idx) => (
                             <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
-                                <td className="px-4 py-2 text-2xs font-bold text-slate-400 text-center">
+                                <td className="px-4 py-2 text-sm font-bold text-slate-400 text-center">
                                     {p.payment_number || (idx + 1).toString().padStart(3, '0')}
                                 </td>
                                 <td className="px-4 py-2 text-sm font-medium text-slate-700 whitespace-nowrap">
@@ -86,7 +83,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                                 </td>
                                 <td className="px-4 py-2 text-xs font-medium text-slate-500">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-2xs font-bold text-slate-500 border border-slate-200 shrink-0">
+                                        <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 border border-slate-200 shrink-0">
                                             {(p.created_by || '??').substring(0, 2).toUpperCase()}
                                         </div>
                                         <span className="truncate">{p.created_by || 'System'}</span>

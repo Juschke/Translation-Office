@@ -1,9 +1,12 @@
 {
   "common": {
+    "project": "Projekt",
     "number": "Nummer",
     "number_short": "Nr.",
     "designation": "Bezeichnung",
     "language_pair": "Sprachpaar",
+    "source_language": "Eingangssprache",
+    "target_language": "Zielsprache",
     "down_payment": "Anzahlung",
     "total_price": "Gesamtpreis",
     "status": "Status",

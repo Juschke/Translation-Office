@@ -18,14 +18,13 @@ interface SearchableSelectProps {
     id?: string;
     preserveOrder?: boolean;
     maxVisibleItems?: number;
-    roundedSide?: 'left' | 'right' | 'both' | 'none';
     disabled?: boolean;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
     isMulti = false, onAddNew, onSearch, id, preserveOrder = false,
-    maxVisibleItems = 2, roundedSide = 'both', disabled = false
+    maxVisibleItems = 2, disabled = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -238,7 +237,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                             <div className="flex items-center gap-2">
                                                 {isMulti && (
                                                     <div className={clsx(
-                                                        "w-3.5 h-3.5 rounded-sm border transition-colors flex items-center justify-center mr-1",
+                                                        "w-3.5 h-3.5 rounded-none border transition-colors flex items-center justify-center mr-1",
                                                         isSelected ? "bg-brand-primary border-brand-primary" : "bg-white border-slate-300"
                                                     )}>
                                                         {isSelected && <FaCheck className="text-white text-[7px]" />}
@@ -277,7 +276,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                             <div className="flex items-center gap-2">
                                                 {isMulti && (
                                                     <div className={clsx(
-                                                        "w-3.5 h-3.5 rounded-sm border transition-colors flex items-center justify-center mr-1",
+                                                        "w-3.5 h-3.5 rounded-none border transition-colors flex items-center justify-center mr-1",
                                                         isSelected ? "bg-brand-primary border-brand-primary" : "bg-white border-slate-300"
                                                     )}>
                                                         {isSelected && <FaCheck className="text-white text-[7px]" />}
@@ -309,10 +308,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             onAddNew();
                             setIsOpen(false);
                         }}
-                        className="w-full h-9 py-2.5 text-[11px] font-bold bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm border-none flex items-center justify-center gap-2 rounded-sm"
+                        className="w-full h-9 py-2.5 text-[11px] font-bold bg-brand-primary text-white hover:bg-brand-primary/90 transition shadow-sm border-none flex items-center justify-center gap-2 rounded-none"
                     >
                         <FaPlus className="text-2xs" />
-                        <span className="uppercase tracking-wider">Neu anlegen</span>
+                        <span>Neu anlegen</span>
                     </Button>
                 </div>
             )}
@@ -325,12 +324,9 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
             <div
                 id={id}
                 className={clsx(
-                    "w-full border px-3 py-1 text-sm bg-white flex justify-between items-center cursor-pointer transition h-9",
-                    roundedSide === 'both' && "rounded-sm",
-                    roundedSide === 'left' && "rounded-l-sm",
-                    roundedSide === 'right' && "rounded-r-sm",
-                    roundedSide === 'none' && "rounded-none",
-                    isOpen ? "border-brand-primary ring-2 ring-brand-primary/10 shadow-sm" : "border-slate-200 shadow-sm",
+                    "w-full border px-3 py-1 text-sm bg-white flex justify-between items-center transition h-9",
+                    "rounded-none",
+                    isOpen ? "border-brand-primary ring-2 ring-brand-primary/10 shadow-sm" : "border-slate-200 hover:border-brand-primary shadow-sm",
                     disabled ? "bg-slate-50 border-slate-200 cursor-not-allowed opacity-60" : "bg-white",
                     className
                 )}
@@ -347,7 +343,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                 return (
                                     <div key={v} className={clsx(
                                         "flex items-center gap-1",
-                                        isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-slate-700 whitespace-nowrap" : "font-semibold text-slate-800"
+                                        isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded-none text-sm font-medium text-slate-700 whitespace-nowrap" : "font-semibold text-slate-800"
                                     )}>
                                         {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
                                         <span>{opt.label}</span>
@@ -361,7 +357,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                 );
                             })}
                             {isMulti && values.length > maxVisibleItems && (
-                                <div className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-sm text-xs font-bold text-slate-500 whitespace-nowrap">
+                                <div className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-none text-xs font-bold text-slate-500 whitespace-nowrap">
                                     + {values.length - maxVisibleItems} weitere
                                 </div>
                             )}

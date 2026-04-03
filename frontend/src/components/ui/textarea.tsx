@@ -44,10 +44,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                 <textarea
                     id={textareaId}
                     className={cn(
-                        "flex min-h-[80px] w-full rounded-sm bg-transparent px-3 py-2 text-sm text-slate-900 transition-colors resize-none",
-                        "border border-slate-200 hover:border-slate-300",
+                        "flex min-h-[80px] w-full rounded-none bg-transparent px-3 py-2 text-sm text-slate-900 transition-colors resize-none",
+                        "border border-slate-200 hover:border-brand-primary",
                         "placeholder:text-slate-400",
-                        "focus:outline-none focus:ring-1 focus:ring-slate-950/10 focus:border-slate-400",
+                        "focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary",
                         "disabled:cursor-not-allowed disabled:opacity-50",
                         error && "border-red-500 focus:border-red-500 focus:ring-red-500/10",
                         className

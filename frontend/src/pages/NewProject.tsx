@@ -8,6 +8,7 @@ import {
     FaSearch, FaCheck, FaTimes, FaArrowLeft, FaSave,
     FaInfoCircle, FaQuestionCircle
 } from 'react-icons/fa';
+import { formatCustomerLabel, formatPartnerLabel } from '../utils/dropdownFormat';
 import CustomerSelect from '../components/common/CustomerSelect';
 import DocumentTypeSelect from '../components/common/DocumentTypeSelect';
 import PartnerSelect from '../components/common/PartnerSelect';
@@ -44,7 +45,7 @@ const INPUT_WRAP = 'flex-1 min-w-0';
 const ROW_CLASS = 'flex items-start gap-4 py-3 border-b border-slate-50';
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
 const SECTION_NUM = 'w-7 h-7 rounded-md bg-brand-primary text-white flex items-center justify-center text-xs font-bold shadow-sm';
-const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
+const SECTION_TITLE = 'text-sm font-semibold text-slate-800 ';
 
 const getStatusOptions = (t: any) => [
     { value: 'offer', label: t('project.status_offer') },
@@ -167,15 +168,21 @@ const NewProject = () => {
         return lang ? (lang.name_internal || lang.name) : code.toUpperCase();
     };
 
+    const activeInvoice = useMemo(() => {
+        if (!initialData?.invoices) return null;
+        return initialData.invoices.find((inv: any) => !['cancelled'].includes(inv.status));
+    }, [initialData]);
+    const isLocked = !!activeInvoice;
+
     // ── Derived ──
     const custOptions = useMemo(() => (Array.isArray(customersData) ? customersData : []).map((c: any) => ({
         value: c.id.toString(),
-        label: `${c.company_name || `${c.first_name} ${c.last_name}`} (${c.display_id || c.id}) - ${c.address_city || ''}`
+        label: formatCustomerLabel(c)
     })), [customersData]);
 
     const partnerOptions = useMemo(() => (Array.isArray(partnersData) ? partnersData : []).map((p: any) => ({
         value: p.id.toString(),
-        label: `${p.company_name || `${p.first_name} ${p.last_name}`} (${p.display_id || p.id}) - ${p.address_city || ''}`
+        label: formatPartnerLabel(p)
     })), [partnersData]);
 
     const { data: dbStatuses } = useQuery({ queryKey: ['settings', 'projectStatuses'], queryFn: settingsService.getProjectStatuses });
@@ -525,7 +532,7 @@ const NewProject = () => {
                             <FaArrowLeft />
                         </button>
                         <div>
-                            <h1 className="text-lg font-semibold text-slate-800 tracking-tight">
+                            <h1 className="text-lg font-semibold text-slate-800">
                                 {isEditing ? 'Projekt bearbeiten' : 'Neues Projekt erfassen'}
                             </h1>
                         </div>
@@ -654,9 +661,9 @@ const NewProject = () => {
                                     <table className="w-full text-left border-collapse">
                                         <thead className="sticky top-0 bg-white border-b border-slate-200">
                                             <tr>
-                                                <th className="px-4 py-2.5 text-2xs font-bold uppercase tracking-widest text-slate-400">Partner</th>
-                                                <th className="px-4 py-2.5 text-2xs font-bold uppercase tracking-widest text-slate-400">Sprachen</th>
-                                                <th className="px-4 py-2.5 text-2xs font-bold uppercase tracking-widest text-slate-400 text-right w-16">Wählen</th>
+                                                <th className="px-4 py-2.5 text-[9.5px] font-bold text-slate-500">Partner</th>
+                                                <th className="px-4 py-2.5 text-[9.5px] font-bold text-slate-500">Sprachen</th>
+                                                <th className="px-4 py-2.5 text-[9.5px] font-bold text-slate-500 text-right w-16">Wählen</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
@@ -665,16 +672,16 @@ const NewProject = () => {
                                                     onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}>
                                                     <td className="px-4 py-2">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded-sm bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-2xs font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
+                                                            <div className="w-6 h-6 rounded-sm bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
                                                             <span className="text-xs font-medium text-slate-700">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-2">
-                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-2xs font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
+                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-sm font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
                                                     </td>
                                                     <td className="px-4 py-2 text-right">
                                                         <div className={clsx('inline-flex items-center justify-center w-5 h-5 rounded-full border transition', translator === p.id.toString() ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200 text-transparent')}>
-                                                            <FaCheck className="text-2xs" />
+                                                            <FaCheck className="text-sm" />
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -696,40 +703,58 @@ const NewProject = () => {
                             <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
                         </div>
                         <div className="px-6 pb-5">
+                            {isLocked && (
+                                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-100 rounded-sm flex items-center gap-2 text-amber-600">
+                                    <FaInfoCircle className="text-xs shrink-0" />
+                                    <span className="text-xs font-bold uppercase tracking-tight">Kalkulation Gesperrt</span>
+                                    <span className="text-xs opacity-80">(Rechnung {activeInvoice?.invoice_number} bereits erstellt)</span>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-4 border-b border-slate-100">
                                 {[
-                                    { label: 'Beglaubigung (5€)', enabled: isCertified, toggle: () => setIsCertified(!isCertified), qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
-                                    { label: 'Express (15€)', enabled: isExpress, toggle: () => setIsExpress(!isExpress), qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
-                                    { label: 'Apostille (25€)', enabled: hasApostille, toggle: () => setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
-                                    { label: 'Klassifizierung (15€)', enabled: classification === 'ja', toggle: () => setClassification(classification === 'ja' ? 'nein' : 'ja'), qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
+                                    { label: 'Beglaubigung (5€)', enabled: isCertified, toggle: () => !isLocked && setIsCertified(!isCertified), qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
+                                    { label: 'Express (15€)', enabled: isExpress, toggle: () => !isLocked && setIsExpress(!isExpress), qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
+                                    { label: 'Apostille (25€)', enabled: hasApostille, toggle: () => !isLocked && setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
+                                    { label: 'Klassifizierung (15€)', enabled: classification === 'ja', toggle: () => !isLocked && setClassification(classification === 'ja' ? 'nein' : 'ja'), qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
                                 ].map(opt => (
-                                    <div key={opt.label} className="space-y-1">
+                                    <div key={opt.label} className={clsx("space-y-1", isLocked && "opacity-60")}>
                                         <label className="text-xs font-medium text-slate-400 flex items-center gap-1">{opt.label} <FieldTip text={opt.tip} /></label>
                                         <div className="flex flex-col gap-2">
-                                            <div className="h-9 flex items-center gap-2 cursor-pointer" onClick={opt.toggle}>
+                                            <div
+                                                className={clsx("h-9 flex items-center gap-2", !isLocked ? "cursor-pointer" : "cursor-not-allowed")}
+                                                onClick={opt.toggle}
+                                            >
                                                 <div className={clsx('w-8 h-4 rounded-full relative transition-colors', opt.enabled ? 'bg-emerald-500' : 'bg-slate-300')}>
                                                     <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', opt.enabled ? 'left-4' : 'left-0.5')} />
                                                 </div>
-                                                <span className={clsx('text-2xs font-bold', opt.enabled ? 'text-emerald-600' : 'text-slate-400')}>{opt.enabled ? 'JA' : 'NEIN'}</span>
+                                                <span className={clsx('text-sm font-bold', opt.enabled ? 'text-emerald-600' : 'text-slate-400')}>{opt.enabled ? 'JA' : 'NEIN'}</span>
                                             </div>
                                             {opt.enabled && (
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-2xs text-slate-400 font-medium">Menge:</span>
+                                                    <span className="text-sm text-slate-400 font-medium">Menge:</span>
                                                     <input
                                                         type="number"
                                                         min="1"
                                                         value={opt.qty}
-                                                        onChange={e => opt.setQty(Math.max(1, parseInt(e.target.value) || 1))}
-                                                        className="w-12 h-7 text-center text-xs font-medium text-slate-700 border border-slate-200 rounded-sm outline-none focus:ring-1 focus:ring-brand-500"
+                                                        onChange={e => !isLocked && opt.setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                        disabled={isLocked}
+                                                        className={clsx(
+                                                            "w-12 h-7 text-center text-xs font-medium text-slate-700 border border-slate-200 rounded-sm outline-none",
+                                                            !isLocked ? "focus:ring-1 focus:ring-brand-500" : "bg-slate-50 cursor-not-allowed"
+                                                        )}
                                                     />
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                 ))}
-                                <div className="space-y-1">
+                                <div className={clsx("space-y-1", isLocked && "opacity-60")}>
                                     <label className="text-xs font-medium text-slate-400 flex items-center gap-1">MwSt. (19%) <FieldTip text="Umsatzsteuer auf den Nettobetrag." /></label>
-                                    <div className="h-9 flex items-center gap-2 cursor-pointer" onClick={() => setWithTax(!withTax)}>
+                                    <div
+                                        className={clsx("h-9 flex items-center gap-2", !isLocked ? "cursor-pointer" : "cursor-not-allowed")}
+                                        onClick={() => !isLocked && setWithTax(!withTax)}
+                                    >
                                         <div className={clsx('w-8 h-4 rounded-full relative transition-colors', withTax ? 'bg-emerald-500' : 'bg-slate-300')}>
                                             <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', withTax ? 'left-4' : 'left-0.5')} />
                                         </div>
@@ -739,19 +764,32 @@ const NewProject = () => {
                             </div>
 
                             {/* Copies */}
-                            <div className="grid grid-cols-12 gap-4 pt-4">
+                            <div className={clsx("grid grid-cols-12 gap-4 pt-4", isLocked && "opacity-60")}>
                                 <div className="col-span-4">
                                     <label className="text-xs font-medium text-slate-400 mb-1 block">Anzahl Kopien</label>
-                                    <div className="flex items-center h-9 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm">
-                                        <button onClick={() => setCopies(Math.max(0, copies - 1))} className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100"><FaMinus className="text-xs" /></button>
+                                    <div className={clsx("flex items-center h-9 border rounded-md overflow-hidden bg-white shadow-sm", !isLocked ? "border-slate-200" : "border-slate-100")}>
+                                        <button
+                                            onClick={() => !isLocked && setCopies(Math.max(0, copies - 1))}
+                                            disabled={isLocked}
+                                            className={clsx("h-full px-3 text-slate-400 transition border-r border-slate-100", !isLocked ? "hover:text-slate-700 hover:bg-slate-50" : "cursor-not-allowed")}
+                                        >
+                                            <FaMinus className="text-xs" />
+                                        </button>
                                         <input
                                             type="number"
                                             value={copies}
-                                            onChange={e => setCopies(Math.max(0, parseInt(e.target.value) || 0))}
-                                            onFocus={(e) => { if (copies === 0) e.target.value = ''; }}
-                                            className="flex-1 w-full h-full text-center text-sm font-medium text-slate-700 outline-none"
+                                            onChange={e => !isLocked && setCopies(Math.max(0, parseInt(e.target.value) || 0))}
+                                            onFocus={(e) => { if (!isLocked && copies === 0) e.target.value = ''; }}
+                                            disabled={isLocked}
+                                            className={clsx("flex-1 w-full h-full text-center text-sm font-medium text-slate-700 outline-none", isLocked && "bg-slate-50 cursor-not-allowed")}
                                         />
-                                        <button onClick={() => setCopies(copies + 1)} className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100"><FaPlus className="text-xs" /></button>
+                                        <button
+                                            onClick={() => !isLocked && setCopies(copies + 1)}
+                                            disabled={isLocked}
+                                            className={clsx("h-full px-3 text-slate-400 transition border-l border-slate-100", !isLocked ? "hover:text-slate-700 hover:bg-slate-50" : "cursor-not-allowed")}
+                                        >
+                                            <FaPlus className="text-xs" />
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="col-span-4">
@@ -760,10 +798,12 @@ const NewProject = () => {
                                         type="number"
                                         step="0.01"
                                         value={copyPrice}
-                                        onChange={e => setCopyPrice(e.target.value)}
-                                        onFocus={() => { if (parseFloat(copyPrice) === 0) setCopyPrice(''); }}
+                                        onChange={e => !isLocked && setCopyPrice(e.target.value)}
+                                        onFocus={() => { if (!isLocked && parseFloat(copyPrice) === 0) setCopyPrice(''); }}
                                         onBlur={() => setCopyPrice(parseFloat(copyPrice || '0').toFixed(2))}
                                         containerClassName="h-9"
+                                        disabled={isLocked}
+                                        className={isLocked ? "bg-slate-50 cursor-not-allowed" : ""}
                                     />
                                 </div>
                                 <div className="col-span-4 flex items-end pb-1.5">
@@ -780,7 +820,14 @@ const NewProject = () => {
                             <h3 className={SECTION_TITLE}>Kalkulation Positionen</h3>
                         </div>
                         <div className="px-6 pb-5">
-                            <ProjectPositionsTable positions={positions} setPositions={setPositions} />
+                            {isLocked && (
+                                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-100 rounded-sm flex items-center gap-2 text-amber-600">
+                                    <FaInfoCircle className="text-xs shrink-0" />
+                                    <span className="text-xs font-bold uppercase tracking-tight">Kalkulation Gesperrt</span>
+                                    <span className="text-xs opacity-80">(Rechnung {activeInvoice?.invoice_number} bereits erstellt)</span>
+                                </div>
+                            )}
+                            <ProjectPositionsTable positions={positions} setPositions={setPositions} disabled={isLocked} />
                         </div>
                     </section>
 
@@ -790,7 +837,7 @@ const NewProject = () => {
                             <div className="flex items-center gap-3">
                                 <div className={SECTION_NUM}>07</div>
                                 <h3 className={SECTION_TITLE}>Anzahlungen / Teilzahlungen</h3>
-                                <span className="bg-slate-100 text-slate-600 text-2xs font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
+                                <span className="bg-slate-100 text-slate-600 text-sm font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
                                     {payments.length}
                                 </span>
                             </div>

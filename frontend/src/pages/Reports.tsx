@@ -507,7 +507,7 @@ const Reports = () => {
                                             <th className="px-4 py-2 font-medium text-right border-r border-slate-200" rowSpan={2}>Vorsteuer <span className="opacity-60">(Schätzung)</span></th>
                                             <th className="px-4 py-2 font-bold text-slate-800 text-right bg-slate-100/80" rowSpan={2}>Zahllast</th>
                                         </tr>
-                                        <tr className="bg-slate-50 text-2xs text-slate-500 border-b border-slate-200 uppercase tracking-wider">
+                                        <tr className="bg-slate-50 text-sm text-slate-500 border-b border-slate-200">
                                             <th className="px-3 py-1.5 text-right font-medium text-slate-600">19%</th>
                                             <th className="px-3 py-1.5 text-right font-medium text-slate-600">7%</th>
                                             <th className="px-3 py-1.5 text-right font-medium text-slate-600 border-r border-slate-200">Rev. Charge</th>
@@ -583,7 +583,7 @@ const Reports = () => {
                                                 <td className="px-5 py-2 border-r border-slate-100">
                                                     <div className="flex flex-col justify-center">
                                                         <span className="text-xs font-semibold text-slate-900 leading-tight">{row.project_number}</span>
-                                                        <span className="text-2xs font-medium text-slate-500 leading-tight truncate max-w-[150px]">{row.customer}</span>
+                                                        <span className="text-sm font-medium text-slate-500 leading-tight truncate max-w-[150px]">{row.customer}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-2 text-xs text-slate-500 tabular-nums border-r border-slate-100 whitespace-nowrap">{row.date}</td>
@@ -592,7 +592,7 @@ const Reports = () => {
                                                 <td className="px-5 py-2 text-xs font-semibold text-emerald-600 text-right tabular-nums whitespace-nowrap border-l border-slate-100">{fmtNum(row.profit ?? 0)}</td>
                                                 <td className="px-5 py-2 text-right tabular-nums whitespace-nowrap">
                                                     <span className={clsx(
-                                                        "text-2xs font-bold px-2 py-0.5 rounded-sm inline-block min-w-[48px] text-center",
+                                                        "text-sm font-bold px-2 py-0.5 rounded-sm inline-block min-w-[48px] text-center",
                                                         (row.margin ?? 0) >= 30 ? "bg-emerald-100/50 text-emerald-700"
                                                             : (row.margin ?? 0) >= 15 ? "bg-blue-100/50 text-blue-700"
                                                                 : "bg-amber-100/50 text-amber-700"
@@ -602,7 +602,7 @@ const Reports = () => {
                                                 </td>
                                                 <td className="px-5 py-2 whitespace-nowrap border-l border-slate-100">
                                                     <span className={clsx(
-                                                        "text-2xs font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider",
+                                                        "text-sm font-bold px-2 py-0.5 rounded-sm",
                                                         row.status === 'completed' || row.status === 'invoiced'
                                                             ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
                                                             : row.status === 'delivery'
@@ -661,11 +661,11 @@ const Reports = () => {
                                                 <td className="px-5 py-3 text-xs text-slate-500">{row.date}</td>
                                                 <td className="px-5 py-3 text-xs text-slate-500">
                                                     <span className={clsx(row.overdue && "text-red-500 font-bold")}>{row.due_date}</span>
-                                                    {row.overdue && <span className="ml-2 text-2xs text-red-500">({row.days_overdue} Tage drüber)</span>}
+                                                    {row.overdue && <span className="ml-2 text-sm text-red-500">({row.days_overdue} Tage drüber)</span>}
                                                 </td>
                                                 <td className="px-5 py-3 text-xs font-semibold text-slate-900 text-right tabular-nums">{fmtNum(row.amount_gross)}</td>
                                                 <td className="px-5 py-3 text-right">
-                                                    <span className="text-2xs uppercase font-bold tracking-widest px-2 py-0.5 rounded-sm bg-slate-100 text-slate-500">
+                                                    <span className="text-sm font-bold px-2 py-0.5 rounded-sm bg-slate-100 text-slate-500">
                                                         {row.status === 'issued' ? t('reports.invoice_issued') : row.status === 'overdue' ? t('reports.invoice_overdue') : row.status}
                                                     </span>
                                                 </td>
@@ -712,7 +712,7 @@ const Reports = () => {
                                                 <td className="px-5 py-3 text-xs font-semibold text-emerald-600 text-right tabular-nums">{fmtNum(row.gross_profit)}</td>
                                                 <td className="px-5 py-3 text-right tabular-nums">
                                                     <span className={clsx(
-                                                        "text-2xs font-bold tracking-widest px-2 py-0.5 rounded-full",
+                                                        "text-sm font-bold px-2 py-0.5 rounded-full",
                                                         (row.margin ?? 0) >= 30 ? "bg-emerald-100 text-emerald-700"
                                                             : (row.margin ?? 0) >= 15 ? "bg-blue-100 text-blue-700"
                                                                 : "bg-amber-100 text-amber-700"

@@ -45,9 +45,9 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                     <select
                         id={selectId}
                         className={cn(
-                            "flex h-9 w-full appearance-none rounded-sm bg-transparent px-3 py-1 pr-8 text-sm text-slate-900 transition-colors",
-                            "border border-slate-200 hover:border-slate-300",
-                            "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
+                            "flex h-9 w-full appearance-none rounded-none bg-transparent px-3 py-1 pr-8 text-sm text-slate-900 transition-colors",
+                            "border border-slate-200 hover:border-brand-primary",
+                            "focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary",
                             "disabled:cursor-not-allowed disabled:opacity-50",
                             error && "border-red-500 focus:border-red-500 focus:ring-red-500/10",
                             className

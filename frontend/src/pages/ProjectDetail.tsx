@@ -7,7 +7,7 @@ import { mapProjectResponse } from '../utils/projectDataMapper';
 import { useProjectModals } from '../hooks/useProjectModals';
 import { useProjectFinancials } from '../hooks/useProjectFinancials';
 import toast from 'react-hot-toast';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { FaArrowLeft, FaEdit, FaFlag, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
@@ -15,7 +15,7 @@ import CustomerSelectionModal from '../components/modals/CustomerSelectionModal'
 import NewProjectModal from '../components/modals/NewProjectModal';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
-import FileUploadModal from '../components/modals/FileUploadModal';
+
 import ConfirmModal from '../components/common/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
 import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
@@ -23,7 +23,7 @@ import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import EmailComposeModal from '../components/modals/EmailComposeModal';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectService, customerService, partnerService } from '../api/services';
+import { projectService, customerService, partnerService, invoiceService } from '../api/services';
 import { getFlagUrl } from '../utils/flags';
 import { getLanguageLabel } from '../utils/languages';
 import { Button } from '../components/ui/button';
@@ -103,7 +103,7 @@ interface ProjectData {
     isCertified: boolean;
     hasApostille: boolean;
     isExpress: boolean;
-    classification: string;
+    classification: any;
     copies: number;
     copyPrice: number;
     docType: string[];
@@ -175,13 +175,14 @@ const ProjectDetail = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
-    const [activeTab, setActiveTab] = useState('overview');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'overview';
+    const setActiveTab = (tab: string) => setSearchParams({ tab }, { replace: true });
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
 
     const {
         isPartnerModalOpen, setIsPartnerModalOpen,
         isEditModalOpen, setIsEditModalOpen,
-        isUploadModalOpen, setIsUploadModalOpen,
         isPaymentModalOpen, setIsPaymentModalOpen,
         isCustomerSearchOpen, setIsCustomerSearchOpen,
         isCustomerEditModalOpen, setIsCustomerEditModalOpen,
@@ -192,9 +193,11 @@ const ProjectDetail = () => {
         previewFile, setPreviewFile,
         deleteFileConfirm, setDeleteFileConfirm,
         paymentDeleteConfirm, setPaymentDeleteConfirm,
+        bulkDeleteConfirm, setBulkDeleteConfirm,
     } = useProjectModals();
 
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
+    const [invoiceToCancel, setInvoiceToCancel] = useState<any>(null);
     const [isEmailComposeOpen, setIsEmailComposeOpen] = useState(false);
     const [editingPayment, setEditingPayment] = useState<any>(null);
     const [emailComposeData, setEmailComposeData] = useState<{
@@ -202,6 +205,7 @@ const ProjectDetail = () => {
         subject: string;
         recipientType: 'customer' | 'partner' | 'none';
     }>({ to: '', subject: '', recipientType: 'none' });
+    const [financeBadgeDraft, setFinanceBadgeDraft] = useState<number | null>(null);
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -252,10 +256,15 @@ const ProjectDetail = () => {
         }
     };
 
-    const getLanguageInfo = (code: string) => {
+    const getLanguageInfo = (code: string, langObj?: any) => {
+        if (langObj) {
+            return {
+                flagUrl: getFlagUrl(code),
+                name: langObj.name_internal || langObj.name || (code ? code.toUpperCase() : '-')
+            };
+        }
         if (!code) return { flagUrl: '', name: '-' };
         const cleanCode = code.split('-')[0].toLowerCase();
-
         return {
             flagUrl: getFlagUrl(code),
             name: getLanguageLabel(cleanCode)
@@ -288,6 +297,18 @@ const ProjectDetail = () => {
         },
         onSettled: () => {
             setIsProjectDeleteConfirmOpen(false);
+        }
+    });
+
+    const cancelInvoiceMutation = useMutation({
+        mutationFn: (invoiceId: number) => invoiceService.cancel(invoiceId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            toast.success(t('toast.invoice_cancelled') || 'Rechnung wurde storniert.');
+            setInvoiceToCancel(null);
+        },
+        onError: () => {
+            toast.error(t('toast.invoice_cancel_error') || 'Fehler beim Stornieren der Rechnung.');
         }
     });
 
@@ -428,17 +449,6 @@ const ProjectDetail = () => {
         }
     };
 
-    const toggleFileType = async (file: any) => {
-        try {
-            const newType = file.type === 'source' ? 'target' : 'source';
-            await projectService.updateFile(id!, file.id, { type: newType });
-            queryClient.invalidateQueries({ queryKey: ['projects', id] });
-            toast.success(`Dateityp zu "${newType === 'source' ? 'Quelle' : 'Ziel'}" geändert`);
-        } catch (error) {
-            toast.error(t('messages.file_type_change_error'));
-        }
-    };
-
     const deleteFileMutation = useMutation({
         mutationFn: async (fileId: string) => {
             await projectService.deleteFile(id!, fileId);
@@ -452,24 +462,6 @@ const ProjectDetail = () => {
         }
     });
 
-    const handleRenameFile = async (file: any, newName: string) => {
-        try {
-            await projectService.updateFile(id!, file.id, { file_name: newName });
-            queryClient.invalidateQueries({ queryKey: ['projects', id] });
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    const handleMoveFile = async (file: any, newType: string) => {
-        try {
-            await projectService.updateFile(id!, file.id, { type: newType });
-            queryClient.invalidateQueries({ queryKey: ['projects', id] });
-        } catch (error) {
-            throw error;
-        }
-    };
-
     const handleBulkFilesMove = async (ids: string[], newType: string) => {
         try {
             await projectService.bulkUpdateFiles(id!, ids, newType);
@@ -477,6 +469,16 @@ const ProjectDetail = () => {
             toast.success(t('messages.files_moved_success'));
         } catch (error) {
             toast.error(t('messages.files_move_error'));
+        }
+    };
+
+    const handleBulkFilesDelete = async (ids: string[]) => {
+        try {
+            await projectService.bulkDeleteFiles(id!, ids);
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            toast.success(t('messages.files_deleted_success'));
+        } catch (error) {
+            toast.error(t('messages.files_delete_error'));
         }
     };
 
@@ -511,8 +513,8 @@ const ProjectDetail = () => {
     if (isLoading) return <TableSkeleton rows={10} columns={5} />;
     if (error || !projectData) return <div className="p-10 text-center text-red-500">Fehler beim Laden des Projekts.</div>;
 
-    const sourceLang = getLanguageInfo(projectData.source);
-    const targetLang = getLanguageInfo(projectData.target);
+    const sourceLang = getLanguageInfo(projectData.source, projectData.source_language);
+    const targetLang = getLanguageInfo(projectData.target, projectData.target_language);
     const deadlineStatus = getDeadlineStatus();
 
     const handleDownloadConfirmation = async (type: 'order_confirmation' | 'pickup_confirmation') => {
@@ -554,8 +556,8 @@ const ProjectDetail = () => {
                                         <div className="flex flex-col gap-0.5">
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-3 flex-wrap">
-                                                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
-                                                        {projectData.project_number || `#${projectData.id}`}
+                                                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 leading-tight">
+                                                        {projectData.project_number} {projectData.name}
                                                     </h1>
                                                     {projectData.priority !== 'low' && (
                                                         <div className={clsx("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0",
@@ -609,12 +611,12 @@ const ProjectDetail = () => {
                                         onClick={() => setIsActionsOpen(v => !v)}
                                         className="w-full px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
                                     >
-                                        Mehr Aktionen <FaChevronDown className={clsx('text-2xs transition-transform', isActionsOpen && 'rotate-180')} />
+                                        Mehr Aktionen <FaChevronDown className={clsx('text-sm transition-transform', isActionsOpen && 'rotate-180')} />
                                     </Button>
 
                                     {isActionsOpen && (
                                         <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-sm shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-1">
-                                            <div className="px-3 py-1.5 text-2xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
+                                            <div className="px-3 py-1.5 text-sm font-bold text-slate-400 border-b border-slate-100">PDF Dokumente</div>
                                             <button
                                                 onClick={() => { handleDownloadConfirmation('order_confirmation'); setIsActionsOpen(false); }}
                                                 className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
@@ -634,7 +636,7 @@ const ProjectDetail = () => {
                                                 <FaFilePdf className="text-red-400 shrink-0" /> Dolmetscherbestätigung
                                             </button>
 
-                                            <div className="px-3 py-1.5 text-2xs font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-100 mt-1">Rechnung</div>
+                                            <div className="px-3 py-1.5 text-sm font-bold text-slate-400 border-t border-b border-slate-100 mt-1">Rechnung</div>
                                             {(() => {
                                                 const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
                                                 return activeInvoice ? (
@@ -662,11 +664,8 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Meta Info Bar */}
-                <div className="flex items-center gap-4 sm:gap-6 text-2xs sm:text-xs text-slate-400 flex-wrap border-t border-slate-50 px-3 sm:px-4 md:px-8 py-3 bg-slate-50/20">
-                    <div className="flex items-center gap-2">
-                        <span>Projekt: <span className="text-slate-600 font-medium">{projectData.project_number || projectData.id}</span></span>
-                    </div>
-                    <span className="text-slate-200 hidden sm:block">•</span>
+                <div className="flex items-center gap-4 sm:gap-6 text-sm sm:text-xs text-slate-400 flex-wrap border-t border-slate-50 px-3 sm:px-4 md:px-8 py-3 bg-slate-50/20">
+
                     <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                         <span className="flex items-center gap-1 flex-wrap">
@@ -720,7 +719,20 @@ const ProjectDetail = () => {
                         {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
                             let badgeCount = 0;
                             if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                            if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                            if (tab === 'finances') {
+                                if (financeBadgeDraft !== null) {
+                                    badgeCount = financeBadgeDraft;
+                                } else {
+                                    const extrasCount = [
+                                        projectData?.isCertified,
+                                        projectData?.hasApostille,
+                                        projectData?.isExpress,
+                                        projectData?.classification === true || projectData?.classification === 'ja',
+                                        (projectData?.copies || 0) > 0
+                                    ].filter(Boolean).length;
+                                    badgeCount = (projectData?.positions?.length || 0) + extrasCount;
+                                }
+                            }
                             if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
                             const isActive = activeTab === tab;
 
@@ -745,13 +757,13 @@ const ProjectDetail = () => {
                                     {tab === 'history' && <FaClock className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
 
                                     {tab === 'overview' ? 'Stammdaten' :
-                                        tab === 'files' ? 'Dokumente' :
+                                        tab === 'files' ? 'Dateien' :
                                             tab === 'finances' ? 'Kalkulation' :
                                                 tab === 'history' ? 'Historie' : 'Kommunikation'}
 
                                     {tab !== 'overview' && tab !== 'history' && (
                                         <span className={clsx(
-                                            "px-1.5 py-0.5 rounded-sm text-2xs font-bold transition-colors",
+                                            "px-1.5 py-0.5 rounded-sm text-sm font-bold transition-colors",
                                             isActive ? "bg-brand-primary text-white" : "bg-slate-100 text-slate-500"
                                         )}>
                                             {badgeCount}
@@ -769,10 +781,6 @@ const ProjectDetail = () => {
                         <div className="md:hidden border-t border-slate-100 bg-white animate-fadeIn">
                             <div className="flex flex-col">
                                 {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
-                                    let badgeCount = 0;
-                                    if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
-                                    if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
                                     const isActive = activeTab === tab;
 
                                     return (
@@ -798,7 +806,7 @@ const ProjectDetail = () => {
                                             <span className="flex-1 text-left">
                                                 {tab === 'overview' ? 'Stammdaten' :
                                                     tab === 'files' ? 'Dateien' :
-                                                        tab === 'finances' ? 'Kalkulation & Marge' :
+                                                        tab === 'finances' ? 'Kalkulation' :
                                                             tab === 'history' ? 'Historie' : 'Kommunikation'}
                                             </span>
 
@@ -807,7 +815,15 @@ const ProjectDetail = () => {
                                                     "px-2 py-0.5 rounded-full text-xs font-medium",
                                                     isActive ? "bg-slate-200 text-slate-900" : "bg-slate-100 text-slate-500"
                                                 )}>
-                                                    {badgeCount}
+                                                    {tab === 'finances' && (financeBadgeDraft !== null ? financeBadgeDraft : (projectData?.positions?.length || 0) + [
+                                                        projectData?.isCertified,
+                                                        projectData?.hasApostille,
+                                                        projectData?.isExpress,
+                                                        projectData?.classification === true || projectData?.classification === 'ja',
+                                                        (projectData?.copies || 0) > 0
+                                                    ].filter(Boolean).length)}
+                                                    {tab === 'files' && projectData?.files?.length || 0}
+                                                    {tab === 'messages' && projectData?.messages?.length || 0}
                                                 </span>
                                             )}
                                         </button>
@@ -820,7 +836,7 @@ const ProjectDetail = () => {
             </div >
 
             {/* Main Content Area */}
-            < div className="flex-1 max-w-[1800px] mx-auto w-full py-4 sm:py-8 transition-all duration-300" >
+            <div className="flex-1 max-w-[1800px] mx-auto w-full pb-4 sm:pb-8 pt-0 transition-all duration-300">
                 {activeTab === 'overview' && (
                     <ProjectOverviewTab
                         projectData={projectData}
@@ -836,18 +852,6 @@ const ProjectDetail = () => {
                         handlePreviewFile={handlePreviewFile}
                         setPreviewInvoice={setPreviewInvoice}
                         onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
-                        onSendEmail={(recipientType) => {
-                            const to = recipientType === 'partner'
-                                ? (projectData.translator?.email || '')
-                                : (projectData.customer?.email || '');
-
-                            setEmailComposeData({
-                                to,
-                                subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
-                                recipientType
-                            });
-                            setIsEmailComposeOpen(true);
-                        }}
                     />
                 )}
 
@@ -855,14 +859,11 @@ const ProjectDetail = () => {
                     activeTab === 'files' && (
                         <ProjectFilesTab
                             projectData={projectData}
-                            setIsUploadModalOpen={setIsUploadModalOpen}
                             handlePreviewFile={handlePreviewFile}
                             handleDownloadFile={handleDownloadFile}
                             setDeleteFileConfirm={setDeleteFileConfirm}
-                            toggleFileType={toggleFileType}
-                            onRenameFile={handleRenameFile}
-                            onMoveFile={handleMoveFile}
                             onBulkMove={handleBulkFilesMove}
+                            onBulkDelete={(ids) => setBulkDeleteConfirm({ isOpen: true, ids })}
                             onBulkDownloadZip={handleBulkFilesDownloadZip}
                             formatFileSize={formatFileSize}
                             onUpload={handleFileUpload}
@@ -874,7 +875,7 @@ const ProjectDetail = () => {
                     activeTab === 'finances' && projectData && (
                         <ProjectFinancesTab
                             projectData={projectData}
-                            onSavePositions={(positions, extras) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
+                            onSavePositions={(positions: any[], extras?: Record<string, any>) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
                             onRecordPayment={() => {
                                 setEditingPayment(null);
                                 setIsPaymentModalOpen(true);
@@ -889,6 +890,9 @@ const ProjectDetail = () => {
                             }}
                             isPendingSave={updateProjectMutation.isPending}
                             onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
+                            onOpenInvoice={(inv: any) => setPreviewInvoice(inv)}
+                            onCancelInvoice={(inv: any) => setInvoiceToCancel(inv)}
+                            onBadgeChange={setFinanceBadgeDraft}
                         />
                     )
                 }
@@ -896,7 +900,7 @@ const ProjectDetail = () => {
                 {
                     activeTab === 'messages' && (
                         <div className="mb-10 animate-fadeIn">
-                            <MessagesTab projectData={projectData} projectId={id!} financials={financials} />
+                            <MessagesTab projectData={projectData} projectId={id!} />
                         </div>
                     )
                 }
@@ -942,7 +946,7 @@ const ProjectDetail = () => {
                 initialData={projectData}
                 isLoading={updateProjectMutation.isPending}
             />
-            <FileUploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleFileUpload} />
+
             <PaymentModal
                 isOpen={isPaymentModalOpen}
                 initialData={editingPayment}
@@ -1016,7 +1020,19 @@ const ProjectDetail = () => {
                 message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
                 confirmText={t('actions.delete')}
                 cancelText={t('actions.cancel')}
-                isLoading={deleteFileMutation.isPending}
+            />
+            <ConfirmModal
+                isOpen={bulkDeleteConfirm.isOpen}
+                onClose={() => setBulkDeleteConfirm({ isOpen: false, ids: [] })}
+                onConfirm={() => {
+                    handleBulkFilesDelete(bulkDeleteConfirm.ids);
+                    setBulkDeleteConfirm({ isOpen: false, ids: [] });
+                }}
+                title="Dateien löschen"
+                message={`Möchten Sie die ${bulkDeleteConfirm.ids.length} ausgewählten Dateien wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                confirmText={t('actions.delete')}
+                cancelText={t('actions.cancel')}
+                type="danger"
             />
             <ConfirmModal
                 isOpen={paymentDeleteConfirm.isOpen}
@@ -1060,6 +1076,21 @@ const ProjectDetail = () => {
                 isOpen={!!previewInvoice}
                 onClose={() => setPreviewInvoice(null)}
                 invoice={previewInvoice}
+            />
+
+            <ConfirmModal
+                isOpen={!!invoiceToCancel}
+                onClose={() => setInvoiceToCancel(null)}
+                onConfirm={() => {
+                    if (invoiceToCancel) {
+                        cancelInvoiceMutation.mutate(invoiceToCancel.id);
+                    }
+                }}
+                title="Rechnung stornieren"
+                message={`Möchten Sie die Rechnung "${invoiceToCancel?.invoice_number}" wirklich stornieren? Dieser Vorgang erzeugt ein Storno-Dokument und kann nicht rückgängig gemacht werden.`}
+                confirmText="Jetzt stornieren"
+                type="danger"
+                isLoading={cancelInvoiceMutation.isPending}
             />
 
             <EmailComposeModal

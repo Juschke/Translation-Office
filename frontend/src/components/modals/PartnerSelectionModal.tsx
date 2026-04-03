@@ -283,10 +283,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                     ) : paginatedPartners.map(p => (
                                         <React.Fragment key={p.id}>
                                             <tr
-                                                className={clsx(
-                                                    "transition-all group cursor-pointer border-b border-transparent",
-                                                    expandedPartnerId === p.id ? "bg-brand-primary/[0.03]" : "hover:bg-slate-50/80"
-                                                )}
+                                                className={clsx("transition-all group cursor-pointer border-b border-transparent", expandedPartnerId === p.id ?"bg-brand-primary/[0.03]" :"hover:bg-slate-50/80" )}
                                                 onClick={() => setExpandedPartnerId(expandedPartnerId === p.id ? null : p.id)}
                                             >
                                                 <td className="px-6 py-2.5">
@@ -307,7 +304,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                                         {p.languages.slice(0, 3).map(lang => (
                                                             <span key={lang} className="inline-flex items-center gap-1 px-1 py-0.5 bg-slate-50 text-slate-500 rounded-sm border border-slate-100 text-xs font-medium">
                                                                 <img src={getFlagUrl(lang)} className="w-2.5 h-1.5 object-cover rounded-sm" alt={lang} />
-                                                                <span className="uppercase">{lang}</span>
+                                                                <span className="">{lang}</span>
                                                             </span>
                                                         ))}
                                                         {p.languages.length > 3 && <span className="text-xs text-slate-400 font-medium">+{p.languages.length - 3}</span>}
@@ -405,12 +402,7 @@ const PartnerSelectionModal: React.FC<PartnerSelectionModalProps> = ({ isOpen, o
                                             <button
                                                 key={i}
                                                 onClick={() => setCurrentPage(i + 1)}
-                                                className={clsx(
-                                                    "w-8 h-8 rounded-sm text-xs font-semibold transition-all",
-                                                    currentPage === i + 1
-                                                        ? "bg-brand-primary text-white shadow-sm shadow-brand-primary/20"
-                                                        : "text-slate-400 hover:bg-slate-50"
-                                                )}
+                                                className={clsx("w-8 h-8 rounded-sm text-xs font-semibold transition-all", currentPage === i + 1 ?"bg-brand-primary text-white shadow-sm shadow-brand-primary/20" :"text-slate-400 hover:bg-slate-50" )}
                                             >
                                                 {i + 1}
                                             </button>

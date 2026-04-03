@@ -180,7 +180,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
             <div
                 className={clsx(
                     "w-full px-3 bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm h-10 border rounded-sm",
-                    error ? "border-red-700 ring-2 ring-red-700/10 shadow-sm" : (isOpen ? "border-brand-primary ring-2 ring-brand-primary/10 shadow-sm" : "border-slate-200 hover:border-slate-300 shadow-sm")
+                    error ? "border-red-700 ring-2 ring-red-700/10 shadow-sm" : (isOpen ? "border-brand-primary ring-2 ring-brand-primary/10 shadow-sm" : "border-slate-200 hover:border-brand-primary shadow-sm")
                 )}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
@@ -284,7 +284,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                     <button
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); onChange([]); }}
-                                        className="text-2xs font-bold text-slate-400 hover:text-red-500 uppercase tracking-wider transition-colors"
+                                        className="text-2xs font-bold text-slate-400 hover:text-red-500 transition-colors"
                                     >
                                         Aufheben
                                     </button>
@@ -342,7 +342,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 className="w-full py-2.5 text-[11px] font-bold bg-brand-primary text-white  transition shadow-sm border-none flex items-center justify-center gap-2 rounded-sm"
                             >
                                 <FaPlus className="text-2xs" />
-                                <span className="uppercase tracking-wider">Sprache hinzufügen</span>
+                                <span>Sprache hinzufügen</span>
                             </Button>
                         </div>
                     )}

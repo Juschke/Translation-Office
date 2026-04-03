@@ -409,7 +409,7 @@ const Invoices = () => {
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 {t('invoices.tabs.open')}
-                {subTabCounts.pending > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-2xs ${statusFilter === 'pending' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.pending}</span>}
+                {subTabCounts.pending > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-sm ${statusFilter === 'pending' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.pending}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('paid')}
@@ -422,14 +422,14 @@ const Invoices = () => {
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 {t('invoices.tabs.overdue')}
-                {subTabCounts.overdue > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-2xs ${statusFilter === 'overdue' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.overdue}</span>}
+                {subTabCounts.overdue > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-sm ${statusFilter === 'overdue' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.overdue}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('reminders')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 {t('invoices.tabs.reminders')}
-                {subTabCounts.reminders > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-2xs ${statusFilter === 'reminders' ? 'bg-white text-amber-600' : 'bg-amber-50 text-amber-600'}`}>{subTabCounts.reminders}</span>}
+                {subTabCounts.reminders > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-sm ${statusFilter === 'reminders' ? 'bg-white text-amber-600' : 'bg-amber-50 text-amber-600'}`}>{subTabCounts.reminders}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('cancelled')}
@@ -442,7 +442,7 @@ const Invoices = () => {
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 {t('invoices.tabs.credit_notes')}
-                {subTabCounts.credit_notes > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-2xs ${statusFilter === 'credit_notes' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.credit_notes}</span>}
+                {subTabCounts.credit_notes > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-sm ${statusFilter === 'credit_notes' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.credit_notes}</span>}
             </button>
         </div>
     ) : null;
@@ -514,7 +514,7 @@ const Invoices = () => {
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('invoices.title')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">{t('invoices.title')}</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">{t('invoices.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">

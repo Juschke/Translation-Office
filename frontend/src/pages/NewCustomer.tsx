@@ -30,7 +30,7 @@ const INPUT_WRAP = 'flex-1 min-w-0';
 const ROW_CLASS = 'flex items-start gap-4 py-3 border-b border-slate-50';
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
 const SECTION_NUM = 'w-7 h-7 rounded-md bg-brand-primary text-white flex items-center justify-center text-xs font-bold shadow-sm';
-const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
+const SECTION_TITLE = 'text-sm font-semibold text-slate-800 ';
 
 /* ─── Tooltip Helper ─── */
 const FieldTip = ({ text }: { text: string }) => (
@@ -350,9 +350,9 @@ const NewCustomer = () => {
                             <FaArrowLeft />
                         </button>
                         <div>
-                            <h1 className="text-lg font-semibold text-slate-800 tracking-tight flex items-center gap-3">
+                            <h1 className="text-lg font-semibold text-slate-800 flex items-center gap-3">
                                 {isEditing ? 'Kunde bearbeiten' : 'Neuen Kunden anlegen'}
-                                <span className="text-[11px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-sm uppercase tracking-wider">
+                                <span className="text-[11px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-sm">
                                     {displayNr}
                                 </span>
                             </h1>
@@ -383,7 +383,7 @@ const NewCustomer = () => {
                                 {duplicates.map((d: any) => (
                                     <div key={d.id} className="flex items-center justify-between bg-white p-2 rounded-sm border border-amber-100 shadow-sm transition-all hover:border-amber-300">
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
+                                            <span className="text-xs font-bold text-slate-800">
                                                 {d.company_name || `${d.first_name} ${d.last_name}`}
                                             </span>
                                             <span className="text-[10px] text-slate-400 font-medium">
@@ -400,7 +400,7 @@ const NewCustomer = () => {
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" className="sr-only peer" checked={ignoreDuplicates} onChange={(e) => setIgnoreDuplicates(e.target.checked)} />
                                     <div className="w-9 h-5 bg-amber-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
-                                    <span className="ms-3 text-[11px] font-bold text-amber-900 uppercase tracking-wide">Trotzdem als neuen Datensatz anlegen</span>
+                                    <span className="ms-3 text-[11px] font-bold text-amber-900">Trotzdem als neuen Datensatz anlegen</span>
                                 </label>
                             </div>
                         </div>
@@ -559,7 +559,7 @@ const NewCustomer = () => {
                                         {formData.additional_emails.length < 3 && (
                                             <button
                                                 onClick={() => setFormData(prev => ({ ...prev, additional_emails: [...prev.additional_emails, ''] }))}
-                                                className="text-2xs font-bold text-brand-primary flex items-center gap-1.5 hover:opacity-80 transition ml-1"
+                                                className="text-sm font-bold text-brand-primary flex items-center gap-1.5 hover:opacity-80 transition ml-1"
                                             >
                                                 <FaPlus size={10} /> E-MAIL HINZUFÜGEN
                                             </button>
@@ -589,7 +589,7 @@ const NewCustomer = () => {
                                         {formData.additional_phones.length < 3 && (
                                             <button
                                                 onClick={() => setFormData(prev => ({ ...prev, additional_phones: [...prev.additional_phones, ''] }))}
-                                                className="text-2xs font-bold text-brand-primary flex items-center gap-1.5 hover:opacity-80 transition ml-1"
+                                                className="text-sm font-bold text-brand-primary flex items-center gap-1.5 hover:opacity-80 transition ml-1"
                                             >
                                                 <FaPlus size={10} /> NUMMER HINZUFÜGEN
                                             </button>

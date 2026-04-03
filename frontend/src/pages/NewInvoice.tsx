@@ -4,7 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-    FaPlus, FaTrash, FaSave, FaArrowLeft, FaBook, FaSearch, FaTimes, FaChevronDown
+    FaPlus, FaTrash, FaSave, FaArrowLeft, FaBook, FaSearch, FaTimes, FaChevronDown, FaCheck
 } from 'react-icons/fa';
 import Input from '../components/common/Input';
 import { Button } from '../components/ui/button';
@@ -14,12 +14,15 @@ import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { projectService, settingsService, invoiceService, customerService } from '../api/services';
+import { formatCustomerLabel } from '../utils/dropdownFormat';
 import CustomerSelect from '../components/common/CustomerSelect';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
+import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/common/ConfirmModal';
 
 const UNITS = ['Wörter', 'Normzeile', 'Seiten', 'Stunden', 'Pauschal', 'Stück', 'Minuten', 'Tage'];
+const EMPTY_SERVICE = () => ({ name: '', unit: 'Normzeile', base_price: '0.00' });
 
 /* ─── UI Styling Tokens (Matching Project Style) ─── */
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
@@ -64,7 +67,7 @@ const MiniDropdown = ({ value, options, onChange, align = 'right', width }: { va
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="flex items-center gap-1.5 px-2 py-1 text-2xs font-bold text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-sm transition-all uppercase tracking-wider h-7"
+                className="flex items-center gap-1.5 px-2 py-1 text-sm font-medium text-slate-600 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-sm transition-all h-7"
             >
                 {options.find(o => o.value === value)?.label || value}
                 <FaChevronDown className={clsx("text-[8px] transition-transform", open && "rotate-180")} />
@@ -85,7 +88,7 @@ const MiniDropdown = ({ value, options, onChange, align = 'right', width }: { va
                                 type="button"
                                 onClick={() => { onChange(o.value); setOpen(false); }}
                                 className={clsx(
-                                    "w-full text-left px-3 py-2 text-2xs font-bold transition-colors border-b border-slate-50 last:border-0",
+                                    "w-full text-left px-3 py-2 text-sm font-bold transition-colors border-b border-slate-50 last:border-0",
                                     value === o.value ? "bg-slate-100 text-brand-primary" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                                 )}
                             >
@@ -102,6 +105,7 @@ const MiniDropdown = ({ value, options, onChange, align = 'right', width }: { va
 const NewInvoice = () => {
     const navigate = useNavigate();
     const { updateTab, activeTabId, tabs, closeTab } = useWorkspaceTabs();
+    const { user } = useAuth();
     const { id } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
     const queryClient = useQueryClient();
@@ -121,7 +125,10 @@ const NewInvoice = () => {
     const catalogSearchRef = useRef<HTMLInputElement>(null);
     const lastAutoPaymentText = useRef('');
     const lastAutoIntroText = useRef('');
+    const lastAutoFooterText = useRef('');
     const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
+    const [showCreate, setShowCreate] = useState(false);
+    const [newSvc, setNewSvc] = useState(EMPTY_SERVICE());
 
     const [formData, setFormData] = useState({
         type: defaultType,
@@ -216,6 +223,16 @@ const NewInvoice = () => {
         onError: () => toast.error('Fehler beim Aktualisieren der Rechnung'),
     });
 
+    const createServiceMutation = useMutation({
+        mutationFn: settingsService.createService,
+        onSuccess: (created: any) => {
+            queryClient.invalidateQueries({ queryKey: ['settings', 'services'] });
+            addService(created);
+            setShowCreate(false);
+            setNewSvc(EMPTY_SERVICE());
+        },
+    });
+
 
     const isLoading = createMutation.isPending || updateMutation.isPending;
 
@@ -269,7 +286,7 @@ const NewInvoice = () => {
         const list = customersResponse?.data || customersResponse || [];
         return (list as any[]).map((c: any) => ({
             value: c.id.toString(),
-            label: c.company_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || `ID: ${c.id}`
+            label: formatCustomerLabel(c)
         }));
     }, [customersResponse]);
 
@@ -491,36 +508,51 @@ const NewInvoice = () => {
         if (catalogOpen) setTimeout(() => catalogSearchRef.current?.focus(), 50);
     }, [catalogOpen]);
 
-    // ── Texte & Steuern basierend auf Kunde/Wahl aktualisieren ─────────────
+    // ── Texte & Steuern basierend auf Kunde/Wahl & Settings aktualisieren ─────────────
     useEffect(() => {
-        if (!isEditMode && activeCustomer) {
+        if (!isEditMode && activeCustomer && companyData) {
             const salutation = activeCustomer.salutation || 'Sehr geehrte Damen und Herren';
             let greeting = salutation;
             if (salutation.toLowerCase().includes('geehrte')) {
                 greeting = `${salutation} ${activeCustomer.contact_person || (activeCustomer.last_name ? activeCustomer.last_name : '')}`;
             }
 
-            const newIntro = `${greeting},\n\nwir bedanken uns für den Auftrag und erlauben uns, die folgenden Leistungen in Rechnung zu stellen:`;
+            const template = formData.type === 'invoice'
+                ? (companyData.invoice_intro_text || 'wir bedanken uns für den Auftrag und erlauben uns, die folgenden Leistungen in Rechnung zu stellen:')
+                : (companyData.credit_note_intro_text || 'wir erstellen Ihnen hiermit folgende Gutschrift:');
+
+            const newIntro = template.includes('{salutation}')
+                ? template.replace('{salutation}', greeting)
+                : `${greeting},\n\n${template}`;
 
             setFormData(prev => {
                 const shouldUpdate = !prev.intro_text || prev.intro_text === lastAutoIntroText.current;
                 if (shouldUpdate) {
                     lastAutoIntroText.current = newIntro;
-                    return { ...prev, intro_text: newIntro, customer_id: activeCustomer.id?.toString() || prev.customer_id };
+                    return { ...prev, intro_text: newIntro };
                 }
-                return { ...prev, customer_id: activeCustomer.id?.toString() || prev.customer_id };
+                return prev;
             });
         }
-    }, [activeCustomer, isEditMode]);
+    }, [activeCustomer, isEditMode, companyData, formData.type]);
 
-    // Zahlungsbedingungen basierend auf Kunde & Datum
+    // Zahlungsbedingungen basierend auf Kunde, Datum & Settings
     useEffect(() => {
-        if (!isEditMode && activeCustomer) {
-            const days = activeCustomer.payment_terms_days !== undefined ? parseInt(activeCustomer.payment_terms_days) : 14;
+        if (!isEditMode && companyData) {
+            // Priority: Customer specific days -> Company default days -> 14
+            const days = (activeCustomer?.payment_terms_days !== undefined && activeCustomer.payment_terms_days !== null)
+                ? parseInt(activeCustomer.payment_terms_days)
+                : (parseInt(companyData.default_payment_days) || 14);
+
             const newDueDate = dayjs(formData.date).add(days, 'day').format('YYYY-MM-DD');
-            const newPaymentText = days === 0
-                ? `Zahlbar sofort nach Erhalt der Rechnung ohne Abzug.`
-                : `Zahlbar innerhalb von ${days} Tagen bis zum ${fmtDate(newDueDate)} ohne Abzug.`;
+            const template = companyData.default_payment_text || (days === 0
+                ? 'Zahlbar sofort nach Erhalt der Rechnung ohne Abzug.'
+                : 'Zahlbar innerhalb von {days} Tagen bis zum {date} ohne Abzug.');
+
+            const newPaymentText = template
+                .replace('{days}', days.toString())
+                .replace('{date}', fmtDate(newDueDate))
+                .replace('{due_date}', fmtDate(newDueDate));
 
             setFormData(prev => {
                 const shouldUpdate = !prev.payment_text || prev.payment_text === lastAutoPaymentText.current;
@@ -531,7 +563,22 @@ const NewInvoice = () => {
                 return prev;
             });
         }
-    }, [activeCustomer, formData.date, isEditMode]);
+    }, [activeCustomer, formData.date, isEditMode, companyData]);
+
+    // Fußzeile (Closing Text) aus Settings
+    useEffect(() => {
+        if (!isEditMode && companyData) {
+            const newFooter = companyData.invoice_closing_text || '';
+            setFormData(prev => {
+                const shouldUpdate = !prev.footer_text || prev.footer_text === lastAutoFooterText.current;
+                if (shouldUpdate && newFooter) {
+                    lastAutoFooterText.current = newFooter;
+                    return { ...prev, footer_text: newFooter };
+                }
+                return prev;
+            });
+        }
+    }, [companyData, isEditMode]);
 
     useEffect(() => {
         if (formData.tax_exemption === '§19_ustg') {
@@ -589,7 +636,7 @@ const NewInvoice = () => {
             id: Date.now().toString(),
             description: service.name,
             quantity: '1.00',
-            unit: service.unit || 'Wörter',
+            unit: UNITS.includes(service.unit) ? service.unit : 'Normzeile',
             price: (parseFloat(service.base_price) || 0).toFixed(2),
             total: (parseFloat(service.base_price) || 0).toFixed(2),
             price_mode: 'unit',
@@ -656,7 +703,7 @@ const NewInvoice = () => {
     return (
         <div className="min-h-screen bg-[#F0F2F5] pb-12">
             {/* ── Top Navigation Bar ── */}
-            <div className="relative  bg-white border-b border-slate-200 px-6 py-6 flex justify-between items-center shadow-sm">
+            <div className="relative bg-white border-b border-slate-200 px-6 py-6 flex justify-between items-center shadow-sm">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={handleCancel}
@@ -708,7 +755,7 @@ const NewInvoice = () => {
                         disabled={!formData.customer_id || items.length === 0 || isLoading}
                         className="px-5 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm flex items-center gap-2"
                     >
-                        <FaSave className="text-2xs" />
+                        <FaSave className="text-sm" />
                         {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen speichern' : 'Beleg jetzt buchen')}
                     </Button>
                 </div>
@@ -725,7 +772,7 @@ const NewInvoice = () => {
                             <h3 className="text-sm font-bold text-slate-800 ml-1">Projekt-Zuordnung</h3>
                             <div className="bg-white p-6 rounded-sm border border-slate-200/60 shadow-sm">
                                 <div className="max-w-xl space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Projekt verknüpfen (empfohlen)</label>
+                                    <label className="text-xs font-bold text-slate-500">Projekt verknüpfen (empfohlen)</label>
                                     <SearchableSelect
                                         placeholder="Suchen Sie nach einem Projekt (Name oder Nummer)..."
                                         options={projectOptions}
@@ -742,7 +789,7 @@ const NewInvoice = () => {
                                             }
                                         }}
                                     />
-                                    <p className="text-2xs text-slate-400 italic">Durch die Auswahl eines Projekts werden Leistungen und Kundendaten automatisch übernommen.</p>
+                                    <p className="text-sm text-slate-400 italic">Durch die Auswahl eines Projekts werden Leistungen und Kundendaten automatisch übernommen.</p>
                                 </div>
                             </div>
                         </section>
@@ -814,7 +861,7 @@ const NewInvoice = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => handleEditCustomer(activeCustomer.id.toString())}
-                                                className="text-[12px] font-bold text-brand-primary hover:underline transition-colors flex items-center gap-1 px-3 py-1.5 "
+                                                className="text-[12px] font-bold text-brand-primary hover:underline transition-colors flex items-center gap-1 px-3 py-1.5"
                                             >
                                                 Kunde bearbeiten
                                             </button>
@@ -877,22 +924,22 @@ const NewInvoice = () => {
                         {/* Section: Kopfbereich (Belegtitel) */}
                         <section className="bg-transparent space-y-2 mb-8">
                             <h3 className="text-sm font-bold text-slate-800 ml-1">Kopfbereich</h3>
-                            <div className="bg-white p-6 rounded-sm border border-slate-200/60 shadow-sm space-y-6">
-                                <div className="space-y-1.5">
-                                    <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Belegtitel</label>
-                                    <select
-                                        className="w-full h-11 border-slate-200 border text-base font-medium focus:border-brand-primary outline-none rounded-md px-4 bg-white"
-                                        value={formData.type}
-                                        disabled
-                                    >
-                                        <option value="invoice">Rechnung</option>
-                                        <option value="credit_note">Gutschrift</option>
-                                    </select>
-                                </div>
+                            <div className="bg-white p-6 rounded-sm border border-slate-200/60 shadow-sm space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 items-center">
+                                    <div className="grid grid-cols-2 gap-4 items-center">
+                                        <label className="text-sm font-medium text-slate-600 pl-1">Belegtitel</label>
+                                        <select
+                                            className="w-full h-11 border-slate-200 border text-sm font-medium focus:border-brand-primary outline-none rounded-md px-4 bg-white"
+                                            value={formData.type}
+                                            onChange={e => setFormData({ ...formData, type: e.target.value as 'invoice' | 'credit_note' })}
+                                        >
+                                            <option value="invoice">Rechnung</option>
+                                            <option value="credit_note">Gutschrift</option>
+                                        </select>
+                                    </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-1.5">
-                                        <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Steuersatz</label>
+                                    <div className="grid grid-cols-2 gap-4 items-center">
+                                        <label className="text-sm font-medium text-slate-600 pl-1">Steuersatz</label>
                                         <select
                                             className="w-full h-11 border-slate-200 border text-sm font-medium focus:border-slate-800 outline-none rounded-md px-4 bg-white"
                                             value={formData.tax_exemption === 'none' ? formData.tax_rate : formData.tax_exemption}
@@ -907,11 +954,9 @@ const NewInvoice = () => {
                                             <option value="reverse_charge">Steuerbefreit (Reverse Charge)</option>
                                         </select>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-1.5">
-                                        <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Leitweg-ID</label>
+                                    <div className="grid grid-cols-2 gap-4 items-center">
+                                        <label className="text-sm font-medium text-slate-600 pl-1">Leitweg-ID</label>
                                         <Input
                                             value={formData.leitweg_id}
                                             onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
@@ -919,8 +964,9 @@ const NewInvoice = () => {
                                             placeholder="z.B. 0101-12345-67"
                                         />
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Kundenreferenz</label>
+
+                                    <div className="grid grid-cols-2 gap-4 items-center">
+                                        <label className="text-sm font-medium text-slate-600 pl-1">Kundenreferenz</label>
                                         <Input
                                             value={formData.customer_reference}
                                             onChange={e => setFormData({ ...formData, customer_reference: e.target.value })}
@@ -930,8 +976,8 @@ const NewInvoice = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1.5">
-                                    <label className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Einleitungstext</label>
+                                <div className="pt-4 border-t border-slate-50 space-y-2">
+                                    <label className="text-sm font-medium text-slate-600 pl-1 block">Einleitungstext</label>
                                     <textarea
                                         className="w-full min-h-[100px] border border-slate-200 rounded-md p-4 text-sm focus:border-brand-primary outline-none transition-colors bg-white shadow-sm"
                                         placeholder="Vielen Dank für Ihren Auftrag..."
@@ -951,10 +997,11 @@ const NewInvoice = () => {
                                         ref={catalogButtonRef}
                                         variant="default"
                                         size="sm"
-                                        className={clsx("h-8 text-[11px] font-bold", catalogOpen && "ring-2 ring-brand-primary ring-offset-1")}
-                                        onClick={() => { setCatalogOpen(!catalogOpen); setSearch(''); }}
+                                        className={clsx("h-8 px-4 text-xs font-bold", catalogOpen && "ring-2 ring-brand-primary ring-offset-1")}
+                                        onClick={() => { setCatalogOpen(!catalogOpen); setShowCreate(false); setSearch(''); }}
                                     >
-                                        <FaBook className="mr-1.5" /> LEISTUNGSKATALOG
+                                        <FaBook className="text-sm mr-1.5" />
+                                        Leistungskatalog
                                     </Button>
                                 </div>
                             </div>
@@ -971,8 +1018,8 @@ const NewInvoice = () => {
                                             pointerEvents: 'auto'
                                         }}
                                     >
-                                        <div className="border-b border-slate-100 bg-white relative shrink-0">
-                                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                                        <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50">
+                                            <FaSearch className="text-slate-400 text-xs" />
                                             <input
                                                 ref={catalogSearchRef}
                                                 type="text"
@@ -980,35 +1027,107 @@ const NewInvoice = () => {
                                                 autoFocus
                                                 value={search}
                                                 onChange={e => setSearch(e.target.value)}
-                                                className="w-full pl-9 pr-8 py-2.5 border-none text-xs focus:outline-none text-slate-700 placeholder:text-slate-400"
+                                                className="flex-1 text-xs outline-none bg-transparent text-slate-700 placeholder:text-slate-400"
                                             />
                                             {search && (
                                                 <FaTimes
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 cursor-pointer text-xs"
+                                                    className="text-slate-400 hover:text-red-500 cursor-pointer text-xs"
                                                     onClick={() => setSearch('')}
                                                 />
                                             )}
                                         </div>
-                                        <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                                            {activeServices.length > 0 ? (
-                                                activeServices.map((s: any) => (
+
+                                        <div className="max-h-60 overflow-y-auto">
+                                            {activeServices.length === 0 && !showCreate ? (
+                                                <p className="text-xs text-slate-400 text-center py-4 italic">
+                                                    {search ? 'Keine Treffer' : 'Noch keine Leistungen im Katalog'}
+                                                </p>
+                                            ) : (
+                                                activeServices.map((service: any) => (
                                                     <button
-                                                        key={s.id}
+                                                        key={service.id}
                                                         type="button"
-                                                        onClick={() => addService(s)}
-                                                        className="w-full text-left px-4 py-2 text-xs hover:bg-slate-50 border-b border-slate-50 last:border-0 group transition-colors flex justify-between items-center"
+                                                        onClick={() => addService(service)}
+                                                        className="w-full text-left px-3 py-2.5 flex items-center justify-between hover:bg-brand-primary/5 transition-colors border-b border-slate-50 last:border-0 group/item"
                                                     >
                                                         <div className="flex flex-col">
-                                                            <span className="font-bold text-slate-700 group-hover:text-brand-primary">{s.name}</span>
-                                                            <span className="text-2xs text-slate-400 uppercase tracking-widest">{s.unit || 'Stk.'}</span>
+                                                            <span className="text-xs font-semibold text-slate-700 group-hover/item:text-brand-primary transition-colors">
+                                                                {service.name}
+                                                            </span>
+                                                            <span className="text-sm font-bold text-slate-400">{service.unit || 'Stk.'}</span>
                                                         </div>
-                                                        <div className="text-right flex flex-col font-mono text-2xs text-slate-500">
-                                                            <span>{(parseFloat(s.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                                                        <div className="text-right">
+                                                            <div className="text-xs font-bold text-slate-700">{(parseFloat(service.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</div>
                                                         </div>
                                                     </button>
                                                 ))
+                                            )}
+                                        </div>
+
+                                        <div className="border-t border-slate-100 bg-slate-50/30">
+                                            {!showCreate ? (
+                                                <button
+                                                    onClick={() => setShowCreate(true)}
+                                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-brand-primary hover:bg-slate-100 transition-colors"
+                                                >
+                                                    <FaPlus className="text-sm" />
+                                                    Neue Leistung anlegen
+                                                </button>
                                             ) : (
-                                                <div className="p-4 text-center text-xs text-slate-400 italic">Keine Leistungen gefunden</div>
+                                                <div className="p-3 space-y-2.5 bg-white">
+                                                    <p className="text-sm font-bold text-slate-400">Schnellanlage</p>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Bezeichnung *"
+                                                        autoFocus
+                                                        value={newSvc.name}
+                                                        onChange={e => setNewSvc(s => ({ ...s, name: e.target.value }))}
+                                                        className="w-full text-xs border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <select
+                                                            value={newSvc.unit}
+                                                            onChange={e => setNewSvc(s => ({ ...s, unit: e.target.value }))}
+                                                            className="flex-1 text-xs border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-600 transition-colors"
+                                                        >
+                                                            {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                                        </select>
+                                                        <div className="flex items-end gap-1">
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                placeholder="0,00"
+                                                                value={newSvc.base_price}
+                                                                onChange={e => setNewSvc(s => ({ ...s, base_price: e.target.value }))}
+                                                                className="w-20 text-right text-xs font-mono border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
+                                                            />
+                                                            <span className="text-xs text-slate-400 pb-px">€</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 pt-1">
+                                                        <Button
+                                                            size="sm"
+                                                            disabled={!newSvc.name.trim() || createServiceMutation.isPending}
+                                                            onClick={() => createServiceMutation.mutate({
+                                                                name: newSvc.name.trim(),
+                                                                unit: newSvc.unit,
+                                                                base_price: parseFloat(newSvc.base_price) || 0,
+                                                                status: 'active',
+                                                            })}
+                                                            className="flex-1"
+                                                        >
+                                                            <FaCheck className="text-[8px] mr-1" />
+                                                            Hinzufügen
+                                                        </Button>
+                                                        <button
+                                                            onClick={() => { setShowCreate(false); setNewSvc(EMPTY_SERVICE()); }}
+                                                            className="px-2 py-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                                                        >
+                                                            Abbrechen
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     </div>,
@@ -1019,21 +1138,21 @@ const NewInvoice = () => {
                                     <table className="w-full text-left border-collapse min-w-[1000px]">
                                         <thead>
                                             <tr className="bg-slate-50/50 border-b border-slate-100/50">
-                                                <th className="px-3 py-2 w-10 text-center text-2xs font-bold text-slate-400 uppercase tracking-widest">#</th>
-                                                <th className="px-3 py-2 text-2xs font-bold text-slate-400 uppercase tracking-widest">Beschreibung</th>
-                                                <th className="px-3 py-2 w-20 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">Menge</th>
-                                                <th className="px-3 py-2 w-32 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">Einheit</th>
-                                                <th className="px-3 py-2 w-36 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">Einzelpreis (€)</th>
-                                                <th className="px-3 py-2 w-24 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">MwSt.</th>
-                                                <th className="px-3 py-2 w-36 text-right text-2xs font-bold text-slate-400 uppercase tracking-widest">Rabatt</th>
-                                                <th className="px-3 py-2 w-32 text-right text-2xs font-bold text-slate-500 uppercase tracking-widest italic">Gesamt (€)</th>
+                                                <th className="px-3 py-2 w-10 text-center text-sm font-medium text-slate-600">#</th>
+                                                <th className="px-3 py-2 text-sm font-medium text-slate-600">Beschreibung</th>
+                                                <th className="px-3 py-2 w-20 text-right text-sm font-medium text-slate-600">Menge</th>
+                                                <th className="px-3 py-2 w-32 text-right text-sm font-medium text-slate-600">Einheit</th>
+                                                <th className="px-3 py-2 w-36 text-right text-sm font-medium text-slate-600">Einzelpreis (€)</th>
+                                                <th className="px-3 py-2 w-24 text-right text-sm font-medium text-slate-600">MwSt.</th>
+                                                <th className="px-3 py-2 w-36 text-right text-sm font-medium text-slate-600">Rabatt</th>
+                                                <th className="px-3 py-2 w-32 text-right text-sm font-bold text-slate-500 italic">Gesamt (€)</th>
                                                 <th className="px-3 py-2 w-10"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {items.map((item, idx) => (
                                                 <tr key={item.id} className="group hover:bg-slate-50/30 transition-colors">
-                                                    <td className="px-3 py-3 text-center text-2xs font-bold text-slate-300">
+                                                    <td className="px-3 py-3 text-center text-sm font-bold text-slate-300">
                                                         {idx + 1}
                                                     </td>
                                                     <td className="px-3 py-3">
@@ -1141,7 +1260,7 @@ const NewInvoice = () => {
                                             onClick={addItem}
                                             className="flex items-center gap-1.5 px-6 py-2 text-[11px] font-bold text-slate-500 border border-dashed border-slate-300 rounded-md hover:border-brand-primary hover:text-brand-primary hover:bg-white transition-all shadow-sm"
                                         >
-                                            <FaPlus className="text-2xs" /> POSITION HINZUFÜGEN
+                                            <FaPlus className="text-sm" /> POSITION HINZUFÜGEN
                                         </button>
                                     </div>
 
@@ -1149,17 +1268,17 @@ const NewInvoice = () => {
                                     {items.length > 0 && (
                                         <div className="border-t-2 border-slate-100 bg-slate-50/30 p-6 space-y-2">
                                             <div className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
-                                                <span className="uppercase tracking-widest text-2xs font-bold text-slate-400">Summe Netto</span>
+                                                <span className="text-sm font-medium text-slate-600">Summe Netto</span>
                                                 <span className="text-slate-700 tabular-nums">{fmtEur(computedFinancials.amount_net)}</span>
                                             </div>
                                             {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
                                                 <div key={rate} className="flex justify-between items-center text-xs text-slate-500 font-medium max-w-md ml-auto">
-                                                    <span className="uppercase tracking-widest text-2xs font-bold text-slate-400">MwSt. {parseFloat(rate)}%</span>
+                                                    <span className="text-sm font-medium text-slate-600">MwSt. {parseFloat(rate)}%</span>
                                                     <span className="text-slate-600 tabular-nums">{fmtEur(amount as number)}</span>
                                                 </div>
                                             ))}
                                             <div className="flex justify-between items-center pt-3 mt-2 border-t border-slate-200 max-w-md ml-auto">
-                                                <span className="uppercase tracking-widest text-xs font-black text-slate-900">Gesamtbetrag</span>
+                                                <span className="text-xs font-black text-slate-900">Gesamtbetrag</span>
                                                 <span className="text-lg font-black text-brand-primary tabular-nums italic">
                                                     {fmtEur(computedFinancials.amount_gross)}
                                                 </span>
@@ -1171,23 +1290,48 @@ const NewInvoice = () => {
                         </section>
 
                         {/* Section: Zahlungsbedingungen & Footer */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <section className="bg-transparent space-y-2 h-full">
+                        {/* Section: Zahlungsbedingungen & Footer */}
+                        <div className="space-y-6">
+                            <section className="bg-transparent space-y-2">
                                 <h4 className="text-sm font-bold text-slate-800 ml-1">Zahlungsbedingungen</h4>
-                                <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm p-5">
+                                <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm p-6 space-y-4">
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        {[0, 7, 14, 30].map(days => (
+                                            <button
+                                                key={days}
+                                                type="button"
+                                                onClick={() => {
+                                                    const newDueDate = dayjs(formData.date).add(days, 'day').format('YYYY-MM-DD');
+                                                    const newPaymentText = days === 0
+                                                        ? `Zahlbar sofort nach Erhalt der Rechnung ohne Abzug.`
+                                                        : `Zahlbar innerhalb von ${days} Tagen bis zum ${fmtDate(newDueDate)} ohne Abzug.`;
+                                                    setFormData(prev => ({ ...prev, due_date: newDueDate, payment_text: newPaymentText }));
+                                                }}
+                                                className={clsx(
+                                                    "px-4 py-1.5 rounded-full text-[11px] font-bold border transition-all",
+                                                    (dayjs(formData.due_date).diff(dayjs(formData.date), 'day') === days)
+                                                        ? "bg-brand-primary text-white border-brand-primary shadow-sm"
+                                                        : "bg-white text-slate-500 border-slate-200 hover:border-brand-primary hover:text-brand-primary"
+                                                )}
+                                            >
+                                                {days === 0 ? 'Sofort' : `${days} Tage`}
+                                            </button>
+                                        ))}
+                                    </div>
                                     <textarea
-                                        className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
+                                        className="w-full h-32 border border-slate-200 rounded-sm p-4 text-sm focus:border-brand-primary outline-none transition-colors bg-slate-50/30"
                                         placeholder="Z.B. Zahlbar innerhalb von 14 Tagen..."
                                         value={formData.payment_text}
                                         onChange={e => setFormData({ ...formData, payment_text: e.target.value })}
                                     />
                                 </div>
                             </section>
-                            <section className="bg-transparent space-y-2 h-full">
+
+                            <section className="bg-transparent space-y-2">
                                 <h4 className="text-sm font-bold text-slate-800 ml-1">Freitext (Fußzeile)</h4>
-                                <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm p-5">
+                                <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm p-6">
                                     <textarea
-                                        className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
+                                        className="w-full h-32 border border-slate-200 rounded-sm p-4 text-sm focus:border-brand-primary outline-none transition-colors bg-slate-50/30"
                                         placeholder="Optionaler abschließender Text (z.B. Vielen Dank für Ihren Auftrag!)"
                                         value={formData.footer_text}
                                         onChange={e => setFormData({ ...formData, footer_text: e.target.value })}
@@ -1204,16 +1348,58 @@ const NewInvoice = () => {
                         <section className="bg-transparent space-y-2">
                             <h4 className="text-sm font-bold text-slate-800 ml-1">Zusätzliche Infos</h4>
                             <div className="bg-white rounded-sm border border-slate-200/60 shadow-sm p-6 space-y-4">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-slate-400">Erstellt von</span>
+                                    <span className="font-bold text-slate-700">{user?.name || 'Unbekannt'}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pt-3 border-t border-slate-50">
+                                    <span className="text-slate-400">Belegnummer</span>
+                                    <span className="font-bold text-slate-800">{formData.invoice_number || '–'}</span>
+                                </div>
+
+                                {activeProject && (
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-slate-400">Projekt</span>
+                                        <a
+                                            href={`/projects/${activeProject.id}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="font-bold text-brand-primary hover:underline"
+                                        >
+                                            {activeProject.project_number}
+                                        </a>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-slate-400">Zahlungsziel</span>
+                                    <span className={clsx(
+                                        "font-bold",
+                                        dayjs(formData.due_date).isBefore(dayjs(), 'day') ? "text-red-500" : "text-slate-800"
+                                    )}>
+                                        {formData.due_date ? fmtDate(formData.due_date) : '–'}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-50">
+                                    <span className="text-slate-400">Status</span>
+                                    <div className={clsx(
+                                        "px-2 py-0.5 rounded-full text-[9px] font-bold   border",
+                                        formData.status === 'draft'
+                                            ? "bg-slate-50 text-slate-500 border-slate-200"
+                                            : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                    )}>
+                                        {formData.status === 'draft' ? 'Entwurf' : (formData.status === 'issued' ? 'Ausgestellt' : formData.status)}
+                                    </div>
+                                </div>
+
                                 <div className="space-y-3">
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-slate-400">Status</span>
-                                        <span className="font-bold text-brand-primary uppercase text-2xs tracking-wider">{formData.status === 'draft' ? 'Entwurf' : formData.status}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
+                                    <div className="flex items-center justify-between text-xs">
                                         <span className="text-slate-400">Währung</span>
-                                        <span className="font-bold">{formData.currency}</span>
+                                        <span className="font-bold text-slate-700">{formData.currency}</span>
                                     </div>
-                                    <div className="flex justify-between text-xs pt-3 border-t border-slate-50">
+                                    <div className="flex items-center justify-between text-xs">
                                         <span className="text-slate-400">Erstellt am</span>
                                         <span className="font-medium text-slate-600">{fmtDate(formData.date)}</span>
                                     </div>
@@ -1286,7 +1472,7 @@ const NewInvoice = () => {
                                         </div>
 
                                         <div className="flex justify-between items-center text-sm font-bold text-slate-800">
-                                            <span className="uppercase tracking-tight text-2xs">Restforderung</span>
+                                            <span className="text-sm">Restforderung</span>
                                             <span className="text-lg tabular-nums">
                                                 {fmtEur(computedFinancials.amount_due)}
                                             </span>
@@ -1304,23 +1490,23 @@ const NewInvoice = () => {
                 <Button
                     variant="outline"
                     onClick={handleCancel}
-                    className="px-5 h-9 text-xs font-semibold border-slate-200 text-slate-500 hover:bg-slate-50 uppercase tracking-wider"
+                    className="px-5 h-9 text-xs font-semibold border-slate-200 text-slate-500 hover:bg-slate-50"
                 >
                     Abbrechen
                 </Button>
                 <Button
                     onClick={() => handleSubmit('draft')}
                     disabled={!formData.customer_id || isLoading}
-                    className="px-5 h-9 text-xs font-bold border-brand-primary/20 text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 uppercase tracking-wider"
+                    className="px-5 h-9 text-xs font-bold border-brand-primary/20 text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10"
                 >
                     Als Entwurf speichern
                 </Button>
                 <Button
                     onClick={() => handleSubmit('issued')}
                     disabled={!formData.customer_id || items.length === 0 || isLoading}
-                    className="px-8 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm uppercase tracking-wider flex items-center gap-2"
+                    className="px-8 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm flex items-center gap-2"
                 >
-                    <FaSave className="text-2xs" />
+                    <FaSave className="text-sm" />
                     {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen übernehmen' : 'Beleg jetzt buchen')}
                 </Button>
             </div >

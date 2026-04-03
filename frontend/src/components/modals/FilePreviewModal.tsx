@@ -77,7 +77,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                             <h2 className="text-sm font-bold text-slate-800 truncate max-w-sm" title={name}>
                                 {name}
                             </h2>
-                            <p className="text-2xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Datei-Vorschau</p>
+                            <p className="text-sm text-slate-400 font-bold mt-0.5">Datei-Vorschau</p>
                         </div>
                     </div>
 
@@ -85,35 +85,35 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                         {canPrint && (
                             <button
                                 onClick={handlePrint}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-2xs font-bold uppercase tracking-widest"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-sm font-bold"
                             >
-                                <FaPrint className="text-2xs" />
+                                <FaPrint className="text-sm" />
                                 Drucken
                             </button>
                         )}
 
                         <button
                             onClick={() => window.open(file.url, '_blank')}
-                            className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-2xs font-bold uppercase tracking-widest"
+                            className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-sm font-bold"
                         >
-                            <FaExternalLinkAlt className="text-2xs" />
+                            <FaExternalLinkAlt className="text-sm" />
                             <span className="hidden sm:inline">Neuer Tab</span>
                         </button>
 
                         <button
                             onClick={onDownload}
-                            className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-2xs font-bold uppercase tracking-widest"
+                            className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-sm font-bold"
                         >
-                            <FaDownload className="text-2xs" />
+                            <FaDownload className="text-sm" />
                             <span className="hidden sm:inline">Laden</span>
                         </button>
 
                         {onDelete && (
                             <button
                                 onClick={() => { onClose(); onDelete(); }}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-2xs font-bold uppercase tracking-widest"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-sm font-bold"
                             >
-                                <FaTrashAlt className="text-2xs" />
+                                <FaTrashAlt className="text-sm" />
                                 <span className="hidden sm:inline">Löschen</span>
                             </button>
                         )}
@@ -136,7 +136,7 @@ const FilePreviewModal = ({ isOpen, onClose, file, onDownload, onDelete }: FileP
                             {!imgLoaded && (
                                 <div className="absolute flex flex-col items-center gap-3 text-slate-400">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400" />
-                                    <span className="text-2xs font-bold uppercase tracking-widest">Laden...</span>
+                                    <span className="text-sm font-bold">Laden...</span>
                                 </div>
                             )}
                             <img

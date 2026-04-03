@@ -15,6 +15,8 @@ export function useEmailCompose() {
 
     const [isComposeOpen, setIsComposeOpen] = useState(false);
     const [composeTo, setComposeTo] = useState('');
+    const [composeCc, setComposeCc] = useState('');
+    const [composeBcc, setComposeBcc] = useState('');
     const [composeSubject, setComposeSubject] = useState('');
     const [composeBody, setComposeBody] = useState('');
     const [composeAttachments, setComposeAttachments] = useState<File[]>([]);
@@ -39,6 +41,8 @@ export function useEmailCompose() {
     const resetCompose = () => {
         setIsComposeOpen(false);
         setComposeTo('');
+        setComposeCc('');
+        setComposeBcc('');
         setComposeSubject('');
         setComposeBody('');
         setComposeAttachments([]);
@@ -53,6 +57,8 @@ export function useEmailCompose() {
             const formData = new FormData();
             formData.append('mail_account_id', selectedAccountId.toString());
             formData.append('to', composeTo);
+            if (composeCc) formData.append('cc', composeCc);
+            if (composeBcc) formData.append('bcc', composeBcc);
             formData.append('subject', composeSubject);
             formData.append('body', composeBody);
             if (selectedProjectId) {
@@ -121,6 +127,8 @@ export function useEmailCompose() {
     return {
         isComposeOpen, setIsComposeOpen,
         composeTo, setComposeTo,
+        composeCc, setComposeCc,
+        composeBcc, setComposeBcc,
         composeSubject, setComposeSubject,
         composeBody, setComposeBody,
         composeAttachments, setComposeAttachments,

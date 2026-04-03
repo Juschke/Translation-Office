@@ -141,7 +141,6 @@ const Profile = () => {
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
         localStorage.setItem('locale', lng);
-        window.location.reload(); // Reload to ensure all context is updated
     };
 
     return (
@@ -327,7 +326,7 @@ const Profile = () => {
                                                         </div>
                                                     ))}
                                                 </div>
-                                                <p className="text-2xs text-slate-400 mt-1 font-medium">
+                                                <p className="text-sm text-slate-400 mt-1 font-medium">
                                                     {passwordData.password.length === 0 ? t('profile.password_strength') :
                                                         passwordData.password.length < 6 ? t('profile.strength.very_weak') :
                                                             passwordData.password.length < 9 ? t('profile.strength.weak') :

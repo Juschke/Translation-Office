@@ -21,7 +21,7 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
         <div className="col-span-12 md:col-span-8 flex flex-col gap-1.5">
             <div className="flex gap-3">
                 <div className="flex flex-col gap-0.5 flex-1">
-                    <span className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Präfix</span>
+                    <span className="text-2xs font-bold text-slate-400 pl-1">Präfix</span>
                     <input
                         type="text"
                         value={formData[prefixKey] || ''}
@@ -31,7 +31,7 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
                     />
                 </div>
                 <div className="flex flex-col gap-0.5 flex-1">
-                    <span className="text-2xs font-bold text-slate-400 uppercase tracking-widest pl-1">Start-Nummer</span>
+                    <span className="text-2xs font-bold text-slate-400 pl-1">Start-Nummer</span>
                     <input
                         type="number"
                         value={formData[startKey] || ''}
@@ -41,7 +41,7 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
                     />
                 </div>
                 <div className="flex flex-col gap-0.5 w-20 items-center shrink-0">
-                    <span className="text-2xs font-bold text-slate-400 uppercase tracking-widest">Jahr</span>
+                    <span className="text-2xs font-bold text-slate-400">Jahr</span>
                     <div className="h-8 flex items-center justify-center">
                         <Switch
                             checked={formData[showYearKey] || false}
@@ -55,7 +55,7 @@ const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formDat
             <div className="bg-slate-50 border border-slate-100 rounded-sm px-2 py-1 flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-slate-400">
                     <FaEye className="text-2xs" />
-                    <span className="text-2xs font-bold uppercase tracking-widest italic leading-none">Vorschau:</span>
+                    <span className="text-2xs font-bold italic leading-none">Vorschau:</span>
                 </div>
                 <span className="text-xs font-mono font-bold text-slate-900 tracking-tight leading-none">{preview}</span>
             </div>
@@ -192,7 +192,7 @@ const NumberCircleSettingsTab = () => {
 
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
                 <div className="mb-6">
-                    <h4 className="text-2xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
+                    <h4 className="text-2xs font-bold text-slate-400 mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
                         Stammdaten
                     </h4>
                     <ConfigRow
@@ -216,7 +216,7 @@ const NumberCircleSettingsTab = () => {
                 </div>
 
                 <div className="mb-6">
-                    <h4 className="text-2xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
+                    <h4 className="text-2xs font-bold text-slate-400 mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
                         Projektmanagement
                     </h4>
                     <ConfigRow
@@ -249,7 +249,7 @@ const NumberCircleSettingsTab = () => {
                 </div>
 
                 <div className="mb-2">
-                    <h4 className="text-2xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
+                    <h4 className="text-2xs font-bold text-slate-400 mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
                         Finanzwesen
                     </h4>
                     <ConfigRow

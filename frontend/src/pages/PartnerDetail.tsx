@@ -145,8 +145,8 @@ const PartnerDetail = () => {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
-                                ? 'border-brand-primary text-brand-primary'
-                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                            ? 'border-brand-primary text-brand-primary'
+                            : 'border-transparent text-slate-500 hover:text-slate-700'
                             }`}
                     >
                         {tab === 'stammdaten' ? 'Stammdaten' : 'Abrechnung'}
@@ -378,7 +378,7 @@ const RecentPartnerProjects = ({ partnerId }: { partnerId: string }) => {
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-                <thead className="bg-transparent text-slate-500 text-xs font-medium tracking-wider">
+                <thead className="bg-transparent text-slate-500 text-xs font-medium">
                     <tr>
                         <th className="px-6 py-3 border-b border-slate-100">Projekt</th>
                         <th className="px-6 py-3 border-b border-slate-100">Status</th>

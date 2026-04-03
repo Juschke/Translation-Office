@@ -142,7 +142,7 @@ const Interpreting = () => {
                         <span className="font-bold text-slate-800">
                             {safeFormat(item.start_date, 'eeee, dd.MM.yyyy', locale)}
                         </span>
-                        <span className="text-2xs text-slate-500 font-medium uppercase tracking-wider">
+                        <span className="text-sm text-slate-500 font-medium">
                             {safeFormat(item.start_date, 'HH:mm', locale)}
                             {item.end_date && ` - ${safeFormat(item.end_date, 'HH:mm', locale)}`}
                         </span>
@@ -162,7 +162,7 @@ const Interpreting = () => {
                                 e.stopPropagation();
                                 navigate(`/projects/${item.project.id}`);
                             }}
-                            className="text-2xs text-brand-primary font-bold uppercase truncate max-w-[200px] hover:underline text-left"
+                            className="text-sm text-brand-primary font-bold truncate max-w-[200px] hover:underline text-left"
                         >
                             PROJEKT: {item.project.project_number || item.project.project_name}
                         </button>
@@ -180,13 +180,13 @@ const Interpreting = () => {
                 const name = customer.company_name || `${salutation}${customer.first_name} ${customer.last_name}` || t('interpreting.columns.unknown');
                 return (
                     <div className="flex items-center gap-3 max-w-[240px]">
-                        <div className="w-8 h-8 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-2xs font-semibold shrink-0 shadow-sm rounded-sm">
+                        <div className="w-8 h-8 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-sm font-semibold shrink-0 shadow-sm rounded-sm">
                             {getInitials(name)}
                         </div>
                         <div className="flex flex-col text-[11px] leading-tight overflow-hidden">
                             <span className="font-semibold text-slate-800 truncate mb-0.5" title={name}>{name}</span>
                             {customer.email && (
-                                <span className="text-2xs text-slate-500 truncate flex items-center gap-1.5 grayscale opacity-70">
+                                <span className="text-sm text-slate-500 truncate flex items-center gap-1.5 grayscale opacity-70">
                                     <FaEnvelope size={8} /> {customer.email}
                                 </span>
                             )}
@@ -204,13 +204,13 @@ const Interpreting = () => {
                 const name = partner.company_name || `${partner.first_name} ${partner.last_name}` || t('interpreting.columns.interpreter');
                 return (
                     <div className="flex items-center gap-3 max-w-[240px]">
-                        <div className="w-8 h-8 bg-brand-primary/5 border border-brand-primary/10 text-brand-primary flex items-center justify-center text-2xs font-semibold shrink-0 shadow-sm rounded-sm">
+                        <div className="w-8 h-8 bg-brand-primary/5 border border-brand-primary/10 text-brand-primary flex items-center justify-center text-sm font-semibold shrink-0 shadow-sm rounded-sm">
                             {getInitials(name)}
                         </div>
                         <div className="flex flex-col text-[11px] leading-tight overflow-hidden">
                             <span className="font-semibold text-slate-800 truncate mb-0.5" title={name}>{name}</span>
                             {partner.email && (
-                                <span className="text-2xs text-brand-primary/60 truncate flex items-center gap-1.5">
+                                <span className="text-sm text-brand-primary/60 truncate flex items-center gap-1.5">
                                     <FaEnvelope size={8} /> {partner.email}
                                 </span>
                             )}
@@ -224,7 +224,7 @@ const Interpreting = () => {
             header: t('interpreting.columns.location'),
             accessor: (item: Appointment) => item.location ? (
                 <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                    <FaMapMarkerAlt className="text-2xs text-slate-400" />
+                    <FaMapMarkerAlt className="text-sm text-slate-400" />
                     <span className="text-xs">{item.location}</span>
                 </div>
             ) : <span className="text-slate-400">-</span>
@@ -278,7 +278,7 @@ const Interpreting = () => {
         <div className="flex flex-col gap-6 fade-in pb-10">
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('interpreting.title')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">{t('interpreting.title')}</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">{t('interpreting.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">

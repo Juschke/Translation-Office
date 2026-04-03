@@ -130,7 +130,7 @@ const NotificationSettingsTab = () => {
                     {GROUPS.map(group => (
                         <div key={group.label}>
                             <div className="px-6 py-2 bg-slate-50/60">
-                                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{group.label}</span>
+                                <span className="text-[11px] font-semibold text-slate-500">{group.label}</span>
                             </div>
                             {group.events.map(event => {
                                 const entry = settings[event.key as keyof NotifSettings];

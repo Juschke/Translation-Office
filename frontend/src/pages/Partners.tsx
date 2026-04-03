@@ -198,6 +198,15 @@ const Partners = () => {
 
     const columns = [
         {
+            id: 'display_id',
+            header: 'ID',
+            accessor: (p: any) => <span className="text-xs font-semibold text-slate-500">{p.display_id}</span>,
+            sortable: true,
+            sortKey: 'display_id',
+            width: 80,
+            defaultVisible: true
+        },
+        {
             id: 'partner',
             header: t('partners.table.partner'),
             accessor: (p: any) => (
@@ -207,16 +216,12 @@ const Partners = () => {
                     </div>
                     <div className="flex flex-col min-w-0">
                         <span className="font-medium text-slate-800 truncate" title={p.company || `${p.first_name} ${p.last_name}`}>{p.company || `${p.first_name} ${p.last_name}`}</span>
-                        <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-xs text-slate-400 font-medium shrink-0">{p.display_id}</span>
-                            <span className="text-xs text-slate-300 shrink-0">•</span>
-                            <span
-                                className="text-xs text-slate-500 font-medium truncate shrink"
-                                title={p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
-                            >
-                                {p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
-                            </span>
-                        </div>
+                        <span
+                            className="text-xs text-slate-500 font-medium truncate"
+                            title={p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
+                        >
+                            {p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
+                        </span>
                     </div>
                 </div>
             ),
@@ -257,7 +262,7 @@ const Partners = () => {
                 };
                 const status = p.status?.toLowerCase();
                 return (
-                    <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                    <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border  ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
                         {labels[status] || p.status}
                     </span>
                 );
@@ -314,18 +319,19 @@ const Partners = () => {
             sortKey: 'address_city'
         },
         {
-            id: 'email',
-            header: t('fields.email'),
-            accessor: (p: any) => <span className="text-slate-600 truncate max-w-[150px] inline-block">{p.email || '-'}</span>,
-            sortable: true,
-            sortKey: 'email'
-        },
-        {
             id: 'phone',
             header: t('fields.phone'),
             accessor: (p: any) => <span className="text-slate-600 whitespace-nowrap">{p.phone || '-'}</span>,
             sortable: true,
             sortKey: 'phone'
+        },
+        {
+            id: 'email',
+            header: t('fields.email'),
+            accessor: (p: any) => <span className="text-slate-600 truncate max-w-[150px] inline-block">{p.email || '-'}</span>,
+            sortable: true,
+            sortKey: 'email',
+            defaultVisible: true
         },
         {
             id: 'rating',
@@ -418,7 +424,7 @@ const Partners = () => {
         <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('partners.title')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">{t('partners.title')}</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">{t('partners.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">

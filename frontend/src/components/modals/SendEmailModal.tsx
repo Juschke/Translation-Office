@@ -202,7 +202,7 @@ const SendEmailModal = ({ isOpen, onClose, projectData, recipientType = 'custome
                             placeholder="Ihre Nachricht..."
                             required
                         />
-                        <p className="text-2xs text-slate-400 mt-1">
+                        <p className="text-sm text-slate-400 mt-1">
                             Verfügbare Platzhalter: {'{'}{'{'} project_name {'}'}{'}'}, {'{'}{'{'} source_language {'}'}{'}'}, {'{'}{'{'} target_language {'}'}{'}'}, {'{'}{'{'} deadline {'}'}{'}'}, {'{'}{'{'} price_net {'}'}{'}'}, {'{'}{'{'} company_name {'}'}{'}'}, {'{'}{'{'} sender_name {'}'}{'}'}
                         </p>
                     </div>

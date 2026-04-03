@@ -44,7 +44,7 @@ const Field = ({
     type?: string; className?: string; error?: string; autoComplete?: string;
 }) => (
     <div className={clsx('flex flex-col gap-1', className)}>
-        <label htmlFor={name} className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+        <label htmlFor={name} className="text-[10px] font-semibold text-slate-400">
             {label}{required && <span className="text-red-400 ml-0.5">*</span>}
         </label>
         <input
@@ -79,7 +79,7 @@ const SelectField = ({
     options: string[]; className?: string;
 }) => (
     <div className={clsx('flex flex-col gap-1', className)}>
-        <label htmlFor={name} className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+        <label htmlFor={name} className="text-[10px] font-semibold text-slate-400">
             {label}
         </label>
         <select
@@ -98,8 +98,8 @@ const SelectField = ({
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const STEPS = [
     { label: 'Unternehmen', icon: Building2 },
-    { label: 'Finanzen',    icon: CreditCard },
-    { label: 'Ihr Paket',   icon: Sparkles },
+    { label: 'Finanzen', icon: CreditCard },
+    { label: 'Ihr Paket', icon: Sparkles },
 ];
 
 const COUNTRIES = [
@@ -198,7 +198,7 @@ export default function OnboardingPage() {
         <div className="space-y-6" key="s0">
             {/* Company */}
             <div className="space-y-3">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Firmenstammdaten</p>
+                <p className="text-[11px] font-bold text-slate-500">Firmenstammdaten</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field
                         label="Firmenname" name="company_name" value={form.company_name} onChange={set}
@@ -207,7 +207,7 @@ export default function OnboardingPage() {
                         helpText="Erscheint auf allen Rechnungen und Dokumenten."
                     />
                     <div className="col-span-2 flex flex-col gap-1">
-                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Rechtsform</label>
+                        <label className="text-[10px] font-semibold text-slate-400">Rechtsform</label>
                         <input
                             name="legal_form" value={form.legal_form} onChange={set}
                             placeholder="z. B. GmbH, UG, Einzelunternehmen"
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
 
             {/* Address */}
             <div className="space-y-3">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Geschäftsadresse</p>
+                <p className="text-[11px] font-bold text-slate-500">Geschäftsadresse</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <SelectField
                         label="Land" name="address_country" value={form.address_country}
@@ -271,7 +271,7 @@ export default function OnboardingPage() {
             </div>
 
             <div className="space-y-3">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Bankverbindung</p>
+                <p className="text-[11px] font-bold text-slate-500">Bankverbindung</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field
                         label="Kreditinstitut" name="bank_name" value={form.bank_name} onChange={set}
@@ -293,7 +293,7 @@ export default function OnboardingPage() {
             <div className="h-px bg-slate-100" />
 
             <div className="space-y-3">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Steuerdaten</p>
+                <p className="text-[11px] font-bold text-slate-500">Steuerdaten</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field
                         label="Zuständiges Finanzamt" name="tax_office" value={form.tax_office} onChange={set}
@@ -334,7 +334,7 @@ export default function OnboardingPage() {
                             )}
                         >
                             {'badge' in plan && (
-                                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-2xs font-bold uppercase tracking-widest bg-[#9BCB56] text-brand-primary px-2 py-0.5 rounded-full whitespace-nowrap">
+                                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] font-bold bg-[#9BCB56] text-brand-primary px-2 py-0.5 rounded-full whitespace-nowrap">
                                     {plan.badge}
                                 </span>
                             )}
@@ -343,7 +343,7 @@ export default function OnboardingPage() {
                                     <Check size={10} className="text-white" strokeWidth={3} />
                                 </span>
                             )}
-                            <p className="text-2xs font-bold uppercase tracking-widest text-slate-400 mb-2">{plan.name}</p>
+                            <p className="text-[9px] font-bold text-slate-400 mb-2">{plan.name}</p>
                             <div className="flex items-baseline gap-0.5 mb-1">
                                 <span className="text-2xl font-black text-brand-primary">{plan.price}€</span>
                                 <span className="text-[11px] text-slate-400 font-medium">/Mo.</span>
@@ -362,7 +362,7 @@ export default function OnboardingPage() {
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Enterprise-Lizenz</p>
+                <p className="text-[10px] font-bold text-slate-400 mb-3">Enterprise-Lizenz</p>
                 <Field
                     label="Lizenzschlüssel (optional)" name="license_key" value={form.license_key} onChange={set}
                     placeholder="VBA-1234-XXXX-XXXX"
@@ -391,14 +391,14 @@ export default function OnboardingPage() {
                                 <span className="text-[#9BCB56] font-black text-sm leading-none">TO</span>
                             </div>
                             <div>
-                                <p className="text-white font-black text-base leading-none tracking-tight">TransOffice</p>
-                                <p className="text-[#9BCB56]/70 text-2xs font-bold tracking-widest uppercase mt-0.5">Einrichtung</p>
+                                <p className="text-white font-black text-base leading-none">TransOffice</p>
+                                <p className="text-[#9BCB56]/70 text-[9px] font-bold mt-0.5">Einrichtung</p>
                             </div>
                         </div>
 
                         {/* Headline */}
                         <div className="mb-10">
-                            <h2 className="text-2xl font-black text-white leading-tight tracking-tight mb-3">
+                            <h2 className="text-2xl font-black text-white leading-tight mb-3">
                                 Ihr digitales Übersetzungsbüro wartet.
                             </h2>
                             <p className="text-sm text-white/50 leading-relaxed">
@@ -410,8 +410,8 @@ export default function OnboardingPage() {
                         <div className="space-y-5 flex-1">
                             {[
                                 { icon: FileText, title: 'GoBD-konforme Rechnungen', desc: 'ZUGFeRD, DATEV-Export inklusive' },
-                                { icon: Globe,    title: 'Projekte & Kunden', desc: 'Von der Anfrage bis zur Rechnung' },
-                                { icon: Users,    title: 'Partner-Portal', desc: 'Übersetzer nahtlos einbinden' },
+                                { icon: Globe, title: 'Projekte & Kunden', desc: 'Von der Anfrage bis zur Rechnung' },
+                                { icon: Users, title: 'Partner-Portal', desc: 'Übersetzer nahtlos einbinden' },
                             ].map(({ icon: Icon, title, desc }) => (
                                 <div key={title} className="flex items-start gap-3.5">
                                     <div className="w-8 h-8 rounded-lg bg-white/8 flex items-center justify-center shrink-0">
@@ -477,7 +477,7 @@ export default function OnboardingPage() {
 
                         {/* Heading */}
                         <div className="mb-6">
-                            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+                            <h1 className="text-xl font-bold text-slate-800">
                                 {['Ihr Unternehmen', 'Bank & Steuern', 'Paket wählen'][step]}
                             </h1>
                             <p className="text-sm text-slate-400 mt-0.5">
@@ -506,7 +506,7 @@ export default function OnboardingPage() {
                         <button
                             type="button" onClick={back} disabled={step === 0}
                             className={clsx(
-                                'flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all',
+                                'flex items-center gap-1.5 text-xs font-bold   px-4 py-2.5 rounded-lg transition-all',
                                 step === 0
                                     ? 'invisible'
                                     : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
@@ -531,14 +531,14 @@ export default function OnboardingPage() {
                             {step < 2 ? (
                                 <button
                                     type="button" onClick={next}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-brand-primary/80 transition-colors group shadow-sm"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-xs font-bold rounded-lg hover:bg-brand-primary/80 transition-colors group shadow-sm"
                                 >
                                     Weiter <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
                                 </button>
                             ) : (
                                 <button
                                     type="button" onClick={submit} disabled={loading}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#9BCB56] text-brand-primary text-xs font-black uppercase tracking-wider rounded-lg hover:brightness-105 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#9BCB56] text-brand-primary text-xs font-black rounded-lg hover:brightness-105 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {loading ? 'Wird eingerichtet…' : <><Rocket size={13} /> Jetzt starten</>}
                                 </button>

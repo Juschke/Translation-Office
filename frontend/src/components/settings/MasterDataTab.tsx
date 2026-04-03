@@ -248,7 +248,7 @@ const MasterDataTab = () => {
                         columns={[
                             { id: 'name', header: t('fields.name'), accessor: (l: any) => <span className="font-medium text-slate-800 text-sm">{l.name_internal}</span> },
                             { id: 'code', header: t('settings.master_data.code_iso'), accessor: (l: any) => <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 border border-slate-100 rounded-sm">{l.iso_code}</span>, className: 'w-32' },
-                            { id: 'flag', header: 'Flagge', accessor: (l: any) => <div className="w-8 h-6 overflow-hidden shadow-sm border border-slate-200 bg-slate-50 rounded-sm flex items-center justify-center">{l.flag_icon ? <img src={getFlagUrl(l.flag_icon)} className="w-full h-full object-cover" /> : <span className="text-2xs text-slate-300 uppercase font-bold">no</span>}</div>, align: 'center' },
+                            { id: 'flag', header: 'Flagge', accessor: (l: any) => <div className="w-8 h-6 overflow-hidden shadow-sm border border-slate-200 bg-slate-50 rounded-sm flex items-center justify-center">{l.flag_icon ? <img src={getFlagUrl(l.flag_icon)} className="w-full h-full object-cover" /> : <span className="text-2xs text-slate-300 font-bold">no</span>}</div>, align: 'center' },
                             { id: 'native', header: t('settings.master_data.native'), accessor: 'name_native', className: 'text-slate-500 italic text-sm' },
                             { id: 'status', header: t('settings.master_data.status'), accessor: (l: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', l.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{l.status || 'active'}</span>, align: 'center' },
                             { id: 'actions', header: '', accessor: (l: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(l)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(l)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
@@ -288,7 +288,7 @@ const MasterDataTab = () => {
                                         accessor: (d: any) => (
                                             <div className="flex flex-col py-1">
                                                 <span className="font-semibold text-slate-800 text-sm leading-tight">{d.name}</span>
-                                                <span className="text-2xs text-slate-400 font-medium uppercase tracking-wider mt-0.5">{d.category || '-'}</span>
+                                                <span className="text-2xs text-slate-400 font-medium mt-0.5">{d.category || '-'}</span>
                                             </div>
                                         )
                                     },
@@ -310,7 +310,7 @@ const MasterDataTab = () => {
                         columns={[
                             { id: 'name', header: t('settings.master_data.service_name'), accessor: (s: any) => <span className="font-medium text-slate-800 text-sm">{s.name}</span> },
                             { id: 'description', header: t('fields.description'), accessor: (s: any) => <span className="text-2xs text-slate-400 italic line-clamp-1 max-w-[200px]">{s.description || '-'}</span> },
-                            { id: 'extra', header: 'Extra', accessor: (s: any) => s.is_extra ? <span className="px-2 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-sm uppercase tracking-tighter">Ja</span> : <span className="px-2 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-400 border border-slate-200 rounded-sm uppercase tracking-tighter">Nein</span>, align: 'center' },
+                            { id: 'extra', header: 'Extra', accessor: (s: any) => s.is_extra ? <span className="px-2 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-sm">Ja</span> : <span className="px-2 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-400 border border-slate-200 rounded-sm">Nein</span>, align: 'center' },
                             { id: 'status', header: t('settings.master_data.status'), accessor: (s: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', s.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{s.status || 'active'}</span>, align: 'center' },
                             { id: 'actions', header: '', accessor: (s: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(s)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(s)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
                         ]} pageSize={10} />)}

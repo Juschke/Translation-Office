@@ -234,26 +234,26 @@ const Calendar = () => {
             <div className="flex flex-col w-full h-full p-2 overflow-hidden transition-all group/event">
                 <div className="flex items-start justify-between gap-1.5 mb-1.5">
                     <div className="flex items-center gap-1.5 min-w-0">
-                        <Icon className={`text-2xs shrink-0 ${iconColor}`} />
-                        <span className="font-bold text-[11px] truncate leading-tight tracking-tight text-slate-800">
+                        <Icon className={`text-sm shrink-0 ${iconColor}`} />
+                        <span className="font-bold text-[11px] truncate leading-tight text-slate-800">
                             {title}
                         </span>
                     </div>
                     {time && (
-                        <span className="text-2xs font-bold text-slate-500 whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded-sm">
+                        <span className="text-sm font-bold text-slate-500 whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded-sm">
                             {time}
                         </span>
                     )}
                 </div>
                 <div className="flex flex-col gap-1.5 mt-auto">
                     {customer && (
-                        <div className="text-2xs text-slate-500 font-medium truncate flex items-center gap-1.5">
+                        <div className="text-sm text-slate-500 font-medium truncate flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                             {customer}
                         </div>
                     )}
                     {langPair && (
-                        <div className="inline-flex items-center gap-1.5 text-2xs font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-sm transition-all w-fit">
+                        <div className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-sm transition-all w-fit">
                             <span>{langPair}</span>
                         </div>
                     )}
@@ -266,7 +266,7 @@ const Calendar = () => {
         <div className="flex flex-col gap-6 fade-in h-[calc(100vh-140px)]">
             <div className="flex justify-between items-center gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('calendar.title')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">{t('calendar.title')}</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">{t('calendar.subtitle')}</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -418,12 +418,12 @@ const Calendar = () => {
                                         <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
                                         {t('calendar.sidebar.unassigned_projects')}
                                     </h3>
-                                    <span className="text-2xs font-bold bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-sm">
+                                    <span className="text-sm font-bold bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-sm">
                                         {unassignedProjects.length}
                                     </span>
                                 </div>
                                 <div className="relative">
-                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-2xs" />
+                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
                                     <input
                                         type="text"
                                         placeholder={t('calendar.sidebar.search_project')}
@@ -456,11 +456,11 @@ const Calendar = () => {
                                     >
                                         <div className="flex flex-col gap-1.5">
                                             <div className="flex justify-between items-start gap-2">
-                                                <span className="text-2xs font-bold text-slate-400 uppercase tracking-tight">
+                                                <span className="text-sm font-bold text-slate-400">
                                                     {p.project_number || `ID ${p.id}`}
                                                 </span>
                                                 <span className={clsx(
-                                                    "px-1.5 py-0.5 rounded-sm text-2xs font-bold uppercase shrink-0",
+                                                    "px-1.5 py-0.5 rounded-sm text-sm font-bold  shrink-0",
                                                     p.priority === 'high' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
                                                 )}>
                                                     {p.priority === 'high' ? '⚡ Express' : 'Standard'}
@@ -470,10 +470,10 @@ const Calendar = () => {
                                                 {p.project_name}
                                             </h4>
                                             <div className="mt-1 flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
-                                                <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-2xs font-bold text-slate-500">
+                                                <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500">
                                                     {(p.customer?.company_name || p.customer?.first_name || 'P').charAt(0)}
                                                 </div>
-                                                <span className="text-2xs text-slate-600 font-medium truncate">
+                                                <span className="text-sm text-slate-600 font-medium truncate">
                                                     {p.customer?.company_name || `${p.customer?.first_name || ''} ${p.customer?.last_name || ''}`.trim() || 'Privatkunde'}
                                                 </span>
                                             </div>
@@ -486,7 +486,7 @@ const Calendar = () => {
                                             <FaSearch className="text-2xl text-slate-300" />
                                         </div>
                                         <p className="text-xs font-medium">{t('calendar.sidebar.no_projects')}</p>
-                                        <p className="text-2xs text-slate-400 mt-1">{t('calendar.sidebar.all_planned')}</p>
+                                        <p className="text-sm text-slate-400 mt-1">{t('calendar.sidebar.all_planned')}</p>
                                     </div>
                                 )}
                             </div>
@@ -499,7 +499,7 @@ const Calendar = () => {
                                     {t('calendar.sidebar.staff_title')}
                                 </h3>
                                 <div className="relative">
-                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-2xs" />
+                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
                                     <input
                                         type="text"
                                         placeholder={t('calendar.sidebar.search_staff')}
@@ -523,18 +523,18 @@ const Calendar = () => {
                                             data-name={fullName}
                                             className="staff-drag-item p-3 bg-white border border-slate-200 rounded-sm flex items-center gap-3 hover:border-brand-primary hover:shadow-md transition-all group cursor-move active:cursor-grabbing active:opacity-50"
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:ring-2 group-hover:ring-brand-primary/30 transition-all uppercase shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:ring-2 group-hover:ring-brand-primary/30 transition-all shrink-0">
                                                 {initials}
                                             </div>
                                             <div className="flex flex-col min-w-0 flex-1">
                                                 <span className="text-xs font-bold text-slate-800 truncate group-hover:text-brand-primary transition-colors">
                                                     {fullName}
                                                 </span>
-                                                <span className="text-2xs font-medium text-slate-500 truncate">
+                                                <span className="text-sm font-medium text-slate-500 truncate">
                                                     {roleDE}
                                                 </span>
                                                 {u.email && (
-                                                    <span className="text-2xs text-slate-400 truncate">
+                                                    <span className="text-sm text-slate-400 truncate">
                                                         {u.email}
                                                     </span>
                                                 )}
@@ -554,7 +554,7 @@ const Calendar = () => {
                                                     className="w-7 h-7 flex items-center justify-center rounded-sm bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
                                                     title="Urlaub"
                                                 >
-                                                    <FaUmbrellaBeach className="text-2xs" />
+                                                    <FaUmbrellaBeach className="text-sm" />
                                                 </button>
                                                 <button
                                                     onClick={(e) => {
@@ -570,7 +570,7 @@ const Calendar = () => {
                                                     className="w-7 h-7 flex items-center justify-center rounded-sm bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
                                                     title="Dolmetscher"
                                                 >
-                                                    <FaMicrophone className="text-2xs" />
+                                                    <FaMicrophone className="text-sm" />
                                                 </button>
                                             </div>
                                         </div>
@@ -582,7 +582,7 @@ const Calendar = () => {
                                             <FaSearch className="text-2xl text-slate-300" />
                                         </div>
                                         <p className="text-xs font-medium">{t('calendar.sidebar.no_staff')}</p>
-                                        <p className="text-2xs text-slate-400 mt-1">{t('calendar.sidebar.try_another_search')}</p>
+                                        <p className="text-sm text-slate-400 mt-1">{t('calendar.sidebar.try_another_search')}</p>
                                     </div>
                                 )}
                             </div>

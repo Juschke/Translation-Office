@@ -86,7 +86,7 @@ const Dashboard = () => {
             {/* Minimalist Professional Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pb-6">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight">{t('dashboard.title')}</h1>
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800">{t('dashboard.title')}</h1>
                     <p className="text-slate-500 text-sm mt-0.5 hidden sm:block">{t('dashboard.subtitle')}</p>
                 </div>
 

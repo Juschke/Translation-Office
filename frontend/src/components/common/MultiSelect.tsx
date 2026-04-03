@@ -80,7 +80,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
         <div className="relative" ref={containerRef}>
             <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">{label}</label>
             <div
-                className={`w-full border rounded-sm px-3 py-2 min-h-[42px] bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm ${isOpen ? 'border-brand-primary ring-2 ring-brand-primary/10' : 'border-slate-200 hover:border-slate-300'}`}
+                className={`w-full border rounded-sm px-3 py-2 min-h-[42px] bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm ${isOpen ? 'border-brand-primary ring-2 ring-brand-primary/10' : 'border-slate-200 hover:border-brand-primary'}`}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
                 tabIndex={0}
