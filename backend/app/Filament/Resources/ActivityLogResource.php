@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ActivityLogResource\Pages;
 use BackedEnum, UnitEnum;
-use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -105,7 +104,7 @@ class ActivityLogResource extends Resource
                     }),
             ])
             ->actions([
-                ViewAction::make(),
+                Tables\Actions\ViewAction::make(),
             ])
             ->defaultSort('created_at', 'desc')
             ->poll('10s');

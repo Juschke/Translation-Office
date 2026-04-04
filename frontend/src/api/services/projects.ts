@@ -54,10 +54,6 @@ export const projectService = {
         const response = await api.post(`/projects/${projectId}/files/bulk-update`, { ids, type });
         return response.data;
     },
-    bulkDeleteFiles: async (projectId: string, ids: string[]) => {
-        const response = await api.post(`/projects/${projectId}/files/bulk-delete`, { ids });
-        return response.data;
-    },
     downloadFilesZip: async (projectId: string, ids: string[]) => {
         const response = await api.get(`/projects/${projectId}/files/download-zip`, {
             params: { ids: ids.join(',') },

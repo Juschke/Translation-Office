@@ -11,7 +11,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use BackedEnum;
-use Illuminate\Database\Eloquent\Builder;
 
 class ApiRequestLogResource extends Resource
 {
@@ -58,25 +57,5 @@ class ApiRequestLogResource extends Resource
             'index' => ListApiRequestLogs::route('/'),
             'view' => ViewApiRequestLog::route('/{record}'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->with(['user:id,name,email', 'tenant:id,company_name']);
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        $count = static::getModel()::where('status_code', '>=', 500)
-            ->where('created_at', '>=', now()->subDay())
-            ->count();
-
-        return $count > 0 ? (string) $count : null;
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'danger';
     }
 }

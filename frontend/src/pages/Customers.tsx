@@ -1,13 +1,14 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
     FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaUserPlus, FaArchive
 } from 'react-icons/fa';
 
 
+import NewCustomerModal from '../components/modals/NewCustomerModal';
 import KPICard from '../components/common/KPICard';
 import StatusBadge from '../components/common/StatusBadge';
 import DataTable, { type FilterDef } from '../components/common/DataTable';
@@ -23,38 +24,15 @@ import { useTranslation } from 'react-i18next';
 const Customers = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>(() => {
-        const p = searchParams.get('view');
-        return (p === 'archive' || p === 'trash') ? p : 'active';
-    });
-    const [typeFilter, setTypeFilter] = useState(() => searchParams.get('type') || 'all');
-
-    const updateSearchParams = (updates: Record<string, string | null>) => {
-        setSearchParams(prev => {
-            const next = new URLSearchParams(prev);
-            for (const [key, value] of Object.entries(updates)) {
-                if (value === null) {
-                    next.delete(key);
-                } else {
-                    next.set(key, value);
-                }
-            }
-            return next;
-        }, { replace: true });
-    };
-
-    const handleSetStatusView = (v: 'active' | 'archive' | 'trash') => {
-        setStatusView(v);
-        updateSearchParams({ view: v === 'active' ? null : v });
-    };
-
-    const handleSetTypeFilter = (v: string) => {
-        setTypeFilter(v);
-        updateSearchParams({ type: v === 'all' ? null : v });
-    };
+    const location = useLocation();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
+    const [typeFilter, setTypeFilter] = useState('all');
     const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
+    const [editingCustomer, setEditingCustomer] = useState<any>(null);
+    const [isDetailLoading, setIsDetailLoading] = useState(false);
+
     const exportRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -67,6 +45,14 @@ const Customers = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (location.state?.openNewModal) {
+            setIsModalOpen(true);
+            setEditingCustomer(null);
+            // Clear location state to prevent modal from reopening on refresh or navigation
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
     // deleted/archived states removed in favor of typeFilter
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -81,11 +67,37 @@ const Customers = () => {
         queryFn: customerService.getAll
     });
 
-    const { data: stats, isLoading: statsLoading } = useQuery({
+    const { data: stats } = useQuery({
         queryKey: ['customerStats'],
         queryFn: customerService.getStats
     });
 
+    const createMutation = useMutation({
+        mutationFn: customerService.create,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+            setIsModalOpen(false);
+            toast.success(t('customers.messages.create_success'));
+        },
+        onError: () => {
+            toast.error(t('customers.messages.create_error'));
+        }
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (data: any) => customerService.update(data.id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+            setIsModalOpen(false);
+            setEditingCustomer(null);
+            toast.success(t('customers.messages.update_success'));
+        },
+        onError: () => {
+            toast.error(t('customers.messages.update_error'));
+        }
+    });
 
     const deleteMutation = useMutation({
         mutationFn: customerService.delete,
@@ -194,15 +206,6 @@ const Customers = () => {
 
     const columns = [
         {
-            id: 'display_id',
-            header: 'ID',
-            accessor: (c: any) => <span className="text-xs font-semibold text-slate-500">{c.display_id}</span>,
-            sortable: true,
-            sortKey: 'display_id',
-            width: '80px',
-            defaultVisible: true
-        },
-        {
             id: 'company',
             header: t('customers.table.company'),
             accessor: (c: any) => (
@@ -212,7 +215,11 @@ const Customers = () => {
                     </div>
                     <div className="flex flex-col min-w-0">
                         <span className="font-semibold text-slate-800 truncate">{c.company_name || `${c.first_name} ${c.last_name}`}</span>
-                        <span className="text-xs text-slate-500 font-medium">{c.type === 'company' ? t('customers.type_company_label') : c.type === 'authority' ? t('customers.type_authority_label') : t('customers.type_private_label')}</span>
+                        <div className="flex gap-2">
+                            <span className="text-xs text-slate-400 font-medium">ID: {c.display_id}</span>
+                            <span className="text-xs text-slate-300">•</span>
+                            <span className="text-xs text-slate-500 font-medium">{c.type}</span>
+                        </div>
                     </div>
                 </div>
             ),
@@ -225,6 +232,7 @@ const Customers = () => {
             accessor: (c: any) => (
                 <div className="flex flex-col">
                     <span className="font-medium text-slate-700">{c.contact_person || `${c.first_name} ${c.last_name}`}</span>
+                    <span className="text-xs text-slate-500">{c.email}</span>
                 </div>
             ),
             sortable: true,
@@ -248,14 +256,6 @@ const Customers = () => {
             accessor: (c: any) => <span className="text-slate-600">{c.phone || '-'}</span>,
             sortable: true,
             sortKey: 'phone'
-        },
-        {
-            id: 'email',
-            header: 'E-Mail',
-            accessor: (c: any) => <span className="text-slate-600 text-xs">{c.email || '-'}</span>,
-            sortable: true,
-            sortKey: 'email',
-            defaultVisible: true
         },
         {
             id: 'projects_count',
@@ -292,14 +292,26 @@ const Customers = () => {
             header: '',
             accessor: (c: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.details')} aria-label={t('actions.details')}><FaEye /></button>
-                    <button onClick={() => navigate(`/customers/${c.id}/edit`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')} aria-label={t('actions.edit')}><FaEdit /></button>
+                    <button onClick={() => navigate(`/customers/${c.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.details')}><FaEye /></button>
+                    <button onClick={async () => {
+                        setEditingCustomer(c);
+                        setIsModalOpen(true);
+                        setIsDetailLoading(true);
+                        try {
+                            const fullData = await customerService.getById(c.id);
+                            setEditingCustomer(fullData);
+                        } catch (err) {
+                            // Error already handled by axios interceptor
+                        } finally {
+                            setIsDetailLoading(false);
+                        }
+                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit /></button>
                     <button onClick={() => {
                         setCustomerToDelete(c.id);
                         setConfirmTitle(t('customers.status.deleted'));
                         setConfirmMessage(t('customers.confirm.delete_message', { count: 1 }));
                         setIsConfirmOpen(true);
-                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')} aria-label={t('actions.delete')}><FaTrash /></button>
+                    }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')}><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -309,17 +321,17 @@ const Customers = () => {
 
     const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0);
     const resetFilters = () => {
-        handleSetStatusView('active');
-        handleSetTypeFilter('all');
+        setStatusView('active');
+        setTypeFilter('all');
     };
 
     const tableFilters: FilterDef[] = [
         {
-            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { handleSetStatusView(v as 'active' | 'archive' | 'trash'); handleSetTypeFilter('all'); },
+            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('all'); },
             options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
         },
         ...(statusView === 'active' ? [{
-            id: 'type', label: t('customers.filters.type'), type: 'select' as const, value: typeFilter, onChange: (v: any) => handleSetTypeFilter(v),
+            id: 'type', label: t('customers.filters.type'), type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
             options: [
                 { value: 'all', label: t('customers.filters.types.all') },
                 { value: 'Firma', label: t('customers.filters.types.company') },
@@ -356,27 +368,22 @@ const Customers = () => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
-            <div className="flex justify-between items-center gap-4">
-                <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">{t('customers.title')}</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">{t('customers.subtitle')}</p>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                    <Button
-                        onClick={() => navigate('/customers/new')}
-                    >
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('customers.new_customer')}</span><span className="inline sm:hidden">{t('customers.new_short')}</span>
-                    </Button>
+        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden" onClick={() => { setIsExportOpen(false); }}>
+                <div className="flex justify-between items-center gap-4">
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('customers.title')}</h1>
+                        <p className="text-slate-500 text-sm hidden sm:block">{t('customers.subtitle')}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        <Button
+                            onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
+                        >
+                            <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('customers.new_customer')}</span><span className="inline sm:hidden">{t('customers.new_short')}</span>
+                        </Button>
+                    </div>
                 </div>
 
-            {statsLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                    {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="animate-pulse bg-slate-100 rounded-sm h-20" />
-                    ))}
-                </div>
-            ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                     <KPICard label={t('customers.kpi.total_customers')} value={stats?.total_active || activeCustomersCount} icon={<FaUsers />} />
                     <KPICard label={t('customers.kpi.new_entries')} value={newCustomersCount} icon={<FaUserPlus />} subValue={t('customers.kpi.last_30_days')} />
@@ -392,40 +399,49 @@ const Customers = () => {
                         } : undefined}
                     />
                 </div>
-            )}
 
-            <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
-                <DataTable
-                    data={filteredCustomers}
-                    columns={columns as any}
-                    onRowClick={(c) => navigate(`/customers/${c.id}`)}
-                    searchPlaceholder={t('customers.search_placeholder')}
-                    searchFields={['company_name', 'contact_person', 'email']}
-                    actions={actions}
-                    onAddClick={() => navigate('/customers/new')}
-                    selectable
-                    selectedIds={selectedCustomers}
-                    onSelectionChange={(ids) => setSelectedCustomers(ids as number[])}
-                    bulkActions={[
-                        {
-                            label: t('customers.actions.activate'),
-                            icon: <FaCheck className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Aktiv' } }),
-                            variant: 'success',
-                            show: statusView === 'active'
-                        },
-                        {
-                            label: t('projects.actions.bulk.send_email'),
-                            icon: <FaEnvelope className="text-xs" />,
-                            onClick: () => {
-                                const selectedEmails = customers
-                                    .filter((c: any) => selectedCustomers.includes(c.id))
-                                    .map((c: any) => c.email)
-                                    .filter(Boolean)
-                                    .join(', ');
-                                if (selectedEmails) {
-                                    navigate('/inbox', { state: { compose: true, to: selectedEmails, subject: 'Nachricht an Kunden' } });
-                                }
+                <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
+                    <DataTable
+                        data={filteredCustomers}
+                        columns={columns as any}
+                        onRowClick={(c) => navigate(`/customers/${c.id}`)}
+                        searchPlaceholder={t('customers.search_placeholder')}
+                        searchFields={['company_name', 'contact_person', 'email']}
+                        actions={actions}
+                        onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
+                        selectable
+                        selectedIds={selectedCustomers}
+                        onSelectionChange={(ids) => setSelectedCustomers(ids as number[])}
+                        bulkActions={[
+                            {
+                                label: t('customers.actions.activate'),
+                                icon: <FaCheck className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Aktiv' } }),
+                                variant: 'success',
+                                show: statusView === 'active'
+                            },
+                            {
+                                label: t('projects.actions.bulk.send_email'),
+                                icon: <FaEnvelope className="text-xs" />,
+                                onClick: () => {
+                                    const selectedEmails = customers
+                                        .filter((c: any) => selectedCustomers.includes(c.id))
+                                        .map((c: any) => c.email)
+                                        .filter(Boolean)
+                                        .join(', ');
+                                    if (selectedEmails) {
+                                        navigate('/inbox', { state: { compose: true, to: selectedEmails, subject: 'Nachricht an Kunden' } });
+                                    }
+                                },
+                                variant: 'primary',
+                                show: statusView === 'active'
+                            },
+                            {
+                                label: t('customers.actions.deactivate'),
+                                icon: <FaBan className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedCustomers, data: { status: 'Inaktiv' } }),
+                                variant: 'danger',
+                                show: statusView === 'active'
                             },
                             {
                                 label: t('projects.actions.bulk.archive'),
@@ -486,29 +502,29 @@ const Customers = () => {
                     isLoading={isDetailLoading || updateMutation.isPending}
                 />
 
-
-            <ConfirmModal
-                isOpen={isConfirmOpen}
-                onClose={() => {
-                    setIsConfirmOpen(false);
-                    setCustomerToDelete(null);
-                }}
-                onConfirm={() => {
-                    if (customerToDelete) {
-                        if (Array.isArray(customerToDelete)) {
-                            bulkDeleteMutation.mutate(customerToDelete, {
-                                onSuccess: () => {
-                                    setIsConfirmOpen(false);
-                                    setCustomerToDelete(null);
-                                }
-                            });
-                        } else {
-                            deleteMutation.mutate(customerToDelete as number, {
-                                onSuccess: () => {
-                                    setIsConfirmOpen(false);
-                                    setCustomerToDelete(null);
-                                }
-                            });
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => {
+                        setIsConfirmOpen(false);
+                        setCustomerToDelete(null);
+                    }}
+                    onConfirm={() => {
+                        if (customerToDelete) {
+                            if (Array.isArray(customerToDelete)) {
+                                bulkDeleteMutation.mutate(customerToDelete, {
+                                    onSuccess: () => {
+                                        setIsConfirmOpen(false);
+                                        setCustomerToDelete(null);
+                                    }
+                                });
+                            } else {
+                                deleteMutation.mutate(customerToDelete as number, {
+                                    onSuccess: () => {
+                                        setIsConfirmOpen(false);
+                                        setCustomerToDelete(null);
+                                    }
+                                });
+                            }
                         }
                     }}
                     title={confirmTitle}

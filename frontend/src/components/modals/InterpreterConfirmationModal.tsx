@@ -7,7 +7,6 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import { de } from 'date-fns/locale/de';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { partnerService, projectService, settingsService, calendarService } from '../../api/services';
-import { formatPartnerLabel } from '../../utils/dropdownFormat';
 import toast from 'react-hot-toast';
 import "react-datepicker/dist/react-datepicker.css";
 import { Input } from '../ui/input';
@@ -138,7 +137,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
 
     const partnerOptions = (Array.isArray(partnersData) ? partnersData : []).map((p: any) => ({
         value: p.id.toString(),
-        label: formatPartnerLabel(p)
+        label: p.company_name || `${p.first_name} ${p.last_name}`
     }));
 
     // Find selected partner for preview
@@ -216,9 +215,9 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                 <div className="text-[28pt] font-bold tracking-[10pt]" style={{ letterSpacing: '10pt' }}>
                                     {companyName.replace(/[^A-Z]/gi, '').substring(0, 5).toUpperCase() || 'ITC'}
                                 </div>
-                                <div className="text-[16pt]">{companyName}</div>
-                                <div className="text-[12pt]">DOLMETSCHER- & ÜBERSETZUNGSBÜRO</div>
-                                <div className="text-[10pt]">FÜR ALLE WELTSPRACHEN</div>
+                                <div className="text-[16pt] uppercase tracking-wide">{companyName}</div>
+                                <div className="text-[12pt] uppercase">DOLMETSCHER- & ÜBERSETZUNGSBÜRO</div>
+                                <div className="text-[10pt] uppercase">FÜR ALLE WELTSPRACHEN</div>
                             </div>
 
                             {/* Languages bar */}
@@ -331,13 +330,13 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
                             {/* Section 1: Einsatzdetails */}
                             <div className="space-y-4">
-                                <h3 className="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-sm">1</div>
+                                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">1</div>
                                     Einsatzdetails
                                 </h3>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-sm font-bold text-slate-400 ml-1">Dolmetscher / Partner</Label>
+                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Dolmetscher / Partner</Label>
                                     <SearchableSelect
                                         value={interpreterId}
                                         onChange={setInterpreterId}
@@ -348,7 +347,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-sm font-bold text-slate-400 ml-1">Termin - Datum & Uhrzeit</Label>
+                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Termin - Datum & Uhrzeit</Label>
                                     <div className="relative">
                                         <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
                                         <DatePicker
@@ -372,13 +371,13 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
 
                             {/* Section 2: Einsatzort */}
                             <div className="space-y-4">
-                                <h3 className="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-sm">2</div>
+                                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">2</div>
                                     Einsatzort
                                 </h3>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-sm font-bold text-slate-400 ml-1">Einsatzort (Name der Einrichtung / Firma)</Label>
+                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Einsatzort (Name der Einrichtung / Firma)</Label>
                                     <Input
                                         startIcon={<FaMapMarkerAlt className="text-slate-400" />}
                                         value={location}
@@ -408,14 +407,14 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
 
                             {/* Section 3: Referenzdaten */}
                             <div className="space-y-4">
-                                <h3 className="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-sm">3</div>
+                                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">3</div>
                                     Referenzdaten
                                 </h3>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <Label className="text-sm font-bold text-slate-400 ml-1">Ihr Zeichen (Referenz)</Label>
+                                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Zeichen (Referenz)</Label>
                                         <Input
                                             startIcon={<FaUserEdit className="text-slate-400" />}
                                             value={customerReference}
@@ -426,7 +425,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-sm font-bold text-slate-400 ml-1">Ihr Schreiben vom</Label>
+                                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ihr Schreiben vom</Label>
                                         <div className="relative">
                                             <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none" />
                                             <DatePicker
@@ -444,7 +443,7 @@ const InterpreterConfirmationModal: React.FC<InterpreterConfirmationModalProps> 
                                 </div>
 
                                 <div className="space-y-1.5 pt-2">
-                                    <Label className="text-sm font-bold text-slate-400 ml-1">Unser Zeichen (Projekt-Nr)</Label>
+                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Unser Zeichen (Projekt-Nr)</Label>
                                     <Input
                                         startIcon={<FaInfoCircle className="text-slate-400" />}
                                         value={projectNumber}

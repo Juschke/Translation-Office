@@ -20,8 +20,6 @@ class TenantForm
                     ->default(null),
                 TextInput::make('legal_form')
                     ->default(null),
-                TextInput::make('managing_director')
-                    ->default(null),
                 TextInput::make('address_street')
                     ->default(null),
                 TextInput::make('address_house_no')
@@ -72,12 +70,8 @@ class TenantForm
                     ->label('Email address')
                     ->email()
                     ->default(null),
-                TextInput::make('website')
-                    ->url()
+                TextInput::make('opening_hours')
                     ->default(null),
-                Textarea::make('opening_hours')
-                    ->default(null)
-                    ->columnSpanFull(),
             ]);
     }
 }

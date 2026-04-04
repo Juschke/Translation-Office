@@ -99,7 +99,7 @@ const Documents = () => {
                         <span className="text-[13px] font-bold text-slate-800 truncate leading-tight">
                             {file.original_name}
                         </span>
-                        <span className="text-sm text-slate-400 font-mono mt-0.5">
+                        <span className="text-[10px] text-slate-400 font-mono mt-0.5 uppercase tracking-tighter">
                             VER {file.version} • {file.extension}
                         </span>
                     </div>
@@ -116,10 +116,10 @@ const Documents = () => {
                     className="flex flex-col hover:text-brand-primary transition-colors group"
                 >
                     <span className="text-xs font-bold text-slate-700 truncate flex items-center gap-2 group-hover:text-brand-primary">
-                        <FaFolder className="text-sm opacity-20" />
+                        <FaFolder className="text-[10px] opacity-20" />
                         {file.project?.project_number}
                     </span>
-                    <span className="text-sm text-slate-500 truncate pl-4">
+                    <span className="text-[10px] text-slate-500 truncate pl-4">
                         {file.project?.project_name}
                     </span>
                 </Link>
@@ -131,10 +131,10 @@ const Documents = () => {
             header: t('common.type') || 'Typ',
             accessor: (file: any) => (
                 <div className="flex flex-col gap-1">
-                    <Badge variant={file.type === 'target' ? 'success' : 'default'} className="text-sm font-bold px-1.5 py-0 w-fit">
+                    <Badge variant={file.type === 'target' ? 'success' : 'default'} className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0 w-fit">
                         {file.type === 'target' ? 'Ausspielung' : 'Eingang'}
                     </Badge>
-                    <span className="text-sm text-slate-400 font-mono tabular-nums">
+                    <span className="text-[10px] text-slate-400 font-mono tabular-nums">
                         {formatFileSize(file.file_size || 0)}
                     </span>
                 </div>
@@ -147,10 +147,10 @@ const Documents = () => {
             accessor: (file: any) => (
                 <div className="flex flex-col">
                     <span className="text-[11px] font-bold text-slate-700 flex items-center gap-2">
-                        <FaUser className="text-sm opacity-20" />
+                        <FaUser className="text-[10px] opacity-20" />
                         {file.uploader?.name || 'System'}
                     </span>
-                    <span className="text-sm text-slate-400 font-medium">
+                    <span className="text-[10px] text-slate-400 font-medium">
                         {format(new Date(file.created_at), 'dd.MM.yyyy HH:mm', { locale: de })}
                     </span>
                 </div>
@@ -178,7 +178,7 @@ const Documents = () => {
                         onClick={() => navigate(`/projects/${file.project_id}`)}
                         title={t('projects.actions.view_details') || "Projekt öffnen"}
                     >
-                        <FaExternalLinkAlt className="text-sm" />
+                        <FaExternalLinkAlt className="text-[10px]" />
                     </Button>
                     <Button
                         variant="ghost"
@@ -235,17 +235,19 @@ const Documents = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10">
-            {/* Header Section */}
-            <div className="flex justify-between items-center gap-4">
-                <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">Dokumente</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">Zentrale Verwaltung aller Projektdokumente und Lieferungen</p>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                    <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 text-xs font-bold h-9 px-4 border-slate-200 hover:bg-slate-50 transition-all">
-                        <FaCloudUploadAlt className="text-slate-400" /> List Export
-                    </Button>
+        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <div className="flex flex-col gap-6 h-full overflow-hidden fade-in">
+                {/* Header Section */}
+                <div className="flex justify-between items-center gap-4">
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Dokumente</h1>
+                        <p className="text-slate-500 text-sm hidden sm:block">Zentrale Verwaltung aller Projektdokumente und Lieferungen</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-tight h-9 px-4 border-slate-200 hover:bg-slate-50 transition-all">
+                            <FaCloudUploadAlt className="text-slate-400" /> List Export
+                        </Button>
+                    </div>
                 </div>
 
                 {/* KPI Cards */}

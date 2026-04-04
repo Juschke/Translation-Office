@@ -16,24 +16,17 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ({ className, type, label, tooltip, error, helperText, startIcon, endIcon, onEndIconClick, containerClassName, ...props }, ref) => {
-        const inputId = React.useId()
-        const errorId = React.useId()
-        const isRequired = props.required
-
         return (
             <div className={cn("w-full", containerClassName)}>
                 {label && (
-                    <label htmlFor={inputId} className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
                         {label}
-                        {isRequired && (
-                            <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>
-                        )}
                         {tooltip && (
                             <TooltipProvider delayDuration={200}>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <span className="text-slate-300 hover:text-slate-500 transition cursor-help">
-                                            <FaInfoCircle className="text-2xs" />
+                                            <FaInfoCircle className="text-[10px]" />
                                         </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -51,13 +44,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         </div>
                     )}
                     <input
-                        id={inputId}
                         type={type}
                         className={cn(
-                            "flex h-9 w-full rounded-none bg-white px-3 py-1 text-sm text-brand-text transition-all",
-                            "border border-slate-200 hover:border-brand-primary",
+                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
+                            "border border-brand-border hover:border-brand-primary",
                             "placeholder:text-brand-muted",
-                            "focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary",
+                            "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
                             "disabled:cursor-not-allowed disabled:opacity-50",
                             "file:border-0 file:bg-transparent file:text-sm file:font-medium",
                             error && "border-red-500 focus:border-red-500 focus:ring-red-500/10",
@@ -65,8 +57,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                             endIcon && "pr-9",
                             className
                         )}
-                        aria-required={isRequired ? "true" : undefined}
-                        aria-describedby={helperText ? errorId : undefined}
                         ref={ref}
                         {...props}
                     />
@@ -83,7 +73,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     )}
                 </div>
                 {helperText && (
-                    <p id={errorId} className={cn("mt-1 text-xs", error ? "text-red-500" : "text-slate-500")}>
+                    <p className={cn("mt-1 text-xs", error ? "text-red-500" : "text-slate-500")}>
                         {helperText}
                     </p>
                 )}

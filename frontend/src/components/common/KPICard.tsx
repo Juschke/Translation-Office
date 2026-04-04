@@ -36,7 +36,7 @@ const KPICard: React.FC<KPICardProps> = ({
         >
             <div className="flex justify-between items-start mb-2 sm:mb-3 gap-2">
                 <p className="text-xs sm:text-sm font-medium text-slate-500 line-clamp-2">{label}</p>
-                <div className={`${iconColor} ${iconBg} text-sm sm:text-base shrink-0 mt-0.5 w-8 h-8 rounded-full flex items-center justify-center`} aria-hidden="true">
+                <div className={`${iconColor} ${iconBg} text-sm sm:text-base shrink-0 mt-0.5 w-8 h-8 rounded-full flex items-center justify-center`}>
                     {icon}
                 </div>
             </div>
@@ -45,10 +45,7 @@ const KPICard: React.FC<KPICardProps> = ({
                 <h3 className="text-lg sm:text-2xl font-semibold text-slate-900 tracking-tight truncate">{value}</h3>
                 {trend && (
                     <span className={`text-xs font-medium ${trend.isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
-                        <span aria-label={trend.isPositive ? 'Anstieg' : 'Rückgang'}>
-                            {trend.isPositive ? '↑' : '↓'}
-                        </span>
-                        {' '}{trend.value}
+                        {trend.isPositive ? '↑' : '↓'} {trend.value}
                     </span>
                 )}
             </div>

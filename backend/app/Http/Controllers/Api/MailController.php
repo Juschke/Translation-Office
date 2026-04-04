@@ -160,44 +160,33 @@ class MailController extends Controller
     {
         $validated = $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'required|exists:mails,id',
+            'ids.*' => 'exists:mails,id',
         ]);
 
-        $mails = Mail::whereIn('id', $validated['ids'])->get();
+        $ids = $validated['ids'];
 
-        foreach ($mails as $mail) {
-            if ($mail->folder === 'trash') {
-                $mail->delete();
-            } else {
-                $mail->update(['folder' => 'trash']);
-            }
-        }
+        // Mails already in trash should be permanently deleted (well, soft-deleted from DB in this case)
+        Mail::whereIn('id', $ids)->where('folder', 'trash')->delete();
 
-        return response()->json(['message' => count($validated['ids']) . ' Mails gelöscht']);
+        // Mails not in trash should be moved to trash
+        Mail::whereIn('id', $ids)->where('folder', '!=', 'trash')->update(['folder' => 'trash']);
+
+        return response()->json(['message' => 'Mails deleted successfully']);
     }
 
-    public function archive(Request $request)
+    public function bulkRestore(Request $request)
     {
         $validated = $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'required|exists:mails,id',
+            'ids.*' => 'exists:mails,id',
         ]);
 
-        Mail::whereIn('id', $validated['ids'])->update(['folder' => 'archive']);
+        $ids = $validated['ids'];
 
-        return response()->json(['message' => count($validated['ids']) . ' Mails archiviert']);
-    }
+        // Move items from trash back to inbox
+        Mail::whereIn('id', $ids)->where('folder', 'trash')->update(['folder' => 'inbox']);
 
-    public function restore(Request $request)
-    {
-        $validated = $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'required|exists:mails,id',
-        ]);
-
-        Mail::whereIn('id', $validated['ids'])->update(['folder' => 'inbox']);
-
-        return response()->json(['message' => count($validated['ids']) . ' Mails wiederhergestellt']);
+        return response()->json(['message' => 'Mails restored successfully']);
     }
     public function sync(Request $request)
     {

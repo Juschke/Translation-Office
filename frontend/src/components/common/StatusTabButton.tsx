@@ -25,7 +25,7 @@ const StatusTabButton = ({ active, onClick, icon, label, count }: StatusTabButto
                 <span>{label}</span>
                 {count !== undefined && (
                     <span className={clsx(
-                        'px-1.5 py-0.5 rounded-sm text-2xs font-semibold min-w-[20px] text-center',
+                        'px-1.5 py-0.5 rounded-sm text-[10px] font-semibold min-w-[20px] text-center',
                         active ? 'bg-brand-primary text-white' : 'bg-slate-200 text-slate-600'
                     )}>
                         {count}

@@ -60,7 +60,7 @@ const OpenQuotesTable: React.FC<OpenQuotesTableProps> = ({ quotes }) => {
  {new Date(quote.created_at).toLocaleDateString('de-DE')}
  </span>
  <span className="text-xs text-slate-400">
- {quote.total_price ? `${parseFloat(quote.total_price).toFixed(2)} €` : '-'}
+ {quote.total_price ? `${quote.total_price.toFixed(2)} €` : '-'}
  </span>
  </div>
  </td>

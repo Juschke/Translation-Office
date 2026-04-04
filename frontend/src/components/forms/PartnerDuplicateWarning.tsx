@@ -25,14 +25,14 @@ const PartnerDuplicateWarning = ({ duplicates, ignoreDuplicates, onIgnoreDuplica
                                 <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
                                     {d.company || `${d.first_name} ${d.last_name}`}
                                 </span>
-                                <span className="text-sm text-slate-400 font-medium tracking-wide italic">
+                                <span className="text-[10px] text-slate-400 font-medium tracking-wide italic">
                                     ID: {d.id} • {d.email || d.emails?.[0] || 'Keine E-Mail'} • {d.phone || d.phones?.[0] || 'Kein Telefon'}
                                 </span>
                             </div>
                             <Link
                                 to={`/partners?id=${d.id}`}
                                 target="_blank"
-                                className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded-sm text-sm font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                                className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded-sm text-[10px] font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
                             >
                                 <FaExternalLinkAlt size={10} />
                                 PROFIL ÖFFNEN

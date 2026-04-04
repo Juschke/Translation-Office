@@ -1,20 +1,17 @@
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
-import { FaTimes, FaReply, FaForward, FaTrashAlt, FaPaperclip, FaFileAlt, FaSyncAlt, FaFolderOpen } from 'react-icons/fa';
+import { FaTimes, FaReply, FaForward, FaTrashAlt, FaPaperclip, FaFileAlt } from 'react-icons/fa';
 import { ScrollArea, Separator } from '../ui';
 
 interface MailDetailPanelProps {
     mail: any;
-    folder: string;
     onClose: () => void;
     onReply: (mail: any) => void;
     onForward: (mail: any) => void;
-    onArchive: (id: any) => void;
-    onRestore: (id: any) => void;
     onDelete: (id: any) => void;
 }
 
-const MailDetailPanel = ({ mail, folder, onClose, onReply, onForward, onArchive, onRestore, onDelete }: MailDetailPanelProps) => {
+const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDetailPanelProps) => {
     const { t } = useTranslation();
     if (!mail) return null;
 
@@ -32,42 +29,23 @@ const MailDetailPanel = ({ mail, folder, onClose, onReply, onForward, onArchive,
                     <div className="flex items-center gap-1.5">
                         <button
                             onClick={() => onReply(mail)}
-                            className="h-8 px-3 text-2xs font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-brand-primary active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
+                            className="h-8 px-3 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-brand-primary active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
                         >
                             <FaReply size={10} /> Antworten
                         </button>
                         <button
                             onClick={() => onForward(mail)}
-                            className="h-8 px-3 text-2xs font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-brand-primary active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
+                            className="h-8 px-3 text-[10px] font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-brand-primary active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
                         >
                             <FaForward size={10} /> Weiterleiten
                         </button>
-
-                        <div className="w-[1px] h-4 bg-slate-200 mx-1" />
-
-                        {folder === 'trash' ? (
-                            <button
-                                onClick={() => onRestore(mail.id)}
-                                className="h-8 px-3 text-2xs font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-emerald-600 active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
-                            >
-                                <FaSyncAlt size={10} /> Wiederherstellen
-                            </button>
-                        ) : folder !== 'archive' && (
-                            <button
-                                onClick={() => onArchive(mail.id)}
-                                className="h-8 px-3 text-2xs font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-amber-600 active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
-                                title="Archivieren"
-                            >
-                                <FaFolderOpen size={10} /> Archivieren
-                            </button>
-                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
                     <button
                         onClick={() => onDelete(mail.id)}
                         className="p-2 text-slate-300 hover:text-red-500 transition rounded-sm"
-                        title={folder === 'trash' ? 'Endgültig löschen' : t('actions.delete')}
+                        title={t('actions.delete')}
                     >
                         <FaTrashAlt size={14} />
                     </button>
@@ -98,7 +76,7 @@ const MailDetailPanel = ({ mail, folder, onClose, onReply, onForward, onArchive,
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-1">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm font-bold text-slate-900 truncate">{mail.from}</span>
-                                        <span className="text-2xs text-slate-400 font-medium uppercase tracking-widest hidden sm:inline">
+                                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-widest hidden sm:inline">
                                             VON
                                         </span>
                                     </div>
@@ -107,7 +85,7 @@ const MailDetailPanel = ({ mail, folder, onClose, onReply, onForward, onArchive,
                                     </span>
                                 </div>
                                 <div className="text-[11px] font-medium text-slate-500 flex items-center gap-2">
-                                    <span className="uppercase tracking-widest text-2xs opacity-70">AN</span>
+                                    <span className="uppercase tracking-widest text-[10px] opacity-70">AN</span>
                                     <span className="truncate">
                                         {mail.to_emails?.join(', ') || mail.target_email || 'Empfänger unbekannt'}
                                     </span>
@@ -129,7 +107,7 @@ const MailDetailPanel = ({ mail, folder, onClose, onReply, onForward, onArchive,
                     {/* Attachments */}
                     {mail.attachments && mail.attachments.length > 0 && (
                         <div className="mt-16 pt-10 border-t border-slate-100">
-                            <h4 className="text-2xs font-bold text-slate-900 mb-6 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <h4 className="text-[10px] font-bold text-slate-900 mb-6 uppercase tracking-[0.2em] flex items-center gap-2">
                                 <FaPaperclip className="text-slate-400" /> ANHÄNGE ({mail.attachments.length})
                             </h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -145,7 +123,7 @@ const MailDetailPanel = ({ mail, folder, onClose, onReply, onForward, onArchive,
                                             <div className="text-[11px] font-bold text-slate-700 truncate group-hover:text-slate-900 transition-colors mb-0.5">
                                                 {at.name}
                                             </div>
-                                            <div className="text-2xs text-slate-400 font-bold tracking-widest uppercase">
+                                            <div className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">
                                                 {(at.size / 1024).toFixed(0)} KB
                                             </div>
                                         </div>

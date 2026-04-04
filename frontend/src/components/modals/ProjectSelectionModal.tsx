@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaSearch, FaTimes, FaFolderOpen, FaHashtag } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../../api/services';
@@ -35,7 +36,7 @@ const ProjectSelectionModal: React.FC<ProjectSelectionModalProps> = ({ isOpen, o
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-800">Projekt auswählen</h2>
+                        <h2 className="text-lg font-semibold text-slate-800 tracking-tight">Projekt auswählen</h2>
                         <p className="text-xs text-slate-500 font-medium">Wählen Sie ein Projekt für den Dolmetschereinsatz aus.</p>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><FaTimes /></button>
@@ -84,7 +85,7 @@ const ProjectSelectionModal: React.FC<ProjectSelectionModalProps> = ({ isOpen, o
                                     </div>
                                     <div className="text-right shrink-0">
                                         <div className="text-xs font-bold text-slate-700">{p.customer?.company_name || `${p.customer?.first_name} ${p.customer?.last_name}`}</div>
-                                        <div className="text-sm text-slate-400 font-medium">{p.status}</div>
+                                        <div className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">{p.status}</div>
                                     </div>
                                 </button>
                             ))}

@@ -1,12 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
-import { FaInfoCircle, FaFileInvoiceDollar } from 'react-icons/fa';
+import { FaInfoCircle, FaCalculator } from 'react-icons/fa';
 import ProjectPositionsTable from '../modals/ProjectPositionsTable';
 import type { ExtraServiceRow } from '../modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../modals/ProjectPaymentsTable';
 import ProjectFinancialSidebar from '../modals/ProjectFinancialSidebar';
-import type { ProjectPosition } from '../modals/projectType';
+import type { ProjectPosition } from '../modals/projectTypes';
 
 interface ProjectFinancesTabProps {
     projectData: any;
@@ -16,9 +14,6 @@ interface ProjectFinancesTabProps {
     onDeletePayment?: (id: string) => void;
     isPendingSave: boolean;
     onCreateInvoice?: () => void;
-    onOpenInvoice?: (invoice: any) => void;
-    onCancelInvoice?: (invoice: any) => void;
-    onBadgeChange?: (count: number) => void;
 }
 
 const ProjectFinancesTab = ({
@@ -29,9 +24,6 @@ const ProjectFinancesTab = ({
     onDeletePayment,
     isPendingSave,
     onCreateInvoice,
-    onOpenInvoice,
-    onCancelInvoice,
-    onBadgeChange,
 }: ProjectFinancesTabProps) => {
     const [positions, setPositions] = useState<ProjectPosition[]>(() => {
         if (projectData.positions && Array.isArray(projectData.positions)) {
@@ -39,16 +31,16 @@ const ProjectFinancesTab = ({
                 id: p.id.toString(),
                 description: p.description || '',
                 unit: p.unit || 'Normzeile',
-                quantity: (p.quantity || p.amount || '0.00').toString(),
-                amount: (p.amount || '0.00').toString(),
-                partnerRate: (p.partnerRate || p.partner_rate || '0.00').toString(),
+                quantity: (p.quantity || p.amount || '1').toString(),
+                amount: (p.amount || '1').toString(),
+                partnerRate: (p.partnerRate || p.partner_rate || '0').toString(),
                 partnerMode: p.partnerMode || p.partner_mode || 'unit',
-                partnerTotal: (p.partnerTotal || p.partner_total || '0.00').toString(),
-                customerRate: (p.customerRate || p.customer_rate || '0.00').toString(),
+                partnerTotal: (p.partnerTotal || p.partner_total || '0').toString(),
+                customerRate: (p.customerRate || p.customer_rate || '0').toString(),
                 customerMode: p.customerMode || p.customer_mode || 'unit',
-                customerTotal: (p.customerTotal || p.customer_total || '0.00').toString(),
+                customerTotal: (p.customerTotal || p.customer_total || '0').toString(),
                 marginType: p.marginType || p.margin_type || 'markup',
-                marginPercent: (p.marginPercent || p.margin_percent || '0.00').toString(),
+                marginPercent: (p.marginPercent || p.margin_percent || '0').toString(),
             }));
         }
         return [];
@@ -57,37 +49,14 @@ const ProjectFinancesTab = ({
     const [extras, setExtras] = useState({
         isCertified: projectData.isCertified || !!projectData.is_certified,
         certifiedQty: projectData.certified_count || 1,
-        certifiedDesc: 'Beglaubigung',
-        certifiedPrice: 5,
-        certifiedTax: '19.00',
-        certifiedUnit: 'Stk',
-
         hasApostille: projectData.hasApostille || !!projectData.has_apostille,
         apostilleQty: projectData.apostille_count || 1,
-        apostilleDesc: 'Apostille',
-        apostillePrice: 15,
-        apostilleTax: '19.00',
-        apostilleUnit: 'Stk',
-
         isExpress: projectData.isExpress || !!projectData.is_express,
         expressQty: projectData.express_count || 1,
-        expressDesc: 'Express-Zuschlag',
-        expressPrice: 15,
-        expressTax: '19.00',
-        expressUnit: 'Stk',
-
         classification: projectData.classification === 'ja' || projectData.classification === true,
         classificationQty: projectData.classification_count || 1,
-        classificationDesc: 'FS-Klassifizierung',
-        classificationPrice: 15,
-        classificationTax: '19.00',
-        classificationUnit: 'Stk',
-
         copies: projectData.copies || projectData.copies_count || 0,
         copyPrice: parseFloat(projectData.copyPrice || projectData.copy_price || '5'),
-        copyDesc: 'Zusatzkopien',
-        copyTax: '19.00',
-        copyUnit: 'Stk',
     });
 
     const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
@@ -133,45 +102,24 @@ const ProjectFinancesTab = ({
 
     const financials = useMemo(() => {
         const payments = projectData.payments || [];
+        const extraNet =
+            (extras.isCertified ? 5 * extras.certifiedQty : 0) +
+            (extras.hasApostille ? 15 * extras.apostilleQty : 0) +
+            (extras.isExpress ? 15 * extras.expressQty : 0) +
+            (extras.classification ? 15 * extras.classificationQty : 0) +
+            (extras.copies * extras.copyPrice);
 
-        const extraList = [
-            { enabled: extras.isCertified, qty: extras.certifiedQty, price: extras.certifiedPrice, tax: extras.certifiedTax },
-            { enabled: extras.hasApostille, qty: extras.apostilleQty, price: extras.apostillePrice, tax: extras.apostilleTax },
-            { enabled: extras.isExpress, qty: extras.expressQty, price: extras.expressPrice, tax: extras.expressTax },
-            { enabled: extras.classification, qty: extras.classificationQty, price: extras.classificationPrice, tax: extras.classificationTax },
-            { enabled: extras.copies > 0, qty: extras.copies, price: extras.copyPrice, tax: extras.copyTax },
-        ];
+        const positionsNet = positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.customerTotal) || 0), 0);
+        const partnerTotal = positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.partnerTotal) || 0), 0);
 
-        let extraNet = 0;
-        let extraTax = 0;
-        extraList.forEach(ex => {
-            if (ex.enabled) {
-                const net = parseFloat((ex.qty * ex.price).toFixed(2));
-                extraNet = parseFloat((extraNet + net).toFixed(2));
-                const tax = parseFloat((net * (parseFloat(ex.tax) / 100)).toFixed(2));
-                extraTax = parseFloat((extraTax + tax).toFixed(2));
-            }
-        });
+        const netTotal = positionsNet + extraNet;
+        const taxTotal = netTotal * 0.19;
+        const grossTotal = netTotal + taxTotal;
 
-        let positionsNet = 0;
-        let positionsTax = 0;
-        positions.forEach(pos => {
-            const net = parseFloat((parseFloat(pos.customerTotal) || 0).toFixed(2));
-            positionsNet = parseFloat((positionsNet + net).toFixed(2));
-            const tax = parseFloat((net * (parseFloat(pos.taxRate || '19.00') / 100)).toFixed(2));
-            positionsTax = parseFloat((positionsTax + tax).toFixed(2));
-        });
-
-        const partnerTotal = parseFloat(positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.partnerTotal) || 0), 0).toFixed(2));
-
-        const netTotal = parseFloat((positionsNet + extraNet).toFixed(2));
-        const taxTotal = parseFloat((positionsTax + extraTax).toFixed(2));
-        const grossTotal = parseFloat((netTotal + taxTotal).toFixed(2));
-
-        const margin = parseFloat((netTotal - partnerTotal).toFixed(2));
-        const marginPercent = netTotal > 0 ? parseFloat(((margin / netTotal) * 100).toFixed(2)) : 0;
-        const paid = parseFloat(payments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0).toFixed(2));
-        const open = parseFloat((grossTotal - paid).toFixed(2));
+        const margin = netTotal - partnerTotal;
+        const marginPercent = netTotal > 0 ? (margin / netTotal) * 100 : 0;
+        const paid = payments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
+        const open = grossTotal - paid;
 
         return {
             netTotal,
@@ -189,11 +137,11 @@ const ProjectFinancesTab = ({
 
     const extraRows = useMemo((): ExtraServiceRow[] => {
         const rows: ExtraServiceRow[] = [];
-        if (extras.isCertified) rows.push({ key: 'isCertified', description: extras.certifiedDesc, quantity: extras.certifiedQty, unit: extras.certifiedUnit, unitPrice: extras.certifiedPrice, total: extras.certifiedPrice * extras.certifiedQty, taxRate: extras.certifiedTax });
-        if (extras.hasApostille) rows.push({ key: 'hasApostille', description: extras.apostilleDesc, quantity: extras.apostilleQty, unit: extras.apostilleUnit, unitPrice: extras.apostillePrice, total: extras.apostillePrice * extras.apostilleQty, taxRate: extras.apostilleTax });
-        if (extras.isExpress) rows.push({ key: 'isExpress', description: extras.expressDesc, quantity: extras.expressQty, unit: extras.expressUnit, unitPrice: extras.expressPrice, total: extras.expressPrice * extras.expressQty, taxRate: extras.expressTax });
-        if (extras.classification) rows.push({ key: 'classification', description: extras.classificationDesc, quantity: extras.classificationQty, unit: extras.classificationUnit, unitPrice: extras.classificationPrice, total: extras.classificationPrice * extras.classificationQty, taxRate: extras.classificationTax });
-        if (extras.copies > 0) rows.push({ key: 'copies', description: extras.copyDesc, quantity: extras.copies, unit: extras.copyUnit, unitPrice: extras.copyPrice, total: extras.copies * extras.copyPrice, taxRate: extras.copyTax });
+        if (extras.isCertified) rows.push({ key: 'isCertified', description: 'Beglaubigung', quantity: extras.certifiedQty, unit: 'Stk', unitPrice: 5, total: 5 * extras.certifiedQty });
+        if (extras.hasApostille) rows.push({ key: 'hasApostille', description: 'Apostille', quantity: extras.apostilleQty, unit: 'Stk', unitPrice: 15, total: 15 * extras.apostilleQty });
+        if (extras.isExpress) rows.push({ key: 'isExpress', description: 'Express-Zuschlag', quantity: extras.expressQty, unit: 'Stk', unitPrice: 15, total: 15 * extras.expressQty });
+        if (extras.classification) rows.push({ key: 'classification', description: 'FS-Klassifizierung', quantity: extras.classificationQty, unit: 'Stk', unitPrice: 15, total: 15 * extras.classificationQty });
+        if (extras.copies > 0) rows.push({ key: 'copies', description: 'Zusatzkopien', quantity: extras.copies, unit: 'Stk', unitPrice: extras.copyPrice, total: extras.copies * extras.copyPrice });
         return rows;
     }, [extras]);
 
@@ -208,54 +156,16 @@ const ProjectFinancesTab = ({
         });
     };
 
-    const handleUpdateExtra = (key: string, patch: any) => {
+    const handleUpdateExtraQty = (key: string, qty: number) => {
         setExtras(prev => {
-            const updates: any = {};
-            if (key === 'isCertified') {
-                if (patch.description !== undefined) updates.certifiedDesc = patch.description;
-                if (patch.quantity !== undefined) updates.certifiedQty = patch.quantity;
-                if (patch.unitPrice !== undefined) updates.certifiedPrice = patch.unitPrice;
-                if (patch.taxRate !== undefined) updates.certifiedTax = patch.taxRate;
-                if (patch.unit !== undefined) updates.certifiedUnit = patch.unit;
-            } else if (key === 'hasApostille') {
-                if (patch.description !== undefined) updates.apostilleDesc = patch.description;
-                if (patch.quantity !== undefined) updates.apostilleQty = patch.quantity;
-                if (patch.unitPrice !== undefined) updates.apostillePrice = patch.unitPrice;
-                if (patch.taxRate !== undefined) updates.apostilleTax = patch.taxRate;
-                if (patch.unit !== undefined) updates.apostilleUnit = patch.unit;
-            } else if (key === 'isExpress') {
-                if (patch.description !== undefined) updates.expressDesc = patch.description;
-                if (patch.quantity !== undefined) updates.expressQty = patch.quantity;
-                if (patch.unitPrice !== undefined) updates.expressPrice = patch.unitPrice;
-                if (patch.taxRate !== undefined) updates.expressTax = patch.taxRate;
-                if (patch.unit !== undefined) updates.expressUnit = patch.unit;
-            } else if (key === 'classification') {
-                if (patch.description !== undefined) updates.classificationDesc = patch.description;
-                if (patch.quantity !== undefined) updates.classificationQty = patch.quantity;
-                if (patch.unitPrice !== undefined) updates.classificationPrice = patch.unitPrice;
-                if (patch.taxRate !== undefined) updates.classificationTax = patch.taxRate;
-                if (patch.unit !== undefined) updates.classificationUnit = patch.unit;
-            } else if (key === 'copies') {
-                if (patch.description !== undefined) updates.copyDesc = patch.description;
-                if (patch.quantity !== undefined) updates.copies = patch.quantity;
-                if (patch.unitPrice !== undefined) updates.copyPrice = patch.unitPrice;
-                if (patch.taxRate !== undefined) updates.copyTax = patch.taxRate;
-                if (patch.unit !== undefined) updates.copyUnit = patch.unit;
-            }
-            return { ...prev, ...updates };
+            if (key === 'isCertified') return { ...prev, certifiedQty: qty };
+            if (key === 'hasApostille') return { ...prev, apostilleQty: qty };
+            if (key === 'isExpress') return { ...prev, expressQty: qty };
+            if (key === 'classification') return { ...prev, classificationQty: qty };
+            if (key === 'copies') return { ...prev, copies: qty };
+            return prev;
         });
     };
-
-    useEffect(() => {
-        const extrasCount = [
-            extras.isCertified,
-            extras.hasApostille,
-            extras.isExpress,
-            !!extras.classification,
-            (extras.copies || 0) > 0
-        ].filter(Boolean).length;
-        onBadgeChange?.(positions.length + extrasCount);
-    }, [positions, extras, onBadgeChange]);
 
     const handleSave = () => {
         onSavePositions(
@@ -281,7 +191,7 @@ const ProjectFinancesTab = ({
                 apostille_count: extras.apostilleQty,
                 is_express: extras.isExpress,
                 express_count: extras.expressQty,
-                classification: extras.classification,
+                classification: extras.classification ? 'ja' : 'nein',
                 classification_count: extras.classificationQty,
                 copies_count: extras.copies,
             }
@@ -289,99 +199,77 @@ const ProjectFinancesTab = ({
     };
 
     return (
-        <div className="bg-white rounded-sm border border-slate-200 overflow-hidden animate-fadeIn">
-            <div className="px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-slate-100 bg-slate-50/10 flex items-center justify-between flex-wrap gap-3">
-                <h3 className="font-semibold text-sm text-slate-800 flex items-center gap-2 md:gap-3">
-                    <div className="w-8 h-8 rounded-sm bg-white border border-slate-200 flex items-center justify-center">
-                        <FaFileInvoiceDollar className="text-slate-600 text-sm" />
-                    </div>
-                    Kalkulation
-                </h3>
-            </div>
-
-            <div className="p-4 sm:p-6 md:p-8">
-                <div className="flex flex-col xl:flex-row gap-8">
-                    {/* Left Column: Calculation & Payments */}
-                    <div className="flex-1 space-y-6 flex flex-col">
-                        {/* Positions Table Container */}
-                        <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                            {isLocked && (
-                                <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between gap-2 text-amber-600">
-                                    <div className="flex items-center gap-2">
-                                        <FaInfoCircle size={10} />
-                                        <span className="text-sm font-bold">Kalkulation Gesperrt</span>
-                                        <span className="text-sm font-medium opacity-70">({activeInvoice.invoice_number})</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 ml-auto">
-                                        {onOpenInvoice && (
-                                            <button
-                                                onClick={() => onOpenInvoice(activeInvoice)}
-                                                className="px-2 py-1 text-xs font-bold hover:bg-amber-100 rounded-sm transition-colors"
-                                            >
-                                                Rechnung öffnen
-                                            </button>
-                                        )}
-                                        {onCancelInvoice && (
-                                            <button
-                                                onClick={() => onCancelInvoice(activeInvoice)}
-                                                className="px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50 rounded-sm transition-colors"
-                                            >
-                                                Stornieren
-                                            </button>
-                                        )}
-                                    </div>
+        <div className="flex flex-col gap-6 mb-10 animate-fadeIn h-full">
+            <div className="flex flex-col xl:flex-row gap-8 flex-1">
+                {/* Left Column: Calculation & Payments */}
+                <div className="flex-1 space-y-6 flex flex-col">
+                    {/* Positions Table Container */}
+                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                            <div className="flex items-center gap-3">
+                                <FaCalculator className="text-slate-400 text-sm" />
+                                <div className="flex items-center gap-3">
+                                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Leistungs-Kalkulation</h3>
+                                    {isLocked && (
+                                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 border border-amber-100 rounded text-amber-600">
+                                            <FaInfoCircle size={10} />
+                                            <span className="text-[10px] font-bold uppercase tracking-tight">Gesperrt</span>
+                                            <span className="text-[10px] font-medium opacity-70">({activeInvoice.invoice_number})</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-
-                            <div className="p-4 flex-1">
-                                <ProjectPositionsTable
-                                    positions={positions}
-                                    setPositions={setPositions}
-                                    disabled={isLocked}
-                                    extraRows={extraRows}
-                                    onToggleExtra={handleToggleExtra}
-                                    onUpdateExtra={handleUpdateExtra}
-                                    onSave={isLocked ? undefined : handleSave}
-                                    isSaving={isPendingSave}
-                                />
                             </div>
                         </div>
 
-                        {/* Payments section */}
-                        <div className="bg-white rounded-sm border border-slate-200 shadow-sm p-4 overflow-hidden">
-                            <ProjectPaymentsTable
-                                payments={projectData.payments || []}
-                                onAddPayment={onRecordPayment}
-                                onEditPayment={onEditPayment || (() => { })}
-                                onDeletePayment={onDeletePayment || (() => { })}
-                                disabledAdd={financials.open <= 0.01}
+                        <div className="p-4 flex-1">
+                            <ProjectPositionsTable
+                                positions={positions}
+                                setPositions={setPositions}
+                                disabled={isLocked}
+                                extraRows={extraRows}
+                                onToggleExtra={handleToggleExtra}
+                                onUpdateExtraQty={handleUpdateExtraQty}
+                                onSave={isLocked ? undefined : handleSave}
+                                isSaving={isPendingSave}
                             />
                         </div>
                     </div>
 
-                    {/* Right Column: Financial Summary Sidebar */}
-                    <div className="xl:w-80 flex flex-col gap-6">
-                        <ProjectFinancialSidebar
-                            creationDate={format(new Date(projectData.created_at || projectData.createdAtRaw || Date.now()), 'dd.MM.yyyy', { locale: de })}
-                            projectManager={projectData.creator?.name || projectData.pm || 'System'}
-                            baseNet={financials.baseNet}
-                            calcNet={financials.netTotal}
-                            calcTax={financials.taxTotal}
-                            calcGross={financials.grossTotal}
-                            totalPaid={financials.paid}
-                            remainingBalance={financials.open}
-                            profit={financials.margin}
-                            profitMargin={financials.marginPercent}
-                            isCertified={extras.isCertified}
-                            hasApostille={extras.hasApostille}
-                            isExpress={extras.isExpress}
-                            classification={extras.classification ? 'ja' : 'nein'}
-                            copies={extras.copies}
-                            copyPrice={extras.copyPrice.toString()}
-                            isLocked={isLocked}
-                            onCreateInvoice={onCreateInvoice}
+                    {/* Payments section */}
+                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm p-4 overflow-hidden">
+                        <ProjectPaymentsTable
+                            payments={projectData.payments || []}
+                            onAddPayment={onRecordPayment}
+                            onEditPayment={onEditPayment || (() => { })}
+                            onDeletePayment={onDeletePayment || (() => { })}
+                            disabledAdd={financials.open <= 0.01}
                         />
                     </div>
+                </div>
+
+                {/* Right Column: Financial Summary Sidebar */}
+                <div className="xl:w-80 flex flex-col gap-6">
+                    <ProjectFinancialSidebar
+                        creationDate={projectData.createdAt || new Date(projectData.created_at || Date.now()).toLocaleDateString('de-DE')}
+                        projectManager={projectData.pm || 'System'}
+                        baseNet={financials.baseNet}
+                        extraCosts={financials.extraTotal}
+                        calcNet={financials.netTotal}
+                        calcTax={financials.taxTotal}
+                        calcGross={financials.grossTotal}
+                        totalPaid={financials.paid}
+                        remainingBalance={financials.open}
+                        profit={financials.margin}
+                        profitMargin={financials.marginPercent}
+                        isCertified={extras.isCertified}
+                        hasApostille={extras.hasApostille}
+                        isExpress={extras.isExpress}
+                        classification={extras.classification ? 'ja' : 'nein'}
+                        copies={extras.copies}
+                        copyPrice={extras.copyPrice.toString()}
+                        isLocked={isLocked}
+                        onCreateInvoice={onCreateInvoice}
+                    />
                 </div>
             </div>
         </div>

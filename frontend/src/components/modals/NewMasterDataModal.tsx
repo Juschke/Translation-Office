@@ -22,16 +22,6 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
     const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-    const [currencies, setCurrencies] = useState<any[]>([]);
-
-    useEffect(() => {
-        settingsService.getCurrencies().then(setCurrencies);
-    }, []);
-
-    const currencySymbol = React.useMemo(() => {
-        const def = currencies.find(c => c.is_default);
-        return def ? def.symbol : '€';
-    }, [currencies]);
 
     const availableVariables = [
         { label: 'Auftragsnummer', value: '{offer_number}' },
@@ -219,7 +209,10 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
 
     return (
         <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
-            <div className={clsx("bg-white rounded-sm shadow-sm w-full overflow-hidden animate-fadeInUp", type === 'email_templates' ?"max-w-2xl" :"max-w-lg" )}>
+            <div className={clsx(
+                "bg-white rounded-sm shadow-sm w-full overflow-hidden animate-fadeInUp",
+                type === 'email_templates' ? "max-w-2xl" : "max-w-lg"
+            )}>
                 {/* Header */}
                 <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                     <div className="flex items-center gap-3">
@@ -249,7 +242,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             </button>
                             <button
                                 onClick={() => handleChange('status', 'inactive')}
-                                className={clsx("flex-1 text-xs font-medium rounded-sm flex items-center justify-center gap-2 transition", formData.status === 'inactive' ?"bg-white text-slate-500 shadow-sm" :"text-slate-400")}
+                                className={clsx("flex-1 text-xs font-medium rounded-sm flex items-center justify-center gap-2 transition", formData.status === 'inactive' ? "bg-white text-slate-500 shadow-sm" : "text-slate-400")}
                             >
                                 <FaBan className="text-xs" /> Inaktiv
                             </button>
@@ -264,7 +257,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="name_internal"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name_internal ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name_internal ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Deutsch (Deutschland)"
                                     value={formData.name_internal || ''}
                                     onChange={(e) => handleChange('name_internal', e.target.value)}
@@ -275,7 +268,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="name_native"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name_native ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name_native ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Deutsch"
                                     value={formData.name_native || ''}
                                     onChange={(e) => handleChange('name_native', e.target.value)}
@@ -287,7 +280,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <input
                                         id="iso_code"
                                         type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.iso_code ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
+                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.iso_code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="de-DE"
                                         value={formData.iso_code || ''}
                                         onChange={(e) => handleChange('iso_code', e.target.value)}
@@ -312,27 +305,16 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                     {type === 'doc_types' && (
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-400">Kategorie <span className="text-red-500">*</span></label>
-                                <div className="flex">
-                                    <SearchableSelect
-                                        id="category"
-                                        placeholder="Wählen oder suchen..."
-                                        options={categories}
-                                        value={formData.category || ''}
-                                        onChange={(val) => handleChange('category', val)}
-                                        error={errors.category}
-                                        roundedSide="left"
-                                        className="flex-1"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsAddCategoryModalOpen(true)}
-                                        className="h-9 w-10 flex items-center justify-center bg-brand-primary text-white rounded-r-sm hover:brightness-95 transition shadow-sm"
-                                        title="Kategorien verwalten"
-                                    >
-                                        <FaPlus className="text-xs" />
-                                    </button>
-                                </div>
+                                <SearchableSelect
+                                    id="category"
+                                    label="Kategorie"
+                                    placeholder="Wählen oder neu suchen..."
+                                    options={categories}
+                                    value={formData.category || ''}
+                                    onChange={(val) => handleChange('category', val)}
+                                    onAddNew={() => setIsAddCategoryModalOpen(true)}
+                                    error={errors.category}
+                                />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-2">
                                 <div className="space-y-1.5 col-span-1">
@@ -351,7 +333,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <input
                                         id="name"
                                         type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
+                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="z.B. Marketing Broschüre"
                                         value={formData.name || ''}
                                         onChange={(e) => handleChange('name', e.target.value)}
@@ -370,7 +352,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                     <input
                                         id="name"
                                         type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
+                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                         placeholder="z.B. Lektorat Premium"
                                         value={formData.name || ''}
                                         onChange={(e) => handleChange('name', e.target.value)}
@@ -403,48 +385,17 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                         <option value="Pauschal">Pauschal</option>
                                     </select>
                                 </div>
-                                <div className="space-y-1.5 flex-1">
-                                    <label className="block text-xs font-medium text-slate-400">Basispreis ({currencySymbol}) <span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <input
-                                            id="base_price"
-                                            type="text"
-                                            className={clsx("w-full h-11 pl-3 pr-8 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.base_price ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
-                                            placeholder="0.12"
-                                            value={formData.base_price || ''}
-                                            onChange={(e) => handleChange('base_price', e.target.value)}
-                                        />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 pointer-events-none">
-                                            {currencySymbol}
-                                        </div>
-                                    </div>
-                                </div>
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-medium text-slate-400 font-bold">Extra-Leistung</label>
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleChange('is_extra', !formData.is_extra)}
-                                            className={clsx("w-10 h-5 rounded-full relative transition-colors duration-200", formData.is_extra ?"bg-emerald-500" :"bg-slate-200" )}
-                                        >
-                                            <div className={clsx("absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm", formData.is_extra ?"left-6" :"left-1" )} />
-                                        </button>
-                                        <span className={clsx("text-xs font-bold", formData.is_extra ?"text-emerald-600" :"text-slate-400")}>
-                                            {formData.is_extra ? 'JA' : 'NEIN'}
-                                        </span>
-                                    </div>
+                                    <label className="block text-xs font-medium text-slate-400">Basispreis (€) <span className="text-red-500">*</span></label>
+                                    <input
+                                        id="base_price"
+                                        type="text"
+                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.base_price ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                        placeholder="0.12"
+                                        value={formData.base_price || ''}
+                                        onChange={(e) => handleChange('base_price', e.target.value)}
+                                    />
                                 </div>
-                            </div>
-
-                            <div className="space-y-1.5 mt-4">
-                                <label className="block text-xs font-medium text-slate-400">Kurzbeschreibung (Tooltip)</label>
-                                <textarea
-                                    className="w-full min-h-[60px] p-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white"
-                                    placeholder="Wird als Tooltip in der Projektmaske angezeigt..."
-                                    value={formData.description || ''}
-                                    onChange={(e) => handleChange('description', e.target.value)}
-                                />
-                                <p className="text-sm text-slate-400 italic">Erscheint als Schnell-Option in der Projektmaske, wenn "Extra-Leistung" aktiviert ist.</p>
                             </div>
                         </>
                     )}
@@ -454,7 +405,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                         <>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
-                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")} placeholder="z.B. Recht & Verträge" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Recht & Verträge" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Beschreibung</label>
@@ -469,11 +420,11 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5 col-span-2">
                                     <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
-                                    <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")} placeholder="z.B. Normseite" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+                                    <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Normseite" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Abkürzung</label>
-                                    <input type="text" maxLength={10} className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white font-mono" placeholder="z.B. NS" value={formData.abbreviation || ''} onChange={(e) => handleChange('abbreviation', e.target.value)} />
+                                    <input type="text" maxLength={10} className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white font-mono uppercase tracking-tighter" placeholder="z.B. NS" value={formData.abbreviation || ''} onChange={(e) => handleChange('abbreviation', e.target.value)} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Einheitstyp</label>
@@ -501,22 +452,22 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Code (ISO) <span className="text-red-500">*</span></label>
-                                    <input id="code" type="text" maxLength={3} className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.code ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")} placeholder="EUR" value={formData.code || ''} onChange={(e) => handleChange('code', e.target.value.toUpperCase())} />
+                                    <input id="code" type="text" maxLength={3} className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all uppercase", errors.code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="EUR" value={formData.code || ''} onChange={(e) => handleChange('code', e.target.value.toUpperCase())} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Symbol <span className="text-red-500">*</span></label>
-                                    <input id="symbol" type="text" maxLength={5} className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.symbol ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")} placeholder="€" value={formData.symbol || ''} onChange={(e) => handleChange('symbol', e.target.value)} />
+                                    <input id="symbol" type="text" maxLength={5} className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.symbol ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="€" value={formData.symbol || ''} onChange={(e) => handleChange('symbol', e.target.value)} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-slate-400">Standard</label>
-                                    <button type="button" onClick={() => handleChange('is_default', !formData.is_default)} className={clsx("w-full h-11 px-3 border rounded-sm text-xs font-medium transition-all flex items-center justify-center gap-2", formData.is_default ?"bg-emerald-50 border-emerald-300 text-emerald-700" :"border-slate-300 text-slate-400 bg-white")}>
+                                    <button type="button" onClick={() => handleChange('is_default', !formData.is_default)} className={clsx("w-full h-11 px-3 border rounded-sm text-xs font-medium transition-all flex items-center justify-center gap-2", formData.is_default ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "border-slate-300 text-slate-400 bg-white")}>
                                         {formData.is_default ? <><FaCheck className="text-xs" /> Standard</> : 'Nein'}
                                     </button>
                                 </div>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Bezeichnung <span className="text-red-500">*</span></label>
-                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")} placeholder="z.B. Euro" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. Euro" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
                             </div>
                         </>
                     )}
@@ -529,7 +480,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="name"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="z.B. Angebot versenden"
                                     value={formData.name || ''}
                                     onChange={(e) => handleChange('name', e.target.value)}
@@ -540,7 +491,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 <input
                                     id="subject"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.subject ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
+                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.subject ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                     placeholder="Ihre Anfrage bei Translation Office"
                                     value={formData.subject || ''}
                                     onChange={(e) => handleChange('subject', e.target.value)}
@@ -578,7 +529,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                         <textarea
                                             id="body"
                                             ref={textareaRef}
-                                            className={clsx("w-full h-32 px-3 py-2 border rounded-sm outline-none focus:border-slate-900 text-sm bg-white transition-all", errors.body ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")}
+                                            className={clsx("w-full h-32 px-3 py-2 border rounded-sm outline-none focus:border-slate-900 text-sm bg-white transition-all", errors.body ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
                                             placeholder="Hallo {contact_person}, anbei erhalten Sie..."
                                             value={formData.body || ''}
                                             onChange={(e) => handleChange('body', e.target.value)}
@@ -594,19 +545,19 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                         <div className="space-y-4">
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Key (Interner Code) <span className="text-red-500">*</span></label>
-                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all font-mono", errors.name ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")} placeholder="z.B. in_progress" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
-                                <p className="text-sm text-slate-400">Dienet der internen Identifikation (z.B. f_bearbeitung). Keine Leerstellen.</p>
+                                <input id="name" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all font-mono", errors.name ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. in_progress" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} />
+                                <p className="text-[10px] text-slate-400">Dienet der internen Identifikation (z.B. f_bearbeitung). Keine Leerstellen.</p>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Anzeigename <span className="text-red-500">*</span></label>
-                                <input id="label" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.label ?"border-red-500 bg-red-50" :"border-slate-300 bg-white")} placeholder="z.B. In Bearbeitung" value={formData.label || ''} onChange={(e) => handleChange('label', e.target.value)} />
+                                <input id="label" type="text" className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.label ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")} placeholder="z.B. In Bearbeitung" value={formData.label || ''} onChange={(e) => handleChange('label', e.target.value)} />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="block text-xs font-medium text-slate-400">Stil (Tailwind Klassen)</label>
                                 <input type="text" className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white" placeholder="bg-blue-50 text-blue-700 border-blue-200" value={formData.style || ''} onChange={(e) => handleChange('style', e.target.value)} />
                                 <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-sm text-slate-400">Vorschau:</span>
-                                    <span className={clsx('px-2.5 py-0.5 rounded-sm text-xs font-semibold border ', formData.style || 'bg-slate-50 text-slate-400 border-slate-200')}>
+                                    <span className="text-[10px] text-slate-400">Vorschau:</span>
+                                    <span className={clsx('px-2.5 py-0.5 rounded-sm text-xs font-semibold border tracking-tight', formData.style || 'bg-slate-50 text-slate-400 border-slate-200')}>
                                         {formData.label || 'Vorschau'}
                                     </span>
                                 </div>
@@ -641,73 +592,33 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                 <div className="fixed inset-0 bg-slate-900/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
                     <div className="bg-white rounded-sm shadow-sm w-full max-w-sm overflow-hidden animate-scaleIn">
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                            <h4 className="font-medium text-slate-800 text-xs text-brand-primary flex items-center gap-2">
-                                <FaTag /> Kategorien verwalten
-                            </h4>
+                            <h4 className="font-medium text-slate-800 text-xs">Neue Kategorie</h4>
                             <button onClick={() => setIsAddCategoryModalOpen(false)} className="text-slate-400 hover:text-slate-600"><FaTimes /></button>
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-400">Neue Kategorie hinzufügen</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        autoFocus
-                                        type="text"
-                                        className="flex-1 h-9 px-3 border border-slate-200 rounded-sm outline-none focus:border-slate-900 text-sm bg-slate-50 focus:bg-white transition-all shadow-sm"
-                                        placeholder="z.B. Marketing"
-                                        value={newCategoryName}
-                                        onChange={(e) => setNewCategoryName(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAddNewCategory()}
-                                    />
-                                    <button
-                                        onClick={handleAddNewCategory}
-                                        className="h-9 px-3 bg-brand-primary text-white rounded-sm text-xs font-medium hover:brightness-95 flex items-center gap-2 shadow-sm"
-                                    >
-                                        <FaPlus />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="pt-2">
-                                <label className="block text-xs font-medium text-slate-400 mb-2">Bestehende Kategorien</label>
-                                <div className="max-h-48 overflow-y-auto pr-1 flex flex-wrap gap-2">
-                                    {categories.length > 0 ? (
-                                        categories.map((cat) => (
-                                            <div
-                                                key={cat.value}
-                                                className={clsx("group flex items-center gap-2 px-2.5 py-1 rounded-sm border text-xs font-medium transition cursor-pointer", formData.category === cat.value ?"bg-brand-primary/10 border-brand-primary text-brand-primary" :"bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300" )}
-                                                onClick={() => {
-                                                    handleChange('category', cat.value);
-                                                    setIsAddCategoryModalOpen(false);
-                                                }}
-                                            >
-                                                {cat.label}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setCategories(prev => prev.filter(c => c.value !== cat.value));
-                                                        if (formData.category === cat.value) handleChange('category', '');
-                                                    }}
-                                                    className="text-sm text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
-                                                >
-                                                    <FaTimes />
-                                                </button>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="w-full py-4 text-center border border-dashed border-slate-200 rounded-sm italic text-slate-400 text-xs">
-                                            Keine Kategorien vorhanden
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                        <div className="p-6">
+                            <label className="block text-xs font-medium text-slate-400 mb-2">Name der Kategorie</label>
+                            <input
+                                autoFocus
+                                type="text"
+                                className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm"
+                                placeholder="z.B. Medizinische Dokumente"
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddNewCategory()}
+                            />
                         </div>
-                        <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end">
+                        <div className="bg-slate-50 px-6 py-4 flex justify-end gap-2">
                             <button
                                 onClick={() => setIsAddCategoryModalOpen(false)}
-                                className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 transition"
+                                className="px-4 py-2 text-xs font-medium text-slate-500"
                             >
-                                Schließen
+                                Abbrechen
+                            </button>
+                            <button
+                                onClick={handleAddNewCategory}
+                                className="px-4 py-2 bg-slate-900 text-white rounded-sm text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaPlus className="text-xs" /> Hinzufügen
                             </button>
                         </div>
                     </div>

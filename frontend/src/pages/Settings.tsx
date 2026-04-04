@@ -40,57 +40,35 @@ const Settings: React.FC = () => {
     const meta = TAB_META[activeTab] ?? TAB_META['company'];
 
     return (
-        <div className="max-w-[1600px] mx-auto fade-in p-4 pb-20">
-            <div className="flex flex-col lg:flex-row gap-8">
-                {/* Sidebar Navigation */}
-                <aside className="w-full lg:w-64 shrink-0">
-                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden sticky top-20">
-                        <nav className="flex flex-col">
-                            {Object.entries(TAB_META).map(([id, item]) => {
-                                const Icon = item.icon;
-                                const isMasterData = id === 'master_data';
-                                const isActive = activeTab === id;
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <div className="max-w-7xl mx-auto fade-in pb-20">
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Sidebar Navigation */}
+                    <aside className="w-full lg:w-64 shrink-0">
+                        <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden sticky top-20">
+                            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Einstellungen</h2>
+                            </div>
+                            <nav className="flex flex-col">
+                                {Object.entries(TAB_META).map(([id, item]) => {
+                                    const Icon = item.icon;
+                                    const isMasterData = id === 'master_data';
+                                    const isActive = activeTab === id;
 
-                                return (
-                                    <React.Fragment key={id}>
-                                        <Link
-                                            to={`/settings?tab=${id}`}
-                                            className={clsx(
-                                                "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-l-2",
-                                                isActive
-                                                    ? "bg-brand-primary/5 text-brand-primary border-brand-primary"
-                                                    : "text-slate-600 hover:bg-slate-50 border-transparent"
-                                            )}
-                                        >
-                                            <Icon className={clsx("w-4 h-4", isActive ? "text-brand-primary" : "text-slate-400")} />
-                                            <span>{item.label}</span>
-                                        </Link>
-
-                                        {/* Sub-items for Master Data */}
-                                        {isMasterData && isActive && (
-                                            <div className="bg-slate-50/50 py-1">
-                                                {MASTER_DATA_SUBTABS.map(sub => (
-                                                    <Link
-                                                        key={sub.id}
-                                                        to={`/settings?tab=master_data&sub=${sub.id}`}
-                                                        className={clsx(
-                                                            "flex items-center gap-3 pl-10 pr-4 py-2 text-[13px] font-medium transition-colors border-l-2",
-                                                            searchParams.get('sub') === sub.id || (!searchParams.get('sub') && sub.id === 'languages')
-                                                                ? "text-brand-primary border-brand-primary bg-brand-primary/5"
-                                                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100 border-transparent"
-                                                        )}
-                                                    >
-                                                        <span>{sub.label}</span>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            })}
-                        </nav>
-                    </div>
-                </aside>
+                                    return (
+                                        <React.Fragment key={id}>
+                                            <Link
+                                                to={`/settings?tab=${id}`}
+                                                className={clsx(
+                                                    "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-l-2",
+                                                    isActive
+                                                        ? "bg-brand-primary/5 text-brand-primary border-brand-primary"
+                                                        : "text-slate-600 hover:bg-slate-50 border-transparent"
+                                                )}
+                                            >
+                                                <Icon className={clsx("w-4 h-4", isActive ? "text-brand-primary" : "text-slate-400")} />
+                                                <span>{item.label}</span>
+                                            </Link>
 
                                             {/* Sub-items for Master Data */}
                                             {isMasterData && isActive && (
@@ -133,15 +111,16 @@ const Settings: React.FC = () => {
                             </div>
                         </div>
 
-                    <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
-                        {activeTab === 'company' && <CompanySettingsTab />}
-                        {activeTab === 'objects' && <NumberCircleSettingsTab />}
-                        {activeTab === 'invoice' && <InvoiceSettingsTab />}
-                        {activeTab === 'master_data' && <MasterDataTab />}
-                        {activeTab === 'notifications' && <NotificationSettingsTab />}
-                        {activeTab === 'audit' && <AuditLogsTab />}
-                    </div>
-                </main>
+                        <div className="bg-white rounded-sm border border-slate-200 shadow-sm min-h-[500px]">
+                            {activeTab === 'company' && <CompanySettingsTab />}
+                            {activeTab === 'objects' && <NumberCircleSettingsTab />}
+                            {activeTab === 'invoice' && <InvoiceSettingsTab />}
+                            {activeTab === 'master_data' && <MasterDataTab />}
+                            {activeTab === 'notifications' && <NotificationSettingsTab />}
+                            {activeTab === 'audit' && <AuditLogsTab />}
+                        </div>
+                    </main>
+                </div>
             </div>
         </div>
     );

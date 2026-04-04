@@ -211,16 +211,15 @@ class MasterDataSeeder extends Seeder
 
         // 3. Standard Service Packages
         $services = [
-            ['service_code' => 'ÜB-01', 'name' => 'Übersetzung (Standard)', 'unit' => 'word', 'base_price' => 0.12, 'status' => 'active', 'is_extra' => false],
-            ['service_code' => 'ÜB-02', 'name' => 'Fachübersetzung (Jura / Medizin)', 'unit' => 'word', 'base_price' => 0.18, 'status' => 'active', 'is_extra' => false],
-            ['service_code' => 'BÜ-01', 'name' => 'Beglaubigte Übersetzung', 'unit' => 'piece', 'base_price' => 5.00, 'status' => 'active', 'is_extra' => true, 'description' => 'Beglaubigte Übersetzung mit Stempel und Unterschrift.'],
-            ['service_code' => 'EX-01', 'name' => 'Express', 'unit' => 'piece', 'base_price' => 15.00, 'status' => 'active', 'is_extra' => true, 'description' => 'Eilzuschlag für schnelle Bearbeitung.'],
-            ['service_code' => 'AP-01', 'name' => 'Apostille', 'unit' => 'piece', 'base_price' => 25.00, 'status' => 'active', 'is_extra' => true, 'description' => 'Apostille-Beglaubigung für internationalen Gebrauch.'],
-            ['service_code' => 'KL-01', 'name' => 'Klassifizierung', 'unit' => 'piece', 'base_price' => 15.00, 'status' => 'active', 'is_extra' => true, 'description' => 'Führerschein-Klassifizierung.'],
-            ['service_code' => 'DO-01', 'name' => 'Dolmetschen (Simultan)', 'unit' => 'hour', 'base_price' => 120.00, 'status' => 'active', 'is_extra' => false],
-            ['service_code' => 'DO-02', 'name' => 'Dolmetschen (Konsekutiv)', 'unit' => 'hour', 'base_price' => 95.00, 'status' => 'active', 'is_extra' => false],
-            ['service_code' => 'LE-01', 'name' => 'Lektorat / Korrekturlesen', 'unit' => 'word', 'base_price' => 0.05, 'status' => 'active', 'is_extra' => false],
-            ['service_code' => 'TR-01', 'name' => 'Transkription (Audio/Video)', 'unit' => 'minute', 'base_price' => 2.50, 'status' => 'active', 'is_extra' => false],
+            ['service_code' => 'ÜB-01', 'name' => 'Übersetzung (Standard)', 'unit' => 'word', 'base_price' => 0.12, 'status' => 'active'],
+            ['service_code' => 'ÜB-02', 'name' => 'Fachübersetzung (Jura / Medizin)', 'unit' => 'word', 'base_price' => 0.18, 'status' => 'active'],
+            ['service_code' => 'BÜ-01', 'name' => 'Beglaubigte Übersetzung', 'unit' => 'piece', 'base_price' => 15.00, 'status' => 'active'],
+            ['service_code' => 'BÜ-02', 'name' => 'Beglaubigungspauschale', 'unit' => 'piece', 'base_price' => 10.00, 'status' => 'active'],
+            ['service_code' => 'AP-01', 'name' => 'Apostille-Service', 'unit' => 'piece', 'base_price' => 25.00, 'status' => 'active'],
+            ['service_code' => 'DO-01', 'name' => 'Dolmetschen (Simultan)', 'unit' => 'hour', 'base_price' => 120.00, 'status' => 'active'],
+            ['service_code' => 'DO-02', 'name' => 'Dolmetschen (Konsekutiv)', 'unit' => 'hour', 'base_price' => 95.00, 'status' => 'active'],
+            ['service_code' => 'LE-01', 'name' => 'Lektorat / Korrekturlesen', 'unit' => 'word', 'base_price' => 0.05, 'status' => 'active'],
+            ['service_code' => 'TR-01', 'name' => 'Transkription (Audio/Video)', 'unit' => 'minute', 'base_price' => 2.50, 'status' => 'active'],
         ];
 
         foreach ($services as $service) {

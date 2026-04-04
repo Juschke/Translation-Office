@@ -6,15 +6,14 @@ import {
     FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaBriefcase,
     FaFileContract, FaChartLine
 } from 'react-icons/fa';
-import DetailSkeleton from '../components/common/DetailSkeleton';
-import { useState, useEffect } from 'react';
+import TableSkeleton from '../components/common/TableSkeleton';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Button } from '../components/ui/button';
-import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
-import clsx from 'clsx';
+
 
 const CustomerDetail = () => {
     const { t } = useTranslation();
@@ -30,15 +29,6 @@ const CustomerDetail = () => {
         queryFn: () => customerService.getById(parseInt(id!)),
         enabled: !!id
     });
-
-    const { updateTab } = useWorkspaceTabs();
-
-    useEffect(() => {
-        if (customer) {
-            const customerName = customer.company_name || `${customer.first_name} ${customer.last_name}`;
-            updateTab(`customer_detail_${id}`, { label: `Kunde: ${customerName}` });
-        }
-    }, [customer, id, updateTab]);
 
     const updateMutation = useMutation({
         mutationFn: (data: any) => customerService.update(parseInt(id!), data),
@@ -56,7 +46,7 @@ const CustomerDetail = () => {
         }
     });
 
-    if (isLoading) return <DetailSkeleton />;
+    if (isLoading) return <TableSkeleton rows={5} columns={2} />;
     if (!customer) return <div className="p-10 text-center text-slate-500">Kunde nicht gefunden</div>;
 
     const name = customer.company_name || `${customer.first_name} ${customer.last_name}`;
@@ -138,59 +128,12 @@ const CustomerDetail = () => {
                     {/* Main Column */}
                     <div className="lg:col-span-2 space-y-6">
 
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
-
-                            {/* Section: Kontakt */}
-                            <div className="space-y-4">
-                                <h4 className="text-xs font-medium text-slate-400 border-b border-slate-100 pb-2 mb-4">Kontaktinformationen</h4>
-
-                                <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm break-words">
-                                    <span className="text-slate-500 font-medium">Kunden-ID</span>
-                                    <span className="text-slate-800 font-semibold">{customer.display_id}</span>
-
-                                    {customer.type !== 'private' && (
-                                        <>
-                                            <span className="text-slate-500 font-medium">{customer.type === 'authority' ? t('customers.type_authority_label') : t('customers.type_company_label')}</span>
-                                            <span className="text-slate-800">{customer.company_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-                                        </>
-                                    )}
-
-                                    <span className="text-slate-500 font-medium">Anrede</span>
-                                    <span className="text-slate-800">{customer.salutation || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Vorname</span>
-                                    <span className="text-slate-800">{customer.first_name || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Nachname</span>
-                                    <span className="text-slate-800 font-medium">{customer.last_name || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
-
-                                    <span className="text-slate-500 font-medium">Telefon</span>
-                                    <span className="text-slate-800">{customer.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-
-                                    {customer.additional_phones?.length > 0 && (
-                                        <>
-                                            <span className="text-slate-500 font-medium">Weitere Tel.</span>
-                                            <span className="text-slate-800">{customer.additional_phones.join(', ')}</span>
-                                        </>
-                                    )}
-
-                                    <span className="text-slate-500 font-medium">E-Mail</span>
-                                    <span className="text-slate-700 hover:underline cursor-pointer">{customer.email || <span className="text-slate-400 italic no-underline cursor-default">Keine Angabe</span>}</span>
-
-                                    {customer.additional_emails?.length > 0 && (
-                                        <>
-                                            <span className="text-slate-500 font-medium">Weitere E-Mails</span>
-                                            <span className="text-slate-800">{customer.additional_emails.join(', ')}</span>
-                                        </>
-                                    )}
-
-                                    {customer.type !== 'private' && (
-                                        <>
-                                            <span className="text-slate-500 font-medium">Rechtsform</span>
-                                            <span className="text-slate-800">{customer.legal_form || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
-                                        </>
-                                    )}
-                                </div>
+                        {/* Stammdaten Card */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <h3 className="font-medium text-slate-700 flex items-center gap-2">
+                                    <FaFileContract className="text-slate-600" /> Stammdatenblatt
+                                </h3>
                             </div>
 
                             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
@@ -313,24 +256,19 @@ const CustomerDetail = () => {
                     </div>
                 </div>
 
-            <NewCustomerModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                onSubmit={(data) => updateMutation.mutate(data)}
-                initialData={customer}
-            />
+                <NewCustomerModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSubmit={(data) => updateMutation.mutate(data)} initialData={customer} />
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={() => deleteMutation.mutate(parseInt(id!))}
+                    title="Kunde löschen"
+                    message={`Möchten Sie den Kunden "${name}" wirklich löschen?`}
+                    isLoading={deleteMutation.isPending}
+                />
 
-            <ConfirmModal
-                isOpen={isConfirmOpen}
-                onClose={() => setIsConfirmOpen(false)}
-                onConfirm={() => deleteMutation.mutate(parseInt(id!))}
-                title="Kunde löschen"
-                message={`Möchten Sie den Kunden "${name}" wirklich löschen?`}
-                isLoading={deleteMutation.isPending}
-            />
-
-            {/* Spacer for bottom padding */}
-            <div className="h-32" />
+                {/* Spacer for bottom padding */}
+                <div className="h-32" />
+            </div>
         </div>
     );
 };
@@ -345,12 +283,13 @@ const RecentProjectsList = ({ customerId }: { customerId: string }) => {
     if (isLoading) return <div className="p-6 text-center text-slate-400 text-xs">Lade Projekte...</div>;
     if (!projects || projects.length === 0) return <div className="p-6 text-center text-slate-400 text-xs italic">Keine Projekte vorhanden.</div>;
 
+    // Use projects.data if paginated, or projects if array
     const list = Array.isArray(projects) ? projects : (projects.data || []);
 
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-                <thead className="bg-transparent text-slate-500 text-xs font-medium">
+                <thead className="bg-transparent text-slate-500 text-xs font-medium tracking-wider">
                     <tr>
                         <th className="px-6 py-3 border-b border-slate-100">Projekt</th>
                         <th className="px-6 py-3 border-b border-slate-100">Status</th>

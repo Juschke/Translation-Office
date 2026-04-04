@@ -18,8 +18,6 @@ class TenantInfolist
                     ->placeholder('-'),
                 TextEntry::make('legal_form')
                     ->placeholder('-'),
-                TextEntry::make('managing_director')
-                    ->placeholder('-'),
                 TextEntry::make('address_street')
                     ->placeholder('-'),
                 TextEntry::make('address_house_no')
@@ -55,26 +53,6 @@ class TenantInfolist
                     ->placeholder('-')
                     ->columnSpanFull(),
                 TextEntry::make('subscription_plan'),
-                TextEntry::make('subscription.plan')
-                    ->label('Aktuelles Abo')
-                    ->badge()
-                    ->placeholder('-'),
-                TextEntry::make('subscription.status')
-                    ->label('Abo-Status')
-                    ->badge()
-                    ->placeholder('-'),
-                TextEntry::make('users_count')
-                    ->label('Benutzer')
-                    ->state(fn ($record) => $record->users_count)
-                    ->badge(),
-                TextEntry::make('projects_count')
-                    ->label('Projekte')
-                    ->state(fn ($record) => $record->projects_count)
-                    ->badge(),
-                TextEntry::make('tenant_invoices_count')
-                    ->label('Rechnungen')
-                    ->state(fn ($record) => $record->tenant_invoices_count)
-                    ->badge(),
                 TextEntry::make('license_key')
                     ->placeholder('-'),
                 TextEntry::make('created_at')
@@ -87,9 +65,6 @@ class TenantInfolist
                     ->placeholder('-'),
                 TextEntry::make('email')
                     ->label('Email address')
-                    ->placeholder('-'),
-                TextEntry::make('website')
-                    ->url(fn ($state) => $state)
                     ->placeholder('-'),
                 TextEntry::make('opening_hours')
                     ->placeholder('-'),

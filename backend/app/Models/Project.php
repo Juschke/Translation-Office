@@ -44,8 +44,6 @@ class Project extends Model
         'line_count',
         'price_total',
         'partner_cost_net',
-        'partner_paid',
-        'partner_paid_at',
         'down_payment',
         'down_payment_date',
         'down_payment_note',
@@ -61,7 +59,6 @@ class Project extends Model
         'appointment_location',
         'customer_reference',
         'customer_date',
-        'extra_services',
     ];
 
     protected $casts = [
@@ -73,13 +70,10 @@ class Project extends Model
         'classification' => 'boolean',
         'price_total' => 'decimal:2',
         'partner_cost_net' => 'decimal:2',
-        'partner_paid' => 'boolean',
-        'partner_paid_at' => 'datetime',
         'down_payment' => 'decimal:2',
         'copy_price' => 'decimal:4',
         'down_payment_date' => 'datetime',
         'customer_date' => 'datetime',
-        'extra_services' => 'array',
     ];
 
     public function documentType()

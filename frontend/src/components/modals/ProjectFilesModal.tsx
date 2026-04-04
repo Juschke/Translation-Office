@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     FaTimes, FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel,
     FaFileImage, FaFileArchive, FaDownload, FaInbox, FaCheckCircle
@@ -66,7 +67,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                             <FaFileAlt size={20} />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-slate-800">
+                            <h3 className="text-lg font-bold text-slate-800 tracking-tight">
                                 Projekt-Dateien
                             </h3>
                             <p className="text-xs text-slate-500 font-medium">
@@ -96,7 +97,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2 px-1">
                                         <FaInbox className="text-brand-primary text-xs" />
-                                        <h4 className="text-[11px] font-bold text-slate-400">Quell-Dokumente (Eingang)</h4>
+                                        <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Quell-Dokumente (Eingang)</h4>
                                         <div className="h-[1px] flex-1 bg-slate-100" />
                                     </div>
                                     <div className="grid gap-2">
@@ -108,7 +109,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                                                         <span className="text-sm font-bold text-slate-700 truncate leading-snug group-hover:text-brand-primary transition-colors">
                                                             {file.original_name}
                                                         </span>
-                                                        <span className="text-sm text-slate-400 font-mono">
+                                                        <span className="text-[10px] text-slate-400 font-mono">
                                                             VER {file.version} • {formatFileSize(file.file_size || 0)} • {format(new Date(file.created_at), 'dd.MM.yy', { locale: de })}
                                                         </span>
                                                     </div>
@@ -131,7 +132,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2 px-1">
                                         <FaCheckCircle className="text-emerald-500 text-xs" />
-                                        <h4 className="text-[11px] font-bold text-slate-400">Ziel-Dokumente (Ausspielung)</h4>
+                                        <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Ziel-Dokumente (Ausspielung)</h4>
                                         <div className="h-[1px] flex-1 bg-slate-100" />
                                     </div>
                                     <div className="grid gap-2">
@@ -143,7 +144,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                                                         <span className="text-sm font-bold text-slate-700 truncate leading-snug group-hover:text-emerald-600 transition-colors">
                                                             {file.original_name}
                                                         </span>
-                                                        <span className="text-sm text-slate-400 font-mono">
+                                                        <span className="text-[10px] text-slate-400 font-mono">
                                                             VER {file.version} • {formatFileSize(file.file_size || 0)} • {format(new Date(file.created_at), 'dd.MM.yy', { locale: de })}
                                                         </span>
                                                     </div>
@@ -168,7 +169,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({ isOpen, onClose, 
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 transition-colors"
+                        className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-800 transition-colors"
                     >
                         Schließen
                     </button>

@@ -5,10 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\InvoiceResource\Pages;
 use App\Models\Invoice;
 use BackedEnum, UnitEnum;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -135,12 +131,12 @@ class InvoiceResource extends Resource
                     ->label('Overdue Only'),
             ])
             ->actions([
-                ViewAction::make(),
-                EditAction::make(),
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

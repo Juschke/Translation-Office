@@ -26,12 +26,8 @@ export const mailService = {
         const response = await api.post('/mails/bulk-delete', { ids });
         return response.data;
     },
-    archiveMails: async (ids: number[]) => {
-        const response = await api.post('/mails/archive', { ids });
-        return response.data;
-    },
     restoreMails: async (ids: number[]) => {
-        const response = await api.post('/mails/restore', { ids });
+        const response = await api.post('/mails/bulk-restore', { ids });
         return response.data;
     },
     sync: async () => {

@@ -11,16 +11,9 @@ class Service extends Model
     protected $fillable = [
         'tenant_id',
         'name',
-        'description',
         'service_code',
         'unit',
         'base_price',
         'status',
-        'is_extra',
-    ];
-
-    protected $casts = [
-        'is_extra' => 'boolean',
-        'base_price' => 'decimal:4',
     ];
 }

@@ -48,7 +48,7 @@
 
     <style>
         @page {
-            margin: 10mm 15mm 15mm 15mm;
+            margin: 15mm 20mm 28mm 20mm;
         }
 
         body {
@@ -189,7 +189,11 @@
         }
 
         .items-table td {
-            padding: 1.5mm 2mm;
+            padding: 3mm 2mm;
+            border-bottom: 0.3pt solid #e2e8f0;
+            vertical-align: top;
+            font-size: 9pt;
+            color: #334155;
         }
 
         .items-table tr:nth-child(even) td {
@@ -466,10 +470,14 @@
                     <td>Rechnungsbetrag:</td>
                     <td class="text-right">{{ number_format($invoice->total_amount, 2, ',', '.') }} €</td>
                 </tr>
-                @if($paidAmount > 0)
+                @if($paidAmount > 0 && $dueAmount > 0)
+                    <tr>
+                        <td>Bereits bezahlt:</td>
+                        <td class="text-right">- {{ number_format($paidAmount, 2, ',', '.') }} €</td>
+                    </tr>
                     <tr class="total-due">
                         <td class="font-bold">
-                            Noch zu zahlen (abzgl. bereits gezahlter {{ number_format($paidAmount, 2, ',', '.') }} €):
+                            Noch zu zahlen:
                         </td>
                         <td class="text-right font-bold">
                             {{ number_format($dueAmount, 2, ',', '.') }} €

@@ -13,7 +13,7 @@ const InboxSidebar = ({ activeTab, setActiveTab }: InboxSidebarProps) => {
             <nav className="flex-1 flex flex-col p-2 space-y-2">
                 <TooltipProvider delayDuration={0}>
                     <div className="space-y-1">
-                        <div className="px-3 text-sm font-bold text-slate-400 mb-2 hidden md:block">
+                        <div className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 hidden md:block">
                             E-Mails
                         </div>
                         <MailTabButton
@@ -29,12 +29,6 @@ const InboxSidebar = ({ activeTab, setActiveTab }: InboxSidebarProps) => {
                             label="Gesendet"
                         />
                         <MailTabButton
-                            active={activeTab === 'archive'}
-                            onClick={() => setActiveTab('archive')}
-                            icon={<FaFolderOpen className="" />}
-                            label="Archiv"
-                        />
-                        <MailTabButton
                             active={activeTab === 'trash'}
                             onClick={() => setActiveTab('trash')}
                             icon={<FaTrashAlt />}
@@ -43,7 +37,7 @@ const InboxSidebar = ({ activeTab, setActiveTab }: InboxSidebarProps) => {
                     </div>
 
                     <div className="space-y-1 mt-auto!">
-                        <div className="px-3 text-sm font-bold text-slate-400 mb-2 hidden md:block">
+                        <div className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 hidden md:block">
                             Verwaltung
                         </div>
                         <MailTabButton

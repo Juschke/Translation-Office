@@ -575,7 +575,7 @@ const CompanySettingsTab = () => {
                             />
                             <div className="col-span-1 md:col-span-2">
                                 <div className="space-y-1.5">
-                                    <label className="text-2xs font-bold text-slate-400 ml-1">Öffnungszeiten</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Öffnungszeiten</label>
                                     <button
                                         onClick={() => setIsOpeningHoursModalOpen(true)}
                                         className="w-full flex items-center justify-between px-4 py-2 bg-white border border-slate-200 rounded-sm hover:border-slate-900 transition-all text-sm font-medium text-slate-700"
@@ -584,7 +584,7 @@ const CompanySettingsTab = () => {
                                             <FaClock className="text-slate-400" />
                                             <span>Öffnungszeiten konfigurieren</span>
                                         </div>
-                                        <span className="text-2xs text-slate-400 font-bold">Bearbeiten</span>
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bearbeiten</span>
                                     </button>
                                 </div>
                             </div>
@@ -759,7 +759,7 @@ const CompanySettingsTab = () => {
                             >
                                 Schließen
                             </button>
-                            <p className="text-2xs text-slate-400 self-center">* Änderungen werden beim Speichern der Firmeneinstellungen übernommen</p>
+                            <p className="text-[10px] text-slate-400 self-center">* Änderungen werden beim Speichern der Firmeneinstellungen übernommen</p>
                         </div>
                     </div>
                 </div>

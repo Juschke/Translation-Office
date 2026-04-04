@@ -10,7 +10,6 @@ use Illuminate\Notifications\Notifiable;
 
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use Laravel\Sanctum\PersonalAccessToken;
 
 class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 {
@@ -111,10 +110,5 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->isPlatformAdmin();
-    }
-
-    public function apiTokens()
-    {
-        return $this->morphMany(PersonalAccessToken::class, 'tokenable');
     }
 }
