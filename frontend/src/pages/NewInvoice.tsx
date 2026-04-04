@@ -701,7 +701,7 @@ const NewInvoice = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F0F2F5] pb-12">
+        <div className="flex-1 flex flex-col overflow-hidden max-h-screen">
             {/* ── Top Navigation Bar ── */}
             <div className="relative bg-white border-b border-slate-200 px-6 py-6 flex justify-between items-center shadow-sm">
                 <div className="flex items-center gap-4">
@@ -795,6 +795,8 @@ const NewInvoice = () => {
                         </section>
 
 
+                        {/* ── Main Content Area (Left) ── */}
+                        <div className="flex-1 space-y-6 w-full">
 
                         {/* Section: Kundenangaben (Single Card with 2-Column Grid) */}
                         <section className="bg-transparent space-y-2 mb-8">
@@ -850,6 +852,7 @@ const NewInvoice = () => {
                                             readOnly
                                             className="h-11 bg-white border-slate-200 col-span-3"
                                         />
+                                        <p className="text-[10px] text-slate-400 italic">Durch die Auswahl eines Projekts werden Leistungen und Kundendaten automatisch übernommen.</p>
                                     </div>
                                     <CountrySelect
                                         value={activeCustomer?.address_country || 'Deutschland'}
@@ -868,54 +871,120 @@ const NewInvoice = () => {
                                         </div>
                                     )}
                                 </div>
+                            </section>
 
-                                {/* Right Column: Metadata */}
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Rechnungsnummer</label>
+
+
+                            {/* Section: Kundenangaben (Single Card with 2-Column Grid) */}
+                            <section className="bg-transparent space-y-2 mb-8">
+                                <h3 className="text-sm font-bold text-slate-800 ml-1">Kundenangaben</h3>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
+                                    {/* Left Column: Address */}
+                                    <div className="space-y-4">
+
+                                        <div className="space-y-3">
+                                            <CustomerSelect
+                                                options={customerOptions}
+                                                value={formData.customer_id}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, customer_id: val }))}
+                                                placeholder="Kunden suchen oder neu anlegen..."
+                                            />
+                                        </div>
                                         <Input
-                                            value={formData.invoice_number || ''}
-                                            placeholder="automatisch"
+                                            placeholder="Anrede / Name / Firma"
+                                            value={activeCustomer ? `${activeCustomer.salutation || ''} ${activeCustomer.company_name || `${activeCustomer.first_name || ''} ${activeCustomer.last_name || ''}`.trim()}`.trim() : ''}
                                             readOnly
-                                            className="h-11 bg-white border-slate-200 text-slate-500 italic"
+                                            className="h-11 bg-white border-slate-200"
                                         />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Kundennummer</label>
                                         <Input
-                                            value={customerDisplayNo}
+                                            placeholder="Adresszusatz"
+                                            value={activeCustomer?.address_zusatz || ''}
                                             readOnly
-                                            className="h-11 bg-slate-50 border-slate-200 font-mono text-slate-500"
-                                            placeholder="–"
+                                            className="h-11 bg-white border-slate-200"
+                                        />
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Input
+                                                placeholder="Straße"
+                                                value={activeCustomer?.address_street || ''}
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 col-span-3"
+                                            />
+                                            <Input
+                                                placeholder="Nr."
+                                                value={activeCustomer?.address_house_no || ''}
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 col-span-1"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Input
+                                                placeholder="PLZ"
+                                                value={activeCustomer?.address_zip || ''}
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 col-span-1"
+                                            />
+                                            <Input
+                                                placeholder="Ort"
+                                                value={activeCustomer?.address_city || ''}
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 col-span-3"
+                                            />
+                                        </div>
+                                        <CountrySelect
+                                            value={activeCustomer?.address_country || 'Deutschland'}
+                                            onChange={() => { }}
+                                            className="w-full"
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Datum</label>
-                                        <DatePicker
-                                            format="DD.MM.YYYY"
-                                            value={formData.date ? dayjs(formData.date) : null}
-                                            onChange={(val) => setFormData({ ...formData, date: val ? val.format('YYYY-MM-DD') : '' })}
-                                            className="h-11 w-full rounded-md border-slate-200 bg-white"
-                                            placeholder="15.07.2025"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Zahlungsziel</label>
-                                        <DatePicker
-                                            format="DD.MM.YYYY"
-                                            value={formData.due_date ? dayjs(formData.due_date) : null}
-                                            onChange={(val) => setFormData({ ...formData, due_date: val ? val.format('YYYY-MM-DD') : '' })}
-                                            className="h-11 w-full rounded-md border-slate-200 bg-white"
-                                            placeholder="Zahlbar bis..."
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 items-center">
-                                        <label className="text-sm font-medium text-slate-600">Leistungszeitraum</label>
-                                        <Input
-                                            value={formData.service_period}
-                                            onChange={e => setFormData({ ...formData, service_period: e.target.value })}
-                                            className="h-11 bg-white"
-                                        />
+
+                                    {/* Right Column: Metadata */}
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Rechnungsnummer</label>
+                                            <Input
+                                                value={formData.invoice_number || ''}
+                                                placeholder="automatisch"
+                                                readOnly
+                                                className="h-11 bg-white border-slate-200 text-slate-500 italic"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Kundennummer</label>
+                                            <Input
+                                                value={customerDisplayNo}
+                                                readOnly
+                                                className="h-11 bg-slate-50 border-slate-200 font-mono text-slate-500"
+                                                placeholder="–"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Datum</label>
+                                            <DatePicker
+                                                format="DD.MM.YYYY"
+                                                value={formData.date ? dayjs(formData.date) : null}
+                                                onChange={(val) => setFormData({ ...formData, date: val ? val.format('YYYY-MM-DD') : '' })}
+                                                className="h-11 w-full rounded-md border-slate-200 bg-white"
+                                                placeholder="15.07.2025"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Zahlungsziel</label>
+                                            <DatePicker
+                                                format="DD.MM.YYYY"
+                                                value={formData.due_date ? dayjs(formData.due_date) : null}
+                                                onChange={(val) => setFormData({ ...formData, due_date: val ? val.format('YYYY-MM-DD') : '' })}
+                                                className="h-11 w-full rounded-md border-slate-200 bg-white"
+                                                placeholder="Zahlbar bis..."
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Leistungszeitraum</label>
+                                            <Input
+                                                value={formData.service_period}
+                                                onChange={e => setFormData({ ...formData, service_period: e.target.value })}
+                                                className="h-11 bg-white"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -941,17 +1010,12 @@ const NewInvoice = () => {
                                     <div className="grid grid-cols-2 gap-4 items-center">
                                         <label className="text-sm font-medium text-slate-600 pl-1">Steuersatz</label>
                                         <select
-                                            className="w-full h-11 border-slate-200 border text-sm font-medium focus:border-slate-800 outline-none rounded-md px-4 bg-white"
-                                            value={formData.tax_exemption === 'none' ? formData.tax_rate : formData.tax_exemption}
-                                            onChange={e => {
-                                                const v = e.target.value;
-                                                if (v === '19.00' || v === '7.00') setFormData({ ...formData, tax_exemption: 'none', tax_rate: v });
-                                                else setFormData({ ...formData, tax_exemption: v, tax_rate: '0.00' });
-                                            }}>
-                                            <option value="19.00">19% MWSt (Standard)</option>
-                                            <option value="7.00">7% MWSt</option>
-                                            <option value="§19_ustg">Steuerbefreit (§ 19 UStG)</option>
-                                            <option value="reverse_charge">Steuerbefreit (Reverse Charge)</option>
+                                            className="w-full h-11 border-slate-200 border text-base font-medium focus:border-brand-primary outline-none rounded-md px-4 bg-white"
+                                            value={formData.type}
+                                            disabled
+                                        >
+                                            <option value="invoice">Rechnung</option>
+                                            <option value="credit_note">Gutschrift</option>
                                         </select>
                                     </div>
 
@@ -975,6 +1039,7 @@ const NewInvoice = () => {
                                         />
                                     </div>
                                 </div>
+                            </section>
 
                                 <div className="pt-4 border-t border-slate-50 space-y-2">
                                     <label className="text-sm font-medium text-slate-600 pl-1 block">Einleitungstext</label>
@@ -1338,8 +1403,6 @@ const NewInvoice = () => {
                                     />
                                 </div>
                             </section>
-                        </div>
-                    </div>
 
                     {/* ── Sidebar (Right) ── */}
                     <div className="w-full lg:w-96 space-y-6 sticky top-24">
@@ -1403,7 +1466,7 @@ const NewInvoice = () => {
                                         <span className="text-slate-400">Erstellt am</span>
                                         <span className="font-medium text-slate-600">{fmtDate(formData.date)}</span>
                                     </div>
-                                </div>
+                                </section>
                             </div>
                         </section>
 
@@ -1417,6 +1480,8 @@ const NewInvoice = () => {
                                         <span>Netto</span>
                                         <span className="font-mono text-slate-900">{fmtEur(computedFinancials.amount_net)}</span>
                                     </div>
+                                </div>
+                            </section>
 
                                     {/* 2. Editable Adjustments */}
                                     <div className="pt-2 border-t border-slate-100 space-y-1">
@@ -1444,32 +1509,31 @@ const NewInvoice = () => {
                                                 <span className="font-mono text-slate-900">€</span>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* 3. Tax Breakdown */}
-                                    <div className="pt-2 border-t border-slate-100 space-y-1">
-                                        <div className="flex justify-between items-center h-8 text-sm text-slate-600">
-                                            <span>Umsatzsteuer {parseFloat(formData.tax_rate)}%</span>
-                                            <span className="font-mono text-slate-900">{fmtEur(computedFinancials.amount_tax)}</span>
+                                        {/* 3. Tax Breakdown */}
+                                        <div className="pt-2 border-t border-slate-100 space-y-1">
+                                            <div className="flex justify-between items-center h-8 text-sm text-slate-600">
+                                                <span>Umsatzsteuer {parseFloat(formData.tax_rate)}%</span>
+                                                <span className="font-mono text-slate-900">{fmtEur(computedFinancials.amount_tax)}</span>
+                                            </div>
+                                            {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
+                                                parseFloat(rate) !== parseFloat(formData.tax_rate) && (
+                                                    <div key={rate} className="flex justify-between items-center h-5 text-[11px] text-slate-400 italic">
+                                                        <span>davon {parseFloat(rate)}% MwSt</span>
+                                                        <span className="font-mono">{fmtEur(amount as number)}</span>
+                                                    </div>
+                                                )
+                                            ))}
                                         </div>
-                                        {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
-                                            parseFloat(rate) !== parseFloat(formData.tax_rate) && (
-                                                <div key={rate} className="flex justify-between items-center h-5 text-[11px] text-slate-400 italic">
-                                                    <span>davon {parseFloat(rate)}% MwSt</span>
-                                                    <span className="font-mono">{fmtEur(amount as number)}</span>
-                                                </div>
-                                            )
-                                        ))}
-                                    </div>
 
-                                    {/* 4. Final Totals */}
-                                    <div className="pt-4 mt-2 border-t-2 border-slate-100 space-y-3">
-                                        <div className="flex justify-between items-center text-sm font-bold text-slate-800">
-                                            <span>Gesamtbetrag</span>
-                                            <span className="text-lg tabular-nums">
-                                                {fmtEur(computedFinancials.amount_gross)}
-                                            </span>
-                                        </div>
+                                        {/* 4. Final Totals */}
+                                        <div className="pt-4 mt-2 border-t-2 border-slate-100 space-y-3">
+                                            <div className="flex justify-between items-center text-sm font-bold text-slate-800">
+                                                <span>Gesamtbetrag</span>
+                                                <span className="text-lg tabular-nums">
+                                                    {fmtEur(computedFinancials.amount_gross)}
+                                                </span>
+                                            </div>
 
                                         <div className="flex justify-between items-center text-sm font-bold text-slate-800">
                                             <span className="text-sm">Restforderung</span>
@@ -1479,8 +1543,8 @@ const NewInvoice = () => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </section>
+                            </section>
+                        </div>
                     </div>
                 </div >
             </div >

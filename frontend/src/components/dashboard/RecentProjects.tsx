@@ -98,7 +98,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                             <th className="px-4 py-3 border-b border-slate-100">Projekt</th>
                             <th className="px-4 py-3 border-b border-slate-100">Kunde</th>
                             <th className="px-4 py-3 border-b border-slate-100">Partner</th>
-                            <th className="px-4 py-3 border-b border-slate-100">Sprachen</th>
+                            <th className="px-4 py-3 border-b border-slate-100 text-center">Sprachen</th>
                             <th className="px-4 py-3 border-b border-slate-100 text-right">Dateien</th>
                             <th className="px-4 py-3 border-b border-slate-100 text-right">Netto-Preis</th>
                             <th className="px-4 py-3 border-b border-slate-100 text-right">Deadline</th>
@@ -155,7 +155,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-4 py-2 text-xs">
                                         {p.partner ? (
                                             <div className="flex items-center gap-2.5">
                                                 <div className="w-7 h-7 rounded-sm bg-indigo-50 text-indigo-700 flex items-center justify-center text-sm font-bold border border-indigo-100 shrink-0">
@@ -189,7 +189,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                         )}
                                     </td>
                                     <td className="px-4 py-2">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center justify-center gap-2.5">
                                             <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded-sm border border-slate-100">
                                                 <img
                                                     src={getFlagUrl(p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'de')}

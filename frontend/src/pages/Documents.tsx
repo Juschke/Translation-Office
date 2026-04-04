@@ -247,50 +247,50 @@ const Documents = () => {
                         <FaCloudUploadAlt className="text-slate-400" /> List Export
                     </Button>
                 </div>
-            </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KPICard
-                    label="Dateien Gesamt"
-                    value={totalCount}
-                    icon={<FaFileAlt />}
-                    subValue="Indexierte Dokumente"
-                />
-                <KPICard
-                    label="Speicherplatz"
-                    value={formatFileSize(totalSize)}
-                    icon={<FaHdd />}
-                    subValue="Belegter Speicher"
-                />
-                <KPICard
-                    label="Quell-Dokumente"
-                    value={sourceFilesCount}
-                    icon={<FaInbox />}
-                    subValue="Eingänge von Kunden"
-                />
-                <KPICard
-                    label="Ausspielungen"
-                    value={targetFilesCount}
-                    icon={<FaCheckCircle />}
-                    subValue="Gelieferte Dateien"
-                />
-            </div>
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <KPICard
+                        label="Dateien Gesamt"
+                        value={totalCount}
+                        icon={<FaFileAlt />}
+                        subValue="Indexierte Dokumente"
+                    />
+                    <KPICard
+                        label="Speicherplatz"
+                        value={formatFileSize(totalSize)}
+                        icon={<FaHdd />}
+                        subValue="Belegter Speicher"
+                    />
+                    <KPICard
+                        label="Quell-Dokumente"
+                        value={sourceFilesCount}
+                        icon={<FaInbox />}
+                        subValue="Eingänge von Kunden"
+                    />
+                    <KPICard
+                        label="Ausspielungen"
+                        value={targetFilesCount}
+                        icon={<FaCheckCircle />}
+                        subValue="Gelieferte Dateien"
+                    />
+                </div>
 
-            {/* Table Section */}
-            <div className="flex-1 flex flex-col min-h-[500px] relative z-0">
-                <DataTable
-                    data={filteredFiles}
-                    columns={columns}
-                    isLoading={isLoading}
-                    filters={filters}
-                    onResetFilters={onResetFilters}
-                    activeFilterCount={(typeFilter !== 'all' ? 1 : 0) + (extFilter !== 'all' ? 1 : 0)}
-                    searchPlaceholder="Nach Dateiname oder Erweiterung suchen..."
-                    searchFields={['original_name', 'extension']}
-                    pageSize={25}
-                    onRowClick={(file) => navigate(`/projects/${file.project_id}`)}
-                />
+                {/* Table Section */}
+                <div className="flex-1 flex flex-col min-h-[500px] relative z-0">
+                    <DataTable
+                        data={filteredFiles}
+                        columns={columns}
+                        isLoading={isLoading}
+                        filters={filters}
+                        onResetFilters={onResetFilters}
+                        activeFilterCount={(typeFilter !== 'all' ? 1 : 0) + (extFilter !== 'all' ? 1 : 0)}
+                        searchPlaceholder="Nach Dateiname oder Erweiterung suchen..."
+                        searchFields={['original_name', 'extension']}
+                        pageSize={25}
+                        onRowClick={(file) => navigate(`/projects/${file.project_id}`)}
+                    />
+                </div>
             </div>
         </div>
     );

@@ -618,41 +618,159 @@ const Projects = () => {
                     <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">Projekte</h1>
                     <p className="text-slate-500 text-sm hidden sm:block">{t('projects.subtitle')}</p>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                    <Button
-                        onClick={() => navigate('/projects/new')}
-                    >
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('projects.new_project')}</span><span className="inline sm:hidden">{t('projects.new_short')}</span>
-                    </Button>
-                </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard
-                    label={t('projects.kpi.active_projects')}
-                    value={activeProjectsCount}
-                    icon={<FaLayerGroup />}
-                    subValue={t('projects.kpi.active_count_sub', { total: totalProjectsCount })}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <KPICard
+                        label={t('projects.kpi.active_projects')}
+                        value={activeProjectsCount}
+                        icon={<FaLayerGroup />}
+                        subValue={t('projects.kpi.active_count_sub', { total: totalProjectsCount })}
+                    />
+                    <KPICard
+                        label={t('projects.kpi.open_assignments')}
+                        value={unassignedCount}
+                        icon={<FaUserTimes />}
+                        subValue={unassignedCount > 0 ? t('projects.kpi.unassigned') : t('projects.kpi.all_assigned')}
+                    />
+                    <KPICard
+                        label={t('projects.kpi.profitability')}
+                        value={marginPercentage > 0 ? `${marginPercentage.toFixed(1)}%` : '0%'}
+                        icon={<FaChartPie />}
+                        subValue={t('projects.kpi.margin_sub', { amount: totalMargin.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) })}
+                    />
+                    <KPICard
+                        label={t('projects.kpi.deadline_alarm')}
+                        value={urgencyCount}
+                        icon={<FaExclamationTriangle />}
+                        subValue={urgencyCount > 0 ? t('projects.kpi.overdue') : t('projects.kpi.on_track')}
+                    />
+                </div>
+
+                <div className="flex justify-end -mb-2">
+                    <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-hidden">
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={clsx(
+                                "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all rounded-sm",
+                                viewMode === 'list'
+                                    ? "bg-white text-slate-800 shadow-sm"
+                                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                            )}
+                            title="Tabellenansicht"
+                        >
+                            <FaListUl className="text-xs" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('kanban')}
+                            className={clsx(
+                                "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all rounded-sm",
+                                viewMode === 'kanban'
+                                    ? "bg-white text-slate-800 shadow-sm"
+                                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                            )}
+                            title="Kanban-Ansicht"
+                        >
+                            <FaColumns className="text-xs" />
+                        </button>
+                    </div>
+                </div>
+                <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
+                    {viewMode === 'list' ? (
+                        <DataTable
+                            data={filteredProjects as any[]}
+                            columns={columns as any}
+                            onRowClick={(p) => navigate(`/projects/${p.id}`)}
+                            searchPlaceholder={t('projects.search_placeholder')}
+                            searchFields={['project_name', 'project_number'] as any[]}
+                            actions={actions}
+                            onAddClick={() => navigate('/projects/new')}
+                            selectable
+                            selectedIds={selectedProjects}
+                            onSelectionChange={(ids) => setSelectedProjects(ids as string[])}
+                            bulkActions={[
+                                { label: t('projects.actions.bulk.complete'), icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'completed', progress: 100 } }), variant: 'success', show: statusView === 'active' && filter !== 'completed' },
+                                { label: t('projects.actions.bulk.reset'), icon: <FaArrowRight className="text-xs rotate-180" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'default', show: statusView === 'active' && filter === 'completed' },
+                                { label: t('projects.actions.bulk.send_email'), icon: <FaEnvelope className="text-xs" />, onClick: () => { if (selectedProjects.length === 1) { const p = projects.find((pro: any) => pro.id === selectedProjects[0]); navigate('/inbox', { state: { compose: true, to: p?.customer?.email, subject: `Projekt: ${p?.project_name} (${p?.project_number || 'ID ' + p?.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p?.project_name}.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`, attachments: p?.files || [] } }); } }, variant: 'primary', show: selectedProjects.length === 1 && statusView === 'active' },
+                                { label: t('projects.actions.bulk.archive'), icon: <FaArchive className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'archived' } }), variant: 'default', show: statusView === 'active' },
+                                { label: t('projects.actions.bulk.trash'), icon: <FaTrash className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'deleted' } }), variant: 'danger', show: statusView === 'active' },
+                                { label: t('projects.actions.bulk.restore'), icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' },
+                                { label: t('projects.actions.bulk.delete_permanent'), icon: <FaTrash className="text-xs" />, onClick: () => { setProjectToDelete(selectedProjects); setConfirmTitle(t('projects.confirm.delete_title')); setConfirmMessage(t('projects.confirm.delete_message', { count: selectedProjects.length })); setIsConfirmOpen(true); }, variant: 'dangerSolid', show: statusView === 'trash' },
+                            ] as BulkActionItem[]}
+                            filters={tableFilters}
+                            activeFilterCount={activeFilterCount}
+                            onResetFilters={resetFilters}
+                        />
+                    ) : (
+                        <div className="flex-1 min-h-0 flex flex-col pt-4 overflow-x-hidden">
+                            <div className="flex justify-between items-center mb-6 px-4">
+                                <h2 className="text-xl font-medium text-slate-800 tracking-tight">{t('projects.board_title')}</h2>
+                            </div>
+                            <div className="flex-1 min-h-0 px-4 overflow-y-auto pb-10 custom-scrollbar">
+                                <KanbanBoard
+                                    projects={filteredProjects}
+                                    onProjectClick={(p) => navigate(`/projects/${p.id}`)}
+                                    onStatusChange={(projectId, newStatus) => {
+                                        updateMutation.mutate({ id: projectId, status: newStatus });
+                                    }}
+                                    onEdit={handleEditProject}
+                                />
+                            </div>
+                        </div >
+                    )}
+                </div >
+
+                <NewProjectModal
+                    isOpen={isModalOpen}
+                    onClose={() => { setIsModalOpen(false); setEditingProject(null); }}
+                    onSubmit={(data) => {
+                        if (editingProject) {
+                            updateMutation.mutate({ ...data, id: editingProject.id });
+                        } else {
+                            createMutation.mutate(data);
+                        }
+                    }}
+                    initialData={editingProject}
+                    isLoading={createMutation.isPending || updateMutation.isPending}
                 />
-                <KPICard
-                    label={t('projects.kpi.open_assignments')}
-                    value={unassignedCount}
-                    icon={<FaUserTimes />}
-                    subValue={unassignedCount > 0 ? t('projects.kpi.unassigned') : t('projects.kpi.all_assigned')}
+
+                <ProjectFilesModal
+                    isOpen={isFilesModalOpen}
+                    onClose={() => {
+                        setIsFilesModalOpen(false);
+                        setViewFilesProject(null);
+                    }}
+                    project={viewFilesProject}
                 />
-                <KPICard
-                    label={t('projects.kpi.profitability')}
-                    value={marginPercentage > 0 ? `${marginPercentage.toFixed(1)}%` : '0%'}
-                    icon={<FaChartPie />}
-                    subValue={t('projects.kpi.margin_sub', { amount: totalMargin.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) })}
+
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => {
+                        setIsConfirmOpen(false);
+                        setProjectToDelete(null);
+                    }}
+                    onConfirm={() => {
+                        if (projectToDelete) {
+                            if (Array.isArray(projectToDelete)) {
+                                bulkDeleteMutation.mutate(projectToDelete, {
+                                    onSuccess: () => {
+                                        setIsConfirmOpen(false);
+                                        setProjectToDelete(null);
+                                    }
+                                });
+                            } else {
+                                deleteMutation.mutate(projectToDelete as string, {
+                                    onSuccess: () => {
+                                        setIsConfirmOpen(false);
+                                        setProjectToDelete(null);
+                                    }
+                                });
+                            }
+                        }
+                    }}
+                    title={confirmTitle}
+                    message={confirmMessage}
+                    isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
                 />
-                <KPICard
-                    label={t('projects.kpi.deadline_alarm')}
-                    value={urgencyCount}
-                    icon={<FaExclamationTriangle />}
-                    subValue={urgencyCount > 0 ? t('projects.kpi.overdue') : t('projects.kpi.on_track')}
-                />
-            </div>
 
             <div className="flex justify-end -mb-2">
                 <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-hidden">

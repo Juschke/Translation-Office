@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { FaCheckCircle, FaFileInvoiceDollar } from 'react-icons/fa';
 import { Button } from '../ui/button';
 
-interface ProjectFinancialSidebarProps {
+export interface ProjectFinancialSidebarProps {
     creationDate: string;
     projectManager: string;
     baseNet: number;
@@ -27,6 +27,7 @@ const ProjectFinancialSidebar = ({
     creationDate,
     projectManager,
     baseNet,
+    extraCosts,
     calcNet,
     calcTax,
     calcGross,

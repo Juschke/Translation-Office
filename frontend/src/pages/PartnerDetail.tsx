@@ -65,78 +65,79 @@ const PartnerDetail = () => {
     const initials = (partner.first_name?.[0] || '') + (partner.last_name?.[0] || 'P');
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10">
-            {/* Header */}
-            <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-4 md:p-6">
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3 md:gap-4">
-                        <button
-                            onClick={() => location.state?.from ? navigate(location.state.from) : navigate('/partners')}
-                            className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
-                        >
-                            <FaArrowLeft />
-                        </button>
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-sm bg-brand-primary/10 text-brand-primary flex items-center justify-center text-lg md:text-xl font-medium border border-brand-primary/20 shadow-sm shrink-0">
-                            {initials}
-                        </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h1 className="text-lg md:text-2xl font-medium text-slate-800 truncate">{name}</h1>
-                                <StatusBadge status={partner.status || 'active'} type="partner" />
+        <div className="flex-1 flex flex-col overflow-hidden fade-in bg-slate-50/20">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-8">
+                {/* Header */}
+                <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-4 md:p-6 mb-6">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-3 md:gap-4">
+                            <button
+                                onClick={() => location.state?.from ? navigate(location.state.from) : navigate('/partners')}
+                                className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition shrink-0"
+                            >
+                                <FaArrowLeft />
+                            </button>
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-sm bg-brand-primary/10 text-brand-primary flex items-center justify-center text-lg md:text-xl font-medium border border-brand-primary/20 shadow-sm shrink-0">
+                                {initials}
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
-                                <span className="flex items-center gap-1"><FaUserTie className="text-slate-400" /> {partner.type === 'translator' ? t('partners.type_translator') : partner.type === 'interpreter' ? t('partners.type_interpreter') : partner.type === 'agency' ? t('partners.type_agency') : partner.type === 'trans_interp' ? t('partners.type_trans_interp') : partner.type || t('partners.type_unknown')}</span>
-                                {partner.email && <span className="flex items-center gap-1 truncate"><FaEnvelope className="text-slate-400" /> {partner.email}</span>}
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-lg md:text-2xl font-medium text-slate-800 truncate">{name}</h1>
+                                    <StatusBadge status={partner.status || 'active'} type="partner" />
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-slate-500 mt-1 flex-wrap">
+                                    <span className="flex items-center gap-1"><FaUserTie className="text-slate-400" /> {partner.type === 'translator' ? t('partners.type_translator') : partner.type === 'interpreter' ? t('partners.type_interpreter') : partner.type === 'agency' ? t('partners.type_agency') : partner.type === 'trans_interp' ? t('partners.type_trans_interp') : partner.type || t('partners.type_unknown')}</span>
+                                    {partner.email && <span className="flex items-center gap-1 truncate"><FaEnvelope className="text-slate-400" /> {partner.email}</span>}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 flex-wrap ml-0 md:ml-auto border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
-                        <Button
-                            variant="secondary"
-                            onClick={() => navigate('/inbox', { state: { compose: true, to: partner.email, subject: `Anfrage: ${name}` } })}
-                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
-                        >
-                            <FaEnvelope /> E-Mail
-                        </Button>
-                        <Button
-                            variant="default"
-                            onClick={() => setIsEditModalOpen(true)}
-                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
-                        >
-                            <FaEdit /> Bearbeiten
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={() => setIsConfirmOpen(true)}
-                            className="px-3 py-2 text-xs font-medium flex items-center gap-2"
-                        >
-                            <FaTrash /> Löschen
-                        </Button>
-                    </div>
+                        <div className="flex items-center gap-2 flex-wrap ml-0 md:ml-auto border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
+                            <Button
+                                variant="secondary"
+                                onClick={() => navigate('/inbox', { state: { compose: true, to: partner.email, subject: `Anfrage: ${name}` } })}
+                                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaEnvelope /> E-Mail
+                            </Button>
+                            <Button
+                                variant="default"
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaEdit /> Bearbeiten
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => setIsConfirmOpen(true)}
+                                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaTrash /> Löschen
+                            </Button>
+                        </div>
 
-                    {/* Meta Info Bar */}
-                    <div className="flex items-center gap-6 text-xs text-slate-400 flex-wrap border-t border-slate-100 pt-3 mt-1">
-                        <div className="flex items-center gap-2">
-                            <span>Partner-ID: <span className="text-slate-600 font-medium">{partner.display_id}</span></span>
-                        </div>
-                        <span className="text-slate-200">•</span>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            <span>Erstellt am <span className="text-slate-600">{new Date(partner.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span></span>
-                        </div>
-                        <span className="text-slate-200">•</span>
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                            <span>Zuletzt geändert: <span className="text-slate-600">{new Date(partner.updated_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span></span>
-                        </div>
-                        <span className="text-slate-200">•</span>
-                        <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1">Bewertung: <span className="text-amber-500 font-medium flex items-center gap-0.5">{partner.rating || '0.0'} <FaStar className="text-xs" /></span></span>
+                        {/* Meta Info Bar */}
+                        <div className="flex items-center gap-6 text-xs text-slate-400 flex-wrap border-t border-slate-100 pt-3 mt-1">
+                            <div className="flex items-center gap-2">
+                                <span>Partner-ID: <span className="text-slate-600 font-medium">{partner.display_id}</span></span>
+                            </div>
+                            <span className="text-slate-200">•</span>
+                            <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                <span>Erstellt am <span className="text-slate-600">{new Date(partner.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span></span>
+                            </div>
+                            <span className="text-slate-200">•</span>
+                            <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                <span>Zuletzt geändert: <span className="text-slate-600">{new Date(partner.updated_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</span></span>
+                            </div>
+                            <span className="text-slate-200">•</span>
+                            <div className="flex items-center gap-2">
+                                <span className="flex items-center gap-1">Bewertung: <span className="text-amber-500 font-medium flex items-center gap-0.5">{partner.rating || '0.0'} <FaStar className="text-xs" /></span></span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
             {/* Tab Navigation */}
             <div className="flex gap-1 border-b border-slate-200">
@@ -336,25 +337,26 @@ const PartnerDetail = () => {
                 </div>
             )} {/* end stammdaten tab */}
 
-            <NewPartnerModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                onSubmit={(data) => updateMutation.mutate(data)}
-                initialData={partner}
-                isLoading={updateMutation.isPending}
-            />
+                <NewPartnerModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onSubmit={(data) => updateMutation.mutate(data)}
+                    initialData={partner}
+                    isLoading={updateMutation.isPending}
+                />
 
-            <ConfirmModal
-                isOpen={isConfirmOpen}
-                onClose={() => setIsConfirmOpen(false)}
-                onConfirm={() => deleteMutation.mutate(parseInt(id!))}
-                title="Partner löschen"
-                message={`Möchten Sie den Partner "${name}" wirklich löschen?`}
-                isLoading={deleteMutation.isPending}
-            />
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={() => deleteMutation.mutate(parseInt(id!))}
+                    title="Partner löschen"
+                    message={`Möchten Sie den Partner "${name}" wirklich löschen?`}
+                    isLoading={deleteMutation.isPending}
+                />
 
-            {/* Spacer for bottom padding */}
-            <div className="h-32" />
+                {/* Spacer for bottom padding */}
+                <div className="h-32" />
+            </div>
         </div>
     );
 };

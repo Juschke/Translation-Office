@@ -9,8 +9,8 @@ interface InboxSidebarProps {
 
 const InboxSidebar = ({ activeTab, setActiveTab }: InboxSidebarProps) => {
     return (
-        <div className="w-16 md:w-56 bg-white border-r border-slate-200 flex flex-col shrink-0">
-            <nav className="flex-1 flex flex-col p-2 space-y-4">
+        <div className="w-16 md:w-56 bg-white border-r border-slate-200 flex flex-col shrink-0 text-slate-900!">
+            <nav className="flex-1 flex flex-col p-2 space-y-2">
                 <TooltipProvider delayDuration={0}>
                     <div className="space-y-1">
                         <div className="px-3 text-sm font-bold text-slate-400 mb-2 hidden md:block">

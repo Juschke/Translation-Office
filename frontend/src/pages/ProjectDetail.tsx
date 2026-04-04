@@ -34,7 +34,7 @@ import DetailSkeleton from '../components/common/DetailSkeleton';
 import FilePreviewModal from '../components/modals/FilePreviewModal';
 import HistoryTab from '../components/projects/HistoryTab';
 import MessagesTab from '../components/projects/MessagesTab';
-import ProjectOverviewTab from '../components/projects/ProjectOverviewTab';
+import ProjectOverviewTabNew from '../components/projects/ProjectOverviewTabNew';
 import ProjectFilesTab from '../components/projects/ProjectFilesTab';
 import ProjectFinancesTab from '../components/projects/ProjectFinancesTab';
 
@@ -1100,8 +1100,8 @@ const ProjectDetail = () => {
                 to={emailComposeData.to}
                 subject={emailComposeData.subject}
             />
-        </div >
+        </div>
+        </div>
     );
 };
-
 export default ProjectDetail;

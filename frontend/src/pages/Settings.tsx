@@ -92,17 +92,46 @@ const Settings: React.FC = () => {
                     </div>
                 </aside>
 
-                {/* Main Content Area */}
-                <main className="flex-1 min-w-0">
-                    <div className="mb-6 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-sm bg-white border border-slate-200 shadow-sm flex items-center justify-center text-brand-primary text-xl shrink-0">
-                            {React.createElement(meta.icon)}
+                                            {/* Sub-items for Master Data */}
+                                            {isMasterData && isActive && (
+                                                <div className="bg-slate-50/50 py-1">
+                                                    {MASTER_DATA_SUBTABS.map(sub => (
+                                                        <Link
+                                                            key={sub.id}
+                                                            to={`/settings?tab=master_data&sub=${sub.id}`}
+                                                            className={clsx(
+                                                                "flex items-center gap-3 pl-10 pr-4 py-2 text-[13px] font-medium transition-colors border-l-2",
+                                                                searchParams.get('sub') === sub.id || (!searchParams.get('sub') && sub.id === 'languages')
+                                                                    ? "text-brand-primary border-brand-primary bg-brand-primary/5"
+                                                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100 border-transparent"
+                                                            )}
+                                                        >
+                                                            <div className="w-6 h-6 rounded-sm bg-slate-100 flex items-center justify-center shrink-0">
+                                                                <sub.icon className={clsx("w-3.5 h-3.5", (searchParams.get('sub') === sub.id || (!searchParams.get('sub') && sub.id === 'languages')) ? "text-brand-primary" : "text-slate-400")} />
+                                                            </div>
+                                                            <span>{sub.label}</span>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </nav>
                         </div>
-                        <div>
-                            <h1 className="text-xl font-bold text-slate-900 leading-tight">{meta.label}</h1>
-                            <p className="text-slate-500 text-sm italic">{meta.description}</p>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 min-w-0">
+                        <div className="mb-6 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-sm bg-white border border-slate-200 shadow-sm flex items-center justify-center text-brand-primary text-xl shrink-0">
+                                {React.createElement(meta.icon)}
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold text-slate-900 leading-tight">{meta.label}</h1>
+                                <p className="text-slate-500 text-sm italic">{meta.description}</p>
+                            </div>
                         </div>
-                    </div>
 
                     <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
                         {activeTab === 'company' && <CompanySettingsTab />}

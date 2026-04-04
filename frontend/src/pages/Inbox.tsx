@@ -91,6 +91,12 @@ const CommunicationHub = () => {
         }
     }, [location.state, setIsComposeOpen, setSelectedProjectId]);
 
+    // Reset selection when tab changes
+    useEffect(() => {
+        setSelectedMails([]);
+        setViewingMail(null);
+    }, [activeTab]);
+
     // Mutations
     const syncMutation = useMutation({
         mutationFn: mailService.sync,
@@ -157,7 +163,8 @@ const CommunicationHub = () => {
     if (isLoadingActive) return <MailSkeleton />;
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10">
+        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
 
             {/* ── Seitenkopf ── */}
             <div className="flex justify-between items-center gap-4">
@@ -184,7 +191,6 @@ const CommunicationHub = () => {
                         <span className="sm:hidden">Neu</span>
                     </Button>
                 </div>
-            </div>
 
             {/* ── Inbox-Container ── */}
             <div className="flex flex-col bg-white border border-slate-200 shadow-sm rounded-sm overflow-hidden" style={{ height: 'calc(100vh - 180px)', minHeight: '500px' }}>
@@ -315,59 +321,60 @@ const CommunicationHub = () => {
                 </div>
             </div>
 
-            {/* Modals */}
-            <EmailComposeModal
-                isOpen={isComposeOpen}
-                onClose={() => { setIsComposeOpen(false); resetCompose(); }}
-            />
+                {/* Modals */}
+                <EmailComposeModal
+                    isOpen={isComposeOpen}
+                    onClose={() => { setIsComposeOpen(false); resetCompose(); }}
+                />
 
-            <NewEmailAccountModal
-                isOpen={isAccountModalOpen}
-                onClose={() => setIsAccountModalOpen(false)}
-                onSubmit={(data) => {
-                    if (accountToEdit) {
-                        mailService.updateAccount(accountToEdit.id, data).then(() => {
-                            queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
-                            setIsAccountModalOpen(false);
-                        });
-                    } else {
-                        mailService.createAccount(data).then(() => {
-                            queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
-                            setIsAccountModalOpen(false);
-                        });
-                    }
-                }}
-                initialData={accountToEdit}
-            />
+                <NewEmailAccountModal
+                    isOpen={isAccountModalOpen}
+                    onClose={() => setIsAccountModalOpen(false)}
+                    onSubmit={(data) => {
+                        if (accountToEdit) {
+                            mailService.updateAccount(accountToEdit.id, data).then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+                                setIsAccountModalOpen(false);
+                            });
+                        } else {
+                            mailService.createAccount(data).then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+                                setIsAccountModalOpen(false);
+                            });
+                        }
+                    }}
+                    initialData={accountToEdit}
+                />
 
-            <NewEmailTemplateModal
-                isOpen={isTemplateModalOpen}
-                onClose={() => setIsTemplateModalOpen(false)}
-                onSubmit={(data) => {
-                    if (templateToEdit) {
-                        mailService.updateTemplate(templateToEdit.id, data).then(() => {
-                            queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
-                            setIsTemplateModalOpen(false);
-                        });
-                    } else {
-                        mailService.createTemplate(data).then(() => {
-                            queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
-                            setIsTemplateModalOpen(false);
-                        });
-                    }
-                }}
-                initialData={templateToEdit}
-            />
+                <NewEmailTemplateModal
+                    isOpen={isTemplateModalOpen}
+                    onClose={() => setIsTemplateModalOpen(false)}
+                    onSubmit={(data) => {
+                        if (templateToEdit) {
+                            mailService.updateTemplate(templateToEdit.id, data).then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+                                setIsTemplateModalOpen(false);
+                            });
+                        } else {
+                            mailService.createTemplate(data).then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+                                setIsTemplateModalOpen(false);
+                            });
+                        }
+                    }}
+                    initialData={templateToEdit}
+                />
 
-            <ConfirmModal
-                isOpen={isConfirmOpen}
-                onClose={() => setIsConfirmOpen(false)}
-                onConfirm={confirmDelete}
-                title={deleteType === 'bulk' ? 'Mails löschen' : 'Mail löschen'}
-                message={deleteType === 'bulk' ? `Wollen Sie wirklich ${selectedMails.length} Mails löschen?` : 'Wollen Sie diese Mail wirklich löschen?'}
-                confirmText="Löschen"
-                type="danger"
-            />
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={confirmDelete}
+                    title={deleteType === 'bulk' ? 'Mails löschen' : 'Mail löschen'}
+                    message={deleteType === 'bulk' ? `Wollen Sie wirklich ${selectedMails.length} Mails löschen?` : 'Wollen Sie diese Mail wirklich löschen?'}
+                    confirmLabel="Löschen"
+                    variant="danger"
+                />
+            </div>
         </div>
     );
 };

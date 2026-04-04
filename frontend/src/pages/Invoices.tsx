@@ -534,118 +534,118 @@ const Invoices = () => {
                         </span>
                     </Button>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label={t('invoices.kpi.open_amount')} value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={t('invoices.kpi.overdue_sub', { count: overdueCount })} />
-                <KPICard label={t('invoices.kpi.paid_total')} value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={t('invoices.kpi.transactions_sub', { count: paidCount })} />
-                <KPICard label={t('invoices.kpi.reminders')} value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue={t('invoices.kpi.reminders_sub')} />
-                <KPICard
-                    label={t('invoices.kpi.external_costs')}
-                    value={(externalCostsStats?.total_costs ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                    icon={<FaHistory />}
-                    subValue={t('invoices.kpi.this_month')}
-                />
-            </div>
-
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <KPICard label={t('invoices.kpi.open_amount')} value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={t('invoices.kpi.overdue_sub', { count: overdueCount })} />
+                    <KPICard label={t('invoices.kpi.paid_total')} value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={t('invoices.kpi.transactions_sub', { count: paidCount })} />
+                    <KPICard label={t('invoices.kpi.reminders')} value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue={t('invoices.kpi.reminders_sub')} />
+                    <KPICard
+                        label={t('invoices.kpi.external_costs')}
+                        value={(externalCostsStats?.total_costs ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                        icon={<FaHistory />}
+                        subValue={t('invoices.kpi.this_month')}
+                    />
+                </div>
 
 
-            <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
-                <DataTable
-                    data={filteredInvoices}
-                    columns={columns as any}
-                    searchPlaceholder={t('invoices.search_placeholder')}
-                    searchFields={['invoice_number', 'customer.company_name', 'project.project_name']}
-                    actions={actions}
-                    tabs={tabs}
-                    onRowClick={(inv: any) => setPreviewInvoice(inv)}
-                    selectable
-                    selectedIds={selectedInvoices}
-                    onSelectionChange={(ids) => setSelectedInvoices(ids as number[])}
-                    bulkActions={[
-                        {
-                            label: t('invoices.actions.paid'),
-                            icon: <FaCheck className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }),
-                            variant: 'success',
-                            show: statusView === 'active' && statusFilter !== 'cancelled' && statusFilter !== 'paid'
-                        },
-                        {
-                            label: t('invoices.actions.send_reminder'),
-                            icon: <FaPaperPlane className="text-xs text-amber-500" />,
-                            onClick: () => {
-                                setConfirmTitle(t('invoices.confirm.reminder_title'));
-                                setConfirmMessage(t('invoices.confirm.reminder_message', { count: selectedInvoices.length }));
-                                setConfirmLabel(t('invoices.confirm.reminders_btn'));
-                                setConfirmVariant('warning');
-                                setConfirmAction(() => () => {
-                                    toast.loading('Mahnungen werden verarbeitet...');
-                                    selectedInvoices.forEach(id => {
-                                        const inv = invoices.find((i: any) => i.id === id);
-                                        const nextLevel = (inv?.reminder_level || 0) + 1;
-                                        bulkUpdateMutation.mutate({
-                                            ids: [id],
-                                            data: { reminder_level: nextLevel, last_reminder_date: new Date().toISOString().split('T')[0] }
+
+                <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
+                    <DataTable
+                        data={filteredInvoices}
+                        columns={columns as any}
+                        searchPlaceholder={t('invoices.search_placeholder')}
+                        searchFields={['invoice_number', 'customer.company_name', 'project.project_name']}
+                        actions={actions}
+                        tabs={tabs}
+                        onRowClick={(inv: any) => setPreviewInvoice(inv)}
+                        selectable
+                        selectedIds={selectedInvoices}
+                        onSelectionChange={(ids) => setSelectedInvoices(ids as number[])}
+                        bulkActions={[
+                            {
+                                label: t('invoices.actions.paid'),
+                                icon: <FaCheck className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }),
+                                variant: 'success',
+                                show: statusView === 'active' && statusFilter !== 'cancelled' && statusFilter !== 'paid'
+                            },
+                            {
+                                label: t('invoices.actions.send_reminder'),
+                                icon: <FaPaperPlane className="text-xs text-amber-500" />,
+                                onClick: () => {
+                                    setConfirmTitle(t('invoices.confirm.reminder_title'));
+                                    setConfirmMessage(t('invoices.confirm.reminder_message', { count: selectedInvoices.length }));
+                                    setConfirmLabel(t('invoices.confirm.reminders_btn'));
+                                    setConfirmVariant('warning');
+                                    setConfirmAction(() => () => {
+                                        toast.loading('Mahnungen werden verarbeitet...');
+                                        selectedInvoices.forEach(id => {
+                                            const inv = invoices.find((i: any) => i.id === id);
+                                            const nextLevel = (inv?.reminder_level || 0) + 1;
+                                            bulkUpdateMutation.mutate({
+                                                ids: [id],
+                                                data: { reminder_level: nextLevel, last_reminder_date: new Date().toISOString().split('T')[0] }
+                                            });
                                         });
                                     });
-                                });
-                                setIsConfirmOpen(true);
+                                    setIsConfirmOpen(true);
+                                },
+                                variant: 'primary',
+                                show: statusView === 'active' && (statusFilter === 'reminders' || statusFilter === 'overdue')
                             },
-                            variant: 'primary',
-                            show: statusView === 'active' && (statusFilter === 'reminders' || statusFilter === 'overdue')
-                        },
-                        {
-                            label: t('projects.actions.bulk.archive'),
-                            icon: <FaArchive className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'archived' } }),
-                            variant: 'default',
-                            show: statusView === 'active' && statusFilter === 'paid'
-                        },
-                        {
-                            label: t('projects.actions.bulk.restore'),
-                            icon: <FaTrashRestore className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'draft' } }),
-                            variant: 'success',
-                            show: statusView === 'trash' || statusView === 'archive'
-                        }
-                    ] as BulkActionItem[]}
-                    filters={tableFilters}
-                    activeFilterCount={activeFilterCount}
-                    onResetFilters={resetFilters}
-                />
+                            {
+                                label: t('projects.actions.bulk.archive'),
+                                icon: <FaArchive className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'archived' } }),
+                                variant: 'default',
+                                show: statusView === 'active' && statusFilter === 'paid'
+                            },
+                            {
+                                label: t('projects.actions.bulk.restore'),
+                                icon: <FaTrashRestore className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'draft' } }),
+                                variant: 'success',
+                                show: statusView === 'trash' || statusView === 'archive'
+                            }
+                        ] as BulkActionItem[]}
+                        filters={tableFilters}
+                        activeFilterCount={activeFilterCount}
+                        onResetFilters={resetFilters}
+                    />
+                </div>
+
+                <InvoicePreviewModal isOpen={!!previewInvoice} onClose={() => setPreviewInvoice(null)} invoice={previewInvoice} />
+
+
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => {
+                        setIsConfirmOpen(false);
+                    }}
+                    onConfirm={() => {
+                        confirmAction();
+                        setIsConfirmOpen(false);
+                    }}
+                    title={confirmTitle}
+                    message={confirmMessage}
+                    confirmLabel={confirmLabel}
+                    variant={confirmVariant}
+                    isLoading={deleteMutation.isPending || issueMutation.isPending || cancelMutation.isPending || bulkUpdateMutation.isPending}
+                >
+                    {confirmTitle === t('invoices.confirm.cancel_title') && (
+                        <div className="mt-4">
+                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('invoices.confirm.cancel_reason')}</label>
+                            <textarea
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                                className="w-full border border-slate-200 rounded-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                placeholder={t('invoices.confirm.cancel_placeholder')}
+                                rows={3}
+                            />
+                        </div>
+                    )}
+                </ConfirmModal>
             </div>
-
-            <InvoicePreviewModal isOpen={!!previewInvoice} onClose={() => setPreviewInvoice(null)} invoice={previewInvoice} />
-
-
-            <ConfirmModal
-                isOpen={isConfirmOpen}
-                onClose={() => {
-                    setIsConfirmOpen(false);
-                }}
-                onConfirm={() => {
-                    confirmAction();
-                    setIsConfirmOpen(false);
-                }}
-                title={confirmTitle}
-                message={confirmMessage}
-                confirmLabel={confirmLabel}
-                variant={confirmVariant}
-                isLoading={deleteMutation.isPending || issueMutation.isPending || cancelMutation.isPending || bulkUpdateMutation.isPending}
-            >
-                {confirmTitle === t('invoices.confirm.cancel_title') && (
-                    <div className="mt-4">
-                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('invoices.confirm.cancel_reason')}</label>
-                        <textarea
-                            value={cancelReason}
-                            onChange={(e) => setCancelReason(e.target.value)}
-                            className="w-full border border-slate-200 rounded-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            placeholder={t('invoices.confirm.cancel_placeholder')}
-                            rows={3}
-                        />
-                    </div>
-                )}
-            </ConfirmModal>
         </div>
     );
 };

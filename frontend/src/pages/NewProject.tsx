@@ -523,10 +523,10 @@ const NewProject = () => {
     );
 
     return (
-        <div className="fade-in pb-12">
-            {/* ── Sticky Header ── */}
-            <div className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-6 shadow-sm">
-                <div className="flex items-center justify-between max-w-6xl mx-auto">
+        <div className="flex-1 flex flex-col overflow-hidden">
+            {/* ── Header ── */}
+            <div className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-16 py-3 shadow-sm z-10 shrink-0">
+                <div className="max-w-[1600px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button onClick={handleCancel} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition">
                             <FaArrowLeft />
@@ -555,6 +555,39 @@ const NewProject = () => {
                     </div>
                 </div>
             </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-8">
+                <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-8">
+                    {/* ── Main Content ── */}
+                    <div className="flex-1 min-w-0 space-y-8">
+
+                        {/* Section 1: Basis-Daten */}
+                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
+                                <div className={SECTION_NUM}>01</div>
+                                <h3 className={SECTION_TITLE}>Basis-Daten</h3>
+                            </div>
+                            <div className="px-6 pb-5">
+                                <FormRow label="Projektname" tooltip="Wird automatisch generiert aus Sprachpaar und Datum. Leerzeichen werden durch Unterstriche ersetzt.">
+                                    <Input placeholder="z.B. DE_EN_260326_01" value={name} onChange={e => setName(e.target.value)} />
+                                </FormRow>
+                                <FormRow label="Dokumentenart" required tooltip="Art des zu übersetzenden Dokuments. Mehrfachauswahl möglich." error={validationErrors.has('docType')} id="field-docType">
+                                    <DocumentTypeSelect
+                                        options={docTypes.sort((a: any, b: any) => (a.category || '').localeCompare(b.category || '')).map((dt: any) => ({ value: dt.id.toString(), label: dt.name, group: dt.category }))}
+                                        value={docType}
+                                        onChange={setDocType}
+                                        error={validationErrors.has('docType')}
+                                        isMulti={true}
+                                    />
+                                </FormRow>
+                                <FormRow label="Status" tooltip="Aktueller Bearbeitungsstatus des Projekts." error={validationErrors.has('status')} id="field-status">
+                                    <SearchableSelect options={statusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} preserveOrder={true} />
+                                </FormRow>
+                                <FormRow label="Liefertermin" tooltip="Geplanter Abgabetermin inkl. Uhrzeit.">
+                                    <DatePicker showTime format="DD.MM.YYYY HH:mm" value={deadline ? dayjs(deadline) : null}
+                                        onChange={(d) => setDeadline(d ? d.toISOString() : '')} className="w-full h-9" placeholder="Datum & Zeit wählen" />
+                                </FormRow>
+                            </div>
+                        </section>
 
             <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
                 {/* ── Main Content ── */}
@@ -615,46 +648,47 @@ const NewProject = () => {
                         </div>
                     </section>
 
-                    {/* Section 3: Sprachen */}
-                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                            <div className={SECTION_NUM}>03</div>
-                            <h3 className={SECTION_TITLE}>Sprachen</h3>
-                        </div>
-                        <div className="px-6 pb-5">
-                            <FormRow label="Eingangssprache" required tooltip="Sprache des Originaldokuments." error={validationErrors.has('source')} id="field-source">
-                                <LanguageSelect id="source" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
-                            </FormRow>
-                            <FormRow label="Zielsprache" required tooltip="Sprache, in die übersetzt werden soll." error={validationErrors.has('target')} id="field-target">
-                                <LanguageSelect id="target" value={target} onChange={setTarget} isMulti={true} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
-                            </FormRow>
-                        </div>
-                    </section>
+                        {/* Section 3: Sprachen */}
+                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
+                                <div className={SECTION_NUM}>03</div>
+                                <h3 className={SECTION_TITLE}>Sprachen</h3>
+                            </div>
+                            <div className="px-6 pb-5">
+                                <FormRow label="Eingangssprache" required tooltip="Sprache des Originaldokuments." error={validationErrors.has('source')} id="field-source">
+                                    <LanguageSelect id="source" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
+                                </FormRow>
+                                <FormRow label="Zielsprache" required tooltip="Sprache, in die übersetzt werden soll." error={validationErrors.has('target')} id="field-target">
+                                    <LanguageSelect id="target" value={target} onChange={setTarget} isMulti={true} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
+                                </FormRow>
+                            </div>
+                        </section>
 
-                    {/* Section 4: Partner */}
-                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                            <div className={SECTION_NUM}>04</div>
-                            <h3 className={SECTION_TITLE}>Partner & Übersetzer</h3>
-                        </div>
-                        <div className="px-6 pb-5">
-                            <FormRow label="Übersetzer" required tooltip="Wählen Sie den Partner, der die Übersetzung durchführt." error={validationErrors.has('translator')} id="field-translator">
-                                <PartnerSelect
-                                    options={partnerOptions}
-                                    value={translator}
-                                    onChange={setTranslator}
-                                    error={validationErrors.has('translator')}
-                                    placeholder="Übersetzer auswählen..."
-                                />
-                            </FormRow>
+                        {/* Section 4: Partner */}
+                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
+                                <div className={SECTION_NUM}>04</div>
+                                <h3 className={SECTION_TITLE}>Partner & Übersetzer</h3>
+                            </div>
+                            <div className="px-6 pb-5">
+                                <FormRow label="Übersetzer" required tooltip="Wählen Sie den Partner, der die Übersetzung durchführt." error={validationErrors.has('translator')} id="field-translator">
+                                    <PartnerSelect
+                                        options={partnerOptions}
+                                        value={translator}
+                                        onChange={setTranslator}
+                                        error={validationErrors.has('translator')}
+                                        placeholder="Übersetzer auswählen..."
+                                    />
+                                </FormRow>
 
-                            {/* Partner suggestion table */}
-                            <div className="mt-4">
-                                <div className="flex justify-end mb-2">
-                                    <div className="relative w-40">
-                                        <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-xs" />
-                                        <input type="text" placeholder="Suchen..." value={partnerSearch} onChange={e => setPartnerSearch(e.target.value)}
-                                            className="w-full pl-7 pr-2 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:outline-none focus:border-slate-400 transition" />
+                                {/* Partner suggestion table */}
+                                <div className="mt-4">
+                                    <div className="flex justify-end mb-2">
+                                        <div className="relative w-40">
+                                            <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-xs" />
+                                            <input type="text" placeholder="Suchen..." value={partnerSearch} onChange={e => setPartnerSearch(e.target.value)}
+                                                className="w-full pl-7 pr-2 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:outline-none focus:border-slate-400 transition" />
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="border border-slate-200 rounded-sm bg-white overflow-hidden max-h-[200px] overflow-y-auto custom-scrollbar shadow-sm">
@@ -685,16 +719,36 @@ const NewProject = () => {
                                                         </div>
                                                     </td>
                                                 </tr>
-                                            ))}
-                                            {matchingPartners.length === 0 && otherPartners.length === 0 && (
-                                                <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-300 italic text-xs">Keine Partner gefunden</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {[...matchingPartners, ...otherPartners].map((p: any) => (
+                                                    <tr key={p.id} className={clsx('group transition-colors cursor-pointer hover:bg-slate-50', translator === p.id.toString() && 'bg-brand-primary/5')}
+                                                        onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}>
+                                                        <td className="px-4 py-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-6 h-6 rounded-sm bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
+                                                                <span className="text-xs font-medium text-slate-700">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-[10px] font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <div className={clsx('inline-flex items-center justify-center w-5 h-5 rounded-full border transition', translator === p.id.toString() ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200 text-transparent')}>
+                                                                <FaCheck className="text-[10px]" />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {matchingPartners.length === 0 && otherPartners.length === 0 && (
+                                                    <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-300 italic text-xs">Keine Partner gefunden</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
                     {/* Section 5: Leistungen & Optionen */}
                     <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
@@ -758,10 +812,8 @@ const NewProject = () => {
                                         <div className={clsx('w-8 h-4 rounded-full relative transition-colors', withTax ? 'bg-emerald-500' : 'bg-slate-300')}>
                                             <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', withTax ? 'left-4' : 'left-0.5')} />
                                         </div>
-                                        <span className={clsx('text-xs font-bold', withTax ? 'text-emerald-600' : 'text-slate-400')}>{withTax ? 'AKTIV' : 'AUS'}</span>
                                     </div>
                                 </div>
-                            </div>
 
                             {/* Copies */}
                             <div className={clsx("grid grid-cols-12 gap-4 pt-4", isLocked && "opacity-60")}>
@@ -809,9 +861,40 @@ const NewProject = () => {
                                 <div className="col-span-4 flex items-end pb-1.5">
                                     <span className="text-xs text-slate-400 italic">Summe: <span className="text-slate-800 font-medium">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span></span>
                                 </div>
+                                <Button
+                                    onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
+                                    disabled={remainingBalance <= 0.01}
+                                    className={clsx(
+                                        "h-8 px-4 text-xs font-bold",
+                                        remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none" : ""
+                                    )}
+                                >
+                                    <FaPlus className="mr-1.5" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                                </Button>
                             </div>
-                        </div>
-                    </section>
+                            <div className="px-6 pb-5 pt-3">
+                                <ProjectPaymentsTable
+                                    payments={payments}
+                                    onAddPayment={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
+                                    onEditPayment={p => { setEditingPayment(p); setIsPaymentModalOpen(true); }}
+                                    onDeletePayment={pid => {
+                                        const payment = payments.find(p => p.id === pid);
+                                        setConfirmConfig({
+                                            isOpen: true,
+                                            title: 'Zahlung löschen',
+                                            message: t('confirm.delete_payment_amount', { amount: payment?.amount || '0' }),
+                                            type: 'danger',
+                                            confirmLabel: 'Löschen',
+                                            onConfirm: () => {
+                                                setPayments(payments.filter(p => p.id !== pid));
+                                                setConfirmConfig((p: any) => ({ ...p, isOpen: false }));
+                                            }
+                                        });
+                                    }}
+                                    hideHeader
+                                />
+                            </div>
+                        </section>
 
                     {/* Section 6: Kalkulation */}
                     <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
@@ -841,54 +924,27 @@ const NewProject = () => {
                                     {payments.length}
                                 </span>
                             </div>
-                            <Button
-                                onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
-                                disabled={remainingBalance <= 0.01}
-                                className={clsx(
-                                    "h-8 px-4 text-xs font-bold",
-                                    remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none" : ""
-                                )}
-                            >
-                                <FaPlus className="mr-1.5" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
-                            </Button>
-                        </div>
-                        <div className="px-6 pb-5 pt-3">
-                            <ProjectPaymentsTable
-                                payments={payments}
-                                onAddPayment={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
-                                onEditPayment={p => { setEditingPayment(p); setIsPaymentModalOpen(true); }}
-                                onDeletePayment={pid => {
-                                    const payment = payments.find(p => p.id === pid);
-                                    setConfirmConfig({
-                                        isOpen: true,
-                                        title: 'Zahlung löschen',
-                                        message: t('confirm.delete_payment_amount', { amount: payment?.amount || '0' }),
-                                        type: 'danger',
-                                        confirmLabel: 'Löschen',
-                                        onConfirm: () => {
-                                            setPayments(payments.filter(p => p.id !== pid));
-                                            setConfirmConfig((p: any) => ({ ...p, isOpen: false }));
-                                        }
-                                    });
-                                }}
-                                hideHeader
-                            />
-                        </div>
-                    </section>
+                            <div className="px-6 pb-5">
+                                <FormRow label="Interne Notizen" tooltip="Nur für Sie sichtbar. Wird nicht an Kunden oder Partner weitergeleitet.">
+                                    <Input isTextArea placeholder="Wichtige Hinweise zum Projekt..." value={notes} onChange={e => setNotes(e.target.value)} />
+                                </FormRow>
+                            </div>
+                        </section>
+                    </div>
 
-                    {/* Section 8: Anmerkungen */}
-                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                            <div className={SECTION_NUM}>08</div>
-                            <h3 className={SECTION_TITLE}>Anmerkungen</h3>
+                    {/* ── Sidebar: Financial Summary ── */}
+                    <div className="w-full lg:w-80 shrink-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
+                        {/* Meta */}
+                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-3">
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                                <FaInfoCircle className="text-slate-400 text-xs" />
+                                <h4 className="text-xs font-semibold text-slate-500">Meta Info</h4>
+                            </div>
+                            <div className="space-y-2 text-xs">
+                                <div className="flex justify-between"><span className="text-slate-400">Erstellt:</span><span className="font-medium text-slate-700">{initialData?.createdAt || new Date().toLocaleDateString('de-DE')}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-400">Manager:</span><span className="font-medium text-slate-700">{initialData?.pm || 'Admin'}</span></div>
+                            </div>
                         </div>
-                        <div className="px-6 pb-5">
-                            <FormRow label="Interne Notizen" tooltip="Nur für Sie sichtbar. Wird nicht an Kunden oder Partner weitergeleitet.">
-                                <Input isTextArea placeholder="Wichtige Hinweise zum Projekt..." value={notes} onChange={e => setNotes(e.target.value)} />
-                            </FormRow>
-                        </div>
-                    </section>
-                </div>
 
                 {/* ── Sidebar: Financial Summary ── */}
                 <div className="w-full lg:w-80 shrink-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
@@ -903,47 +959,36 @@ const NewProject = () => {
                             <div className="flex justify-between"><span className="text-slate-400">Erstellt:</span><span className="font-medium text-slate-700">{initialData?.created_at ? dayjs(initialData.created_at).format('DD.MM.YYYY') : dayjs().format('DD.MM.YYYY')}</span></div>
                             <div className="flex justify-between"><span className="text-slate-400">Mitarbeiter:</span><span className="font-medium text-slate-700">{initialData?.creator?.name || initialData?.pm || 'System'}</span></div>
                         </div>
-                    </div>
 
-                    {/* Invoice Preview */}
-                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-3">
-                        <h4 className="text-xs font-semibold text-slate-500 pb-2 border-b border-slate-100">Rechnungsvorschau</h4>
-                        <div className="space-y-2 text-xs">
-                            <div className="flex justify-between text-slate-500"><span>Positionen Netto</span><span>{fmtEur(baseNet)}</span></div>
-                            {isCertified && <div className="flex justify-between text-slate-400 pl-2"><span>+ Beglaubigung {certifiedQty > 1 ? `(${certifiedQty}×)` : ''}</span><span>{fmtEur(5 * certifiedQty)}</span></div>}
-                            {hasApostille && <div className="flex justify-between text-slate-400 pl-2"><span>+ Apostille {apostilleQty > 1 ? `(${apostilleQty}×)` : ''}</span><span>{fmtEur(25 * apostilleQty)}</span></div>}
-                            {isExpress && <div className="flex justify-between text-slate-400 pl-2"><span>+ Express {expressQty > 1 ? `(${expressQty}×)` : ''}</span><span>{fmtEur(15 * expressQty)}</span></div>}
-                            {classification === 'ja' && <div className="flex justify-between text-slate-400 pl-2"><span>+ Klassifizierung {classificationQty > 1 ? `(${classificationQty}×)` : ''}</span><span>{fmtEur(15 * classificationQty)}</span></div>}
-                            {copies > 0 && <div className="flex justify-between text-slate-400 pl-2"><span>+ Kopien ({copies}×)</span><span>{fmtEur(copies * Number(copyPrice))}</span></div>}
-                            <div className="pt-2 border-t border-slate-100 flex justify-between font-medium text-slate-800"><span>Gesamt Netto</span><span>{fmtEur(calcNet)}</span></div>
-                            <div className="flex justify-between text-slate-400"><span>MwSt. 19%</span><span>{fmtEur(calcTax)}</span></div>
-                            <div className="pt-2 border-t-2 border-slate-100 flex justify-between text-lg font-semibold text-slate-900"><span>Gesamt</span><span>{fmtEur(calcGross)}</span></div>
-                            {totalPaid > 0 && <div className="flex justify-between text-emerald-600 font-medium"><span>Bezahlt</span><span>-{fmtEur(totalPaid)}</span></div>}
-                            <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                                <span className="text-sm font-medium text-slate-600">Restbetrag</span>
-                                <span className={clsx('text-base font-semibold', remainingBalance <= 0.01 ? 'text-emerald-600' : 'text-slate-900')}>{remainingBalance <= 0.01 ? 'BEZAHLT' : fmtEur(remainingBalance)}</span>
+                        {/* Profit */}
+                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-medium text-slate-500">Gewinn</span>
+                                <span className={clsx('text-xs font-medium', profit >= 0 ? 'text-slate-800' : 'text-red-600')}>{fmtEur(profit)}</span>
                             </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div className={clsx('h-full transition-all duration-500', profitMargin > 40 ? 'bg-emerald-500' : profitMargin > 20 ? 'bg-slate-700' : 'bg-amber-500')} style={{ width: `${Math.min(100, Math.max(0, profitMargin))}%` }} />
+                            </div>
+                            <div className="text-right text-xs font-medium text-slate-500">{profitMargin.toFixed(1)}% Marge</div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Profit */}
-                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-medium text-slate-500">Gewinn</span>
-                            <span className={clsx('text-xs font-medium', profit >= 0 ? 'text-slate-800' : 'text-red-600')}>{fmtEur(profit)}</span>
-                        </div>
-                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                            <div className={clsx('h-full transition-all duration-500', profitMargin > 40 ? 'bg-emerald-500' : profitMargin > 20 ? 'bg-slate-700' : 'bg-amber-500')} style={{ width: `${Math.min(100, Math.max(0, profitMargin))}%` }} />
-                        </div>
-                        <div className="text-right text-xs font-medium text-slate-500">{profitMargin.toFixed(1)}% Marge</div>
+                <div className="max-w-6xl mx-auto mt-10 border-t border-slate-200 pt-5 pb-6 flex justify-end gap-2">
+                    <div className="flex items-center gap-2">
+                        {renderActionButtons()}
                     </div>
                 </div>
-            </div>
 
-            <div className="max-w-6xl mx-auto mt-10 border-t border-slate-200 pt-5 pb-6 flex justify-end gap-2">
-                <div className="flex items-center gap-2">
-                    {renderActionButtons()}
-                </div>
+                {/* ── Modals ── */}
+                <NewCustomerModal isOpen={showCustomerModal} onClose={() => setShowCustomerModal(false)} onSubmit={(d) => createCustomerMutation.mutate({ company_name: d.company_name, salutation: d.salutation, first_name: d.first_name, last_name: d.last_name, email: d.email, address: d.address_street, zip: d.address_zip, city: d.address_city, type: d.type })} />
+                <CustomerSelectionModal isOpen={isCustomerSearchOpen} onClose={() => setIsCustomerSearchOpen(false)} onSelect={(id) => { setCustomer(id); setIsCustomerSearchOpen(false); }} />
+                <NewPartnerModal isOpen={showPartnerModal} onClose={() => setShowPartnerModal(false)} onSubmit={(d) => createPartnerMutation.mutate({ company_name: d.company || d.company_name, salutation: d.salutation, first_name: d.firstName, last_name: d.lastName, email: d.emails?.[0] || d.email, street: d.street, zip: d.zip, city: d.city, phone: d.phones?.[0] || d.phone, languages: d.languages, price_list: d.priceList })} isLoading={createPartnerMutation.isPending} />
+                <PartnerSelectionModal isOpen={isPartnerSearchOpen} onClose={() => setIsPartnerSearchOpen(false)} onSelect={(id) => { setTranslator(id); setIsPartnerSearchOpen(false); }} />
+                <NewDocTypeModal isOpen={showDocTypeModal} onClose={() => setShowDocTypeModal(false)} onSubmit={(d) => createDocTypeMutation.mutate(d)} isLoading={createDocTypeMutation.isPending} />
+                <NewMasterDataModal isOpen={isLanguageModalOpen} onClose={() => setIsLanguageModalOpen(false)} onSubmit={(d) => createLanguageMutation.mutate(d)} type="languages" />
+                <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={(p) => { if (editingPayment) setPayments(payments.map(x => x.id === p.id ? p : x)); else setPayments([...payments, p]); setIsPaymentModalOpen(false); setEditingPayment(null); }} initialData={editingPayment} totalAmount={calcGross} />
+                <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig((p: any) => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
             </div>
 
             {/* ── Modals ── */}
