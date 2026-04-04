@@ -278,7 +278,7 @@ const Billing = () => {
                                 <FaRegCalendarAlt /> Nächste Abrechnung
                             </h3>
                             <div className="flex flex-col gap-1 mb-8">
-                                <p className="text-3xl font-medium tracking-tight">01. {nextBillingDate.toLocaleString('default', { month: 'long' })}</p>
+                                <p className="text-3xl font-medium">01. {nextBillingDate.toLocaleString('default', { month: 'long' })}</p>
                                 <p className="text-white/50 text-sm font-medium">Voraussichtlich {activePlan.price}</p>
                             </div>
 

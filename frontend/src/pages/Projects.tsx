@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth, subMonths, startOfYear, subYears, isWithinInterval } from 'date-fns';
 import {
     FaPlus, FaFileCsv,
@@ -12,10 +12,10 @@ import {
     FaExclamationTriangle, FaChartPie, FaUserTimes
 } from 'react-icons/fa';
 import { buildProjectColumns } from './projectColumns';
+import { getFlagUrl } from '../utils/flags';
 import clsx from 'clsx';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
-import NewProjectModal from '../components/modals/NewProjectModal';
 import KPICard from '../components/common/KPICard';
 import DataTable, { type FilterDef } from '../components/common/DataTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,29 +34,76 @@ const Projects = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
-    const [filter, setFilter] = useState('all');
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>(() => {
+        const p = searchParams.get('view');
+        return (p === 'archive' || p === 'trash') ? p : 'active';
+    });
+
+    const [filter, setFilter] = useState(() => searchParams.get('status') || 'all');
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
     const [isExportOpen, setIsExportOpen] = useState(false);
-    const [editingProject, setEditingProject] = useState<any>(null);
     const [viewFilesProject, setViewFilesProject] = useState<any>(null);
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
-    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'kanban'>(() => {
+        const p = searchParams.get('mode');
+        return p === 'kanban' ? 'kanban' : 'list';
+    });
     const [advancedFilters, setAdvancedFilters] = useState<any>({
         customerId: '',
         partnerId: '',
-        sourceLanguageId: '',
-        targetLanguageId: '',
+        sourceLanguageId: searchParams.get('src') || '',
+        targetLanguageId: searchParams.get('tgt') || '',
         dateRange: 'all',
         projectSearch: '',
         deadlineDate: '',
         deadlineRange: 'all',
-        priority: 'all',
+        priority: searchParams.get('priority') || 'all',
         certified: 'all',
         apostille: 'all',
     });
+
+    const updateSearchParams = (updates: Record<string, string | null>) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            for (const [key, value] of Object.entries(updates)) {
+                if (value === null) {
+                    next.delete(key);
+                } else {
+                    next.set(key, value);
+                }
+            }
+            return next;
+        }, { replace: true });
+    };
+
+    const handleSetStatusView = (v: 'active' | 'archive' | 'trash') => {
+        setStatusView(v);
+        updateSearchParams({ view: v === 'active' ? null : v });
+    };
+
+    const handleSetFilter = (v: string) => {
+        setFilter(v);
+        updateSearchParams({ status: v === 'all' ? null : v });
+    };
+
+    const handleSetViewMode = (v: 'list' | 'kanban') => {
+        setViewMode(v);
+        updateSearchParams({ mode: v === 'list' ? null : v });
+    };
+
+    const handleSetAdvancedFilters = (updater: (prev: any) => any) => {
+        setAdvancedFilters((prev: any) => {
+            const next = updater(prev);
+            updateSearchParams({
+                src: next.sourceLanguageId || null,
+                tgt: next.targetLanguageId || null,
+                priority: next.priority === 'all' ? null : next.priority,
+            });
+            return next;
+        });
+    };
 
     const exportRef = useRef<HTMLDivElement>(null);
 
@@ -70,21 +117,15 @@ const Projects = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        if (location.state?.openNewModal) {
-            setIsModalOpen(true);
-            // Clear location state to prevent modal from reopening on refresh or navigation
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location.state, navigate, location.pathname]);
-
-    // deleted/archived states removed in favor of filter
-
+    const queryClient = useQueryClient();
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [projectToDelete, setProjectToDelete] = useState<string | string[] | null>(null);
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
-    const queryClient = useQueryClient();
+
+    const handleEditProject = (project: any) => {
+        navigate(`/projects/${project.id}/edit`);
+    };
 
     // Listen to real-time project updates
     useEffect(() => {
@@ -126,19 +167,6 @@ const Projects = () => {
         queryFn: settingsService.getLanguages
     });
 
-    const createMutation = useMutation({
-        mutationFn: projectService.create,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            setIsModalOpen(false);
-            toast.success(t('projects.messages.create_success'));
-        },
-        onError: () => {
-            toast.error(t('projects.messages.create_error'));
-        }
-    });
-
     const updateMutation = useMutation({
         mutationFn: (data: any) => projectService.update(data.id, data),
         onMutate: async (updatedProject) => {
@@ -160,8 +188,6 @@ const Projects = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
-            setIsModalOpen(false);
-            setEditingProject(null);
             toast.success(t('projects.messages.update_success'));
         },
         onError: (_err, _updatedProject, context: any) => {
@@ -226,10 +252,20 @@ const Projects = () => {
                 const searchLow = advancedFilters.projectSearch.toLowerCase();
                 if (!(p.project_name?.toLowerCase().includes(searchLow) || p.project_number?.toLowerCase().includes(searchLow))) return false;
             }
-            if (advancedFilters.customerId && p.customer_id?.toString() !== advancedFilters.customerId) return false;
-            if (advancedFilters.partnerId && p.partner_id?.toString() !== advancedFilters.partnerId) return false;
-            if (advancedFilters.sourceLanguageId && p.source_lang_id?.toString() !== advancedFilters.sourceLanguageId) return false;
-            if (advancedFilters.targetLanguageId && p.target_lang_id?.toString() !== advancedFilters.targetLanguageId) return false;
+            if (advancedFilters.customerId && p.customer_id?.toString() !== advancedFilters.customerId.toString()) return false;
+            if (advancedFilters.partnerId && p.partner_id?.toString() !== advancedFilters.partnerId.toString()) return false;
+            if (advancedFilters.sourceLanguageId && advancedFilters.sourceLanguageId.length > 0) {
+                const slids = Array.isArray(advancedFilters.sourceLanguageId)
+                    ? advancedFilters.sourceLanguageId.map((id: any) => id.toString())
+                    : [advancedFilters.sourceLanguageId.toString()];
+                if (!slids.includes(p.source_lang_id?.toString())) return false;
+            }
+            if (advancedFilters.targetLanguageId && advancedFilters.targetLanguageId.length > 0) {
+                const tlids = Array.isArray(advancedFilters.targetLanguageId)
+                    ? advancedFilters.targetLanguageId.map((id: any) => id.toString())
+                    : [advancedFilters.targetLanguageId.toString()];
+                if (!tlids.includes(p.target_lang_id?.toString())) return false;
+            }
 
             if (advancedFilters.deadlineDate) {
                 if (!p.deadline) return false;
@@ -333,10 +369,20 @@ const Projects = () => {
                 const searchLow = advancedFilters.projectSearch.toLowerCase();
                 if (!(p.project_name?.toLowerCase().includes(searchLow) || p.project_number?.toLowerCase().includes(searchLow))) return false;
             }
-            if (advancedFilters.customerId && p.customer_id?.toString() !== advancedFilters.customerId) return false;
-            if (advancedFilters.partnerId && p.partner_id?.toString() !== advancedFilters.partnerId) return false;
-            if (advancedFilters.sourceLanguageId && p.source_lang_id?.toString() !== advancedFilters.sourceLanguageId) return false;
-            if (advancedFilters.targetLanguageId && p.target_lang_id?.toString() !== advancedFilters.targetLanguageId) return false;
+            if (advancedFilters.customerId && p.customer_id?.toString() !== advancedFilters.customerId.toString()) return false;
+            if (advancedFilters.partnerId && p.partner_id?.toString() !== advancedFilters.partnerId.toString()) return false;
+            if (advancedFilters.sourceLanguageId && advancedFilters.sourceLanguageId.length > 0) {
+                const slids = Array.isArray(advancedFilters.sourceLanguageId)
+                    ? advancedFilters.sourceLanguageId.map((id: any) => id.toString())
+                    : [advancedFilters.sourceLanguageId.toString()];
+                if (!slids.includes(p.source_lang_id?.toString())) return false;
+            }
+            if (advancedFilters.targetLanguageId && advancedFilters.targetLanguageId.length > 0) {
+                const tlids = Array.isArray(advancedFilters.targetLanguageId)
+                    ? advancedFilters.targetLanguageId.map((id: any) => id.toString())
+                    : [advancedFilters.targetLanguageId.toString()];
+                if (!tlids.includes(p.target_lang_id?.toString())) return false;
+            }
 
             if (advancedFilters.deadlineDate) {
                 if (!p.deadline) return false;
@@ -424,9 +470,6 @@ const Projects = () => {
         setIsExportOpen(false);
     };
 
-    const handleEditProject = async (p: any) => {
-        navigate(`/projects/${p.id}/edit`);
-    };
 
     const columns = buildProjectColumns({
         navigate,
@@ -436,7 +479,7 @@ const Projects = () => {
             setViewFilesProject(p);
             setIsFilesModalOpen(true);
         },
-        setIsModalOpen: (val) => { if (!val) setIsModalOpen(false); },
+        setIsModalOpen: () => { },
         setProjectToDelete,
         setConfirmTitle,
         setConfirmMessage,
@@ -449,26 +492,26 @@ const Projects = () => {
 
     const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (filter !== 'all' ? 1 : 0) + Object.values(advancedFilters).filter(v => v && v !== 'all').length;
     const resetFilters = () => {
-        setStatusView('active');
-        setFilter('all');
-        setAdvancedFilters({
-            customerId: '', partnerId: '', sourceLanguageId: '', targetLanguageId: '',
+        handleSetStatusView('active');
+        handleSetFilter('all');
+        handleSetAdvancedFilters(() => ({
+            customerId: '', partnerId: '', sourceLanguageId: [], targetLanguageId: [],
             dateRange: 'all', projectSearch: '', deadlineDate: '',
             deadlineRange: 'all', priority: 'all', certified: 'all', apostille: 'all',
-        });
+        }));
     };
 
     const tableFilters = useMemo(() => {
         const filters: FilterDef[] = [
             {
-                id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setFilter('all'); },
+                id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { handleSetStatusView(v as 'active' | 'archive' | 'trash'); handleSetFilter('all'); },
                 options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
             }
         ];
 
         if (statusView === 'active') {
             filters.push({
-                id: 'filter', label: t('projects.filters.quick_filter'), type: 'select' as const, value: filter, onChange: (v: any) => setFilter(v),
+                id: 'filter', label: t('projects.filters.quick_filter'), type: 'select' as const, value: filter, onChange: (v: any) => handleSetFilter(v),
                 options: [
                     { value: 'all', label: t('projects.filters.status_tabs.all') },
                     { value: 'offer', label: t('projects.filters.status_tabs.offer') },
@@ -483,7 +526,7 @@ const Projects = () => {
 
         filters.push(
             {
-                id: 'priority', label: t('projects.filters.priority.label'), type: 'select' as const, value: advancedFilters.priority || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, priority: v })),
+                id: 'priority', label: t('projects.filters.priority.label'), type: 'select' as const, value: advancedFilters.priority || 'all', onChange: (v: any) => handleSetAdvancedFilters((prev: any) => ({ ...prev, priority: v })),
                 options: [
                     { value: 'all', label: t('projects.filters.priority.all') },
                     { value: 'low', label: t('projects.filters.priority.standard') },
@@ -493,20 +536,38 @@ const Projects = () => {
                 ]
             },
             {
-                id: 'customer', label: t('projects.filters.customers.label'), type: 'select' as const, value: advancedFilters.customerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: v })),
-                options: [{ value: '', label: t('projects.filters.customers.all') }, ...customers.map((c: any) => ({ value: c.id, label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]
+                id: 'customer', label: t('projects.filters.customers.label'), type: 'searchable' as const, value: advancedFilters.customerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: v })),
+                options: customers.map((c: any) => ({
+                    value: c.id,
+                    label: `[K-${c.id}] ${(c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim()}`
+                })),
+                placeholder: t('projects.filters.customers.all')
             },
             {
-                id: 'partner', label: t('projects.filters.partners.label'), type: 'select' as const, value: advancedFilters.partnerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: v })),
-                options: [{ value: '', label: t('projects.filters.partners.all') }, ...partners.map((p: any) => ({ value: p.id, label: (p.company || `${p.first_name || ''} ${p.last_name || ''}`).trim() }))]
+                id: 'partner', label: t('projects.filters.partners.label'), type: 'searchable' as const, value: advancedFilters.partnerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: v })),
+                options: partners.map((p: any) => ({
+                    value: p.id,
+                    label: `[P-${p.id}] ${(p.company || `${p.first_name || ''} ${p.last_name || ''}`).trim()}`
+                })),
+                placeholder: t('projects.filters.partners.all')
             },
             {
-                id: 'sourceLang', label: t('projects.filters.languages.source'), type: 'select' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
-                options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
+                id: 'sourceLang', label: t('projects.filters.languages.source'), type: 'searchable' as const, isMulti: true, value: advancedFilters.sourceLanguageId || [], onChange: (v: any) => handleSetAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
+                options: languages.map((l: any) => ({
+                    value: l.id,
+                    label: l.name_internal || l.name || (l.iso_code || '').toUpperCase(),
+                    icon: getFlagUrl(l.flag_icon || l.iso_code)
+                })),
+                placeholder: t('projects.filters.languages.all')
             },
             {
-                id: 'targetLang', label: t('projects.filters.languages.target'), type: 'select' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
-                options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
+                id: 'targetLang', label: t('projects.filters.languages.target'), type: 'searchable' as const, isMulti: true, value: advancedFilters.targetLanguageId || [], onChange: (v: any) => handleSetAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
+                options: languages.map((l: any) => ({
+                    value: l.id,
+                    label: l.name_internal || l.name || (l.iso_code || '').toUpperCase(),
+                    icon: getFlagUrl(l.flag_icon || l.iso_code)
+                })),
+                placeholder: t('projects.filters.languages.all')
             },
             {
                 id: 'deadlineRange', label: t('projects.filters.deadline.label'), type: 'select' as const, value: advancedFilters.deadlineRange || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, deadlineRange: v })),
@@ -535,7 +596,7 @@ const Projects = () => {
         <div className="flex items-center gap-2">
             <div className="relative group z-50" ref={exportRef}>
                 <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
-                    <FaDownload /> Export
+                    <FaDownload /> Exportieren
                 </button>
                 {isExportOpen && (
                     <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
@@ -551,20 +612,11 @@ const Projects = () => {
     if (isLoading && viewMode === 'kanban') return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
-            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden" onClick={() => { setIsExportOpen(false); }}>
-                <div className="flex justify-between items-center gap-4">
-                    <div className="min-w-0">
-                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Projekte</h1>
-                        <p className="text-slate-500 text-sm hidden sm:block">{t('projects.subtitle')}</p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                        <Button
-                            onClick={() => navigate('/projects/new')}
-                        >
-                            <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('projects.new_project')}</span><span className="inline sm:hidden">{t('projects.new_short')}</span>
-                        </Button>
-                    </div>
+        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => { setIsExportOpen(false); }}>
+            <div className="flex justify-between items-center gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">Projekte</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('projects.subtitle')}</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -720,8 +772,120 @@ const Projects = () => {
                     isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
                 />
 
+            <div className="flex justify-end -mb-2">
+                <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-hidden">
+                    <button
+                        onClick={() => handleSetViewMode('list')}
+                        className={clsx(
+                            "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all rounded-sm",
+                            viewMode === 'list'
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                        )}
+                        title="Tabellenansicht"
+                    >
+                        <FaListUl className="text-xs" />
+                    </button>
+                    <button
+                        onClick={() => handleSetViewMode('kanban')}
+                        className={clsx(
+                            "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all rounded-sm",
+                            viewMode === 'kanban'
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                        )}
+                        title="Kanban-Ansicht"
+                    >
+                        <FaColumns className="text-xs" />
+                    </button>
+                </div>
+            </div>
+            <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
+                {viewMode === 'list' ? (
+                    <DataTable
+                        data={filteredProjects as any[]}
+                        columns={columns as any}
+                        onRowClick={(p) => navigate(`/projects/${p.id}`)}
+                        searchPlaceholder={t('projects.search_placeholder')}
+                        searchFields={['project_name', 'project_number'] as any[]}
+                        actions={actions}
+                        onAddClick={() => navigate('/projects/new')}
+                        selectable
+                        selectedIds={selectedProjects}
+                        onSelectionChange={(ids) => setSelectedProjects(ids as string[])}
+                        bulkActions={[
+                            { label: t('projects.actions.bulk.complete'), icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'completed', progress: 100 } }), variant: 'success', show: statusView === 'active' && filter !== 'completed' },
+                            { label: t('projects.actions.bulk.reset'), icon: <FaArrowRight className="text-xs rotate-180" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'default', show: statusView === 'active' && filter === 'completed' },
+                            { label: t('projects.actions.bulk.send_email'), icon: <FaEnvelope className="text-xs" />, onClick: () => { if (selectedProjects.length === 1) { const p = projects.find((pro: any) => pro.id === selectedProjects[0]); navigate('/inbox', { state: { compose: true, to: p?.customer?.email, subject: `Projekt: ${p?.project_name} (${p?.project_number || 'ID ' + p?.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p?.project_name}.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`, attachments: p?.files || [] } }); } }, variant: 'primary', show: selectedProjects.length === 1 && statusView === 'active' },
+                            { label: t('projects.actions.bulk.archive'), icon: <FaArchive className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'archived' } }), variant: 'default', show: statusView === 'active' },
+                            { label: t('projects.actions.bulk.trash'), icon: <FaTrash className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'deleted' } }), variant: 'danger', show: statusView === 'active' },
+                            { label: t('projects.actions.bulk.restore'), icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' },
+                            { label: t('projects.actions.bulk.delete_permanent'), icon: <FaTrash className="text-xs" />, onClick: () => { setProjectToDelete(selectedProjects); setConfirmTitle(t('projects.confirm.delete_title')); setConfirmMessage(t('projects.confirm.delete_message', { count: selectedProjects.length })); setIsConfirmOpen(true); }, variant: 'dangerSolid', show: statusView === 'trash' },
+                        ] as BulkActionItem[]}
+                        filters={tableFilters}
+                        activeFilterCount={activeFilterCount}
+                        onResetFilters={resetFilters}
+                    />
+                ) : (
+                    <div className="flex-1 min-h-0 flex flex-col pt-4 overflow-x-hidden">
+                        <div className="flex justify-between items-center mb-6 px-4">
+                            <h2 className="text-xl font-medium text-slate-800">{t('projects.board_title')}</h2>
+                        </div>
+                        <div className="flex-1 min-h-0 px-4 overflow-y-auto pb-10 custom-scrollbar">
+                            <KanbanBoard
+                                projects={filteredProjects}
+                                onProjectClick={(p) => navigate(`/projects/${p.id}`)}
+                                onStatusChange={(projectId, newStatus) => {
+                                    updateMutation.mutate({ id: projectId, status: newStatus });
+                                }}
+                                onEdit={handleEditProject}
+                            />
+                        </div>
+                    </div >
+                )}
             </div >
-        </div>
+
+
+            <ProjectFilesModal
+                isOpen={isFilesModalOpen}
+                onClose={() => {
+                    setIsFilesModalOpen(false);
+                    setViewFilesProject(null);
+                }}
+                project={viewFilesProject}
+            />
+
+            <ConfirmModal
+                isOpen={isConfirmOpen}
+                onClose={() => {
+                    setIsConfirmOpen(false);
+                    setProjectToDelete(null);
+                }}
+                onConfirm={() => {
+                    if (projectToDelete) {
+                        if (Array.isArray(projectToDelete)) {
+                            bulkDeleteMutation.mutate(projectToDelete, {
+                                onSuccess: () => {
+                                    setIsConfirmOpen(false);
+                                    setProjectToDelete(null);
+                                }
+                            });
+                        } else {
+                            deleteMutation.mutate(projectToDelete as string, {
+                                onSuccess: () => {
+                                    setIsConfirmOpen(false);
+                                    setProjectToDelete(null);
+                                }
+                            });
+                        }
+                    }
+                }}
+                title={confirmTitle}
+                message={confirmMessage}
+                isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
+            />
+
+        </div >
     );
 };
 

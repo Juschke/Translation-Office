@@ -45,16 +45,16 @@ export function buildProjectColumns({
             id: 'project_info',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('common.project') || 'Projekt'}</span>
+                    <span className="text-xs">{t('common.project')}</span>
                 </div>
             ),
             accessor: (p: any) => (
                 <div className="flex flex-col cursor-pointer group/link w-fit">
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[150px]" title={p.project_name || `Projekt #${p.id}`}>
-                        {p.project_name || <span className="text-slate-400 italic font-normal text-xs">Unbenannt</span>}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-mono tracking-tighter group-hover/link:text-brand-primary transition">
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[150px]" title={p.project_number || `Projekt #${p.id}`}>
                         {p.project_number || `#${p.id}`}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium group-hover/link:text-brand-primary transition truncate max-w-[150px]" title={p.project_name || 'Unbenannt'}>
+                        {p.project_name || <span className="italic opacity-50">Unbenannt</span>}
                     </span>
                 </div>
             ),
@@ -74,13 +74,13 @@ export function buildProjectColumns({
                 const name = p.customer?.company_name || `${salutation}${p.customer?.first_name} ${p.customer?.last_name}` || 'Unbekannt';
                 return (
                     <div className="flex items-center gap-2 max-w-[200px] group/cust cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/cust:border-brand-primary/30 transition-colors">
+                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-sm font-semibold shrink-0 shadow-sm rounded-sm group-hover/cust:border-brand-primary/30 transition-colors">
                             {getInitials(name)}
                         </div>
                         <div className="flex flex-col leading-snug overflow-hidden">
                             <span className="font-semibold text-slate-800 truncate group-hover/cust:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
                             {(p.customer?.address_street || p.customer?.address_city) && (
-                                <div className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight mb-0.5">
+                                <div className="text-sm text-slate-400 truncate max-w-[150px] leading-tight mb-0.5">
                                     {p.customer.address_street}{p.customer.address_street && (p.customer.address_zip || p.customer.address_city) ? ', ' : ''}
                                     {p.customer.address_zip} {p.customer.address_city}
                                 </div>
@@ -88,8 +88,8 @@ export function buildProjectColumns({
                             <div className="flex items-center gap-1.5 overflow-hidden">
                                 {p.customer?.email && (
                                     <div className="flex items-center gap-1 min-w-0">
-                                        <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
-                                        <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.customer.email}>{p.customer.email}</span>
+                                        <FaEnvelope className="text-sm text-slate-300 shrink-0" />
+                                        <span className="text-sm text-slate-400 truncate" title={p.customer.email}>{p.customer.email}</span>
                                     </div>
                                 )}
                             </div>
@@ -114,15 +114,15 @@ export function buildProjectColumns({
                 const name = p.partner.company || `${salutation}${p.partner.first_name} ${p.partner.last_name}`;
                 return (
                     <div className="flex items-center gap-2 max-w-[200px] group/part cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/part:border-brand-primary/30 transition-colors">
+                        <div className="w-7 h-7 bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 shadow-sm rounded-sm group-hover/part:border-indigo-200 transition-colors">
                             {getInitials(name)}
                         </div>
                         <div className="flex flex-col leading-snug overflow-hidden">
                             <span className="font-semibold text-slate-800 truncate group-hover/part:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
                             {p.partner.email && (
                                 <div className="flex items-center gap-1 min-w-0 mt-0.5">
-                                    <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
-                                    <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.partner.email}>{p.partner.email}</span>
+                                    <FaEnvelope className="text-sm text-slate-300 shrink-0" />
+                                    <span className="text-sm text-slate-400 truncate" title={p.partner.email}>{p.partner.email}</span>
                                 </div>
                             )}
                         </div>
@@ -132,33 +132,44 @@ export function buildProjectColumns({
             width: 150,
         },
         {
-            id: 'languages',
+            id: 'source_lang',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('common.language_pair') || 'Sprachpaar'}</span>
+                    <span className="text-xs">{t('common.source_language')}</span>
                 </div>
             ),
             accessor: (p: any) => {
-                const sourceCode = p.source_language?.iso_code || p.source || 'de';
-                const sourceName = p.source_language?.name_internal || p.source_language?.name || sourceCode.toUpperCase();
-
-                const targetCode = p.target_language?.iso_code || p.target || 'en';
-                const targetName = p.target_language?.name_internal || p.target_language?.name || targetCode.toUpperCase();
+                const code = p.source_language?.iso_code || p.source || 'de';
+                const name = p.source_language?.name_internal || p.source_language?.name || code.toUpperCase();
                 return (
-                    <div className="flex items-center justify-between w-full py-1">
-                        <div className="flex items-center gap-1.5 shrink-0 bg-slate-50 px-1.5 py-1 rounded-sm border border-slate-100">
-                            <img src={getFlagUrl(sourceCode)} className="w-4 h-3 object-cover shadow-sm border border-slate-200 rounded-[1px] brightness-110" alt={sourceName} />
-                            <span className="text-[11px] font-bold text-slate-700">{sourceName}</span>
-                        </div>
-                        <span className="text-slate-300 text-[12px] font-bold">→</span>
-                        <div className="flex items-center gap-1.5 shrink-0 bg-brand-primary/[0.03] px-1.5 py-1 rounded-sm border border-brand-primary/5">
-                            <img src={getFlagUrl(targetCode)} className="w-4 h-3 object-cover shadow-sm border border-slate-200 rounded-[1px] brightness-110" alt={targetName} />
-                            <span className="text-[11px] font-bold text-brand-primary">{targetName}</span>
-                        </div>
+                    <div className="flex items-center gap-2 py-1 overflow-hidden" title={name}>
+                        <img src={getFlagUrl(code)} className="w-4 h-3 object-cover shadow-sm border border-slate-200 rounded-[1px] brightness-110 shrink-0" alt={name} />
+                        <span className="text-[11px] font-bold text-slate-700 truncate">{name}</span>
                     </div>
                 );
             },
-            width: 250,
+            defaultVisible: true,
+            width: 120,
+        },
+        {
+            id: 'target_lang',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">{t('common.target_language')}</span>
+                </div>
+            ),
+            accessor: (p: any) => {
+                const code = p.target_language?.iso_code || p.target || 'en';
+                const name = p.target_language?.name_internal || p.target_language?.name || code.toUpperCase();
+                return (
+                    <div className="flex items-center gap-2 py-1 overflow-hidden" title={name}>
+                        <img src={getFlagUrl(code)} className="w-4 h-3 object-cover shadow-sm border border-slate-200 rounded-[1px] brightness-110 shrink-0" alt={name} />
+                        <span className="text-[11px] font-bold text-brand-primary truncate">{name}</span>
+                    </div>
+                );
+            },
+            defaultVisible: true,
+            width: 120,
         },
         {
             id: 'status',
@@ -202,9 +213,9 @@ export function buildProjectColumns({
                     <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1 text-xs font-medium text-slate-700">
                             <span className="whitespace-nowrap">{date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
-                            <span className="text-slate-400 text-[10px] opacity-70">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-slate-400 text-sm opacity-70">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                        <span className={`px-1 py-0 rounded-[2px] text-[10px] font-bold border w-fit uppercase ${badgeColor}`}>{label}</span>
+                        <span className={`px-1 py-0 rounded-[2px] text-sm font-bold border w-fit ${badgeColor}`}>{label}</span>
                     </div>
                 );
             },

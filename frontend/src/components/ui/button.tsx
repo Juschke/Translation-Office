@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 const buttonVariants = cva(
     [
         "inline-flex items-center justify-center gap-2 whitespace-nowrap",
-        "rounded-[3px] text-sm font-medium",
+        "rounded-none text-sm font-medium",
         "transition-all duration-100",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4D4F]/30 focus-visible:ring-offset-1",
         "disabled:pointer-events-none disabled:opacity-50",
@@ -94,22 +94,22 @@ const buttonVariants = cva(
 
             size: {
                 default: "h-9 px-4 py-2",
-                sm:      "h-7 px-3 text-xs",
-                lg:      "h-10 px-6",
-                icon:    "h-9 w-9 p-0",
+                sm: "h-7 px-3 text-xs",
+                lg: "h-10 px-6",
+                icon: "h-9 w-9 p-0",
             },
         },
         defaultVariants: {
             variant: "default",
-            size:    "default",
+            size: "default",
         },
     }
 )
 
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-        VariantProps<typeof buttonVariants> {
-    asChild?:   boolean
+    VariantProps<typeof buttonVariants> {
+    asChild?: boolean
     isLoading?: boolean
 }
 
@@ -124,7 +124,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 {...props}
             >
                 {isLoading && (
-                    <div className="mr-1 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <div className="mr-1 h-4 w-4 animate-spin rounded-none border-2 border-current border-t-transparent" />
                 )}
                 {children}
             </Comp>

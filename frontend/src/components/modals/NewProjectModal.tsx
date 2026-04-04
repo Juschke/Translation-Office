@@ -1,32 +1,33 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     FaPlus, FaMinus, FaTrash,
     FaFlag, FaClock, FaBolt,
-    FaSearch, FaCheck, FaTimes
+    FaSearch, FaCheck, FaTimes, FaBook, FaChevronDown
 } from 'react-icons/fa';
-import SearchableSelect from '../common/SearchableSelect';
+import { createPortal } from 'react-dom';
 import CustomerSelect from '../common/CustomerSelect';
 import DocumentTypeSelect from '../common/DocumentTypeSelect';
 import PartnerSelect from '../common/PartnerSelect';
 import LanguageSelect from '../common/LanguageSelect';
 import Input from '../common/Input';
+import ProjectStatusSelect from '../common/ProjectStatusSelect';
 import PartnerSelectionModal from './PartnerSelectionModal';
 import CustomerSelectionModal from './CustomerSelectionModal';
 import NewCustomerModal from './NewCustomerModal';
 import NewPartnerModal from './NewPartnerModal';
-import ConfirmDialog from '../common/ConfirmDialog';
+import ConfirmModal from '../common/ConfirmModal';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { customerService, partnerService, settingsService, projectService } from '../../api/services';
+import { formatCustomerLabel, formatPartnerLabel } from '../../utils/dropdownFormat';
 import PaymentModal from './PaymentModal';
 import NewDocTypeModal from './NewDocTypeModal';
 import NewMasterDataModal from './NewMasterDataModal';
 import { Label } from '../ui/label';
-import type { ProjectPosition } from './projectTypes';
+import type { ProjectPosition } from './projectType';
 import ProjectPositionsTable from './ProjectPositionsTable';
 import ProjectPaymentsTable from './ProjectPaymentsTable';
 import ProjectFinancialSidebar from './ProjectFinancialSidebar';
@@ -42,16 +43,15 @@ interface NewProjectModalProps {
 }
 
 const statusOptions = [
-    { value: 'offer', label: 'Neu / Angebot', group: 'Schritt 1: Angebot' },
-    { value: 'in_progress', label: 'In Bearbeitung', group: 'Schritt 2: Produktion' },
-    { value: 'ready_for_pickup', label: 'Abholbereit', group: 'Schritt 3: Lieferung' },
-    { value: 'delivered', label: 'Geliefert / Versendet', group: 'Schritt 3: Lieferung' },
-    { value: 'invoiced', label: 'Rechnung gestellt', group: 'Schritt 4: Abschluss' },
-    { value: 'completed', label: 'Projekt abgeschlossen', group: 'Schritt 4: Abschluss' }
+    { value: 'offer', label: 'Neu / Angebot' },
+    { value: 'in_progress', label: 'In Bearbeitung' },
+    { value: 'ready_for_pickup', label: 'Abholbereit' },
+    { value: 'delivered', label: 'Geliefert / Versendet' },
+    { value: 'invoiced', label: 'Rechnung gestellt' },
+    { value: 'completed', label: 'Projekt abgeschlossen' }
 ];
 
 const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
-    const { t } = useTranslation();
     const queryClient = useQueryClient();
 
     // Basic States
@@ -109,6 +109,12 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [langTrigger, setLangTrigger] = useState<'source' | 'target' | null>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'services' | 'details'>('general');
+    const [catalogOpen, setCatalogOpen] = useState(false);
+    const [serviceSearch, setServiceSearch] = useState('');
+    const [catalogCoords, setCatalogCoords] = useState({ top: 0, left: 0, width: 0 });
+    const catalogButtonRef = React.useRef<HTMLButtonElement>(null);
+    const catalogDropdownRef = React.useRef<HTMLDivElement>(null);
+    const catalogSearchRef = React.useRef<HTMLInputElement>(null);
 
     // API Data
     const { data: customersData = [] } = useQuery({
@@ -145,6 +151,12 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         enabled: isOpen
     });
 
+    const { data: services = [] } = useQuery({
+        queryKey: ['settings', 'services'],
+        queryFn: () => settingsService.getServices(),
+        enabled: isOpen
+    });
+
     const { data: projectsData = [] } = useQuery({
         queryKey: ['projects'],
         queryFn: projectService.getAll,
@@ -157,6 +169,18 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         enabled: isOpen
     });
 
+    const { data: dbStatuses } = useQuery({
+        queryKey: ['settings', 'projectStatuses'],
+        queryFn: settingsService.getProjectStatuses,
+        enabled: isOpen
+    });
+
+    const combinedStatusOptions = useMemo(() => {
+        const customs = (dbStatuses || []).map((s: any) => ({ value: s.key || s.id.toString(), label: s.name }));
+        const filteredCustoms = customs.filter((c: any) => !statusOptions.some(d => d.value === c.value));
+        return [...statusOptions, ...filteredCustoms];
+    }, [dbStatuses]);
+
     const displayNr = useMemo(() => {
         if (initialData?.project_number) return initialData.project_number;
         const prefix = companyData?.project_id_prefix || 'P';
@@ -168,14 +192,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const custOptions = useMemo(() => {
         return Array.isArray(customersData) ? customersData.map((c: any) => ({
             value: c.id.toString(),
-            label: `${c.display_id || c.id} - ${c.company_name || `${c.first_name} ${c.last_name}`}`
+            label: formatCustomerLabel(c)
         })) : [];
     }, [customersData]);
 
     const partnerOptions = useMemo(() => {
         return Array.isArray(partnersData) ? partnersData.map((p: any) => ({
             value: p.id.toString(),
-            label: `${p.id} - ${p.company_name || `${p.first_name} ${p.last_name}`}`
+            label: formatPartnerLabel(p)
         })) : [];
     }, [partnersData]);
 
@@ -523,6 +547,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             errors.push("Übersetzer ist ein Pflichtfeld");
             newErrorSet.add('translator');
         }
+        if (!status) {
+            errors.push("Status ist ein Pflichtfeld");
+            newErrorSet.add('status');
+        }
 
         const hasActiveInvoice = initialData?.invoices?.some((inv: any) => inv.status !== 'cancelled') ||
             initialData?.invoices_count > 0;
@@ -662,6 +690,73 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const profit = calcNet - (parseFloat(partnerPrice) || 0);
     const profitMargin = calcNet > 0 ? (profit / calcNet) * 100 : 0;
 
+    const addService = (service: any) => {
+        setPositions(prev => [...prev, {
+            id: crypto.randomUUID?.() || Date.now().toString() + Math.random(),
+            description: service.name,
+            unit: service.unit || 'Normzeile',
+            amount: '0.00',
+            quantity: '1.00',
+            partnerRate: '0.00',
+            partnerMode: 'unit',
+            partnerTotal: '0.00',
+            customerRate: (parseFloat(service.base_price) || 0).toFixed(2),
+            customerMode: 'rate',
+            customerTotal: (parseFloat(service.base_price) || 0).toFixed(2),
+            marginType: 'markup',
+            marginPercent: '0.00',
+            taxRate: '19.00',
+        }]);
+        setCatalogOpen(false);
+    };
+
+    const activeServices = useMemo(() => {
+        if (!serviceSearch) return services;
+        const s = serviceSearch.toLowerCase();
+        return services.filter((svc: any) =>
+            svc.name?.toLowerCase().includes(s) ||
+            svc.service_code?.toLowerCase().includes(s)
+        );
+    }, [services, serviceSearch]);
+
+    useEffect(() => {
+        if (!catalogOpen || !catalogButtonRef.current) return;
+
+        const updateCoords = () => {
+            const rect = catalogButtonRef.current?.getBoundingClientRect();
+            if (rect) {
+                setCatalogCoords({
+                    top: rect.bottom + 4,
+                    left: rect.right - 320, // Match width of dropdown
+                    width: 320
+                });
+            }
+        };
+
+        updateCoords();
+        window.addEventListener('scroll', updateCoords, true);
+        window.addEventListener('resize', updateCoords);
+
+        return () => {
+            window.removeEventListener('scroll', updateCoords, true);
+            window.removeEventListener('resize', updateCoords);
+        };
+    }, [catalogOpen]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (catalogOpen &&
+                catalogDropdownRef.current &&
+                !catalogDropdownRef.current.contains(event.target as Node) &&
+                catalogButtonRef.current &&
+                !catalogButtonRef.current.contains(event.target as Node)) {
+                setCatalogOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [catalogOpen]);
+
     const handlePartnerSelect = (partner: any) => {
         setTranslator(partner.id.toString());
         setIsPartnerModalOpen(false);
@@ -709,8 +804,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 <div className="w-12 h-12 border-4 border border-brand-primary border-t-transparent rounded-full animate-spin absolute inset-0"></div>
                             </div>
                             <div className="flex flex-col items-center gap-1">
-                                <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
-                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
+                                <p className="text-sm font-bold text-slate-800">Lade Daten...</p>
+                                <p className="text-sm text-slate-400 font-medium">Bitte warten</p>
                             </div>
                         </div>
                     </div>
@@ -721,17 +816,17 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         <h3 className="font-medium text-slate-800 text-base sm:text-lg flex flex-wrap items-center gap-2 sm:gap-3">
                             {initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}
                         </h3>
-                        <span className="text-[10px] sm:text-xs font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded-sm border border-slate-200 w-fit">
+                        <span className="text-sm sm:text-xs font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded-sm border border-slate-200 w-fit">
                             Nr: {displayNr}
                         </span>
                     </div>
                     <div className="flex items-center justify-between w-full sm:w-auto gap-3">
                         <div className="flex bg-slate-200/50 rounded-sm p-0.5 border border-slate-300/50 h-8 sm:h-9">
                             {['low', 'medium', 'high'].map(p => (
-                                <button key={p} onClick={() => setPriority(p as any)} className={clsx("px-2 sm:px-3 h-full text-[10px] sm:text-xs font-medium rounded-sm transition-all flex items-center gap-1 sm:gap-2", priority === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}>
-                                    {p === 'low' && <FaClock className="text-[10px] sm:text-xs" />}
-                                    {p === 'medium' && <FaFlag className="text-[10px] sm:text-xs" />}
-                                    {p === 'high' && <FaBolt className="text-[10px] sm:text-xs" />}
+                                <button key={p} onClick={() => setPriority(p as any)} className={clsx("px-2 sm:px-3 h-full text-sm sm:text-xs font-medium rounded-sm transition-all flex items-center gap-1 sm:gap-2", priority === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}>
+                                    {p === 'low' && <FaClock className="text-sm sm:text-xs" />}
+                                    {p === 'medium' && <FaFlag className="text-sm sm:text-xs" />}
+                                    {p === 'high' && <FaBolt className="text-sm sm:text-xs" />}
                                     <span className="hidden xs:inline">{p === 'low' ? 'Standard' : p === 'medium' ? 'Dringend' : 'Express'}</span>
                                 </button>
                             ))}
@@ -800,17 +895,17 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         </div>
 
                                         <div className="col-span-12 md:col-span-6" id="field-container-status">
-                                            <SearchableSelect
-                                                label="Status"
-                                                options={statusOptions}
+                                            <Label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Status <span className="text-red-500 font-bold">*</span></Label>
+                                            <ProjectStatusSelect
+                                                options={combinedStatusOptions}
                                                 value={status}
                                                 onChange={setStatus}
                                                 error={validationErrors.has('status')}
-                                                preserveOrder={true}
+                                                placeholder="Status auswählen..."
                                             />
                                         </div>
 
-                                        <div className="col-span-12 md:col-span-6 " id="field-container-deadline">
+                                        <div className="col-span-12 md:col-span-6" id="field-container-deadline">
                                             <Label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Liefertermin</Label>
                                             <DatePicker
                                                 showTime
@@ -892,15 +987,15 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                     {/* Partner Selection Table */}
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between pb-1 border-b border-slate-100 gap-2">
-                                            <h4 className="text-[10px] sm:text-xs font-medium text-slate-400 ml-1 truncate">Partner Auswahl (Vorschläge basierend auf Sprache)</h4>
+                                            <h4 className="text-sm sm:text-xs font-medium text-slate-400 ml-1 truncate">Partner Auswahl (Vorschläge basierend auf Sprache)</h4>
                                             <div className="relative w-32 sm:w-40">
-                                                <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[10px] sm:text-xs" />
+                                                <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-sm sm:text-xs" />
                                                 <input
                                                     type="text"
                                                     placeholder="Suchen..."
                                                     value={partnerSearch}
                                                     onChange={(e) => setPartnerSearch(e.target.value)}
-                                                    className="w-full pl-7 pr-2 py-1 bg-white border border-slate-200 rounded-sm text-[10px] sm:text-xs focus:outline-none focus:border-brand-300 transition-all"
+                                                    className="w-full pl-7 pr-2 py-1 bg-white border border-slate-200 rounded-sm text-sm sm:text-xs focus:outline-none focus:border-brand-300 transition-all"
                                                 />
                                             </div>
                                         </div>
@@ -922,7 +1017,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                     <td colSpan={3} className="px-2 py-1.5 border-b border-slate-100">
                                                                         <div className="flex items-center gap-2">
                                                                             <span className="text-xs font-semibold text-slate-600">Passende Übersetzer</span>
-                                                                            <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{matchingPartners.length}</span>
+                                                                            <span className="bg-white border border-slate-200 text-slate-600 text-sm font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{matchingPartners.length}</span>
                                                                         </div>
                                                                     </td>
                                                                 </tr>
@@ -942,7 +1037,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                                 </div>
                                                                                 <div className="flex flex-col min-w-0">
                                                                                     <span className="text-xs font-medium text-slate-700">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
-                                                                                    <span className="text-xs text-slate-400 tracking-tight">{p.email}</span>
+                                                                                    <span className="text-xs text-slate-400">{p.email}</span>
                                                                                 </div>
                                                                             </div>
                                                                         </td>
@@ -953,10 +1048,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                                     const targetArray = Array.isArray(target) ? target : [target];
                                                                                     const isTargetMatch = targetArray.length > 0 && l.toLowerCase().includes(targetArray[0]?.toLowerCase().split('-')[0]);
                                                                                     return (
-                                                                                        <span key={l} className={clsx(
-                                                                                            "px-1 py-0 rounded-sm text-[7px] font-medium border",
-                                                                                            isSourceMatch || isTargetMatch ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white text-slate-400 border-slate-100"
-                                                                                        )}>{getFullLanguageName(l)}</span>
+                                                                                        <span key={l} className={clsx("px-1 py-0 rounded-sm text-[7px] font-medium border", isSourceMatch || isTargetMatch ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white text-slate-400 border-slate-100")}>{getFullLanguageName(l)}</span>
                                                                                     );
                                                                                 })}
                                                                             </div>
@@ -978,7 +1070,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                             <td colSpan={3} className="px-2 py-1.5 border-b border-slate-100">
                                                                 <div className="flex items-center gap-2 mt-2">
                                                                     <span className="text-xs font-semibold text-slate-400">Sonstige Partner</span>
-                                                                    <span className="bg-white border border-slate-200 text-slate-500 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{otherPartners.length}</span>
+                                                                    <span className="bg-white border border-slate-200 text-slate-500 text-sm font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{otherPartners.length}</span>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -998,14 +1090,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                                         </div>
                                                                         <div className="flex flex-col min-w-0">
                                                                             <span className="text-xs font-medium text-slate-700">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
-                                                                            <span className="text-xs text-slate-400 tracking-tight">{p.email}</span>
+                                                                            <span className="text-xs text-slate-400">{p.email}</span>
                                                                         </div>
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-2 py-2">
                                                                     <div className="flex flex-wrap gap-1">
                                                                         {(p.languages || []).slice(0, 3).map((l: string) => (
-                                                                            <span key={l} className="px-1 py-0 rounded-sm text-[7px] font-semibolder border bg-white text-slate-400 border-slate-100">{l}</span>
+                                                                            <span key={l} className="px-1 py-0 rounded-sm text-[7px] font-semibold border bg-white text-slate-400 border-slate-100">{l}</span>
                                                                         ))}
                                                                     </div>
                                                                 </td>
@@ -1063,16 +1155,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 className="h-8 sm:h-9 flex items-center gap-2 cursor-pointer transition-all"
                                                 onClick={() => setIsCertified(!isCertified)}
                                             >
-                                                <div className={clsx(
-                                                    "w-7 h-3.5 rounded-full relative transition-colors",
-                                                    isCertified ? "bg-emerald-500" : "bg-slate-300"
-                                                )}>
-                                                    <div className={clsx(
-                                                        "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
-                                                        isCertified ? "left-4" : "left-0.5"
-                                                    )} />
+                                                <div className={clsx("w-7 h-3.5 rounded-full relative transition-colors", isCertified ? "bg-emerald-500" : "bg-slate-300")}>
+                                                    <div className={clsx("absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm", isCertified ? "left-4" : "left-0.5")} />
                                                 </div>
-                                                <span className={clsx("text-[10px] font-bold tracking-tight", isCertified ? "text-emerald-600" : "text-slate-400")}>
+                                                <span className={clsx("text-sm font-bold", isCertified ? "text-emerald-600" : "text-slate-400")}>
                                                     {isCertified ? "JA" : "NEIN"}
                                                 </span>
                                             </div>
@@ -1084,16 +1170,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 className="h-8 sm:h-9 flex items-center gap-2 cursor-pointer transition-all"
                                                 onClick={() => setIsExpress(!isExpress)}
                                             >
-                                                <div className={clsx(
-                                                    "w-7 h-3.5 rounded-full relative transition-colors",
-                                                    isExpress ? "bg-emerald-500" : "bg-slate-300"
-                                                )}>
-                                                    <div className={clsx(
-                                                        "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
-                                                        isExpress ? "left-4" : "left-0.5"
-                                                    )} />
+                                                <div className={clsx("w-7 h-3.5 rounded-full relative transition-colors", isExpress ? "bg-emerald-500" : "bg-slate-300")}>
+                                                    <div className={clsx("absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm", isExpress ? "left-4" : "left-0.5")} />
                                                 </div>
-                                                <span className={clsx("text-[10px] font-bold tracking-tight", isExpress ? "text-emerald-600" : "text-slate-400")}>
+                                                <span className={clsx("text-sm font-bold", isExpress ? "text-emerald-600" : "text-slate-400")}>
                                                     {isExpress ? "JA" : "NEIN"}
                                                 </span>
                                             </div>
@@ -1105,16 +1185,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 className="h-8 sm:h-9 flex items-center gap-2 cursor-pointer transition-all"
                                                 onClick={() => setHasApostille(!hasApostille)}
                                             >
-                                                <div className={clsx(
-                                                    "w-7 h-3.5 rounded-full relative transition-colors",
-                                                    hasApostille ? "bg-emerald-500" : "bg-slate-300"
-                                                )}>
-                                                    <div className={clsx(
-                                                        "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
-                                                        hasApostille ? "left-4" : "left-0.5"
-                                                    )} />
+                                                <div className={clsx("w-7 h-3.5 rounded-full relative transition-colors", hasApostille ? "bg-emerald-500" : "bg-slate-300")}>
+                                                    <div className={clsx("absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm", hasApostille ? "left-4" : "left-0.5")} />
                                                 </div>
-                                                <span className={clsx("text-[10px] font-bold tracking-tight", hasApostille ? "text-emerald-600" : "text-slate-400")}>
+                                                <span className={clsx("text-sm font-bold", hasApostille ? "text-emerald-600" : "text-slate-400")}>
                                                     {hasApostille ? "JA" : "NEIN"}
                                                 </span>
                                             </div>
@@ -1126,16 +1200,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 className="h-8 sm:h-9 flex items-center gap-2 cursor-pointer transition-all"
                                                 onClick={() => setClassification(classification === 'ja' ? 'nein' : 'ja')}
                                             >
-                                                <div className={clsx(
-                                                    "w-7 h-3.5 rounded-full relative transition-colors",
-                                                    classification === 'ja' ? "bg-emerald-500" : "bg-slate-300"
-                                                )}>
-                                                    <div className={clsx(
-                                                        "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
-                                                        classification === 'ja' ? "left-4" : "left-0.5"
-                                                    )} />
+                                                <div className={clsx("w-7 h-3.5 rounded-full relative transition-colors", classification === 'ja' ? "bg-emerald-500" : "bg-slate-300")}>
+                                                    <div className={clsx("absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm", classification === 'ja' ? "left-4" : "left-0.5")} />
                                                 </div>
-                                                <span className={clsx("text-[10px] font-bold tracking-tight", classification === 'ja' ? "text-emerald-600" : "text-slate-400")}>
+                                                <span className={clsx("text-sm font-bold", classification === 'ja' ? "text-emerald-600" : "text-slate-400")}>
                                                     {classification === 'ja' ? "JA" : "NEIN"}
                                                 </span>
                                             </div>
@@ -1147,16 +1215,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 className="h-8 sm:h-9 flex items-center gap-2 cursor-pointer transition-all"
                                                 onClick={() => setWithTax(!withTax)}
                                             >
-                                                <div className={clsx(
-                                                    "w-7 h-3.5 rounded-full relative transition-colors",
-                                                    withTax ? "bg-emerald-500" : "bg-slate-300"
-                                                )}>
-                                                    <div className={clsx(
-                                                        "absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm",
-                                                        withTax ? "left-4" : "left-0.5"
-                                                    )} />
+                                                <div className={clsx("w-7 h-3.5 rounded-full relative transition-colors", withTax ? "bg-emerald-500" : "bg-slate-300")}>
+                                                    <div className={clsx("absolute top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-all shadow-sm", withTax ? "left-4" : "left-0.5")} />
                                                 </div>
-                                                <span className={clsx("text-[10px] font-bold tracking-tight", withTax ? "text-emerald-600" : "text-slate-400")}>
+                                                <span className={clsx("text-sm font-bold", withTax ? "text-emerald-600" : "text-slate-400")}>
                                                     {withTax ? "AKTIV" : "AUS"}
                                                 </span>
                                             </div>
@@ -1172,7 +1234,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                         onClick={() => setCopies(Math.max(0, copies - 1))}
                                                         className="h-full px-2 sm:px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-r border-slate-100"
                                                     >
-                                                        <FaMinus className="text-[10px] sm:text-xs" />
+                                                        <FaMinus className="text-sm sm:text-xs" />
                                                     </button>
                                                     <input
                                                         type="number"
@@ -1184,7 +1246,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                         onClick={() => setCopies(copies + 1)}
                                                         className="h-full px-2 sm:px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors border-l border-slate-100"
                                                     >
-                                                        <FaPlus className="text-[10px] sm:text-xs" />
+                                                        <FaPlus className="text-sm sm:text-xs" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -1219,10 +1281,114 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 </div>
 
                                 <div className="space-y-6 pt-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">05</div>
-                                        <h4 className="text-sm font-medium text-slate-800">Kalkulation Positionen</h4>
+                                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">05</div>
+                                            <h4 className="text-sm font-medium text-slate-800">Kalkulation Positionen</h4>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 text-xs bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
+                                                onClick={() => toast('Leistungspakete werden in Kürze verfügbar sein.')}
+                                            >
+                                                Leistungspaket
+                                            </Button>
+                                            <div className="relative">
+                                                <Button
+                                                    ref={catalogButtonRef}
+                                                    type="button"
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    className={clsx(
+                                                        "h-8 text-xs font-bold transition-all",
+                                                        catalogOpen ? "bg-slate-100 border-slate-300 ring-2 ring-brand-primary/10" : "bg-slate-50 border-slate-200"
+                                                    )}
+                                                    onClick={() => { setCatalogOpen(!catalogOpen); setServiceSearch(''); }}
+                                                >
+                                                    <FaBook className="mr-1.5 text-slate-400" />
+                                                    Leistungen
+                                                    <FaChevronDown className={clsx("ml-1.5 text-[10px] transition-transform duration-200", catalogOpen && "rotate-180")} />
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    {catalogOpen && createPortal(
+                                        <div
+                                            ref={catalogDropdownRef}
+                                            className="fixed z-[10000] w-80 border border-slate-200 rounded-sm bg-white shadow-2xl overflow-hidden animate-fadeInUp"
+                                            style={{
+                                                top: catalogCoords.top,
+                                                left: catalogCoords.left,
+                                                pointerEvents: 'auto'
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-slate-100 bg-slate-50/50">
+                                                <FaSearch className="text-slate-400 text-[10px]" />
+                                                <input
+                                                    ref={catalogSearchRef}
+                                                    type="text"
+                                                    placeholder="Leistung suchen…"
+                                                    autoFocus
+                                                    value={serviceSearch}
+                                                    onChange={e => setServiceSearch(e.target.value)}
+                                                    className="flex-1 text-[11px] outline-none bg-transparent text-slate-700 placeholder:text-slate-400 font-medium"
+                                                />
+                                                {serviceSearch && (
+                                                    <FaTimes
+                                                        className="text-slate-300 hover:text-red-500 cursor-pointer text-[10px]"
+                                                        onClick={() => setServiceSearch('')}
+                                                    />
+                                                )}
+                                            </div>
+
+                                            <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                                                {activeServices.length === 0 ? (
+                                                    <p className="text-[11px] text-slate-400 text-center py-6 italic">
+                                                        {serviceSearch ? 'Keine Treffer' : 'Keine Leistungen im Katalog'}
+                                                    </p>
+                                                ) : (
+                                                    activeServices.map((service: any) => (
+                                                        <button
+                                                            key={service.id}
+                                                            type="button"
+                                                            onClick={() => addService(service)}
+                                                            className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 group/item"
+                                                        >
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[11px] font-bold text-slate-700 group-hover/item:text-brand-primary transition-colors">
+                                                                    {service.name}
+                                                                </span>
+                                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tight">{service.unit || 'Stk.'}</span>
+                                                                    {service.service_code && <span className="text-[10px] text-slate-300">•</span>}
+                                                                    {service.service_code && <span className="text-[10px] font-mono text-slate-400 font-medium">{service.service_code}</span>}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className="text-[11px] font-black text-slate-700">
+                                                                    {(parseFloat(service.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                    ))
+                                                )}
+                                            </div>
+
+                                            <div className="border-t border-slate-100 bg-slate-50/50 p-2 text-center">
+                                                <button
+                                                    onClick={() => toast('Gehe zu Einstellungen > Stammdaten > Leistungen')}
+                                                    className="text-[10px] font-bold text-brand-primary hover:underline"
+                                                >
+                                                    Katalog verwalten
+                                                </button>
+                                            </div>
+                                        </div>,
+                                        document.body
+                                    )}
 
                                     <ProjectPositionsTable positions={positions} setPositions={setPositions} />
                                 </div>
@@ -1232,19 +1398,16 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         <div className="flex items-center gap-3">
                                             <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">06</div>
                                             <h4 className="text-sm font-medium text-slate-800">Anzahlungen / Teilzahlungen</h4>
-                                            <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{payments.length}</span>
+                                            <span className="bg-white border border-slate-200 text-slate-600 text-sm font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{payments.length}</span>
                                         </div>
                                         <Button
                                             variant="default"
                                             size="sm"
                                             onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
                                             disabled={remainingBalance <= 0.01}
-                                            className={clsx(
-                                                "h-7 px-3 text-[10px] uppercase font-bold tracking-tight shadow-none rounded flex items-center gap-1.5",
-                                                remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white"
-                                            )}
+                                            className={clsx("h-7 px-3 text-sm font-bold shadow-none rounded flex items-center gap-1.5", remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white")}
                                         >
-                                            <FaPlus className="text-[10px]" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                                            <FaPlus className="text-sm" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
                                         </Button>
                                     </div>
 
@@ -1276,7 +1439,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         creationDate={creationDate}
                         projectManager={projectManager}
                         baseNet={baseNet}
-                        extraCosts={extraCosts}
                         calcNet={calcNet}
                         calcTax={calcTax}
                         calcGross={calcGross}
@@ -1302,7 +1464,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 onClick={handleDelete}
                                 className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                             >
-                                <FaTrash className="text-[10px]" /> Projekt Löschen
+                                <FaTrash className="text-sm" /> Projekt Löschen
                             </Button>
                         )}
                     </div>
@@ -1343,7 +1505,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                 alreadyPaid={editingPayment ? totalPaid - parseFloat(editingPayment.amount) : totalPaid}
             />
             <NewMasterDataModal isOpen={isLanguageModalOpen} onClose={() => setIsLanguageModalOpen(false)} onSubmit={(data) => createLanguageMutation.mutate(data)} type="languages" />
-            <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
+            <ConfirmModal isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig(p => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
         </div>
     );
 };

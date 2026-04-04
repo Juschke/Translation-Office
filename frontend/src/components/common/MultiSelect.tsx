@@ -80,7 +80,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
         <div className="relative" ref={containerRef}>
             <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">{label}</label>
             <div
-                className={`w-full border rounded-sm px-3 py-2 min-h-[42px] bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm ${isOpen ? 'border-slate-900 ring-2 ring-slate-950/10' : 'border-slate-300 hover:border-slate-400'}`}
+                className={`w-full border rounded-sm px-3 py-2 min-h-[42px] bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm ${isOpen ? 'border-brand-primary ring-2 ring-brand-primary/10' : 'border-slate-200 hover:border-brand-primary'}`}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
                 tabIndex={0}
@@ -115,43 +115,45 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
                 </div>
             </div>
 
-            {isOpen && (
-                <div className="absolute z-50 w-full rounded-sm bg-white border border-slate-200 max-h-60 overflow-hidden flex flex-col shadow-sm">
-                    <div className="border-b border-slate-100 bg-white relative">
-                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
-                        <input
-                            type="text"
-                            className="w-full pl-9 pr-3 py-2.5 border-none text-sm focus:outline-none"
-                            placeholder="Suchen..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                        />
-                    </div>
-                    <div className="overflow-y-auto custom-scrollbar flex-1">
-                        {filteredOptions.length > 0 ? (
-                            filteredOptions.map((option, index) => (
-                                <div
-                                    key={option.value}
-                                    className={`px-4 py-2.5 text-sm cursor-pointer transition flex items-center gap-2 ${activeIndex === index ? 'bg-slate-50 text-slate-900' : ''
-                                        } ${value.includes(option.value) ? 'bg-brand-primary/5 text-brand-primary font-medium' : 'text-slate-600 hover:bg-slate-50'
-                                        }`}
-                                    onClick={() => toggleOption(option.value)}
-                                >
-                                    <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition ${value.includes(option.value) ? 'bg-brand-primary border-brand-primary' : 'border-slate-300 bg-white'}`}>
-                                        {value.includes(option.value) && <span className="text-white text-xs">✓</span>}
+            {
+                isOpen && (
+                    <div className="absolute z-50 w-full rounded-sm bg-white border border-slate-200 max-h-60 overflow-hidden flex flex-col shadow-sm">
+                        <div className="border-b border-slate-100 bg-white relative">
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                            <input
+                                type="text"
+                                className="w-full pl-9 pr-3 py-2.5 border-none text-sm focus:outline-none"
+                                placeholder="Suchen..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="overflow-y-auto custom-scrollbar flex-1">
+                            {filteredOptions.length > 0 ? (
+                                filteredOptions.map((option, index) => (
+                                    <div
+                                        key={option.value}
+                                        className={`px-4 py-2.5 text-sm cursor-pointer transition flex items-center gap-2 ${activeIndex === index ? 'bg-slate-50 text-slate-900' : ''
+                                            } ${value.includes(option.value) ? 'bg-brand-primary/5 text-brand-primary font-medium' : 'text-slate-600 hover:bg-slate-50'
+                                            }`}
+                                        onClick={() => toggleOption(option.value)}
+                                    >
+                                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition ${value.includes(option.value) ? 'bg-brand-primary border-brand-primary' : 'border-slate-300 bg-white'}`}>
+                                            {value.includes(option.value) && <span className="text-white text-xs">✓</span>}
+                                        </div>
+                                        {option.label}
                                     </div>
-                                    {option.label}
-                                </div>
-                            ))
-                        ) : (
-                            <div className="px-4 py-3 text-sm text-slate-400 italic text-center">Keine Ergebnisse</div>
-                        )}
+                                ))
+                            ) : (
+                                <div className="px-4 py-3 text-sm text-slate-400 italic text-center">Keine Ergebnisse</div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,12 +8,13 @@ import {
     FaSearch, FaCheck, FaTimes, FaArrowLeft, FaSave,
     FaInfoCircle, FaQuestionCircle
 } from 'react-icons/fa';
-import SearchableSelect from '../components/common/SearchableSelect';
+import { formatCustomerLabel, formatPartnerLabel } from '../utils/dropdownFormat';
 import CustomerSelect from '../components/common/CustomerSelect';
 import DocumentTypeSelect from '../components/common/DocumentTypeSelect';
 import PartnerSelect from '../components/common/PartnerSelect';
 import LanguageSelect from '../components/common/LanguageSelect';
 import Input from '../components/common/Input';
+import ProjectStatusSelect from '../components/common/ProjectStatusSelect';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
@@ -21,14 +22,15 @@ import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import NewDocTypeModal from '../components/modals/NewDocTypeModal';
 import NewMasterDataModal from '../components/modals/NewMasterDataModal';
 import PaymentModal from '../components/modals/PaymentModal';
-import ConfirmDialog from '../components/common/ConfirmDialog';
+import ConfirmModal from '../components/common/ConfirmModal';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { customerService, partnerService, settingsService, projectService } from '../api/services';
-import type { ProjectPosition } from '../components/modals/projectTypes';
+import type { ProjectPosition } from '../components/modals/projectType';
 import ProjectPositionsTable from '../components/modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../components/modals/ProjectPaymentsTable';
+import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
 import { Button } from '../components/ui/button';
 import {
     Tooltip,
@@ -42,16 +44,16 @@ const LABEL_CLASS = 'text-[13px] font-medium text-slate-500 flex items-center ga
 const INPUT_WRAP = 'flex-1 min-w-0';
 const ROW_CLASS = 'flex items-start gap-4 py-3 border-b border-slate-50';
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
-const SECTION_NUM = 'w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm';
-const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
+const SECTION_NUM = 'w-7 h-7 rounded-md bg-brand-primary text-white flex items-center justify-center text-xs font-bold shadow-sm';
+const SECTION_TITLE = 'text-sm font-semibold text-slate-800 ';
 
 const getStatusOptions = (t: any) => [
-    { value: 'offer', label: t('project.status_offer'), group: t('project.step_1') },
-    { value: 'in_progress', label: t('project.status_in_progress'), group: t('project.step_2') },
-    { value: 'ready_for_pickup', label: t('project.status_ready_for_pickup'), group: t('project.step_3') },
-    { value: 'delivered', label: t('project.status_delivered'), group: t('project.step_3') },
-    { value: 'invoiced', label: t('project.status_invoiced'), group: t('project.step_4') },
-    { value: 'completed', label: t('project.status_completed'), group: t('project.step_4') }
+    { value: 'offer', label: t('project.status_offer') },
+    { value: 'in_progress', label: t('project.status_in_progress') },
+    { value: 'ready_for_pickup', label: t('project.status_ready_for_pickup') },
+    { value: 'delivered', label: t('project.status_delivered') },
+    { value: 'invoiced', label: t('project.status_invoiced') },
+    { value: 'completed', label: t('project.status_completed') }
 ];
 
 /* ─── Tooltip Helper ─── */
@@ -87,19 +89,20 @@ const FormRow = ({ label, required, tooltip, children, error, id }: {
 const NewProject = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { updateTab, activeTabId, tabs, closeTab } = useWorkspaceTabs();
     const { id } = useParams();
     const isEditing = !!id;
     const queryClient = useQueryClient();
 
     // ── Get status options with translations ──
-    const statusOptions = getStatusOptions(t);
+
 
     // ── States ──
     const [name, setName] = useState('');
     const [customer, setCustomer] = useState('');
     const [deadline, setDeadline] = useState('');
-    const [source, setSource] = useState('de-DE');
-    const [target, setTarget] = useState<string[]>(['en-US']);
+    const [source, setSource] = useState('');
+    const [target, setTarget] = useState<string[]>([]);
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
     const [status, setStatus] = useState('offer');
     const [withTax, setWithTax] = useState(true);
@@ -115,7 +118,7 @@ const NewProject = () => {
     const [copyPrice, setCopyPrice] = useState('5.00');
     const [positions, setPositions] = useState<ProjectPosition[]>([{
         id: Date.now().toString(), description: 'Übersetzung',
-        unit: 'Normzeile', amount: '1.00', quantity: '1.00', partnerRate: '0.00', partnerMode: 'unit',
+        unit: 'Normzeile', amount: '0.00', quantity: '1.00', partnerRate: '0.00', partnerMode: 'unit',
         partnerTotal: '0.00', customerRate: '0.00', customerTotal: '0.00',
         customerMode: 'rate', marginType: 'markup', marginPercent: '0.00'
     }]);
@@ -127,6 +130,7 @@ const NewProject = () => {
     const [notes, setNotes] = useState('');
     const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
     const [partnerSearch, setPartnerSearch] = useState('');
+    const [isManualName, setIsManualName] = useState(false);
 
     // UI modals
     const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -164,16 +168,32 @@ const NewProject = () => {
         return lang ? (lang.name_internal || lang.name) : code.toUpperCase();
     };
 
+    const activeInvoice = useMemo(() => {
+        if (!initialData?.invoices) return null;
+        return initialData.invoices.find((inv: any) => !['cancelled'].includes(inv.status));
+    }, [initialData]);
+    const isLocked = !!activeInvoice;
+
     // ── Derived ──
     const custOptions = useMemo(() => (Array.isArray(customersData) ? customersData : []).map((c: any) => ({
         value: c.id.toString(),
-        label: `${c.company_name || `${c.first_name} ${c.last_name}`} (${c.display_id || c.id}) - ${c.address_city || ''}`
+        label: formatCustomerLabel(c)
     })), [customersData]);
 
     const partnerOptions = useMemo(() => (Array.isArray(partnersData) ? partnersData : []).map((p: any) => ({
         value: p.id.toString(),
-        label: `${p.company_name || `${p.first_name} ${p.last_name}`} (${p.display_id || p.id}) - ${p.address_city || ''}`
+        label: formatPartnerLabel(p)
     })), [partnersData]);
+
+    const { data: dbStatuses } = useQuery({ queryKey: ['settings', 'projectStatuses'], queryFn: settingsService.getProjectStatuses });
+
+    const combinedStatusOptions = useMemo(() => {
+        const defaults = getStatusOptions(t);
+        const customs = (dbStatuses || []).map((s: any) => ({ value: s.key || s.id.toString(), label: s.name }));
+        // Filter out customs that might overlap with defaults by key/value
+        const filteredCustoms = customs.filter((c: any) => !defaults.some(d => d.value === c.value));
+        return [...defaults, ...filteredCustoms];
+    }, [t, dbStatuses]);
 
     const { matchingPartners, otherPartners } = useMemo(() => {
         if (!Array.isArray(partnersData)) return { matchingPartners: [], otherPartners: [] };
@@ -199,10 +219,23 @@ const NewProject = () => {
     const displayNr = useMemo(() => {
         if (initialData?.project_number) return initialData.project_number;
         const prefix = companyData?.project_id_prefix || 'P';
-        const datePart = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
-        const nextNum = companyData?.project_start_number || '0001';
-        return `${prefix}-${datePart}-${nextNum}`;
-    }, [initialData?.project_number, companyData]);
+        const showYear = companyData?.project_show_year ?? true;
+        const year = new Date().getFullYear().toString();
+        const yearPrefix = showYear ? `${prefix}-${year}-` : `${prefix}-`;
+
+        const list = Array.isArray(projectsData) ? projectsData : [];
+        const activeProjects = list.filter((p: any) => p.project_number && p.project_number.startsWith(yearPrefix));
+
+        let maxNum = 0;
+        activeProjects.forEach((p: any) => {
+            const part = p.project_number.replace(yearPrefix, '');
+            const n = parseInt(part);
+            if (!isNaN(n) && n > maxNum) maxNum = n;
+        });
+
+        const nextIndex = Math.max(maxNum + 1, parseInt(companyData?.project_start_number || '1'));
+        return `${yearPrefix}${String(nextIndex).padStart(4, '0')}`;
+    }, [initialData?.project_number, companyData, projectsData]);
 
     // ── Position calculations ──
     useEffect(() => {
@@ -228,73 +261,148 @@ const NewProject = () => {
         setTotalPrice(updated.reduce((s, p) => s + parseFloat(p.customerTotal || '0'), 0).toFixed(2));
     }, [positions]);
 
-    // Auto-generate name
+    // Sync Workspace Tab Title
     useEffect(() => {
-        if (!isEditing && source && target && Array.isArray(projectsData)) {
-            const targetArray = Array.isArray(target) ? target : [target];
-            const cs = source.split('-')[0].toLowerCase();
-            const ct = targetArray[0]?.split('-')[0].toLowerCase() || 'xx';
-            const now = new Date();
-            const dp = String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
-            const base = `${cs}_${ct}_${dp}`.toUpperCase();
-            const list = Array.isArray(projectsData) ? projectsData : [];
-            const cnt = list.filter((p: any) => (p.project_name || '').toUpperCase().startsWith(base)).length;
-            setName(`${base}_${String(cnt + 1).padStart(2, '0')}`);
-        }
-    }, [source, target, projectsData, isEditing]);
+        const tabId = isEditing ? `project_edit_${id}` : 'project_new';
+        const prefix = isEditing ? 'Bearbeiten: ' : 'Neu: ';
+        const projectLabel = isEditing ? (initialData?.project_number || name || '...') : (displayNr || 'Neues Projekt');
+        updateTab(tabId, { label: `${prefix}${projectLabel}` });
+    }, [name, isEditing, id, displayNr, initialData, updateTab]);
 
     // Load initial data for editing
     useEffect(() => {
         if (initialData) {
-            setName(initialData.name || initialData.project_name || '');
-            setCustomer(initialData.customer_id?.toString() || '');
-            setDeadline(initialData.due || initialData.deadline || '');
-            setSource(initialData.source || initialData.source_language?.iso_code?.split('-')[0] || 'de');
-            let targetLangs: string[] = ['en'];
-            if (initialData.target_languages?.length) {
-                targetLangs = initialData.target_languages.map((l: any) => l.iso_code || l);
-            } else if (initialData.target) {
-                targetLangs = Array.isArray(initialData.target) ? initialData.target : [initialData.target];
-            } else if (initialData.target_language?.iso_code) {
-                targetLangs = [initialData.target_language.iso_code];
+            const mapped = initialData;
+            const pName = mapped.project_name || mapped.name || '';
+            setName(pName);
+            setIsManualName(!!pName);
+            setCustomer(mapped.customer_id?.toString() || '');
+            setDeadline(mapped.deadline || '');
+            setSource(mapped.source_language?.iso_code || mapped.source_lang?.iso_code || 'de-DE');
+            const targets = Array.isArray(mapped.target_languages)
+                ? mapped.target_languages.map((l: any) => l.iso_code)
+                : (mapped.target_language?.iso_code ? [mapped.target_language.iso_code] : ['en-US']);
+            setTarget(targets);
+            setPriority(mapped.priority || 'low');
+            setStatus(mapped.status || 'offer');
+            setIsCertified(mapped.is_certified === 1 || mapped.is_certified === true);
+            setCertifiedQty(mapped.certified_count || 1);
+            setHasApostille(mapped.has_apostille === 1 || mapped.has_apostille === true);
+            setApostilleQty(mapped.apostille_count || 1);
+            setIsExpress(mapped.is_express === 1 || mapped.is_express === true);
+            setExpressQty(mapped.express_count || 1);
+            setClassification(mapped.classification ? 'ja' : 'nein');
+            setClassificationQty(mapped.classification_count || 1);
+            setCopies(mapped.copies_count || 0);
+            setCopyPrice((parseFloat(mapped.copy_price) || 5).toFixed(2));
+            setWithTax(mapped.tax_rate > 0);
+            if (mapped.document_type_id) {
+                const docIds = [mapped.document_type_id.toString()];
+                if (Array.isArray(mapped.additional_doc_types)) {
+                    docIds.push(...mapped.additional_doc_types.map((id: any) => id.toString()));
+                }
+                setDocType(docIds);
             }
-            setTarget(targetLangs);
-            setPriority(initialData.priority || 'medium');
-            setStatus(initialData.status || 'draft');
-            setIsCertified(initialData.isCertified || !!initialData.is_certified);
-            setCertifiedQty(initialData.certified_count || 1);
-            setHasApostille(initialData.hasApostille || !!initialData.has_apostille);
-            setApostilleQty(initialData.apostille_count || 1);
-            setIsExpress(initialData.isExpress || !!initialData.is_express);
-            setExpressQty(initialData.express_count || 1);
-            setClassification(initialData.classification === 'ja' || initialData.classification === true ? 'ja' : 'nein');
-            setClassificationQty(initialData.classification_count || 1);
-            setCopies(initialData.copies || initialData.copies_count || 0);
-            setCopyPrice(String(initialData.copyPrice || initialData.copy_price || '5'));
-            const dt: string[] = [];
-            if (initialData.document_type_id) dt.push(initialData.document_type_id.toString());
-            if (initialData.additional_doc_types?.length) dt.push(...initialData.additional_doc_types.map((x: any) => x.toString()));
-            setDocType([...new Set(dt)]);
-            setTranslator(initialData.partner?.id?.toString() || '');
-            if (initialData.positions?.length) {
-                setPositions(initialData.positions.map((p: any) => ({ ...p, id: p.id.toString(), unit: p.unit || 'Normzeile', partnerRate: p.partner_rate || p.partnerRate || '0', customerRate: p.customer_rate || p.customerRate || '0', partnerMode: p.partner_mode || 'unit', customerMode: p.customer_mode || 'unit' })));
+            if (mapped.partner_id) setTranslator(mapped.partner_id.toString());
+            if (Array.isArray(mapped.positions) && mapped.positions.length > 0) {
+                const pos = mapped.positions.map((p: any) => ({
+                    id: p.id?.toString() || Date.now().toString() + Math.random(),
+                    description: p.description,
+                    unit: p.unit,
+                    amount: (parseFloat(p.amount) || 0).toFixed(2),
+                    quantity: (parseFloat(p.quantity) || 1).toFixed(2),
+                    partnerRate: (parseFloat(p.partner_rate) || 0).toFixed(2),
+                    partnerMode: p.partner_mode || 'unit',
+                    partnerTotal: (parseFloat(p.partner_total) || 0).toFixed(2),
+                    customerRate: (parseFloat(p.customer_rate) || 0).toFixed(2),
+                    customerMode: p.customer_mode || 'rate',
+                    customerTotal: (parseFloat(p.customer_total) || 0).toFixed(2),
+                    marginType: p.margin_type || 'markup',
+                    marginPercent: (parseFloat(p.margin_percent) || 0).toFixed(2)
+                }));
+                setPositions(pos);
             }
-            if (initialData.payments?.length) setPayments(initialData.payments.map((p: any) => ({ ...p, id: p.id?.toString() || Date.now().toString() })));
-            else if (initialData.down_payment && parseFloat(initialData.down_payment) > 0) setPayments([{ id: Date.now().toString(), amount: initialData.down_payment.toString(), payment_date: initialData.down_payment_date || new Date().toISOString(), payment_method: 'Überweisung', note: 'Anzahlung' }]);
-            else setPayments([]);
-            setNotes(initialData.notes || '');
+            if (Array.isArray(mapped.payments)) setPayments(mapped.payments);
+            setNotes(mapped.notes || '');
         }
     }, [initialData]);
+    // Dynamic Project Name based on languages & counters
+    useEffect(() => {
+        if (!isManualName && source && target && target.length > 0) {
+            const srcCode = source.split('-')[0].toUpperCase();
+            const trgCode = target[0].split('-')[0].toUpperCase();
+            const now = new Date();
+            const yy = now.getFullYear().toString().slice(-2);
+            const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+            const yyMm = `${yy}${mm}`;
+            const prefix = `${srcCode}-${trgCode}${yyMm}-`;
+
+            // Calculate next number
+            const list = Array.isArray(projectsData) ? projectsData : [];
+            const related = list.filter((p: any) => (p.project_name || p.name || '').startsWith(prefix));
+
+            let maxNum = 0;
+            related.forEach((p: any) => {
+                const nameStr = p.project_name || p.name || '';
+                const parts = nameStr.split('-');
+                const lastPart = parts[parts.length - 1];
+                const n = parseInt(lastPart);
+                if (!isNaN(n) && n > maxNum) maxNum = n;
+            });
+
+            const nextNum = (maxNum + 1).toString().padStart(2, '0');
+            setName(`${prefix}${nextNum}`);
+        }
+    }, [source, target, isManualName, projectsData]);
+
+    // ── Dirty State Logic ──
+    const currentValuesStr = JSON.stringify([name, customer, deadline, source, JSON.stringify(target), priority, status, withTax, isCertified, certifiedQty, hasApostille, apostilleQty, isExpress, expressQty, classification, classificationQty, copies, copyPrice, JSON.stringify(positions), JSON.stringify(docType), translator, notes]);
+    const initialValuesStr = useRef(currentValuesStr);
+
+    const resetDirtyState = useCallback((newData?: string) => {
+        initialValuesStr.current = newData || currentValuesStr;
+        if (activeTabId) updateTab(activeTabId, { isDirty: false });
+    }, [currentValuesStr, activeTabId, updateTab]);
+
+    useEffect(() => {
+        const hasChanged = currentValuesStr !== initialValuesStr.current;
+        if (activeTabId) {
+            updateTab(activeTabId, { isDirty: hasChanged });
+        }
+    }, [currentValuesStr, activeTabId, updateTab]);
+
+    // Update initialValuesStr when initialData loads
+    useEffect(() => {
+        if (isEditing && initialData) {
+            // After data is loaded and set to state, we should wait one tick or just use currentValuesStr
+            // Since this effect runs when initialData changes, and we have a separate effect to sync states,
+            // we might need to be careful. But standard approach is to reset once states are populated.
+            resetDirtyState(currentValuesStr);
+        } else if (!isEditing) {
+            // For new project, we might want to capture the "clean" default state
+            // But usually the first render already did that.
+        }
+    }, [initialData, isEditing, resetDirtyState, currentValuesStr]);
 
     // ── Mutations ──
     const createMutation = useMutation({
         mutationFn: projectService.create,
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['projects'] }); toast.success('Projekt erfolgreich erstellt'); navigate('/projects'); },
+        onSuccess: () => {
+            resetDirtyState();
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            toast.success('Projekt erfolgreich erstellt');
+            navigate('/projects');
+        },
         onError: () => toast.error('Fehler beim Erstellen')
     });
     const updateMutation = useMutation({
         mutationFn: (data: any) => projectService.update(data.id, data),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['projects'] }); toast.success('Projekt aktualisiert'); navigate(`/projects/${id}`); },
+        onSuccess: () => {
+            resetDirtyState();
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            toast.success('Projekt aktualisiert');
+            navigate(`/projects/${id}`);
+        },
         onError: () => toast.error('Fehler beim Aktualisieren')
     });
     const createCustomerMutation = useMutation({
@@ -335,6 +443,7 @@ const NewProject = () => {
         const targetArray = Array.isArray(target) ? target : [target];
         if (!targetArray.length || !targetArray[0]) { errors.push('Zielsprache ist erforderlich'); errSet.add('target'); }
         if (!docType.length) { errors.push('Dokumentenart ist ein Pflichtfeld'); errSet.add('docType'); }
+        if (!status) { errors.push('Status ist ein Pflichtfeld'); errSet.add('status'); }
         if (!translator) { errors.push('Übersetzer ist ein Pflichtfeld'); errSet.add('translator'); }
         setValidationErrors(errSet);
         if (errors.length > 0) {
@@ -369,10 +478,32 @@ const NewProject = () => {
         else createMutation.mutate(payload);
     };
 
+    const handleCancel = () => {
+        if (activeTabId) {
+            const currentTab = tabs.find(t => t.id === activeTabId);
+            if (currentTab?.isDirty) {
+                setConfirmConfig({
+                    isOpen: true,
+                    title: 'Änderungen verwerfen?',
+                    message: 'Sie haben ungespeicherte Änderungen. Möchten Sie diese wirklich verwerfen und den Tab schließen?',
+                    type: 'danger',
+                    confirmLabel: 'Schließen & Verwerfen',
+                    onConfirm: () => {
+                        closeTab(activeTabId);
+                    }
+                });
+            } else {
+                closeTab(activeTabId);
+            }
+        } else {
+            navigate('/projects');
+        }
+    };
+
     const isSaving = createMutation.isPending || updateMutation.isPending;
     const renderActionButtons = () => (
         <>
-            <Button variant="secondary" onClick={() => navigate('/projects')} className="h-9 px-4 text-xs font-semibold">
+            <Button variant="secondary" onClick={handleCancel} className="h-9 px-4 text-xs font-semibold">
                 <FaTimes className="mr-1.5" /> Abbrechen
             </Button>
             <Button onClick={handleSubmit} disabled={isSaving} className="h-9 px-6 text-xs font-bold">
@@ -397,14 +528,13 @@ const NewProject = () => {
             <div className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-16 py-3 shadow-sm z-10 shrink-0">
                 <div className="max-w-[1600px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => navigate('/projects')} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition">
+                        <button onClick={handleCancel} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition">
                             <FaArrowLeft />
                         </button>
                         <div>
-                            <h1 className="text-lg font-semibold text-slate-800 tracking-tight">
+                            <h1 className="text-lg font-semibold text-slate-800">
                                 {isEditing ? 'Projekt bearbeiten' : 'Neues Projekt erfassen'}
                             </h1>
-                            <span className="text-xs text-slate-400 font-medium">Nr: {displayNr}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -459,24 +589,64 @@ const NewProject = () => {
                             </div>
                         </section>
 
-                        {/* Section 2: Kunde */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                                <div className={SECTION_NUM}>02</div>
-                                <h3 className={SECTION_TITLE}>Kunde</h3>
-                            </div>
-                            <div className="px-6 pb-5">
-                                <FormRow label="Kunde" required tooltip="Der Auftraggeber dieses Projekts." error={validationErrors.has('customer')} id="field-customer">
-                                    <CustomerSelect
-                                        options={custOptions}
-                                        value={customer}
-                                        onChange={setCustomer}
-                                        error={validationErrors.has('customer')}
-                                        placeholder="Kunde auswählen..."
-                                    />
-                                </FormRow>
-                            </div>
-                        </section>
+            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
+                {/* ── Main Content ── */}
+                <div className="flex-1 min-w-0 space-y-8">
+
+                    {/* Section 1: Basis-Daten */}
+                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
+                            <div className={SECTION_NUM}>01</div>
+                            <h3 className={SECTION_TITLE}>Basis-Daten</h3>
+                        </div>
+                        <div className="px-6 pb-5">
+                            <FormRow label="Projektname" tooltip="Wird automatisch aus den Sprachen generiert. Manuelle Eingaben deaktivieren die Automatik.">
+                                <Input
+                                    placeholder="z.B. Deutsch -> Englisch"
+                                    value={name}
+                                    onChange={e => {
+                                        setName(e.target.value);
+                                        setIsManualName(true);
+                                    }}
+                                />
+                            </FormRow>
+                            <FormRow label="Dokumentenart" required tooltip="Art des zu übersetzenden Dokuments. Mehrfachauswahl möglich." error={validationErrors.has('docType')} id="field-docType">
+                                <DocumentTypeSelect
+                                    options={docTypes.sort((a: any, b: any) => (a.category || '').localeCompare(b.category || '')).map((dt: any) => ({ value: dt.id.toString(), label: dt.name, group: dt.category }))}
+                                    value={docType}
+                                    onChange={setDocType}
+                                    error={validationErrors.has('docType')}
+                                    isMulti={true}
+                                />
+                            </FormRow>
+                            <FormRow label="Status" required tooltip="Aktueller Bearbeitungsstatus des Projekts." error={validationErrors.has('status')} id="field-status">
+                                <ProjectStatusSelect options={combinedStatusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} />
+                            </FormRow>
+                            <FormRow label="Liefertermin" tooltip="Geplanter Abgabetermin inkl. Uhrzeit.">
+                                <DatePicker showTime format="DD.MM.YYYY HH:mm" value={deadline ? dayjs(deadline) : null}
+                                    onChange={(d) => setDeadline(d ? d.toISOString() : '')} className="w-full h-9" placeholder="Datum & Zeit wählen" />
+                            </FormRow>
+                        </div>
+                    </section>
+
+                    {/* Section 2: Kunde */}
+                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
+                            <div className={SECTION_NUM}>02</div>
+                            <h3 className={SECTION_TITLE}>Kunde</h3>
+                        </div>
+                        <div className="px-6 pb-5">
+                            <FormRow label="Kunde" required tooltip="Der Auftraggeber dieses Projekts." error={validationErrors.has('customer')} id="field-customer">
+                                <CustomerSelect
+                                    options={custOptions}
+                                    value={customer}
+                                    onChange={setCustomer}
+                                    error={validationErrors.has('customer')}
+                                    placeholder="Kunde auswählen..."
+                                />
+                            </FormRow>
+                        </div>
+                    </section>
 
                         {/* Section 3: Sprachen */}
                         <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
@@ -520,13 +690,34 @@ const NewProject = () => {
                                                 className="w-full pl-7 pr-2 py-1.5 bg-white border border-slate-200 rounded-sm text-xs focus:outline-none focus:border-slate-400 transition" />
                                         </div>
                                     </div>
-                                    <div className="border border-slate-200 rounded-sm bg-white overflow-hidden max-h-[200px] overflow-y-auto custom-scrollbar shadow-sm">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead className="sticky top-0 bg-white border-b border-slate-200">
-                                                <tr>
-                                                    <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Partner</th>
-                                                    <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Sprachen</th>
-                                                    <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right w-16">Wählen</th>
+                                </div>
+                                <div className="border border-slate-200 rounded-sm bg-white overflow-hidden max-h-[200px] overflow-y-auto custom-scrollbar shadow-sm">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="sticky top-0 bg-white border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-4 py-2.5 text-[9.5px] font-bold text-slate-500">Partner</th>
+                                                <th className="px-4 py-2.5 text-[9.5px] font-bold text-slate-500">Sprachen</th>
+                                                <th className="px-4 py-2.5 text-[9.5px] font-bold text-slate-500 text-right w-16">Wählen</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {[...matchingPartners, ...otherPartners].map((p: any) => (
+                                                <tr key={p.id} className={clsx('group transition-colors cursor-pointer hover:bg-slate-50', translator === p.id.toString() && 'bg-brand-primary/5')}
+                                                    onClick={() => setTranslator(p.id.toString() === translator ? '' : p.id.toString())}>
+                                                    <td className="px-4 py-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-6 h-6 rounded-sm bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center text-sm font-bold shrink-0">{(p.first_name?.[0] || '')}{(p.last_name?.[0] || '')}</div>
+                                                            <span className="text-xs font-medium text-slate-700">{p.company_name || `${p.first_name} ${p.last_name}`}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-2">
+                                                        <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-sm font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
+                                                    </td>
+                                                    <td className="px-4 py-2 text-right">
+                                                        <div className={clsx('inline-flex items-center justify-center w-5 h-5 rounded-full border transition', translator === p.id.toString() ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200 text-transparent')}>
+                                                            <FaCheck className="text-sm" />
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
@@ -559,96 +750,116 @@ const NewProject = () => {
                             </div>
                         </section>
 
-                        {/* Section 5: Leistungen & Optionen */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                                <div className={SECTION_NUM}>05</div>
-                                <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
-                            </div>
-                            <div className="px-6 pb-5">
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-4 border-b border-slate-100">
-                                    {[
-                                        { label: 'Beglaubigung (5€)', enabled: isCertified, toggle: () => setIsCertified(!isCertified), qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
-                                        { label: 'Express (15€)', enabled: isExpress, toggle: () => setIsExpress(!isExpress), qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
-                                        { label: 'Apostille (25€)', enabled: hasApostille, toggle: () => setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
-                                        { label: 'Klassifizierung (15€)', enabled: classification === 'ja', toggle: () => setClassification(classification === 'ja' ? 'nein' : 'ja'), qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
-                                    ].map(opt => (
-                                        <div key={opt.label} className="space-y-1">
-                                            <label className="text-xs font-medium text-slate-400 flex items-center gap-1">{opt.label} <FieldTip text={opt.tip} /></label>
-                                            <div className="flex flex-col gap-2">
-                                                <div className="h-9 flex items-center gap-2 cursor-pointer" onClick={opt.toggle}>
-                                                    <div className={clsx('w-8 h-4 rounded-full relative transition-colors', opt.enabled ? 'bg-emerald-500' : 'bg-slate-300')}>
-                                                        <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', opt.enabled ? 'left-4' : 'left-0.5')} />
-                                                    </div>
-                                                    <span className={clsx('text-[10px] font-bold', opt.enabled ? 'text-emerald-600' : 'text-slate-400')}>{opt.enabled ? 'JA' : 'NEIN'}</span>
+                    {/* Section 5: Leistungen & Optionen */}
+                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
+                            <div className={SECTION_NUM}>05</div>
+                            <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
+                        </div>
+                        <div className="px-6 pb-5">
+                            {isLocked && (
+                                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-100 rounded-sm flex items-center gap-2 text-amber-600">
+                                    <FaInfoCircle className="text-xs shrink-0" />
+                                    <span className="text-xs font-bold uppercase tracking-tight">Kalkulation Gesperrt</span>
+                                    <span className="text-xs opacity-80">(Rechnung {activeInvoice?.invoice_number} bereits erstellt)</span>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-4 border-b border-slate-100">
+                                {[
+                                    { label: 'Beglaubigung (5€)', enabled: isCertified, toggle: () => !isLocked && setIsCertified(!isCertified), qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
+                                    { label: 'Express (15€)', enabled: isExpress, toggle: () => !isLocked && setIsExpress(!isExpress), qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
+                                    { label: 'Apostille (25€)', enabled: hasApostille, toggle: () => !isLocked && setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
+                                    { label: 'Klassifizierung (15€)', enabled: classification === 'ja', toggle: () => !isLocked && setClassification(classification === 'ja' ? 'nein' : 'ja'), qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
+                                ].map(opt => (
+                                    <div key={opt.label} className={clsx("space-y-1", isLocked && "opacity-60")}>
+                                        <label className="text-xs font-medium text-slate-400 flex items-center gap-1">{opt.label} <FieldTip text={opt.tip} /></label>
+                                        <div className="flex flex-col gap-2">
+                                            <div
+                                                className={clsx("h-9 flex items-center gap-2", !isLocked ? "cursor-pointer" : "cursor-not-allowed")}
+                                                onClick={opt.toggle}
+                                            >
+                                                <div className={clsx('w-8 h-4 rounded-full relative transition-colors', opt.enabled ? 'bg-emerald-500' : 'bg-slate-300')}>
+                                                    <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', opt.enabled ? 'left-4' : 'left-0.5')} />
                                                 </div>
-                                                {opt.enabled && (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] text-slate-400 font-medium">Menge:</span>
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            value={opt.qty}
-                                                            onChange={e => opt.setQty(Math.max(1, parseInt(e.target.value) || 1))}
-                                                            className="w-12 h-7 text-center text-xs font-medium text-slate-700 border border-slate-200 rounded-sm outline-none focus:ring-1 focus:ring-brand-500"
-                                                        />
-                                                    </div>
-                                                )}
+                                                <span className={clsx('text-sm font-bold', opt.enabled ? 'text-emerald-600' : 'text-slate-400')}>{opt.enabled ? 'JA' : 'NEIN'}</span>
                                             </div>
+                                            {opt.enabled && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-slate-400 font-medium">Menge:</span>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={opt.qty}
+                                                        onChange={e => !isLocked && opt.setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                                        disabled={isLocked}
+                                                        className={clsx(
+                                                            "w-12 h-7 text-center text-xs font-medium text-slate-700 border border-slate-200 rounded-sm outline-none",
+                                                            !isLocked ? "focus:ring-1 focus:ring-brand-500" : "bg-slate-50 cursor-not-allowed"
+                                                        )}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-slate-400 flex items-center gap-1">MwSt. (19%) <FieldTip text="Umsatzsteuer auf den Nettobetrag." /></label>
-                                        <div className="h-9 flex items-center gap-2 cursor-pointer" onClick={() => setWithTax(!withTax)}>
-                                            <div className={clsx('w-8 h-4 rounded-full relative transition-colors', withTax ? 'bg-emerald-500' : 'bg-slate-300')}>
-                                                <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', withTax ? 'left-4' : 'left-0.5')} />
-                                            </div>
-                                            <span className={clsx('text-xs font-bold', withTax ? 'text-emerald-600' : 'text-slate-400')}>{withTax ? 'AKTIV' : 'AUS'}</span>
+                                    </div>
+                                ))}
+                                <div className={clsx("space-y-1", isLocked && "opacity-60")}>
+                                    <label className="text-xs font-medium text-slate-400 flex items-center gap-1">MwSt. (19%) <FieldTip text="Umsatzsteuer auf den Nettobetrag." /></label>
+                                    <div
+                                        className={clsx("h-9 flex items-center gap-2", !isLocked ? "cursor-pointer" : "cursor-not-allowed")}
+                                        onClick={() => !isLocked && setWithTax(!withTax)}
+                                    >
+                                        <div className={clsx('w-8 h-4 rounded-full relative transition-colors', withTax ? 'bg-emerald-500' : 'bg-slate-300')}>
+                                            <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', withTax ? 'left-4' : 'left-0.5')} />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Copies */}
-                                <div className="grid grid-cols-12 gap-4 pt-4">
-                                    <div className="col-span-4">
-                                        <label className="text-xs font-medium text-slate-400 mb-1 block">Anzahl Kopien</label>
-                                        <div className="flex items-center h-9 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm">
-                                            <button onClick={() => setCopies(Math.max(0, copies - 1))} className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100"><FaMinus className="text-xs" /></button>
-                                            <input type="number" value={copies} onChange={e => setCopies(Math.max(0, parseInt(e.target.value) || 0))} className="flex-1 w-full h-full text-center text-sm font-medium text-slate-700 outline-none" />
-                                            <button onClick={() => setCopies(copies + 1)} className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100"><FaPlus className="text-xs" /></button>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-4">
-                                        <label className="text-xs font-medium text-slate-400 mb-1 block">Preis / Kopie</label>
-                                        <Input type="number" step="0.01" value={copyPrice} onChange={e => setCopyPrice(e.target.value)} onBlur={() => setCopyPrice(parseFloat(copyPrice).toFixed(2))} containerClassName="h-9" />
-                                    </div>
-                                    <div className="col-span-4 flex items-end pb-1.5">
-                                        <span className="text-xs text-slate-400 italic">Summe: <span className="text-slate-800 font-medium">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span></span>
+                            {/* Copies */}
+                            <div className={clsx("grid grid-cols-12 gap-4 pt-4", isLocked && "opacity-60")}>
+                                <div className="col-span-4">
+                                    <label className="text-xs font-medium text-slate-400 mb-1 block">Anzahl Kopien</label>
+                                    <div className={clsx("flex items-center h-9 border rounded-md overflow-hidden bg-white shadow-sm", !isLocked ? "border-slate-200" : "border-slate-100")}>
+                                        <button
+                                            onClick={() => !isLocked && setCopies(Math.max(0, copies - 1))}
+                                            disabled={isLocked}
+                                            className={clsx("h-full px-3 text-slate-400 transition border-r border-slate-100", !isLocked ? "hover:text-slate-700 hover:bg-slate-50" : "cursor-not-allowed")}
+                                        >
+                                            <FaMinus className="text-xs" />
+                                        </button>
+                                        <input
+                                            type="number"
+                                            value={copies}
+                                            onChange={e => !isLocked && setCopies(Math.max(0, parseInt(e.target.value) || 0))}
+                                            onFocus={(e) => { if (!isLocked && copies === 0) e.target.value = ''; }}
+                                            disabled={isLocked}
+                                            className={clsx("flex-1 w-full h-full text-center text-sm font-medium text-slate-700 outline-none", isLocked && "bg-slate-50 cursor-not-allowed")}
+                                        />
+                                        <button
+                                            onClick={() => !isLocked && setCopies(copies + 1)}
+                                            disabled={isLocked}
+                                            className={clsx("h-full px-3 text-slate-400 transition border-l border-slate-100", !isLocked ? "hover:text-slate-700 hover:bg-slate-50" : "cursor-not-allowed")}
+                                        >
+                                            <FaPlus className="text-xs" />
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                        </section>
-
-                        {/* Section 6: Kalkulation */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                                <div className={SECTION_NUM}>06</div>
-                                <h3 className={SECTION_TITLE}>Kalkulation Positionen</h3>
-                            </div>
-                            <div className="px-6 pb-5">
-                                <ProjectPositionsTable positions={positions} setPositions={setPositions} />
-                            </div>
-                        </section>
-
-                        {/* Section 7: Zahlungen */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden" id="field-payments">
-                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
-                                <div className="flex items-center gap-3">
-                                    <div className={SECTION_NUM}>07</div>
-                                    <h3 className={SECTION_TITLE}>Anzahlungen / Teilzahlungen</h3>
-                                    <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
-                                        {payments.length}
-                                    </span>
+                                <div className="col-span-4">
+                                    <label className="text-xs font-medium text-slate-400 mb-1 block">Preis / Kopie</label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={copyPrice}
+                                        onChange={e => !isLocked && setCopyPrice(e.target.value)}
+                                        onFocus={() => { if (!isLocked && parseFloat(copyPrice) === 0) setCopyPrice(''); }}
+                                        onBlur={() => setCopyPrice(parseFloat(copyPrice || '0').toFixed(2))}
+                                        containerClassName="h-9"
+                                        disabled={isLocked}
+                                        className={isLocked ? "bg-slate-50 cursor-not-allowed" : ""}
+                                    />
+                                </div>
+                                <div className="col-span-4 flex items-end pb-1.5">
+                                    <span className="text-xs text-slate-400 italic">Summe: <span className="text-slate-800 font-medium">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span></span>
                                 </div>
                                 <Button
                                     onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
@@ -685,11 +896,33 @@ const NewProject = () => {
                             </div>
                         </section>
 
-                        {/* Section 8: Anmerkungen */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                                <div className={SECTION_NUM}>08</div>
-                                <h3 className={SECTION_TITLE}>Anmerkungen</h3>
+                    {/* Section 6: Kalkulation */}
+                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
+                            <div className={SECTION_NUM}>06</div>
+                            <h3 className={SECTION_TITLE}>Kalkulation Positionen</h3>
+                        </div>
+                        <div className="px-6 pb-5">
+                            {isLocked && (
+                                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-100 rounded-sm flex items-center gap-2 text-amber-600">
+                                    <FaInfoCircle className="text-xs shrink-0" />
+                                    <span className="text-xs font-bold uppercase tracking-tight">Kalkulation Gesperrt</span>
+                                    <span className="text-xs opacity-80">(Rechnung {activeInvoice?.invoice_number} bereits erstellt)</span>
+                                </div>
+                            )}
+                            <ProjectPositionsTable positions={positions} setPositions={setPositions} disabled={isLocked} />
+                        </div>
+                    </section>
+
+                    {/* Section 7: Zahlungen */}
+                    <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden" id="field-payments">
+                        <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
+                            <div className="flex items-center gap-3">
+                                <div className={SECTION_NUM}>07</div>
+                                <h3 className={SECTION_TITLE}>Anzahlungen / Teilzahlungen</h3>
+                                <span className="bg-slate-100 text-slate-600 text-sm font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
+                                    {payments.length}
+                                </span>
                             </div>
                             <div className="px-6 pb-5">
                                 <FormRow label="Interne Notizen" tooltip="Nur für Sie sichtbar. Wird nicht an Kunden oder Partner weitergeleitet.">
@@ -713,25 +946,18 @@ const NewProject = () => {
                             </div>
                         </div>
 
-                        {/* Invoice Preview */}
-                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-3">
-                            <h4 className="text-xs font-semibold text-slate-500 pb-2 border-b border-slate-100">Rechnungsvorschau</h4>
-                            <div className="space-y-2 text-xs">
-                                <div className="flex justify-between text-slate-500"><span>Positionen Netto</span><span>{fmtEur(baseNet)}</span></div>
-                                {isCertified && <div className="flex justify-between text-slate-400 pl-2"><span>+ Beglaubigung {certifiedQty > 1 ? `(${certifiedQty}×)` : ''}</span><span>{fmtEur(5 * certifiedQty)}</span></div>}
-                                {hasApostille && <div className="flex justify-between text-slate-400 pl-2"><span>+ Apostille {apostilleQty > 1 ? `(${apostilleQty}×)` : ''}</span><span>{fmtEur(25 * apostilleQty)}</span></div>}
-                                {isExpress && <div className="flex justify-between text-slate-400 pl-2"><span>+ Express {expressQty > 1 ? `(${expressQty}×)` : ''}</span><span>{fmtEur(15 * expressQty)}</span></div>}
-                                {classification === 'ja' && <div className="flex justify-between text-slate-400 pl-2"><span>+ Klassifizierung {classificationQty > 1 ? `(${classificationQty}×)` : ''}</span><span>{fmtEur(15 * classificationQty)}</span></div>}
-                                {copies > 0 && <div className="flex justify-between text-slate-400 pl-2"><span>+ Kopien ({copies}×)</span><span>{fmtEur(copies * Number(copyPrice))}</span></div>}
-                                <div className="pt-2 border-t border-slate-100 flex justify-between font-medium text-slate-800"><span>Gesamt Netto</span><span>{fmtEur(calcNet)}</span></div>
-                                <div className="flex justify-between text-slate-400"><span>MwSt. 19%</span><span>{fmtEur(calcTax)}</span></div>
-                                <div className="pt-2 border-t-2 border-slate-100 flex justify-between text-lg font-semibold text-slate-900"><span>Gesamt</span><span>{fmtEur(calcGross)}</span></div>
-                                {totalPaid > 0 && <div className="flex justify-between text-emerald-600 font-medium"><span>Bezahlt</span><span>-{fmtEur(totalPaid)}</span></div>}
-                                <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                                    <span className="text-sm font-medium text-slate-600">Restbetrag</span>
-                                    <span className={clsx('text-base font-semibold', remainingBalance <= 0.01 ? 'text-emerald-600' : 'text-slate-900')}>{remainingBalance <= 0.01 ? 'BEZAHLT' : fmtEur(remainingBalance)}</span>
-                                </div>
-                            </div>
+                {/* ── Sidebar: Financial Summary ── */}
+                <div className="w-full lg:w-80 shrink-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
+                    {/* Meta */}
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-3">
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                            <FaInfoCircle className="text-slate-400 text-xs" />
+                            <h4 className="text-xs font-semibold text-slate-500">Meta Info</h4>
+                        </div>
+                        <div className="space-y-2 text-xs">
+                            <div className="flex justify-between"><span className="text-slate-400">Projekt-Nr:</span><span className="font-bold text-slate-900">{displayNr}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Erstellt:</span><span className="font-medium text-slate-700">{initialData?.created_at ? dayjs(initialData.created_at).format('DD.MM.YYYY') : dayjs().format('DD.MM.YYYY')}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Mitarbeiter:</span><span className="font-medium text-slate-700">{initialData?.creator?.name || initialData?.pm || 'System'}</span></div>
                         </div>
 
                         {/* Profit */}
@@ -764,6 +990,16 @@ const NewProject = () => {
                 <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={(p) => { if (editingPayment) setPayments(payments.map(x => x.id === p.id ? p : x)); else setPayments([...payments, p]); setIsPaymentModalOpen(false); setEditingPayment(null); }} initialData={editingPayment} totalAmount={calcGross} />
                 <ConfirmDialog isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig((p: any) => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
             </div>
+
+            {/* ── Modals ── */}
+            <NewCustomerModal isOpen={showCustomerModal} onClose={() => setShowCustomerModal(false)} onSubmit={(d) => createCustomerMutation.mutate({ company_name: d.company_name, salutation: d.salutation, first_name: d.first_name, last_name: d.last_name, email: d.email, address: d.address_street, zip: d.address_zip, city: d.address_city, type: d.type })} />
+            <CustomerSelectionModal isOpen={isCustomerSearchOpen} onClose={() => setIsCustomerSearchOpen(false)} onSelect={(id) => { setCustomer(id); setIsCustomerSearchOpen(false); }} />
+            <NewPartnerModal isOpen={showPartnerModal} onClose={() => setShowPartnerModal(false)} onSubmit={(d) => createPartnerMutation.mutate({ company_name: d.company || d.company_name, salutation: d.salutation, first_name: d.firstName, last_name: d.lastName, email: d.emails?.[0] || d.email, street: d.street, zip: d.zip, city: d.city, phone: d.phones?.[0] || d.phone, languages: d.languages, price_list: d.priceList })} isLoading={createPartnerMutation.isPending} />
+            <PartnerSelectionModal isOpen={isPartnerSearchOpen} onClose={() => setIsPartnerSearchOpen(false)} onSelect={(id) => { setTranslator(id); setIsPartnerSearchOpen(false); }} />
+            <NewDocTypeModal isOpen={showDocTypeModal} onClose={() => setShowDocTypeModal(false)} onSubmit={(d) => createDocTypeMutation.mutate(d)} isLoading={createDocTypeMutation.isPending} />
+            <NewMasterDataModal isOpen={isLanguageModalOpen} onClose={() => setIsLanguageModalOpen(false)} onSubmit={(d) => createLanguageMutation.mutate(d)} type="languages" />
+            <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={(p) => { if (editingPayment) setPayments(payments.map(x => x.id === p.id ? p : x)); else setPayments([...payments, p]); setIsPaymentModalOpen(false); setEditingPayment(null); }} initialData={editingPayment} totalAmount={calcGross} />
+            <ConfirmModal isOpen={confirmConfig.isOpen} onCancel={() => setConfirmConfig((p: any) => ({ ...p, isOpen: false }))} onConfirm={confirmConfig.onConfirm} title={confirmConfig.title} message={confirmConfig.message} type={confirmConfig.type} confirmLabel={confirmConfig.confirmLabel} />
         </div>
     );
 };

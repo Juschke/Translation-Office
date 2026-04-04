@@ -83,4 +83,14 @@ class Tenant extends Model
     {
         return $this->hasMany(Subscription::class)->orderBy('created_at', 'desc');
     }
+
+    public function tenantInvoices()
+    {
+        return $this->hasMany(TenantInvoice::class)->orderByDesc('invoice_date');
+    }
+
+    public function apiRequestLogs()
+    {
+        return $this->hasMany(ApiRequestLog::class)->orderByDesc('created_at');
+    }
 }

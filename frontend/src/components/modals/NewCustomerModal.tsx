@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaTimes, FaPlus, FaTrash, FaEnvelope, FaExclamationTriangle, FaExternalLinkAlt, FaInfoCircle } from 'react-icons/fa';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { customerService, settingsService } from '../../api/services';
@@ -19,7 +18,7 @@ const FieldTip = ({ text }: { text: string }) => (
         <Tooltip>
             <TooltipTrigger asChild>
                 <span className="text-slate-300 hover:text-slate-500 transition cursor-help">
-                    <FaInfoCircle className="text-[10px]" />
+                    <FaInfoCircle className="text-sm" />
                 </span>
             </TooltipTrigger>
             <TooltipContent>
@@ -278,7 +277,11 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        if (name === 'payment_terms_days' && value !== '') {
+            const num = parseInt(value);
+            if (num < 0) value = '0';
+        }
         setFormData((prev: CustomerFormData) => ({ ...prev, [name]: value }));
         setTouched((prev: Record<string, boolean>) => ({ ...prev, [name]: true }));
     };
@@ -409,8 +412,8 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 <div className="w-12 h-12 border-4 border border-brand-primary border-t-transparent rounded-full animate-spin absolute inset-0"></div>
                             </div>
                             <div className="flex flex-col items-center gap-1">
-                                <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
-                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
+                                <p className="text-sm font-bold text-slate-800">Lade Daten...</p>
+                                <p className="text-sm text-slate-400 font-medium">Bitte warten</p>
                             </div>
                         </div>
                     </div>
@@ -447,17 +450,17 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         {duplicates.map((d: any) => (
                                             <div key={d.id} className="flex items-center justify-between bg-white p-2 rounded-sm border border-amber-100 shadow-sm transition-all hover:border-amber-300">
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
+                                                    <span className="text-xs font-bold text-slate-800">
                                                         {d.company_name || `${d.first_name} ${d.last_name}`}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-400 font-medium">
+                                                    <span className="text-sm text-slate-400 font-medium">
                                                         ID: {d.id} • {d.email || 'Keine E-Mail'} • {d.phone || 'Kein Telefon'}
                                                     </span>
                                                 </div>
                                                 <Link
                                                     to={`/customers/${d.id}`}
                                                     target="_blank"
-                                                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded-sm text-[10px] font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                                                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-600 rounded-sm text-sm font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm"
                                                 >
                                                     <FaExternalLinkAlt size={10} />
                                                     DATENSATZ ÖFFNEN
@@ -476,7 +479,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 onChange={(e) => setIgnoreDuplicates(e.target.checked)}
                                             />
                                             <div className="w-9 h-5 bg-amber-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
-                                            <span className="ms-3 text-[11px] font-bold text-amber-900 uppercase tracking-wide">Trotzdem als neuen Datensatz anlegen</span>
+                                            <span className="ms-3 text-[11px] font-bold text-amber-900">Trotzdem als neuen Datensatz anlegen</span>
                                         </label>
                                     </div>
                                 </div>
@@ -493,7 +496,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                         <div className="flex-1 overflow-y-auto space-y-6 pb-6 pr-1 custom-scrollbar">
 
                             {/* TAB: Allgemein */}
-                            <div className={clsx("space-y-6", activeTab !== 'general' && "hidden")}>
+                            <div className={clsx("space-y-6", activeTab !== 'general' &&"hidden")}>
                                 {/* Section 1: Classification */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
@@ -632,7 +635,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 ))}
                                                 {formData.additional_emails.length < 3 && (
                                                     <button type="button" onClick={() => addField('additional_emails')} className="text-xs text-slate-400 font-medium flex items-center gap-1.5 hover:text-slate-700 transition-colors py-1 ml-1">
-                                                        <FaPlus className="text-[10px]" /> Weitere E-Mail
+                                                        <FaPlus className="text-sm" /> Weitere E-Mail
                                                     </button>
                                                 )}
                                             </div>
@@ -670,7 +673,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 ))}
                                                 {formData.additional_phones.length < 3 && (
                                                     <button type="button" onClick={() => addField('additional_phones')} className="text-xs text-slate-400 font-medium flex items-center gap-1.5 hover:text-slate-700 transition-colors py-1 ml-1">
-                                                        <FaPlus className="text-[10px]" /> Weitere Nummer
+                                                        <FaPlus className="text-sm" /> Weitere Nummer
                                                     </button>
                                                 )}
                                             </div>
@@ -711,7 +714,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             </div>
 
                             {/* TAB: Buchhaltung & Bank */}
-                            <div className={clsx("space-y-6", activeTab !== 'accounting' && "hidden")}>
+                            <div className={clsx("space-y-6", activeTab !== 'accounting' &&"hidden")}>
                                 {/* Section 4: Bookkeeping */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
@@ -726,6 +729,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 tooltip="Standardfrist in Tagen nach Rechnungsdatum, z.B. 14 oder 30"
                                                 name="payment_terms_days"
                                                 type="number"
+                                                min={0}
                                                 value={formData.payment_terms_days}
                                                 onChange={handleChange}
                                                 placeholder="14"
@@ -790,11 +794,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                             setTouched(prev => ({ ...prev, iban: true }));
                                                         }}
                                                         onBlur={handleIbanBlur}
-                                                        className={clsx(
-                                                            'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm text-brand-text shadow-sm transition-all border outline-none',
-                                                            'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary',
-                                                            errors.iban && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
-                                                        )}
+                                                        className={clsx( 'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm text-brand-text shadow-sm transition-all border outline-none', 'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary', errors.iban && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10' )}
                                                     />
                                                     {isValidatingIban && (
                                                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -838,10 +838,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                         setTouched(prev => ({ ...prev, bic: true }));
                                                     }}
                                                     onBlur={handleBicBlur}
-                                                    className={clsx(
-                                                        'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm text-brand-text shadow-sm transition-all border outline-none',
-                                                        'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary'
-                                                    )}
+                                                    className={clsx( 'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm text-brand-text shadow-sm transition-all border outline-none', 'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary' )}
                                                 />
                                             </div>
                                         </div>
@@ -850,7 +847,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             </div>
 
                             {/* TAB: Erweitert */}
-                            <div className={clsx("space-y-6", activeTab !== 'notes' && "hidden")}>
+                            <div className={clsx("space-y-6", activeTab !== 'notes' &&"hidden")}>
                                 {/* Section 6: Notes */}
                                 <div className="space-y-4 pb-10">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">

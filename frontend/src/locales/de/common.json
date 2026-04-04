@@ -1,9 +1,12 @@
 {
   "common": {
+    "project": "Projekt",
     "number": "Nummer",
     "number_short": "Nr.",
     "designation": "Bezeichnung",
     "language_pair": "Sprachpaar",
+    "source_language": "Eingangssprache",
+    "target_language": "Zielsprache",
     "down_payment": "Anzahlung",
     "total_price": "Gesamtpreis",
     "status": "Status",
@@ -884,7 +887,37 @@
     "unread": "Ungelesen",
     "no_notifications": "Keine Benachrichtigungen",
     "mark_all_as_read": "Alle als gelesen markieren",
-    "no_notifications_message": "Sie sind auf dem neuesten Stand!"
+    "no_notifications_message": "Sie sind auf dem neuesten Stand!",
+    "settings": {
+      "title": "Benachrichtigungseinstellungen",
+      "subtitle": "Konfigurieren Sie, wie und wann Sie benachrichtigt werden möchten.",
+      "event": "Ereignis",
+      "email": "E-Mail",
+      "app": "In-App",
+      "lead_time": "Vorlaufzeit",
+      "days_before": "Tage vorab",
+      "save": "Einstellungen speichern",
+      "saving": "Wird gespeichert...",
+      "save_success": "Einstellungen erfolgreich gespeichert",
+      "save_error": "Fehler beim Speichern der Einstellungen",
+      "loading": "Lade Einstellungen...",
+      "groups": {
+        "projects": "Projekte",
+        "invoices": "Rechnungen & Finanzen",
+        "communication": "Kommunikation"
+      },
+      "events": {
+        "project_created": "Neues Projekt angelegt",
+        "project_status_changed": "Projektstatus geändert",
+        "deadline_reminder": "Fristerinnerung",
+        "document_uploaded": "Dokument hochgeladen",
+        "invoice_due": "Rechnung fällig",
+        "invoice_overdue": "Rechnung überfällig",
+        "payment_received": "Zahlung erhalten",
+        "new_mail": "Neue E-Mail erhalten",
+        "partner_inquiry_replied": "Partner hat auf Anfrage geantwortet"
+      }
+    }
   },
   "profile": {
     "title": "Mein Profil",

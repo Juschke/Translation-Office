@@ -15,6 +15,7 @@ class ProjectPayment extends Model
         'payment_date',
         'payment_method',
         'note',
+        'created_by',
     ];
 
     protected $casts = [

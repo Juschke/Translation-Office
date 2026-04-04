@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { FaPaperPlane, FaTimes } from 'react-icons/fa';
@@ -203,7 +202,7 @@ const SendEmailModal = ({ isOpen, onClose, projectData, recipientType = 'custome
                             placeholder="Ihre Nachricht..."
                             required
                         />
-                        <p className="text-[10px] text-slate-400 mt-1">
+                        <p className="text-sm text-slate-400 mt-1">
                             Verfügbare Platzhalter: {'{'}{'{'} project_name {'}'}{'}'}, {'{'}{'{'} source_language {'}'}{'}'}, {'{'}{'{'} target_language {'}'}{'}'}, {'{'}{'{'} deadline {'}'}{'}'}, {'{'}{'{'} price_net {'}'}{'}'}, {'{'}{'{'} company_name {'}'}{'}'}, {'{'}{'{'} sender_name {'}'}{'}'}
                         </p>
                     </div>

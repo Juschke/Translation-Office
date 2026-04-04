@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import { FaInfoCircle, FaTrash, FaEuroSign, FaPlus } from 'react-icons/fa';
+import { Tooltip } from 'antd';
 import { Button } from '../ui/button';
 import clsx from 'clsx';
 
@@ -19,7 +19,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                 <div className="flex items-center gap-3">
                     <FaEuroSign className="text-slate-400 text-sm" />
                     <h4 className="text-sm font-medium text-slate-800">Anzahlungen / Teilzahlungen</h4>
-                    <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
+                    <span className="bg-white border border-slate-200 text-slate-600 text-sm font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
                         {payments.length}
                     </span>
                 </div>
@@ -29,12 +29,9 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                         size="sm"
                         onClick={onAddPayment}
                         disabled={disabledAdd}
-                        className={clsx(
-                            "h-7 px-3 text-[10px] uppercase font-bold tracking-tight shadow-none rounded flex items-center gap-1.5",
-                            disabledAdd ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white"
-                        )}
+                        className={clsx("h-7 px-3 text-sm font-bold shadow-none rounded flex items-center gap-1.5", disabledAdd ?"bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" :"bg-brand-primary hover:bg-brand-primary/90 text-white" )}
                     >
-                        <FaPlus className="text-[10px]" /> {disabledAdd ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                        <FaPlus className="text-sm" /> {disabledAdd ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
                     </Button>
                 )}
             </div>
@@ -53,6 +50,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 whitespace-nowrap">Datum & Uhrzeit</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-32 text-right">Betrag (Brutto)</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-40">Zahlmittel</th>
+                            <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-44">Anmerkung</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-48">Mitarbeiter</th>
                             <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-20 text-center">Aktion</th>
                         </tr>
@@ -60,7 +58,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                     <tbody className="divide-y divide-slate-100">
                         {payments.map((p, idx) => (
                             <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
-                                <td className="px-4 py-2 text-[10px] font-bold text-slate-400 text-center">
+                                <td className="px-4 py-2 text-sm font-bold text-slate-400 text-center">
                                     {p.payment_number || (idx + 1).toString().padStart(3, '0')}
                                 </td>
                                 <td className="px-4 py-2 text-sm font-medium text-slate-700 whitespace-nowrap">
@@ -72,9 +70,20 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                                 <td className="px-4 py-2 text-xs font-medium text-slate-600">
                                     {p.payment_method}
                                 </td>
+                                <td className="px-4 py-2 text-xs font-medium text-slate-500 max-w-[176px]">
+                                    {p.note ? (
+                                        <Tooltip title={p.note} placement="top">
+                                            <span className="truncate block cursor-default">
+                                                {p.note.length > 40 ? `${p.note.substring(0, 40)}…` : p.note}
+                                            </span>
+                                        </Tooltip>
+                                    ) : (
+                                        <span className="text-slate-300">–</span>
+                                    )}
+                                </td>
                                 <td className="px-4 py-2 text-xs font-medium text-slate-500">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200 shrink-0">
+                                        <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 border border-slate-200 shrink-0">
                                             {(p.created_by || '??').substring(0, 2).toUpperCase()}
                                         </div>
                                         <span className="truncate">{p.created_by || 'System'}</span>

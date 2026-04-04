@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { FaHistory, FaTag } from 'react-icons/fa';
+import { FaHistory } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../../api/services';
@@ -156,8 +155,8 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
                 const d = new Date(change.date);
                 return (
                     <div className="flex flex-col">
-                        <span className="font-bold text-slate-700 text-xs">{d.toLocaleDateString('de-DE')}</span>
-                        <span className="text-[10px] text-slate-400 font-bold">{d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="font-bold text-slate-700 text-xs">{d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                        <span className="text-sm text-slate-400 font-bold">{d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                 );
             },
@@ -169,7 +168,7 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Benutzer',
             accessor: (change: any) => (
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-700 shadow-inner uppercase">
+                    <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-700 shadow-inner">
                         {change.user[0]}
                     </div>
                     <span className="font-bold text-slate-600 text-[11px]">{change.user}</span>
@@ -183,12 +182,12 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Aktion',
             accessor: (change: any) => (
                 <div className="flex flex-col">
-                    <span className={clsx("px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-tight border shadow-sm w-fit",
+                    <span className={clsx("px-2 py-0.5 rounded-sm text-sm font-bold   border shadow-sm w-fit",
                         change.eventColor, change.eventBg, change.eventBorder
                     )}>
                         {change.eventLabel}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter mt-0.5 ml-1">{change.subjectType}</span>
+                    <span className="text-sm font-bold text-slate-300 mt-0.5 ml-1">{change.subjectType}</span>
                 </div>
             ),
             sortable: true,
@@ -199,8 +198,8 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Objekt / Feld',
             accessor: (change: any) => (
                 <div className="flex items-center gap-2">
-                    <FaTag className="text-slate-300 text-[10px]" />
-                    <span className="font-bold text-slate-700 text-[11px] uppercase tracking-tighter">{change.objectField}</span>
+
+                    <span className="font-bold text-slate-700 text-sm">{change.objectField}</span>
                 </div>
             ),
             sortable: true,
@@ -211,7 +210,7 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Alt',
             accessor: (change: any) => (
                 <div className="max-w-[150px] truncate">
-                    <span className="text-red-400 line-through text-[10px] font-medium bg-red-50/30 px-1.5 py-0.5 rounded-sm border border-red-100/30">{change.oldValue}</span>
+                    <span className="text-red-400 underline text-sm font-medium bg-red-50/30 px-1.5 py-0.5 rounded-sm border border-red-100/30">{change.oldValue}</span>
                 </div>
             ),
         },
@@ -220,7 +219,7 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Neu',
             accessor: (change: any) => (
                 <div className="max-w-[150px] truncate">
-                    <span className="text-emerald-700 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-100">{change.newValue}</span>
+                    <span className="text-emerald-700 font-bold text-sm bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-100">{change.newValue}</span>
                 </div>
             ),
         },
@@ -229,20 +228,24 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-4 animate-fadeIn pb-10">
-            <DataTable
-                data={flattenedChanges}
-                columns={columns as any}
-                pageSize={15}
-                searchPlaceholder="Historie filtern..."
-                showSettings={true}
-                extraControls={
-                    <div className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-200 rounded-[3px] shadow-sm">
-                        <FaHistory className="text-slate-400 text-xs" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-brand-primary">Detail-Protokoll</span>
+        <div className="bg-white rounded-sm border border-slate-200 overflow-hidden animate-fadeIn">
+            <div className="px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-slate-100 bg-slate-50/10 flex items-center justify-between flex-wrap gap-3">
+                <h3 className="font-semibold text-sm text-slate-800 flex items-center gap-2 md:gap-3">
+                    <div className="w-8 h-8 rounded-sm bg-white border border-slate-200 flex items-center justify-center">
+                        <FaHistory className="text-slate-600 text-sm" />
                     </div>
-                }
-            />
+                    Historie
+                </h3>
+            </div>
+            <div className="h-[calc(100vh-260px)] flex flex-col">
+                <DataTable
+                    data={flattenedChanges}
+                    columns={columns as any}
+                    pageSize={50}
+                    searchPlaceholder="Suchen nach..."
+                    showSettings={true}
+                />
+            </div>
         </div>
     );
 };

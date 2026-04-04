@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"//.*shadow\")",
+      "Bash(npm run:*)",
+      "Bash(__NEW_LINE_e5662ecd82968507__ cat:*)"
+    ]
+  }
+}

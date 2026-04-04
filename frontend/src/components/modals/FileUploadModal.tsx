@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaCloudUploadAlt, FaTimes, FaTrash, FaCamera } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -20,7 +19,6 @@ const DOC_TYPES: { value: DocType; label: string; color: string }[] = [
 ];
 
 const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) => {
-    const { t } = useTranslation();
     const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -164,10 +162,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                 <div className="p-6 flex-1 overflow-y-auto max-h-[65vh] custom-scrollbar">
                     {/* Dropzone */}
                     <div
-                        className={clsx(
-                            'border-2 border-dashed rounded-sm p-8 flex flex-col items-center justify-center transition-all cursor-pointer group mb-4',
-                            dragActive ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300 bg-transparent hover:bg-slate-50'
-                        )}
+                        className={clsx( 'border-2 border-dashed rounded-sm p-8 flex flex-col items-center justify-center transition-all cursor-pointer group mb-4', dragActive ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300 bg-transparent hover:bg-slate-50' )}
                         onClick={() => fileInputRef.current?.click()}
                         onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                         onDragLeave={() => setDragActive(false)}
@@ -187,7 +182,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                         <button
                             type="button"
                             onClick={() => cameraInputRef.current?.click()}
-                            className="flex items-center gap-2 px-4 py-2 rounded-sm border border-brand-primary/20 bg-brand-primary/[0.03] text-brand-primary hover:bg-brand-primary/[0.08] text-xs font-bold uppercase tracking-wider transition-all shadow-sm group"
+                            className="flex items-center gap-2 px-4 py-2 rounded-sm border border-brand-primary/20 bg-brand-primary/[0.03] text-brand-primary hover:bg-brand-primary/[0.08] text-xs font-bold transition-all shadow-sm group"
                         >
                             <FaCamera className="text-sm transition-transform group-hover:scale-110" />
                             Dokument scannen (Kamera)
@@ -224,7 +219,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 bg-white">
                                     {selectedFiles.map((file) => (
-                                        <tr key={file.id} className={clsx("group transition-colors", !file.isValid && "bg-red-50/30")}>
+                                        <tr key={file.id} className={clsx("group transition-colors", !file.isValid &&"bg-red-50/30")}>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-sm bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-400 shrink-0">

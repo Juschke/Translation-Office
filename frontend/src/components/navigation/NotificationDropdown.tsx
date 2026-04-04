@@ -29,6 +29,8 @@ const NotificationDropdown = ({
             <button
                 className="text-emerald-100/60 hover:text-white focus:outline-none cursor-pointer flex items-center transition-colors"
                 onClick={onToggle}
+                aria-label="Benachrichtigungen öffnen"
+                aria-expanded={isOpen}
             >
                 <FaBell className="w-5 h-5" />
                 <div className="absolute -top-1.5 -right-1.5">
@@ -57,7 +59,10 @@ const NotificationDropdown = ({
                                 <div
                                     key={n.id}
                                     onClick={() => onNotificationClick(n)}
-                                    className={clsx("block p-3 hover:bg-slate-50 border-b border-slate-50 cursor-pointer text-left", !n.read_at ? "bg-transparent" : "")}
+                                    className={clsx(
+                                        "block p-3 hover:bg-slate-50 border-b border-slate-50 cursor-pointer text-left border-l-2",
+                                        !n.read_at ? "bg-brand-primary/5 border-l-brand-primary" : "bg-transparent border-l-transparent"
+                                    )}
                                 >
                                     <div className="flex justify-between items-center mb-1">
                                         <div className="text-xs text-slate-400">

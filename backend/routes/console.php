@@ -27,3 +27,8 @@ Schedule::command('monitor:api-errors --threshold=10')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+Schedule::command('subscriptions:generate-invoices')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->runInBackground();

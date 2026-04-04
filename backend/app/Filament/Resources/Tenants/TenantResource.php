@@ -11,9 +11,9 @@ use App\Filament\Resources\Tenants\Schemas\TenantInfolist;
 use App\Filament\Resources\Tenants\Tables\TenantsTable;
 use App\Models\Tenant;
 use BackedEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
 class TenantResource extends Resource
@@ -62,5 +62,24 @@ class TenantResource extends Resource
             'view' => ViewTenant::route('/{record}'),
             'edit' => EditTenant::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withCount(['users', 'projects', 'customers', 'tenantInvoices'])
+            ->with(['subscription', 'tenantInvoices' => fn ($query) => $query->latest('invoice_date')->limit(1)]);
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::where('is_active', false)->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
     }
 }

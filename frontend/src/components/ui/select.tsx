@@ -13,17 +13,24 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     ({ className, label, tooltip, error, helperText, containerClassName, children, ...props }, ref) => {
+        const selectId = React.useId()
+        const errorId = React.useId()
+        const isRequired = props.required
+
         return (
             <div className={cn("w-full", containerClassName)}>
                 {label && (
-                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                    <label htmlFor={selectId} className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
                         {label}
+                        {isRequired && (
+                            <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>
+                        )}
                         {tooltip && (
                             <TooltipProvider delayDuration={200}>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <span className="text-slate-300 hover:text-slate-500 transition cursor-help">
-                                            <FaInfoCircle className="text-[10px]" />
+                                            <FaInfoCircle className="text-2xs" />
                                         </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -36,14 +43,17 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 )}
                 <div className="relative">
                     <select
+                        id={selectId}
                         className={cn(
-                            "flex h-9 w-full appearance-none rounded-sm bg-transparent px-3 py-1 pr-8 text-sm text-slate-900 transition-colors",
-                            "border border-slate-200 hover:border-slate-300",
-                            "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
+                            "flex h-9 w-full appearance-none rounded-none bg-transparent px-3 py-1 pr-8 text-sm text-slate-900 transition-colors",
+                            "border border-slate-200 hover:border-brand-primary",
+                            "focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary",
                             "disabled:cursor-not-allowed disabled:opacity-50",
                             error && "border-red-500 focus:border-red-500 focus:ring-red-500/10",
                             className
                         )}
+                        aria-required={isRequired ? "true" : undefined}
+                        aria-describedby={helperText ? errorId : undefined}
                         ref={ref}
                         {...props}
                     >
@@ -56,7 +66,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                     </div>
                 </div>
                 {helperText && (
-                    <p className={cn("mt-1.5 text-xs", error ? "text-red-500" : "text-slate-500")}>
+                    <p id={errorId} className={cn("mt-1.5 text-xs", error ? "text-red-500" : "text-slate-500")}>
                         {helperText}
                     </p>
                 )}

@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { FaClock, FaCircle } from 'react-icons/fa';
 

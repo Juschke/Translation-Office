@@ -7,13 +7,15 @@ import {
     FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaStar,
     FaUserTie, FaFileContract, FaBriefcase, FaChartLine
 } from 'react-icons/fa';
-import TableSkeleton from '../components/common/TableSkeleton';
+import DetailSkeleton from '../components/common/DetailSkeleton';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { Button } from '../components/ui/button';
+import PartnerBillingTab from '../components/partners/PartnerBillingTab';
+import { useWorkspaceTabs } from '../context/WorkspaceTabsContext';
 
 const PartnerDetail = () => {
     const { t } = useTranslation();
@@ -23,12 +25,22 @@ const PartnerDetail = () => {
     const queryClient = useQueryClient();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'stammdaten' | 'abrechnung'>('stammdaten');
 
     const { data: partner, isLoading } = useQuery({
         queryKey: ['partners', id],
         queryFn: () => partnerService.getById(parseInt(id!)),
         enabled: !!id
     });
+
+    const { updateTab } = useWorkspaceTabs();
+
+    useEffect(() => {
+        if (partner) {
+            const partnerName = partner.company || `${partner.first_name} ${partner.last_name}`;
+            updateTab(`partner_detail_${id}`, { label: `Partner: ${partnerName}` });
+        }
+    }, [partner, id, updateTab]);
 
     const updateMutation = useMutation({
         mutationFn: (data: any) => partnerService.update(parseInt(id!), data),
@@ -46,7 +58,7 @@ const PartnerDetail = () => {
         }
     });
 
-    if (isLoading) return <TableSkeleton rows={5} columns={2} />;
+    if (isLoading) return <DetailSkeleton />;
     if (!partner) return <div className="p-10 text-center text-slate-500">{t('empty.partner_not_found')}</div>;
 
     const name = partner.company || `${partner.first_name} ${partner.last_name}`;
@@ -127,6 +139,29 @@ const PartnerDetail = () => {
                     </div>
                 </div>
 
+            {/* Tab Navigation */}
+            <div className="flex gap-1 border-b border-slate-200">
+                {(['stammdaten', 'abrechnung'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
+                            ? 'border-brand-primary text-brand-primary'
+                            : 'border-transparent text-slate-500 hover:text-slate-700'
+                            }`}
+                    >
+                        {tab === 'stammdaten' ? 'Stammdaten' : 'Abrechnung'}
+                    </button>
+                ))}
+            </div>
+
+            {/* Abrechnung Tab */}
+            {activeTab === 'abrechnung' && (
+                <PartnerBillingTab partnerId={Number(id)} />
+            )}
+
+            {/* Stammdaten Tab */}
+            {activeTab === 'stammdaten' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
                     {/* Main Column */}
@@ -300,6 +335,7 @@ const PartnerDetail = () => {
 
                     </div>
                 </div>
+            )} {/* end stammdaten tab */}
 
                 <NewPartnerModal
                     isOpen={isEditModalOpen}
@@ -344,7 +380,7 @@ const RecentPartnerProjects = ({ partnerId }: { partnerId: string }) => {
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-                <thead className="bg-transparent text-slate-500 text-xs font-medium tracking-wider">
+                <thead className="bg-transparent text-slate-500 text-xs font-medium">
                     <tr>
                         <th className="px-6 py-3 border-b border-slate-100">Projekt</th>
                         <th className="px-6 py-3 border-b border-slate-100">Status</th>

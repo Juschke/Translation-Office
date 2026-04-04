@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import ConfirmationModal from '../components/modals/ConfirmationModal';
-import type { ConfirmationVariant } from '../components/modals/ConfirmationModal';
+import ConfirmModal from '../components/common/ConfirmModal';
+import type { ConfirmModalProps } from '../components/common/ConfirmModal';
+
+type ExtendedVariant = ConfirmModalProps['variant'];
 
 interface ConfirmOptions {
  title?: string;
  message: string;
  confirmText?: string;
  cancelText?: string;
- variant?: ConfirmationVariant;
+ variant?: ExtendedVariant;
  onConfirm: () => Promise<void> | void;
  onCancel?: () => void;
 }
@@ -16,7 +18,7 @@ interface AlertOptions {
  title?: string;
  message: string;
  confirmText?: string;
- variant?: ConfirmationVariant;
+ variant?: ExtendedVariant;
  onClose?: () => void;
 }
 
@@ -93,7 +95,7 @@ export const ConfirmationProvider: React.FC<{ children: ReactNode }> = ({ childr
  message: 'Sind Sie sicher?',
  confirmText: 'Bestätigen',
  cancelText: 'Abbrechen',
- variant: 'danger' as ConfirmationVariant
+ variant: 'danger' as ExtendedVariant
  };
 
  const activeConfig = config || defaultConfig;
@@ -102,14 +104,15 @@ export const ConfirmationProvider: React.FC<{ children: ReactNode }> = ({ childr
  <ConfirmationContext.Provider value={{ confirm, alert }}>
  {children}
  {config && (
- <ConfirmationModal
+ <ConfirmModal
  isOpen={isOpen}
  onClose={handleClose}
  onConfirm={handleConfirm}
  title={activeConfig.title || defaultConfig.title}
  message={activeConfig.message}
  confirmText={activeConfig.confirmText || defaultConfig.confirmText}
- cancelText={activeConfig.cancelText} // If undefined, modal won't show it
+ cancelText={activeConfig.cancelText}
+ hideCancelButton={activeConfig.cancelText === undefined}
  variant={activeConfig.variant || defaultConfig.variant}
  isLoading={isLoading}
  />

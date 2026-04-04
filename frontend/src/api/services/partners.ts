@@ -79,4 +79,12 @@ export const partnerService = {
         const response = await api.post('/partners/check-duplicates', mapped);
         return response.data;
     },
+    getPartnerBilling: async (id: number) => {
+        const response = await api.get(`/partners/${id}/billing`);
+        return response.data;
+    },
+    markProjectPaid: async (partnerId: number, projectId: number) => {
+        const response = await api.post(`/partners/${partnerId}/projects/${projectId}/mark-paid`);
+        return response.data;
+    },
 };

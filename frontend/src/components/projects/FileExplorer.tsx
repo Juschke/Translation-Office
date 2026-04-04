@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
     FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
     FaDownload, FaTrashAlt, FaSearch, FaCloudUploadAlt, FaCheckCircle,
-    FaExclamationCircle, FaArrowRight, FaInbox, FaBookOpen, FaCamera, FaPrint,
+    FaExclamationCircle, FaArrowRight, FaInbox, FaBookOpen, FaPrint,
     FaListUl, FaTh, FaEye,
 } from 'react-icons/fa';
 import clsx from 'clsx';
@@ -13,14 +13,11 @@ import toast from 'react-hot-toast';
 
 interface FileExplorerProps {
     projectData: any;
-    setIsUploadModalOpen: (open: boolean) => void;
     handlePreviewFile: (file: any) => Promise<void>;
     handleDownloadFile: (file: any) => Promise<void>;
     setDeleteFileConfirm: (confirm: { isOpen: boolean; fileId: string | null; fileName: string }) => void;
-    toggleFileType: (file: any) => Promise<void>;
-    onRenameFile: (file: any, newName: string) => Promise<void>;
-    onMoveFile: (file: any, newType: string) => Promise<void>;
     onBulkMove: (ids: string[], newType: string) => Promise<void>;
+    onBulkDelete: (ids: string[]) => void | Promise<void>;
     onBulkDownloadZip: (ids: string[]) => Promise<void>;
     formatFileSize: (bytes: any) => string;
     onUpload: (files: any[], onProgress: (id: string, progress: number) => void) => Promise<void>;
@@ -71,6 +68,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     handleDownloadFile,
     setDeleteFileConfirm,
     onBulkMove,
+    onBulkDelete,
     onBulkDownloadZip,
     formatFileSize,
     onUpload,
@@ -84,6 +82,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all');
     const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isMoveOpen, setIsMoveOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scanInputRef = useRef<HTMLInputElement>(null);
 
@@ -179,11 +178,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
         }
     };
 
-    const handleScanClick = () => {
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (!isMobile) setShowScanHint(true);
-        scanInputRef.current?.click();
-    };
+
 
     const openTypePicker = (files: FileList | File[]) => setPendingFiles(Array.from(files));
 
@@ -239,7 +234,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                         <FaPrint className="text-blue-600 text-sm" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-1">Drucker / Scanner</p>
+                        <p className="text-[11px] font-bold text-blue-800 mb-1">Drucker / Scanner</p>
                         <p className="text-xs text-blue-700 leading-relaxed">
                             Scannen Sie das Dokument an Ihrem Drucker und speichern Sie es als <strong>PDF oder JPEG</strong>.
                             Wählen Sie dann die gespeicherte Datei im geöffneten Datei-Dialog aus.
@@ -254,7 +249,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             {uploadQueue.length > 0 && (
                 <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-4 animate-in slide-in-from-top-4 duration-300">
                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-sm font-bold text-slate-500 flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
                             Upload-Status ({uploadQueue.length})
                         </span>
@@ -265,11 +260,11 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                 <div className="flex justify-between items-center mb-2">
                                     <div className="flex items-center gap-2 truncate">
                                         <div className="text-xs shrink-0">{getFileIcon(f.name)}</div>
-                                        <span className="text-[10px] font-bold text-slate-700 truncate">{f.name}</span>
+                                        <span className="text-sm font-bold text-slate-700 truncate">{f.name}</span>
                                     </div>
                                     {f.status === 'saved' ? <FaCheckCircle className="text-emerald-500 text-xs shrink-0" /> :
                                         f.status === 'error' ? <FaExclamationCircle className="text-red-500 text-xs shrink-0" /> :
-                                            <span className="text-[10px] font-mono text-slate-400 shrink-0">{f.progress}%</span>}
+                                            <span className="text-sm font-mono text-slate-400 shrink-0">{f.progress}%</span>}
                                 </div>
                                 <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
                                     <div
@@ -309,19 +304,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center gap-2 h-9 px-4 bg-brand-primary text-white text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-brand-primary/90 transition-all shadow-sm"
+                                className="flex items-center gap-2 h-9 px-4 bg-brand-primary text-white text-sm font-bold rounded-sm hover:bg-brand-primary/90 transition-all shadow-sm"
                             >
                                 <FaCloudUploadAlt /> Hochladen
                             </button>
                             <input type="file" multiple className="hidden" onChange={(e) => e.target.files?.length && openTypePicker(e.target.files)} ref={fileInputRef} />
 
-                            <button
-                                onClick={handleScanClick}
-                                className="h-9 w-9 flex items-center justify-center bg-white border border-slate-200 text-slate-400 rounded-sm hover:bg-slate-50 transition-all"
-                                title="Scannen"
-                            >
-                                <FaCamera className="text-sm" />
-                            </button>
                             <input ref={scanInputRef} type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden"
                                 onChange={(e) => { setShowScanHint(false); if (e.target.files?.length) openTypePicker(e.target.files); e.target.value = ''; }}
                             />
@@ -347,7 +335,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
                     {/* Bottom Row: Filter Badges */}
                     <div className="px-4 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar bg-white/30">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2 shrink-0">Filter:</span>
+                        <span className="text-sm font-bold text-slate-400 shrink-0">Filter:</span>
                         <div className="flex items-center gap-1.5">
                             {FILTERS.map(({ value, label }) => {
                                 const count = filterCount(value);
@@ -357,15 +345,15 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                         key={value}
                                         onClick={() => setActiveFilter(value)}
                                         className={clsx(
-                                            'px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all border whitespace-nowrap',
+                                            'px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all border whitespace-nowrap',
                                             isActive
                                                 ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
                                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'
                                         )}
                                     >
                                         {label}
-                                        <span className={clsx('rounded-sm px-1.5 py-0.5 text-[10px] font-mono leading-none',
-                                            isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 font-bold'
+                                        <span className={clsx('rounded-full px-2 py-0.5 text-sm font-mono leading-none',
+                                            isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 font-bold'
                                         )}>{count}</span>
                                     </button>
                                 );
@@ -376,63 +364,86 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
                 {/* Bulk action bar */}
                 {someSelected && (
-                    <div className="px-4 py-2.5 bg-brand-primary/[0.03] border-b border-brand-primary/10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 animate-in slide-in-from-top-2 duration-150">
-                        <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-bold text-brand-primary uppercase tracking-wider">
-                                {selectedFiles.length} ausgewählt
+                    <div className="px-4 py-3 bg-brand-primary/[0.03] border-b border-brand-primary/10 flex items-center justify-between animate-in slide-in-from-top-2 duration-150">
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-bold text-brand-primary bg-brand-primary/10 px-4 py-1.5 rounded-full flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+                                {selectedFiles.length} Dokumente ausgewählt
                             </span>
-                            <div className="w-px h-4 bg-brand-primary/20" />
-                            <div className="flex items-center gap-1">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">Verschieben nach:</span>
-                                {(['source', 'target', 'reference', 'delivery'] as FileType[]).map(type => (
-                                    <button
-                                        key={type}
-                                        onClick={() => {
-                                            onBulkMove(Array.from(selectedIds), type);
-                                            setSelectedIds(new Set());
-                                        }}
-                                        className="px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-widest bg-white border border-slate-200 text-slate-500 hover:border-brand-primary hover:text-brand-primary hover:shadow-sm transition-all"
-                                    >
-                                        {FILE_TYPE_CONFIG[type].short}
-                                    </button>
-                                ))}
-                            </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5 sm:ml-auto">
-                            {selectedFiles.length > 1 ? (
+                        <div className="flex items-center gap-3">
+                            {/* Move Dropdown */}
+                            <div className="relative">
                                 <button
-                                    onClick={() => onBulkDownloadZip(Array.from(selectedIds))}
-                                    className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                    onClick={() => setIsMoveOpen(!isMoveOpen)}
+                                    className={clsx(
+                                        "h-9 px-4 rounded-sm flex items-center gap-2 text-sm font-bold border transition-all shadow-sm",
+                                        isMoveOpen ? "bg-slate-100 border-slate-300 text-slate-800" : "bg-white border-slate-200 text-slate-600 hover:border-brand-primary hover:text-brand-primary"
+                                    )}
                                 >
-                                    <FaDownload className="text-[8px]" /> ZIP herunterladen
+                                    <FaArrowRight className={clsx("text-xs transition-transform", isMoveOpen && "rotate-90")} />
+                                    Verschieben
                                 </button>
-                            ) : (
-                                <button
-                                    onClick={() => { handleDownloadFile(selectedFiles[0]); }}
-                                    className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
-                                >
-                                    <FaDownload className="text-[8px]" /> Herunterladen
-                                </button>
-                            )}
+                                {isMoveOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setIsMoveOpen(false)} />
+                                        <div className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-slate-200 rounded-sm shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                            <div className="px-3 py-2 bg-slate-50 border-b border-slate-100">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Verschieben nach...</span>
+                                            </div>
+                                            <div className="p-1.5 flex flex-col gap-1">
+                                                {(['source', 'target', 'reference', 'delivery'] as FileType[]).map(type => (
+                                                    <button
+                                                        key={type}
+                                                        onClick={() => {
+                                                            onBulkMove(Array.from(selectedIds), type);
+                                                            setSelectedIds(new Set());
+                                                            setIsMoveOpen(false);
+                                                            toast.success(`Dateien nach «${FILE_TYPE_CONFIG[type].short}» verschoben`);
+                                                        }}
+                                                        className="flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors text-left"
+                                                    >
+                                                        <span className="opacity-50">{FILE_TYPE_CONFIG[type].icon}</span>
+                                                        {FILE_TYPE_CONFIG[type].label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
+                            {/* ZIP Download */}
+                            <button
+                                onClick={() => onBulkDownloadZip(Array.from(selectedIds))}
+                                className="h-9 px-4 rounded-sm flex items-center gap-2 bg-brand-primary text-white text-sm font-bold hover:bg-brand-primary/95 transition-all shadow-sm active:scale-[0.98]"
+                            >
+                                <FaFileArchive className="text-xs" />
+                                Herunterladen als ZIP
+                            </button>
+
+                            {/* Delete */}
                             <button
                                 onClick={() => {
                                     if (selectedFiles.length === 1) {
                                         setDeleteFileConfirm({ isOpen: true, fileId: selectedFiles[0].id, fileName: selectedFiles[0].name || selectedFiles[0].original_name });
                                     } else {
-                                        toast('Mehrfach-Löschen: Bitte einzeln löschen.', { icon: 'ℹ️' });
+                                        onBulkDelete(Array.from(selectedIds));
                                     }
                                     setSelectedIds(new Set());
                                 }}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                className="h-9 px-4 rounded-sm flex items-center gap-2 bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-all shadow-sm active:scale-[0.98]"
                             >
-                                <FaTrashAlt className="text-[8px]" /> Löschen
+                                <FaTrashAlt className="text-xs" />
+                                Löschen
                             </button>
 
+                            <div className="w-px h-6 bg-slate-200 mx-1" />
+
                             <button
-                                onClick={() => setSelectedIds(new Set())}
-                                className="text-[10px] font-bold text-slate-400 hover:text-slate-600 px-2 py-1.5 uppercase tracking-widest"
+                                onClick={() => { setSelectedIds(new Set()); setIsMoveOpen(false); }}
+                                className="text-sm font-bold text-slate-400 hover:text-slate-600 px-3 py-2 transition-colors"
                             >
                                 Abbrechen
                             </button>
@@ -448,13 +459,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                     >
                         <FaCloudUploadAlt className="text-5xl text-slate-200" />
                         <div className="text-center">
-                            <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest">
+                            <p className="text-[13px] font-bold text-slate-400">
                                 {searchQuery ? `Keine Ergebnisse für «${searchQuery}»` : 'Keine Dokumente vorhanden'}
                             </p>
                             {!searchQuery && <p className="text-xs text-slate-300 mt-1">Dateien hierher ziehen oder klicken zum Hochladen</p>}
                         </div>
                         {!searchQuery && (
-                            <Button variant="outline" size="sm" className="text-[10px] font-bold uppercase tracking-wider"
+                            <Button variant="outline" size="sm" className="text-sm font-bold"
                                 onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                             >
                                 <FaCloudUploadAlt className="mr-2" /> Hochladen
@@ -496,20 +507,20 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                     <div className="absolute bottom-1.5 right-1.5 flex gap-0.5">
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-brand-primary bg-white/90 border border-slate-100"
                                             onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }} title="Herunterladen">
-                                            <FaDownload className="text-[10px]" />
+                                            <FaDownload className="text-sm" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500 bg-white/90 border border-slate-100"
                                             onClick={(e) => { e.stopPropagation(); setDeleteFileConfirm({ isOpen: true, fileId: file.id, fileName: name }); }} title={t('actions.delete')}>
-                                            <FaTrashAlt className="text-[10px]" />
+                                            <FaTrashAlt className="text-sm" />
                                         </Button>
                                     </div>
                                     <div className="mt-4 opacity-80">
                                         {getFileIcon(name, true)}
                                     </div>
-                                    <p className="text-[10px] font-bold text-slate-700 text-center line-clamp-2 break-all w-full leading-tight">
+                                    <p className="text-sm font-bold text-slate-700 text-center line-clamp-2 break-all w-full leading-tight">
                                         {name}
                                     </p>
-                                    <p className="text-[10px] text-slate-400 font-mono -mt-1">
+                                    <p className="text-sm text-slate-400 font-mono -mt-1">
                                         {formatFileSize(file.size || 0)}
                                     </p>
                                 </div>
@@ -522,7 +533,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 {viewMode === 'list' && allFilteredFiles.length > 0 && (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-[#fcfdff] text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100">
+                            <thead className="bg-[#fcfdff] text-slate-400 text-sm font-bold border-b border-slate-100">
                                 <tr>
                                     <th className="pl-4 pr-2 py-3 w-8">
                                         <input
@@ -557,7 +568,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                                 />
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className={clsx('px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase border', cfg.bg)}>
+                                                <span className={clsx('px-3 py-1 rounded-full text-sm font-bold  border shadow-sm', cfg.bg)}>
                                                     {cfg.short}
                                                 </span>
                                             </td>
@@ -574,12 +585,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className="text-[10px] text-slate-500 font-mono tracking-tighter whitespace-nowrap">
+                                                <span className="text-sm text-slate-500 font-mono whitespace-nowrap">
                                                     {formatFileSize(file.size || 0)}
                                                 </span>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                                                <span className="text-sm text-slate-500 whitespace-nowrap">
                                                     {new Date(file.created_at || Date.now()).toLocaleString('de-DE', {
                                                         day: '2-digit', month: '2-digit', year: 'numeric',
                                                         hour: '2-digit', minute: '2-digit',
@@ -587,7 +598,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                                 </span>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                                                <span className="text-sm text-slate-500 whitespace-nowrap">
                                                     {file.uploader?.name ?? <span className="text-slate-300">—</span>}
                                                 </span>
                                             </td>
@@ -618,50 +629,54 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             </div>
 
             {/* Type picker modal */}
-            {pendingFiles && (
-                <div className="fixed inset-0 bg-black/30 z-[9998] flex items-center justify-center backdrop-blur-[2px] animate-in fade-in duration-150">
-                    <div className="bg-white rounded-sm border border-slate-200 shadow-2xl w-full max-w-sm mx-4">
-                        <div className="px-6 py-5 border-b border-slate-100">
-                            <p className="text-[11px] font-bold text-slate-800 uppercase tracking-widest">Dokumenttyp wählen</p>
-                            <p className="text-xs text-slate-400 mt-1">
-                                {pendingFiles.length === 1 ? `«${pendingFiles[0].name}»` : `${pendingFiles.length} Dateien`}
-                            </p>
-                        </div>
-                        <div className="p-4 flex flex-col gap-2">
-                            {(['source', 'target', 'reference'] as FileType[]).map((type) => {
-                                const cfg = FILE_TYPE_CONFIG[type];
-                                return (
-                                    <button key={type} onClick={() => confirmUpload(type)}
-                                        className={clsx('flex items-center gap-4 px-4 py-3.5 rounded-sm border text-left transition-all hover:shadow-sm', cfg.bg)}>
-                                        <span className="text-base shrink-0">{cfg.icon}</span>
-                                        <p className="text-[11px] font-bold">{cfg.label}</p>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <div className="px-4 pb-4">
-                            <button
-                                onClick={() => { setPendingFiles(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                className="w-full text-center text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider py-2"
-                            >
-                                Abbrechen
-                            </button>
+            {
+                pendingFiles && (
+                    <div className="fixed inset-0 bg-black/30 z-[9998] flex items-center justify-center backdrop-blur-[2px] animate-in fade-in duration-150">
+                        <div className="bg-white rounded-sm border border-slate-200 shadow-2xl w-full max-w-sm mx-4">
+                            <div className="px-6 py-5 border-b border-slate-100">
+                                <p className="text-[11px] font-bold text-slate-800">Dokumenttyp wählen</p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {pendingFiles.length === 1 ? `«${pendingFiles[0].name}»` : `${pendingFiles.length} Dateien`}
+                                </p>
+                            </div>
+                            <div className="p-4 flex flex-col gap-2">
+                                {(['source', 'target', 'reference'] as FileType[]).map((type) => {
+                                    const cfg = FILE_TYPE_CONFIG[type];
+                                    return (
+                                        <button key={type} onClick={() => confirmUpload(type)}
+                                            className={clsx('flex items-center gap-4 px-4 py-3.5 rounded-sm border text-left transition-all hover:shadow-sm', cfg.bg)}>
+                                            <span className="text-base shrink-0">{cfg.icon}</span>
+                                            <p className="text-[11px] font-bold">{cfg.label}</p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="px-4 pb-4">
+                                <button
+                                    onClick={() => { setPendingFiles(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                    className="w-full text-center text-sm font-bold text-slate-400 hover:text-slate-600 py-2"
+                                >
+                                    Abbrechen
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Drag overlay */}
-            {isDragging && (
-                <div className="fixed inset-0 bg-brand-primary/10 border-4 border-dashed border-brand-primary z-[9999] flex flex-col items-center justify-center backdrop-blur-[2px] pointer-events-none animate-in fade-in duration-200">
-                    <div className="bg-white p-8 rounded-full shadow-2xl border border-brand-primary/20 mb-6 scale-110">
-                        <FaCloudUploadAlt className="text-6xl text-brand-primary" />
+            {
+                isDragging && (
+                    <div className="fixed inset-0 bg-brand-primary/10 border-4 border-dashed border-brand-primary z-[9999] flex flex-col items-center justify-center backdrop-blur-[2px] pointer-events-none animate-in fade-in duration-200">
+                        <div className="bg-white p-8 rounded-full shadow-2xl border border-brand-primary/20 mb-6 scale-110">
+                            <FaCloudUploadAlt className="text-6xl text-brand-primary" />
+                        </div>
+                        <div className="text-2xl font-black text-brand-primary tracking-[0.2em]">Dateien ablegen</div>
+                        <p className="text-sm text-brand-primary/60 mt-2 font-bold">Upload startet sofort</p>
                     </div>
-                    <div className="text-2xl font-black text-brand-primary uppercase tracking-[0.2em]">Dateien ablegen</div>
-                    <p className="text-sm text-brand-primary/60 mt-2 font-bold uppercase">Upload startet sofort</p>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

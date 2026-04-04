@@ -409,7 +409,7 @@ const Invoices = () => {
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 {t('invoices.tabs.open')}
-                {subTabCounts.pending > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'pending' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.pending}</span>}
+                {subTabCounts.pending > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-sm ${statusFilter === 'pending' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.pending}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('paid')}
@@ -422,14 +422,14 @@ const Invoices = () => {
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 {t('invoices.tabs.overdue')}
-                {subTabCounts.overdue > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'overdue' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.overdue}</span>}
+                {subTabCounts.overdue > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-sm ${statusFilter === 'overdue' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.overdue}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('reminders')}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 {t('invoices.tabs.reminders')}
-                {subTabCounts.reminders > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'reminders' ? 'bg-white text-amber-600' : 'bg-amber-50 text-amber-600'}`}>{subTabCounts.reminders}</span>}
+                {subTabCounts.reminders > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-sm ${statusFilter === 'reminders' ? 'bg-white text-amber-600' : 'bg-amber-50 text-amber-600'}`}>{subTabCounts.reminders}</span>}
             </button>
             <button
                 onClick={() => setStatusFilter('cancelled')}
@@ -442,7 +442,7 @@ const Invoices = () => {
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
             >
                 {t('invoices.tabs.credit_notes')}
-                {subTabCounts.credit_notes > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'credit_notes' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.credit_notes}</span>}
+                {subTabCounts.credit_notes > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-sm ${statusFilter === 'credit_notes' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.credit_notes}</span>}
             </button>
         </div>
     ) : null;
@@ -450,7 +450,7 @@ const Invoices = () => {
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
             <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
-                <FaDownload /> Export
+                <FaDownload /> Exportieren
             </button>
             {isExportOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-sm border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
@@ -511,30 +511,28 @@ const Invoices = () => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
-            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden" onClick={() => setIsExportOpen(false)}>
-                <div className="flex justify-between items-center gap-4">
-                    <div className="min-w-0">
-                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('invoices.title')}</h1>
-                        <p className="text-slate-500 text-sm hidden sm:block">{t('invoices.subtitle')}</p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                        <Button
-                            onClick={() => navigate(statusFilter === 'credit_notes' ? '/invoices/new?type=credit_note' : '/invoices/new')}
-                            className={clsx(
-                                "text-white font-bold shadow-sm flex items-center justify-center gap-2 transition px-4 py-2",
-                                statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-brand-primary hover:bg-brand-primary/90"
-                            )}
-                        >
-                            <FaPlus className="text-xs" />
-                            <span className="hidden sm:inline">
-                                {statusFilter === 'credit_notes' ? t('invoices.new_credit_note') : t('invoices.new_invoice')}
-                            </span>
-                            <span className="inline sm:hidden">
-                                {t('common.new_short') || 'Neu'}
-                            </span>
-                        </Button>
-                    </div>
+        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
+            <div className="flex justify-between items-center gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">{t('invoices.title')}</h1>
+                    <p className="text-slate-500 text-sm hidden sm:block">{t('invoices.subtitle')}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                    <Button
+                        onClick={() => navigate(statusFilter === 'credit_notes' ? '/invoices/new?type=credit_note' : '/invoices/new')}
+                        className={clsx(
+                            "text-white font-bold shadow-sm flex items-center justify-center gap-2 transition px-4 py-2",
+                            statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-brand-primary hover:bg-brand-primary/90"
+                        )}
+                    >
+                        <FaPlus className="text-xs" />
+                        <span className="hidden sm:inline">
+                            {statusFilter === 'credit_notes' ? t('invoices.new_credit_note') : t('invoices.new_invoice')}
+                        </span>
+                        <span className="inline sm:hidden">
+                            {t('common.new_short') || 'Neu'}
+                        </span>
+                    </Button>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">

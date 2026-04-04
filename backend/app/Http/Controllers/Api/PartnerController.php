@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Partner;
+use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PartnerController extends Controller
 {
@@ -143,6 +145,74 @@ class PartnerController extends Controller
         Partner::whereIn('id', $validated['ids'])->delete();
 
         return response()->json(['message' => 'Partners deleted successfully']);
+    }
+
+    public function billing(Partner $partner)
+    {
+        $tenantId = Auth::user()->tenant_id;
+
+        $projects = Project::query()
+            ->where('tenant_id', $tenantId)
+            ->where('partner_id', $partner->id)
+            ->select([
+                'id',
+                'project_number',
+                'project_name',
+                'status',
+                'deadline',
+                'partner_cost_net',
+                'partner_paid',
+                'partner_paid_at',
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalOwedNet = $projects
+            ->where('partner_paid', false)
+            ->sum(fn ($p) => (float) $p->partner_cost_net);
+
+        $totalPaidNet = $projects
+            ->where('partner_paid', true)
+            ->sum(fn ($p) => (float) $p->partner_cost_net);
+
+        return response()->json([
+            'summary' => [
+                'total_projects'      => $projects->count(),
+                'total_owed_net'      => round($totalOwedNet, 2),
+                'total_paid_net'      => round($totalPaidNet, 2),
+                'total_outstanding_net' => round($totalOwedNet, 2),
+            ],
+            'projects' => $projects,
+        ]);
+    }
+
+    public function markPartnerPaid(Partner $partner, Project $project)
+    {
+        $tenantId = Auth::user()->tenant_id;
+
+        if ((int) $project->tenant_id !== (int) $tenantId) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        if ((int) $project->partner_id !== (int) $partner->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        if ($project->partner_paid) {
+            $project->partner_paid    = false;
+            $project->partner_paid_at = null;
+        } else {
+            $project->partner_paid    = true;
+            $project->partner_paid_at = now();
+        }
+
+        $project->save();
+
+        return response()->json([
+            'success'          => true,
+            'partner_paid'     => $project->partner_paid,
+            'partner_paid_at'  => $project->partner_paid_at,
+        ]);
     }
 
     public function checkDuplicates(Request $request)

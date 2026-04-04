@@ -74,7 +74,7 @@ const LoginPage = () => {
                 <div className="mx-auto h-20 w-20 bg-slate-900 rounded-sm flex items-center justify-center text-3xl font-medium text-white shadow-sm">
                     TO
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-slate-900">
+                <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
                     {showTwoFactor ? t('auth.two_factor_title') : t('auth.welcome_back')}
                 </h2>
                 <p className="mt-2 text-center text-sm text-slate-600">

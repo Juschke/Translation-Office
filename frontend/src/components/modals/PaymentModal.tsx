@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaTimes, FaEuroSign } from 'react-icons/fa';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';

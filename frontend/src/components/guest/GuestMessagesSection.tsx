@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaPaperPlane, FaPaperclip, FaCamera } from 'react-icons/fa';
 import { Button } from '../ui/button';

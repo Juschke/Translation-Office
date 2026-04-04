@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import {
     FaHome, FaLayerGroup, FaFileAlt, FaUsers, FaUserTie,
-    FaCommentDots, FaFileInvoiceDollar, FaEnvelope, FaCalendarAlt,
+    FaFileInvoiceDollar, FaEnvelope, FaCalendarAlt,
     FaChartBar, FaCog, FaChevronDown, FaBuilding, FaHashtag,
     FaFileInvoice, FaDatabase, FaBell, FaHistory, FaGlobe, FaTag, FaRuler, FaMoneyBillWave
 } from 'react-icons/fa';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import {
@@ -22,18 +23,30 @@ interface DesktopLinksProps {
     dashboardData: any;
     unreadEmails: number;
     hasMinRole: (role: UserRole) => boolean;
+    isProjectsOpen: boolean;
+    setIsProjectsOpen: (open: boolean) => void;
     isCustomersOpen: boolean;
     setIsCustomersOpen: (open: boolean) => void;
     isPartnersOpen: boolean;
     setIsPartnersOpen: (open: boolean) => void;
+    isInvoicesOpen: boolean;
+    setIsInvoicesOpen: (open: boolean) => void;
+    isCalendarOpen: boolean;
+    setIsCalendarOpen: (open: boolean) => void;
     isSettingsOpen: boolean;
     setIsSettingsOpen: (open: boolean) => void;
+    projectsRef: React.RefObject<HTMLDivElement | null>;
     customersRef: React.RefObject<HTMLDivElement | null>;
     partnersRef: React.RefObject<HTMLDivElement | null>;
+    invoicesRef: React.RefObject<HTMLDivElement | null>;
+    calendarRef: React.RefObject<HTMLDivElement | null>;
     settingsRef: React.RefObject<HTMLDivElement | null>;
     navigate: (path: string) => void;
-    setIsProfileOpen: (open: boolean) => void;
-    setIsNotifOpen: (open: boolean) => void;
+    closeAllDropdowns: () => void;
+    onNewProject: () => void;
+    onNewCustomer: () => void;
+    onNewPartner: () => void;
+    onNewAppointment: () => void;
 }
 
 const DesktopLinks = ({
@@ -41,18 +54,30 @@ const DesktopLinks = ({
     dashboardData,
     unreadEmails,
     hasMinRole,
+    isProjectsOpen,
+    setIsProjectsOpen,
     isCustomersOpen,
     setIsCustomersOpen,
     isPartnersOpen,
     setIsPartnersOpen,
+    isInvoicesOpen,
+    setIsInvoicesOpen,
+    isCalendarOpen,
+    setIsCalendarOpen,
     isSettingsOpen,
     setIsSettingsOpen,
+    projectsRef,
     customersRef,
     partnersRef,
+    invoicesRef,
+    calendarRef,
     settingsRef,
     navigate,
-    setIsProfileOpen,
-    setIsNotifOpen
+    closeAllDropdowns,
+    onNewProject,
+    onNewCustomer,
+    onNewPartner,
+    onNewAppointment,
 }: DesktopLinksProps) => {
     const { t } = useTranslation();
 
@@ -74,6 +99,38 @@ const DesktopLinks = ({
         { id: 'audit', label: t('settings.tabs.audit'), icon: FaHistory },
     ];
 
+    const dropdownMenuClass = "absolute left-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden";
+
+    const dropdownHeader = (_label: string) => null;
+
+    const dropdownPageLink = (to: string, icon: React.ReactNode, label: string, badge?: number) => (
+        <Link
+            to={to}
+            className={clsx(
+                "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
+                location.pathname === to ? "text-brand-primary bg-slate-50" : "text-slate-700"
+            )}
+        >
+            <div className="flex items-center gap-3">
+                {icon && icon}
+                <span>{label}</span>
+            </div>
+            {badge !== undefined && badge > 0 && (
+                <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-2xs font-bold">{badge}</span>
+            )}
+        </Link>
+    );
+
+    const dropdownAction = (onClick: () => void, icon: React.ReactNode, label: string) => (
+        <button
+            onClick={onClick}
+            className="w-full px-4 py-2.5 text-sm font-medium flex items-center gap-3 hover:bg-teal-50 hover:text-brand-primary text-slate-600 transition-colors text-left"
+        >
+            {icon && icon}
+            <span>{label}</span>
+        </button>
+    );
+
     return (
         <TooltipProvider delayDuration={0}>
             <div className="hidden space-x-1 h-full xl:flex">
@@ -92,18 +149,31 @@ const DesktopLinks = ({
                     </TooltipContent>
                 </Tooltip>
 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link to="/projects" className={navLinkClass("/projects")}>
-                            <FaLayerGroup className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">{t('nav.projects')}</span>
-                            <NavBadge count={dashboardData?.stats?.open_projects} label={t('nav.projects')} activeColor="bg-rose-500" />
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <span className="font-semibold text-sm">Projekte</span>
-                    </TooltipContent>
-                </Tooltip>
+                {/* Projekte Dropdown */}
+                <div className="relative h-full" ref={projectsRef}>
+                    <button
+                        onClick={() => { const next = !isProjectsOpen; closeAllDropdowns(); setIsProjectsOpen(next); }}
+                        className={navLinkClass("", isProjectsOpen || location.pathname.startsWith('/projects'))}
+                        aria-haspopup="true"
+                        aria-expanded={isProjectsOpen}
+                    >
+                        <FaLayerGroup className="text-base lg:hidden" />
+                        <span className="hidden lg:inline">{t('nav.projects')}</span>
+                        <NavBadge count={dashboardData?.stats?.open_projects} label={t('nav.projects')} activeColor="bg-rose-500" />
+                        <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isProjectsOpen && "rotate-180")} />
+                    </button>
+                    {isProjectsOpen && (
+                        <div className={dropdownMenuClass}>
+                            {dropdownHeader('Projekte')}
+                            <div className="py-1">
+                                {dropdownPageLink('/projects', null, 'Alle Projekte', dashboardData?.stats?.open_projects)}
+                                <div className="border-t border-slate-50 mt-1 pt-1">
+                                    {dropdownAction(onNewProject, null, 'Projekt erstellen')}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -123,40 +193,23 @@ const DesktopLinks = ({
                 {/* Kunden Dropdown */}
                 <div className="relative h-full" ref={customersRef}>
                     <button
-                        onClick={() => {
-                            setIsCustomersOpen(!isCustomersOpen);
-                            setIsPartnersOpen(false);
-                            setIsProfileOpen(false);
-                            setIsNotifOpen(false);
-                            setIsSettingsOpen(false);
-                        }}
+                        onClick={() => { closeAllDropdowns(); setIsCustomersOpen(!isCustomersOpen); }}
                         className={navLinkClass("", isCustomersOpen || location.pathname.startsWith('/customers'))}
+                        aria-haspopup="true"
+                        aria-expanded={isCustomersOpen}
                     >
                         <FaUsers className="text-base lg:hidden" />
                         <span className="hidden lg:inline">{t('nav.customers')}</span>
-                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isCustomersOpen && "rotate-180")} />
+                        <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isCustomersOpen && "rotate-180")} />
                     </button>
-
                     {isCustomersOpen && (
-                        <div className="absolute left-0 mt-0 w-48 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
+                        <div className={dropdownMenuClass}>
+                            {dropdownHeader('Kunden')}
                             <div className="py-1">
-                                <Link
-                                    to="/customers"
-                                    className={clsx(
-                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
-                                        location.pathname === '/customers' ? "text-brand-primary bg-slate-50" : "text-slate-700"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FaUsers className="text-slate-400 w-3.5 h-3.5" />
-                                        <span>{t('nav.customers')}</span>
-                                    </div>
-                                    {dashboardData?.stats?.active_customers > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                                            {dashboardData.stats.active_customers}
-                                        </span>
-                                    )}
-                                </Link>
+                                {dropdownPageLink('/customers', null, 'Alle Kunden', dashboardData?.stats?.active_customers)}
+                                <div className="border-t border-slate-50 mt-1 pt-1">
+                                    {dropdownAction(onNewCustomer, null, 'Kunden anlegen')}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -165,89 +218,59 @@ const DesktopLinks = ({
                 {/* Partner Dropdown */}
                 <div className="relative h-full" ref={partnersRef}>
                     <button
-                        onClick={() => {
-                            setIsPartnersOpen(!isPartnersOpen);
-                            setIsCustomersOpen(false);
-                            setIsProfileOpen(false);
-                            setIsNotifOpen(false);
-                            setIsSettingsOpen(false);
-                        }}
+                        onClick={() => { closeAllDropdowns(); setIsPartnersOpen(!isPartnersOpen); }}
                         className={navLinkClass("", isPartnersOpen || location.pathname.startsWith('/partners') || location.pathname.startsWith('/interpreting'))}
+                        aria-haspopup="true"
+                        aria-expanded={isPartnersOpen}
                     >
                         <FaUserTie className="text-base lg:hidden" />
                         <span className="hidden lg:inline">{t('nav.partners')}</span>
-                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isPartnersOpen && "rotate-180")} />
+                        <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isPartnersOpen && "rotate-180")} />
                     </button>
-
                     {isPartnersOpen && (
-                        <div className="absolute left-0 mt-0 w-48 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
+                        <div className={dropdownMenuClass}>
+                            {dropdownHeader('Partner')}
                             <div className="py-1">
-                                <Link
-                                    to="/partners"
-                                    className={clsx(
-                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
-                                        location.pathname === '/partners' ? "text-brand-primary bg-slate-50" : "text-slate-700"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FaUserTie className="text-slate-400 w-3.5 h-3.5" />
-                                        <span>{t('nav.partners')}</span>
-                                    </div>
-                                    {dashboardData?.stats?.active_partners > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                                            {dashboardData.stats.active_partners}
-                                        </span>
-                                    )}
-                                </Link>
-
-                                <Link
-                                    to="/interpreting"
-                                    className={clsx(
-                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
-                                        location.pathname === '/interpreting' ? "text-brand-primary bg-slate-50" : "text-slate-700"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FaCommentDots className="text-slate-400 w-3.5 h-3.5" />
-                                        <span>Dolmetscher</span>
-                                    </div>
-                                    {dashboardData?.stats?.active_interpreting > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                                            {dashboardData.stats.active_interpreting}
-                                        </span>
-                                    )}
-                                </Link>
+                                {dropdownPageLink('/partners', null, 'Alle Partner', dashboardData?.stats?.active_partners)}
+                                {dropdownPageLink('/interpreting', null, 'Dolmetscher', dashboardData?.stats?.active_interpreting)}
+                                <div className="border-t border-slate-50 mt-1 pt-1">
+                                    {dropdownAction(onNewPartner, null, 'Partner anlegen')}
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
 
+                {/* Rechnungen Dropdown */}
                 {hasMinRole('manager') && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Link to="/invoices" className={navLinkClass("/invoices")}>
-                                <FaFileInvoiceDollar className="text-base lg:hidden" />
-                                <span className="hidden lg:inline">{t('nav.invoices')}</span>
-                                <NavBadge
-                                    count={dashboardData?.stats?.unpaid_invoices}
-                                    label={t('nav.invoices')}
-                                    activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
-                                />
-                            </Link>
-                        </TooltipTrigger>
-                        <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                            <div className="flex flex-col gap-1">
-                                <span className="font-semibold text-sm">Rechnungen</span>
-                                {dashboardData?.stats?.unpaid_invoices > 0 && (
-                                    <div className={clsx("flex items-center gap-2 text-xs", dashboardData?.stats?.overdue_invoices > 0 ? "text-rose-400" : "text-slate-400")}>
-                                        <div className={clsx("w-1.5 h-1.5 rounded-full", dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-500" : "bg-slate-500")}></div>
-                                        {dashboardData?.stats?.unpaid_invoices} offene Rechnungen
-                                        {dashboardData?.stats?.overdue_invoices > 0 && ` (${dashboardData.stats.overdue_invoices} überfällig)`}
+                    <div className="relative h-full" ref={invoicesRef}>
+                        <button
+                            onClick={() => { closeAllDropdowns(); setIsInvoicesOpen(!isInvoicesOpen); }}
+                            className={navLinkClass("", isInvoicesOpen || location.pathname.startsWith('/invoices'))}
+                            aria-haspopup="true"
+                            aria-expanded={isInvoicesOpen}
+                        >
+                            <FaFileInvoiceDollar className="text-base lg:hidden" />
+                            <span className="hidden lg:inline">{t('nav.invoices')}</span>
+                            <NavBadge
+                                count={dashboardData?.stats?.unpaid_invoices}
+                                label={t('nav.invoices')}
+                                activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
+                            />
+                            <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isInvoicesOpen && "rotate-180")} />
+                        </button>
+                        {isInvoicesOpen && (
+                            <div className={dropdownMenuClass}>
+                                {dropdownHeader('Rechnungen')}
+                                <div className="py-1">
+                                    {dropdownPageLink('/invoices', null, 'Alle Rechnungen', dashboardData?.stats?.unpaid_invoices)}
+                                    <div className="border-t border-slate-50 mt-1 pt-1">
+                                        {dropdownAction(() => { closeAllDropdowns(); navigate('/invoices/new'); }, null, 'Rechnung erstellen')}
                                     </div>
-                                )}
+                                </div>
                             </div>
-                        </TooltipContent>
-                    </Tooltip>
+                        )}
+                    </div>
                 )}
 
                 {hasMinRole('manager') && (
@@ -273,17 +296,30 @@ const DesktopLinks = ({
                     </Tooltip>
                 )}
 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link to="/calendar" className={navLinkClass("/calendar")}>
-                            <FaCalendarAlt className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">{t('nav.calendar')}</span>
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <span className="font-semibold text-sm">{t('nav.calendar')}</span>
-                    </TooltipContent>
-                </Tooltip>
+                {/* Kalender Dropdown */}
+                <div className="relative h-full" ref={calendarRef}>
+                    <button
+                        onClick={() => { closeAllDropdowns(); setIsCalendarOpen(!isCalendarOpen); }}
+                        className={navLinkClass("", isCalendarOpen || location.pathname === '/calendar')}
+                        aria-haspopup="true"
+                        aria-expanded={isCalendarOpen}
+                    >
+                        <FaCalendarAlt className="text-base lg:hidden" />
+                        <span className="hidden lg:inline">{t('nav.calendar')}</span>
+                        <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isCalendarOpen && "rotate-180")} />
+                    </button>
+                    {isCalendarOpen && (
+                        <div className={dropdownMenuClass}>
+                            {dropdownHeader('Kalender')}
+                            <div className="py-1">
+                                {dropdownPageLink('/calendar', null, 'Kalenderansicht')}
+                                <div className="border-t border-slate-50 mt-1 pt-1">
+                                    {dropdownAction(onNewAppointment, null, 'Termin erstellen')}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {hasMinRole('manager') && (
                     <Tooltip>
@@ -303,17 +339,17 @@ const DesktopLinks = ({
                     <div className="relative h-full" ref={settingsRef}>
                         <button
                             onClick={() => {
-                                setIsSettingsOpen(!isSettingsOpen);
-                                setIsCustomersOpen(false);
-                                setIsPartnersOpen(false);
-                                setIsProfileOpen(false);
-                                setIsNotifOpen(false);
+                                const next = !isSettingsOpen;
+                                closeAllDropdowns();
+                                setIsSettingsOpen(next);
                             }}
                             className={navLinkClass("", isSettingsOpen || location.pathname.startsWith('/settings'))}
+                            aria-haspopup="true"
+                            aria-expanded={isSettingsOpen}
                         >
                             <FaCog className="text-base lg:hidden" />
                             <span className="hidden lg:inline">{t('nav.settings')}</span>
-                            <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isSettingsOpen && "rotate-180")} />
+                            <FaChevronDown className={clsx("text-2xs ml-1 transition-transform opacity-60", isSettingsOpen && "rotate-180")} />
                         </button>
 
                         {isSettingsOpen && (
@@ -336,7 +372,7 @@ const DesktopLinks = ({
                                                     <span>{tab.label}</span>
                                                 </div>
                                                 {tab.id === 'master_data' && (
-                                                    <FaChevronDown className="text-[10px] -rotate-90 opacity-80 ml-2 text-slate-400 group-hover/tab:text-brand-primary transition-colors" />
+                                                    <FaChevronDown className="text-2xs -rotate-90 opacity-80 ml-2 text-slate-400 group-hover/tab:text-brand-primary transition-colors" />
                                                 )}
                                             </button>
 
@@ -344,9 +380,7 @@ const DesktopLinks = ({
                                             {tab.id === 'master_data' && (
                                                 <div className="absolute left-full top-0 ml-[1px] w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 opacity-0 invisible group-hover/tab:opacity-100 group-hover/tab:visible transition-all duration-200 transform translate-x-2 group-hover/tab:translate-x-0">
                                                     <div className="py-1">
-                                                        <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">
-                                                            {t('settings.tabs.master_data')}
-                                                        </div>
+                                                        <div className="border-b border-slate-50 mb-1" />
                                                         {[
                                                             { id: 'languages', label: t('settings.tabs.languages'), icon: FaGlobe },
                                                             { id: 'doc_types', label: t('settings.tabs.doc_types'), icon: FaFileAlt },

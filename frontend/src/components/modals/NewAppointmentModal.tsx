@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaTimes, FaCalendarAlt } from 'react-icons/fa';
 import SearchableSelect from '../common/SearchableSelect';
 import Input from '../common/Input';
 import { Button } from '../ui/button';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
+import { formatCustomerLabel, formatPartnerLabel } from '../../utils/dropdownFormat';
 
 interface NewAppointmentModalProps {
     isOpen: boolean;
@@ -151,8 +151,8 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
                                 <div className="w-12 h-12 border-4 border border-slate-900 border-t-transparent rounded-full animate-spin absolute inset-0"></div>
                             </div>
                             <div className="flex flex-col items-center gap-1">
-                                <p className="text-sm font-bold text-slate-800 tracking-tight">Lade Daten...</p>
-                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Bitte warten</p>
+                                <p className="text-sm font-bold text-slate-800">Lade Daten...</p>
+                                <p className="text-sm text-slate-400 font-medium">Bitte warten</p>
                             </div>
                         </div>
                     </div>
@@ -215,7 +215,7 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Beginn *</label>
+                            <label className="text-sm font-bold text-slate-400 ml-1">Beginn *</label>
                             <DatePicker
                                 showTime
                                 format="DD.MM.YYYY HH:mm"
@@ -226,7 +226,7 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ende</label>
+                            <label className="text-sm font-bold text-slate-400 ml-1">Ende</label>
                             <DatePicker
                                 showTime
                                 format="DD.MM.YYYY HH:mm"
@@ -245,7 +245,7 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
                             onChange={(id) => setCustomerId(id ? Number(id) : null)}
                             options={customers.map(c => ({
                                 value: String(c.id),
-                                label: c.company_name || `${c.first_name} ${c.last_name}`
+                                label: formatCustomerLabel(c)
                             }))}
                         />
                         {['staff', 'vacation'].includes(type) ? (
@@ -265,7 +265,7 @@ const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({ isOpen, onClo
                                 onChange={(id) => setPartnerId(id ? Number(id) : null)}
                                 options={partners.map(p => ({
                                     value: String(p.id),
-                                    label: p.company_name || `${p.first_name} ${p.last_name}`
+                                    label: formatPartnerLabel(p)
                                 }))}
                             />
                         )}
