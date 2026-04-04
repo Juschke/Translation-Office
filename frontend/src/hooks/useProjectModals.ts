@@ -31,11 +31,6 @@ export function useProjectModals() {
         amount: string;
     }>({ isOpen: false, paymentId: null, amount: '' });
 
-    const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState<{
-        isOpen: boolean;
-        ids: string[];
-    }>({ isOpen: false, ids: [] });
-
     return {
         isPartnerModalOpen, setIsPartnerModalOpen,
         isEditModalOpen, setIsEditModalOpen,
@@ -51,6 +46,5 @@ export function useProjectModals() {
         previewFile, setPreviewFile,
         deleteFileConfirm, setDeleteFileConfirm,
         paymentDeleteConfirm, setPaymentDeleteConfirm,
-        bulkDeleteConfirm, setBulkDeleteConfirm,
     };
 }

@@ -256,39 +256,6 @@ class ProjectFileController extends Controller
         return response()->json(['message' => 'Dateien erfolgreich verschoben']);
     }
 
-    public function bulkDestroy(Request $request, Project $project)
-    {
-        if ($project->tenant_id !== $request->user()->tenant_id) {
-            abort(403, 'Unauthorized access to project');
-        }
-
-        $validated = $request->validate([
-            'ids' => 'required|array'
-        ]);
-
-        try {
-            $files = $project->files()->whereIn('id', $validated['ids'])->get();
-
-            foreach ($files as $file) {
-                if (Storage::disk('public')->exists($file->path)) {
-                    Storage::disk('public')->delete($file->path);
-                }
-                $file->delete();
-            }
-
-            return response()->json(['message' => 'Dateien erfolgreich gelöscht']);
-        } catch (\Exception $e) {
-            \Log::error('Bulk file deletion failed', [
-                'project_id' => $project->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'message' => 'Dateien konnten nicht gelöscht werden.'
-            ], 500);
-        }
-    }
-
     public function downloadZip(Project $project, Request $request)
     {
         if ($project->tenant_id !== $request->user()->tenant_id) {

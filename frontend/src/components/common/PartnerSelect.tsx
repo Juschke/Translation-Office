@@ -269,7 +269,7 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
 
               {/* Stammdaten Section */}
               <div>
-                <h4 className="text-xs font-semibold text-slate-800 mb-4">Kontaktdaten</h4>
+                <h4 className="text-xs font-semibold text-slate-800 mb-4 uppercase tracking-wider">Kontaktdaten</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Salutation - Alone in row */}
                   <div className="col-span-2">
@@ -404,7 +404,7 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
 
               {/* Sprachen Section */}
               <div>
-                <h4 className="text-xs font-semibold text-slate-800 mb-4">Sprachen</h4>
+                <h4 className="text-xs font-semibold text-slate-800 mb-4 uppercase tracking-wider">Sprachen</h4>
                 <div className={clsx(validationErrors.some(e => e.includes('Sprache')) && "ring-2 ring-red-500/50 rounded-sm")}>
                   <LanguageSelect
                     value={quickAddData.languages}
@@ -417,7 +417,7 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
 
               {/* Adresse Section */}
               <div>
-                <h4 className="text-xs font-semibold text-slate-800 mb-4">Anschrift (optional)</h4>
+                <h4 className="text-xs font-semibold text-slate-800 mb-4 uppercase tracking-wider">Anschrift (optional)</h4>
                 <div className="grid grid-cols-6 gap-4">
                   <div className="col-span-4 flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-slate-500">Straße</label>
@@ -495,7 +495,7 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
                 <Button
                   onClick={handleQuickAddSubmit}
                   disabled={createPartnerMutation.isPending}
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/20 shadow-sm transition-all active:scale-[0.98]"
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/20 shadow-lg transition-all active:scale-[0.98]"
                 >
                   <FaPlus className="text-xs" />
                   {createPartnerMutation.isPending ? 'Speichern...' : 'Hinzufügen'}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Input from './Input';
 import CountrySelect from './CountrySelect';
 import { fetchCityByZip } from '../../utils/autoFill';
-import { searchStreetSuggestions } from '../../api/services/geocoding';
+import axios from 'axios';
 
 
 interface AddressFormProps {
@@ -47,9 +47,23 @@ const AddressForm: React.FC<AddressFormProps> = ({
 
         if (country === 'Deutschland' && value.length > 3) {
             try {
-                const results = await searchStreetSuggestions({ street: value, city, postalcode: zip });
-                if (results.length > 0) {
-                    setSuggestions(results);
+                const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+                    params: {
+                        street: value,
+                        city: city,
+                        postalcode: zip,
+                        country: 'Germany',
+                        format: 'json',
+                        limit: 5,
+                        addressdetails: 1
+                    },
+                    headers: {
+                        'Accept-Language': 'de'
+                    }
+                });
+
+                if (response.data && response.data.length > 0) {
+                    setSuggestions(response.data);
                     setShowSuggestions(true);
                 } else {
                     setSuggestions([]);

@@ -6,7 +6,6 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import NewProject from './pages/NewProject';
 import Customers from './pages/Customers';
-import NewCustomer from './pages/NewCustomer';
 import CustomerDetail from './pages/CustomerDetail';
 import Partners from './pages/Partners';
 import PartnerDetail from './pages/PartnerDetail';
@@ -78,8 +77,6 @@ function App() {
                             <Route path="/documents" element={<Documents />} />
 
                             <Route path="/customers" element={<Customers />} />
-                            <Route path="/customers/new" element={<NewCustomer />} />
-                            <Route path="/customers/:id/edit" element={<NewCustomer />} />
                             <Route path="/customers/:id" element={<CustomerDetail />} />
                             <Route path="/partners" element={<Partners />} />
                             <Route path="/partners/:id" element={<PartnerDetail />} />

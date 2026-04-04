@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaTimes, FaServer, FaKey, FaUser, FaInfoCircle } from 'react-icons/fa';
 import Input from '../common/Input';
 

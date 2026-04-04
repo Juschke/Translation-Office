@@ -8,10 +8,6 @@ import { settingsService } from '../../api/services';
 import Input from '../common/Input';
 import { Button } from '../ui/button';
 
-const toBool = (v: any, def: boolean = false) => {
-    if (v === undefined || v === null) return def;
-    return v === true || v === '1' || v === 'true';
-};
 const SettingRow = ({ label, description, children, className }: any) => (
     <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
         <div className="col-span-12 md:col-span-4 space-y-1">
@@ -98,9 +94,9 @@ const InvoiceSettingsTab = () => {
                 offer_closing_text: companyData.offer_closing_text || prev.offer_closing_text,
                 footer_style: companyData.footer_style || prev.footer_style,
                 footer_columns: companyData.footer_columns || prev.footer_columns,
-                show_footer: toBool(companyData.show_footer, prev.show_footer),
-                show_sender_line: toBool(companyData.show_sender_line, prev.show_sender_line),
-                show_labor_cost_hint: toBool(companyData.show_labor_cost_hint, prev.show_labor_cost_hint),
+                show_footer: companyData.show_footer ?? prev.show_footer,
+                show_sender_line: companyData.show_sender_line ?? prev.show_sender_line,
+                show_labor_cost_hint: companyData.show_labor_cost_hint ?? prev.show_labor_cost_hint,
                 invoice_layout: companyData.invoice_layout || prev.invoice_layout,
                 invoice_font_family: companyData.invoice_font_family || prev.invoice_font_family,
                 invoice_font_size: companyData.invoice_font_size || prev.invoice_font_size,
@@ -212,7 +208,7 @@ const InvoiceSettingsTab = () => {
                                                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                                             )}
                                         >
-                                            {d === '0' ? t('settings.payment_term_immediate') : t('settings.payment_term_days', { days: d })}
+                                            {d === '0' ? t('settings.payment_term_immediate') : t('settings.payment_term_days', {days: d})}
                                         </button>
                                     ))}
                                     <Input

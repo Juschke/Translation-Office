@@ -37,7 +37,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
                     className={clsx(
                         "flex w-full px-3 py-1 transition-all outline-none border shadow-sm bg-white h-9 text-sm items-center",
                         "focus-within:ring-2 focus-within:ring-slate-950/10",
-                        error ? "border-red-500 bg-red-50/10 focus-within:border-red-500" : "border-slate-200 focus-within:border-brand-primary hover:border-brand-primary",
+                        error ? "border-red-500 bg-red-50/10 focus-within:border-red-500" : "border-slate-200 focus-within:border-slate-900 hover:border-slate-300",
                         "rounded-sm"
                     )}
                 />

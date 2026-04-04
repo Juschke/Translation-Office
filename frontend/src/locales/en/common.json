@@ -1,12 +1,9 @@
 {
   "common": {
-    "project": "Project",
     "number": "Number",
     "number_short": "No.",
     "designation": "Designation",
     "language_pair": "Language Pair",
-    "source_language": "Source Language",
-    "target_language": "Target Language",
     "down_payment": "Down Payment",
     "total_price": "Total Price",
     "status": "Status",
@@ -703,37 +700,7 @@
     "unread": "Unread",
     "no_notifications": "No notifications",
     "mark_all_as_read": "Mark all as read",
-    "no_notifications_message": "You are up to date!",
-    "settings": {
-      "title": "Notification Settings",
-      "subtitle": "Configure how and when you want to be notified.",
-      "event": "Event",
-      "email": "Email",
-      "app": "In-App",
-      "lead_time": "Lead Time",
-      "days_before": "days before",
-      "save": "Save Settings",
-      "saving": "Saving...",
-      "save_success": "Settings saved successfully",
-      "save_error": "Error saving settings",
-      "loading": "Loading settings...",
-      "groups": {
-        "projects": "Projects",
-        "invoices": "Invoices & Finance",
-        "communication": "Communication"
-      },
-      "events": {
-        "project_created": "New project created",
-        "project_status_changed": "Project status changed",
-        "deadline_reminder": "Deadline reminder",
-        "document_uploaded": "Document uploaded",
-        "invoice_due": "Invoice due",
-        "invoice_overdue": "Invoice overdue",
-        "payment_received": "Payment received",
-        "new_mail": "New email received",
-        "partner_inquiry_replied": "Partner replied to inquiry"
-      }
-    }
+    "no_notifications_message": "You are up to date!"
   },
   "profile": {
     "title": "My Profile",

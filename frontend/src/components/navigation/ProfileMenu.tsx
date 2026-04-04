@@ -44,13 +44,13 @@ const ProfileMenu = ({
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-200 z-[9999999] text-slate-800 origin-top-right animate-slideUp">
                     <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-2xs text-white font-bold shrink-0 shadow-sm uppercase">
+                        <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-[10px] text-white font-bold shrink-0 shadow-sm uppercase">
                             {initials}
                         </div>
                         <div className="overflow-hidden text-left">
                             <p className="text-xs font-semibold text-slate-900 truncate">{user?.name || 'Benutzer'}</p>
                             {user?.role && (
-                                <span className="inline-block px-2 py-0.5 bg-slate-200 text-slate-700 text-2xs font-bold rounded-full mt-1 uppercase tracking-wider">
+                                <span className="inline-block px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-full mt-1 uppercase tracking-wider">
                                     {t(`settings.roles.${user.role}`) ?? user.role}
                                 </span>
                             )}

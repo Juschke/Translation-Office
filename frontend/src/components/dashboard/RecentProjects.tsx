@@ -70,7 +70,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                 filter === 'urgent' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-red-600'
                             )}
                         >
-                            Dringend <FaExclamationTriangle className="text-sm" />
+                            Dringend <FaExclamationTriangle className="text-[10px]" />
                         </button>
                         <button
                             onClick={() => { setFilter('express'); setPage(1); }}
@@ -79,7 +79,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                 filter === 'express' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-600'
                             )}
                         >
-                            Express <FaBolt className="text-sm" />
+                            Express <FaBolt className="text-[10px]" />
                         </button>
                     </div>
                 </div>
@@ -93,7 +93,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
 
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-slate-500 text-sm font-bold">
+                    <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
                         <tr>
                             <th className="px-4 py-3 border-b border-slate-100">Projekt</th>
                             <th className="px-4 py-3 border-b border-slate-100">Kunde</th>
@@ -117,23 +117,21 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                 <tr
                                     key={p.id}
                                     onClick={() => navigate(`/projects/${p.id}`)}
-                                    className="hover:bg-slate-50 transition cursor-pointer"
+                                    className="hover:bg-slate-50 transition cursor-pointer group"
                                 >
                                     <td className="px-4 py-2">
-                                        <div
-                                            className="flex flex-col group/link w-fit"
-                                        >
-                                            <span className="text-xs font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[150px]">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold text-slate-800 group-hover:text-brand-primary group-hover:underline transition truncate max-w-[150px]">
                                                 {p.project_name || p.name}
                                             </span>
-                                            <span className="text-sm text-slate-400 font-mono tracking-tighter group-hover/link:text-brand-primary transition">
+                                            <span className="text-[10px] text-slate-400 font-mono tracking-tighter group-hover:text-brand-primary transition">
                                                 {p.project_number || `#${p.id}`}
                                             </span>
                                         </div>
                                     </td>
                                     <td className="px-4 py-2 text-xs">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-sm bg-slate-100 text-slate-500 flex items-center justify-center text-sm font-bold border border-slate-200 shrink-0">
+                                            <div className="w-7 h-7 rounded-sm bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold border border-slate-200 shrink-0">
                                                 {getInitials(customerName)}
                                             </div>
                                             <div className="flex flex-col min-w-0">
@@ -147,7 +145,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     {customerName}
                                                 </span>
                                                 {(p.customer?.address_street || p.customer?.address_city) && (
-                                                    <div className="text-sm text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis mb-0.5">
+                                                    <div className="text-[10px] text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis mb-0.5">
                                                         {p.customer.address_street}{p.customer.address_street && (p.customer.address_zip || p.customer.address_city) ? ', ' : ''}
                                                         {p.customer.address_zip} {p.customer.address_city}
                                                     </div>
@@ -158,34 +156,32 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                     <td className="px-4 py-2 text-xs">
                                         {p.partner ? (
                                             <div className="flex items-center gap-2.5">
-                                                <div className="w-7 h-7 rounded-sm bg-indigo-50 text-indigo-700 flex items-center justify-center text-sm font-bold border border-indigo-100 shrink-0">
-                                                    {getInitials(p.partner.company_name || `${p.partner.first_name} ${p.partner.last_name}`)}
+                                                <div className="w-7 h-7 rounded-sm bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold border border-slate-200 shrink-0">
+                                                    {getInitials(p.partner.company || `${p.partner.first_name} ${p.partner.last_name}`)}
                                                 </div>
                                                 <div className="flex flex-col min-w-0">
                                                     <span
                                                         onClick={(e) => { e.stopPropagation(); p.partner?.id && navigate(`/partners/${p.partner.id}`); }}
                                                         className={clsx(
-                                                            "text-xs font-bold text-slate-700 whitespace-nowrap transition",
+                                                            "font-bold text-slate-700 whitespace-nowrap text-xs transition",
                                                             p.partner?.id ? "cursor-pointer hover:underline hover:text-slate-900" : ""
                                                         )}
                                                     >
-                                                        {p.partner.company_name || `${p.partner.first_name} ${p.partner.last_name}`}
+                                                        {p.partner.company || `${p.partner.first_name} ${p.partner.last_name}`}
                                                     </span>
-                                                    <div className="flex items-center gap-1.5 overflow-hidden">
-                                                        <FaEnvelope className="text-sm text-slate-300 shrink-0" />
-                                                        <span className="text-sm text-slate-400 truncate tracking-tight" title={p.partner.email}>
-                                                            {p.partner.email}
-                                                        </span>
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                                            <FaEnvelope className="text-slate-300 shrink-0" />
+                                                            <span className="truncate max-w-[130px]">{p.partner.email}</span>
+                                                        </div>
+                                                        {p.partner.phone && (
+                                                            <span className="text-[10px] text-slate-400 font-medium">{p.partner.phone}</span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-7 h-7 rounded-sm bg-slate-50 text-slate-300 flex items-center justify-center text-sm border border-slate-100 border-dashed shrink-0 italic">
-                                                    ?
-                                                </div>
-                                                <span className="text-sm text-slate-400 italic">Nicht zugewiesen</span>
-                                            </div>
+                                            <span className="text-[10px] text-slate-400 italic">Nicht zugewiesen</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-2">
@@ -196,25 +192,25 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     className="w-3.5 h-2.5 object-cover"
                                                     alt="Src"
                                                 />
-                                                <span className="text-sm font-bold text-slate-600">
-                                                    {p.source_language?.name || p.sourceLanguage?.name || (p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'DE').toUpperCase()}
+                                                <span className="text-[10px] font-bold text-slate-600">
+                                                    {(p.source_language?.name_internal || p.sourceLanguage?.name_internal || p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'DE')}
                                                 </span>
                                             </div>
-                                            <FaArrowRight className="text-sm text-slate-300" />
+                                            <FaArrowRight className="text-[10px] text-slate-300" />
                                             <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded-sm border border-slate-100">
                                                 <img
                                                     src={getFlagUrl(p.target_language?.iso_code || p.targetLanguage?.iso_code || 'en')}
                                                     className="w-3.5 h-2.5 object-cover"
                                                     alt="Tgt"
                                                 />
-                                                <span className="text-sm font-bold text-slate-600">
-                                                    {p.target_language?.name || p.targetLanguage?.name || (p.target_language?.iso_code || p.targetLanguage?.iso_code || 'EN').toUpperCase()}
+                                                <span className="text-[10px] font-bold text-slate-600">
+                                                    {(p.target_language?.name_internal || p.targetLanguage?.name_internal || p.target_language?.iso_code || p.targetLanguage?.iso_code || 'EN')}
                                                 </span>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-4 py-2 text-right">
-                                        <div className="flex items-center justify-end px-2 py-0.5 rounded-sm bg-slate-50 border border-slate-100 text-sm font-bold text-slate-500 w-fit ml-auto">
+                                        <div className="flex items-center justify-end px-2 py-0.5 rounded-sm bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500 w-fit ml-auto">
                                             {totalFiles}
                                         </div>
                                     </td>

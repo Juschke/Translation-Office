@@ -7,18 +7,16 @@ import clsx from 'clsx';
 import Switch from './Switch';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
 import TableSkeleton from './TableSkeleton';
-import SearchableSelect from './SearchableSelect';
 import { Button } from '../ui/button';
 
 export interface FilterDef {
     id: string;
     label: string;
-    type: 'select' | 'text' | 'date' | 'searchable';
-    options?: { value: string | number; label: string; icon?: string; group?: string }[];
+    type: 'select' | 'text' | 'date';
+    options?: { value: string | number; label: string }[];
     value: any;
     onChange: (val: any) => void;
     placeholder?: string;
-    isMulti?: boolean;
 }
 
 interface Column<T> {
@@ -89,7 +87,7 @@ const DataTable = <T extends { id: string | number }>({
     data,
     columns,
     onRowClick,
-    pageSize: pageSizeProp = 10,
+    pageSize: pageSizeProp = 9_999_999,
     isLoading = false,
     searchPlaceholder = "Suche...",
     searchFields = [],
@@ -260,11 +258,10 @@ const DataTable = <T extends { id: string | number }>({
             align: col.align ?? 'left',
             className: col.className,
             showSorterTooltip: false,
-            ellipsis: true,
-            width: columnWidths[col.id] || 150,
+            width: columnWidths[col.id],
             title: (
-                <div className="relative w-full group/header overflow-hidden">
-                    <div className="w-full truncate">{col.header}</div>
+                <div className="relative w-full group/header">
+                    <div className="w-full">{col.header}</div>
                     <div
                         className="dt-column-resizer"
                         onMouseDown={(e) => handleResize(col.id, e)}
@@ -306,7 +303,7 @@ const DataTable = <T extends { id: string | number }>({
     const emptyNode = (
         <div className="flex flex-col items-center justify-center gap-4 py-20 min-h-[400px]">
             <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
-                <FaPlus aria-hidden="true" className="text-2xl text-slate-300" />
+                <FaPlus className="text-2xl text-slate-300" />
             </div>
             <div className="space-y-1 text-center">
                 <p className="text-base font-bold text-slate-600">Noch kein Eintrag</p>
@@ -318,14 +315,14 @@ const DataTable = <T extends { id: string | number }>({
                     onClick={onAddClick}
                     className="mt-2 px-6 py-2.5 font-bold flex items-center gap-2"
                 >
-                    <FaPlus aria-hidden="true" className="text-xs" /> Neuer Eintrag
+                    <FaPlus className="text-xs" /> Neuer Eintrag
                 </Button>
             )}
         </div>
     );
 
     return (
-        <div className="dt-skeuomorphic flex flex-col h-full bg-white border border-[#D1D9D8] rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.1)] fade-in overflow-hidden">
+        <div className="dt-skeuomorphic flex flex-col h-full bg-white border border-[#D1D9D8] rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.1)] fade-in overflow-hidden max-h-[calc(100vh-250px)] sm:max-h-none">
 
             {/* ── Filter Panel ── */}
             {filters && filters.length > 0 && (
@@ -343,7 +340,7 @@ const DataTable = <T extends { id: string | number }>({
                                     {filter.type === 'select' ? (
                                         <div className="relative">
                                             <select
-                                                className="w-full h-9 text-xs border border-[#ccc] rounded-none px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                                className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
                                                 value={filter.value}
                                                 onChange={e => filter.onChange(e.target.value)}
                                             >
@@ -353,24 +350,15 @@ const DataTable = <T extends { id: string | number }>({
                                                     </option>
                                                 ))}
                                             </select>
-                                            <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-2xs text-slate-400 pointer-events-none" />
+                                            <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none" />
                                         </div>
-                                    ) : filter.type === 'searchable' ? (
-                                        <SearchableSelect
-                                            options={filter.options as any || []}
-                                            value={filter.value}
-                                            onChange={filter.onChange}
-                                            placeholder={filter.placeholder}
-                                            isMulti={filter.isMulti}
-                                            className="h-9 text-xs"
-                                        />
                                     ) : (
                                         <input
                                             type={filter.type}
                                             value={filter.value}
                                             onChange={e => filter.onChange(e.target.value)}
                                             placeholder={filter.placeholder}
-                                            className="w-full h-9 text-xs border border-[#ccc] rounded-none px-2.5 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] focus:border-[#1B4D4F] outline-none transition"
+                                            className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] focus:border-[#1B4D4F] outline-none transition"
                                         />
                                     )}
                                 </div>
@@ -380,9 +368,9 @@ const DataTable = <T extends { id: string | number }>({
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => { onResetFilters(); setIsFilterOpen(false); }}
-                                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-none hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center gap-1.5"
+                                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center gap-1.5"
                                 >
-                                    <FaUndo className="text-2xs" /> Filter zurücksetzen
+                                    <FaUndo className="text-[10px]" /> Filter zurücksetzen
                                 </button>
                             </div>
                         )}
@@ -403,7 +391,6 @@ const DataTable = <T extends { id: string | number }>({
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             placeholder={searchPlaceholder}
-                            aria-label="Suche"
                             className="w-full pl-8 pr-4 py-1.5 border border-[#D1D9D8] rounded-[3px] text-sm focus:outline-none focus:border-[#1B4D4F] bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.07)] transition-colors"
                         />
                     </div>
@@ -418,13 +405,11 @@ const DataTable = <T extends { id: string | number }>({
                                     : "text-slate-500 hover:text-[#1B4D4F] bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc]"
                             )}
                             title="Filter"
-                            aria-label="Filter ein-/ausblenden"
-                            aria-expanded={isFilterOpen}
                         >
                             <FaFilter className="text-sm" />
                             {activeFilterCount ? (
                                 <span className={clsx(
-                                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-2xs font-bold flex items-center justify-center border",
+                                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center border",
                                     isFilterOpen
                                         ? "bg-white text-[#1B4D4F] border-transparent"
                                         : "bg-rose-500 text-white border-rose-600 shadow-sm"
@@ -445,8 +430,6 @@ const DataTable = <T extends { id: string | number }>({
                                     : "bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc]"
                             )}
                             title="Spalten anpassen"
-                            aria-label="Spalten ein-/ausblenden"
-                            aria-expanded={isSettingsOpen}
                         >
                             <FaColumns className="text-sm" />
                         </button>
@@ -474,7 +457,6 @@ const DataTable = <T extends { id: string | number }>({
                         onClick={() => onSelectionChange?.([])}
                         className="shrink-0 p-1 text-slate-400 hover:text-slate-700 hover:bg-[#d0d0d0] rounded-[2px] transition"
                         title="Auswahl aufheben"
-                        aria-label="Auswahl aufheben"
                     >
                         <FaTimes className="text-xs" />
                     </button>
@@ -482,7 +464,7 @@ const DataTable = <T extends { id: string | number }>({
             )}
 
             {/* ── Ant Design Table ── */}
-            <div className="flex-1 overflow-auto min-h-0 relative overscroll-none scrollbar-gutter-stable">
+            <div className="flex-1 overflow-x-auto min-h-0 relative">
                 {isLoading ? (
                     <TableSkeleton rows={pageSize} columns={activeColumns.length + (selectable ? 1 : 0)} />
                 ) : (
@@ -496,10 +478,10 @@ const DataTable = <T extends { id: string | number }>({
                         showSorterTooltip={false}
                         onChange={handleTableChange}
                         rowSelection={rowSelection}
-                        sticky={{ offsetHeader: 0 }}
-                        tableLayout="fixed"
+                        sticky
+                        tableLayout="auto"
                         scroll={{
-                            x: activeColumns.reduce((sum, col) => sum + (columnWidths[col.id] || 150), selectable ? 40 : 0)
+                            x: 'max-content'
                         }}
                         onRow={record => ({
                             onClick: () => {
@@ -548,7 +530,7 @@ const DataTable = <T extends { id: string | number }>({
                             ))}
                             <option value={ALL_SENTINEL}>Alle anzeigen</option>
                         </select>
-                        <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-2xs text-slate-400 pointer-events-none" />
+                        <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none" />
                     </div>
                 </div>
 
@@ -558,7 +540,6 @@ const DataTable = <T extends { id: string | number }>({
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             className="p-1.5 border border-[#ccc] rounded-[3px] text-slate-500 bg-gradient-to-b from-white to-[#ebebeb] hover:to-[#e0e0e0] hover:text-[#1B4D4F] disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_1px_1px_rgba(0,0,0,0.08)] transition"
-                            aria-label="Vorherige Seite"
                         >
                             <FaChevronLeft className="text-xs" />
                         </button>
@@ -573,8 +554,6 @@ const DataTable = <T extends { id: string | number }>({
                                             ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#133d3f] shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)]"
                                             : "bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc] text-slate-600 hover:text-[#1B4D4F] hover:border-[#999] shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
                                     )}
-                                    aria-label={`Seite ${i + 1}`}
-                                    aria-current={currentPage === i + 1 ? 'page' : undefined}
                                 >
                                     {i + 1}
                                 </button>
@@ -584,7 +563,6 @@ const DataTable = <T extends { id: string | number }>({
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             className="p-1.5 border border-[#ccc] rounded-[3px] text-slate-500 bg-gradient-to-b from-white to-[#ebebeb] hover:to-[#e0e0e0] hover:text-[#1B4D4F] disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_1px_1px_rgba(0,0,0,0.08)] transition"
-                            aria-label="Nächste Seite"
                         >
                             <FaChevronRight className="text-xs" />
                         </button>
@@ -626,10 +604,10 @@ const DataTable = <T extends { id: string | number }>({
                         ))}
                     </div>
                     <div className="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                        <span className="text-2xs font-bold text-slate-400 tracking-tight">{visibleColumns.size} Aktiv</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{visibleColumns.size} Aktiv</span>
                         <button
                             onClick={() => setIsSettingsOpen(false)}
-                            className="text-2xs font-bold text-brand-primary tracking-tight hover:underline"
+                            className="text-[10px] font-bold text-brand-primary uppercase tracking-widest hover:underline"
                         >
                             Schließen
                         </button>

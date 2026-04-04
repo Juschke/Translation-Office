@@ -180,7 +180,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
             <div
                 className={clsx(
                     "w-full px-3 bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm h-10 border rounded-sm",
-                    error ? "border-red-700 ring-2 ring-red-700/10 shadow-sm" : (isOpen ? "border-brand-primary ring-2 ring-brand-primary/10 shadow-sm" : "border-slate-200 hover:border-brand-primary shadow-sm")
+                    error ? "border-red-700 ring-2 ring-red-700/10" : (isOpen ? "ring-2 ring-slate-950/10 border-slate-900 shadow-sm" : "border-slate-300 hover:border-slate-400 shadow-sm")
                 )}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
@@ -215,21 +215,6 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                     )}
                 </div>
                 <div className="flex items-center gap-2 ml-2 shrink-0">
-                    {values.length > 0 && (
-                        <div className="flex items-center border-r border-slate-100 pr-2">
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onChange(isMulti ? [] : '');
-                                }}
-                                className="p-1 text-slate-300 hover:text-red-500 transition-colors focus:outline-none"
-                                title="Auswahl leeren"
-                            >
-                                <FaTimes className="text-2xs" />
-                            </button>
-                        </div>
-                    )}
                     <FaChevronDown className={clsx("text-slate-400 text-xs transition-transform", isOpen ? "rotate-180" : "")} />
                 </div>
             </div>
@@ -257,40 +242,6 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 autoFocus
                             />
                         </div>
-                        {isMulti && filteredOptions.length > 0 && (
-                            <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                                <div
-                                    className="flex items-center gap-3 cursor-pointer group"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const filteredCodes = filteredOptions.map((o: LanguageOption) => o.code);
-                                        const allIn = filteredCodes.every((c: string) => values.includes(c));
-                                        if (allIn) {
-                                            onChange(values.filter(v => !filteredCodes.includes(v)));
-                                        } else {
-                                            onChange(Array.from(new Set([...values, ...filteredCodes])));
-                                        }
-                                    }}
-                                >
-                                    <div className={clsx(
-                                        "w-4 h-4 border rounded-sm flex items-center justify-center transition-all",
-                                        filteredOptions.every((o: LanguageOption) => values.includes(o.code)) ? "bg-brand-primary border-brand-primary" : "border-slate-300 bg-white group-hover:border-slate-400"
-                                    )}>
-                                        {filteredOptions.every((o: LanguageOption) => values.includes(o.code)) && <FaCheck className="text-white text-2xs" />}
-                                    </div>
-
-                                </div>
-                                {values.length > 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); onChange([]); }}
-                                        className="text-2xs font-bold text-slate-400 hover:text-red-500 transition-colors"
-                                    >
-                                        Aufheben
-                                    </button>
-                                )}
-                            </div>
-                        )}
                     </div>
 
                     <div className="overflow-y-auto custom-scrollbar flex-1 py-1" ref={listRef}>
@@ -339,10 +290,9 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                     onAddNew();
                                     setIsOpen(false);
                                 }}
-                                className="w-full py-2.5 text-[11px] font-bold bg-brand-primary text-white  transition shadow-sm border-none flex items-center justify-center gap-2 rounded-sm"
+                                className="w-full py-2 text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm"
                             >
-                                <FaPlus className="text-2xs" />
-                                <span>Sprache hinzufügen</span>
+                                <FaPlus className="text-[10px] text-brand-primary" />
                             </Button>
                         </div>
                     )}

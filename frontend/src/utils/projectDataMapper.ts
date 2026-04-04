@@ -5,7 +5,6 @@
 export function mapProjectResponse(projectResponse: any) {
     return {
         id: projectResponse.id.toString(),
-        project_number: projectResponse.project_number || '',
         name: projectResponse.project_name || '',
         client:
             projectResponse.customer?.company_name ||

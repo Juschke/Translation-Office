@@ -11,7 +11,6 @@ use App\Filament\Resources\Subscriptions\Schemas\SubscriptionInfolist;
 use App\Filament\Resources\Subscriptions\Tables\SubscriptionsTable;
 use App\Models\Subscription;
 use BackedEnum;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -53,23 +52,5 @@ class SubscriptionResource extends Resource
             'view' => ViewSubscription::route('/{record}'),
             'edit' => EditSubscription::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->with(['tenant']);
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        $count = static::getModel()::where('status', Subscription::STATUS_PAST_DUE)->count();
-
-        return $count > 0 ? (string) $count : null;
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'danger';
     }
 }

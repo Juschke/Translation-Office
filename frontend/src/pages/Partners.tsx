@@ -64,7 +64,7 @@ const Partners = () => {
         queryFn: partnerService.getAll
     });
 
-    const { data: stats, isLoading: statsLoading } = useQuery({
+    const { data: stats } = useQuery({
         queryKey: ['partnerStats'],
         queryFn: partnerService.getStats
     });
@@ -198,15 +198,6 @@ const Partners = () => {
 
     const columns = [
         {
-            id: 'display_id',
-            header: 'ID',
-            accessor: (p: any) => <span className="text-xs font-semibold text-slate-500">{p.display_id}</span>,
-            sortable: true,
-            sortKey: 'display_id',
-            width: 80,
-            defaultVisible: true
-        },
-        {
             id: 'partner',
             header: t('partners.table.partner'),
             accessor: (p: any) => (
@@ -216,12 +207,16 @@ const Partners = () => {
                     </div>
                     <div className="flex flex-col min-w-0">
                         <span className="font-medium text-slate-800 truncate" title={p.company || `${p.first_name} ${p.last_name}`}>{p.company || `${p.first_name} ${p.last_name}`}</span>
-                        <span
-                            className="text-xs text-slate-500 font-medium truncate"
-                            title={p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
-                        >
-                            {p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
-                        </span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-xs text-slate-400 font-medium shrink-0">{p.display_id}</span>
+                            <span className="text-xs text-slate-300 shrink-0">•</span>
+                            <span
+                                className="text-xs text-slate-500 font-medium truncate shrink"
+                                title={p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
+                            >
+                                {p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
+                            </span>
+                        </div>
                     </div>
                 </div>
             ),
@@ -262,7 +257,7 @@ const Partners = () => {
                 };
                 const status = p.status?.toLowerCase();
                 return (
-                    <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border  ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                    <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
                         {labels[status] || p.status}
                     </span>
                 );
@@ -319,19 +314,18 @@ const Partners = () => {
             sortKey: 'address_city'
         },
         {
+            id: 'email',
+            header: t('fields.email'),
+            accessor: (p: any) => <span className="text-slate-600 truncate max-w-[150px] inline-block">{p.email || '-'}</span>,
+            sortable: true,
+            sortKey: 'email'
+        },
+        {
             id: 'phone',
             header: t('fields.phone'),
             accessor: (p: any) => <span className="text-slate-600 whitespace-nowrap">{p.phone || '-'}</span>,
             sortable: true,
             sortKey: 'phone'
-        },
-        {
-            id: 'email',
-            header: t('fields.email'),
-            accessor: (p: any) => <span className="text-slate-600 truncate max-w-[150px] inline-block">{p.email || '-'}</span>,
-            sortable: true,
-            sortKey: 'email',
-            defaultVisible: true
         },
         {
             id: 'rating',
@@ -361,7 +355,7 @@ const Partners = () => {
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('common.details')} aria-label={t('common.details')}><FaEye /></button>
+                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('common.details')}><FaEye /></button>
                     <button onClick={async () => {
                         setEditingPartner(p);
                         setIsModalOpen(true);
@@ -374,8 +368,8 @@ const Partners = () => {
                         } finally {
                             setIsDetailLoading(false);
                         }
-                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')} aria-label={t('actions.edit')}><FaEdit /></button>
-                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')} aria-label={t('actions.delete')}><FaTrash /></button>
+                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit /></button>
+                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')}><FaTrash /></button>
                 </div>
             ),
             align: 'right' as const
@@ -385,7 +379,7 @@ const Partners = () => {
     const actions = (
         <div className="relative group z-50" ref={exportRef}>
             <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 rounded-sm text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white flex items-center gap-2 shadow-sm transition">
-                <FaDownload /> Exportieren
+                <FaDownload /> Export
             </button>
             {isExportOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
@@ -421,11 +415,20 @@ const Partners = () => {
     if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10" onClick={() => setIsExportOpen(false)}>
-            <div className="flex justify-between items-center gap-4">
-                <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 truncate">{t('partners.title')}</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">{t('partners.subtitle')}</p>
+        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden" onClick={() => setIsExportOpen(false)}>
+                <div className="flex justify-between items-center gap-4">
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('partners.title')}</h1>
+                        <p className="text-slate-500 text-sm hidden sm:block">{t('partners.subtitle')}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        <Button
+                            onClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
+                        >
+                            <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('partners.new_partner')}</span><span className="inline sm:hidden">{t('partners.new_short')}</span>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -444,64 +447,105 @@ const Partners = () => {
                     />
                     <KPICard label={t('partners.kpi.collaboration')} value={stats?.collaboration_count || 0} icon={<FaHandshake />} subValue={t('partners.kpi.projects_this_month')} />
                 </div>
-            </div>
 
-            {statsLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                    {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="animate-pulse bg-slate-100 rounded-sm h-20" />
-                    ))}
-                </div>
-            ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                    <KPICard label={t('partners.kpi.active_partners')} value={activePartnersCount} icon={<FaUserTie />} />
-                    <KPICard
-                        label={t('partners.kpi.partner_costs')}
-                        value={partnerFinancials.totalCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                        icon={<FaEuroSign />}
-                        subValue={t('partners.kpi.avg_per_project', { amount: partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) })}
+                <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
+                    <DataTable
+                        data={filteredPartners}
+                        columns={columns as any}
+                        onRowClick={(p) => navigate(`/partners/${p.id}`)}
+                        searchPlaceholder={t('partners.search_placeholder')}
+                        searchFields={['first_name', 'last_name', 'company', 'email']}
+                        actions={actions}
+                        onAddClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
+                        selectable
+                        selectedIds={selectedPartners}
+                        onSelectionChange={(ids) => setSelectedPartners(ids as number[])}
+                        bulkActions={[
+                            {
+                                label: t('customers.actions.activate'),
+                                icon: <FaCheck className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
+                                variant: 'success',
+                                show: statusView === 'active'
+                            },
+                            {
+                                label: t('projects.actions.bulk.send_email'),
+                                icon: <FaEnvelope className="text-xs" />,
+                                onClick: () => {
+                                    const selectedEmails = partners
+                                        .filter((p: any) => selectedPartners.includes(p.id))
+                                        .map((p: any) => p.email)
+                                        .filter(Boolean)
+                                        .join(', ');
+                                    if (selectedEmails) {
+                                        navigate('/inbox', { state: { compose: true, to: selectedEmails, subject: 'Nachricht an Partner' } });
+                                    }
+                                },
+                                variant: 'primary',
+                                show: statusView === 'active'
+                            },
+                            {
+                                label: t('partners.actions.lock'),
+                                icon: <FaBan className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'blacklisted' } }),
+                                variant: 'danger',
+                                show: statusView === 'active'
+                            },
+                            {
+                                label: t('projects.actions.bulk.archive'),
+                                icon: <FaArchive className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'archived' } }),
+                                variant: 'default',
+                                show: statusView === 'active'
+                            },
+                            {
+                                label: t('projects.actions.bulk.trash'),
+                                icon: <FaTrash className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'deleted' } }),
+                                variant: 'danger',
+                                show: statusView === 'active'
+                            },
+                            {
+                                label: t('projects.actions.bulk.restore'),
+                                icon: <FaTrashRestore className="text-xs" />,
+                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
+                                variant: 'success',
+                                show: statusView === 'trash' || statusView === 'archive'
+                            }
+                        ] as BulkActionItem[]}
+                        filters={tableFilters}
+                        activeFilterCount={activeFilterCount}
+                        onResetFilters={resetFilters}
                     />
-                    <KPICard
-                        label={t('partners.kpi.quality_average')}
-                        value={`${partnerQuality.toFixed(1)} / 5.0`}
-                        icon={<FaStar />}
-                        subValue={t('partners.kpi.rating_sub')}
-                    />
-                    <KPICard label={t('partners.kpi.collaboration')} value={stats?.collaboration_count || 0} icon={<FaHandshake />} subValue={t('partners.kpi.projects_this_month')} />
                 </div>
-            )}
 
-            <div className="flex-1 flex flex-col min-h-[500px] sm:min-h-0 relative z-0">
-                <DataTable
-                    data={filteredPartners}
-                    columns={columns as any}
-                    onRowClick={(p) => navigate(`/partners/${p.id}`)}
-                    searchPlaceholder={t('partners.search_placeholder')}
-                    searchFields={['first_name', 'last_name', 'company', 'email']}
-                    actions={actions}
-                    onAddClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
-                    selectable
-                    selectedIds={selectedPartners}
-                    onSelectionChange={(ids) => setSelectedPartners(ids as number[])}
-                    bulkActions={[
-                        {
-                            label: t('customers.actions.activate'),
-                            icon: <FaCheck className="text-xs" />,
-                            onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
-                            variant: 'success',
-                            show: statusView === 'active'
-                        },
-                        {
-                            label: t('projects.actions.bulk.send_email'),
-                            icon: <FaEnvelope className="text-xs" />,
-                            onClick: () => {
-                                const selectedEmails = partners
-                                    .filter((p: any) => selectedPartners.includes(p.id))
-                                    .map((p: any) => p.email)
-                                    .filter(Boolean)
-                                    .join(', ');
-                                if (selectedEmails) {
-                                    navigate('/inbox', { state: { compose: true, to: selectedEmails, subject: 'Nachricht an Partner' } });
+                <NewPartnerModal
+                    isOpen={isModalOpen}
+                    onClose={() => { setIsModalOpen(false); setEditingPartner(null); }}
+                    onSubmit={(data) => {
+                        if (editingPartner) {
+                            updateMutation.mutate({ ...data, id: editingPartner.id });
+                        } else {
+                            createMutation.mutate(data);
+                        }
+                    }}
+                    initialData={editingPartner || (
+                        ['Übersetzer', 'Dolmetscher', 'Agentur', 'service_providers'].includes(typeFilter)
+                            ? { type: typeFilter === 'Übersetzer' ? 'translator' : typeFilter === 'Dolmetscher' ? 'interpreter' : typeFilter === 'service_providers' ? 'trans_interp' : 'agency' }
+                            : undefined
+                    )}
+                    isLoading={isDetailLoading || createMutation.isPending || updateMutation.isPending}
+                />
+
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => { setIsConfirmOpen(false); setPartnerToDelete(null); }}
+                    onConfirm={() => {
+                        if (partnerToDelete) {
+                            deleteMutation.mutate(partnerToDelete, {
+                                onSuccess: () => {
+                                    setIsConfirmOpen(false);
+                                    setPartnerToDelete(null);
                                 }
                             });
                         }
@@ -510,44 +554,8 @@ const Partners = () => {
                     message={t('customers.confirm.delete_message', { count: 1 })}
                     isLoading={deleteMutation.isPending}
                 />
-            </div>
-
-            <NewPartnerModal
-                isOpen={isModalOpen}
-                onClose={() => { setIsModalOpen(false); setEditingPartner(null); }}
-                onSubmit={(data) => {
-                    if (editingPartner) {
-                        updateMutation.mutate({ ...data, id: editingPartner.id });
-                    } else {
-                        createMutation.mutate(data);
-                    }
-                }}
-                initialData={editingPartner || (
-                    ['Übersetzer', 'Dolmetscher', 'Agentur', 'service_providers'].includes(typeFilter)
-                        ? { type: typeFilter === 'Übersetzer' ? 'translator' : typeFilter === 'Dolmetscher' ? 'interpreter' : typeFilter === 'service_providers' ? 'trans_interp' : 'agency' }
-                        : undefined
-                )}
-                isLoading={isDetailLoading || createMutation.isPending || updateMutation.isPending}
-            />
-
-            <ConfirmModal
-                isOpen={isConfirmOpen}
-                onClose={() => { setIsConfirmOpen(false); setPartnerToDelete(null); }}
-                onConfirm={() => {
-                    if (partnerToDelete) {
-                        deleteMutation.mutate(partnerToDelete, {
-                            onSuccess: () => {
-                                setIsConfirmOpen(false);
-                                setPartnerToDelete(null);
-                            }
-                        });
-                    }
-                }}
-                title="Partner löschen"
-                description="Sind Sie sicher, dass Sie diesen Partner löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
-                isLoading={deleteMutation.isPending}
-            />
-        </div >
+            </div >
+        </div>
     );
 };
 

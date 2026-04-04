@@ -274,7 +274,7 @@ const SubscriptionTab: React.FC = () => {
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500">Neuer Plan *</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Neuer Plan *</label>
               <Select
                 className="w-full"
                 placeholder="Plan auswählen"
@@ -288,7 +288,7 @@ const SubscriptionTab: React.FC = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500">Abrechnungszyklus *</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Abrechnungszyklus *</label>
               <Select
                 className="w-full"
                 placeholder="Zyklus auswählen"
@@ -301,7 +301,7 @@ const SubscriptionTab: React.FC = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500">Nachricht (optional)</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">Nachricht (optional)</label>
               <Textarea
                 rows={3}
                 placeholder="Zusätzliche Informationen oder Wünsche..."

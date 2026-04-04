@@ -19,27 +19,12 @@ class SubscriptionInfolist
                 TextEntry::make('status')
                     ->badge(),
                 TextEntry::make('billing_cycle'),
-                TextEntry::make('price_net_cents')
-                    ->money('EUR', divideBy: 100),
                 TextEntry::make('price_gross_cents')
                     ->money('EUR', divideBy: 100),
-                TextEntry::make('vat_rate_percent')
-                    ->suffix('%'),
                 IconEntry::make('is_trial')
                     ->boolean(),
-                TextEntry::make('current_period_start')
-                    ->dateTime(),
-                TextEntry::make('current_period_end')
-                    ->dateTime(),
-                TextEntry::make('payment_provider')
-                    ->placeholder('-'),
-                TextEntry::make('billing_email')
-                    ->placeholder('-'),
                 TextEntry::make('expires_at')
                     ->dateTime(),
-                TextEntry::make('notes')
-                    ->placeholder('-')
-                    ->columnSpanFull(),
             ]);
     }
 }

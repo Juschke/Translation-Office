@@ -129,8 +129,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('mails/send', [\App\Http\Controllers\Api\MailController::class, 'send']);
         Route::post('mails/sync', [\App\Http\Controllers\Api\MailController::class, 'sync']);
         Route::post('mails/bulk-delete', [\App\Http\Controllers\Api\MailController::class, 'bulkDelete']);
-        Route::post('mails/archive', [\App\Http\Controllers\Api\MailController::class, 'archive']);
-        Route::post('mails/restore', [\App\Http\Controllers\Api\MailController::class, 'restore']);
+        Route::post('mails/bulk-restore', [\App\Http\Controllers\Api\MailController::class, 'bulkRestore']);
         Route::post('mails/{id}/read', [\App\Http\Controllers\Api\MailController::class, 'markAsRead']);
         Route::delete('mails/{id}', [\App\Http\Controllers\Api\MailController::class, 'destroy']);
 
@@ -147,8 +146,6 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Partner management
         Route::apiResource('partners', App\Http\Controllers\Api\PartnerController::class);
         Route::get('/partners/stats', [App\Http\Controllers\Api\PartnerController::class, 'stats']);
-        Route::get('/partners/{partner}/billing', [App\Http\Controllers\Api\PartnerController::class, 'billing']);
-        Route::post('/partners/{partner}/projects/{project}/mark-paid', [App\Http\Controllers\Api\PartnerController::class, 'markPartnerPaid']);
 
         // External Costs
         Route::get('external-costs/stats', [\App\Http\Controllers\Api\ExternalCostController::class, 'stats']);
@@ -176,7 +173,6 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::put('projects/{project}/files/{file}', [\App\Http\Controllers\Api\ProjectFileController::class, 'update']);
     Route::get('projects/{project}/files/{file}/download', [\App\Http\Controllers\Api\ProjectFileController::class, 'download']);
     Route::post('projects/{project}/files/bulk-update', [\App\Http\Controllers\Api\ProjectFileController::class, 'bulkUpdate']);
-    Route::post('projects/{project}/files/bulk-delete', [\App\Http\Controllers\Api\ProjectFileController::class, 'bulkDestroy']);
     Route::get('projects/{project}/files/download-zip', [\App\Http\Controllers\Api\ProjectFileController::class, 'downloadZip']);
     Route::apiResource('projects', \App\Http\Controllers\Api\ProjectController::class);
     Route::post('projects/{project}/invite', [\App\Http\Controllers\Api\ProjectController::class, 'inviteParticipant']);

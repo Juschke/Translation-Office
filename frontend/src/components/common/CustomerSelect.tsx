@@ -9,8 +9,8 @@ import PhoneInput from './PhoneInput';
 import CountrySelect from './CountrySelect';
 import clsx from 'clsx';
 import { Button } from '../ui/button';
+import axios from 'axios';
 import { fetchCityByZip } from '../../utils/autoFill';
-import { searchStreetSuggestions } from '../../api/services/geocoding';
 
 interface CustomerSelectProps {
   options: { value: string; label: string }[];
@@ -106,14 +106,23 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
 
     if (quickAddData.address_country === 'Deutschland' && value.length > 3) {
       try {
-        const results = await searchStreetSuggestions({
-          street: value,
-          city: quickAddData.address_city,
-          postalcode: quickAddData.address_zip,
+        const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+          params: {
+            street: value,
+            city: quickAddData.address_city,
+            postalcode: quickAddData.address_zip,
+            country: 'Germany',
+            format: 'json',
+            limit: 5,
+            addressdetails: 1
+          },
+          headers: {
+            'Accept-Language': 'de'
+          }
         });
 
-        if (results.length > 0) {
-          setStreetSuggestions(results);
+        if (response.data && response.data.length > 0) {
+          setStreetSuggestions(response.data);
           setShowStreetSuggestions(true);
         } else {
           setStreetSuggestions([]);

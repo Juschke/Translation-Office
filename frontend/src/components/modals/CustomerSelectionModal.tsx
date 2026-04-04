@@ -163,7 +163,10 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  {paginatedCustomers.map(c => (
  <React.Fragment key={c.id}>
  <tr
- className={clsx("transition-all group cursor-pointer border-b border-transparent", expandedCustomerId === c.id ?"bg-slate-50/30" :"hover:bg-slate-50/80" )}
+ className={clsx(
+ "transition-all group cursor-pointer border-b border-transparent",
+ expandedCustomerId === c.id ? "bg-slate-50/30" : "hover:bg-slate-50/80"
+ )}
  onClick={() => setExpandedCustomerId(expandedCustomerId === c.id ? null : c.id)}
  >
  <td className="px-6 py-2.5">
@@ -231,7 +234,12 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({ isOpen,
  <button
  key={i}
  onClick={() => setCurrentPage(i + 1)}
- className={clsx("w-8 h-8 rounded-sm text-xs font-semibold transition-all", currentPage === i + 1 ?"bg-slate-900 text-white shadow-sm" :"text-slate-400 hover:bg-slate-50" )}
+ className={clsx(
+ "w-8 h-8 rounded-sm text-xs font-semibold transition-all",
+ currentPage === i + 1
+ ? "bg-slate-900 text-white shadow-sm"
+ : "text-slate-400 hover:bg-slate-50"
+ )}
  >
  {i + 1}
  </button>

@@ -80,7 +80,6 @@ class ProjectController extends Controller
             'copies_count' => 'nullable|integer',
             'copy_price' => 'nullable|numeric',
             'notes' => 'nullable|string',
-            'extra_services' => 'nullable|array',
             'positions' => 'nullable|array',
             'positions.*.description' => 'required|string',
             'positions.*.amount' => 'required|numeric',
@@ -113,22 +112,11 @@ class ProjectController extends Controller
             $partnerNet = (float) $project->positions()->sum('partner_total');
 
             // Include extra services in the root price_total
-            $extraNet = 0;
-            if ($project->extra_services && is_array($project->extra_services)) {
-                $serviceIds = array_keys($project->extra_services);
-                $dbServices = \App\Models\Service::whereIn('id', $serviceIds)->get()->keyBy('id');
-                foreach ($project->extra_services as $sId => $qty) {
-                    if ($dbSvc = $dbServices->get($sId)) {
-                        $extraNet += ($qty * (float) $dbSvc->base_price);
-                    }
-                }
-            } else {
-                $extraNet = ($project->is_certified ? 5 : 0) +
-                    ($project->has_apostille ? 15 : 0) +
-                    ($project->is_express ? 15 : 0) +
-                    ($project->classification ? 15 : 0);
-            }
-            $extraNet += ((($project->copies_count && $project->copies_count > 0) ? $project->copies_count : 0) * (float) ($project->copy_price && $project->copy_price > 0 ? $project->copy_price : 5));
+            $extraNet = ($project->is_certified ? 5 : 0) +
+                ($project->has_apostille ? 15 : 0) +
+                ($project->is_express ? 15 : 0) +
+                ($project->classification ? 15 : 0) +
+                ((($project->copies_count && $project->copies_count > 0) ? $project->copies_count : 0) * (float) ($project->copy_price && $project->copy_price > 0 ? $project->copy_price : 5));
 
             $project->update([
                 'price_total' => $positionsNet + $extraNet,
@@ -253,7 +241,6 @@ class ProjectController extends Controller
             'appointment_location' => 'nullable|string',
             'customer_reference' => 'nullable|string',
             'customer_date' => 'nullable|date',
-            'extra_services' => 'nullable|array',
             'positions' => 'nullable|array',
             'positions.*.description' => 'required|string',
             'positions.*.amount' => 'required|numeric',
@@ -287,22 +274,11 @@ class ProjectController extends Controller
             $partnerNet = (float) $project->positions()->sum('partner_total');
 
             // Include extra services in the root price_total
-            $extraNet = 0;
-            if ($project->extra_services && is_array($project->extra_services)) {
-                $serviceIds = array_keys($project->extra_services);
-                $dbServices = \App\Models\Service::whereIn('id', $serviceIds)->get()->keyBy('id');
-                foreach ($project->extra_services as $sId => $qty) {
-                    if ($dbSvc = $dbServices->get($sId)) {
-                        $extraNet += ($qty * (float) $dbSvc->base_price);
-                    }
-                }
-            } else {
-                $extraNet = ($project->is_certified ? 5 : 0) +
-                    ($project->has_apostille ? 15 : 0) +
-                    ($project->is_express ? 15 : 0) +
-                    ($project->classification ? 15 : 0);
-            }
-            $extraNet += ((($project->copies_count && $project->copies_count > 0) ? $project->copies_count : 0) * (float) ($project->copy_price && $project->copy_price > 0 ? $project->copy_price : 5));
+            $extraNet = ($project->is_certified ? 5 : 0) +
+                ($project->has_apostille ? 15 : 0) +
+                ($project->is_express ? 15 : 0) +
+                ($project->classification ? 15 : 0) +
+                ((($project->copies_count && $project->copies_count > 0) ? $project->copies_count : 0) * (float) ($project->copy_price && $project->copy_price > 0 ? $project->copy_price : 5));
 
             $project->update([
                 'price_total' => $positionsNet + $extraNet,
