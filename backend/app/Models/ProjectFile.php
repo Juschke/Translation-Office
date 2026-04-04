@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectFile extends Model
 {
-    use \App\Traits\BelongsToTenant;
+    use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity;
 
     protected $fillable = [
         'project_id',

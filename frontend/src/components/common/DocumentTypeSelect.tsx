@@ -119,7 +119,7 @@ const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
               setIsExpanded(true);
             }
           }}
-          className="h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 rounded-r-sm hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0"
+          className="h-9 px-3 bg-white text-slate-400 border border-brand-border border-l-0 rounded-r-sm hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0"
         >
           {showForm ? (
             <FaChevronDown className={clsx('text-xs transition-transform', isExpanded ? 'rotate-180' : '')} />

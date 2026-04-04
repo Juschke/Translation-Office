@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { FaHistory, FaTag } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../../api/services';
 import TableSkeleton from '../common/TableSkeleton';
-import DataTable from '../common/DataTable';
+import DataTable, { type FilterDef } from '../common/DataTable';
+import { useMemo, useState } from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 const ATTRIBUTE_LABELS: Record<string, string> = {
     project_name: 'Projektname',
@@ -114,32 +114,36 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
                 const changedKeys = Object.keys(newAttributes).filter(k => k !== 'updated_at' && k !== 'created_at');
 
                 if (changedKeys.length > 0) {
-                    changedKeys.forEach((key, index) => {
-                        result.push({
-                            ...baseInfo,
-                            id: `${activity.id}-${key}`,
-                            objectField: ATTRIBUTE_LABELS[key] || key,
+                    result.push({
+                        ...baseInfo,
+                        id: activity.id,
+                        changes: changedKeys.map(key => ({
+                            field: ATTRIBUTE_LABELS[key] || key,
                             oldValue: formatFieldValue(key, oldAttributes[key]),
-                            newValue: formatFieldValue(key, newAttributes[key]),
-                            isFirstOfGroup: index === 0,
-                            groupSize: changedKeys.length
-                        });
+                            newValue: formatFieldValue(key, newAttributes[key])
+                        }))
                     });
                 } else {
                     result.push({
                         ...baseInfo,
-                        objectField: 'System-Update',
-                        oldValue: '-',
-                        newValue: 'Metadaten aktualisiert'
+                        id: activity.id,
+                        changes: [{
+                            field: 'System-Update',
+                            oldValue: '-',
+                            newValue: 'Metadaten aktualisiert'
+                        }]
                     });
                 }
             } else {
-                // For created/deleted, just one entry
+                // For created/deleted
                 result.push({
                     ...baseInfo,
-                    objectField: subject,
-                    oldValue: activity.event === 'created' ? '-' : 'Vorhanden',
-                    newValue: activity.event === 'created' ? 'Neu angelegt' : 'Gelöscht'
+                    id: activity.id,
+                    changes: [{
+                        field: subject,
+                        oldValue: activity.event === 'created' ? '-' : 'Vorhanden',
+                        newValue: activity.event === 'created' ? 'Neu angelegt' : 'Gelöscht'
+                    }]
                 });
             }
         });
@@ -147,6 +151,52 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
         // Sort by date descending
         return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [activities]);
+
+    const [eventType, setEventType] = useState('all');
+    const [userFilter, setUserFilter] = useState('all');
+
+    const filteredChanges = useMemo(() => {
+        return flattenedChanges.filter(change => {
+            if (eventType !== 'all' && change.event !== eventType) return false;
+            if (userFilter !== 'all' && change.user !== userFilter) return false;
+            return true;
+        });
+    }, [flattenedChanges, eventType, userFilter]);
+
+    const users = useMemo(() => {
+        const set = new Set<string>();
+        flattenedChanges.forEach(c => set.add(c.user));
+        return Array.from(set).sort();
+    }, [flattenedChanges]);
+
+    const tableFilters: FilterDef[] = [
+        {
+            id: 'eventType',
+            label: 'Aktionstyp',
+            type: 'select',
+            value: eventType,
+            onChange: setEventType,
+            options: [
+                { value: 'all', label: 'Alle Aktionen' },
+                { value: 'created', label: 'Erstellt' },
+                { value: 'updated', label: 'Aktualisiert' },
+                { value: 'deleted', label: 'Gelöscht' },
+            ]
+        },
+        {
+            id: 'userFilter',
+            label: 'Benutzer',
+            type: 'select',
+            value: userFilter,
+            onChange: setUserFilter,
+            options: [
+                { value: 'all', label: 'Alle Benutzer' },
+                ...users.map(u => ({ value: u, label: u }))
+            ]
+        }
+    ];
+
+    const activeFilterCount = (eventType !== 'all' ? 1 : 0) + (userFilter !== 'all' ? 1 : 0);
 
     const columns = useMemo(() => [
         {
@@ -156,8 +206,15 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
                 const d = new Date(change.date);
                 return (
                     <div className="flex flex-col">
-                        <span className="font-bold text-slate-700 text-xs">{d.toLocaleDateString('de-DE')}</span>
-                        <span className="text-[10px] text-slate-400 font-bold">{d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-700 text-xs">
+                                {format(d, 'EEEE, dd.MM.yyyy', { locale: de })}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-bold italic">
+                                ({formatDistanceToNow(d, { addSuffix: true, locale: de })})
+                            </span>
+                        </div>
+                        <span className="text-xs text-slate-400 font-bold">{format(d, 'HH:mm', { locale: de })} Uhr</span>
                     </div>
                 );
             },
@@ -169,7 +226,7 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             header: 'Benutzer',
             accessor: (change: any) => (
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-700 shadow-inner uppercase">
+                    <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 shadow-inner uppercase">
                         {change.user[0]}
                     </div>
                     <span className="font-bold text-slate-600 text-[11px]">{change.user}</span>
@@ -182,36 +239,47 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             id: 'action',
             header: 'Aktion',
             accessor: (change: any) => (
-                <div className="flex flex-col">
-                    <span className={clsx("px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-tight border shadow-sm w-fit",
-                        change.eventColor, change.eventBg, change.eventBorder
-                    )}>
-                        {change.eventLabel}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter mt-0.5 ml-1">{change.subjectType}</span>
-                </div>
+                <span className={clsx("px-2 py-0.5 rounded-sm text-xs font-bold uppercase tracking-tight border shadow-sm w-fit block",
+                    change.eventColor, change.eventBg, change.eventBorder
+                )}>
+                    {change.eventLabel}
+                </span>
             ),
             sortable: true,
             sortKey: 'event',
         },
         {
+            id: 'model',
+            header: 'Modell',
+            accessor: (change: any) => (
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{change.subjectType}</span>
+            ),
+            sortable: true,
+            sortKey: 'subjectType',
+        },
+        {
             id: 'object',
             header: 'Objekt / Feld',
             accessor: (change: any) => (
-                <div className="flex items-center gap-2">
-                    <FaTag className="text-slate-300 text-[10px]" />
-                    <span className="font-bold text-slate-700 text-[11px] uppercase tracking-tighter">{change.objectField}</span>
+                <div className="flex flex-col gap-1.5 py-1">
+                    {change.changes.map((item: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2">
+                            <span className="font-bold text-slate-700 text-[11px] uppercase tracking-tighter whitespace-nowrap">{item.field}</span>
+                        </div>
+                    ))}
                 </div>
             ),
-            sortable: true,
-            sortKey: 'objectField',
         },
         {
             id: 'old',
             header: 'Alt',
             accessor: (change: any) => (
-                <div className="max-w-[150px] truncate">
-                    <span className="text-red-400 line-through text-[10px] font-medium bg-red-50/30 px-1.5 py-0.5 rounded-sm border border-red-100/30">{change.oldValue}</span>
+                <div className="flex flex-col gap-1.5 py-1">
+                    {change.changes.map((item: any, idx: number) => (
+                        <div key={idx} className="max-w-[150px] truncate h-5 flex items-center">
+                            <span className="text-red-400 text-xs font-medium bg-red-50/30 px-1.5 py-0.5 rounded-sm border border-red-100/30">{item.oldValue}</span>
+                        </div>
+                    ))}
                 </div>
             ),
         },
@@ -219,8 +287,12 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
             id: 'new',
             header: 'Neu',
             accessor: (change: any) => (
-                <div className="max-w-[150px] truncate">
-                    <span className="text-emerald-700 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-100">{change.newValue}</span>
+                <div className="flex flex-col gap-1.5 py-1">
+                    {change.changes.map((item: any, idx: number) => (
+                        <div key={idx} className="max-w-[150px] truncate h-5 flex items-center">
+                            <span className="text-emerald-700 font-bold text-xs bg-emerald-50 px-1.5 py-0.5 rounded-sm border border-emerald-100">{item.newValue}</span>
+                        </div>
+                    ))}
                 </div>
             ),
         },
@@ -231,17 +303,17 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
     return (
         <div className="flex flex-col gap-4 animate-fadeIn pb-10">
             <DataTable
-                data={flattenedChanges}
+                data={filteredChanges}
                 columns={columns as any}
                 pageSize={15}
                 searchPlaceholder="Historie filtern..."
                 showSettings={true}
-                extraControls={
-                    <div className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-200 rounded-[3px] shadow-sm">
-                        <FaHistory className="text-slate-400 text-xs" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-brand-primary">Detail-Protokoll</span>
-                    </div>
-                }
+                filters={tableFilters}
+                activeFilterCount={activeFilterCount}
+                onResetFilters={() => {
+                    setEventType('all');
+                    setUserFilter('all');
+                }}
             />
         </div>
     );

@@ -32,7 +32,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                     <FaFilter className="text-xs" />
                     <span>Filter</span>
                     {activeCount > 0 && (
-                        <span className="bg-brand-primary text-white text-[10px] px-1.5 rounded-full ml-1 font-bold">{activeCount}</span>
+                        <span className="bg-brand-primary text-white text-xs px-1.5 rounded-full ml-1 font-bold">{activeCount}</span>
                     )}
                 </Button>
                 {activeCount > 0 && onReset && (

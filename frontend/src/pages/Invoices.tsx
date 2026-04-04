@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import clsx from 'clsx';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
@@ -6,7 +6,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { parseISO, startOfDay, isValid } from 'date-fns';
 import {
     FaPlus, FaCheck, FaCheckCircle, FaHistory,
-    FaFileExcel, FaFileCsv, FaFilePdf, FaDownload,
     FaFileInvoiceDollar, FaTrashRestore, FaPaperPlane, FaArchive,
 } from 'react-icons/fa';
 import { buildInvoiceColumns } from './invoiceColumns';
@@ -16,8 +15,7 @@ import DataTable, { type FilterDef } from '../components/common/DataTable';
 import KPICard from '../components/common/KPICard';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invoiceService, externalCostService } from '../api/services';
-import TableSkeleton from '../components/common/TableSkeleton';
+import { invoiceService, externalCostService, customerService } from '../api/services';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
 import { useTranslation } from 'react-i18next';
@@ -29,25 +27,14 @@ const Invoices = () => {
     const location = useLocation();
     const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
     const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'all');
+    const [customerId, setCustomerId] = useState('');
     useEffect(() => {
         setSelectedInvoices([]);
     }, [statusFilter]);
-    const [isExportOpen, setIsExportOpen] = useState(false);
     const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
 
-    const exportRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
-                setIsExportOpen(false);
-            }
-
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     useEffect(() => {
         if (location.state?.openNewModal) {
@@ -70,6 +57,10 @@ const Invoices = () => {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const { data: customers = [] } = useQuery({
+        queryKey: ['customers'],
+        queryFn: customerService.getAll
+    });
 
     const { data: externalCostsStats } = useQuery({
         queryKey: ['external-costs', 'stats', startOfMonth.toISOString(), endOfMonth.toISOString()],
@@ -151,6 +142,8 @@ const Invoices = () => {
 
         return invoices.filter((inv: any) => {
             const status = inv.status?.toLowerCase() || 'pending';
+            const matchesCustomer = !customerId || String(inv.customer_id) === String(customerId);
+            if (!matchesCustomer) return false;
 
             // Parse due_date safely with date-fns
             let dueDate: Date | null = null;
@@ -192,7 +185,7 @@ const Invoices = () => {
 
             return true;
         });
-    }, [invoices, statusView, statusFilter]);
+    }, [invoices, statusView, statusFilter, customerId]);
 
     const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
         const ids = selectedInvoices.length > 0
@@ -212,7 +205,6 @@ const Invoices = () => {
                 link.click();
                 link.remove();
                 window.URL.revokeObjectURL(url);
-                setIsExportOpen(false);
                 toast.success(t('invoices.messages.datev_success'));
             } catch (error) {
                 toast.error(t('invoices.messages.datev_error'));
@@ -234,7 +226,6 @@ const Invoices = () => {
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         triggerBlobDownload(blob, `Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
-        setIsExportOpen(false);
     };
 
     const handlePrint = async (inv: any, rebuild: boolean = false) => {
@@ -447,27 +438,15 @@ const Invoices = () => {
         </div>
     ) : null;
 
-    const actions = (
-        <div className="relative group z-50" ref={exportRef}>
-            <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
-                <FaDownload /> Export
-            </button>
-            {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-sm border border-slate-100 z-[100] overflow-hidden animate-fadeIn">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
-                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV DATEV</button>
-                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Sammel-Report</button>
-                </div>
-            )}
-        </div>
-    );
 
     const activeInvoices = useMemo(() => {
-        return invoices.filter((inv: any) => {
+        const invoicesArray = Array.isArray(invoices) ? invoices : ((invoices as any)?.data || []);
+        return invoicesArray.filter((inv: any) => {
             const s = inv.status?.toLowerCase();
-            return s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht';
+            const matchesCustomer = !customerId || String(inv.customer_id) === String(customerId);
+            return (s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht') && matchesCustomer;
         });
-    }, [invoices]);
+    }, [invoices, customerId]);
 
     // Count invoices by status for badges
 
@@ -487,12 +466,17 @@ const Invoices = () => {
     const resetFilters = () => {
         setStatusView('active');
         setStatusFilter('all');
+        setCustomerId('');
     };
 
     const tableFilters: FilterDef[] = [
         {
-            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setStatusFilter('all'); },
+            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setStatusFilter('all'); setCustomerId(''); },
             options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
+        },
+        {
+            id: 'customer', label: t('projects.filters.customers.label'), type: 'searchableSelect' as const, value: customerId, onChange: (v: any) => setCustomerId(v),
+            options: [{ value: '', label: t('projects.filters.customers.all') }, ...customers.map((c: any) => ({ value: String(c.id), label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]
         },
         ...(statusView === 'active' ? [{
             id: 'statusFilter', label: t('invoices.filters.invoice_status'), type: 'select' as const, value: statusFilter, onChange: (v: any) => setStatusFilter(v),
@@ -508,11 +492,11 @@ const Invoices = () => {
         }] : [])
     ];
 
-    if (isLoading) return <TableSkeleton rows={8} columns={6} />;
+
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
-            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden" onClick={() => setIsExportOpen(false)}>
+            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
                         <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('invoices.title')}</h1>
@@ -553,11 +537,12 @@ const Invoices = () => {
 
                 <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
                     <DataTable
+                        isLoading={isLoading}
                         data={filteredInvoices}
                         columns={columns as any}
                         searchPlaceholder={t('invoices.search_placeholder')}
                         searchFields={['invoice_number', 'customer.company_name', 'project.project_name']}
-                        actions={actions}
+                        onExport={handleExport}
                         tabs={tabs}
                         onRowClick={(inv: any) => setPreviewInvoice(inv)}
                         selectable
@@ -581,8 +566,9 @@ const Invoices = () => {
                                     setConfirmVariant('warning');
                                     setConfirmAction(() => () => {
                                         toast.loading('Mahnungen werden verarbeitet...');
+                                        const invoicesArray = Array.isArray(invoices) ? invoices : ((invoices as any)?.data || []);
                                         selectedInvoices.forEach(id => {
-                                            const inv = invoices.find((i: any) => i.id === id);
+                                            const inv = invoicesArray.find((i: any) => i.id === id);
                                             const nextLevel = (inv?.reminder_level || 0) + 1;
                                             bulkUpdateMutation.mutate({
                                                 ids: [id],

@@ -2,18 +2,20 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Table, type TableProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table/interface';
-import { FaSearch, FaColumns, FaPlus, FaChevronLeft, FaChevronRight, FaChevronDown, FaTimes, FaFilter, FaUndo } from 'react-icons/fa';
+import { FaSearch, FaColumns, FaPlus, FaChevronLeft, FaChevronRight, FaChevronDown, FaTimes, FaFilter, FaUndo, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf } from 'react-icons/fa';
 import clsx from 'clsx';
 import Switch from './Switch';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
 import TableSkeleton from './TableSkeleton';
 import { Button } from '../ui/button';
+import { useTranslation } from 'react-i18next';
+import SearchableSelect from './SearchableSelect';
 
 export interface FilterDef {
     id: string;
     label: string;
-    type: 'select' | 'text' | 'date';
-    options?: { value: string | number; label: string }[];
+    type: 'select' | 'text' | 'date' | 'searchableSelect';
+    options?: { value: string | number; label: string; icon?: string }[];
     value: any;
     onChange: (val: any) => void;
     placeholder?: string;
@@ -53,6 +55,7 @@ interface DataTableProps<T> {
     filters?: FilterDef[];
     activeFilterCount?: number;
     onResetFilters?: () => void;
+    onExport?: (format: 'xlsx' | 'csv' | 'pdf') => void;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
@@ -103,11 +106,14 @@ const DataTable = <T extends { id: string | number }>({
     filters,
     activeFilterCount,
     onResetFilters,
+    onExport,
 }: DataTableProps<T>) => {
+    const { t } = useTranslation();
     const [currentPage, setCurrentPage] = useState(1);
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascend' | 'descend' } | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(true);
+    const [isExportOpen, setIsExportOpen] = useState(false);
     const [pageSize, setPageSize] = useState(pageSizeProp);
     const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
         new Set(columns.filter(c => c.defaultVisible !== false).map(c => c.id))
@@ -117,7 +123,10 @@ const DataTable = <T extends { id: string | number }>({
 
     const settingsBtnRef = useRef<HTMLButtonElement>(null);
     const settingsRef = useRef<HTMLDivElement>(null);
+    const exportBtnRef = useRef<HTMLButtonElement>(null);
+    const exportDropdownRef = useRef<HTMLDivElement>(null);
     const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
+    const [exportDropdownPos, setExportDropdownPos] = useState({ top: 0, left: 0 });
 
     // ── Resizing Logic ──
     const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
@@ -183,15 +192,41 @@ const DataTable = <T extends { id: string | number }>({
         setIsSettingsOpen(v => !v);
     };
 
+    const openExport = () => {
+        if (exportBtnRef.current) {
+            const rect = exportBtnRef.current.getBoundingClientRect();
+            setExportDropdownPos({
+                top: rect.bottom + 5,
+                left: rect.left
+            });
+        }
+        setIsExportOpen(v => !v);
+    };
+
     useEffect(() => {
-        if (!isSettingsOpen) return;
+        if (!isSettingsOpen && !isExportOpen) return;
         const handler = (e: MouseEvent) => {
-            if (settingsBtnRef.current?.contains(e.target as Node) || settingsRef.current?.contains(e.target as Node)) return;
-            setIsSettingsOpen(false);
+            if (isSettingsOpen) {
+                if (settingsBtnRef.current?.contains(e.target as Node) || settingsRef.current?.contains(e.target as Node)) return;
+                setIsSettingsOpen(false);
+            }
+            if (isExportOpen) {
+                if (exportBtnRef.current?.contains(e.target as Node) || exportDropdownRef.current?.contains(e.target as Node)) return;
+                setIsExportOpen(false);
+            }
+        };
+        // Close on scroll if using portal
+        const scrollHandler = () => {
+            if (isSettingsOpen) setIsSettingsOpen(false);
+            if (isExportOpen) setIsExportOpen(false);
         };
         document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [isSettingsOpen]);
+        window.addEventListener('scroll', scrollHandler, true);
+        return () => {
+            document.removeEventListener('mousedown', handler);
+            window.removeEventListener('scroll', scrollHandler, true);
+        };
+    }, [isSettingsOpen, isExportOpen]);
 
     // 1. Filter
     const filteredData = useMemo(() => {
@@ -300,25 +335,29 @@ const DataTable = <T extends { id: string | number }>({
     const visibleBulkActions = bulkActions?.filter(a => a.show !== false) ?? [];
     const hasSelection = selectable && selectedIds.length > 0;
 
+    const isEmpty = paginatedData.length === 0 && !isLoading;
+
     const emptyNode = (
-        <div className="flex flex-col items-center justify-center gap-4 py-20 min-h-[400px]">
+        <div className="flex flex-col items-center justify-center gap-4 py-12 h-full w-full ">
             <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
-                <FaPlus className="text-2xl text-slate-300" />
-            </div>
+                < FaPlus className="text-2xl text-slate-300" />
+            </div >
             <div className="space-y-1 text-center">
                 <p className="text-base font-bold text-slate-600">Noch kein Eintrag</p>
                 <p className="text-xs text-slate-400">Klicken Sie auf den Button unten, um den ersten Eintrag zu erstellen.</p>
             </div>
-            {onAddClick && (
-                <Button
-                    variant="default"
-                    onClick={onAddClick}
-                    className="mt-2 px-6 py-2.5 font-bold flex items-center gap-2"
-                >
-                    <FaPlus className="text-xs" /> Neuer Eintrag
-                </Button>
-            )}
-        </div>
+            {
+                onAddClick && (
+                    <Button
+                        variant="default"
+                        onClick={onAddClick}
+                        className="mt-2 px-6 py-2.5 font-bold flex items-center gap-2"
+                    >
+                        <FaPlus className="text-xs" /> Neuer Eintrag
+                    </Button>
+                )
+            }
+        </div >
     );
 
     return (
@@ -337,7 +376,15 @@ const DataTable = <T extends { id: string | number }>({
                             {filters.map(filter => (
                                 <div key={filter.id} className="space-y-1.5 flex flex-col">
                                     <label className="text-xs font-semibold text-slate-700">{filter.label}</label>
-                                    {filter.type === 'select' ? (
+                                    {filter.type === 'searchableSelect' ? (
+                                        <SearchableSelect
+                                            options={filter.options?.map(o => ({ value: String(o.value), label: o.label, icon: (o as any).icon })) || []}
+                                            value={String(filter.value)}
+                                            onChange={filter.onChange}
+                                            placeholder={filter.placeholder}
+                                            className="border-[#ccc] hover:border-[#adadad]"
+                                        />
+                                    ) : filter.type === 'select' ? (
                                         <div className="relative">
                                             <select
                                                 className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
@@ -350,7 +397,7 @@ const DataTable = <T extends { id: string | number }>({
                                                     </option>
                                                 ))}
                                             </select>
-                                            <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none" />
+                                            <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
                                         </div>
                                     ) : (
                                         <input
@@ -370,7 +417,7 @@ const DataTable = <T extends { id: string | number }>({
                                     onClick={() => { onResetFilters(); setIsFilterOpen(false); }}
                                     className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center gap-1.5"
                                 >
-                                    <FaUndo className="text-[10px]" /> Filter zurücksetzen
+                                    <FaUndo className="text-xs" /> Filter zurücksetzen
                                 </button>
                             </div>
                         )}
@@ -380,8 +427,27 @@ const DataTable = <T extends { id: string | number }>({
 
             {/* ── Controls Bar ── */}
             <div className="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-[#D1D9D8] flex flex-col md:flex-row gap-3 items-center justify-between bg-gradient-to-b from-white to-[#f0f0f0] shadow-[0_1px_0_rgba(255,255,255,0.8)] relative z-10">
-                <div className="flex gap-2 sm:gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0 scroll-smooth">
-                    {tabs ?? (actions && <div className="flex items-center gap-2">{actions}</div>)}
+                <div className="flex gap-2 sm:gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0 scroll-smooth items-center">
+                    {(onExport || actions) && (
+                        <div className="flex items-center gap-2">
+                            {onExport && (
+                                <div className="relative">
+                                    <button
+                                        ref={exportBtnRef}
+                                        onClick={openExport}
+                                        className={clsx(
+                                            "px-3 py-1.5 border border-[#ccc] text-slate-600 hover:bg-slate-50 text-xs font-semibold bg-gradient-to-b from-white to-[#ebebeb] rounded-[3px] flex items-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition active:shadow-inner",
+                                            isExportOpen && "border-[#adadad] bg-[#f0f0f0]"
+                                        )}
+                                    >
+                                        <FaDownload className="text-xs" /> {t('common.export')}
+                                    </button>
+                                </div>
+                            )}
+                            {actions}
+                        </div>
+                    )}
+                    {tabs}
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64 shrink-0">
@@ -409,7 +475,7 @@ const DataTable = <T extends { id: string | number }>({
                             <FaFilter className="text-sm" />
                             {activeFilterCount ? (
                                 <span className={clsx(
-                                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center border",
+                                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-xs font-bold flex items-center justify-center border",
                                     isFilterOpen
                                         ? "bg-white text-[#1B4D4F] border-transparent"
                                         : "bg-rose-500 text-white border-rose-600 shadow-sm"
@@ -464,7 +530,7 @@ const DataTable = <T extends { id: string | number }>({
             )}
 
             {/* ── Ant Design Table ── */}
-            <div className="flex-1 overflow-x-auto min-h-0 relative">
+            <div className={clsx("flex-1 min-h-0 relative", !isEmpty && "overflow-x-auto")}>
                 {isLoading ? (
                     <TableSkeleton rows={pageSize} columns={activeColumns.length + (selectable ? 1 : 0)} />
                 ) : (
@@ -480,9 +546,7 @@ const DataTable = <T extends { id: string | number }>({
                         rowSelection={rowSelection}
                         sticky
                         tableLayout="auto"
-                        scroll={{
-                            x: 'max-content'
-                        }}
+                        scroll={!isEmpty ? { x: 'max-content' } : undefined}
                         onRow={record => ({
                             onClick: () => {
                                 setSelectedRowKey(record.id);
@@ -530,7 +594,7 @@ const DataTable = <T extends { id: string | number }>({
                             ))}
                             <option value={ALL_SENTINEL}>Alle anzeigen</option>
                         </select>
-                        <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none" />
+                        <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
                     </div>
                 </div>
 
@@ -604,14 +668,45 @@ const DataTable = <T extends { id: string | number }>({
                         ))}
                     </div>
                     <div className="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{visibleColumns.size} Aktiv</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">{visibleColumns.size} Aktiv</span>
                         <button
                             onClick={() => setIsSettingsOpen(false)}
-                            className="text-[10px] font-bold text-brand-primary uppercase tracking-widest hover:underline"
+                            className="text-xs font-bold text-brand-primary uppercase tracking-widest hover:underline"
                         >
                             Schließen
                         </button>
                     </div>
+                </div>,
+                document.body
+            )}
+            {/* ── Export dropdown as portal ── */}
+            {isExportOpen && onExport && createPortal(
+                <div
+                    ref={exportDropdownRef}
+                    style={{
+                        top: exportDropdownPos.top,
+                        left: exportDropdownPos.left
+                    }}
+                    className="fixed z-[1000] w-48 bg-white rounded-sm shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden animate-slideUp"
+                >
+                    <button
+                        onClick={() => { onExport('xlsx'); setIsExportOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"
+                    >
+                        <FaFileExcel className="text-emerald-600 text-[14px]" /> Excel (.xlsx)
+                    </button>
+                    <button
+                        onClick={() => { onExport('csv'); setIsExportOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"
+                    >
+                        <FaFileCsv className="text-blue-600 text-[14px]" /> CSV (.csv)
+                    </button>
+                    <button
+                        onClick={() => { onExport('pdf'); setIsExportOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"
+                    >
+                        <FaFilePdf className="text-rose-600 text-[14px]" /> PDF Report
+                    </button>
                 </div>,
                 document.body
             )}

@@ -3,8 +3,9 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-    FaPlus, FaTrash, FaSave, FaArrowLeft
+    FaPlus, FaTrash, FaSave, FaArrowLeft, FaGripVertical
 } from 'react-icons/fa';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Input from '../components/common/Input';
 import { Button } from '../components/ui/button';
 import SearchableSelect from '../components/common/SearchableSelect';
@@ -445,6 +446,14 @@ const NewInvoice = () => {
         }
     };
 
+    const onDragEnd = (result: DropResult) => {
+        if (!result.destination || isLoading) return;
+        const reordered = Array.from(items);
+        const [moved] = reordered.splice(result.source.index, 1);
+        reordered.splice(result.destination.index, 0, moved);
+        setItems(reordered);
+    };
+
     if (isEditMode && isLoadingInvoice) {
         return (
             <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
@@ -491,14 +500,14 @@ const NewInvoice = () => {
                     </Button>
                     <Button
                         variant="outline"
-                        onClick={() => { }}
+                        onClick={() => { }} // Placeholder
                         className="px-4 h-9 text-xs font-semibold border-slate-200 text-slate-600 bg-white hover:bg-slate-50"
                     >
                         Vorschau
                     </Button>
                     <Button
                         variant="outline"
-                        onClick={() => { }}
+                        onClick={() => { }} // Placeholder
                         className="px-4 h-9 text-xs font-semibold border-slate-200 text-slate-600 bg-white hover:bg-slate-50"
                     >
                         PDF
@@ -548,15 +557,11 @@ const NewInvoice = () => {
                                 </div>
                             </section>
 
-
-
-                            {/* Section: Kundenangaben (Single Card with 2-Column Grid) */}
+                            {/* Section: Kundenangaben */}
                             <section className="bg-transparent space-y-2 mb-8">
                                 <h3 className="text-sm font-bold text-slate-800 ml-1">Kundenangaben</h3>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
-                                    {/* Left Column: Address */}
                                     <div className="space-y-4">
-
                                         <div className="space-y-3">
                                             <CustomerSelect
                                                 options={customerOptions}
@@ -577,7 +582,7 @@ const NewInvoice = () => {
                                             readOnly
                                             className="h-11 bg-white border-slate-200"
                                         />
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-4 gap-3">
                                             <Input
                                                 placeholder="Straße"
                                                 value={activeCustomer?.address_street || ''}
@@ -591,7 +596,7 @@ const NewInvoice = () => {
                                                 className="h-11 bg-white border-slate-200 col-span-1"
                                             />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-4 gap-3">
                                             <Input
                                                 placeholder="PLZ"
                                                 value={activeCustomer?.address_zip || ''}
@@ -612,7 +617,6 @@ const NewInvoice = () => {
                                         />
                                     </div>
 
-                                    {/* Right Column: Metadata */}
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4 items-center">
                                             <label className="text-sm font-medium text-slate-600">Rechnungsnummer</label>
@@ -664,7 +668,7 @@ const NewInvoice = () => {
                                 </div>
                             </section>
 
-                            {/* Section: Kopfbereich (Belegtitel) */}
+                            {/* Section: Kopfbereich */}
                             <section className="bg-transparent space-y-2 mb-8">
                                 <h3 className="text-sm font-bold text-slate-800 ml-1">Kopfbereich</h3>
                                 <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm space-y-6">
@@ -758,133 +762,165 @@ const NewInvoice = () => {
                                         </div>
                                     </div>
                                     <div className="p-0 overflow-x-auto">
-                                        <table className="w-full text-left border-collapse min-w-[900px]">
-                                            <thead>
-                                                <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                                    <th className="px-4 py-2 w-12 text-center">#</th>
-                                                    <th className="px-4 py-2">Beschreibung</th>
-                                                    <th className="px-4 py-2 w-20 text-right">Menge</th>
-                                                    <th className="px-4 py-2 w-24 text-right">Einheit</th>
-                                                    <th className="px-4 py-2 w-24 text-right">Preis (€)</th>
-                                                    <th className="px-4 py-2 w-20 text-right">Steuer</th>
-                                                    <th className="px-4 py-2 w-20 text-right">Rabatt</th>
-                                                    <th className="px-4 py-2 w-32 text-right">Gesamtpreis</th>
-                                                    <th className="px-4 py-2 w-10"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
-                                                {items.map((item, idx) => (
-                                                    <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                        <td className="px-4 py-2 text-center text-[10px] font-mono text-slate-300">
-                                                            {idx + 1}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            {renderItemCell(item.id, 'description', item.description, 'text', 'text-xs font-medium text-slate-700 w-full bg-transparent border-none')}
-                                                        </td>
-                                                        <td className="px-4 py-2 text-right">
-                                                            {renderItemCell(item.id, 'quantity', String(item.quantity), 'number', 'text-right font-mono text-[11px] text-slate-600 border-none')}
-                                                        </td>
-                                                        <td className="px-4 py-2 text-right">
-                                                            <div className="flex justify-end">
-                                                                <MiniDropdown
-                                                                    value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
-                                                                    options={UNITS.map(u => ({ value: u, label: u }))}
-                                                                    onChange={(val: string) => updateItem(item.id, 'unit', val)}
-                                                                    width="25px"
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-2 text-right">
-                                                            <div className="flex items-center justify-end gap-1">
-                                                                {renderItemCell(item.id, 'price', String(item.price), 'number', 'text-right font-mono text-[11px] text-slate-900 font-semibold border-none')}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-2 text-right">
-                                                            <div className="flex justify-end items-center">
-                                                                <MiniDropdown
-                                                                    value={item.tax_rate?.toString() || '19.00'}
-                                                                    options={[
-                                                                        { value: '19.00', label: '19%' },
-                                                                        { value: '7.00', label: '7%' },
-                                                                        { value: '0.00', label: '0%' }
-                                                                    ]}
-                                                                    onChange={(val: string) => updateItem(item.id, 'tax_rate', val)}
-                                                                    width="25px"
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-2 text-right">
-                                                            <div className="flex justify-end items-center gap-1">
-                                                                <div className="flex-1 min-w-[30px]">
-                                                                    {renderItemCell(item.id, 'discount_percent', String(item.discount_percent || '0'), 'number', 'text-right font-mono text-[11px] text-slate-400 border-none')}
-                                                                </div>
-                                                                <MiniDropdown
-                                                                    value={item.discount_mode || 'percent'}
-                                                                    options={[
-                                                                        { value: 'percent', label: '%' },
-                                                                        { value: 'fixed', label: '€' }
-                                                                    ]}
-                                                                    onChange={(val: string) => updateItem(item.id, 'discount_mode', val)}
-                                                                    width="25px"
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums text-[11px]">
-                                                            {fmtEur(item.total)}
-                                                        </td>
-                                                        <td className="px-4 py-2 text-center">
-                                                            <button
-                                                                onClick={() => removeItem(item.id)}
-                                                                className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
-                                                            >
-                                                                <FaTrash size={10} />
-                                                            </button>
-                                                        </td>
+                                        <DragDropContext onDragEnd={onDragEnd}>
+                                            <table className="w-full text-left border-collapse min-w-[900px]">
+                                                <thead>
+                                                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                                        <th className="px-4 py-2 w-12 text-center">#</th>
+                                                        <th className="px-4 py-2">Beschreibung</th>
+                                                        <th className="px-4 py-2 w-20 text-right">Menge</th>
+                                                        <th className="px-4 py-2 w-24 text-right">Einheit</th>
+                                                        <th className="px-4 py-2 w-24 text-right">Preis (€)</th>
+                                                        <th className="px-4 py-2 w-20 text-right">Steuer</th>
+                                                        <th className="px-4 py-2 w-20 text-right">Rabatt</th>
+                                                        <th className="px-4 py-2 w-32 text-right">Gesamtpreis</th>
+                                                        <th className="px-4 py-2 w-10"></th>
                                                     </tr>
+                                                </thead>
+                                                <Droppable droppableId="invoice-items">
+                                                    {(provided) => (
+                                                        <tbody
+                                                            {...provided.droppableProps}
+                                                            ref={provided.innerRef}
+                                                            className="divide-y divide-slate-50"
+                                                        >
+                                                            {items.map((item, idx) => (
+                                                                <Draggable key={item.id} draggableId={item.id} index={idx}>
+                                                                    {(draggableProvided, snapshot) => (
+                                                                        <tr
+                                                                            ref={draggableProvided.innerRef}
+                                                                            {...draggableProvided.draggableProps}
+                                                                            className={clsx(
+                                                                                "group transition-colors",
+                                                                                snapshot.isDragging ? "bg-slate-100 shadow-md ring-1 ring-slate-200 z-50" : "hover:bg-slate-50/50"
+                                                                            )}
+                                                                        >
+                                                                            <td className="px-4 py-2 text-center text-[10px] font-mono text-slate-300">
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <div {...draggableProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-200 hover:text-slate-400 transition-colors">
+                                                                                        <FaGripVertical size={10} />
+                                                                                    </div>
+                                                                                    {idx + 1}
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-4 py-2">
+                                                                                {renderItemCell(item.id, 'description', item.description, 'text', 'text-xs font-medium text-slate-700 w-full bg-transparent border-none')}
+                                                                            </td>
+                                                                            <td className="px-4 py-2 text-right">
+                                                                                {renderItemCell(item.id, 'quantity', String(item.quantity), 'number', 'text-right font-mono text-[11px] text-slate-600 border-none')}
+                                                                            </td>
+                                                                            <td className="px-4 py-2 text-right">
+                                                                                <div className="flex justify-end">
+                                                                                    <MiniDropdown
+                                                                                        value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
+                                                                                        options={UNITS.map(u => ({ value: u, label: u }))}
+                                                                                        onChange={(val: string) => updateItem(item.id, 'unit', val)}
+                                                                                        width="25px"
+                                                                                    />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-4 py-2 text-right">
+                                                                                <div className="flex items-center justify-end gap-1">
+                                                                                    {renderItemCell(
+                                                                                        item.id,
+                                                                                        'price',
+                                                                                        String(item.price),
+                                                                                        'number',
+                                                                                        clsx(
+                                                                                            'text-right font-mono text-[11px] font-semibold border-none',
+                                                                                            (parseFloat(item.price) || 0) === 0 ? 'text-slate-400' : 'text-slate-900'
+                                                                                        )
+                                                                                    )}
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-4 py-2 text-right">
+                                                                                <div className="flex justify-end items-center">
+                                                                                    <MiniDropdown
+                                                                                        value={item.tax_rate?.toString() || '19.00'}
+                                                                                        options={[
+                                                                                            { value: '19.00', label: '19%' },
+                                                                                            { value: '7.00', label: '7%' },
+                                                                                            { value: '0.00', label: '0%' }
+                                                                                        ]}
+                                                                                        onChange={(val: string) => updateItem(item.id, 'tax_rate', val)}
+                                                                                        width="25px"
+                                                                                    />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-4 py-2 text-right">
+                                                                                <div className="flex justify-end items-center gap-1">
+                                                                                    <div className="flex-1 min-w-[30px]">
+                                                                                        {renderItemCell(item.id, 'discount_percent', String(item.discount_percent || '0'), 'number', 'text-right font-mono text-[11px] text-slate-400 border-none')}
+                                                                                    </div>
+                                                                                    <MiniDropdown
+                                                                                        value={item.discount_mode || 'percent'}
+                                                                                        options={[
+                                                                                            { value: 'percent', label: '%' },
+                                                                                            { value: 'fixed', label: '€' }
+                                                                                        ]}
+                                                                                        onChange={(val: string) => updateItem(item.id, 'discount_mode', val)}
+                                                                                        width="25px"
+                                                                                    />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums text-[11px]">
+                                                                                {fmtEur(item.total)}
+                                                                            </td>
+                                                                            <td className="px-4 py-2 text-center">
+                                                                                <button
+                                                                                    onClick={() => removeItem(item.id)}
+                                                                                    className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                                                                                >
+                                                                                    <FaTrash size={10} />
+                                                                                </button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    )}
+                                                                </Draggable>
+                                                            ))}
+                                                            {provided.placeholder}
+                                                            {items.length === 0 && (
+                                                                <tr>
+                                                                    <td colSpan={9} className="px-4 py-12 text-center text-slate-400 italic text-sm">
+                                                                        Fügen Sie Leistungen über den Katalog oder eine manuelle Zeile hinzu.
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </tbody>
+                                                    )}
+                                                </Droppable>
+                                            </table>
+                                        </DragDropContext>
+
+                                        {items.length > 0 && (
+                                            <div className="bg-slate-50/50 border-t-2 border-slate-100 italic">
+                                                <div className="flex justify-end items-center px-4 py-1.5 border-b border-slate-100">
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-4">Summe Netto</span>
+                                                    <span className="text-right font-black text-slate-800 tabular-nums text-xs min-w-[120px]">
+                                                        {fmtEur(computedFinancials.amount_net)}
+                                                    </span>
+                                                </div>
+                                                {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
+                                                    <div key={rate} className="flex justify-end items-center px-4 py-1 border-b border-slate-50">
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-4">zzgl. Umsatzsteuer {parseFloat(rate)}%</span>
+                                                        <span className="text-right font-mono text-slate-600 tabular-nums text-[11px] min-w-[120px]">
+                                                            {fmtEur(amount as number)}
+                                                        </span>
+                                                    </div>
                                                 ))}
-                                                {items.length === 0 && (
-                                                    <tr>
-                                                        <td colSpan={9} className="px-4 py-12 text-center text-slate-400 italic text-sm">
-                                                            Fügen Sie Leistungen über den Katalog oder eine manuelle Zeile hinzu.
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                            {items.length > 0 && (
-                                                <tfoot className="border-t-2 border-slate-100 italic">
-                                                    <tr className="bg-slate-50/50">
-                                                        <td colSpan={7} className="px-4 py-1.5 text-right text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                                            Summe Netto
-                                                        </td>
-                                                        <td className="px-4 py-1.5 text-right font-black text-slate-800 tabular-nums text-xs bg-slate-100/50">
-                                                            {fmtEur(computedFinancials.amount_net)}
-                                                        </td>
-                                                        <td></td>
-                                                    </tr>
-                                                    {Object.entries(computedFinancials.taxBreakdown).map(([rate, amount]) => (
-                                                        <tr key={rate} className="bg-slate-50/50">
-                                                            <td colSpan={7} className="px-4 py-1 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                                zzgl. Umsatzsteuer {parseFloat(rate)}%
-                                                            </td>
-                                                            <td className="px-4 py-1 text-right font-mono text-slate-600 tabular-nums text-[11px] bg-white border-b border-slate-50">
-                                                                {fmtEur(amount as number)}
-                                                            </td>
-                                                            <td></td>
-                                                        </tr>
-                                                    ))}
-                                                </tfoot>
-                                            )}
-                                        </table>
-                                        <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex justify-center">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={addItem}
-                                                className="h-9 text-xs font-bold border-brand-primary/30 text-brand-primary hover:text-white hover:bg-brand-primary bg-brand-primary/5 shadow-sm px-8"
-                                            >
-                                                <FaPlus className="mr-2 text-[10px]" /> Position hinzufügen
-                                            </Button>
-                                        </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex justify-center">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={addItem}
+                                            className="h-9 text-xs font-bold border-brand-primary/30 text-brand-primary hover:text-white hover:bg-brand-primary bg-brand-primary/5 shadow-sm px-8"
+                                        >
+                                            <FaPlus className="mr-2 text-[10px]" /> Position hinzufügen
+                                        </Button>
                                     </div>
                                 </div>
                             </section>
@@ -1014,7 +1050,7 @@ const NewInvoice = () => {
                                             </div>
 
                                             <div className="flex justify-between items-center text-sm font-bold text-slate-800">
-                                                <span className="uppercase tracking-tight text-[10px]">Restforderung</span>
+                                                <span className="tracking-tight text-[10px]">Restforderung</span>
                                                 <span className="text-lg tabular-nums">
                                                     {fmtEur(computedFinancials.amount_due)}
                                                 </span>
@@ -1027,30 +1063,32 @@ const NewInvoice = () => {
                     </div>
                 </div>
 
-                {/* ── Action Footer Bar (Simplified & Relative) ── */}
-                <div className="mt-12 flex justify-end items-center gap-3 pt-8 border-t border-slate-200">
-                    <Button
-                        variant="outline"
-                        onClick={() => navigate('/invoices')}
-                        className="px-5 h-9 text-xs font-semibold border-slate-200 text-slate-500 hover:bg-slate-50 uppercase tracking-wider"
-                    >
-                        Abbrechen
-                    </Button>
-                    <Button
-                        onClick={() => handleSubmit('draft')}
-                        disabled={!formData.customer_id || isLoading}
-                        className="px-5 h-9 text-xs font-bold border-brand-primary/20 text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 uppercase tracking-wider"
-                    >
-                        Als Entwurf speichern
-                    </Button>
-                    <Button
-                        onClick={() => handleSubmit('issued')}
-                        disabled={!formData.customer_id || items.length === 0 || isLoading}
-                        className="px-8 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm uppercase tracking-wider flex items-center gap-2"
-                    >
-                        <FaSave className="text-[10px]" />
-                        {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen übernehmen' : 'Beleg jetzt buchen')}
-                    </Button>
+                {/* ── Action Footer Bar ── */}
+                <div className="max-w-[1400px] mx-auto px-4 py-8">
+                    <div className="flex justify-end items-center gap-3 border-t border-slate-200 pt-8">
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate('/invoices')}
+                            className="px-5 h-9 text-xs font-semibold border-slate-200 text-slate-500 hover:bg-slate-50"
+                        >
+                            Abbrechen
+                        </Button>
+                        <Button
+                            onClick={() => handleSubmit('draft')}
+                            disabled={!formData.customer_id || isLoading}
+                            className="px-5 h-9 text-xs font-bold border-brand-primary/20 text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10"
+                        >
+                            Als Entwurf speichern
+                        </Button>
+                        <Button
+                            onClick={() => handleSubmit('issued')}
+                            disabled={!formData.customer_id || items.length === 0 || isLoading}
+                            className="px-8 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm flex items-center gap-2"
+                        >
+                            <FaSave className="text-[10px]" />
+                            {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen übernehmen' : 'Beleg jetzt buchen')}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

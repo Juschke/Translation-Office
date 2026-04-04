@@ -133,7 +133,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="text"
                                         value={formData.company_name}
                                         onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="Firmenname"
                                     />
                                 </div>
@@ -146,7 +146,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="text"
                                         value={formData.first_name}
                                         onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="Vorname"
                                     />
                                 </div>
@@ -159,7 +159,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="text"
                                         value={formData.last_name}
                                         onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="Nachname"
                                     />
                                 </div>
@@ -172,7 +172,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="text"
                                         value={formData.address_street}
                                         onChange={(e) => setFormData({ ...formData, address_street: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="Straße"
                                     />
                                 </div>
@@ -185,7 +185,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="text"
                                         value={formData.address_house_no}
                                         onChange={(e) => setFormData({ ...formData, address_house_no: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="Nr."
                                     />
                                 </div>
@@ -198,7 +198,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="text"
                                         value={formData.address_zip}
                                         onChange={(e) => setFormData({ ...formData, address_zip: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="PLZ"
                                     />
                                 </div>
@@ -211,7 +211,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="text"
                                         value={formData.address_city}
                                         onChange={(e) => setFormData({ ...formData, address_city: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="Stadt"
                                     />
                                 </div>
@@ -224,7 +224,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="E-Mail"
                                     />
                                 </div>
@@ -237,7 +237,7 @@ export const GuestCustomerInfoEdit: React.FC<GuestCustomerInfoEditProps> = ({ cu
                                         type="tel"
                                         value={formData.phone}
                                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none"
+                                        className="w-full px-3 py-2 border border-slate-400 rounded-sm text-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none bg-slate-50 focus:bg-white transition-all shadow-inner"
                                         placeholder="Telefon"
                                     />
                                 </div>

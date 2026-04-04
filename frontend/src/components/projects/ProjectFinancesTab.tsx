@@ -56,7 +56,18 @@ const ProjectFinancesTab = ({
         classification: projectData.classification === 'ja' || projectData.classification === true,
         classificationQty: projectData.classification_count || 1,
         copies: projectData.copies || projectData.copies_count || 0,
-        copyPrice: parseFloat(projectData.copyPrice || projectData.copy_price || '5'),
+        copyPrice: parseFloat(projectData.copyPrice || '5'),
+        // Dynamic prices for other extras
+        certifiedPrice: parseFloat(projectData.certifiedPrice || '5'),
+        apostillePrice: parseFloat(projectData.apostillePrice || '15'),
+        expressPrice: parseFloat(projectData.expressPrice || '15'),
+        classificationPrice: parseFloat(projectData.classificationPrice || '15'),
+        // Dynamic units
+        certifiedUnit: projectData.certifiedUnit || 'Stk',
+        apostilleUnit: projectData.apostilleUnit || 'Stk',
+        expressUnit: projectData.expressUnit || 'Stk',
+        classificationUnit: projectData.classificationUnit || 'Stk',
+        copiesUnit: projectData.copiesUnit || 'Stk',
     });
 
     const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));
@@ -103,10 +114,10 @@ const ProjectFinancesTab = ({
     const financials = useMemo(() => {
         const payments = projectData.payments || [];
         const extraNet =
-            (extras.isCertified ? 5 * extras.certifiedQty : 0) +
-            (extras.hasApostille ? 15 * extras.apostilleQty : 0) +
-            (extras.isExpress ? 15 * extras.expressQty : 0) +
-            (extras.classification ? 15 * extras.classificationQty : 0) +
+            (extras.isCertified ? extras.certifiedPrice * extras.certifiedQty : 0) +
+            (extras.hasApostille ? extras.apostillePrice * extras.apostilleQty : 0) +
+            (extras.isExpress ? extras.expressPrice * extras.expressQty : 0) +
+            (extras.classification ? extras.classificationPrice * extras.classificationQty : 0) +
             (extras.copies * extras.copyPrice);
 
         const positionsNet = positions.reduce((sum: number, pos: any) => sum + (parseFloat(pos.customerTotal) || 0), 0);
@@ -137,11 +148,11 @@ const ProjectFinancesTab = ({
 
     const extraRows = useMemo((): ExtraServiceRow[] => {
         const rows: ExtraServiceRow[] = [];
-        if (extras.isCertified) rows.push({ key: 'isCertified', description: 'Beglaubigung', quantity: extras.certifiedQty, unit: 'Stk', unitPrice: 5, total: 5 * extras.certifiedQty });
-        if (extras.hasApostille) rows.push({ key: 'hasApostille', description: 'Apostille', quantity: extras.apostilleQty, unit: 'Stk', unitPrice: 15, total: 15 * extras.apostilleQty });
-        if (extras.isExpress) rows.push({ key: 'isExpress', description: 'Express-Zuschlag', quantity: extras.expressQty, unit: 'Stk', unitPrice: 15, total: 15 * extras.expressQty });
-        if (extras.classification) rows.push({ key: 'classification', description: 'FS-Klassifizierung', quantity: extras.classificationQty, unit: 'Stk', unitPrice: 15, total: 15 * extras.classificationQty });
-        if (extras.copies > 0) rows.push({ key: 'copies', description: 'Zusatzkopien', quantity: extras.copies, unit: 'Stk', unitPrice: extras.copyPrice, total: extras.copies * extras.copyPrice });
+        if (extras.isCertified) rows.push({ key: 'isCertified', description: 'Beglaubigung', quantity: extras.certifiedQty, unit: extras.certifiedUnit, unitPrice: extras.certifiedPrice, total: extras.certifiedPrice * extras.certifiedQty });
+        if (extras.hasApostille) rows.push({ key: 'hasApostille', description: 'Apostille', quantity: extras.apostilleQty, unit: extras.apostilleUnit, unitPrice: extras.apostillePrice, total: extras.apostillePrice * extras.apostilleQty });
+        if (extras.isExpress) rows.push({ key: 'isExpress', description: 'Express-Zuschlag', quantity: extras.expressQty, unit: extras.expressUnit, unitPrice: extras.expressPrice, total: extras.expressPrice * extras.expressQty });
+        if (extras.classification) rows.push({ key: 'classification', description: 'FS-Klassifizierung', quantity: extras.classificationQty, unit: extras.classificationUnit, unitPrice: extras.classificationPrice, total: extras.classificationPrice * extras.classificationQty });
+        if (extras.copies > 0) rows.push({ key: 'copies', description: 'Zusatzkopien', quantity: extras.copies, unit: extras.copiesUnit, unitPrice: extras.copyPrice, total: extras.copies * extras.copyPrice });
         return rows;
     }, [extras]);
 
@@ -163,6 +174,28 @@ const ProjectFinancesTab = ({
             if (key === 'isExpress') return { ...prev, expressQty: qty };
             if (key === 'classification') return { ...prev, classificationQty: qty };
             if (key === 'copies') return { ...prev, copies: qty };
+            return prev;
+        });
+    };
+
+    const handleUpdateExtraPrice = (key: string, price: number) => {
+        setExtras(prev => {
+            if (key === 'isCertified') return { ...prev, certifiedPrice: price };
+            if (key === 'hasApostille') return { ...prev, apostillePrice: price };
+            if (key === 'isExpress') return { ...prev, expressPrice: price };
+            if (key === 'classification') return { ...prev, classificationPrice: price };
+            if (key === 'copies') return { ...prev, copyPrice: price };
+            return prev;
+        });
+    };
+
+    const handleUpdateExtraUnit = (key: string, unit: string) => {
+        setExtras(prev => {
+            if (key === 'isCertified') return { ...prev, certifiedUnit: unit };
+            if (key === 'hasApostille') return { ...prev, apostilleUnit: unit };
+            if (key === 'isExpress') return { ...prev, expressUnit: unit };
+            if (key === 'classification') return { ...prev, classificationUnit: unit };
+            if (key === 'copies') return { ...prev, copiesUnit: unit };
             return prev;
         });
     };
@@ -191,9 +224,20 @@ const ProjectFinancesTab = ({
                 apostille_count: extras.apostilleQty,
                 is_express: extras.isExpress,
                 express_count: extras.expressQty,
-                classification: extras.classification ? 'ja' : 'nein',
+                classification: extras.classification,
                 classification_count: extras.classificationQty,
                 copies_count: extras.copies,
+                // Saving custom prices and units
+                certified_price: extras.certifiedPrice,
+                apostille_price: extras.apostillePrice,
+                express_price: extras.expressPrice,
+                classification_price: extras.classificationPrice,
+                copy_price: extras.copyPrice,
+                certified_unit: extras.certifiedUnit,
+                apostille_unit: extras.apostilleUnit,
+                express_unit: extras.expressUnit,
+                classification_unit: extras.classificationUnit,
+                copies_unit: extras.copiesUnit,
             }
         );
     };
@@ -213,8 +257,8 @@ const ProjectFinancesTab = ({
                                     {isLocked && (
                                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 border border-amber-100 rounded text-amber-600">
                                             <FaInfoCircle size={10} />
-                                            <span className="text-[10px] font-bold uppercase tracking-tight">Gesperrt</span>
-                                            <span className="text-[10px] font-medium opacity-70">({activeInvoice.invoice_number})</span>
+                                            <span className="text-xs font-bold uppercase tracking-tight">Gesperrt</span>
+                                            <span className="text-xs font-medium opacity-70">({activeInvoice.invoice_number})</span>
                                         </div>
                                     )}
                                 </div>
@@ -229,6 +273,8 @@ const ProjectFinancesTab = ({
                                 extraRows={extraRows}
                                 onToggleExtra={handleToggleExtra}
                                 onUpdateExtraQty={handleUpdateExtraQty}
+                                onUpdateExtraPrice={handleUpdateExtraPrice}
+                                onUpdateExtraUnit={handleUpdateExtraUnit}
                                 onSave={isLocked ? undefined : handleSave}
                                 isSaving={isPendingSave}
                             />

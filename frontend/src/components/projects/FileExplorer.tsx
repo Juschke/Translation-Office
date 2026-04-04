@@ -8,7 +8,6 @@ import {
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { Button } from '../ui/button';
-import KPICard from '../common/KPICard';
 import toast from 'react-hot-toast';
 
 interface FileExplorerProps {
@@ -200,37 +199,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files?.length) openTypePicker(e.dataTransfer.files); }}
         >
-            {/* KPI Cards — full size like main pages */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <KPICard
-                    label="Dokumente gesamt"
-                    value={stats.totalCount}
-                    icon={<FaFileAlt />}
-                    iconColor="text-slate-500"
-                    iconBg="bg-slate-100"
-                />
-                <KPICard
-                    label="Gesamtgröße"
-                    value={formatFileSize(stats.totalSize)}
-                    icon={<FaCloudUploadAlt />}
-                    iconColor="text-slate-500"
-                    iconBg="bg-slate-100"
-                />
-                <KPICard
-                    label="Eingangsdokumente"
-                    value={stats.countByType.source}
-                    icon={<FaInbox />}
-                    iconColor="text-brand-primary"
-                    iconBg="bg-brand-primary/10"
-                />
-                <KPICard
-                    label="Zieldokumente"
-                    value={stats.countByType.target}
-                    icon={<FaArrowRight />}
-                    iconColor="text-emerald-600"
-                    iconBg="bg-emerald-50"
-                />
-            </div>
 
             {/* Scan hint */}
             {showScanHint && (
@@ -254,7 +222,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             {uploadQueue.length > 0 && (
                 <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-4 animate-in slide-in-from-top-4 duration-300">
                     <div className="flex items-center justify-between mb-4">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
                             Upload-Status ({uploadQueue.length})
                         </span>
@@ -265,11 +233,11 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                 <div className="flex justify-between items-center mb-2">
                                     <div className="flex items-center gap-2 truncate">
                                         <div className="text-xs shrink-0">{getFileIcon(f.name)}</div>
-                                        <span className="text-[10px] font-bold text-slate-700 truncate">{f.name}</span>
+                                        <span className="text-xs font-bold text-slate-700 truncate">{f.name}</span>
                                     </div>
                                     {f.status === 'saved' ? <FaCheckCircle className="text-emerald-500 text-xs shrink-0" /> :
                                         f.status === 'error' ? <FaExclamationCircle className="text-red-500 text-xs shrink-0" /> :
-                                            <span className="text-[10px] font-mono text-slate-400 shrink-0">{f.progress}%</span>}
+                                            <span className="text-xs font-mono text-slate-400 shrink-0">{f.progress}%</span>}
                                 </div>
                                 <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
                                     <div
@@ -290,7 +258,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
 
                 {/* Integrated toolbar inside the card */}
-                <div className="border-b border-slate-100 bg-slate-50/50 divide-y divide-slate-100">
+                <div className="border-b border-slate-100 bg-white divide-y divide-slate-100">
                     {/* Top Row: Search & Actions */}
                     <div className="px-4 py-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                         {/* Search */}
@@ -309,19 +277,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center gap-2 h-9 px-4 bg-brand-primary text-white text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-brand-primary/90 transition-all shadow-sm"
+                                className="flex items-center gap-2 h-9 px-4 bg-brand-primary text-white text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-brand-primary/90 transition-all shadow-sm"
                             >
                                 <FaCloudUploadAlt /> Hochladen
                             </button>
                             <input type="file" multiple className="hidden" onChange={(e) => e.target.files?.length && openTypePicker(e.target.files)} ref={fileInputRef} />
 
-                            <button
-                                onClick={handleScanClick}
-                                className="h-9 w-9 flex items-center justify-center bg-white border border-slate-200 text-slate-400 rounded-sm hover:bg-slate-50 transition-all"
-                                title="Scannen"
-                            >
-                                <FaCamera className="text-sm" />
-                            </button>
+
                             <input ref={scanInputRef} type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden"
                                 onChange={(e) => { setShowScanHint(false); if (e.target.files?.length) openTypePicker(e.target.files); e.target.value = ''; }}
                             />
@@ -347,7 +309,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
                     {/* Bottom Row: Filter Badges */}
                     <div className="px-4 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar bg-white/30">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2 shrink-0">Filter:</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-2 shrink-0">Filter:</span>
                         <div className="flex items-center gap-1.5">
                             {FILTERS.map(({ value, label }) => {
                                 const count = filterCount(value);
@@ -357,14 +319,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                         key={value}
                                         onClick={() => setActiveFilter(value)}
                                         className={clsx(
-                                            'px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all border whitespace-nowrap',
+                                            'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all border whitespace-nowrap',
                                             isActive
                                                 ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
                                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'
                                         )}
                                     >
                                         {label}
-                                        <span className={clsx('rounded-sm px-1.5 py-0.5 text-[10px] font-mono leading-none',
+                                        <span className={clsx('rounded-sm px-1.5 py-0.5 text-xs font-mono leading-none',
                                             isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 font-bold'
                                         )}>{count}</span>
                                     </button>
@@ -378,12 +340,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 {someSelected && (
                     <div className="px-4 py-2.5 bg-brand-primary/[0.03] border-b border-brand-primary/10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 animate-in slide-in-from-top-2 duration-150">
                         <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-bold text-brand-primary uppercase tracking-wider">
+                            <span className="text-xs font-bold text-brand-primary uppercase tracking-wider">
                                 {selectedFiles.length} ausgewählt
                             </span>
                             <div className="w-px h-4 bg-brand-primary/20" />
                             <div className="flex items-center gap-1">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">Verschieben nach:</span>
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1">Verschieben nach:</span>
                                 {(['source', 'target', 'reference', 'delivery'] as FileType[]).map(type => (
                                     <button
                                         key={type}
@@ -391,7 +353,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                             onBulkMove(Array.from(selectedIds), type);
                                             setSelectedIds(new Set());
                                         }}
-                                        className="px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-widest bg-white border border-slate-200 text-slate-500 hover:border-brand-primary hover:text-brand-primary hover:shadow-sm transition-all"
+                                        className="px-2 py-1 rounded-sm text-xs font-bold uppercase tracking-widest bg-white border border-slate-200 text-slate-500 hover:border-brand-primary hover:text-brand-primary hover:shadow-sm transition-all"
                                     >
                                         {FILE_TYPE_CONFIG[type].short}
                                     </button>
@@ -403,14 +365,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                             {selectedFiles.length > 1 ? (
                                 <button
                                     onClick={() => onBulkDownloadZip(Array.from(selectedIds))}
-                                    className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                    className="h-8 px-3 rounded flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors text-xs font-bold uppercase tracking-widest"
                                 >
                                     <FaDownload className="text-[8px]" /> ZIP herunterladen
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => { handleDownloadFile(selectedFiles[0]); }}
-                                    className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                    className="h-8 px-3 rounded flex items-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors text-xs font-bold uppercase tracking-widest"
                                 >
                                     <FaDownload className="text-[8px]" /> Herunterladen
                                 </button>
@@ -425,14 +387,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                     }
                                     setSelectedIds(new Set());
                                 }}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                className="h-8 px-3 rounded flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-xs font-bold uppercase tracking-widest"
                             >
                                 <FaTrashAlt className="text-[8px]" /> Löschen
                             </button>
 
                             <button
                                 onClick={() => setSelectedIds(new Set())}
-                                className="text-[10px] font-bold text-slate-400 hover:text-slate-600 px-2 py-1.5 uppercase tracking-widest"
+                                className="text-xs font-bold text-slate-400 hover:text-slate-600 px-2 py-1.5 uppercase tracking-widest"
                             >
                                 Abbrechen
                             </button>
@@ -443,7 +405,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 {/* Empty state */}
                 {allFilteredFiles.length === 0 && (
                     <div
-                        className="flex flex-col items-center justify-center py-20 gap-5 cursor-pointer hover:bg-slate-50/50 transition-all"
+                        className="flex flex-col items-center justify-center flex-1 h-full min-h-[300px] gap-5 cursor-pointer hover:bg-slate-50/50 transition-all border-b border-slate-100"
                         onClick={() => { if (!searchQuery) fileInputRef.current?.click(); }}
                     >
                         <FaCloudUploadAlt className="text-5xl text-slate-200" />
@@ -454,7 +416,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                             {!searchQuery && <p className="text-xs text-slate-300 mt-1">Dateien hierher ziehen oder klicken zum Hochladen</p>}
                         </div>
                         {!searchQuery && (
-                            <Button variant="outline" size="sm" className="text-[10px] font-bold uppercase tracking-wider"
+                            <Button variant="outline" size="sm" className="text-xs font-bold uppercase tracking-wider"
                                 onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                             >
                                 <FaCloudUploadAlt className="mr-2" /> Hochladen
@@ -496,20 +458,20 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                     <div className="absolute bottom-1.5 right-1.5 flex gap-0.5">
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-brand-primary bg-white/90 border border-slate-100"
                                             onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }} title="Herunterladen">
-                                            <FaDownload className="text-[10px]" />
+                                            <FaDownload className="text-xs" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500 bg-white/90 border border-slate-100"
                                             onClick={(e) => { e.stopPropagation(); setDeleteFileConfirm({ isOpen: true, fileId: file.id, fileName: name }); }} title={t('actions.delete')}>
-                                            <FaTrashAlt className="text-[10px]" />
+                                            <FaTrashAlt className="text-xs" />
                                         </Button>
                                     </div>
                                     <div className="mt-4 opacity-80">
                                         {getFileIcon(name, true)}
                                     </div>
-                                    <p className="text-[10px] font-bold text-slate-700 text-center line-clamp-2 break-all w-full leading-tight">
+                                    <p className="text-xs font-bold text-slate-700 text-center line-clamp-2 break-all w-full leading-tight">
                                         {name}
                                     </p>
-                                    <p className="text-[10px] text-slate-400 font-mono -mt-1">
+                                    <p className="text-xs text-slate-400 font-mono -mt-1">
                                         {formatFileSize(file.size || 0)}
                                     </p>
                                 </div>
@@ -522,7 +484,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 {viewMode === 'list' && allFilteredFiles.length > 0 && (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-[#fcfdff] text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100">
+                            <thead className="bg-[#fcfdff] text-slate-400 text-xs font-bold uppercase tracking-widest border-b border-slate-100">
                                 <tr>
                                     <th className="pl-4 pr-2 py-3 w-8">
                                         <input
@@ -557,7 +519,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                                 />
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className={clsx('px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase border', cfg.bg)}>
+                                                <span className={clsx('px-1.5 py-0.5 rounded-sm text-xs font-bold uppercase border', cfg.bg)}>
                                                     {cfg.short}
                                                 </span>
                                             </td>
@@ -574,12 +536,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className="text-[10px] text-slate-500 font-mono tracking-tighter whitespace-nowrap">
+                                                <span className="text-xs text-slate-500 font-mono tracking-tighter whitespace-nowrap">
                                                     {formatFileSize(file.size || 0)}
                                                 </span>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                                                <span className="text-xs text-slate-500 whitespace-nowrap">
                                                     {new Date(file.created_at || Date.now()).toLocaleString('de-DE', {
                                                         day: '2-digit', month: '2-digit', year: 'numeric',
                                                         hour: '2-digit', minute: '2-digit',
@@ -587,7 +549,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                                                 </span>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                                                <span className="text-xs text-slate-500 whitespace-nowrap">
                                                     {file.uploader?.name ?? <span className="text-slate-300">—</span>}
                                                 </span>
                                             </td>
@@ -642,7 +604,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                         <div className="px-4 pb-4">
                             <button
                                 onClick={() => { setPendingFiles(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                className="w-full text-center text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider py-2"
+                                className="w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider py-2"
                             >
                                 Abbrechen
                             </button>

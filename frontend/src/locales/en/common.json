@@ -16,7 +16,16 @@
     "search": "Search",
     "filter": "Filter",
     "loading": "Loading...",
-    "download_pdf": "Download PDF"
+    "download_pdf": "Download PDF",
+    "no_data": "N/A",
+    "created_at": "Created on",
+    "modified_at": "Last modified",
+    "by": "by",
+    "time_suffix": "",
+    "total": "Total",
+    "show": "Show",
+    "loading_data": "Loading data...",
+    "empty_value": "–"
   },
   "actions": {
     "save": "Save",
@@ -104,23 +113,33 @@
     "invoice_not_found": "Invoice not found"
   },
   "settings": {
+    "title": "Settings",
     "tabs": {
       "profile": "My Profile",
-      "company": "Company Profile",
+      "company": "Company",
+      "company_desc": "Company details, logo and email accounts.",
       "subscription": "Plan & Billing",
       "invoice": "Financials & Document Layouts",
       "number_circles": "Number Circles",
+      "numbering": "Number Ranges",
+      "numbering_desc": "ID prefixes and starting numbers.",
       "document_layout": "Document Layout",
       "master_data": "Master Data Management",
+      "master_data_desc": "Languages, services, categories.",
       "notifications": "Notifications",
-      "audit": "System Logs",
+      "notifications_desc": "Control of system emails.",
+      "audit": "Activity",
+      "audit_log": "Log",
+      "audit_log_desc": "System activities & changes.",
       "languages": "Languages",
       "doc_types": "Document Types",
       "services": "Service Catalog",
       "email_templates": "Email Templates",
       "specializations": "Areas of Expertise",
       "units": "Units of Measurement",
-      "currencies": "Currencies"
+      "currencies": "Currencies",
+      "invoices": "Invoices",
+      "invoices_desc": "Layout, texts and taxes."
     },
     "master_data": {
       "language_config": "Language Settings",
@@ -205,6 +224,8 @@
     "list_view": "List View",
     "search_placeholder": "Search projects...",
     "board_title": "Project Board",
+    "edit_title": "Edit Project",
+    "new_title": "Create New Project",
     "status": {
       "draft": "New",
       "offer": "Offer",
@@ -281,20 +302,44 @@
       "yes": "Yes",
       "no": "No"
     },
-    "actions": {
-      "export": "Export",
+    "priority_express": "Express",
+    "priority_standard": "Standard",
+    "document_output": "Output",
+    "document_input": "Input",
+    "system_uploader": "System",
+    "priority_urgent": "Urgent",
+    "project_creating": "Creating...",
+    "project_updating": "Updating...",
+    "create_project": "Create Project",
+    "update_project": "Update Project",
+    "export": {
       "excel": "Excel (.xlsx)",
       "csv": "CSV (.csv)",
-      "pdf": "PDF Report",
-      "bulk": {
-        "complete": "Complete",
-        "reset": "Reset",
-        "send_email": "Send Email",
-        "archive": "Archive",
-        "trash": "Trash",
-        "restore": "Restore",
-        "delete_permanent": "Delete permanently"
-      }
+      "pdf": "PDF Report"
+    },
+    "views": {
+      "table": "List View",
+      "kanban": "Kanban View"
+    },
+    "file_type": {
+      "source": "Source",
+      "target": "Target"
+    },
+    "detail": {
+      "project_label": "Project:"
+    },
+    "confirm": {
+      "delete_file": "Delete File",
+      "delete_payment": "Delete Payment",
+      "delete_project": "Delete Project"
+    },
+    "validation": {
+      "source_required": "Source language is required",
+      "target_required": "Target language is required"
+    },
+    "form": {
+      "target_language": "Target Language",
+      "target_language_tooltip": "Language to translate into."
     },
     "messages": {
       "create_success": "Project created successfully",
@@ -306,18 +351,26 @@
       "bulk_trash": "{{count}} projects moved to trash",
       "bulk_update": "{{count}} projects updated",
       "bulk_delete": "{{count}} projects permanently deleted",
-      "bulk_error": "Bulk action failed"
+      "bulk_error": "Bulk action failed",
+      "load_error": "Error loading project.",
+      "loading": "Loading project data..."
     },
-    "priority_express": "Express",
-    "priority_standard": "Standard",
-    "document_output": "Output",
-    "document_input": "Input",
-    "system_uploader": "System",
-    "priority_urgent": "Urgent",
-    "project_creating": "Creating...",
-    "project_updating": "Updating...",
-    "create_project": "Create Project",
-    "update_project": "Update Project"
+    "actions": {
+      "export": "Export",
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF Report",
+      "send_email": "Send Email",
+      "bulk": {
+        "complete": "Complete",
+        "reset": "Reset",
+        "send_email": "Send Email",
+        "archive": "Archive",
+        "trash": "Trash",
+        "restore": "Restore",
+        "delete_permanent": "Delete permanently"
+      }
+    }
   },
   "customers": {
     "title": "Customer Base",
@@ -362,9 +415,55 @@
       "activate": "Activate",
       "deactivate": "Deactivate"
     },
+    "export": {
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF Report"
+    },
+    "email": {
+      "subject_bulk": "Message to customers",
+      "subject_to": "Message to: {{name}}"
+    },
+    "detail": {
+      "customer_id": "Customer ID:",
+      "master_data": "Master Data Sheet",
+      "contact_info": "Contact Information",
+      "billing_address": "Billing Address",
+      "financial_data": "Financial Data",
+      "internal_notes": "Internal Notes",
+      "recent_projects": "Recent Projects",
+      "revenue_stats": "Revenue Statistics",
+      "sales_current_year": "Revenue Current Year",
+      "sales_last_year": "Prior Year",
+      "total_projects": "Total Projects"
+    },
+    "form": {
+      "salutation": "Salutation",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "additional_emails": "Additional Emails",
+      "additional_phones": "Additional Tel.",
+      "phone": "Phone",
+      "legal_form": "Legal Form",
+      "street": "Street",
+      "house_number": "House Number",
+      "zip_code": "ZIP",
+      "city": "City",
+      "country": "Country",
+      "leitweg_id": "Leitweg ID",
+      "vat_id": "VAT ID",
+      "tax_id": "Tax No.",
+      "payment_terms": "Payment Terms",
+      "payment_terms_default": "Days (Default)",
+      "iban": "IBAN",
+      "bic": "BIC",
+      "bank_name": "Bank",
+      "bank_code": "Sort Code"
+    },
     "confirm": {
       "delete_title": "Permanently Delete Customers",
-      "delete_message": "Are you sure you want to permanently delete {{count}} customers? This process cannot be undone."
+      "delete_message": "Are you sure you want to permanently delete {{count}} customers? This process cannot be undone.",
+      "delete_customer": "Delete Customer"
     },
     "messages": {
       "create_success": "Customer created successfully",
@@ -376,7 +475,11 @@
       "bulk_update_success": "{{count}} customers updated",
       "bulk_update_error": "Error updating customers",
       "bulk_delete_success": "{{count}} customers permanently deleted",
-      "bulk_delete_error": "Error during permanent deletion"
+      "bulk_delete_error": "Error during permanent deletion",
+      "not_found": "Customer not found",
+      "no_notes": "No notes added.",
+      "no_projects": "No projects available.",
+      "loading_projects": "Loading projects..."
     },
     "type_company": "Company",
     "type_private": "Private",
@@ -437,6 +540,64 @@
     "actions": {
       "lock": "Lock"
     },
+    "export": {
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF Report"
+    },
+    "email": {
+      "subject_request": "Request: {{name}}",
+      "subject_message": "Message to partner"
+    },
+    "detail": {
+      "partner_id": "Partner ID:",
+      "master_data": "Master Data Sheet",
+      "contact_info": "Contact Information",
+      "address": "Address",
+      "payment_data": "Payment Details",
+      "internal_notes": "Internal Notes",
+      "recent_projects": "Recent Projects",
+      "qualifications": "Qualifications",
+      "language_pairs": "Language Pairs",
+      "specializations": "Areas of Expertise",
+      "rates": "Rates",
+      "word_rate": "Word Rate",
+      "line_rate": "Line Rate",
+      "hourly_rate": "Hourly Rate",
+      "stats": "Statistics",
+      "total_projects": "Total Projects",
+      "completed_label": "completed",
+      "total_costs": "Total Costs",
+      "avg_cost": "Ø Costs / Project",
+      "total_words": "Total Words",
+      "rating": "Rating:"
+    },
+    "form": {
+      "company": "Company",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "phone": "Phone",
+      "additional_phone": "Additional Tel.",
+      "street": "Street",
+      "zip": "ZIP",
+      "city": "City",
+      "country": "Country",
+      "iban": "IBAN",
+      "bic": "BIC",
+      "bank": "Bank",
+      "tax_number": "Tax No.",
+      "vat_id": "VAT ID"
+    },
+    "confirm": {
+      "delete_title": "Delete Partner",
+      "delete_message": "Are you sure you want to delete the partner \"{{name}}\"?"
+    },
+    "tables": {
+      "project": "Project",
+      "amount": "Amount",
+      "date": "Date"
+    },
     "messages": {
       "create_success": "Partner created successfully",
       "create_error": "Error creating partner",
@@ -444,7 +605,11 @@
       "update_error": "Error updating partner",
       "delete_success": "Partner deleted successfully",
       "delete_error": "Error deleting partner",
-      "bulk_update_success": "{{count}} partners updated"
+      "bulk_update_success": "{{count}} partners updated",
+      "no_notes": "No notes added.",
+      "no_languages": "No languages specified",
+      "no_projects": "No projects available.",
+      "loading_projects": "Loading projects..."
     },
     "type_translator": "Translator",
     "type_interpreter": "Interpreter",
@@ -480,12 +645,18 @@
     "filters": {
       "invoice_status": "Invoice Status"
     },
+    "export": {
+      "excel": "Excel (.xlsx)",
+      "csv_datev": "CSV DATEV",
+      "pdf_report": "PDF Report"
+    },
     "actions": {
       "paid": "Paid",
       "send_reminder": "Send Reminder",
       "rebuild": "Rebuild",
       "print": "Print",
-      "download_xml": "Download XML"
+      "download_xml": "Download XML",
+      "confirm": "Confirm"
     },
     "messages": {
       "create_success": "Invoice created successfully",
@@ -609,6 +780,18 @@
       "owner": "Owner",
       "user": "User"
     },
+    "fallback": {
+      "project": "Project",
+      "member": "Team Member"
+    },
+    "priority": {
+      "express": "Express",
+      "standard": "Standard"
+    },
+    "tooltip": {
+      "vacation": "Vacation",
+      "interpreter": "Interpreter"
+    },
     "messages": {
       "create_success": "Appointment created successfully",
       "create_error": "Error creating appointment",
@@ -619,11 +802,12 @@
     }
   },
   "interpreting": {
-    "title": "Interpreting Assignments",
+    "title": "Interpreters",
     "subtitle": "Central management of all on-site and online interpreting appointments.",
     "new_assignment": "New Assignment",
     "new_short": "New",
     "search_placeholder": "Search assignments...",
+    "project_prefix": "PROJECT:",
     "kpi": {
       "upcoming": "Upcoming",
       "completed": "Completed",
@@ -711,6 +895,9 @@
     "last_name": "Last Name",
     "email_address": "Email ADDRESS",
     "language": "Language / Sprache",
+    "language_german": "Deutsch (DE)",
+    "language_english": "English (EN)",
+    "language_desc": "Choose your preferred language.",
     "save_profile": "Save Profile",
     "security": "Security & Access",
     "auth_info": "Password & Authentication",
@@ -1148,7 +1335,47 @@
     "role_employee": "Employee",
     "role_manager": "Manager",
     "status_active": "Active",
-    "status_inactive": "Inactive"
+    "status_inactive": "Inactive",
+    "title": "Team & Employees",
+    "subtitle": "Manage the users of your tenant.",
+    "you": "(You)",
+    "empty": "No other employees yet.",
+    "role_overview": "Role overview:",
+    "role_owner_desc": "Owner – Full access, subscription, team",
+    "role_manager_desc": "Manager – Invoices, reports, settings",
+    "role_employee_desc": "Employee – Projects, customers",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "last_login": "Last Login"
+    },
+    "modal": {
+      "add_title": "Add Employee",
+      "edit_title": "Edit Employee",
+      "delete_title": "Delete Employee",
+      "delete_message": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+    },
+    "form": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "role_hint": "Managers have access to invoices, reports, and settings.",
+      "password": "Password",
+      "password_edit": "New password (leave blank = unchanged)",
+      "status": "Status"
+    },
+    "role": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "employee": "Employee"
+    },
+    "errors": {
+      "create": "Error creating.",
+      "update": "Error updating.",
+      "delete": "Error deleting."
+    }
   },
   "toast": {
     "project_updated": "Project successfully updated",
@@ -1197,7 +1424,9 @@
     "import_error": "Error importing data"
   },
   "documents": {
-    "title": "Documents",
+    "title": "Files",
+    "subtitle": "Central management of all project documents and deliveries",
+    "export_list": "List Export",
     "upload": "Upload Document",
     "download": "Download",
     "preview": "Preview",
@@ -1223,7 +1452,22 @@
     "search_files": "Search by filename or extension...",
     "system_uploader": "System",
     "file_input": "Input",
-    "file_output": "Output"
+    "file_output": "Output",
+    "kpi": {
+      "total_files": "Total Files",
+      "indexed": "Indexed Documents",
+      "storage": "Storage Space",
+      "storage_used": "Used Storage",
+      "source_files": "Source Documents",
+      "customer_inputs": "Customer Inputs",
+      "deliveries": "Deliveries",
+      "delivered_files": "Delivered Files"
+    },
+    "type": {
+      "target": "Output",
+      "source": "Input"
+    },
+    "search_placeholder": "Search by filename or extension..."
   },
   "interpreting_advanced": {
     "assignment": "Assignment",
@@ -1300,7 +1544,53 @@
     "payment_method_error": "Error updating payment method.",
     "pdf_generation_disabled": "PDF generation is currently disabled (Demo).",
     "loading_invoices": "Loading invoices...",
-    "no_invoices": "No invoices available"
+    "no_invoices": "No invoices available",
+    "title": "Subscription & Billing",
+    "subtitle": "Manage your plan, payment methods, and download receipts.",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "current_plan": "Your Current Plan",
+    "manage_plan": "Manage Plan",
+    "change_plan": "Change Plan",
+    "payment_method_title": "Payment Method",
+    "payment_expiry": "Expires:",
+    "payment_default": "Default",
+    "no_payment_method": "No payment method on file",
+    "history": "Invoice History",
+    "columns": {
+      "date": "Date",
+      "invoice_number": "Receipt No.",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "download_pdf_btn": "Download PDF",
+    "next_billing": "Next Billing",
+    "usage_projects": "{{count}} projects this month",
+    "help_title": "Help & Support",
+    "help_desc": "Questions about your invoice or subscription? Our support is happy to help.",
+    "contact_support": "Contact Support",
+    "account_status_title": "Account Status",
+    "account_inactive_msg": "Your account is currently inactive or locked. Please contact support.",
+    "select_plan_title": "Choose Plan",
+    "current_badge": "Current",
+    "per_month_short": "/mo.",
+    "enterprise_contact": "For enterprise solutions please contact our",
+    "enterprise_sales": "Sales Team",
+    "plan_active": "Active",
+    "plan_choose": "Choose",
+    "modal_payment_title": "Payment Method",
+    "form": {
+      "cardholder": "Cardholder",
+      "cardholder_placeholder": "John Doe",
+      "card_number": "Card Number",
+      "expiry": "Valid Until",
+      "expiry_format": "MM/YY",
+      "cvc": "CVC"
+    },
+    "save_card": "Save Card",
+    "pdf_disabled": "PDF generation is currently disabled (Demo)."
   },
   "countries": {
     "de": "Germany",
@@ -1357,7 +1647,35 @@
     "var_bank_bic": "BIC",
     "var_bank_holder": "Account Holder",
     "var_date": "Current Date",
-    "var_sender_name": "Sender"
+    "var_sender_name": "Sender",
+    "synced": "Mailbox synchronized",
+    "mails_deleted": "Mails deleted",
+    "loading": "Loading emails...",
+    "bulk_delete_permanent": "Delete permanently",
+    "bulk_delete_trash": "Move to trash",
+    "templates_title": "Email Templates",
+    "template_columns": {
+      "name": "Name",
+      "subject": "Subject",
+      "category": "Category"
+    },
+    "confirm_delete_template": "Really delete template?",
+    "accounts_title": "Email Accounts",
+    "account_columns": {
+      "name": "Name",
+      "email": "Email",
+      "server": "Server",
+      "status": "Status"
+    },
+    "confirm_delete_account": "Really delete account?",
+    "default_account": "Default",
+    "modal": {
+      "delete_bulk_title": "Delete Mails",
+      "delete_single_title": "Delete Mail",
+      "delete_bulk_message": "Are you sure you want to delete {{count}} mails?",
+      "delete_single_message": "Are you sure you want to delete this mail?",
+      "confirm_delete": "Delete"
+    }
   },
   "time": {
     "monday": "Monday",

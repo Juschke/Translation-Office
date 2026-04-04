@@ -20,6 +20,8 @@ import { Button } from '../components/ui/button';
 // Sub-components
 import InboxSidebar from './Inbox/components/InboxSidebar';
 
+import InboxSkeleton from '../components/common/InboxSkeleton';
+
 const CommunicationHub = () => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
@@ -136,9 +138,8 @@ const CommunicationHub = () => {
     };
 
     if (isLoadingInbox || isLoadingSent) return (
-        <div className="p-10 text-center font-medium text-slate-400 flex items-center justify-center gap-3">
-            <div className="w-5 h-5 border-4 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-            <span>Lade E-Mails...</span>
+        <div className="flex-1 overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <InboxSkeleton />
         </div>
     );
 

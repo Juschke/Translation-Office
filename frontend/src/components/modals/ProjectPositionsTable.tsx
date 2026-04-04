@@ -2,7 +2,8 @@ import clsx from 'clsx';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck, FaChevronDown, FaSave } from 'react-icons/fa';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
+import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck, FaChevronDown, FaSave, FaGripVertical } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
 import { Button } from '../ui/button';
@@ -26,6 +27,8 @@ interface ProjectPositionsTableProps {
     extraRows?: ExtraServiceRow[];
     onToggleExtra?: (key: string) => void;
     onUpdateExtraQty?: (key: string, qty: number) => void;
+    onUpdateExtraPrice?: (key: string, price: number) => void;
+    onUpdateExtraUnit?: (key: string, unit: string) => void;
     onSave?: () => void;
     isSaving?: boolean;
 }
@@ -36,8 +39,8 @@ const EMPTY_POSITION = (): ProjectPosition => ({
     id: Date.now().toString(),
     description: '',
     unit: 'Normzeile',
-    amount: '1.00',
-    quantity: '1.00',
+    amount: '0.00',
+    quantity: '0.00',
     partnerRate: '0.00',
     partnerMode: 'unit',
     partnerTotal: '0.00',
@@ -53,9 +56,10 @@ const EMPTY_SERVICE = () => ({ name: '', unit: 'Normzeile', base_price: '' });
 const fmt2 = (v: string | number) =>
     (parseFloat(v as string) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = false) =>
+const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = false, hasBorder = true) =>
     clsx(
-        'w-full bg-transparent outline-none border-b-2 pb-px transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+        'w-full bg-transparent outline-none pb-px transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40',
+        hasBorder && 'border-b-2',
         mono ? 'font-mono text-xs' : 'font-medium text-xs',
         align === 'right' ? 'text-right' : 'text-left',
         invalid
@@ -181,6 +185,8 @@ const ProjectPositionsTable = ({
     extraRows = [],
     onToggleExtra,
     onUpdateExtraQty,
+    onUpdateExtraPrice,
+    onUpdateExtraUnit,
     onSave,
     isSaving,
 }: ProjectPositionsTableProps) => {
@@ -223,8 +229,8 @@ const ProjectPositionsTable = ({
             id: Date.now().toString(),
             description: item.name,
             unit: UNITS.includes(item.unit) ? item.unit : 'Normzeile',
-            amount: '1.00',
-            quantity: '1.00',
+            amount: '0.00',
+            quantity: '0.00',
             partnerRate: '0.00',
             partnerMode: 'unit',
             partnerTotal: '0.00',
@@ -243,6 +249,14 @@ const ProjectPositionsTable = ({
         (s: any) => s.status === 'active' &&
             (search === '' || s.name.toLowerCase().includes(search.toLowerCase())),
     );
+
+    const onDragEnd = (result: DropResult) => {
+        if (!result.destination || disabled) return;
+        const items = Array.from(positions);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        setPositions(items);
+    };
 
     return (
         <div className="bg-white">
@@ -304,7 +318,7 @@ const ProjectPositionsTable = ({
                                                     {item.name}
                                                 </span>
                                                 {item.service_code && (
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.service_code}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400">{item.service_code}</span>
                                                 )}
                                             </div>
                                             <div className="text-right">
@@ -327,7 +341,7 @@ const ProjectPositionsTable = ({
                                     </button>
                                 ) : (
                                     <div className="p-3 space-y-2.5 bg-white">
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Schnellanlage</p>
+                                        <p className="text-[10px] font-bold text-slate-400">Schnellanlage</p>
                                         <input
                                             type="text"
                                             placeholder="Bezeichnung *"
@@ -388,178 +402,221 @@ const ProjectPositionsTable = ({
             )}
 
             <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[700px]">
-                    <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50/30">
-                            <th className="px-2 py-1.5 w-7 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">#</th>
-                            <th className="px-2 py-1.5 min-w-[180px] text-[10px] font-bold uppercase tracking-wider text-slate-400">Bezeichnung</th>
-                            <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Menge</th>
-                            <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einheit</th>
-                            <th className="px-2 py-1.5 w-44 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Einzelpreis €</th>
-                            <th className="px-2 py-1.5 w-28 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500 italic">Gesamt €</th>
-                            <th className="px-2 py-1.5 w-8"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {positions.map((pos, index) => {
-                            const qtyInvalid = !disabled && (parseFloat(pos.quantity) || 0) <= 0;
-                            const descInvalid = !disabled && pos.description.trim() === '';
-                            const rateInvalid = !disabled && (parseFloat(pos.customerRate) || 0) <= 0;
-
-                            return (
-                                <tr key={pos.id} className="group border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                                    <td className="px-3 py-2.5 text-center text-[11px] font-bold text-slate-300">{index + 1}</td>
-
-                                    <td className="px-3 py-2.5">
-                                        <input
-                                            type="text"
-                                            disabled={disabled}
-                                            placeholder="Bezeichnung eingeben…"
-                                            className={inlineInput(descInvalid)}
-                                            value={pos.description}
-                                            onChange={e => update(index, { description: e.target.value })}
-                                        />
-                                    </td>
-
-                                    <td className="px-3 py-2.5">
-                                        <input
-                                            type="text"
-                                            inputMode="decimal"
-                                            disabled={disabled}
-                                            className={inlineInput(qtyInvalid, 'right', true)}
-                                            value={toGerman(pos.quantity)}
-                                            onChange={e => {
-                                                const filtered = filterDecimalInput(e.target.value);
-                                                update(index, { quantity: toEnglish(filtered) });
-                                            }}
-                                            onBlur={e => update(index, { quantity: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
-                                        />
-                                    </td>
-
-                                    <td className="px-3 py-2.5 text-right">
-                                        <div className="flex justify-end">
-                                            <MiniDropdown
-                                                value={pos.unit}
-                                                options={UNITS.map(u => ({ value: u, label: u }))}
-                                                onChange={unit => update(index, { unit })}
-                                                disabled={disabled}
-                                            />
-                                        </div>
-                                    </td>
-
-                                    <td className="px-3 py-2.5">
-                                        <div className="flex items-center justify-end gap-2 pr-1">
-                                            <input
-                                                type="text"
-                                                inputMode="decimal"
-                                                disabled={disabled}
-                                                className={clsx(inlineInput(rateInvalid, 'right', true), 'w-24')}
-                                                value={toGerman(pos.customerRate)}
-                                                onChange={e => {
-                                                    const filtered = filterDecimalInput(e.target.value);
-                                                    update(index, { customerRate: toEnglish(filtered) });
-                                                }}
-                                                onBlur={e => update(index, { customerRate: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
-                                            />
-                                            <MiniDropdown
-                                                value={pos.customerMode === 'flat' ? 'flat' : 'rate'}
-                                                options={[
-                                                    { value: 'rate', label: '/ Einh.' },
-                                                    { value: 'flat', label: 'Pausch.' }
-                                                ]}
-                                                onChange={v => update(index, { customerMode: v })}
-                                                disabled={disabled}
-                                                width="100px"
-                                            />
-                                        </div>
-                                    </td>
-
-                                    <td className="px-3 py-2.5 text-right">
-                                        <span className="font-bold text-xs text-slate-800 tabular-nums">
-                                            {fmt2(pos.customerTotal)} €
-                                        </span>
-                                    </td>
-
-                                    <td className="px-2 py-2.5 text-center">
-                                        {!disabled && positions.length > 1 ? (
-                                            <button
-                                                onClick={() => setPositions(positions.filter(p => p.id !== pos.id))}
-                                                className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
-                                                title={t('actions.delete')}
-                                            >
-                                                <FaTrash className="text-[10px]" />
-                                            </button>
-                                        ) : (
-                                            <span className="p-1.5 block text-slate-100">
-                                                <FaTrash className="text-[10px]" />
-                                            </span>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-
-                        {/* Zusatzleistungen */}
-                        {extraRows.length > 0 && extraRows.map((row, extraIndex) => (
-                            <tr key={row.key} className="group border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                                <td className="px-3 py-2.5 text-center text-[11px] font-bold text-slate-300">
-                                    {positions.length + extraIndex + 1}
-                                </td>
-                                <td className="px-3 py-2.5">
-                                    <span className="text-xs font-medium text-slate-500 italic">{row.description}</span>
-                                </td>
-                                <td className="px-3 py-2.5">
-                                    {!disabled && onUpdateExtraQty ? (
-                                        <input
-                                            type="number"
-                                            step="1"
-                                            min="1"
-                                            className={inlineInput(false, 'right', true)}
-                                            value={row.quantity}
-                                            onChange={e => onUpdateExtraQty(row.key, Math.max(1, parseInt(e.target.value) || 1))}
-                                            onBlur={e => onUpdateExtraQty(row.key, Math.max(1, parseInt(e.target.value) || 1))}
-                                        />
-                                    ) : (
-                                        <span className="font-mono text-xs text-slate-500 tabular-nums block text-right">{row.quantity}</span>
-                                    )}
-                                </td>
-                                <td className="px-3 py-2.5 text-right text-xs text-slate-400">{row.unit}</td>
-                                <td className="px-3 py-2.5 text-right font-mono text-xs text-slate-500 tabular-nums">
-                                    {fmt2(row.unitPrice)} €
-                                </td>
-                                <td className="px-3 py-2.5 text-right">
-                                    <span className="font-bold text-xs text-slate-700 tabular-nums">{fmt2(row.total)} €</span>
-                                </td>
-                                <td className="px-2 py-2.5 text-center">
-                                    {!disabled && (
-                                        <button
-                                            onClick={() => onToggleExtra?.(row.key)}
-                                            className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
-                                            title="Deaktivieren"
-                                        >
-                                            <FaTrash className="text-[10px]" />
-                                        </button>
-                                    )}
-                                </td>
+                <DragDropContext onDragEnd={onDragEnd}>
+                    <table className="w-full text-left border-collapse min-w-[700px]">
+                        <thead>
+                            <tr className="border-b border-slate-200 bg-slate-50/30">
+                                <th className="px-2 py-1.5 w-7 text-center text-[10px] font-bold text-slate-400"></th>
+                                <th className="px-2 py-1.5 min-w-[180px] text-[10px] font-bold text-slate-400">Leistungsbezeichnung</th>
+                                <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold text-slate-400">Menge</th>
+                                <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold text-slate-400">Einheit</th>
+                                <th className="px-2 py-1.5 w-32 text-right text-[10px] font-bold text-slate-400">Einzelpreis €</th>
+                                <th className="px-2 py-1.5 w-28 text-right text-[10px] font-bold text-slate-500 italic">Gesamt €</th>
+                                <th className="px-2 py-1.5 w-8"></th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <Droppable droppableId="positions">
+                            {(provided) => (
+                                <tbody {...provided.droppableProps} ref={provided.innerRef}>
+                                    {positions.map((pos, index) => {
+                                        const qtyInvalid = !disabled && (parseFloat(pos.quantity) || 0) < 0; // Changed from <= to < to allow 0 (though 0 qty is rare, user asked for 0 formatting)
+                                        const descInvalid = !disabled && pos.description.trim() === '';
+                                        const isPriceZero = (parseFloat(pos.customerRate) || 0) === 0;
+                                        const rateInvalid = !disabled && (parseFloat(pos.customerRate) || 0) < 0;
+
+                                        return (
+                                            <Draggable key={pos.id} draggableId={pos.id} index={index} isDragDisabled={disabled}>
+                                                {(provided, snapshot) => (
+                                                    <tr
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        className={clsx(
+                                                            "group border-b border-slate-100 last:border-0 transition-colors",
+                                                            snapshot.isDragging ? "bg-slate-50 shadow-md ring-1 ring-slate-200 z-50" : "hover:bg-slate-50/50"
+                                                        )}
+                                                    >
+                                                        <td className="px-3 py-2.5 text-center text-[11px] font-bold text-slate-400">
+                                                            <div className="flex items-center gap-1">
+                                                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-200 hover:text-slate-400 transition-colors">
+
+                                                                </div>
+                                                                {index + 1}
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="px-3 py-2.5">
+                                                            <input
+                                                                type="text"
+                                                                disabled={disabled}
+                                                                placeholder="Bezeichnung eingeben…"
+                                                                className={clsx(inlineInput(descInvalid), "text-slate-800")}
+                                                                value={pos.description}
+                                                                onChange={e => update(index, { description: e.target.value })}
+                                                            />
+                                                        </td>
+
+                                                        <td className="px-3 py-2.5">
+                                                            <input
+                                                                type="text"
+                                                                inputMode="decimal"
+                                                                disabled={disabled}
+                                                                className={inlineInput(qtyInvalid, 'right', true)}
+                                                                value={toGerman(pos.quantity)}
+                                                                onChange={e => {
+                                                                    const filtered = filterDecimalInput(e.target.value);
+                                                                    update(index, { quantity: toEnglish(filtered) });
+                                                                }}
+                                                                onBlur={e => update(index, { quantity: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
+                                                            />
+                                                        </td>
+
+                                                        <td className="px-3 py-2.5 text-right">
+                                                            <div className="flex justify-end">
+                                                                <MiniDropdown
+                                                                    value={pos.unit}
+                                                                    options={UNITS.map(u => ({ value: u, label: u }))}
+                                                                    onChange={unit => update(index, { unit })}
+                                                                    disabled={disabled}
+                                                                />
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="px-3 py-2.5">
+                                                            <div className="flex items-center justify-end gap-2 pr-1">
+                                                                <input
+                                                                    type="text"
+                                                                    inputMode="decimal"
+                                                                    disabled={disabled}
+                                                                    className={clsx(
+                                                                        inlineInput(rateInvalid, 'right', true, !isPriceZero),
+                                                                        'w-full',
+                                                                        isPriceZero && 'text-slate-400'
+                                                                    )}
+                                                                    value={toGerman(pos.customerRate)}
+                                                                    onChange={e => {
+                                                                        const filtered = filterDecimalInput(e.target.value);
+                                                                        update(index, { customerRate: toEnglish(filtered) });
+                                                                    }}
+                                                                    onBlur={e => update(index, { customerRate: (parseFloat(toEnglish(e.target.value)) || 0).toFixed(2) })}
+                                                                />
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="px-3 py-2.5 text-right">
+                                                            <span className="font-bold text-xs text-slate-800 tabular-nums">
+                                                                {fmt2(pos.customerTotal)} €
+                                                            </span>
+                                                        </td>
+
+                                                        <td className="px-2 py-2.5 text-center">
+                                                            {!disabled && positions.length > 1 ? (
+                                                                <button
+                                                                    onClick={() => setPositions(positions.filter(p => p.id !== pos.id))}
+                                                                    className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
+                                                                    title={t('actions.delete')}
+                                                                >
+                                                                    <FaTrash className="text-[10px]" />
+                                                                </button>
+                                                            ) : (
+                                                                <span className="p-1.5 block text-slate-100">
+                                                                    <FaTrash className="text-[10px]" />
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </Draggable>
+                                        );
+                                    })}
+                                    {provided.placeholder}
+
+                                    {/* Zusatzleistungen */}
+                                    {extraRows.length > 0 && extraRows.map((row, extraIndex) => (
+                                        <tr key={row.key} className="group border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-3 py-2.5 text-center text-[11px] font-bold text-slate-400">
+                                                {positions.length + extraIndex + 1}
+                                            </td>
+                                            <td className="px-3 py-2.5">
+                                                <span className="text-xs font-medium text-slate-800">{row.description}</span>
+                                            </td>
+                                            <td className="px-3 py-2.5">
+                                                <input
+                                                    type="text"
+                                                    inputMode="decimal"
+                                                    disabled={disabled}
+                                                    className={inlineInput(false, 'right', true)}
+                                                    value={toGerman(row.quantity.toFixed(2))}
+                                                    onChange={e => {
+                                                        if (disabled || !onUpdateExtraQty) return;
+                                                        const filtered = filterDecimalInput(e.target.value);
+                                                        onUpdateExtraQty(row.key, parseFloat(toEnglish(filtered)) || 0);
+                                                    }}
+                                                    onBlur={e => onUpdateExtraQty?.(row.key, parseFloat(toEnglish(e.target.value)) || 0)}
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right">
+                                                <div className="flex justify-end">
+                                                    <MiniDropdown
+                                                        value={row.unit}
+                                                        options={UNITS.map(u => ({ value: u, label: u }))}
+                                                        onChange={unit => onUpdateExtraUnit?.(row.key, unit)}
+                                                        disabled={disabled}
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-2.5">
+                                                <input
+                                                    type="text"
+                                                    inputMode="decimal"
+                                                    disabled={disabled}
+                                                    className={inlineInput(false, 'right', true)}
+                                                    value={toGerman(row.unitPrice.toFixed(2))}
+                                                    onChange={e => {
+                                                        if (disabled || !onUpdateExtraPrice) return;
+                                                        const filtered = filterDecimalInput(e.target.value);
+                                                        onUpdateExtraPrice(row.key, parseFloat(toEnglish(filtered)) || 0);
+                                                    }}
+                                                    onBlur={e => onUpdateExtraPrice?.(row.key, parseFloat(toEnglish(e.target.value)) || 0)}
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right">
+                                                <span className="font-bold text-xs text-slate-800 tabular-nums">{fmt2(row.total)} €</span>
+                                            </td>
+                                            <td className="px-2 py-2.5 text-center">
+                                                {!disabled && (
+                                                    <button
+                                                        onClick={() => onToggleExtra?.(row.key)}
+                                                        className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
+                                                        title="Deaktivieren"
+                                                    >
+                                                        <FaTrash className="text-[10px]" />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            )}
+                        </Droppable>
+                    </table>
+                </DragDropContext>
             </div>
 
             {/* Footer: Position hinzufügen zentriert */}
-            {!disabled && (
-                <div className="border-t border-dashed border-slate-200 flex justify-center py-3">
-                    <button
-                        onClick={() => setPositions([...positions, EMPTY_POSITION()])}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-600 border border-dashed border-slate-300 rounded-sm hover:border-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-colors"
-                    >
-                        <FaPlus className="text-[10px]" />
-                        Position hinzufügen
-                    </button>
-                </div>
-            )}
-        </div>
+            {
+                !disabled && (
+                    <div className="border-t border-dashed border-slate-200 flex justify-center py-3">
+                        <button
+                            onClick={() => setPositions([...positions, EMPTY_POSITION()])}
+                            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-600 border border-dashed border-slate-300 rounded-sm hover:border-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-colors"
+                        >
+                            <FaPlus className="text-[10px]" />
+                            Position hinzufügen
+                        </button>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

@@ -22,12 +22,12 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                     checked={selectedMails.length === mails.length && mails.length > 0}
                     onChange={onSelectAll}
                 />
-                <span className="text-[10px] font-semibold text-slate-500 [text-shadow:0_1px_0_rgba(255,255,255,0.8)] uppercase ml-2">Alle auswählen</span>
+                <span className="text-xs font-semibold text-slate-500 [text-shadow:0_1px_0_rgba(255,255,255,0.8)] uppercase ml-2">Alle auswählen</span>
             </div>
         )}
         <div className="flex-1 overflow-auto divide-y divide-slate-100 custom-scrollbar-minimal">
             {mails.length === 0 ? (
-                <p className="px-4 py-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+                <p className="px-4 py-6 text-xs text-slate-400 font-bold uppercase tracking-widest text-center">
                     Keine E-Mails vorhanden
                 </p>
             ) : (
@@ -70,7 +70,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                         >
                                             {senderLabel}
                                         </span>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight shrink-0">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-tight shrink-0">
                                             {mail.full_time?.split(',')[0]}
                                         </span>
                                     </div>
@@ -84,7 +84,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                     >
                                         {mail.subject || '(Kein Betreff)'}
                                     </h4>
-                                    <p className="text-[10px] text-slate-400 truncate font-medium">
+                                    <p className="text-xs text-slate-400 truncate font-medium">
                                         {mail.preview || mail.body?.replace(/<[^>]*>/g, '').substring(0, 100)}
                                     </p>
 

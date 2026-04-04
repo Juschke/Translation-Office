@@ -317,7 +317,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
             }
           }}
           className={clsx(
-            "h-9 px-3 bg-white text-slate-400 border border-slate-300 border-l-0 hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0",
+            "h-9 px-3 bg-white text-slate-400 border border-brand-border border-l-0 hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0",
             (roundedSide === 'both' || roundedSide === 'right') && "rounded-r-sm"
           )}
           title={showForm ? "Schließen" : "Schnellanlage Kunde"}

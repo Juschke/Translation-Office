@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowRight, FaChevronLeft, FaChevronRight, FaEnvelope, FaBolt, FaExclamationTriangle } from 'react-icons/fa';
 import clsx from 'clsx';
-import { getFlagUrl } from '../../utils/flags';
+import { getFlagUrl, getLanguageName } from '../../utils/flags';
 import StatusBadge from '../common/StatusBadge';
 
 import { format, formatDistanceToNow, isBefore, startOfDay } from 'date-fns';
@@ -70,7 +70,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                 filter === 'urgent' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-red-600'
                             )}
                         >
-                            Dringend <FaExclamationTriangle className="text-[10px]" />
+                            Dringend <FaExclamationTriangle className="text-xs" />
                         </button>
                         <button
                             onClick={() => { setFilter('express'); setPage(1); }}
@@ -79,7 +79,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                 filter === 'express' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-600'
                             )}
                         >
-                            Express <FaBolt className="text-[10px]" />
+                            Express <FaBolt className="text-xs" />
                         </button>
                     </div>
                 </div>
@@ -91,9 +91,9 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                 </button>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className={clsx(paginatedProjects.length > 0 ? "overflow-x-auto" : "overflow-hidden")}>
                 <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
+                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
                         <tr>
                             <th className="px-4 py-3 border-b border-slate-100">Projekt</th>
                             <th className="px-4 py-3 border-b border-slate-100">Kunde</th>
@@ -124,14 +124,14 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                             <span className="text-xs font-bold text-slate-800 group-hover:text-brand-primary group-hover:underline transition truncate max-w-[150px]">
                                                 {p.project_name || p.name}
                                             </span>
-                                            <span className="text-[10px] text-slate-400 font-mono tracking-tighter group-hover:text-brand-primary transition">
+                                            <span className="text-xs text-slate-400 font-mono tracking-tighter group-hover:text-brand-primary transition">
                                                 {p.project_number || `#${p.id}`}
                                             </span>
                                         </div>
                                     </td>
                                     <td className="px-4 py-2 text-xs">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-sm bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold border border-slate-200 shrink-0">
+                                            <div className="w-7 h-7 rounded-sm bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold border border-slate-200 shrink-0">
                                                 {getInitials(customerName)}
                                             </div>
                                             <div className="flex flex-col min-w-0">
@@ -145,7 +145,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     {customerName}
                                                 </span>
                                                 {(p.customer?.address_street || p.customer?.address_city) && (
-                                                    <div className="text-[10px] text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis mb-0.5">
+                                                    <div className="text-xs text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis mb-0.5">
                                                         {p.customer.address_street}{p.customer.address_street && (p.customer.address_zip || p.customer.address_city) ? ', ' : ''}
                                                         {p.customer.address_zip} {p.customer.address_city}
                                                     </div>
@@ -156,7 +156,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                     <td className="px-4 py-2 text-xs">
                                         {p.partner ? (
                                             <div className="flex items-center gap-2.5">
-                                                <div className="w-7 h-7 rounded-sm bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold border border-slate-200 shrink-0">
+                                                <div className="w-7 h-7 rounded-sm bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold border border-slate-200 shrink-0">
                                                     {getInitials(p.partner.company || `${p.partner.first_name} ${p.partner.last_name}`)}
                                                 </div>
                                                 <div className="flex flex-col min-w-0">
@@ -170,18 +170,18 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                         {p.partner.company || `${p.partner.first_name} ${p.partner.last_name}`}
                                                     </span>
                                                     <div className="flex flex-col">
-                                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
                                                             <FaEnvelope className="text-slate-300 shrink-0" />
                                                             <span className="truncate max-w-[130px]">{p.partner.email}</span>
                                                         </div>
                                                         {p.partner.phone && (
-                                                            <span className="text-[10px] text-slate-400 font-medium">{p.partner.phone}</span>
+                                                            <span className="text-xs text-slate-400 font-medium">{p.partner.phone}</span>
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <span className="text-[10px] text-slate-400 italic">Nicht zugewiesen</span>
+                                            <span className="text-xs text-slate-400 italic">Nicht zugewiesen</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-2">
@@ -192,25 +192,25 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     className="w-3.5 h-2.5 object-cover"
                                                     alt="Src"
                                                 />
-                                                <span className="text-[10px] font-bold text-slate-600">
-                                                    {(p.source_language?.name_internal || p.sourceLanguage?.name_internal || p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'DE')}
+                                                <span className="text-xs font-bold text-slate-600">
+                                                    {(p.source_language?.name_internal || p.sourceLanguage?.name_internal || getLanguageName(p.source_language?.iso_code || p.sourceLanguage?.iso_code || 'de'))}
                                                 </span>
                                             </div>
-                                            <FaArrowRight className="text-[10px] text-slate-300" />
+                                            <FaArrowRight className="text-xs text-slate-300" />
                                             <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded-sm border border-slate-100">
                                                 <img
                                                     src={getFlagUrl(p.target_language?.iso_code || p.targetLanguage?.iso_code || 'en')}
                                                     className="w-3.5 h-2.5 object-cover"
                                                     alt="Tgt"
                                                 />
-                                                <span className="text-[10px] font-bold text-slate-600">
-                                                    {(p.target_language?.name_internal || p.targetLanguage?.name_internal || p.target_language?.iso_code || p.targetLanguage?.iso_code || 'EN')}
+                                                <span className="text-xs font-bold text-slate-600">
+                                                    {(p.target_language?.name_internal || p.targetLanguage?.name_internal || getLanguageName(p.target_language?.iso_code || p.targetLanguage?.iso_code || 'en'))}
                                                 </span>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-4 py-2 text-right">
-                                        <div className="flex items-center justify-end px-2 py-0.5 rounded-sm bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500 w-fit ml-auto">
+                                        <div className="flex items-center justify-end px-2 py-0.5 rounded-sm bg-slate-50 border border-slate-100 text-xs font-bold text-slate-500 w-fit ml-auto">
                                             {totalFiles}
                                         </div>
                                     </td>

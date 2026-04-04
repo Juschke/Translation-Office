@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaPaperPlane, FaPaperclip, FaCamera } from 'react-icons/fa';
 import { Button } from '../ui/button';
@@ -139,13 +138,13 @@ export const GuestMessagesSection: React.FC<GuestMessagesSectionProps> = ({
                         <FaPaperclip />
                     </button>
 
-                    <div className="flex-1 relative">
+                    <div className="flex-1">
                         <input
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Nachricht..."
-                            className="w-full h-9 pl-3 pr-10 rounded-full border border-slate-200 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none shadow-sm text-sm"
+                            placeholder="Nachricht schreiben..."
+                            className="w-full h-10 pl-4 pr-4 rounded-sm border border-slate-400 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none shadow-sm text-sm transition-all"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -154,15 +153,17 @@ export const GuestMessagesSection: React.FC<GuestMessagesSectionProps> = ({
                             }}
                             disabled={sendMessageMutation.isPending}
                         />
-                        <Button
-                            size="icon"
-                            onClick={handleSendMessage}
-                            disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                            className="absolute right-1 top-1 h-7 w-7 bg-brand-primary text-white rounded-full flex items-center justify-center hover:bg-brand-primary/90 transition shadow-sm"
-                        >
-                            <FaPaperPlane className="text-xs" />
-                        </Button>
                     </div>
+                    <Button
+                        size="default"
+                        onClick={handleSendMessage}
+                        disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                        className="h-10 px-4 bg-brand-primary text-white rounded-sm flex items-center justify-center hover:bg-brand-primary/90 transition shadow-sm font-bold uppercase tracking-wider text-[11px]"
+                    >
+                        <FaPaperPlane className="mr-2 text-xs" />
+                        Senden
+                    </Button>
+
                 </div>
             </div>
         </div>

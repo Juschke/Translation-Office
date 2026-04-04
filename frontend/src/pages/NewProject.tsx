@@ -8,6 +8,7 @@ import {
     FaSearch, FaCheck, FaTimes, FaArrowLeft, FaSave,
     FaInfoCircle, FaQuestionCircle
 } from 'react-icons/fa';
+import { getLanguageName } from '../utils/flags';
 import SearchableSelect from '../components/common/SearchableSelect';
 import CustomerSelect from '../components/common/CustomerSelect';
 import DocumentTypeSelect from '../components/common/DocumentTypeSelect';
@@ -46,12 +47,12 @@ const SECTION_NUM = 'w-7 h-7 rounded-md bg-slate-900 text-white flex items-cente
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
 const getStatusOptions = (t: any) => [
-    { value: 'offer', label: t('project.status_offer'), group: t('project.step_1') },
-    { value: 'in_progress', label: t('project.status_in_progress'), group: t('project.step_2') },
-    { value: 'ready_for_pickup', label: t('project.status_ready_for_pickup'), group: t('project.step_3') },
-    { value: 'delivered', label: t('project.status_delivered'), group: t('project.step_3') },
-    { value: 'invoiced', label: t('project.status_invoiced'), group: t('project.step_4') },
-    { value: 'completed', label: t('project.status_completed'), group: t('project.step_4') }
+    { value: 'offer', label: t('project.status_offer') },
+    { value: 'in_progress', label: t('project.status_in_progress') },
+    { value: 'ready_for_pickup', label: t('project.status_ready_for_pickup') },
+    { value: 'delivered', label: t('project.status_delivered') },
+    { value: 'invoiced', label: t('project.status_invoiced') },
+    { value: 'completed', label: t('project.status_completed') }
 ];
 
 /* ─── Tooltip Helper ─── */
@@ -155,13 +156,7 @@ const NewProject = () => {
     });
 
     const getFullLanguageName = (code: string) => {
-        if (!code) return '';
-        const lang = languages.find((l: any) =>
-            l.iso_code.toLowerCase() === code.toLowerCase() ||
-            l.iso_code.toLowerCase().startsWith(code.toLowerCase() + '-') ||
-            code.toLowerCase().startsWith(l.iso_code.toLowerCase() + '-')
-        );
-        return lang ? (lang.name_internal || lang.name) : code.toUpperCase();
+        return getLanguageName(code);
     };
 
     // ── Derived ──
@@ -232,13 +227,13 @@ const NewProject = () => {
     useEffect(() => {
         if (!isEditing && source && target && Array.isArray(projectsData)) {
             const targetArray = Array.isArray(target) ? target : [target];
-            const cs = source.split('-')[0].toLowerCase();
-            const ct = targetArray[0]?.split('-')[0].toLowerCase() || 'xx';
+            const sourceName = getLanguageName(source)?.split(' ')[0] || source.toUpperCase();
+            const targetName = targetArray[0] ? (getLanguageName(targetArray[0])?.split(' ')[0] || targetArray[0].toUpperCase()) : 'XX';
             const now = new Date();
             const dp = String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
-            const base = `${cs}_${ct}_${dp}`.toUpperCase();
+            const base = `${sourceName}_${targetName}_${dp}`.replace(/\s+/g, '');
             const list = Array.isArray(projectsData) ? projectsData : [];
-            const cnt = list.filter((p: any) => (p.project_name || '').toUpperCase().startsWith(base)).length;
+            const cnt = list.filter((p: any) => (p.project_name || '').startsWith(base)).length;
             setName(`${base}_${String(cnt + 1).padStart(2, '0')}`);
         }
     }, [source, target, projectsData, isEditing]);
@@ -453,8 +448,42 @@ const NewProject = () => {
                                     <SearchableSelect options={statusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} preserveOrder={true} />
                                 </FormRow>
                                 <FormRow label="Liefertermin" tooltip="Geplanter Abgabetermin inkl. Uhrzeit.">
-                                    <DatePicker showTime format="DD.MM.YYYY HH:mm" value={deadline ? dayjs(deadline) : null}
-                                        onChange={(d) => setDeadline(d ? d.toISOString() : '')} className="w-full h-9" placeholder="Datum & Zeit wählen" />
+                                    <div className="space-y-2 space-x-2">
+                                        <DatePicker
+                                            showTime
+                                            format="DD.MM.YYYY HH:mm"
+                                            value={deadline ? dayjs(deadline) : null}
+                                            onChange={(d) => setDeadline(d ? d.toISOString() : '')}
+                                            className="w-full h-9"
+                                            placeholder="Datum & Zeit wählen"
+                                        />
+                                        <div className="flex gap-2 mt-2">
+                                            {[3, 5, 7, 12].map(days => (
+                                                <button
+                                                    key={days}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        let target = dayjs();
+                                                        let added = 0;
+                                                        while (added < days) {
+                                                            target = target.add(1, 'day');
+                                                            // Nur wenn Mo-Fr
+                                                            if (target.day() !== 0 && target.day() !== 6) {
+                                                                added++;
+                                                            }
+                                                        }
+                                                        // Fallback für den Fall das wir auf einem Wochenende landen würden (theoretisch nicht möglich durch while)
+                                                        // Standardzeit auf 17:00 Uhr setzen
+                                                        target = target.set('hour', 17).set('minute', 0).set('second', 0);
+                                                        setDeadline(target.toISOString());
+                                                    }}
+                                                    className="px-2 py-1 text-xs font-bold uppercase border border-brand-accent/20 bg-brand-slate text-slate-700 rounded-sm hover:bg-brand-accent/10 hover:border-brand-accent/30 transition-all shadow-xs"
+                                                >
+                                                    {days} Werktage
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </FormRow>
                             </div>
                         </section>
@@ -540,7 +569,18 @@ const NewProject = () => {
                                                             </div>
                                                         </td>
                                                         <td className="px-4 py-2">
-                                                            <div className="flex flex-wrap gap-1">{(p.languages || []).slice(0, 3).map((l: string) => <span key={l} className="px-1.5 py-0.5 rounded-sm text-[10px] font-medium border bg-white text-slate-400 border-slate-100">{getFullLanguageName(l)}</span>)}</div>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {(p.languages || []).slice(0, 3).map((l: string) => (
+                                                                    <span key={l} className="px-1.5 py-0.5 rounded-sm text-[10px] font-bold border bg-brand-accent/10 text-slate-700 border-brand-accent/20">
+                                                                        {getFullLanguageName(l)}
+                                                                    </span>
+                                                                ))}
+                                                                {(p.languages || []).length > 3 && (
+                                                                    <span className="px-1.5 py-0.5 rounded-sm text-[10px] font-bold border bg-slate-50 text-slate-400 border-slate-100">
+                                                                        + {(p.languages || []).length - 3}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-2 text-right">
                                                             <div className={clsx('inline-flex items-center justify-center w-5 h-5 rounded-full border transition', translator === p.id.toString() ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200 text-transparent')}>

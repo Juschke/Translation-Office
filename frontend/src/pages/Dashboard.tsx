@@ -8,11 +8,13 @@ import NewCustomerModal from '../components/modals/NewCustomerModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardService, projectService, customerService, partnerService } from '../api/services';
 import RecentProjects from '../components/dashboard/RecentProjects';
 import DashboardSkeleton from '../components/common/DashboardSkeleton';
 import KPICard from '../components/common/KPICard';
+import { getLanguageName } from '../utils/flags';
 
 const Dashboard = () => {
     const { t, i18n } = useTranslation();
@@ -166,7 +168,7 @@ const Dashboard = () => {
                                         {dashboardData?.period?.label || t('dashboard.performance.current_month')}
                                     </span>
                                 </div>
-                                <div className="p-0 overflow-x-auto">
+                                <div className={clsx("p-0 min-h-0", sourceLanguageRevenue.length > 0 ? "overflow-x-auto" : "overflow-hidden")}>
                                     <table className="w-full text-left min-w-[300px]">
                                         <thead className="text-xs font-medium text-slate-500">
                                             <tr>
@@ -180,7 +182,7 @@ const Dashboard = () => {
                                                 const share = stats.monthly_revenue > 0 ? (item.value / stats.monthly_revenue) * 100 : 0;
                                                 return (
                                                     <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                        <td className="px-3 py-2 text-xs font-medium text-slate-900">{item.label}</td>
+                                                        <td className="px-3 py-2 text-xs font-medium text-slate-900">{getLanguageName(item.label)}</td>
                                                         <td className="px-3 py-2 text-xs text-slate-900 text-right tabular-nums">
                                                             {item.value.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                         </td>
@@ -210,7 +212,7 @@ const Dashboard = () => {
                                         {dashboardData?.period?.label || t('dashboard.performance.current_month')}
                                     </span>
                                 </div>
-                                <div className="p-0 overflow-x-auto">
+                                <div className={clsx("p-0 min-h-0", targetLanguageRevenue.length > 0 ? "overflow-x-auto" : "overflow-hidden")}>
                                     <table className="w-full text-left min-w-[300px]">
                                         <thead className="text-xs font-medium text-slate-500">
                                             <tr>
@@ -224,7 +226,7 @@ const Dashboard = () => {
                                                 const share = stats.monthly_revenue > 0 ? (item.value / stats.monthly_revenue) * 100 : 0;
                                                 return (
                                                     <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                        <td className="px-3 py-2 text-xs font-medium text-slate-900">{item.label}</td>
+                                                        <td className="px-3 py-2 text-xs font-medium text-slate-900">{getLanguageName(item.label)}</td>
                                                         <td className="px-3 py-2 text-xs text-slate-900 text-right tabular-nums">
                                                             {item.value.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                                                         </td>

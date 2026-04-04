@@ -180,12 +180,30 @@ class ProjectController extends Controller
     {
         $project = \App\Models\Project::findOrFail($id);
 
-        // Get all activities related to this project
-        $activities = \Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Project::class)
-            ->where('subject_id', $id)
+        $posIds = $project->positions()->pluck('id')->toArray();
+        $fileIds = $project->files()->pluck('id')->toArray();
+        $payIds = $project->payments()->pluck('id')->toArray();
+        $invIds = $project->invoices()->pluck('id')->toArray();
+
+        // Get all activities related to this project and its sub-entities
+        $activities = \Spatie\Activitylog\Models\Activity::where(function ($q) use ($id) {
+            $q->where('subject_type', \App\Models\Project::class)->where('subject_id', $id);
+        })
+            ->orWhere(function ($q) use ($posIds) {
+                $q->where('subject_type', \App\Models\ProjectPosition::class)->whereIn('subject_id', $posIds);
+            })
+            ->orWhere(function ($q) use ($fileIds) {
+                $q->where('subject_type', \App\Models\ProjectFile::class)->whereIn('subject_id', $fileIds);
+            })
+            ->orWhere(function ($q) use ($payIds) {
+                $q->where('subject_type', \App\Models\ProjectPayment::class)->whereIn('subject_id', $payIds);
+            })
+            ->orWhere(function ($q) use ($invIds) {
+                $q->where('subject_type', \App\Models\Invoice::class)->whereIn('subject_id', $invIds);
+            })
             ->with('causer')
             ->latest()
-            ->limit(200)
+            ->limit(300)
             ->get()
             ->map(function ($activity) {
                 return [

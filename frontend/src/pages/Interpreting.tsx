@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calendarService } from '../api/services';
 import DataTable from '../components/common/DataTable';
 import { Button } from '../components/ui/button';
+import { triggerBlobDownload } from '../utils/download';
 import NewAppointmentModal from '../components/modals/NewAppointmentModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
@@ -130,6 +131,28 @@ const Interpreting = () => {
 
         return { upcoming, completed, thisMonth, uniquePartners };
     }, [list]);
+
+    const handleExport = (format: 'xlsx' | 'csv' | 'pdf') => {
+        if (list.length === 0) return;
+
+        const headers = [t('interpreting.columns.date'), t('interpreting.columns.title'), t('interpreting.columns.customer'), t('interpreting.columns.interpreter'), t('interpreting.columns.location')];
+        const rows = list.map((a: any) => {
+            const customer = a.customer || a.project?.customer;
+            const customerName = customer ? (customer.company_name || `${customer.first_name} ${customer.last_name}`) : t('interpreting.columns.unknown');
+            const interpreterName = a.partner ? (a.partner.company_name || `${a.partner.first_name} ${a.partner.last_name}`) : t('interpreting.columns.not_assigned');
+            return [
+                a.start_date ? new Date(a.start_date).toLocaleDateString('de-DE') : '',
+                a.title,
+                customerName,
+                interpreterName,
+                a.location || ''
+            ];
+        });
+
+        const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        triggerBlobDownload(blob, `Dolmetschtermine_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
+    };
 
     const columns: any[] = [
         {
@@ -317,6 +340,7 @@ const Interpreting = () => {
                 isLoading={isLoading}
                 searchPlaceholder={t('interpreting.search_placeholder')}
                 searchFields={['title', 'location', 'description']}
+                onExport={handleExport}
                 onRowClick={(row) => {
                     setEditingAssignment(row);
                     setIsModalOpen(true);

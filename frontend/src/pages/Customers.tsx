@@ -1,10 +1,10 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUsers, FaBriefcase, FaChartLine, FaPlus, FaEye, FaEdit, FaTrash,
-    FaCheck, FaBan, FaEnvelope, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf, FaTrashRestore, FaUserPlus, FaArchive
+    FaCheck, FaBan, FaEnvelope, FaTrashRestore, FaUserPlus, FaArchive
 } from 'react-icons/fa';
 
 
@@ -15,7 +15,6 @@ import DataTable, { type FilterDef } from '../components/common/DataTable';
 import { Button } from '../components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService } from '../api/services';
-import TableSkeleton from '../components/common/TableSkeleton';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
 import { useTranslation } from 'react-i18next';
@@ -29,21 +28,10 @@ const Customers = () => {
     const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
     const [typeFilter, setTypeFilter] = useState('all');
     const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
-    const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<any>(null);
     const [isDetailLoading, setIsDetailLoading] = useState(false);
 
-    const exportRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
-                setIsExportOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     useEffect(() => {
         if (location.state?.openNewModal) {
@@ -201,7 +189,6 @@ const Customers = () => {
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         triggerBlobDownload(blob, `Kunden_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
-        setIsExportOpen(false);
     };
 
     const columns = [
@@ -341,35 +328,10 @@ const Customers = () => {
         }] : [])
     ];
 
-    const actions = (
-        <div className="relative group z-50" ref={exportRef}>
-            <button
-                onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }}
-                className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition"
-            >
-                <FaDownload /> Exportieren
-            </button>
-            {isExportOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
-                    <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)
-                    </button>
-                    <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition">
-                        <FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)
-                    </button>
-                    <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition">
-                        <FaFilePdf className="text-red-600 text-sm" /> PDF Report
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-
-    if (isLoading) return <TableSkeleton rows={8} columns={6} />;
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
-            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden" onClick={() => { setIsExportOpen(false); }}>
+            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
                         <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('customers.title')}</h1>
@@ -402,12 +364,13 @@ const Customers = () => {
 
                 <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
                     <DataTable
+                        isLoading={isLoading}
                         data={filteredCustomers}
                         columns={columns as any}
                         onRowClick={(c) => navigate(`/customers/${c.id}`)}
                         searchPlaceholder={t('customers.search_placeholder')}
                         searchFields={['company_name', 'contact_person', 'email']}
-                        actions={actions}
+                        onExport={handleExport}
                         onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
                         selectable
                         selectedIds={selectedCustomers}

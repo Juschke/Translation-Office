@@ -53,12 +53,27 @@ class Project extends Model
         'has_apostille',
         'is_express',
         'classification',
+        'certified_count',
+        'apostille_count',
+        'express_count',
+        'classification_count',
         'copies_count',
         'copy_price',
         'notes',
         'appointment_location',
         'customer_reference',
         'customer_date',
+        // Extra service prices
+        'certified_price',
+        'apostille_price',
+        'express_price',
+        'classification_price',
+        // Extra service units
+        'certified_unit',
+        'apostille_unit',
+        'express_unit',
+        'classification_unit',
+        'copies_unit',
     ];
 
     protected $casts = [
@@ -71,7 +86,11 @@ class Project extends Model
         'price_total' => 'decimal:2',
         'partner_cost_net' => 'decimal:2',
         'down_payment' => 'decimal:2',
-        'copy_price' => 'decimal:4',
+        'copy_price' => 'decimal:2',
+        'certified_price' => 'decimal:2',
+        'apostille_price' => 'decimal:2',
+        'express_price' => 'decimal:2',
+        'classification_price' => 'decimal:2',
         'down_payment_date' => 'datetime',
         'customer_date' => 'datetime',
     ];

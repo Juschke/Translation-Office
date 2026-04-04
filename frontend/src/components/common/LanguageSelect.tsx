@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { FaChevronDown, FaTimes, FaSearch, FaCheck, FaPlus } from 'react-icons/fa';
-import { getFlagUrl } from '../../utils/flags';
+import { getFlagUrl, getLanguageName } from '../../utils/flags';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
@@ -84,7 +84,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
         return serverLanguages
             .map((l: any) => ({
                 code: l.iso_code,
-                name: l.name_internal || l.name,
+                name: getLanguageName(l.iso_code),
                 flagCode: l.flag_icon
             }))
             .sort((a: any, b: any) => a.name.localeCompare(b.name));
@@ -179,8 +179,8 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
 
             <div
                 className={clsx(
-                    "w-full px-3 bg-white cursor-pointer flex flex-wrap gap-2 items-center transition shadow-sm h-10 border rounded-sm",
-                    error ? "border-red-700 ring-2 ring-red-700/10" : (isOpen ? "ring-2 ring-slate-950/10 border-slate-900 shadow-sm" : "border-slate-300 hover:border-slate-400 shadow-sm")
+                    "w-full px-3 bg-white cursor-pointer flex flex-wrap gap-2 items-center transition h-10 border rounded-sm",
+                    error ? "border-red-500 ring-2 ring-red-500/10" : (isOpen ? "ring-2 ring-brand-primary/10 border-brand-primary" : "border-brand-border hover:border-brand-primary shadow-sm")
                 )}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
@@ -192,7 +192,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                             {(isMulti && values.length >= 4 ? values.slice(0, 3) : values).map(v => (
                                 <div key={v} className={clsx(
                                     "flex items-center gap-1.5",
-                                    isMulti ? "bg-white border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700" : "text-sm font-medium text-slate-800"
+                                    isMulti ? "bg-brand-accent/10 border border-brand-accent/20 px-2 py-0.5 text-xs font-semibold text-slate-800" : "text-sm font-medium text-slate-800"
                                 )}>
                                     <img src={getFlagUrl(v.includes('-') ? v : (languages.find((l: LanguageOption) => l.code === v)?.flagCode || v))} className="w-6 h-4.5 object-cover shadow-sm shrink-0" alt="" />
                                     <span>{getLangLabel(v)}</span>
@@ -205,7 +205,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 </div>
                             ))}
                             {isMulti && values.length >= 4 && (
-                                <div className="bg-white border border-slate-100 px-2 py-0.5 text-xs font-medium text-slate-900">
+                                <div className="bg-brand-accent/20 border border-brand-accent/30 px-2 py-0.5 text-xs font-bold text-slate-900">
                                     + {values.length - 3} weitere
                                 </div>
                             )}
@@ -269,7 +269,6 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                             <img src={getFlagUrl(opt.flagCode || opt.code)} className="w-7 h-5 object-cover shadow-sm" alt="" />
                                         </div>
                                         <span className="flex-1">{opt.name}</span>
-                                        <span className="text-xs text-slate-400 font-medium bg-slate-100 px-1 rounded-sm shrink-0">{opt.code}</span>
                                     </div>
                                     {!isMulti && values.includes(opt.code) && <FaCheck className="text-slate-700 text-xs shrink-0 ml-2" />}
                                 </div>

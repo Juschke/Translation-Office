@@ -173,7 +173,7 @@ const ProjectOverviewTabNew = ({
                                     <div className="space-y-2">
                                         <div className="grid grid-cols-[80px_1fr] gap-3 text-sm">
                                             <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Projekt</span>
-                                            <span className={`inline-block px-2 py-1 rounded-sm text-[10px] font-bold ${getStatusColor(projectData.status)}`}>
+                                            <span className={`inline-block px-2 py-1 rounded-sm text-xs font-bold ${getStatusColor(projectData.status)}`}>
                                                 {getStatusLabel(projectData.status)}
                                             </span>
                                         </div>
@@ -664,7 +664,7 @@ const ProjectOverviewTabNew = ({
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Stammdaten</h3>
                         <div className="space-y-1.5">
                             <button
-                                onClick={() => {}}
+                                onClick={() => { }}
                                 className="w-full text-left px-2 py-1.5 text-xs text-brand-primary font-semibold hover:bg-blue-50 rounded transition"
                             >
                                 → Projekt bearbeiten

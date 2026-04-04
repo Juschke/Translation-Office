@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { triggerBlobDownload } from '../utils/download';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '../api/services';
 import {
     FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
-    FaDownload, FaTrashAlt, FaExternalLinkAlt, FaFolder, FaUser, FaCloudUploadAlt,
+    FaDownload, FaTrashAlt, FaExternalLinkAlt, FaFolder, FaUser,
     FaCheckCircle, FaInbox, FaHdd
 } from 'react-icons/fa';
 import { format } from 'date-fns';
@@ -81,6 +82,22 @@ const Documents = () => {
         const matchesExt = extFilter === 'all' || f.extension?.toLowerCase() === extFilter.toLowerCase();
         return matchesType && matchesExt;
     });
+
+    const handleExport = (format: 'xlsx' | 'csv' | 'pdf') => {
+        if (files.length === 0) return;
+
+        const headers = [t('common.file') || 'Datei', t('common.project') || 'Projekt', t('common.type') || 'Typ', t('common.uploaded_by') || 'Hochgeladen'];
+        const rows = filteredFiles.map((f: any) => [
+            f.original_name,
+            f.project?.project_number || '',
+            f.type === 'target' ? 'Ausspielung' : 'Eingang',
+            f.uploader?.name || 'System'
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        triggerBlobDownload(blob, `Dokumente_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
+    };
 
     const sourceFilesCount = files.filter((f: any) => f.type === 'source').length;
     const targetFilesCount = files.filter((f: any) => f.type === 'target').length;
@@ -244,9 +261,6 @@ const Documents = () => {
                         <p className="text-slate-500 text-sm hidden sm:block">Zentrale Verwaltung aller Projektdokumente und Lieferungen</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                        <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-tight h-9 px-4 border-slate-200 hover:bg-slate-50 transition-all">
-                            <FaCloudUploadAlt className="text-slate-400" /> List Export
-                        </Button>
                     </div>
                 </div>
 
@@ -289,6 +303,7 @@ const Documents = () => {
                         activeFilterCount={(typeFilter !== 'all' ? 1 : 0) + (extFilter !== 'all' ? 1 : 0)}
                         searchPlaceholder="Nach Dateiname oder Erweiterung suchen..."
                         searchFields={['original_name', 'extension']}
+                        onExport={handleExport}
                         pageSize={25}
                         onRowClick={(file) => navigate(`/projects/${file.project_id}`)}
                     />

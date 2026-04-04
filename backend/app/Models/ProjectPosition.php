@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectPosition extends Model
 {
+    use \App\Traits\LogsAllActivity;
     protected $fillable = [
         'project_id',
         'description',
@@ -24,11 +25,11 @@ class ProjectPosition extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:4',
-        'quantity' => 'decimal:4',
-        'partner_rate' => 'decimal:4',
+        'amount' => 'decimal:2',
+        'quantity' => 'decimal:2',
+        'partner_rate' => 'decimal:2',
         'partner_total' => 'decimal:2',
-        'customer_rate' => 'decimal:4',
+        'customer_rate' => 'decimal:2',
         'customer_total' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'margin_percent' => 'decimal:2',

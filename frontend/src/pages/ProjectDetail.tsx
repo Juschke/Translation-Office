@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { openBlobInNewTab } from '../utils/download';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -23,13 +23,12 @@ import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import EmailComposeModal from '../components/modals/EmailComposeModal';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectService, customerService, partnerService } from '../api/services';
-import { getFlagUrl } from '../utils/flags';
-import { getLanguageLabel } from '../utils/languages';
+import { projectService, customerService, partnerService, settingsService } from '../api/services';
+import { getFlagUrl, getLanguageName } from '../utils/flags';
 import { Button } from '../components/ui/button';
 
 
-import TableSkeleton from '../components/common/TableSkeleton';
+import DetailSkeleton from '../components/common/DetailSkeleton';
 import FilePreviewModal from '../components/modals/FilePreviewModal';
 import HistoryTab from '../components/projects/HistoryTab';
 import MessagesTab from '../components/projects/MessagesTab';
@@ -105,6 +104,15 @@ interface ProjectData {
     classification: string;
     copies: number;
     copyPrice: number;
+    certifiedPrice: number;
+    apostillePrice: number;
+    expressPrice: number;
+    classificationPrice: number;
+    certifiedUnit: string;
+    apostilleUnit: string;
+    expressUnit: string;
+    classificationUnit: string;
+    copiesUnit: string;
     docType: string[];
     document_type_id?: number;
     additional_doc_types?: any[];
@@ -224,6 +232,24 @@ const ProjectDetail = () => {
         enabled: !!id
     });
 
+    const { data: companyData } = useQuery({
+        queryKey: ['companySettings'],
+        queryFn: settingsService.getCompany
+    });
+
+    const displayProjectNumber = useMemo(() => {
+        if (!projectData) return '';
+        if (projectData.project_number) return projectData.project_number;
+
+        // Fallback or construction if project_number is missing but settings exist
+        const prefix = companyData?.project_id_prefix || 'PR';
+        const showYear = companyData?.project_show_year !== false;
+        const year = projectData.createdAtRaw ? new Date(projectData.createdAtRaw).getFullYear() : new Date().getFullYear();
+        const num = String(projectData.id).padStart(4, '0');
+
+        return `${prefix}${showYear ? `-${year}` : ''}-${num}`;
+    }, [projectData, companyData]);
+
     useEffect(() => {
         if (projectResponse) {
             const mapped = mapProjectResponse(projectResponse) as ProjectData;
@@ -247,13 +273,13 @@ const ProjectDetail = () => {
         }
     };
 
-    const getLanguageInfo = (code: string) => {
+    const getLanguageInfo = (code: string, langObj?: any) => {
         if (!code) return { flagUrl: '', name: '-' };
-        const cleanCode = code.split('-')[0].toLowerCase();
+        const label = langObj?.name_internal || langObj?.name || getLanguageName(code);
 
         return {
             flagUrl: getFlagUrl(code),
-            name: getLanguageLabel(cleanCode)
+            name: label
         };
     };
 
@@ -503,11 +529,11 @@ const ProjectDetail = () => {
 
     const financials = useProjectFinancials(projectData);
 
-    if (isLoading) return <TableSkeleton rows={10} columns={5} />;
+    if (isLoading) return <DetailSkeleton />;
     if (error || !projectData) return <div className="p-10 text-center text-red-500">Fehler beim Laden des Projekts.</div>;
 
-    const sourceLang = getLanguageInfo(projectData.source);
-    const targetLang = getLanguageInfo(projectData.target);
+    const sourceLang = getLanguageInfo(projectData.source, projectData.source_language);
+    const targetLang = getLanguageInfo(projectData.target, projectData.target_language);
     const deadlineStatus = getDeadlineStatus();
 
     const handleDownloadConfirmation = async (type: 'order_confirmation' | 'pickup_confirmation') => {
@@ -548,11 +574,8 @@ const ProjectDetail = () => {
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-3 flex-wrap">
                                             <div className="flex flex-wrap items-baseline gap-2 mb-1">
-                                                <span className="text-sm font-bold text-slate-400 font-mono tracking-tight bg-slate-100 px-2 py-0.5 rounded-sm border border-slate-200">
-                                                    {projectData.project_number || `#${projectData.id}`}
-                                                </span>
                                                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
-                                                    {projectData.name || 'Unbenanntes Projekt'}
+                                                    {displayProjectNumber}
                                                 </h1>
                                             </div>
 
@@ -696,7 +719,7 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Tabs Navigation */}
-                <div className="border-t border-slate-100 bg-white">
+                <div className="border-t border-b border-slate-200 bg-white">
                     <div className="max-w-[1800px] mx-auto px-3 sm:px-4 flex items-center justify-between md:justify-start">
                         <div className="md:hidden flex-1 py-3">
                             <button
@@ -734,10 +757,10 @@ const ProjectDetail = () => {
                                             setIsTabMenuOpen(false);
                                         }}
                                         className={clsx(
-                                            "py-4 px-1 text-sm font-medium transition-all relative flex items-center gap-2.5 border-b-2 -mb-[1px]",
+                                            "pt-5 pb-3 px-1 text-sm font-medium transition-all relative flex items-center gap-2.5 border-b-2 -mb-[1px]",
                                             isActive
                                                 ? 'border-brand-primary text-brand-primary font-bold'
-                                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200'
+                                                : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-200'
                                         )}
                                     >
                                         {tab === 'overview' && <FaInfoCircle className={clsx("text-sm", isActive ? "text-brand-primary" : "text-slate-300")} />}
@@ -820,255 +843,255 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 max-w-[1800px] mx-auto w-full px-3 sm:px-4 py-4 sm:py-8 transition-all duration-300">
+                <div className="flex-1 max-w-[1800px] mx-auto w-full px-3 sm:px-4 pt-0 transition-all duration-300 pb-10">
                     {activeTab === "overview" && (
-            <ProjectOverviewTabNew
-                projectData={projectData}
-                sourceLang={sourceLang}
-                targetLang={targetLang}
-                deadlineStatus={deadlineStatus}
-                navigate={navigate}
-                locationPathname={location.pathname}
-                setIsCustomerSearchOpen={setIsCustomerSearchOpen}
-                setIsPartnerModalOpen={setIsPartnerModalOpen}
-                setIsCustomerEditModalOpen={setIsCustomerEditModalOpen}
-                setIsPartnerEditModalOpen={setIsPartnerEditModalOpen}
-                handlePreviewFile={handlePreviewFile}
-                setPreviewInvoice={setPreviewInvoice}
-                onSendEmail={(recipientType) => {
-                    const to = recipientType === 'partner'
-                        ? (projectData.translator?.email || '')
-                        : (projectData.customer?.email || '');
+                        <ProjectOverviewTabNew
+                            projectData={projectData}
+                            sourceLang={sourceLang}
+                            targetLang={targetLang}
+                            deadlineStatus={deadlineStatus}
+                            navigate={navigate}
+                            locationPathname={location.pathname}
+                            setIsCustomerSearchOpen={setIsCustomerSearchOpen}
+                            setIsPartnerModalOpen={setIsPartnerModalOpen}
+                            setIsCustomerEditModalOpen={setIsCustomerEditModalOpen}
+                            setIsPartnerEditModalOpen={setIsPartnerEditModalOpen}
+                            handlePreviewFile={handlePreviewFile}
+                            setPreviewInvoice={setPreviewInvoice}
+                            onSendEmail={(recipientType) => {
+                                const to = recipientType === 'partner'
+                                    ? (projectData.translator?.email || '')
+                                    : (projectData.customer?.email || '');
 
-                    setEmailComposeData({
-                        to,
-                        subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
-                        recipientType
-                    });
-                    setIsEmailComposeOpen(true);
-                }}
-            />
-        )}
+                                setEmailComposeData({
+                                    to,
+                                    subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
+                                    recipientType
+                                });
+                                setIsEmailComposeOpen(true);
+                            }}
+                        />
+                    )}
 
-{
-    activeTab === 'files' && (
-        <ProjectFilesTab
-            projectData={projectData}
-            setIsUploadModalOpen={setIsUploadModalOpen}
-            handlePreviewFile={handlePreviewFile}
-            handleDownloadFile={handleDownloadFile}
-            setDeleteFileConfirm={setDeleteFileConfirm}
-            toggleFileType={toggleFileType}
-            onRenameFile={handleRenameFile}
-            onMoveFile={handleMoveFile}
-            onBulkMove={handleBulkFilesMove}
-            onBulkDownloadZip={handleBulkFilesDownloadZip}
-            formatFileSize={formatFileSize}
-            onUpload={handleFileUpload}
-        />
-    )
-}
-
-{
-    activeTab === 'finances' && projectData && (
-        <ProjectFinancesTab
-            projectData={projectData}
-            onSavePositions={(positions, extras) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
-            onRecordPayment={() => {
-                setEditingPayment(null);
-                setIsPaymentModalOpen(true);
-            }}
-            onEditPayment={(payment) => {
-                setEditingPayment(payment);
-                setIsPaymentModalOpen(true);
-            }}
-            onDeletePayment={(paymentId) => {
-                const payment = (projectData.payments || []).find((p: any) => p.id === paymentId);
-                setPaymentDeleteConfirm({ isOpen: true, paymentId, amount: payment?.amount || '0' });
-            }}
-            isPendingSave={updateProjectMutation.isPending}
-            onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
-        />
-    )
-}
-
-{
-    activeTab === 'messages' && (
-        <div className="mb-10 animate-fadeIn">
-            <MessagesTab projectData={projectData} projectId={id!} financials={financials} />
-        </div>
-    )
-}
-
-{
-    activeTab === 'history' && (
-        <HistoryTab projectId={id!} />
-    )
-}
-            </div>
-
-            <CustomerSelectionModal
-                isOpen={isCustomerSearchOpen}
-                onClose={() => setIsCustomerSearchOpen(false)}
-                onSelect={(customer) => {
-                    updateProjectMutation.mutate({ customer_id: customer.id });
-                    if (projectData) {
-                        setProjectData({
-                            ...projectData,
-                            customer_id: customer.id,
-                            customer: {
-                                ...projectData.customer,
-                                id: customer.id.toString(),
-                                name: customer.company || customer.name,
-                                contact: customer.contact || '-',
-                                email: customer.email || '',
-                                phone: customer.phone || '',
-                                initials: customer.initials,
-                                type: customer.type
-                            },
-                            client: customer.company || customer.name
-                        });
-                    }
-                    setIsCustomerSearchOpen(false);
-                }}
-            />
-
-            <PartnerSelectionModal isOpen={isPartnerModalOpen} onClose={() => setIsPartnerModalOpen(false)} onSelect={handlePartnerSelect} />
-            <NewProjectModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                onSubmit={handleEditSubmit}
-                initialData={projectData}
-                isLoading={updateProjectMutation.isPending}
-            />
-            <FileUploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleFileUpload} />
-            <PaymentModal
-                isOpen={isPaymentModalOpen}
-                initialData={editingPayment}
-                onClose={() => {
-                    setIsPaymentModalOpen(false);
-                    setEditingPayment(null);
-                }}
-                onSave={(payment) => {
-                    let newPayments;
-                    if (editingPayment) {
-                        newPayments = (projectData?.payments || []).map((p: any) =>
-                            p.id === editingPayment.id ? { ...p, ...payment } : p
-                        );
-                    } else {
-                        newPayments = [...(projectData?.payments || []), { ...payment, id: Date.now().toString() }];
+                    {
+                        activeTab === 'files' && (
+                            <ProjectFilesTab
+                                projectData={projectData}
+                                setIsUploadModalOpen={setIsUploadModalOpen}
+                                handlePreviewFile={handlePreviewFile}
+                                handleDownloadFile={handleDownloadFile}
+                                setDeleteFileConfirm={setDeleteFileConfirm}
+                                toggleFileType={toggleFileType}
+                                onRenameFile={handleRenameFile}
+                                onMoveFile={handleMoveFile}
+                                onBulkMove={handleBulkFilesMove}
+                                onBulkDownloadZip={handleBulkFilesDownloadZip}
+                                formatFileSize={formatFileSize}
+                                onUpload={handleFileUpload}
+                            />
+                        )
                     }
 
-                    const totalPaid = newPayments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
-                    const isFullyPaid = financials.grossTotal > 0 && (financials.grossTotal - totalPaid) <= 0.01;
+                    {
+                        activeTab === 'finances' && projectData && (
+                            <ProjectFinancesTab
+                                projectData={projectData}
+                                onSavePositions={(positions, extras) => updateProjectMutation.mutate({ positions, ...(extras ?? {}) })}
+                                onRecordPayment={() => {
+                                    setEditingPayment(null);
+                                    setIsPaymentModalOpen(true);
+                                }}
+                                onEditPayment={(payment) => {
+                                    setEditingPayment(payment);
+                                    setIsPaymentModalOpen(true);
+                                }}
+                                onDeletePayment={(paymentId) => {
+                                    const payment = (projectData.payments || []).find((p: any) => p.id === paymentId);
+                                    setPaymentDeleteConfirm({ isOpen: true, paymentId, amount: payment?.amount || '0' });
+                                }}
+                                isPendingSave={updateProjectMutation.isPending}
+                                onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
+                            />
+                        )
+                    }
 
-                    if (projectData) {
-                        const updateData: any = { payments: newPayments };
-                        if (isFullyPaid && projectData.status !== 'completed' && projectData.status !== 'archived') {
-                            updateData.status = 'completed';
-                            updateData.progress = 100;
-                            toast.success(t('messages.payment_complete_success'));
+                    {
+                        activeTab === 'messages' && (
+                            <div className="mb-10 animate-fadeIn">
+                                <MessagesTab projectData={projectData} projectId={id!} />
+                            </div>
+                        )
+                    }
+
+                    {
+                        activeTab === 'history' && (
+                            <HistoryTab projectId={id!} />
+                        )
+                    }
+                </div>
+
+                <CustomerSelectionModal
+                    isOpen={isCustomerSearchOpen}
+                    onClose={() => setIsCustomerSearchOpen(false)}
+                    onSelect={(customer) => {
+                        updateProjectMutation.mutate({ customer_id: customer.id });
+                        if (projectData) {
+                            setProjectData({
+                                ...projectData,
+                                customer_id: customer.id,
+                                customer: {
+                                    ...projectData.customer,
+                                    id: customer.id.toString(),
+                                    name: customer.company || customer.name,
+                                    contact: customer.contact || '-',
+                                    email: customer.email || '',
+                                    phone: customer.phone || '',
+                                    initials: customer.initials,
+                                    type: customer.type
+                                },
+                                client: customer.company || customer.name
+                            });
                         }
-                        updateProjectMutation.mutate(updateData);
-                    }
-                    setEditingPayment(null);
-                }}
-                totalAmount={financials.grossTotal}
-                alreadyPaid={editingPayment ? financials.paid - parseFloat(editingPayment.amount) : financials.paid}
-            />
+                        setIsCustomerSearchOpen(false);
+                    }}
+                />
 
-            <NewCustomerModal
-                isOpen={isCustomerEditModalOpen}
-                onClose={() => setIsCustomerEditModalOpen(false)}
-                onSubmit={(data) => updateCustomerMutation.mutate(data)}
-                initialData={projectResponse?.customer}
-                isLoading={updateCustomerMutation.isPending}
-            />
+                <PartnerSelectionModal isOpen={isPartnerModalOpen} onClose={() => setIsPartnerModalOpen(false)} onSelect={handlePartnerSelect} />
+                <NewProjectModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onSubmit={handleEditSubmit}
+                    initialData={projectData}
+                    isLoading={updateProjectMutation.isPending}
+                />
+                <FileUploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleFileUpload} />
+                <PaymentModal
+                    isOpen={isPaymentModalOpen}
+                    initialData={editingPayment}
+                    onClose={() => {
+                        setIsPaymentModalOpen(false);
+                        setEditingPayment(null);
+                    }}
+                    onSave={(payment) => {
+                        let newPayments;
+                        if (editingPayment) {
+                            newPayments = (projectData?.payments || []).map((p: any) =>
+                                p.id === editingPayment.id ? { ...p, ...payment } : p
+                            );
+                        } else {
+                            newPayments = [...(projectData?.payments || []), { ...payment, id: Date.now().toString() }];
+                        }
 
-            <NewPartnerModal
-                isOpen={isPartnerEditModalOpen}
-                onClose={() => setIsPartnerEditModalOpen(false)}
-                onSubmit={(data) => updatePartnerMutation.mutate(data)}
-                initialData={projectResponse?.partner}
-                isLoading={updatePartnerMutation.isPending}
-            />
-            <FilePreviewModal
-                isOpen={!!previewFile}
-                onClose={() => {
-                    if (previewFile?.url) window.URL.revokeObjectURL(previewFile.url);
-                    setPreviewFile(null);
-                }}
-                file={previewFile}
-                onDownload={() => previewFile?.id && handleDownloadFile({ name: previewFile.name, id: previewFile.id })}
-                onDelete={previewFile?.id ? () => setDeleteFileConfirm({ isOpen: true, fileId: previewFile.id!, fileName: previewFile.name }) : undefined}
-            />
-            <ConfirmModal
-                isOpen={deleteFileConfirm.isOpen}
-                onClose={() => setDeleteFileConfirm({ isOpen: false, fileId: null, fileName: '' })}
-                onConfirm={() => {
-                    if (deleteFileConfirm.fileId) {
-                        deleteFileMutation.mutate(deleteFileConfirm.fileId);
-                        setDeleteFileConfirm({ isOpen: false, fileId: null, fileName: '' });
-                    }
-                }}
-                title="Datei löschen"
-                message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-                confirmText={t('actions.delete')}
-                cancelText={t('actions.cancel')}
-                isLoading={deleteFileMutation.isPending}
-            />
-            <ConfirmModal
-                isOpen={paymentDeleteConfirm.isOpen}
-                onClose={() => setPaymentDeleteConfirm({ isOpen: false, paymentId: null, amount: '' })}
-                onConfirm={() => {
-                    if (paymentDeleteConfirm.paymentId) {
-                        const newPayments = (projectData.payments || []).filter((p: any) => p.id !== paymentDeleteConfirm.paymentId);
-                        updateProjectMutation.mutate({ payments: newPayments });
-                        setPaymentDeleteConfirm({ isOpen: false, paymentId: null, amount: '' });
-                    }
-                }}
-                title="Zahlung löschen"
-                message={`Möchten Sie die Zahlung in Höhe von ${paymentDeleteConfirm.amount} € wirklich löschen?`}
-                confirmText={t('actions.delete')}
-                type="danger"
-            />
-            <ConfirmModal
-                isOpen={isProjectDeleteConfirmOpen}
-                onClose={() => setIsProjectDeleteConfirmOpen(false)}
-                onConfirm={() => deleteProjectMutation.mutate(id!)}
-                title="Projekt löschen"
-                message={`Möchten Sie das Projekt "${projectData?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-                confirmText={t('actions.delete')}
-                cancelText={t('actions.cancel')}
-                type="danger"
-                isLoading={deleteProjectMutation.isPending}
-            />
-            <InviteParticipantModal
-                isOpen={isInviteModalOpen}
-                onClose={() => setIsInviteModalOpen(false)}
-                projectId={id!}
-            />
+                        const totalPaid = newPayments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
+                        const isFullyPaid = financials.grossTotal > 0 && (financials.grossTotal - totalPaid) <= 0.01;
 
-            <InterpreterConfirmationModal
-                isOpen={isInterpreterModalOpen}
-                onClose={() => setIsInterpreterModalOpen(false)}
-                project={projectData}
-            />
+                        if (projectData) {
+                            const updateData: any = { payments: newPayments };
+                            if (isFullyPaid && projectData.status !== 'completed' && projectData.status !== 'archived') {
+                                updateData.status = 'completed';
+                                updateData.progress = 100;
+                                toast.success(t('messages.payment_complete_success'));
+                            }
+                            updateProjectMutation.mutate(updateData);
+                        }
+                        setEditingPayment(null);
+                    }}
+                    totalAmount={financials.grossTotal}
+                    alreadyPaid={editingPayment ? financials.paid - parseFloat(editingPayment.amount) : financials.paid}
+                />
 
-            <InvoicePreviewModal
-                isOpen={!!previewInvoice}
-                onClose={() => setPreviewInvoice(null)}
-                invoice={previewInvoice}
-            />
+                <NewCustomerModal
+                    isOpen={isCustomerEditModalOpen}
+                    onClose={() => setIsCustomerEditModalOpen(false)}
+                    onSubmit={(data) => updateCustomerMutation.mutate(data)}
+                    initialData={projectResponse?.customer}
+                    isLoading={updateCustomerMutation.isPending}
+                />
 
-            <EmailComposeModal
-                isOpen={isEmailComposeOpen}
-                onClose={() => setIsEmailComposeOpen(false)}
-                projectId={id}
-                to={emailComposeData.to}
-                subject={emailComposeData.subject}
-            />
-        </div>
+                <NewPartnerModal
+                    isOpen={isPartnerEditModalOpen}
+                    onClose={() => setIsPartnerEditModalOpen(false)}
+                    onSubmit={(data) => updatePartnerMutation.mutate(data)}
+                    initialData={projectResponse?.partner}
+                    isLoading={updatePartnerMutation.isPending}
+                />
+                <FilePreviewModal
+                    isOpen={!!previewFile}
+                    onClose={() => {
+                        if (previewFile?.url) window.URL.revokeObjectURL(previewFile.url);
+                        setPreviewFile(null);
+                    }}
+                    file={previewFile}
+                    onDownload={() => previewFile?.id && handleDownloadFile({ name: previewFile.name, id: previewFile.id })}
+                    onDelete={previewFile?.id ? () => setDeleteFileConfirm({ isOpen: true, fileId: previewFile.id!, fileName: previewFile.name }) : undefined}
+                />
+                <ConfirmModal
+                    isOpen={deleteFileConfirm.isOpen}
+                    onClose={() => setDeleteFileConfirm({ isOpen: false, fileId: null, fileName: '' })}
+                    onConfirm={() => {
+                        if (deleteFileConfirm.fileId) {
+                            deleteFileMutation.mutate(deleteFileConfirm.fileId);
+                            setDeleteFileConfirm({ isOpen: false, fileId: null, fileName: '' });
+                        }
+                    }}
+                    title="Datei löschen"
+                    message={`Möchten Sie die Datei "${deleteFileConfirm.fileName}" wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                    confirmText={t('actions.delete')}
+                    cancelText={t('actions.cancel')}
+                    isLoading={deleteFileMutation.isPending}
+                />
+                <ConfirmModal
+                    isOpen={paymentDeleteConfirm.isOpen}
+                    onClose={() => setPaymentDeleteConfirm({ isOpen: false, paymentId: null, amount: '' })}
+                    onConfirm={() => {
+                        if (paymentDeleteConfirm.paymentId) {
+                            const newPayments = (projectData.payments || []).filter((p: any) => p.id !== paymentDeleteConfirm.paymentId);
+                            updateProjectMutation.mutate({ payments: newPayments });
+                            setPaymentDeleteConfirm({ isOpen: false, paymentId: null, amount: '' });
+                        }
+                    }}
+                    title="Zahlung löschen"
+                    message={`Möchten Sie die Zahlung in Höhe von ${paymentDeleteConfirm.amount} € wirklich löschen?`}
+                    confirmText={t('actions.delete')}
+                    type="danger"
+                />
+                <ConfirmModal
+                    isOpen={isProjectDeleteConfirmOpen}
+                    onClose={() => setIsProjectDeleteConfirmOpen(false)}
+                    onConfirm={() => deleteProjectMutation.mutate(id!)}
+                    title="Projekt löschen"
+                    message={`Möchten Sie das Projekt "${projectData?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                    confirmText={t('actions.delete')}
+                    cancelText={t('actions.cancel')}
+                    type="danger"
+                    isLoading={deleteProjectMutation.isPending}
+                />
+                <InviteParticipantModal
+                    isOpen={isInviteModalOpen}
+                    onClose={() => setIsInviteModalOpen(false)}
+                    projectId={id!}
+                />
+
+                <InterpreterConfirmationModal
+                    isOpen={isInterpreterModalOpen}
+                    onClose={() => setIsInterpreterModalOpen(false)}
+                    project={projectData}
+                />
+
+                <InvoicePreviewModal
+                    isOpen={!!previewInvoice}
+                    onClose={() => setPreviewInvoice(null)}
+                    invoice={previewInvoice}
+                />
+
+                <EmailComposeModal
+                    isOpen={isEmailComposeOpen}
+                    onClose={() => setIsEmailComposeOpen(false)}
+                    projectId={id}
+                    to={emailComposeData.to}
+                    subject={emailComposeData.subject}
+                />
+            </div>
         </div>
     );
 };

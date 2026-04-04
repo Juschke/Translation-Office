@@ -75,21 +75,21 @@ const ProjectOverviewTab = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                         <div className="space-y-4">
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Projekt</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Projekt</span>
                                 <span className="font-medium text-slate-800 tracking-tight">{projectData.project_number || projectData.id || <span className="text-slate-300 italic font-normal">Keine Angabe</span>}</span>
                             </div>
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bezeichnung</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Bezeichnung</span>
                                 <span className="font-bold text-slate-800">{projectData.name || <span className="text-slate-300 italic font-normal">Keine Angabe</span>}</span>
                             </div>
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-center">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Sprachpaar</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Sprachpaar</span>
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-2 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-sm text-xs text-slate-700 font-semibold uppercase tracking-tight">
                                         <img src={sourceLang.flagUrl} alt="" className="w-4 h-3 rounded-[1px] object-cover" />
                                         {sourceLang.name}
                                     </div>
-                                    <FaArrowRight className="text-slate-300 text-[10px]" />
+                                    <FaArrowRight className="text-slate-300 text-xs" />
                                     <div className="flex items-center gap-2 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-sm text-xs text-slate-700 font-semibold uppercase tracking-tight">
                                         <img src={targetLang.flagUrl} alt="" className="w-4 h-3 rounded-[1px] object-cover" />
                                         {targetLang.name}
@@ -100,7 +100,7 @@ const ProjectOverviewTab = ({
 
                         <div className="space-y-4">
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Termin</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Termin</span>
                                 <div className="flex flex-col gap-1">
                                     <span className="text-slate-800 font-bold">
                                         {projectData.due ? (() => {
@@ -110,34 +110,34 @@ const ProjectOverviewTab = ({
                                         })() : <span className="text-slate-300 italic font-normal">Keine Angabe</span>}
                                     </span>
                                     {projectData.due && (
-                                        <div className={clsx("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-tight", deadlineStatus.color.split(' ')[1])}>
+                                        <div className={clsx("flex items-center gap-1.5 text-xs font-bold uppercase tracking-tight", deadlineStatus.color.split(' ')[1])}>
                                             {deadlineStatus.label}
                                         </div>
                                     )}
                                 </div>
                             </div>
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Priorität</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Priorität</span>
                                 <div>
                                     {(() => {
                                         const p = projectData.priority;
                                         if (p === 'low') return (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">
                                                 Standard
                                             </span>
                                         );
                                         if (p === 'medium') return (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-500 border border-blue-100">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-500 border border-blue-100">
                                                 Normal
                                             </span>
                                         );
                                         if (p === 'high') return (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-orange-50 text-orange-500 border border-orange-100">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-bold uppercase tracking-wider bg-orange-50 text-orange-500 border border-orange-100">
                                                 Hoch
                                             </span>
                                         );
                                         if (p === 'express') return (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-500 border border-red-100">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-bold uppercase tracking-wider bg-red-50 text-red-500 border border-red-100">
                                                 Express
                                             </span>
                                         );
@@ -159,17 +159,17 @@ const ProjectOverviewTab = ({
                                     <button
                                         onClick={() => onSendEmail('customer')}
                                         title="E-Mail an Kunden senden"
-                                        className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-brand-primary transition-colors px-2 py-1 rounded-sm hover:bg-slate-50 border border-transparent hover:border-slate-200"
+                                        className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-primary transition-colors px-2 py-1 rounded-sm hover:bg-slate-50 border border-transparent hover:border-slate-200"
                                     >
-                                        <FaEnvelope className="text-[10px]" /> E-Mail
+                                        <FaEnvelope className="text-xs" /> E-Mail
                                     </button>
                                 )}
                                 <button
                                     onClick={() => setIsCustomerEditModalOpen(true)}
                                     title="Kundendaten bearbeiten"
-                                    className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-brand-primary transition-colors px-2 py-1 rounded-sm hover:bg-slate-50 border border-transparent hover:border-slate-200"
+                                    className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-primary transition-colors px-2 py-1 rounded-sm hover:bg-slate-50 border border-transparent hover:border-slate-200"
                                 >
-                                    <FaEdit className="text-[10px]" /> Bearbeiten
+                                    <FaEdit className="text-xs" /> Bearbeiten
                                 </button>
                                 {projectData.customer_id && (
                                     <Button
@@ -178,7 +178,7 @@ const ProjectOverviewTab = ({
                                         onClick={() => navigate(`/customers/${projectData.customer_id}`, { state: { from: locationPathname } })}
                                         className="h-auto p-0 text-slate-400 font-medium hover:text-brand-primary flex items-center gap-1.5 transition-colors"
                                     >
-                                        <FaExternalLinkAlt className="text-[10px]" /> Details
+                                        <FaExternalLinkAlt className="text-xs" /> Details
                                     </Button>
                                 )}
                                 <Button variant="link" size="sm" onClick={() => setIsCustomerSearchOpen(true)} className="h-auto p-0 text-brand-primary font-bold hover:underline">Ändern</Button>
@@ -186,17 +186,17 @@ const ProjectOverviewTab = ({
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Kunden-ID</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Kunden-ID</span>
                                 <span className="font-medium text-slate-800 truncate">{projectData.customer.display_id || projectData.customer.id || '-'}</span>
                             </div>
                             <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Name</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Name</span>
                                 <span className="font-bold text-slate-800">{projectData.customer.name || '-'}</span>
                             </div>
                             {/* Address — individual rows */}
                             {projectData.customer.address_street && (
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Straße</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Straße</span>
                                     <span className="text-slate-700 text-xs font-medium">
                                         {projectData.customer.address_street}{projectData.customer.address_house_no ? ` ${projectData.customer.address_house_no}` : ''}
                                     </span>
@@ -204,19 +204,19 @@ const ProjectOverviewTab = ({
                             )}
                             {projectData.customer.address_zip && (
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">PLZ</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">PLZ</span>
                                     <span className="text-slate-700 text-xs font-medium">{projectData.customer.address_zip}</span>
                                 </div>
                             )}
                             {projectData.customer.address_city && (
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Stadt</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Stadt</span>
                                     <span className="text-slate-700 text-xs font-medium">{projectData.customer.address_city}</span>
                                 </div>
                             )}
                             {projectData.customer.address_country && (
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Land</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Land</span>
                                     <span className="text-slate-700 text-xs font-medium">
                                         {projectData.customer.address_country === 'DE' ? 'Deutschland'
                                             : projectData.customer.address_country === 'AT' ? 'Österreich'
@@ -227,13 +227,13 @@ const ProjectOverviewTab = ({
                             )}
                             {!projectData.customer.address_street && !projectData.customer.address_city && (
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Adresse</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Adresse</span>
                                     <span className="text-slate-300 italic text-xs">Keine Angabe</span>
                                 </div>
                             )}
                             {/* Contact details — individual rows */}
                             <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline pt-1">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">E-Mail</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">E-Mail</span>
                                 <div className="space-y-1">
                                     {projectData.customer.email ? (
                                         <a href={`mailto:${projectData.customer.email}`} className="text-slate-700 font-medium hover:underline text-xs">
@@ -248,7 +248,7 @@ const ProjectOverviewTab = ({
                                 </div>
                             </div>
                             <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Telefon</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Telefon</span>
                                 <div className="space-y-1">
                                     {projectData.customer.phone ? (
                                         <a href={`tel:${projectData.customer.phone}`} className="text-slate-700 font-medium hover:underline text-xs">
@@ -274,18 +274,18 @@ const ProjectOverviewTab = ({
                                     <button
                                         onClick={() => onSendEmail('partner')}
                                         title="E-Mail an Partner senden"
-                                        className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-brand-primary transition-colors px-2 py-1 rounded-sm hover:bg-slate-50 border border-transparent hover:border-slate-200"
+                                        className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-primary transition-colors px-2 py-1 rounded-sm hover:bg-slate-50 border border-transparent hover:border-slate-200"
                                     >
-                                        <FaEnvelope className="text-[10px]" /> E-Mail
+                                        <FaEnvelope className="text-xs" /> E-Mail
                                     </button>
                                 )}
                                 {projectData.translator?.id && (
                                     <button
                                         onClick={() => setIsPartnerEditModalOpen(true)}
                                         title="Partnerdaten bearbeiten"
-                                        className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-brand-primary transition-colors px-2 py-1 rounded-sm hover:bg-slate-50 border border-transparent hover:border-slate-200"
+                                        className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-primary transition-colors px-2 py-1 rounded-sm hover:bg-slate-50 border border-transparent hover:border-slate-200"
                                     >
-                                        <FaEdit className="text-[10px]" /> Bearbeiten
+                                        <FaEdit className="text-xs" /> Bearbeiten
                                     </button>
                                 )}
                                 {projectData.translator?.id && (
@@ -295,7 +295,7 @@ const ProjectOverviewTab = ({
                                         onClick={() => navigate(`/partners/${projectData.translator.id}`, { state: { from: locationPathname } })}
                                         className="h-auto p-0 text-slate-400 font-medium hover:text-brand-primary flex items-center gap-1.5 transition-colors"
                                     >
-                                        <FaExternalLinkAlt className="text-[10px]" /> Details
+                                        <FaExternalLinkAlt className="text-xs" /> Details
                                     </Button>
                                 )}
                                 <Button variant="link" size="sm" onClick={() => setIsPartnerModalOpen(true)} className="h-auto p-0 text-brand-primary font-bold hover:underline">Ändern</Button>
@@ -305,15 +305,15 @@ const ProjectOverviewTab = ({
                         {projectData.translator?.id ? (
                             <div className="space-y-3">
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partner-ID</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Partner-ID</span>
                                     <span className="font-medium text-slate-800 truncate">{projectData.translator.display_id || projectData.translator.id || '-'}</span>
                                 </div>
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Name</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Name</span>
                                     <span className="font-bold text-slate-800">{projectData.translator.name}</span>
                                 </div>
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-center">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bewertung</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Bewertung</span>
                                     <div className="flex items-center gap-0.5">
                                         {[1, 2, 3, 4, 5].map(star => (
                                             <FaStar key={star} size={10} className={star <= (projectData.translator.rating || 0) ? "text-amber-400" : "text-slate-200"} />
@@ -326,7 +326,7 @@ const ProjectOverviewTab = ({
                                 {/* Address — individual rows */}
                                 {projectData.translator.address_street && (
                                     <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Straße</span>
+                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Straße</span>
                                         <span className="text-slate-700 text-xs font-medium">
                                             {projectData.translator.address_street}{projectData.translator.address_house_no ? ` ${projectData.translator.address_house_no}` : ''}
                                         </span>
@@ -334,19 +334,19 @@ const ProjectOverviewTab = ({
                                 )}
                                 {projectData.translator.address_zip && (
                                     <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">PLZ</span>
+                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">PLZ</span>
                                         <span className="text-slate-700 text-xs font-medium">{projectData.translator.address_zip}</span>
                                     </div>
                                 )}
                                 {projectData.translator.address_city && (
                                     <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Stadt</span>
+                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Stadt</span>
                                         <span className="text-slate-700 text-xs font-medium">{projectData.translator.address_city}</span>
                                     </div>
                                 )}
                                 {/* Contact — individual rows */}
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline pt-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">E-Mail</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">E-Mail</span>
                                     <div className="space-y-1">
                                         {projectData.translator.email ? (
                                             <a href={`mailto:${projectData.translator.email}`} className="text-slate-700 font-medium hover:underline text-xs">
@@ -361,7 +361,7 @@ const ProjectOverviewTab = ({
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Telefon</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Telefon</span>
                                     <div className="space-y-1">
                                         {projectData.translator.phone ? (
                                             <a href={`tel:${projectData.translator.phone}`} className="text-slate-700 font-medium hover:underline text-xs">
@@ -376,7 +376,7 @@ const ProjectOverviewTab = ({
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Rate</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Rate</span>
                                     <div className="flex flex-wrap gap-3">
                                         {(() => {
                                             const rates = Array.isArray(projectData.translator.unit_rates) ? projectData.translator.unit_rates : [];
@@ -417,34 +417,34 @@ const ProjectOverviewTab = ({
                         </div>
                         <div className="space-y-4">
                             <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dokument</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Dokument</span>
                                 <div className="text-xs font-semibold text-slate-800">
                                     {projectData.docType.length > 0 ? projectData.docType.join(', ') : <span className="text-slate-300 italic font-normal">Keine Angabe</span>}
                                 </div>
                             </div>
                             <div className="grid grid-cols-[100px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Optionen</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Optionen</span>
                                 <div className="flex flex-wrap gap-4">
                                     {!projectData.isCertified && !projectData.hasApostille && !projectData.isExpress && projectData.classification !== 'ja' && projectData.copies <= 0 && (
                                         <span className="text-slate-300 italic">Standard</span>
                                     )}
                                     {projectData.isCertified && (
-                                        <span className="text-emerald-600 text-[10px] font-bold uppercase tracking-tight flex items-center gap-1">
+                                        <span className="text-emerald-600 text-xs font-bold uppercase tracking-tight flex items-center gap-1">
                                             <FaCheck className="text-[8px]" /> Beglaubigt
                                         </span>
                                     )}
                                     {projectData.hasApostille && (
-                                        <span className="text-amber-600 text-[10px] font-bold uppercase tracking-tight flex items-center gap-1">
+                                        <span className="text-amber-600 text-xs font-bold uppercase tracking-tight flex items-center gap-1">
                                             <FaCheck className="text-[8px]" /> Apostille
                                         </span>
                                     )}
                                     {projectData.classification === 'ja' && (
-                                        <span className="text-purple-600 text-[10px] font-bold uppercase tracking-tight flex items-center gap-1">
+                                        <span className="text-purple-600 text-xs font-bold uppercase tracking-tight flex items-center gap-1">
                                             <FaCheck className="text-[8px]" /> Klassifiziert
                                         </span>
                                     )}
                                     {projectData.copies > 0 && (
-                                        <span className="text-slate-600 text-[10px] font-bold uppercase tracking-tight flex items-center gap-1">
+                                        <span className="text-slate-600 text-xs font-bold uppercase tracking-tight flex items-center gap-1">
                                             <FaCopy className="text-[8px]" /> {projectData.copies}x Kopie
                                         </span>
                                     )}
@@ -461,7 +461,7 @@ const ProjectOverviewTab = ({
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between p-4 border border-slate-100 rounded-sm">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Projektstatus</span>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Projektstatus</span>
                                         {(() => {
                                             const status = projectData.status;
                                             const labels: { [key: string]: string } = {
@@ -484,7 +484,7 @@ const ProjectOverviewTab = ({
                                             };
                                             return (
                                                 <span className={clsx(
-                                                    "px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider border w-fit shadow-xs",
+                                                    "px-2.5 py-1 rounded-sm text-xs font-bold uppercase tracking-wider border w-fit shadow-xs",
                                                     colorClasses[status] || 'bg-slate-50 text-slate-600 border-slate-200'
                                                 )}>
                                                     {labels[status] || status}
@@ -496,7 +496,7 @@ const ProjectOverviewTab = ({
 
                                 <div className="flex items-center justify-between p-4 border border-slate-100 rounded-sm">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Versandstatus</span>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Versandstatus</span>
                                         {projectData.documentsSent ? (
                                             <div className="flex items-center gap-2 text-emerald-700 font-bold transition-all text-xs">
                                                 <FaCheckCircle className="text-emerald-500" /> Dokumente versendet
@@ -510,7 +510,7 @@ const ProjectOverviewTab = ({
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <h5 className="text-[10px] font-bold text-slate-400 uppercase">Interne Notizen</h5>
+                                    <h5 className="text-xs font-bold text-slate-400 uppercase">Interne Notizen</h5>
                                     <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap font-medium bg-slate-50/30 p-3 rounded-sm border border-slate-100">
                                         {projectData.notes || <span className="italic text-slate-300">Keine Notizen.</span>}
                                     </div>
@@ -522,7 +522,7 @@ const ProjectOverviewTab = ({
                                     <>
                                         {sourceFiles.length > 0 && (
                                             <div className="space-y-2">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Quelldateien</span>
+                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Quelldateien</span>
                                                 <div className="flex flex-col gap-1.5">
                                                     {sourceFiles.map((file: any) => (
                                                         <button
@@ -534,8 +534,8 @@ const ProjectOverviewTab = ({
                                                                 {getFileIcon(file.name)}
                                                             </div>
                                                             <div className="flex flex-col min-w-0 flex-1">
-                                                                <span className="text-[10px] font-bold text-slate-700 truncate group-hover:text-emerald-700">{file.name}</span>
-                                                                <span className="text-[10px] text-slate-400 font-medium">{formatFileSize(file.size)}</span>
+                                                                <span className="text-xs font-bold text-slate-700 truncate group-hover:text-emerald-700">{file.name}</span>
+                                                                <span className="text-xs text-slate-400 font-medium">{formatFileSize(file.size)}</span>
                                                             </div>
                                                             <FaExternalLinkAlt className="text-[8px] text-slate-200 group-hover:text-emerald-400 transition-colors" />
                                                         </button>
@@ -546,7 +546,7 @@ const ProjectOverviewTab = ({
 
                                         {targetFiles.length > 0 && (
                                             <div className="space-y-2">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Übersetzungen</span>
+                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Übersetzungen</span>
                                                 <div className="flex flex-col gap-1.5">
                                                     {targetFiles.map((file: any) => (
                                                         <button
@@ -558,8 +558,8 @@ const ProjectOverviewTab = ({
                                                                 {getFileIcon(file.name)}
                                                             </div>
                                                             <div className="flex flex-col min-w-0 flex-1">
-                                                                <span className="text-[10px] font-bold text-slate-700 truncate group-hover:text-blue-700">{file.name}</span>
-                                                                <span className="text-[10px] text-slate-400 font-medium">{formatFileSize(file.size)}</span>
+                                                                <span className="text-xs font-bold text-slate-700 truncate group-hover:text-blue-700">{file.name}</span>
+                                                                <span className="text-xs text-slate-400 font-medium">{formatFileSize(file.size)}</span>
                                                             </div>
                                                             <FaCheckCircle className="text-[8px] text-slate-200 group-hover:text-blue-400 transition-colors" />
                                                         </button>
@@ -570,7 +570,7 @@ const ProjectOverviewTab = ({
 
                                         {activeInvoice && (
                                             <div className="space-y-2">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Abrechnung</span>
+                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Abrechnung</span>
                                                 <button
                                                     onClick={() => setPreviewInvoice(activeInvoice)}
                                                     className="flex items-center gap-3 p-2 bg-white border border-slate-100 rounded-sm hover:border-purple-200 hover:bg-purple-50/20 transition-all group text-left w-full"
@@ -579,8 +579,8 @@ const ProjectOverviewTab = ({
                                                         <FaFileInvoiceDollar />
                                                     </div>
                                                     <div className="flex flex-col min-w-0 flex-1">
-                                                        <span className="text-[10px] font-bold text-slate-700 truncate group-hover:text-purple-700">{activeInvoice.invoice_number}</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium">Rechnung (PDF)</span>
+                                                        <span className="text-xs font-bold text-slate-700 truncate group-hover:text-purple-700">{activeInvoice.invoice_number}</span>
+                                                        <span className="text-xs text-slate-400 font-medium">Rechnung (PDF)</span>
                                                     </div>
                                                     <FaExternalLinkAlt className="text-[8px] text-slate-200 group-hover:text-purple-400 transition-colors" />
                                                 </button>
@@ -590,7 +590,7 @@ const ProjectOverviewTab = ({
                                 ) : (
                                     <div className="flex flex-col items-center justify-center h-full py-8 text-center bg-slate-50/30 rounded-sm border border-dashed border-slate-200">
                                         <FaFileAlt className="text-slate-200 text-xl mb-2" />
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Keine Dokumente</p>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Keine Dokumente</p>
                                     </div>
                                 )}
                             </div>

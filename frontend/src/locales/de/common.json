@@ -1,5 +1,8 @@
 {
   "common": {
+    "project": "Projekt",
+    "project_id": "Projekt-ID",
+    "project_name": "Bezeichnung",
     "number": "Nummer",
     "number_short": "Nr.",
     "designation": "Bezeichnung",

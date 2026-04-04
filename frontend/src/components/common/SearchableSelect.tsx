@@ -324,8 +324,8 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     roundedSide === 'left' && "rounded-l-sm",
                     roundedSide === 'right' && "rounded-r-sm",
                     roundedSide === 'none' && "rounded-none",
-                    isOpen ? "border-slate-900 ring-2 ring-slate-950/10 shadow-sm" : "shadow-sm",
-                    disabled ? "bg-slate-50 border-slate-200 cursor-not-allowed opacity-60" : "bg-white",
+                    isOpen ? "border-brand-primary ring-2 ring-brand-primary/10" : "border-brand-border hover:border-brand-primary shadow-sm",
+                    disabled ? "bg-slate-50 border-brand-border/50 cursor-not-allowed opacity-60" : "bg-white",
                     className
                 )}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
@@ -341,7 +341,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                 return (
                                     <div key={v} className={clsx(
                                         "flex items-center gap-1",
-                                        isMulti ? "bg-slate-100 border border-slate-200 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-slate-700 whitespace-nowrap" : "font-semibold text-slate-800"
+                                        isMulti ? "bg-brand-accent/10 border border-brand-accent/20 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-slate-800 whitespace-nowrap" : "font-semibold text-slate-800"
                                     )}>
                                         {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
                                         <span>{opt.label}</span>
@@ -355,7 +355,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                 );
                             })}
                             {isMulti && values.length > maxVisibleItems && (
-                                <div className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-sm text-xs font-bold text-slate-500 whitespace-nowrap">
+                                <div className="bg-brand-accent/10 border border-brand-accent/20 px-1.5 py-0.5 rounded-sm text-xs font-bold text-slate-800 whitespace-nowrap">
                                     + {values.length - maxVisibleItems} weitere
                                 </div>
                             )}

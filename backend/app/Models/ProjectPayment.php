@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectPayment extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\LogsAllActivity;
 
     protected $fillable = [
         'project_id',

@@ -1,12 +1,11 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { triggerBlobDownload } from '../utils/download';
+import { getFlagUrl, getLanguageName } from '../utils/flags';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth, subMonths, startOfYear, subYears, isWithinInterval } from 'date-fns';
 import {
-    FaPlus, FaFileCsv,
-    FaFilePdf, FaFileExcel, FaLayerGroup,
-    FaDownload,
+    FaPlus, FaLayerGroup,
     FaListUl, FaColumns,
     FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore,
     FaExclamationTriangle, FaChartPie, FaUserTimes
@@ -20,7 +19,6 @@ import KPICard from '../components/common/KPICard';
 import DataTable, { type FilterDef } from '../components/common/DataTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, customerService, partnerService, settingsService } from '../api/services';
-import TableSkeleton from '../components/common/TableSkeleton';
 import KanbanBoard from '../components/projects/KanbanBoard';
 import ConfirmModal from '../components/common/ConfirmModal';
 import ProjectFilesModal from '../components/modals/ProjectFilesModal';
@@ -39,7 +37,6 @@ const Projects = () => {
     const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
     const [filter, setFilter] = useState('all');
     const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-    const [isExportOpen, setIsExportOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<any>(null);
     const [viewFilesProject, setViewFilesProject] = useState<any>(null);
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
@@ -58,17 +55,7 @@ const Projects = () => {
         apostille: 'all',
     });
 
-    const exportRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
-                setIsExportOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     useEffect(() => {
         if (location.state?.openNewModal) {
@@ -124,6 +111,11 @@ const Projects = () => {
     const { data: languages = [] } = useQuery({
         queryKey: ['languages'],
         queryFn: settingsService.getLanguages
+    });
+
+    const { data: companySettings } = useQuery({
+        queryKey: ['companySettings'],
+        queryFn: settingsService.getCompany
     });
 
     const createMutation = useMutation({
@@ -302,7 +294,8 @@ const Projects = () => {
     }).length;
 
     const filteredProjects = useMemo(() => {
-        let result = projects.filter((p: any) => {
+        const projectsArray = Array.isArray(projects) ? projects : ((projects as any)?.data || []);
+        let result = projectsArray.filter((p: any) => {
             // Priority 1: Filter by status view (active/archive/trash)
             if (statusView === 'trash') {
                 if (p.status !== 'deleted') return false;
@@ -421,7 +414,6 @@ const Projects = () => {
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         triggerBlobDownload(blob, `Projekte_Export_${new Date().toISOString().split('T')[0]}.${format === 'xlsx' ? 'csv' : format}`);
-        setIsExportOpen(false);
     };
 
     const handleEditProject = async (p: any) => {
@@ -442,6 +434,7 @@ const Projects = () => {
         setConfirmMessage,
         setIsConfirmOpen,
         t,
+        companySettings,
     });
 
     // Count projects by status for badges
@@ -493,20 +486,20 @@ const Projects = () => {
                 ]
             },
             {
-                id: 'customer', label: t('projects.filters.customers.label'), type: 'select' as const, value: advancedFilters.customerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: v })),
-                options: [{ value: '', label: t('projects.filters.customers.all') }, ...customers.map((c: any) => ({ value: c.id, label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]
+                id: 'customer', label: t('projects.filters.customers.label'), type: 'searchableSelect' as const, value: advancedFilters.customerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, customerId: v })),
+                options: [{ value: '', label: t('projects.filters.customers.all') }, ...(Array.isArray(customers) ? customers : ((customers as any)?.data || [])).map((c: any) => ({ value: String(c.id), label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]
             },
             {
-                id: 'partner', label: t('projects.filters.partners.label'), type: 'select' as const, value: advancedFilters.partnerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: v })),
-                options: [{ value: '', label: t('projects.filters.partners.all') }, ...partners.map((p: any) => ({ value: p.id, label: (p.company || `${p.first_name || ''} ${p.last_name || ''}`).trim() }))]
+                id: 'partner', label: t('projects.filters.partners.label'), type: 'searchableSelect' as const, value: advancedFilters.partnerId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, partnerId: v })),
+                options: [{ value: '', label: t('projects.filters.partners.all') }, ...(Array.isArray(partners) ? partners : ((partners as any)?.data || [])).map((p: any) => ({ value: String(p.id), label: (p.company || `${p.first_name || ''} ${p.last_name || ''}`).trim() }))]
             },
             {
-                id: 'sourceLang', label: t('projects.filters.languages.source'), type: 'select' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
-                options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
+                id: 'sourceLang', label: t('projects.filters.languages.source'), type: 'searchableSelect' as const, value: advancedFilters.sourceLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, sourceLanguageId: v })),
+                options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: String(l.id), label: getLanguageName(l.iso_code), icon: getFlagUrl(l.flag_icon || l.iso_code) }))]
             },
             {
-                id: 'targetLang', label: t('projects.filters.languages.target'), type: 'select' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
-                options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: l.id, label: l.name || (l.iso_code || '').toUpperCase() }))]
+                id: 'targetLang', label: t('projects.filters.languages.target'), type: 'searchableSelect' as const, value: advancedFilters.targetLanguageId || '', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, targetLanguageId: v })),
+                options: [{ value: '', label: t('projects.filters.languages.all') }, ...languages.map((l: any) => ({ value: String(l.id), label: getLanguageName(l.iso_code), icon: getFlagUrl(l.flag_icon || l.iso_code) }))]
             },
             {
                 id: 'deadlineRange', label: t('projects.filters.deadline.label'), type: 'select' as const, value: advancedFilters.deadlineRange || 'all', onChange: (v: any) => setAdvancedFilters((prev: any) => ({ ...prev, deadlineRange: v })),
@@ -531,31 +524,15 @@ const Projects = () => {
         return filters;
     }, [statusView, filter, advancedFilters, customers, partners, languages]);
 
-    const actions = (
-        <div className="flex items-center gap-2">
-            <div className="relative group z-50" ref={exportRef}>
-                <button onClick={(e) => { e.stopPropagation(); setIsExportOpen(!isExportOpen); }} className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium bg-white rounded-sm flex items-center gap-2 shadow-sm transition">
-                    <FaDownload /> Export
-                </button>
-                {isExportOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-sm shadow-sm border border-slate-100 z-[100] overflow-hidden animate-slideUp">
-                        <button onClick={() => handleExport('xlsx')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileExcel className="text-emerald-600 text-sm" /> Excel (.xlsx)</button>
-                        <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"><FaFileCsv className="text-blue-600 text-sm" /> CSV (.csv)</button>
-                        <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-3 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"><FaFilePdf className="text-red-600 text-sm" /> PDF Report</button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
 
-    if (isLoading && viewMode === 'kanban') return <TableSkeleton rows={8} columns={6} />;
+
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
-            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden" onClick={() => { setIsExportOpen(false); }}>
+            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
-                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">Projekte</h1>
+                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('projects.title')}</h1>
                         <p className="text-slate-500 text-sm hidden sm:block">{t('projects.subtitle')}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
@@ -625,12 +602,13 @@ const Projects = () => {
                 <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
                     {viewMode === 'list' ? (
                         <DataTable
+                            isLoading={isLoading}
                             data={filteredProjects as any[]}
                             columns={columns as any}
                             onRowClick={(p) => navigate(`/projects/${p.id}`)}
                             searchPlaceholder={t('projects.search_placeholder')}
                             searchFields={['project_name', 'project_number'] as any[]}
-                            actions={actions}
+                            onExport={handleExport}
                             onAddClick={() => navigate('/projects/new')}
                             selectable
                             selectedIds={selectedProjects}
@@ -654,14 +632,22 @@ const Projects = () => {
                                 <h2 className="text-xl font-medium text-slate-800 tracking-tight">{t('projects.board_title')}</h2>
                             </div>
                             <div className="flex-1 min-h-0 px-4 overflow-y-auto pb-10 custom-scrollbar">
-                                <KanbanBoard
-                                    projects={filteredProjects}
-                                    onProjectClick={(p) => navigate(`/projects/${p.id}`)}
-                                    onStatusChange={(projectId, newStatus) => {
-                                        updateMutation.mutate({ id: projectId, status: newStatus });
-                                    }}
-                                    onEdit={handleEditProject}
-                                />
+                                {isLoading ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+                                        {[...Array(8)].map((_, i) => (
+                                            <div key={i} className="h-48 bg-slate-100 rounded-sm" />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <KanbanBoard
+                                        projects={filteredProjects}
+                                        onProjectClick={(p) => navigate(`/projects/${p.id}`)}
+                                        onStatusChange={(projectId, newStatus) => {
+                                            updateMutation.mutate({ id: projectId, status: newStatus });
+                                        }}
+                                        onEdit={handleEditProject}
+                                    />
+                                )}
                             </div>
                         </div >
                     )}

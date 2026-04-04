@@ -95,7 +95,7 @@ const MobileMenu = ({
                                     onClose();
                                 }}
                                 className={clsx(
-                                    "flex items-center justify-center min-w-[3.5rem] py-2 rounded-sm border text-[10px] font-bold uppercase transition-all shadow-sm",
+                                    "flex items-center justify-center min-w-[3.5rem] py-2 rounded-sm border text-xs font-bold uppercase transition-all shadow-sm",
                                     i18n.language === lang
                                         ? "bg-brand-primary text-white border-brand-primary"
                                         : "bg-white text-slate-600 border-slate-200"

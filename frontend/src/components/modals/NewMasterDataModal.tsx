@@ -394,6 +394,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                         placeholder="0.12"
                                         value={formData.base_price || ''}
                                         onChange={(e) => handleChange('base_price', e.target.value)}
+                                        onBlur={(e) => handleChange('base_price', (parseFloat(e.target.value.replace(',', '.')) || 0).toFixed(2))}
                                     />
                                 </div>
                             </div>

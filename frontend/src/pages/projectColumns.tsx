@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { FaEdit, FaTrash, FaEye, FaTrashRestore, FaFolderOpen, FaEnvelope } from 'react-icons/fa';
-import { getFlagUrl } from '../utils/flags';
+import { getFlagUrl, getLanguageName } from '../utils/flags';
 
 export function getStatusBadge(status: string, _t?: any): ReactNode {
     return <StatusBadge status={status} />;
@@ -25,6 +25,7 @@ export interface BuildProjectColumnsParams {
     setConfirmMessage: (m: string) => void;
     setIsConfirmOpen: (v: boolean) => void;
     t: any;
+    companySettings: any;
 }
 
 export function buildProjectColumns({
@@ -38,29 +39,55 @@ export function buildProjectColumns({
     setConfirmMessage,
     setIsConfirmOpen,
     t,
+    companySettings,
 }: BuildProjectColumnsParams) {
 
     return [
         {
-            id: 'project_info',
+            id: 'project_number',
             header: (
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('common.project') || 'Projekt'}</span>
+                    <span className="text-xs">{t('common.project_id') || 'Projekt-ID'}</span>
+                </div>
+            ),
+            accessor: (p: any) => {
+                const projectNumber = p.project_number || (() => {
+                    const prefix = companySettings?.project_id_prefix || 'PR';
+                    const showYear = companySettings?.project_show_year !== false;
+                    const year = p.createdAtRaw ? new Date(p.createdAtRaw).getFullYear() : new Date().getFullYear();
+                    const num = String(p.id).padStart(4, '0');
+                    return `${prefix}${showYear ? `-${year}` : ''}-${num}`;
+                })();
+
+                return (
+                    <div className="flex flex-col cursor-pointer group/link w-fit">
+                        <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-50 px-2 py-0.5 border border-slate-200/50 rounded-sm group-hover/link:border-brand-primary/30 transition">
+                            {projectNumber}
+                        </span>
+                    </div>
+                );
+            },
+            sortable: true,
+            sortKey: 'project_number',
+            width: 140,
+        },
+        {
+            id: 'project_name',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">{t('common.project_name') || 'Bezeichnung'}</span>
                 </div>
             ),
             accessor: (p: any) => (
                 <div className="flex flex-col cursor-pointer group/link w-fit">
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[150px]" title={p.project_name || `Projekt #${p.id}`}>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[200px]" title={p.project_name || `Projekt #${p.id}`}>
                         {p.project_name || <span className="text-slate-400 italic font-normal text-xs">Unbenannt</span>}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-mono tracking-tighter group-hover/link:text-brand-primary transition">
-                        {p.project_number || `#${p.id}`}
                     </span>
                 </div>
             ),
             sortable: true,
             sortKey: 'project_name',
-            width: 140,
+            width: 180,
         },
         {
             id: 'customer',
@@ -140,10 +167,9 @@ export function buildProjectColumns({
             ),
             accessor: (p: any) => {
                 const sourceCode = p.source_language?.iso_code || p.source || 'de';
-                const sourceName = p.source_language?.name_internal || p.source_language?.name || sourceCode.toUpperCase();
-
+                const sourceName = p.source_language?.name_internal || p.source_language?.name || getLanguageName(sourceCode);
                 const targetCode = p.target_language?.iso_code || p.target || 'en';
-                const targetName = p.target_language?.name_internal || p.target_language?.name || targetCode.toUpperCase();
+                const targetName = p.target_language?.name_internal || p.target_language?.name || getLanguageName(targetCode);
                 return (
                     <div className="flex items-center justify-between w-full py-1">
                         <div className="flex items-center gap-1.5 shrink-0 bg-slate-50 px-1.5 py-1 rounded-sm border border-slate-100">
