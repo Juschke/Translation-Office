@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaSearch, FaTimes, FaFolderOpen, FaHashtag } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../../api/services';

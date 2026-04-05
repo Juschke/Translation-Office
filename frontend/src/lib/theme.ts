@@ -7,15 +7,15 @@
 
 // ── PRIMARY BRAND PALETTE (Teal) ──────────────────────────
 export const BRAND = {
-  primary: '#1B4D4F',   // Deep Teal — Hauptfarbe
-  primaryHover: '#235e62',   // Hover
-  primaryHoverAlt: '#2a7073',   // Button-Hover-Gradient Light
-  primaryActive: '#133d3f',   // Active/Press
-  primaryDark: '#163e40',   // Gradient-Schatten (Button unten)
-  primaryBorder: '#123a3c',   // Button-Border
-  primaryLight: '#eaf4f3',   // Heller Hintergrund (selected rows, badges)
-  primaryMid: '#d0eae8',   // Mittlerer Teal-Hintergrund (selected state)
-  primaryFaint: '#f0f7f6',   // Sehr heller Teal-Hintergrund (option hover)
+  primary: '#1B4D4F',   // Main Brand Teal (from Navbar)
+  primaryHover: '#225A5C',   // Refined hover
+  primaryHoverAlt: '#2A7073',   // Refined gradient top
+  primaryActive: '#133D3F',   // Refined active
+  primaryDark: '#123739',   // Refined shadow base
+  primaryBorder: '#123A3C',   // Refined border
+  primaryLight: '#F0F7F6',   // Faint background
+  primaryMid: '#D0EAE8',   // selection
+  primaryFaint: '#F8FBFB',   // Near-white teal
   // Table component tints (Teal-Abstufungen)
   tableHeader: '#e4efef',
   tableHeaderSort: '#d8e8e8',
@@ -29,10 +29,12 @@ export const BRAND = {
 
 // ── ACCENT PALETTE (Green) ────────────────────────────────
 export const ACCENT = {
-  primary: '#9BCB56',         // Action-Green
-  hover: '#8ab847',
-  light: '#f0f8e0',         // Sehr hell (badges, chips)
-  mid: '#d4edaa',
+  primary: '#9BCB56',         // Brand Accent Green (Action)
+  hover: '#8AB847',
+  light: '#F0F8E0',         // Soft lime tint
+  mid: '#D4EDAA',
+  secondary: '#10B981',     // Emerald subtle accent
+  tertiary: '#F59E0B',      // Amber subtle accent
 } as const;
 
 // ── STATUS COLORS ─────────────────────────────────────────

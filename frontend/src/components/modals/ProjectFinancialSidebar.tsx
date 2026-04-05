@@ -28,7 +28,6 @@ const ProjectFinancialSidebar = ({
     creationDate,
     projectManager,
     baseNet,
-    extraCosts,
     calcNet,
     calcTax,
     calcGross,

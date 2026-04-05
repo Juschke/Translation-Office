@@ -28,7 +28,6 @@ const ProjectOverviewTabNew = ({
     setIsPartnerModalOpen,
     setIsCustomerEditModalOpen,
     setIsPartnerEditModalOpen,
-    setPreviewInvoice,
     onSendEmail,
 }: ProjectOverviewTabProps) => {
     const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({

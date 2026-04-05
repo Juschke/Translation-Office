@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { FaPaperclip, FaTrashAlt } from 'react-icons/fa';
 import Checkbox from '../common/Checkbox';

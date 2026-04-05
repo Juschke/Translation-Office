@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
     FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
     FaDownload, FaTrashAlt, FaSearch, FaCloudUploadAlt, FaCheckCircle,
-    FaExclamationCircle, FaArrowRight, FaInbox, FaBookOpen, FaCamera, FaPrint,
+    FaExclamationCircle, FaArrowRight, FaInbox, FaBookOpen, FaPrint,
     FaListUl, FaTh, FaEye,
 } from 'react-icons/fa';
 import clsx from 'clsx';
@@ -176,12 +176,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             ));
             toast.error('Hochladen fehlgeschlagen');
         }
-    };
-
-    const handleScanClick = () => {
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (!isMobile) setShowScanHint(true);
-        scanInputRef.current?.click();
     };
 
     const openTypePicker = (files: FileList | File[]) => setPendingFiles(Array.from(files));
@@ -482,9 +476,9 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
                 {/* List view */}
                 {viewMode === 'list' && allFilteredFiles.length > 0 && (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-auto custom-scrollbar max-h-[calc(100vh-300px)] lg:max-h-[calc(100vh-350px)]">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-[#fcfdff] text-slate-400 text-xs font-bold uppercase tracking-widest border-b border-slate-100">
+                            <thead className="sticky top-0 z-10 bg-[#fcfdff] text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100 shadow-sm">
                                 <tr>
                                     <th className="pl-4 pr-2 py-3 w-8">
                                         <input

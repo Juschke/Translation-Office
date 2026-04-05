@@ -211,16 +211,16 @@ export function buildProjectColumns({
                 const today = new Date();
                 const diffDays = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-                let badgeColor = 'bg-emerald-50 text-emerald-600 border-emerald-100';
+                let badgeColor = 'bg-brand-accent-emerald/5 text-brand-accent-emerald border-brand-accent-emerald/10';
                 let label = `${diffDays} Tage`;
                 if (diffDays < 0) {
                     badgeColor = 'bg-red-50 text-red-600 border-red-100';
                     label = `${Math.abs(diffDays)} Tage überfällig`;
                 } else if (diffDays === 0) {
-                    badgeColor = 'bg-orange-50 text-orange-600 border-orange-100';
+                    badgeColor = 'bg-brand-accent-amber/5 text-brand-accent-amber border-brand-accent-amber/10';
                     label = 'Heute fällig';
                 } else if (diffDays <= 2) {
-                    badgeColor = 'bg-orange-50 text-orange-600 border-orange-100';
+                    badgeColor = 'bg-brand-accent-amber/5 text-brand-accent-amber border-brand-accent-amber/10';
                     label = `${diffDays} Tage`;
                 }
 

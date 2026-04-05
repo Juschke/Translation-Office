@@ -108,7 +108,7 @@ const NotificationSettingsTab = () => {
 
                 <div className="divide-y divide-slate-100">
                     {/* Header row */}
-                    <div className="grid grid-cols-[1fr_100px_100px_120px] gap-4 px-6 py-2.5 bg-slate-50 border-b border-slate-200">
+                    <div className="grid grid-cols-[1fr_140px_140px_160px] gap-4 px-6 py-2.5 bg-slate-50 border-b border-slate-200">
                         <span className="text-xs font-medium text-slate-400">{t('notifications.settings.event')}</span>
                         <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5 justify-center"><FaEnvelope className="text-xs" /> {t('notifications.settings.email')}</span>
                         <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5 justify-center"><FaDesktop className="text-xs" /> {t('notifications.settings.app')}</span>
@@ -123,7 +123,7 @@ const NotificationSettingsTab = () => {
                             {group.events.map(event => {
                                 const entry = settings[event.key as keyof NotifSettings];
                                 return (
-                                    <div key={event.key} className="grid grid-cols-[1fr_100px_100px_120px] gap-4 px-6 py-3.5 items-center hover:bg-slate-50/50 transition-colors">
+                                    <div key={event.key} className="grid grid-cols-[1fr_140px_140px_160px] gap-4 px-6 py-3.5 items-center hover:bg-slate-50/50 transition-colors">
                                         <span className="text-sm text-slate-700">{event.label}</span>
                                         <div className="flex justify-center">
                                             <Toggle value={entry.email} onChange={v => setField(event.key, 'email', v)} />

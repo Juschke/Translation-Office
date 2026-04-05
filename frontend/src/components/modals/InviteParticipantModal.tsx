@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaTimes, FaEnvelope, FaPaperPlane } from 'react-icons/fa';
 import Input from '../common/Input';
 import { useMutation } from '@tanstack/react-query';
@@ -12,7 +11,6 @@ interface InviteParticipantModalProps {
 }
 
 const InviteParticipantModal = ({ isOpen, onClose, projectId }: InviteParticipantModalProps) => {
-    const { t } = useTranslation();
  const [email, setEmail] = useState('');
  const [role, setRole] = useState('translator');
  const [message, setMessage] = useState('');

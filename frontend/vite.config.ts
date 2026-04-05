@@ -12,7 +12,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://dev.itc-ks.com',
         changeOrigin: true,
         headers: {
           Accept: 'application/json',
@@ -20,7 +20,7 @@ export default defineConfig({
         },
       },
       '/sanctum': {
-        target: 'http://localhost:8000',
+        target: 'https://dev.itc-ks.com',
         changeOrigin: true,
       }
     }

@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
-import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck, FaChevronDown, FaSave, FaGripVertical } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck, FaChevronDown, FaSave } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
 import { Button } from '../ui/button';
@@ -401,12 +401,12 @@ const ProjectPositionsTable = ({
                 </div>
             )}
 
-            <div className="overflow-x-auto">
+            <div className="overflow-auto custom-scrollbar max-h-[calc(100vh-400px)]">
                 <DragDropContext onDragEnd={onDragEnd}>
                     <table className="w-full text-left border-collapse min-w-[700px]">
-                        <thead>
-                            <tr className="border-b border-slate-200 bg-slate-50/30">
-                                <th className="px-2 py-1.5 w-7 text-center text-[10px] font-bold text-slate-400"></th>
+                        <thead className="sticky top-0 z-10 bg-slate-50 shadow-sm">
+                            <tr className="border-b border-slate-200">
+                                <th className="px-2 py-1.5 w-7 text-center text-[10px] font-bold text-slate-400 bg-slate-50"></th>
                                 <th className="px-2 py-1.5 min-w-[180px] text-[10px] font-bold text-slate-400">Leistungsbezeichnung</th>
                                 <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold text-slate-400">Menge</th>
                                 <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold text-slate-400">Einheit</th>

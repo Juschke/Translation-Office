@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FaTimes, FaFileAlt, FaInfoCircle } from 'react-icons/fa';
 import Input from '../common/Input';
 import ReactQuill from 'react-quill-new';

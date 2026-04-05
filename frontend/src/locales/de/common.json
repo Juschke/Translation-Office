@@ -887,7 +887,37 @@
     "unread": "Ungelesen",
     "no_notifications": "Keine Benachrichtigungen",
     "mark_all_as_read": "Alle als gelesen markieren",
-    "no_notifications_message": "Sie sind auf dem neuesten Stand!"
+    "no_notifications_message": "Sie sind auf dem neuesten Stand!",
+    "settings": {
+      "title": "System-Benachrichtigungen",
+      "subtitle": "Konfigurieren Sie, wann und wie Sie benachrichtigt werden möchten.",
+      "save": "Einstellungen speichern",
+      "saving": "Speichern...",
+      "save_success": "Benachrichtigungseinstellungen erfolgreich gespeichert.",
+      "save_error": "Fehler beim Speichern der Benachrichtigungseinstellungen.",
+      "event": "Ereignis",
+      "email": "E-Mail",
+      "app": "In-App",
+      "lead_time": "Vorlauf",
+      "days_before": "Tage vorher",
+      "loading": "Lade Einstellungen...",
+      "groups": {
+        "projects": "Projekte",
+        "invoices": "Finanzen & Rechnungen",
+        "communication": "Kommunikation"
+      },
+      "events": {
+        "project_created": "Projekt erstellt",
+        "project_status_changed": "Projektstatus geändert",
+        "deadline_reminder": "Deadline-Erinnerung",
+        "document_uploaded": "Dokument hochgeladen",
+        "invoice_due": "Rechnung fällig",
+        "invoice_overdue": "Rechnung überfällig",
+        "payment_received": "Zahlung eingegangen",
+        "new_mail": "Neue E-Mail erhalten",
+        "partner_inquiry_replied": "Partner hat auf Anfrage geantwortet"
+      }
+    }
   },
   "profile": {
     "title": "Mein Profil",
@@ -1593,12 +1623,7 @@
       "cvc": "CVC"
     },
     "save_card": "Karte speichern",
-    "pdf_disabled": "PDF Generierung ist aktuell deaktiviert (Demo).",
-    "feature_on_premise": "On-Premise Option",
-    "feature_white_label": "White Label",
-    "feature_audit_logs": "Audit Logs",
-    "feature_custom_branding": "Custom Branding",
-    "feature_api_access": "API Zugriff"
+    "pdf_disabled": "PDF Generierung ist aktuell deaktiviert (Demo)."
   },
   "countries": {
     "de": "Deutschland",

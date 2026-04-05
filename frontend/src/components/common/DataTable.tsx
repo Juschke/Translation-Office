@@ -56,6 +56,9 @@ interface DataTableProps<T> {
     activeFilterCount?: number;
     onResetFilters?: () => void;
     onExport?: (format: 'xlsx' | 'csv' | 'pdf') => void;
+    filterLayout?: 'top' | 'sidebar';
+    onFilterToggle?: () => void;
+    isFilterOpen_external?: boolean;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
@@ -107,6 +110,9 @@ const DataTable = <T extends { id: string | number }>({
     activeFilterCount,
     onResetFilters,
     onExport,
+    filterLayout = 'top',
+    onFilterToggle,
+    isFilterOpen_external,
 }: DataTableProps<T>) => {
     const { t } = useTranslation();
     const [currentPage, setCurrentPage] = useState(1);
@@ -360,11 +366,76 @@ const DataTable = <T extends { id: string | number }>({
         </div >
     );
 
-    return (
-        <div className="dt-skeuomorphic flex flex-col h-full bg-white border border-[#D1D9D8] rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.1)] fade-in overflow-hidden max-h-[calc(100vh-250px)] sm:max-h-none">
+    // ── Sidebar filter panel ──
+    const sidebarFilterPanel = filterLayout === 'sidebar' && filters && filters.length > 0 && (
+        <div
+            className={clsx(
+                "flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out border-r border-[#D1D9D8] bg-[#f6f8f8] flex flex-col",
+                isFilterOpen ? "w-56" : "w-0"
+            )}
+        >
+            <div className="w-56 flex flex-col gap-0 overflow-y-auto custom-scrollbar flex-1">
+                <div className="px-3 pt-3 pb-2 border-b border-[#D1D9D8] bg-gradient-to-b from-white to-[#f0f0f0]">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Filter</span>
+                </div>
+                <div className="p-3 flex flex-col gap-3 flex-1">
+                    {filters.map(filter => (
+                        <div key={filter.id} className="flex flex-col gap-1">
+                            <label className="text-[11px] font-semibold text-slate-600">{filter.label}</label>
+                            {filter.type === 'searchableSelect' ? (
+                                <SearchableSelect
+                                    options={filter.options?.map(o => ({ value: String(o.value), label: o.label, icon: (o as any).icon })) || []}
+                                    value={String(filter.value)}
+                                    onChange={filter.onChange}
+                                    placeholder={filter.placeholder}
+                                    className="border-[#ccc] hover:border-[#adadad]"
+                                />
+                            ) : filter.type === 'select' ? (
+                                <div className="relative">
+                                    <select
+                                        className="w-full h-8 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] focus:border-[#1B4D4F] outline-none appearance-none pr-7 cursor-pointer hover:border-[#adadad] transition"
+                                        value={filter.value}
+                                        onChange={e => filter.onChange(e.target.value)}
+                                    >
+                                        {filter.options?.map(opt => (
+                                            <option key={String(opt.value)} value={String(opt.value)}>
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none" />
+                                </div>
+                            ) : (
+                                <input
+                                    type={filter.type}
+                                    value={filter.value}
+                                    onChange={e => filter.onChange(e.target.value)}
+                                    placeholder={filter.placeholder}
+                                    className="w-full h-8 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] focus:border-[#1B4D4F] outline-none transition"
+                                />
+                            )}
+                        </div>
+                    ))}
+                </div>
+                {onResetFilters && (
+                    <div className="px-3 pb-3 pt-2 border-t border-[#D1D9D8]">
+                        <button
+                            onClick={() => onResetFilters()}
+                            className="w-full px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center gap-1.5"
+                        >
+                            <FaUndo className="text-xs" /> Zurücksetzen
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 
-            {/* ── Filter Panel ── */}
-            {filters && filters.length > 0 && (
+    return (
+        <div className="dt-skeuomorphic flex flex-col h-full bg-white border border-[#D1D9D8] rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.1)] fade-in overflow-hidden">
+
+            {/* ── Filter Panel (top layout) ── */}
+            {filterLayout === 'top' && filters && filters.length > 0 && (
                 <div
                     className={clsx(
                         "overflow-hidden transition-all duration-300 ease-in-out bg-[#f6f8f8]",
@@ -461,12 +532,12 @@ const DataTable = <T extends { id: string | number }>({
                         />
                     </div>
                     {extraControls}
-                    {filters && filters.length > 0 && (
+                    {(filters && filters.length > 0 || onFilterToggle) && (
                         <button
-                            onClick={() => setIsFilterOpen(v => !v)}
+                            onClick={() => onFilterToggle ? onFilterToggle() : setIsFilterOpen(v => !v)}
                             className={clsx(
                                 "p-2 border transition rounded-[3px] shadow-[0_1px_2px_rgba(0,0,0,0.08)] flex items-center justify-center relative",
-                                isFilterOpen || activeFilterCount
+                                (onFilterToggle ? isFilterOpen_external : isFilterOpen) || activeFilterCount
                                     ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
                                     : "text-slate-500 hover:text-[#1B4D4F] bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc]"
                             )}
@@ -476,7 +547,7 @@ const DataTable = <T extends { id: string | number }>({
                             {activeFilterCount ? (
                                 <span className={clsx(
                                     "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-xs font-bold flex items-center justify-center border",
-                                    isFilterOpen
+                                    (onFilterToggle ? isFilterOpen_external : isFilterOpen)
                                         ? "bg-white text-[#1B4D4F] border-transparent"
                                         : "bg-rose-500 text-white border-rose-600 shadow-sm"
                                 )}>
@@ -529,39 +600,44 @@ const DataTable = <T extends { id: string | number }>({
                 </div>
             )}
 
-            {/* ── Ant Design Table ── */}
-            <div className={clsx("flex-1 min-h-0 relative", !isEmpty && "overflow-x-auto")}>
-                {isLoading ? (
-                    <TableSkeleton rows={pageSize} columns={activeColumns.length + (selectable ? 1 : 0)} />
-                ) : (
-                    <Table<T>
-                        columns={antdColumns}
-                        dataSource={paginatedData}
-                        rowKey="id"
-                        pagination={false}
-                        loading={false}
-                        size="small"
-                        showSorterTooltip={false}
-                        onChange={handleTableChange}
-                        rowSelection={rowSelection}
-                        sticky
-                        tableLayout="auto"
-                        scroll={!isEmpty ? { x: 'max-content' } : undefined}
-                        onRow={record => ({
-                            onClick: () => {
-                                setSelectedRowKey(record.id);
-                                onRowClick?.(record);
-                            },
-                            className: clsx(
-                                onRowClick && 'cursor-pointer',
-                                record.id === selectedRowKey && 'dt-row-selected'
-                            ),
-                        })}
-                        rowClassName={(_, index) => index % 2 !== 0 ? 'dt-row-odd' : 'dt-row-even'}
-                        locale={{ emptyText: emptyNode }}
-                        className="dt-antd-table"
-                    />
-                )}
+            {/* ── Body: sidebar + table ── */}
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+                {sidebarFilterPanel}
+
+                {/* ── Ant Design Table ── */}
+                <div className={clsx("flex-1 min-h-0 relative overflow-auto custom-scrollbar")}>
+                    {isLoading ? (
+                        <TableSkeleton rows={pageSize === ALL_SENTINEL ? 10 : pageSize} columns={activeColumns.length + (selectable ? 1 : 0)} />
+                    ) : (
+                        <Table<T>
+                            columns={antdColumns}
+                            dataSource={paginatedData}
+                            rowKey="id"
+                            pagination={false}
+                            loading={false}
+                            size="small"
+                            showSorterTooltip={false}
+                            onChange={handleTableChange}
+                            rowSelection={rowSelection}
+                            sticky
+                            tableLayout="auto"
+                            scroll={!isEmpty ? { x: 'max-content' } : undefined}
+                            onRow={record => ({
+                                onClick: () => {
+                                    setSelectedRowKey(record.id);
+                                    onRowClick?.(record);
+                                },
+                                className: clsx(
+                                    onRowClick && 'cursor-pointer',
+                                    record.id === selectedRowKey && 'dt-row-selected'
+                                ),
+                            })}
+                            rowClassName={(_, index) => index % 2 !== 0 ? 'dt-row-odd' : 'dt-row-even'}
+                            locale={{ emptyText: emptyNode }}
+                            className="dt-antd-table"
+                        />
+                    )}
+                </div>
             </div>
 
             {/* ── Footer ── */}

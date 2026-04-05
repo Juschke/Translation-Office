@@ -8,8 +8,10 @@ import {
     FaPlus, FaLayerGroup,
     FaListUl, FaColumns,
     FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore,
-    FaExclamationTriangle, FaChartPie, FaUserTimes
+    FaExclamationTriangle, FaChartPie, FaUserTimes,
+    FaFilter, FaTimes, FaUndo, FaChevronDown
 } from 'react-icons/fa';
+import SearchableSelect from '../components/common/SearchableSelect';
 import { buildProjectColumns } from './projectColumns';
 import clsx from 'clsx';
 import { Button } from '../components/ui/button';
@@ -41,6 +43,7 @@ const Projects = () => {
     const [viewFilesProject, setViewFilesProject] = useState<any>(null);
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+    const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
     const [advancedFilters, setAdvancedFilters] = useState<any>({
         customerId: '',
         partnerId: '',
@@ -529,6 +532,90 @@ const Projects = () => {
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            {/* ── Filter Sidebar ── */}
+            <>
+                {/* Backdrop */}
+                {isFilterSidebarOpen && (
+                    <div
+                        className="fixed inset-0 z-30 bg-black/[0.03]"
+                        onClick={() => setIsFilterSidebarOpen(false)}
+                    />
+                )}
+                {/* Sidebar */}
+                <div className={clsx(
+                    "fixed top-12 right-0 bottom-0 z-40 w-72 bg-white border-l border-[#D1D9D8] shadow-[-4px_0_20px_rgba(0,0,0,0.08)] flex flex-col transition-transform duration-300 ease-in-out",
+                    isFilterSidebarOpen ? "translate-x-0" : "translate-x-full"
+                )}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#D1D9D8] bg-gradient-to-b from-white to-[#f0f0f0] shrink-0">
+                        <div className="flex items-center gap-2">
+                            <FaFilter className="text-[#1B4D4F] text-xs" />
+                            <span className="text-sm font-bold text-slate-700">Filter</span>
+                            {activeFilterCount > 0 && (
+                                <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setIsFilterSidebarOpen(false)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-sm transition"
+                        >
+                            <FaTimes className="text-xs" />
+                        </button>
+                    </div>
+
+                    {/* Filter Fields */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3 flex flex-col gap-4">
+                        {tableFilters.map(filter => (
+                            <div key={filter.id} className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">{filter.label}</label>
+                                {filter.type === 'searchableSelect' ? (
+                                    <SearchableSelect
+                                        options={filter.options?.map((o: any) => ({ value: String(o.value), label: o.label, icon: o.icon })) || []}
+                                        value={String(filter.value)}
+                                        onChange={filter.onChange}
+                                        placeholder={filter.placeholder}
+                                        className="border-[#ccc] hover:border-[#adadad]"
+                                    />
+                                ) : filter.type === 'select' ? (
+                                    <div className="relative">
+                                        <select
+                                            className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                            value={filter.value}
+                                            onChange={e => filter.onChange(e.target.value)}
+                                        >
+                                            {filter.options?.map((opt: any) => (
+                                                <option key={String(opt.value)} value={String(opt.value)}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                        <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                                    </div>
+                                ) : (
+                                    <input
+                                        type={filter.type}
+                                        value={filter.value}
+                                        onChange={e => filter.onChange(e.target.value)}
+                                        placeholder={filter.placeholder}
+                                        className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)] focus:border-[#1B4D4F] outline-none transition"
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-4 py-3 border-t border-[#D1D9D8] bg-[#f6f8f8] shrink-0">
+                        <button
+                            onClick={() => { resetFilters(); }}
+                            className="w-full px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center gap-2"
+                        >
+                            <FaUndo className="text-xs" /> Filter zurücksetzen
+                        </button>
+                    </div>
+                </div>
+            </>
+
             <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
@@ -566,7 +653,9 @@ const Projects = () => {
                     <KPICard
                         label={t('projects.kpi.deadline_alarm')}
                         value={urgencyCount}
-                        icon={<FaExclamationTriangle />}
+                        icon={<FaExclamationTriangle className={urgencyCount > 0 ? "animate-pulse" : ""} />}
+                        iconColor={urgencyCount > 0 ? 'text-brand-accent-amber' : 'text-slate-400'}
+                        iconBg={urgencyCount > 0 ? 'bg-brand-accent-amber/10' : 'bg-slate-100'}
                         subValue={urgencyCount > 0 ? t('projects.kpi.overdue') : t('projects.kpi.on_track')}
                     />
                 </div>
@@ -622,9 +711,9 @@ const Projects = () => {
                                 { label: t('projects.actions.bulk.restore'), icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' },
                                 { label: t('projects.actions.bulk.delete_permanent'), icon: <FaTrash className="text-xs" />, onClick: () => { setProjectToDelete(selectedProjects); setConfirmTitle(t('projects.confirm.delete_title')); setConfirmMessage(t('projects.confirm.delete_message', { count: selectedProjects.length })); setIsConfirmOpen(true); }, variant: 'dangerSolid', show: statusView === 'trash' },
                             ] as BulkActionItem[]}
-                            filters={tableFilters}
                             activeFilterCount={activeFilterCount}
-                            onResetFilters={resetFilters}
+                            onFilterToggle={() => setIsFilterSidebarOpen(v => !v)}
+                            isFilterOpen_external={isFilterSidebarOpen}
                         />
                     ) : (
                         <div className="flex-1 min-h-0 flex flex-col pt-4 overflow-x-hidden">

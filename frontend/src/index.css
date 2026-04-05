@@ -10,56 +10,62 @@
 
 :root {
   /* Brand Colors */
-  --color-primary:          #1B4D4F;
-  --color-primary-hover:    #235e62;
-  --color-primary-hover-alt:#2a7073;
-  --color-primary-active:   #133d3f;
-  --color-primary-dark:     #163e40;
-  --color-primary-border:   #123a3c;
-  --color-primary-light:    #eaf4f3;
-  --color-primary-mid:      #d0eae8;
-  --color-primary-faint:    #f0f7f6;
-  --color-accent:         #9BCB56;
-  --color-accent-hover:   #8ab847;
-  --color-accent-light:   #f0f8e0;
+  --color-primary: #1B4D4F;
+  /* Brand Teal (from Navbar) */
+  --color-primary-hover: #235E62;
+  --color-primary-hover-alt: #2A7073;
+  --color-primary-active: #133D3F;
+  --color-primary-dark: #163E40;
+  --color-primary-border: #123A3C;
+  --color-primary-light: #F0F7F6;
+  --color-primary-mid: #D0EAE8;
+  --color-primary-faint: #F8FBFB;
+  --color-accent: #9BCB56;
+  /* Brand Accent Green */
+  --color-accent-hover: #8AB847;
+  --color-accent-light: #F0F8E0;
+  --color-accent-2: #10B981;
+  /* Emerald Subtle Accent */
+  --color-accent-3: #F59E0B;
+  /* Amber Alert/Urgent Accent */
 
   /* Neutral Palette */
-  --bg-app:          #F4F7F6;
-  --bg-card:         #FFFFFF;
-  --text-main:       #1A1C1C;
-  --text-muted:      #626B6A;
-  --border-subtle:   #D1D9D8;
-  --border-secondary:#e0eaea;
+  --bg-app: #F4F7F6;
+  --bg-card: #FFFFFF;
+  --text-main: #1A1C1C;
+  --text-muted: #626B6A;
+  --border-subtle: #D1D9D8;
+  --border-secondary: #e0eaea;
 
   /* Status Colors */
-  --status-success:        #2e7d32;
-  --status-success-hover:  #1b5e20;
-  --status-success-light:  #e8f5e9;
+  --status-success: #2e7d32;
+  --status-success-hover: #1b5e20;
+  --status-success-light: #e8f5e9;
   --status-success-border: #a5d6a7;
 
-  --status-warning:        #e65100;
-  --status-warning-hover:  #bf360c;
-  --status-warning-light:  #fff3e0;
+  --status-warning: #e65100;
+  --status-warning-hover: #bf360c;
+  --status-warning-light: #fff3e0;
   --status-warning-border: #ffcc80;
 
-  --status-danger:         #c62828;
-  --status-danger-hover:   #b71c1c;
-  --status-danger-light:   #ffebee;
-  --status-danger-border:  #ef9a9a;
+  --status-danger: #c62828;
+  --status-danger-hover: #b71c1c;
+  --status-danger-light: #ffebee;
+  --status-danger-border: #ef9a9a;
 
-  --status-info:           #1565c0;
-  --status-info-hover:     #0d47a1;
-  --status-info-light:     #e3f2fd;
-  --status-info-border:    #90caf9;
+  --status-info: #1565c0;
+  --status-info-hover: #0d47a1;
+  --status-info-light: #e3f2fd;
+  --status-info-border: #90caf9;
 
-  --status-purple:         #6a1b9a;
-  --status-purple-hover:   #4a148c;
-  --status-purple-light:   #f3e5f5;
-  --status-purple-border:  #ce93d8;
+  --status-purple: #6a1b9a;
+  --status-purple-hover: #4a148c;
+  --status-purple-light: #f3e5f5;
+  --status-purple-border: #ce93d8;
 
-  --status-neutral:        #546e7a;
-  --status-neutral-hover:  #37474f;
-  --status-neutral-light:  #eceff1;
+  --status-neutral: #546e7a;
+  --status-neutral-hover: #37474f;
+  --status-neutral-light: #eceff1;
   --status-neutral-border: #b0bec5;
 
   /* Shadcn-style compatibility variables */
@@ -111,10 +117,13 @@
   /* Custom Colors from Specification */
   --color-brand-primary: var(--color-primary);
   --color-brand-accent: var(--color-accent);
+  --color-brand-accent-emerald: var(--color-accent-2);
+  --color-brand-accent-amber: var(--color-accent-3);
   --color-brand-bg: var(--bg-app);
   --color-brand-text: var(--text-main);
   --color-brand-muted: var(--text-muted);
   --color-brand-border: var(--border-subtle);
+  --color-brand-slate: #f1f5f9;
 }
 
 html,
@@ -581,7 +590,7 @@ body,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  position: relative !important;
+  position: relative;
   transition: background 0.15s ease !important;
 }
 
@@ -833,7 +842,8 @@ body,
 
 .ant-select-focused .ant-select-selector {
   border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 2px rgba(27, 77, 79, 0.12) !important; /* matches SHADOW.focus */
+  box-shadow: 0 0 0 2px rgba(27, 77, 79, 0.12) !important;
+  /* matches SHADOW.focus */
 }
 
 /* ── SELECT DROPDOWN OPTIONS — brand teal ── */

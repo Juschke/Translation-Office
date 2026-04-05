@@ -719,7 +719,7 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Tabs Navigation */}
-                <div className="border-t border-b border-slate-200 bg-white">
+                <div className="border-t border-b border-slate-200 bg-white sticky top-0 z-20">
                     <div className="max-w-[1800px] mx-auto px-3 sm:px-4 flex items-center justify-between md:justify-start">
                         <div className="md:hidden flex-1 py-3">
                             <button

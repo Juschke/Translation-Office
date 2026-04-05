@@ -30,7 +30,7 @@ const TableSkeleton = ({ rows = 8, columns = 6 }: TableSkeletonProps) => {
 
             {/* Table Rows Wrapper */}
             <div className="flex-1 divide-y divide-slate-100 overflow-hidden">
-                {Array.from({ length: rows }).map((_, rowIndex) => (
+                {Array.from({ length: Math.min(rows, 12) }).map((_, rowIndex) => (
                     <div key={rowIndex} className={clsx("px-4 py-4 grid gap-4 items-center", rowIndex % 2 !== 0 ? "bg-[#f9f9f9]" : "bg-white")} style={{ gridTemplateColumns: `40px repeat(${columns - 1}, 1fr)` }}>
                         {Array.from({ length: columns }).map((_, colIndex) => (
                             <div key={colIndex} className="flex items-center gap-3">

@@ -43,7 +43,7 @@ const LABEL_CLASS = 'text-[13px] font-medium text-slate-500 flex items-center ga
 const INPUT_WRAP = 'flex-1 min-w-0';
 const ROW_CLASS = 'flex items-start gap-4 py-3 border-b border-slate-50';
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
-const SECTION_NUM = 'w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm';
+const SECTION_NUM = 'w-7 h-7 rounded-md bg-primary text-white flex items-center justify-center text-xs font-bold shadow-sm';
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
 const getStatusOptions = (t: any) => [
