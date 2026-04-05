@@ -75,12 +75,35 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-  # Job 3: Deployment (Optionale-Platzhalter)
-  # Hier würdest du z.B. Forge, Ploi oder einen SSH-Deploy einbauen
-  # deploy:
-  #   needs: [laravel-tests, frontend-build]
-  #   if: github.ref == 'refs/heads/main'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Deploy via SSH
-  #       run: echo "Hier Befehle zum deployen auf den Server einfügen"
+  # Job 3: Deployment
+  deploy:
+    needs: [laravel-tests, frontend-build]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ngcobalt389.manitu.net
+          username: ssh300009910
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            # 1. In das Verzeichnis auf dem Server wechseln
+            cd /home/sites/site100037608/web/dev.itc-ks.com
+            
+            # 2. Neuesten Code vom Branch 'main' ziehen
+            git pull origin main
+            
+            # 3. Backend Abhängigkeiten installieren & Cache leeren
+            cd backend
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+            php artisan migrate --force
+            php artisan optimize:clear
+            
+            # WICHTIG: Falls Node.js / npm auf deinem Shared-Hosting existiert, 
+            # kannst du das Frontend dort neubauen. Wenn nicht, musst du die 
+            # Frontend-Build-Schritte (dist-Ordner) per rsync/scp übertragen.
+            cd ../frontend
+            npm install || true
+            npm run build || true
