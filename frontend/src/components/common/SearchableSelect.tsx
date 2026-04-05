@@ -166,7 +166,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const dropdownContent = (
         <div
             ref={dropdownRef}
-            className="fixed z-[9999] bg-white border border-slate-200 shadow-sm overflow-hidden animate-fadeIn searchable-select-dropdown flex flex-col"
+            className="text-sm text-brand-text transition-all border border-brand-border hover:border-brand-primary placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50 file:border-0 file:bg-transparent file:text-sm file:font-medium fixed z-[9999] bg-white border border-slate-200 shadow-sm overflow-hidden animate-fadeIn searchable-select-dropdown flex flex-col"
             style={{
                 top: coords.top,
                 left: coords.left,
@@ -319,12 +319,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
             <div
                 id={id}
                 className={clsx(
-                    "w-full border px-3 py-1 text-sm bg-white flex justify-between items-center cursor-pointer transition h-9",
+                    "w-full border px-3 py-1 text-sm text-brand-text flex justify-between items-center cursor-pointer transition-all h-9",
                     roundedSide === 'both' && "rounded-sm",
                     roundedSide === 'left' && "rounded-l-sm",
                     roundedSide === 'right' && "rounded-r-sm",
                     roundedSide === 'none' && "rounded-none",
-                    isOpen ? "border-brand-primary ring-2 ring-brand-primary/10" : "border-brand-border hover:border-brand-primary shadow-sm",
+                    isOpen ? "border-slate-400 ring-2 ring-slate-200 outline-none" : "border-brand-border hover:border-brand-primary shadow-sm",
+                    error && "border-red-500 ring-red-500/10",
                     disabled ? "bg-slate-50 border-brand-border/50 cursor-not-allowed opacity-60" : "bg-white",
                     className
                 )}
@@ -341,13 +342,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                 return (
                                     <div key={v} className={clsx(
                                         "flex items-center gap-1",
-                                        isMulti ? "bg-brand-accent/10 border border-brand-accent/20 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-slate-800 whitespace-nowrap" : "font-semibold text-slate-800"
+                                        isMulti ? "bg-brand-accent/10 border border-brand-accent/20 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-brand-text whitespace-nowrap" : "text-brand-text font-normal"
                                     )}>
                                         {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
-                                        <span>{opt.label}</span>
+                                        <span className="truncate">{opt.label}</span>
                                         {isMulti && (
                                             <FaTimes
-                                                className="ml-1 text-slate-400 hover:text-red-500 transition-colors shrink-0"
+                                                className="ml-1 text-brand-muted hover:text-red-500 transition-colors shrink-0"
                                                 onClick={(e) => { e.stopPropagation(); handleSelect(v); }}
                                             />
                                         )}
@@ -355,19 +356,19 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                 );
                             })}
                             {isMulti && values.length > maxVisibleItems && (
-                                <div className="bg-brand-accent/10 border border-brand-accent/20 px-1.5 py-0.5 rounded-sm text-xs font-bold text-slate-800 whitespace-nowrap">
+                                <div className="bg-brand-accent/10 border border-brand-accent/20 px-1.5 py-0.5 rounded-sm text-xs font-medium text-brand-text whitespace-nowrap">
                                     + {values.length - maxVisibleItems} weitere
                                 </div>
                             )}
                         </>
                     ) : (
-                        <span className="text-slate-400">{placeholder}</span>
+                        <span className="text-brand-muted">{placeholder}</span>
                     )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
                     {!isMulti && value && !disabled && (
                         <FaTimes
-                            className="text-slate-300 hover:text-red-500 cursor-pointer text-xs transition-colors"
+                            className="text-brand-muted hover:text-red-500 cursor-pointer text-xs transition-colors"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleSelect('');

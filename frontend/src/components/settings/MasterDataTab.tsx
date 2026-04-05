@@ -130,7 +130,7 @@ const MasterDataTab = () => {
 
 
                 {/* Main Content Area */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ minHeight: '530px' }}>
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     {masterTab === 'languages' && (isLanguagesLoading ? <TableSkeleton rows={5} columns={6} /> : <DataTable isLoading={isLanguagesLoading} data={languages} columns={[
                         { id: 'name', header: t('fields.name'), accessor: (l: any) => <span className="font-medium text-slate-800 text-sm">{l.name_internal}</span> },
                         { id: 'code', header: t('settings.master_data.code_iso'), accessor: (l: any) => <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 border border-slate-100 rounded-sm">{l.iso_code}</span>, className: 'w-32' },

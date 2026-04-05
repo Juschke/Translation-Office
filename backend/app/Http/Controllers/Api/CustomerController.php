@@ -83,6 +83,7 @@ class CustomerController extends Controller
             'email' => 'nullable|email',
             'additional_emails' => 'nullable|array',
             'phone' => 'nullable|string',
+            'mobile' => 'nullable|string',
             'additional_phones' => 'nullable|array',
             'address_street' => 'nullable|string',
             'address_house_no' => 'nullable|string',
@@ -153,6 +154,7 @@ class CustomerController extends Controller
             'email' => 'nullable|email',
             'additional_emails' => 'nullable|array',
             'phone' => 'nullable|string',
+            'mobile' => 'nullable|string',
             'additional_phones' => 'nullable|array',
             'address_street' => 'nullable|string',
             'address_house_no' => 'nullable|string',
@@ -220,16 +222,20 @@ class CustomerController extends Controller
         $lastName = $request->input('last_name');
         $email = $request->input('email');
         $phone = $request->input('phone');
+        $mobile = $request->input('mobile');
         $companyName = $request->input('company_name');
 
         $query = \App\Models\Customer::query();
 
-        $query->where(function ($q) use ($firstName, $lastName, $email, $phone, $companyName) {
+        $query->where(function ($q) use ($firstName, $lastName, $email, $phone, $mobile, $companyName) {
             if ($email) {
                 $q->orWhere('email', $email);
             }
             if ($phone) {
                 $q->orWhere('phone', $phone);
+            }
+            if ($mobile) {
+                $q->orWhere('mobile', $mobile);
             }
             if ($lastName) {
                 $q->orWhere(function ($sq) use ($firstName, $lastName) {

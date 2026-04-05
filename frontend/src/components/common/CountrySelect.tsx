@@ -8,6 +8,7 @@ interface CountrySelectProps {
     onChange: (value: string) => void;
     label?: string;
     error?: boolean;
+    required?: boolean;
     className?: string;
     placeholder?: string;
     helperText?: string;
@@ -18,6 +19,7 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
     onChange,
     label = "Land",
     error,
+    required,
     className,
     placeholder = "Land auswählen...",
     helperText
@@ -31,8 +33,9 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
     return (
         <div className={className}>
             {label && (
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
                     {label}
+                    {required && <span className="text-red-500 ml-0.5">*</span>}
                 </label>
             )}
             <SearchableSelect

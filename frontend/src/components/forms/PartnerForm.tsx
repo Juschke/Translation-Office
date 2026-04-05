@@ -76,6 +76,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
     country: 'Deutschland',
     emails: [''],
     phones: [''],
+    mobile: '',
     languages: [] as string[],
     domains: [] as string[],
     bankAccountHolder: '',
@@ -160,6 +161,7 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
         flatRates: { ...prev.flatRates, ...(initialData.flat_rates || initialData.flatRates || {}) },
         emails: initialData.emails || (initialData.email ? [initialData.email] : (initialData.additional_emails ? [initialData.email, ...initialData.additional_emails] : [''])),
         phones: initialData.phones || (initialData.phone ? [initialData.phone] : (initialData.additional_phones ? [initialData.phone, ...initialData.additional_phones] : [''])),
+        mobile: initialData.mobile || '',
         languages: Array.isArray(initialData.languages) ? initialData.languages : (typeof initialData.languages === 'string' ? initialData.languages.split(',').map((l: string) => l.trim()) : []),
         domains: Array.isArray(initialData.domains) ? initialData.domains : (typeof initialData.domains === 'string' ? initialData.domains.split(',').map((d: string) => d.trim()) : [])
       }));
@@ -445,44 +447,59 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     </button>
                   )}
                 </div>
-              </div>
-
-              <div className="col-span-12 md:col-span-6 space-y-4">
-                <div className="space-y-4">
-                  {formData.phones.map((phone, i) => (
-                    <div key={i} className="flex gap-2 group animate-fadeIn items-end" data-field={i === 0 ? "phone" : undefined}>
+                     <div className="col-span-12 md:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div data-field="phone">
+                  <PhoneInput
+                    label="Festnetz (Primär) *"
+                    value={formData.phones[0] || ''}
+                    error={duplicates.some(d => (d.phone === formData.phones[0] || d.phones?.[0] === formData.phones[0]) && formData.phones[0] !== '')}
+                    onChange={val => {
+                      const newPhones = [...formData.phones];
+                      newPhones[0] = val;
+                      updateFormData({ phones: newPhones });
+                    }}
+                    helperText="Direkte Erreichbarkeit"
+                  />
+                </div>
+                <div data-field="mobile">
+                  <PhoneInput
+                    label="Mobil"
+                    value={formData.mobile || ''}
+                    error={duplicates.some(d => (d.mobile === formData.mobile) && formData.mobile !== '')}
+                    onChange={val => updateFormData({ mobile: val })}
+                    helperText="Mobilnummer"
+                  />
+                </div>
+                <div className="col-span-full space-y-4">
+                  {formData.phones.slice(1).map((phone, i) => (
+                    <div key={i + 1} className="flex gap-2 group animate-fadeIn items-end">
                       <div className="flex-1">
                         <PhoneInput
-                          label={i === 0 ? "Telefon (Primär) *" : undefined}
+                          label={`Zusätzliche Nummer ${i + 1}`}
                           value={phone}
-                          error={(i === 0 && duplicates.some(d => (d.phone === phone || d.phones?.[0] === phone) && phone !== ''))}
                           onChange={val => {
                             const newPhones = [...formData.phones];
-                            newPhones[i] = val;
+                            newPhones[i + 1] = val;
                             updateFormData({ phones: newPhones });
                           }}
-                          helperText={i === 0 ? "Direkte Erreichbarkeit" : undefined}
                         />
                       </div>
                       <button
                         type="button"
-                        onClick={() => removePhone(i)}
-                        className={clsx(
-                          "h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-sm transition flex-shrink-0",
-                          i === 0 && formData.phones.length === 1 ? "hidden" : ""
-                        )}
+                        onClick={() => removePhone(i + 1)}
+                        className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-sm transition flex-shrink-0"
                       >
                         <FaTrash size={12} />
                       </button>
                     </div>
                   ))}
-                  {!isCompact && (
+                  {!isCompact && formData.phones.length < 3 && (
                     <button type="button" onClick={addPhone} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-1 ml-1">
                       <FaPlus className="text-xs" /> Weitere Nummer hinzufügen
                     </button>
                   )}
                 </div>
-              </div>
+              </div>             </div>
             </div>
           </div>
 

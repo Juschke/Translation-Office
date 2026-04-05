@@ -12,6 +12,7 @@ export interface PartnerFormData {
   country: string;
   emails: string[];
   phones: string[];
+  mobile: string;
   languages: string[];
   domains: string[];
   bankAccountHolder: string;

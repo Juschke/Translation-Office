@@ -150,7 +150,7 @@ const InvoiceSettingsTab = () => {
         { id: 'design', label: t('settings.invoice_tab_design') },
     ];
     return (
-        <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden animate-fadeIn">
+        <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-y-auto custom-scrollbar flex-1 min-h-0 animate-fadeIn">
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-3">

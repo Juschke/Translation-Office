@@ -157,6 +157,9 @@ const CustomerDetail = () => {
 
                                         <span className="text-slate-500 font-medium">Telefon</span>
                                         <span className="text-slate-800">{customer.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
+
+                                        <span className="text-slate-500 font-medium font-medium">Mobil</span>
+                                        <span className="text-slate-800 font-medium">{customer.mobile || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
                                     </div>
                                 </div>
 

@@ -18,6 +18,7 @@ class Tenant extends Model
         'address_city',
         'address_country',
         'phone',
+        'mobile',
         'email',
         'website',
         'opening_hours',

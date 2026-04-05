@@ -98,7 +98,7 @@ const NotificationSettingsTab = () => {
     }
 
     return (
-        <div className="flex flex-col gap-6 animate-fadeIn">
+        <div className="flex flex-col gap-6 animate-fadeIn flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 pb-2">
             <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
                     <FaBell className="text-slate-500" />

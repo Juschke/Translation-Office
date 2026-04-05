@@ -60,6 +60,7 @@ interface CustomerFormData {
     address_country: string;
     email: string;
     phone: string;
+    mobile: string;
     notes: string;
     additional_emails: string[];
     additional_phones: string[];
@@ -96,6 +97,7 @@ const EMPTY_CUSTOMER: CustomerFormData = {
     address_country: 'Deutschland',
     email: '',
     phone: '',
+    mobile: '',
     notes: '',
     additional_emails: [],
     additional_phones: [],
@@ -202,6 +204,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                     last_name: formData.last_name,
                     email: formData.email,
                     phone: formData.phone,
+                    mobile: formData.mobile,
                     company_name: formData.company_name
                 });
 
@@ -285,6 +288,11 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
     const handlePhoneChange = (value: string) => {
         setFormData((prev: CustomerFormData) => ({ ...prev, phone: value }));
         setTouched((prev: Record<string, boolean>) => ({ ...prev, phone: true }));
+    };
+
+    const handleMobileChange = (value: string) => {
+        setFormData((prev: CustomerFormData) => ({ ...prev, mobile: value }));
+        setTouched((prev: Record<string, boolean>) => ({ ...prev, mobile: true }));
     };
 
     const handleArrayChange = (index: number, value: string, field: 'additional_emails' | 'additional_phones') => {
@@ -637,10 +645,10 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                             </div>
                                         </div>
 
-                                        <div className="col-span-12 md:col-span-6 space-y-4">
+                                        <div className="col-span-12 md:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
-                                                    Telefon / Mobil <FieldTip text="Haupttelefonnummer des Kunden inkl. Ländervorwahl" />
+                                                    Festnetz <FieldTip text="Festnetztelefonnummer des Kunden inkl. Ländervorwahl" />
                                                 </label>
                                                 <PhoneInput
                                                     value={formData.phone}
@@ -649,7 +657,18 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 />
                                             </div>
 
-                                            <div className="space-y-1">
+                                            <div>
+                                                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                                                    Mobil <FieldTip text="Mobiltelefonnummer des Kunden inkl. Ländervorwahl" />
+                                                </label>
+                                                <PhoneInput
+                                                    value={formData.mobile}
+                                                    onChange={handleMobileChange}
+                                                    error={!!getError('mobile') || duplicates.some(d => d.mobile === formData.mobile && formData.mobile !== '')}
+                                                />
+                                            </div>
+
+                                            <div className="col-span-full space-y-1">
                                                 {formData.additional_phones.map((phone, i) => (
                                                     <div key={i} className="flex gap-2 group animate-fadeIn items-start">
                                                         <div className="flex-1">

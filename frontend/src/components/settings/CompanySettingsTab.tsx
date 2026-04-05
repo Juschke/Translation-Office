@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FaBuilding, FaSave, FaImage, FaTrash, FaUpload, FaClock, FaTimes } from 'react-icons/fa';
+import { FaBuilding, FaSave, FaImage, FaTrash, FaUpload, FaClock, FaTimes, FaEnvelope } from 'react-icons/fa';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import clsx from 'clsx';
 import { settingsService } from '../../api/services';
 import { useAuth } from '../../context/AuthContext';
@@ -20,10 +23,13 @@ import finanzamt from 'finanzamt';
 import { normalizeSteuernummer } from 'normalize-steuernummer';
 import taxOfficesData from '../../data/tax_offices.json';
 
-const SettingRow = ({ label, description, children, className }: any) => (
+const SettingRow = ({ label, description, children, className, required }: any) => (
     <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
         <div className="col-span-12 md:col-span-4 space-y-1">
-            <label className="block text-sm font-medium text-slate-700">{label}</label>
+            <label className="block text-sm font-medium text-slate-700">
+                {label}
+                {required && <span className="text-red-500 ml-1">*</span>}
+            </label>
             {description && <p className="text-xs text-slate-500 leading-relaxed">{description}</p>}
         </div>
         <div className="col-span-12 md:col-span-8">
@@ -134,6 +140,7 @@ const CompanySettingsTab = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
 
     const taxOfficeOptions = useMemo(() => taxOfficesData.map((fa: any) => ({
         value: `Finanzamt ${fa.name}`,
@@ -179,6 +186,18 @@ const CompanySettingsTab = () => {
         queryKey: ['companySettings'],
         queryFn: settingsService.getCompany
     });
+
+    const { data: currenciesData = [] } = useQuery({
+        queryKey: ['settings', 'currencies'],
+        queryFn: settingsService.getCurrencies
+    });
+
+    const currencyOptions = useMemo(() => {
+        return currenciesData.map((c: any) => ({
+            value: c.code,
+            label: `${c.code} (${c.symbol}) - ${c.name}`
+        }));
+    }, [currenciesData]);
 
     const updateCompanyMutation = useMutation({
         mutationFn: settingsService.updateCompany,
@@ -232,9 +251,28 @@ const CompanySettingsTab = () => {
     const validateCompanyData = () => {
         const newErrors: Record<string, string> = {};
         if (!companyData.company_name) newErrors.company_name = 'Firmenname ist erforderlich';
+        if (!companyData.managing_director) newErrors.managing_director = 'Geschäftsführer ist erforderlich';
+        
         if (!companyData.address_street) newErrors.address_street = 'Straße ist erforderlich';
+        if (!companyData.address_house_no) newErrors.address_house_no = 'Hausnummer ist erforderlich';
         if (!companyData.address_zip) newErrors.address_zip = 'PLZ ist erforderlich';
         if (!companyData.address_city) newErrors.address_city = 'Stadt ist erforderlich';
+        if (!companyData.address_country) newErrors.address_country = 'Land ist erforderlich';
+        
+        if (!companyData.phone) newErrors.phone = 'Festnetztelefon ist erforderlich';
+        if (!companyData.mobile) newErrors.mobile = 'Mobiltelefon ist erforderlich';
+        if (!companyData.email) newErrors.email = 'E-Mail ist erforderlich';
+        
+        if (!companyData.legal_form) newErrors.legal_form = 'Rechtsform ist erforderlich';
+        if (!companyData.tax_office) newErrors.tax_office = 'Finanzbehörde ist erforderlich';
+        if (!companyData.vat_id) newErrors.vat_id = 'USt-IdNr. ist erforderlich';
+        
+        if (!companyData.bank_account_holder) newErrors.bank_account_holder = 'Kontoinhaber ist erforderlich';
+        if (!companyData.bank_iban) newErrors.bank_iban = 'IBAN ist erforderlich';
+        if (!companyData.bank_name) newErrors.bank_name = 'Bankname ist erforderlich';
+        if (!companyData.bank_code) newErrors.bank_code = 'BLZ ist erforderlich';
+        if (!companyData.bank_bic) newErrors.bank_bic = 'BIC ist erforderlich';
+        
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -281,13 +319,14 @@ const CompanySettingsTab = () => {
             fa.ort.toLowerCase() === city.toLowerCase() ||
             fa.name.toLowerCase().includes(city.toLowerCase())
         );
-        if (candidates.length === 1) {
-            setCompanyData((prev: any) => ({ ...prev, tax_office: `Finanzamt ${candidates[0].name}` }));
-            toast.success(`Finanzamt für ${candidates[0].name} erkannt`);
-        } else if (candidates.length > 1) {
+        if (candidates.length > 0) {
             const exactNameMatch = candidates.find((fa: any) => fa.name.toLowerCase() === city.toLowerCase());
             if (exactNameMatch) {
                 setCompanyData((prev: any) => ({ ...prev, tax_office: `Finanzamt ${exactNameMatch.name}` }));
+                toast.success(`Finanzamt für ${exactNameMatch.name} automatisch erkannt`);
+            } else {
+                setCompanyData((prev: any) => ({ ...prev, tax_office: `Finanzamt ${candidates[0].name}` }));
+                toast.success(`Finanzamt für ${candidates[0].name} automatisch erkannt`);
             }
         }
     };
@@ -308,9 +347,9 @@ const CompanySettingsTab = () => {
                             fa.ort.toLowerCase() === newCity.toLowerCase() ||
                             fa.name.toLowerCase().includes(newCity.toLowerCase())
                         );
-                        if (candidates.length === 1) {
+                        if (candidates.length > 0) {
                             setCompanyData((prev: any) => ({ ...prev, tax_office: `Finanzamt ${candidates[0].name}` }));
-                            toast.success(`Finanzamt für ${candidates[0].name} erkannt`);
+                            toast.success(`Finanzamt für ${candidates[0].name} automatisch erkannt`);
                         }
                     }
                 }
@@ -382,8 +421,22 @@ const CompanySettingsTab = () => {
         }
     };
 
+    // Scroll to section when sub-tab is clicked
+    useEffect(() => {
+        const section = searchParams.get('section');
+        if (section) {
+            // Small timeout to ensure DOM is ready
+            setTimeout(() => {
+                const element = document.getElementById(`section-${section}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+    }, [searchParams]);
+
     return (
-        <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden animate-fadeIn">
+        <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-y-auto custom-scrollbar flex-1 min-h-0 animate-fadeIn">
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded-sm"><FaBuilding /></div>
@@ -401,117 +454,38 @@ const CompanySettingsTab = () => {
 
             <div className="p-8">
                 {/* Basisinformationen */}
-                <div className="mb-8">
+                <div id="section-basis" className="mb-8 scroll-mt-20">
                     <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Basisinformationen</h4>
-                    <SettingRow label="Firmenname" description="Der offizielle Name Ihres Unternehmens, wie er auf Rechnungen erscheint.">
+                    <SettingRow label="Firmenname" required={true} description="Der offizielle Name Ihres Unternehmens, wie er auf Rechnungen erscheint.">
                         <Input
                             placeholder="Beispiel GmbH & Co. KG"
                             value={companyData.company_name || ''}
                             onChange={(e) => handleInputMetaChange('company_name', e.target.value)}
                             error={!!errors.company_name}
-                        />
-                    </SettingRow>
-                    <SettingRow label="Rechtsform" description="Die offizielle Rechtsform Ihres Unternehmens (z.B. GmbH).">
-                        <SearchableSelect
-                            placeholder="Rechtsform wählen..."
-                            options={legalFormOptions}
-                            value={companyData.legal_form || ''}
-                            onChange={(val) => handleInputMetaChange('legal_form', val)}
-                            className="h-10"
+                            required={true}
                         />
                     </SettingRow>
                     <SettingRow label="Geschäftsführer" description="Name des vertretungsberechtigten Geschäftsführers.">
                         <Input
                             placeholder="Vorname Nachname"
+                            required={true}
                             value={companyData.managing_director || ''}
                             onChange={(e) => handleInputMetaChange('managing_director', e.target.value)}
-                        />
-                    </SettingRow>
-                    <SettingRow label="Webseite" description="Ihre offizielle Webseite.">
-                        <Input
-                            placeholder="https://www.beispiel.de"
-                            value={companyData.website || ''}
-                            onChange={(e) => handleInputMetaChange('website', e.target.value)}
-                        />
-                    </SettingRow>
-                    <SettingRow label="Währung" description="Die Standardwährung für Ihr System.">
-                        <Input
-                            isSelect
-                            value={companyData.currency || 'EUR'}
-                            onChange={(e) => handleInputMetaChange('currency', e.target.value)}
-                        >
-                            <option value="EUR">EUR (€) - Euro</option>
-                            <option value="USD">USD ($) - US Dollar</option>
-                            <option value="CHF">CHF (Fr.) - Schweizer Franken</option>
-                        </Input>
-                    </SettingRow>
-                </div>
-
-                {/* Steuern & Identifikation */}
-                <div className="mb-8">
-                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Steuern & Identifikation</h4>
-                    <SettingRow label="Steuernummer" description="Ihre beim Finanzamt geführte Steuernummer.">
-                        <IMaskInput
-                            mask="00/000/00000"
-                            placeholder="12/345/67890"
-                            value={companyData.tax_number || ''}
-                            unmask={false}
-                            onAccept={(value) => handleInputMetaChange('tax_number', value)}
-                            onBlur={handleTaxNumberBlur}
-                            className={clsx(
-                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
-                                errors.tax_number && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
-                            )}
-                        />
-                    </SettingRow>
-                    <SettingRow label="USt-IdNr." description="Umsatzsteuer-Identifikationsnummer für den EU-weiten Handel.">
-                        <IMaskInput
-                            mask="aa000000000"
-                            definitions={{ 'a': /[a-zA-Z]/ }}
-                            placeholder="DE123456789"
-                            value={companyData.vat_id || ''}
-                            onAccept={(value) => handleInputMetaChange('vat_id', value.toUpperCase())}
-                            className={clsx(
-                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
-                                errors.vat_id && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
-                            )}
-                        />
-                    </SettingRow>
-                    <SettingRow label="Wirtschafts-ID" description="Die bundeseinheitliche Wirtschafts-Identifikationsnummer (W-IdNr.).">
-                        <IMaskInput
-                            mask="aa00000000000000"
-                            definitions={{ 'a': /[a-zA-Z]/ }}
-                            placeholder="DE12345678900001"
-                            value={companyData.tax_id || ''}
-                            onAccept={(value) => handleInputMetaChange('tax_id', value.toUpperCase())}
-                            className={clsx(
-                                'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
-                                errors.tax_id && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
-                            )}
-                        />
-                    </SettingRow>
-                    <SettingRow label="Finanzbehörde" description="Zugeordnetes Finanzamt für Ihre Steuererklärung.">
-                        <SearchableSelect
-                            placeholder="Finanzamt suchen oder auswählen..."
-                            options={taxOfficeOptions.map(opt => ({ ...opt, label: `${opt.label} (${opt.bufa})` }))}
-                            value={companyData.tax_office || ''}
-                            onChange={(val) => handleInputMetaChange('tax_office', val)}
+                            error={!!errors.managing_director}
                         />
                     </SettingRow>
                 </div>
 
                 {/* Standort & Adresse */}
-                <div className="mb-8">
+                <div id="section-location" className="mb-8 scroll-mt-20">
                     <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Standort & Adresse</h4>
-                    <SettingRow label="Anschrift" description="Der Hauptsitz Ihres Unternehmens.">
+                    <SettingRow label="Anschrift" required={true} description="Der Hauptsitz Ihres Unternehmens.">
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                 <div className="sm:col-span-3">
                                     <Input
-                                        label="Straße *"
+                                        label="Straße"
+                                        required={true}
                                         placeholder="Straße"
                                         list="street-suggestions"
                                         value={companyData.address_street || ''}
@@ -524,15 +498,18 @@ const CompanySettingsTab = () => {
                                 </div>
                                 <Input
                                     label="Nr."
+                                    required={true}
                                     placeholder="Nr."
                                     value={companyData.address_house_no || ''}
                                     onChange={(e) => handleInputMetaChange('address_house_no', e.target.value)}
+                                    error={!!errors.address_house_no}
                                 />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="relative">
                                     <Input
-                                        label="PLZ *"
+                                        label="PLZ"
+                                        required={true}
                                         placeholder="PLZ"
                                         value={companyData.address_zip || ''}
                                         onChange={(e) => handleInputMetaChange('address_zip', e.target.value)}
@@ -543,7 +520,8 @@ const CompanySettingsTab = () => {
                                 </div>
                                 <div className="sm:col-span-2">
                                     <Input
-                                        label="Stadt *"
+                                        label="Stadt"
+                                        required={true}
                                         placeholder="Stadt"
                                         value={companyData.address_city || ''}
                                         onChange={(e) => handleInputMetaChange('address_city', e.target.value)}
@@ -556,23 +534,95 @@ const CompanySettingsTab = () => {
                                 value={companyData.address_country || t('countries.de_default')}
                                 onChange={(val) => handleInputMetaChange('address_country', val)}
                                 label="Land"
+                                required={true}
+                                error={!!errors.address_country}
                             />
                         </div>
                     </SettingRow>
-                    <SettingRow label="Kontaktdaten" description="Öffentliche Kontaktdaten für Ihre Kunden.">
+                    <SettingRow label="Kontaktdaten" required={true} description="Öffentliche Kontaktdaten für Ihre Kunden.">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input
-                                label="Telefon"
-                                placeholder="+49 123 456789"
-                                value={companyData.phone || ''}
-                                onChange={(e) => handleInputMetaChange('phone', e.target.value)}
-                            />
-                            <Input
-                                label="E-Mail"
-                                placeholder="info@ihrefirma.de"
-                                value={companyData.email || ''}
-                                onChange={(e) => handleInputMetaChange('email', e.target.value)}
-                            />
+                            <div className="flex flex-col">
+                                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                                    Festnetztelefon
+                                    <span className="text-red-500 ml-0.5">*</span>
+                                </label>
+                                <PhoneInput
+                                    international
+                                    defaultCountry="DE"
+                                    placeholder="+49 123 456789"
+                                    value={companyData.phone || ''}
+                                    onChange={(val) => handleInputMetaChange('phone', val || '')}
+                                    numberInputProps={{
+                                        className: clsx(
+                                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all outline-none",
+                                            "border border-brand-border hover:border-brand-primary",
+                                            "focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
+                                            errors.phone && "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                                        )
+                                    }}
+                                    className="phone-input-custom"
+                                />
+                                {errors.phone && <p className="text-[10px] text-red-500 mt-1 ml-1 font-medium">{errors.phone}</p>}
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                                    Mobiltelefon
+                                    <span className="text-red-500 ml-0.5">*</span>
+                                </label>
+                                <PhoneInput
+                                    international
+                                    defaultCountry="DE"
+                                    placeholder="+49 160 1234567"
+                                    value={companyData.mobile || ''}
+                                    onChange={(val) => handleInputMetaChange('mobile', val || '')}
+                                    numberInputProps={{
+                                        className: clsx(
+                                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all outline-none",
+                                            "border border-brand-border hover:border-brand-primary",
+                                            "focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
+                                            errors.mobile && "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                                        )
+                                    }}
+                                    className="phone-input-custom"
+                                />
+                                {errors.mobile && <p className="text-[10px] text-red-500 mt-1 ml-1 font-medium">{errors.mobile}</p>}
+                            </div>
+                            <div className="col-span-1 md:col-span-2">
+                                <Input
+                                    label="E-Mail"
+                                    required={true}
+                                    startIcon={<FaEnvelope />}
+                                    placeholder="info@ihrefirma.de"
+                                    value={companyData.email || ''}
+                                    onChange={(e) => handleInputMetaChange('email', e.target.value)}
+                                    error={!!errors.email}
+                                />
+                            </div>
+                            <div className="col-span-1 md:col-span-2">
+                                <div className="flex flex-col">
+                                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">Webseite</label>
+                                    <div className="flex relative">
+                                        <div className="flex items-center justify-center px-3 bg-slate-50 border border-brand-border border-r-0 rounded-l-sm text-slate-500 text-sm font-medium">
+                                            https://
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder="www.beispiel.de"
+                                            value={(companyData.website || '').replace(/^https?:\/\//, '')}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                handleInputMetaChange('website', val ? `https://${val.replace(/^https?:\/\//, '')}` : '');
+                                            }}
+                                            className={clsx(
+                                                "flex h-9 w-full rounded-r-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
+                                                "border border-brand-border hover:border-brand-primary",
+                                                "placeholder:text-brand-muted placeholder:font-normal placeholder:tracking-normal",
+                                                "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none focus:z-10"
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                             <div className="col-span-1 md:col-span-2">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Öffnungszeiten</label>
@@ -592,40 +642,40 @@ const CompanySettingsTab = () => {
                     </SettingRow>
                 </div>
 
-                {/* Firmenlogo */}
-                <div className="mb-8">
-                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Firmenlogo</h4>
-                    <SettingRow label="Logo hochladen" description="Ihr Logo erscheint auf Rechnungen und Dokumenten. Max. 4 MB (PNG, JPG, SVG).">
-                        <LogoUpload logoPath={companyData.company_logo} onUploaded={() => queryClient.invalidateQueries({ queryKey: ['companySettings'] })} />
-                    </SettingRow>
-                </div>
-
                 {/* Bankverbindung */}
-                <div className="mb-8">
+                <div id="section-bank" className="mb-8 scroll-mt-20">
                     <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Bankverbindung</h4>
-                    <SettingRow label="Bankdaten" description="Ihre IBAN und BIC für Überweisungen (erscheint auf Rechnungen).">
+                    <SettingRow label="Bankdaten" required={true} description="Ihre IBAN und BIC für Überweisungen (erscheint auf Rechnungen).">
                         <div className="space-y-4">
                             <Input
                                 label="Kontoinhaber"
+                                required={true}
                                 placeholder={user?.name || 'Vorname Nachname'}
                                 value={companyData.bank_account_holder || ''}
                                 onChange={(e) => handleInputMetaChange('bank_account_holder', e.target.value)}
+                                error={!!errors.bank_account_holder}
                             />
                             <div className="flex flex-col">
-                                <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">IBAN</label>
+                                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                                    IBAN
+                                    <span className="text-red-500 ml-0.5">*</span>
+                                </label>
                                 <div className="relative">
                                     <IMaskInput
                                         mask="aa00 0000 0000 0000 0000 00"
                                         definitions={{ 'a': /[a-zA-Z]/ }}
-                                        placeholder="DE00 0000 0000 0000 0000 00"
+                                        lazy={false}
+                                        placeholderChar="_"
                                         value={companyData.bank_iban || ''}
                                         unmask={false}
                                         onAccept={(value) => handleInputMetaChange('bank_iban', value.toUpperCase())}
                                         onBlur={handleIbanBlur}
                                         className={clsx(
-                                            'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                            'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900',
-                                            errors.bank_iban && 'border-red-500 bg-red-50/10 focus:border-red-500 focus:ring-red-500/10'
+                                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
+                                            "border border-brand-border hover:border-brand-primary",
+                                            "placeholder:text-brand-muted placeholder:font-normal placeholder:tracking-normal",
+                                            "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none",
+                                            errors.bank_iban && "border-red-500 focus:border-red-500 ring-red-500/10"
                                         )}
                                     />
                                     {isValidatingIban && (
@@ -639,30 +689,49 @@ const CompanySettingsTab = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <Input
                                     label="Bankname"
+                                    required={true}
                                     placeholder="Musterbank AG"
                                     value={companyData.bank_name || ''}
                                     onChange={(e) => handleInputMetaChange('bank_name', e.target.value)}
+                                    error={!!errors.bank_name}
                                 />
                                 <div className="flex flex-col">
-                                    <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">BLZ</label>
-                                    <Input
-                                        placeholder="000 000 00"
+                                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                                        BLZ
+                                        <span className="text-red-500 ml-0.5">*</span>
+                                    </label>
+                                    <IMaskInput
+                                        mask="000 000 00"
+                                        lazy={false}
+                                        placeholderChar="_"
                                         value={companyData.bank_code || ''}
-                                        onChange={(e) => handleInputMetaChange('bank_code', e.target.value)}
+                                        onAccept={(value) => handleInputMetaChange('bank_code', value)}
+                                        className={clsx(
+                                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
+                                            "border border-brand-border hover:border-brand-primary",
+                                            "placeholder:text-brand-muted placeholder:font-normal placeholder:tracking-normal",
+                                            "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none"
+                                        )}
                                     />
                                 </div>
                                 <div className="flex flex-col">
-                                    <label className="block text-sm font-medium text-slate-500 mb-1 ml-0.5">BIC</label>
+                                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                                        BIC
+                                        <span className="text-red-500 ml-0.5">*</span>
+                                    </label>
                                     <IMaskInput
                                         mask="aaaaaa aa [aaa]"
                                         definitions={{ 'a': /[a-zA-Z0-9]/ }}
-                                        placeholder="ABCDEFGH"
+                                        lazy={false}
+                                        placeholderChar="_"
                                         value={companyData.bank_bic || ''}
                                         onAccept={(value) => handleInputMetaChange('bank_bic', value.toUpperCase())}
                                         onBlur={handleBicBlur}
                                         className={clsx(
-                                            'flex h-9 w-full rounded-sm bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm transition-all border outline-none',
-                                            'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-slate-950/10 focus:border-slate-900'
+                                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
+                                            "border border-brand-border hover:border-brand-primary",
+                                            "placeholder:text-brand-muted placeholder:font-normal placeholder:tracking-normal",
+                                            "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none"
                                         )}
                                     />
                                 </div>
@@ -671,11 +740,102 @@ const CompanySettingsTab = () => {
                     </SettingRow>
                 </div>
 
+                {/* Steuern & Identifikation */}
+                <div id="section-tax" className="mb-8 scroll-mt-20">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Steuern & Identifikation</h4>
+                    <SettingRow label="Rechtsform" required={true} description="Die offizielle Rechtsform Ihres Unternehmens (z.B. GmbH).">
+                        <SearchableSelect
+                            placeholder="Rechtsform wählen..."
+                            options={legalFormOptions}
+                            value={companyData.legal_form || ''}
+                            onChange={(val) => handleInputMetaChange('legal_form', val)}
+                            error={!!errors.legal_form}
+                        />
+                    </SettingRow>
+                    <SettingRow label="Finanzbehörde" required={true} description="Zugeordnetes Finanzamt für Ihre Steuererklärung.">
+                        <SearchableSelect
+                            placeholder="Finanzamt suchen oder auswählen..."
+                            options={taxOfficeOptions.map(opt => ({ ...opt, label: `${opt.label} (${opt.bufa})` }))}
+                            value={companyData.tax_office || ''}
+                            onChange={(val) => handleInputMetaChange('tax_office', val)}
+                            error={!!errors.tax_office}
+                        />
+                    </SettingRow>
+                    <SettingRow label="Steuernummer" description="Ihre beim Finanzamt geführte Steuernummer.">
+                        <IMaskInput
+                            mask="00/000/00000"
+                            lazy={false}
+                            placeholderChar="_"
+                            value={companyData.tax_number || ''}
+                            unmask={false}
+                            onAccept={(value) => handleInputMetaChange('tax_number', value)}
+                            onBlur={handleTaxNumberBlur}
+                            className={clsx(
+                                "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
+                                "border border-brand-border hover:border-brand-primary",
+                                "placeholder:text-brand-muted placeholder:font-normal placeholder:tracking-normal",
+                                "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none",
+                                errors.tax_number && "border-red-500 focus:border-red-500 ring-red-500/10"
+                            )}
+                        />
+                    </SettingRow>
+                    <SettingRow label="USt-IdNr." required={true} description="Umsatzsteuer-Identifikationsnummer für den EU-weiten Handel.">
+                        <IMaskInput
+                            mask="aa000000000"
+                            definitions={{ 'a': /[a-zA-Z]/ }}
+                            lazy={false}
+                            placeholderChar="_"
+                            value={companyData.vat_id || ''}
+                            onAccept={(value) => handleInputMetaChange('vat_id', value.toUpperCase())}
+                            className={clsx(
+                                "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
+                                "border border-brand-border hover:border-brand-primary",
+                                "placeholder:text-brand-muted placeholder:font-normal placeholder:tracking-normal",
+                                "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none",
+                                errors.vat_id && "border-red-500 focus:border-red-500 ring-red-500/10"
+                            )}
+                        />
+                    </SettingRow>
+                    <SettingRow label="Wirtschafts-ID" description="Die bundeseinheitliche Wirtschafts-Identifikationsnummer (W-IdNr.).">
+                        <IMaskInput
+                            mask="aa00000000000000"
+                            definitions={{ 'a': /[a-zA-Z]/ }}
+                            lazy={false}
+                            placeholderChar="_"
+                            value={companyData.tax_id || ''}
+                            onAccept={(value) => handleInputMetaChange('tax_id', value.toUpperCase())}
+                            className={clsx(
+                                "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
+                                "border border-brand-border hover:border-brand-primary",
+                                "placeholder:text-brand-muted placeholder:font-normal placeholder:tracking-normal",
+                                "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400 outline-none",
+                                errors.tax_id && "border-red-500 focus:border-red-500 ring-red-500/10"
+                            )}
+                        />
+                    </SettingRow>
+
+                    <SettingRow label="Währung" description="Die Standardwährung für Ihr System.">
+                        <SearchableSelect
+                            placeholder="Währung auswählen..."
+                            options={currencyOptions}
+                            value={companyData.currency || 'EUR'}
+                            onChange={(val) => handleInputMetaChange('currency', val)}
+                        />
+                    </SettingRow>
+                </div>
+
+                {/* Firmenlogo */}
+                <div id="section-logo" className="mb-0 scroll-mt-20">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Firmenlogo</h4>
+                    <SettingRow label="Logo hochladen" description="Ihr Logo erscheint auf Rechnungen und Dokumenten. Max. 4 MB (PNG, JPG, SVG).">
+                        <LogoUpload logoPath={companyData.company_logo} onUploaded={() => queryClient.invalidateQueries({ queryKey: ['companySettings'] })} />
+                    </SettingRow>
+                </div>
             </div>
             {/* Opening Hours Modal */}
             {isOpeningHoursModalOpen && (
                 <div className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center backdrop-blur-sm p-4 overflow-y-auto">
-                    <div className="bg-white rounded-sm shadow-xl w-full max-w-2xl overflow-hidden relative animate-fadeInUp">
+                    <div className="bg-white rounded-sm shadow-xl w-full max-w-2xl overflow-hidden relative animate-fadeInDown">
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                             <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                                 <FaClock className="text-brand-primary" />

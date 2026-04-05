@@ -20,6 +20,7 @@ class Customer extends Model
         'email',
         'additional_emails',
         'phone',
+        'mobile',
         'additional_phones',
         'address_street',
         'address_house_no',

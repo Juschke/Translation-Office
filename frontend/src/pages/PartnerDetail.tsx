@@ -162,6 +162,9 @@ const PartnerDetail = () => {
                                         <span className="text-slate-500 font-medium">Telefon</span>
                                         <span className="text-slate-800">{partner.phone || <span className="text-slate-400 italic">Keine Angabe</span>}</span>
 
+                                        <span className="text-slate-500 font-medium font-medium">Mobil</span>
+                                        <span className="text-slate-800 font-medium">{partner.mobile || <span className="text-slate-400 italic font-normal">Keine Angabe</span>}</span>
+
                                         {partner.additional_phones?.length > 0 && (
                                             <>
                                                 <span className="text-slate-500 font-medium">Weitere Tel.</span>
