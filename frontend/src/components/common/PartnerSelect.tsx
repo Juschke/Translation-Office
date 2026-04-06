@@ -141,11 +141,6 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
     if (errors.length > 0) {
       setValidationErrors(errors);
       toast.error(errors.length === 1 ? errors[0] : `${errors.length} Felder erforderlich: ${errors.join(', ')}`);
-      setTimeout(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
       return;
     }
 
@@ -189,31 +184,22 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
           />
         </div>
         <Button
+          variant="default"
           onClick={() => {
             const nextShow = !showForm;
             setShowForm(nextShow);
             setIsExpanded(nextShow);
-            if (nextShow) {
-              setTimeout(() => {
-                if (containerRef.current) {
-                  containerRef.current.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                  });
-                }
-              }, 150);
-            }
           }}
           className={clsx(
-            "h-9 px-3 bg-white text-slate-400 border border-brand-border border-l-0 hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0",
+            "h-9 px-3 border-l-0 shadow-sm shrink-0",
             (roundedSide === 'both' || roundedSide === 'right') && "rounded-r-sm"
           )}
           title={showForm ? "Schließen" : "Schnellanlage Partner"}
         >
-          {showForm ? (
-            <FaChevronDown className="text-xs transition-transform duration-200 rotate-180" />
+          {isExpanded ? (
+            <FaChevronDown className="text-xs text-white rotate-180 transition-transform" />
           ) : (
-            <FaPlus className="text-xs transition-transform duration-200" />
+            <FaPlus className="text-xs text-white" />
           )}
         </Button>
       </div>
@@ -465,6 +451,7 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
               {/* Actions */}
               <div className="flex gap-3 border-t border-slate-200 pt-4">
                 <Button
+                  variant="secondary"
                   onClick={() => {
                     setShowForm(false);
                     setIsExpanded(false);
@@ -488,16 +475,17 @@ const PartnerSelect: React.FC<PartnerSelectProps> = ({
                     });
                     setValidationErrors([]);
                   }}
-                  className="flex-1 bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors"
+                  className="flex-1"
                 >
                   Abbrechen
                 </Button>
                 <Button
+                  variant="default"
                   onClick={handleQuickAddSubmit}
                   disabled={createPartnerMutation.isPending}
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/20 shadow-lg transition-all active:scale-[0.98]"
+                  className="flex-1 flex items-center justify-center gap-2"
                 >
-                  <FaPlus className="text-xs" />
+                  <FaPlus className="text-xs text-white" />
                   {createPartnerMutation.isPending ? 'Speichern...' : 'Hinzufügen'}
                 </Button>
               </div>

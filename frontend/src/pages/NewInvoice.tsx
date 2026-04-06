@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-    FaPlus, FaTrash, FaSave, FaArrowLeft, FaGripVertical
+    FaPlus, FaTrash, FaSave, FaArrowLeft, FaGripVertical, FaBook, FaSearch
 } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Input from '../components/common/Input';
@@ -32,6 +33,15 @@ const NewInvoice = () => {
     const [selectedProjectId, setSelectedProjectId] = useState<string>(preselectedProjectId);
     const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
 
+    const [catalogOpen, setCatalogOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [catalogCoords, setCatalogCoords] = useState({ top: 0, left: 0 });
+    const catalogRef = useRef<HTMLDivElement>(null);
+    const searchRef = useRef<HTMLInputElement>(null);
+
+    const [showCreate, setShowCreate] = useState(false);
+    const [newSvc, setNewSvc] = useState({ name: '', unit: 'Normzeile', base_price: '0.00' });
+
     const [formData, setFormData] = useState({
         type: defaultType,
         invoice_number: '',
@@ -55,6 +65,8 @@ const NewInvoice = () => {
         leitweg_id: '',
         customer_reference: '',
         salutation: '',
+        is_xrechnung: false,
+        supplier_number: '',
     });
 
     const [items, setItems] = useState<any[]>([]);
@@ -165,13 +177,6 @@ const NewInvoice = () => {
         }));
     }, [customersResponse]);
 
-    const serviceOptions = useMemo(() => {
-        return (Array.isArray(services) ? services : []).map((s: any) => ({
-            value: s.id.toString(),
-            label: `${s.name} (${(parseFloat(s.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € / ${s.unit || 'Stk'})`,
-        }));
-    }, [services]);
-
     const activeProject = useMemo(() => {
         if (selectedProjectId) {
             const found = (Array.isArray(projects) ? projects : []).find((p: any) => p.id.toString() === selectedProjectId);
@@ -226,6 +231,8 @@ const NewInvoice = () => {
                 intro_text: inv.intro_text || '',
                 footer_text: inv.footer_text || '',
                 salutation: (inv as any).salutation || '',
+                is_xrechnung: !!inv.is_xrechnung,
+                supplier_number: inv.supplier_number || '',
             });
             if (inv.items) {
                 setItems(inv.items.map((i: any) => ({
@@ -370,7 +377,59 @@ const NewInvoice = () => {
         }]);
     };
 
-    // ── Inline-Cell-Editing ────────────────────────────────────────────────────
+    // ── Catalog Portal Logic ──────────────────────────────────────────────────
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const trigger = document.getElementById('catalog-trigger-invoice');
+            if (catalogRef.current && !catalogRef.current.contains(event.target as Node) && 
+                trigger && !trigger.contains(event.target as Node)) {
+                setCatalogOpen(false);
+            }
+        };
+        if (catalogOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+    }, [catalogOpen]);
+
+    const updateCatalogCoords = () => {
+        const trigger = document.getElementById('catalog-trigger-invoice');
+        if (trigger) {
+            const rect = trigger.getBoundingClientRect();
+            setCatalogCoords({
+                top: rect.bottom + window.scrollY,
+                left: Math.max(20, rect.right - 320)
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (catalogOpen) {
+            updateCatalogCoords();
+            setTimeout(() => searchRef.current?.focus(), 50);
+            window.addEventListener('resize', updateCatalogCoords);
+            return () => window.removeEventListener('resize', updateCatalogCoords);
+        }
+    }, [catalogOpen]);
+
+    const activeCatalogItems = useMemo(() => {
+        return (services as any[]).filter(s => 
+            s.status === 'active' && 
+            (searchTerm === '' || s.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [services, searchTerm]);
+
+    const createServiceMutation = useMutation({
+        mutationFn: settingsService.createService,
+        onSuccess: (created: any) => {
+            queryClient.invalidateQueries({ queryKey: ['settings', 'services'] });
+            addService(created.id.toString());
+            setShowCreate(false);
+            setNewSvc({ name: '', unit: 'Normzeile', base_price: '0.00' });
+            toast.success('Leistung angelegt und hinzugefügt');
+        },
+        onError: () => toast.error('Fehler beim Anlegen der Leistung'),
+    });
     const filterDecimalInvoice = (raw: string): string => {
         let v = raw.replace(/[^0-9,]/g, '');
         const ci = v.indexOf(',');
@@ -582,12 +641,12 @@ const NewInvoice = () => {
                                             readOnly
                                             className="h-11 bg-white border-slate-200"
                                         />
-                                        <div className="grid grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-2 gap-3">
                                             <Input
                                                 placeholder="Straße"
                                                 value={activeCustomer?.address_street || ''}
                                                 readOnly
-                                                className="h-11 bg-white border-slate-200 col-span-3"
+                                                className="h-11 bg-white border-slate-200 col-span-4"
                                             />
                                             <Input
                                                 placeholder="Nr."
@@ -596,7 +655,7 @@ const NewInvoice = () => {
                                                 className="h-11 bg-white border-slate-200 col-span-1"
                                             />
                                         </div>
-                                        <div className="grid grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-2 gap-3">
                                             <Input
                                                 placeholder="PLZ"
                                                 value={activeCustomer?.address_zip || ''}
@@ -607,7 +666,7 @@ const NewInvoice = () => {
                                                 placeholder="Ort"
                                                 value={activeCustomer?.address_city || ''}
                                                 readOnly
-                                                className="h-11 bg-white border-slate-200 col-span-3"
+                                                className="h-11 bg-white border-slate-200 col-span-4"
                                             />
                                         </div>
                                         <CountrySelect
@@ -619,20 +678,11 @@ const NewInvoice = () => {
 
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4 items-center">
-                                            <label className="text-sm font-medium text-slate-600">Rechnungsnummer</label>
-                                            <Input
-                                                value={formData.invoice_number || ''}
-                                                placeholder="automatisch"
-                                                readOnly
-                                                className="h-11 bg-white border-slate-200 text-slate-500 italic"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4 items-center">
                                             <label className="text-sm font-medium text-slate-600">Kundennummer</label>
                                             <Input
                                                 value={customerDisplayNo}
                                                 readOnly
-                                                className="h-11 bg-slate-50 border-slate-200 font-mono text-slate-500"
+                                                className="h-11 bg-slate-50 border-slate-200 text-slate-800 font-medium"
                                                 placeholder="–"
                                             />
                                         </div>
@@ -664,27 +714,47 @@ const NewInvoice = () => {
                                                 className="h-11 bg-white"
                                             />
                                         </div>
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <label className="text-sm font-medium text-slate-600">Kundenreferenz</label>
+                                            <Input
+                                                value={formData.customer_reference}
+                                                onChange={e => setFormData({ ...formData, customer_reference: e.target.value })}
+                                                className="h-11 bg-white"
+                                                placeholder="z.B. Bestellnummer"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </section>
 
                             {/* Section: Kopfbereich */}
-                            <section className="bg-transparent space-y-2 mb-8">
+                            <section className="bg-transparent space-y-2 mb-8" id="section-header">
                                 <h3 className="text-sm font-bold text-slate-800 ml-1">Kopfbereich</h3>
                                 <div className="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm space-y-6">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Belegtitel</label>
-                                        <select
-                                            className="w-full h-11 border-slate-200 border text-base font-medium focus:border-brand-primary outline-none rounded-md px-4 bg-white"
-                                            value={formData.type}
-                                            disabled
-                                        >
-                                            <option value="invoice">Rechnung</option>
-                                            <option value="credit_note">Gutschrift</option>
-                                        </select>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Belegart</label>
+                                            <select
+                                                className="w-full h-11 border-slate-200 border text-sm font-medium focus:border-brand-primary outline-none rounded-md px-4 bg-white"
+                                                value={formData.type}
+                                                onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                                            >
+                                                <option value="invoice">Einnahme (Rechnung)</option>
+                                                <option value="credit_note">Ausgabe (Gutschrift)</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Belegnummer</label>
+                                            <Input
+                                                value={formData.invoice_number}
+                                                onChange={e => setFormData({ ...formData, invoice_number: e.target.value })}
+                                                className="h-11 bg-white border-slate-200 text-slate-800 font-bold"
+                                                placeholder="automatisch"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Steuersatz</label>
                                             <select
@@ -701,33 +771,59 @@ const NewInvoice = () => {
                                                 <option value="reverse_charge">Steuerbefreit (Reverse Charge)</option>
                                             </select>
                                         </div>
+
+                                        <div className="pt-6 flex items-center gap-3">
+                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">X-Rechnung</h4>
+                                            <div
+                                                className="h-8 flex items-center gap-2 cursor-pointer group/toggle"
+                                                onClick={() => setFormData(prev => ({ ...prev, is_xrechnung: !prev.is_xrechnung }))}
+                                            >
+                                                <div className={clsx(
+                                                    'w-8 h-4 rounded-full relative transition-all duration-300',
+                                                    formData.is_xrechnung ? 'bg-emerald-500' : 'bg-slate-300'
+                                                )}>
+                                                    <div className={clsx(
+                                                        'absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm',
+                                                        formData.is_xrechnung ? 'left-4.5' : 'left-0.5'
+                                                    )} />
+                                                </div>
+                                                <span className={clsx(
+                                                    'text-[10px] font-bold tracking-widest transition-colors',
+                                                    formData.is_xrechnung ? 'text-emerald-600' : 'text-slate-400'
+                                                )}>
+                                                    {formData.is_xrechnung ? 'JA' : 'NEIN'}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Leitweg-ID</label>
-                                            <Input
-                                                value={formData.leitweg_id}
-                                                onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
-                                                className="h-11 bg-white"
-                                                placeholder="z.B. 0101-12345-67"
-                                            />
+                                    {formData.is_xrechnung && (
+                                        <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Leitweg-ID</label>
+                                                <Input
+                                                    value={formData.leitweg_id}
+                                                    onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
+                                                    className="h-11 bg-white"
+                                                    placeholder="z.B. 0101-12345-67"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Lieferantennummer</label>
+                                                <Input
+                                                    value={formData.supplier_number}
+                                                    onChange={e => setFormData({ ...formData, supplier_number: e.target.value })}
+                                                    className="h-11 bg-white"
+                                                    placeholder="Wird für X-Rechnung benötigt"
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Kundenreferenz</label>
-                                            <Input
-                                                value={formData.customer_reference}
-                                                onChange={e => setFormData({ ...formData, customer_reference: e.target.value })}
-                                                className="h-11 bg-white"
-                                                placeholder="z.B. Bestellnummer / Projektname"
-                                            />
-                                        </div>
-                                    </div>
+                                    )}
 
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Einleitungstext</label>
                                         <textarea
-                                            className="w-full min-h-[100px] border border-slate-200 rounded-md p-4 text-sm focus:border-brand-primary outline-none transition-colors bg-white shadow-sm"
+                                            className="w-full min-h-[220px] border border-slate-200 rounded-md p-4 text-sm focus:border-brand-primary outline-none transition-colors bg-white shadow-sm resize-y"
                                             placeholder="Vielen Dank für Ihren Auftrag..."
                                             value={formData.intro_text}
                                             onChange={e => setFormData({ ...formData, intro_text: e.target.value })}
@@ -737,44 +833,44 @@ const NewInvoice = () => {
                             </section>
 
                             {/* Section: Belegpositionen */}
-                            <section className="bg-transparent space-y-2 mb-8">
+                            <section className="bg-transparent space-y-2 mb-8" id="section-positions">
                                 <div className="flex justify-between items-center ml-1">
                                     <h3 className="text-sm font-bold text-slate-800">Leistungsübersicht</h3>
-                                    <Button
-                                        variant="default"
-                                        size="sm"
-                                        onClick={addItem}
-                                        className="h-8 text-[11px] font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm"
-                                    >
-                                        <FaPlus className="mr-1.5 text-[10px]" /> Position hinzufügen
-                                    </Button>
-                                </div>
-                                <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                                    <div className="p-6 pb-0 space-y-4">
-                                        <div className="w-full lg:w-1/2">
-                                            <SearchableSelect
-                                                label="Aus Dienstleistungskatalog hinzufügen"
-                                                placeholder="Suchen Sie nach vordefinierten Leistungen..."
-                                                options={serviceOptions}
-                                                value=""
-                                                onChange={(val) => { if (val) addService(val); }}
-                                            />
-                                        </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            id="catalog-trigger-invoice"
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => { setCatalogOpen(!catalogOpen); setSearchTerm(''); }}
+                                            className="h-8 text-[11px] font-bold gap-2"
+                                        >
+                                            <FaBook className="text-[10px]" /> Leistungskatalog
+                                        </Button>
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            onClick={addItem}
+                                            className="h-8 text-[11px] font-bold"
+                                        >
+                                            <FaPlus className="mr-1.5 text-[10px]" /> Position hinzufügen
+                                        </Button>
                                     </div>
+                                </div>
+                                <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden">
                                     <div className="p-0 overflow-x-auto">
                                         <DragDropContext onDragEnd={onDragEnd}>
                                             <table className="w-full text-left border-collapse min-w-[900px]">
                                                 <thead>
-                                                    <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                                        <th className="px-4 py-2 w-12 text-center">#</th>
-                                                        <th className="px-4 py-2">Beschreibung</th>
-                                                        <th className="px-4 py-2 w-20 text-right">Menge</th>
-                                                        <th className="px-4 py-2 w-24 text-right">Einheit</th>
-                                                        <th className="px-4 py-2 w-24 text-right">Preis (€)</th>
-                                                        <th className="px-4 py-2 w-20 text-right">Steuer</th>
-                                                        <th className="px-4 py-2 w-20 text-right">Rabatt</th>
-                                                        <th className="px-4 py-2 w-32 text-right">Gesamtpreis</th>
-                                                        <th className="px-4 py-2 w-10"></th>
+                                                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                        <th className="px-4 py-3 w-[40px] text-center bg-slate-100/30 border-r border-slate-100 italic font-mono text-slate-300">#</th>
+                                                        <th className="px-6 py-3">Beschreibung</th>
+                                                        <th className="px-4 py-3 w-20 text-right">Menge</th>
+                                                        <th className="px-4 py-3 w-28 text-right">Einheit</th>
+                                                        <th className="px-4 py-3 w-28 text-right">Preis (€)</th>
+                                                        <th className="px-4 py-3 w-20 text-right">Steuer</th>
+                                                        <th className="px-4 py-3 w-20 text-right">Rabatt</th>
+                                                        <th className="px-6 py-3 w-32 text-right">Gesamtpreis</th>
+                                                        <th className="px-4 py-3 w-10"></th>
                                                     </tr>
                                                 </thead>
                                                 <Droppable droppableId="invoice-items">
@@ -791,19 +887,20 @@ const NewInvoice = () => {
                                                                             ref={draggableProvided.innerRef}
                                                                             {...draggableProvided.draggableProps}
                                                                             className={clsx(
-                                                                                "group transition-colors",
-                                                                                snapshot.isDragging ? "bg-slate-100 shadow-md ring-1 ring-slate-200 z-50" : "hover:bg-slate-50/50"
+                                                                                "group transition-all duration-200 border-b border-slate-100",
+                                                                                snapshot.isDragging ? "bg-white shadow-xl ring-1 ring-brand-primary/20 scale-[1.01] z-50" : "hover:bg-slate-50/50"
                                                                             )}
                                                                         >
-                                                                            <td className="px-4 py-2 text-center text-[10px] font-mono text-slate-300">
-                                                                                <div className="flex items-center gap-1">
-                                                                                    <div {...draggableProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-200 hover:text-slate-400 transition-colors">
-                                                                                        <FaGripVertical size={10} />
-                                                                                    </div>
-                                                                                    {idx + 1}
+                                                                            <td className="w-[60px] bg-slate-50/30 border-r border-slate-50 text-center py-2 relative group-hover:bg-slate-100/50 transition-colors">
+                                                                                <div 
+                                                                                    {...draggableProvided.dragHandleProps} 
+                                                                                    className="flex flex-row items-center justify-center gap-2 cursor-grab active:cursor-grabbing text-slate-200 hover:text-brand-primary transition-colors py-1"
+                                                                                >
+                                                                                    <FaGripVertical size={11} />
+                                                                                    <span className="text-[10px] font-mono font-bold text-slate-500">{idx + 1}</span>
                                                                                 </div>
                                                                             </td>
-                                                                            <td className="px-4 py-2">
+                                                                            <td className="px-6 py-2">
                                                                                 {renderItemCell(item.id, 'description', item.description, 'text', 'text-xs font-medium text-slate-700 w-full bg-transparent border-none')}
                                                                             </td>
                                                                             <td className="px-4 py-2 text-right">
@@ -815,7 +912,7 @@ const NewInvoice = () => {
                                                                                         value={UNITS.includes(item.unit) ? item.unit : (item.unit || 'Wörter')}
                                                                                         options={UNITS.map(u => ({ value: u, label: u }))}
                                                                                         onChange={(val: string) => updateItem(item.id, 'unit', val)}
-                                                                                        width="25px"
+                                                                                        width="85px"
                                                                                     />
                                                                                 </div>
                                                                             </td>
@@ -843,7 +940,7 @@ const NewInvoice = () => {
                                                                                             { value: '0.00', label: '0%' }
                                                                                         ]}
                                                                                         onChange={(val: string) => updateItem(item.id, 'tax_rate', val)}
-                                                                                        width="25px"
+                                                                                        width="60px"
                                                                                     />
                                                                                 </div>
                                                                             </td>
@@ -859,11 +956,11 @@ const NewInvoice = () => {
                                                                                             { value: 'fixed', label: '€' }
                                                                                         ]}
                                                                                         onChange={(val: string) => updateItem(item.id, 'discount_mode', val)}
-                                                                                        width="25px"
+                                                                                        width="40px"
                                                                                     />
                                                                                 </div>
                                                                             </td>
-                                                                            <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums text-[11px]">
+                                                                            <td className="px-6 py-2 text-right font-bold text-slate-900 tabular-nums text-[11px]">
                                                                                 {fmtEur(item.total)}
                                                                             </td>
                                                                             <td className="px-4 py-2 text-center">
@@ -881,7 +978,7 @@ const NewInvoice = () => {
                                                             {provided.placeholder}
                                                             {items.length === 0 && (
                                                                 <tr>
-                                                                    <td colSpan={9} className="px-4 py-12 text-center text-slate-400 italic text-sm">
+                                                                    <td colSpan={10} className="px-4 py-12 text-center text-slate-400 italic text-sm">
                                                                         Fügen Sie Leistungen über den Katalog oder eine manuelle Zeile hinzu.
                                                                     </td>
                                                                 </tr>
@@ -912,15 +1009,14 @@ const NewInvoice = () => {
                                         )}
                                     </div>
 
-                                    <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex justify-center">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
+                                    <div className="border-t border-dashed border-slate-200 flex justify-center py-4 bg-slate-50/10">
+                                        <button
                                             onClick={addItem}
-                                            className="h-9 px-8 text-xs font-bold"
+                                            className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-slate-600 border border-dashed border-slate-300 rounded-sm hover:border-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all group/addbtn"
                                         >
-                                            <FaPlus className="mr-2 text-[10px]" /> Position hinzufügen
-                                        </Button>
+                                            <FaPlus className="text-[10px] text-slate-400 group-hover/addbtn:text-brand-primary transition-colors" />
+                                            Position hinzufügen
+                                        </button>
                                     </div>
                                 </div>
                             </section>
@@ -931,7 +1027,7 @@ const NewInvoice = () => {
                                     <h4 className="text-sm font-bold text-slate-800 ml-1">Zahlungsbedingungen</h4>
                                     <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-5">
                                         <textarea
-                                            className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
+                                            className="w-full min-h-[160px] border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
                                             placeholder="Z.B. Zahlbar innerhalb von 14 Tagen..."
                                             defaultValue={`Zahlbar innerhalb von 14 Tagen bis zum ${fmtDate(formData.due_date)} ohne Abzug.`}
                                         />
@@ -941,7 +1037,7 @@ const NewInvoice = () => {
                                     <h4 className="text-sm font-bold text-slate-800 ml-1">Freitext (Fußzeile)</h4>
                                     <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-5">
                                         <textarea
-                                            className="w-full h-32 border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
+                                            className="w-full min-h-[160px] border border-slate-200 rounded-sm p-3 text-sm focus:border-brand-primary outline-none transition-colors"
                                             placeholder="Optionaler abschließender Text (z.B. Vielen Dank für Ihren Auftrag!)"
                                             value={formData.footer_text}
                                             onChange={e => setFormData({ ...formData, footer_text: e.target.value })}
@@ -1092,6 +1188,155 @@ const NewInvoice = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Catalog Portal */}
+            {catalogOpen && createPortal(
+                <div 
+                    ref={catalogRef}
+                    className="fixed z-[1000] w-80 border border-slate-200 rounded-sm bg-white shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200"
+                    style={{
+                        top: catalogCoords.top,
+                        left: catalogCoords.left
+                    }}
+                >
+                    <div className="p-2 border-b border-slate-100 bg-white">
+                        <div className="relative group">
+                            <input
+                                ref={searchRef}
+                                type="text"
+                                placeholder="Leistung suchen…"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="w-full h-9 pl-8 pr-3 text-xs border border-slate-200 rounded-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 outline-none transition-all placeholder:text-slate-400"
+                            />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors">
+                                <FaSearch className="text-[10px]" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-h-60 overflow-y-auto">
+                        {activeCatalogItems.length === 0 ? (
+                            <p className="text-xs text-slate-400 text-center py-4 italic">
+                                {searchTerm ? 'Keine Treffer' : 'Noch keine Leistungen im Katalog'}
+                            </p>
+                        ) : (
+                            activeCatalogItems.map((item: any) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => {
+                                        addService(item.id.toString());
+                                        setCatalogOpen(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2.5 flex items-center justify-between hover:bg-brand-primary/5 transition-colors border-b border-slate-50 last:border-0 group/item"
+                                >
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-semibold text-slate-700 group-hover/item:text-brand-primary transition-colors">
+                                            {item.name}
+                                        </span>
+                                        {item.service_code && (
+                                            <span className="text-[10px] font-bold text-slate-400">{item.service_code}</span>
+                                        )}
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xs font-bold text-slate-700">{(parseFloat(item.base_price) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</div>
+                                        <div className="text-[10px] text-slate-400">/ {item.unit}</div>
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="border-t border-slate-100 bg-white p-2">
+                        <Button
+                            variant="default"
+                            onClick={() => {
+                                setCatalogOpen(false);
+                                setShowCreate(true);
+                            }}
+                            className="w-full h-9 text-xs font-bold gap-2"
+                        >
+                            <FaPlus className="text-[10px]" />
+                            Neue Leistung anlegen
+                        </Button>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Modal: Neue Leistung anlegen */}
+            {showCreate && createPortal(
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
+                    <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h4 className="text-sm font-bold text-slate-800">Neue Leistung im Katalog anlegen</h4>
+                            <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <FaPlus className="text-xs rotate-45" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-5">
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bezeichnung</label>
+                                <input
+                                    type="text"
+                                    placeholder="z.B. Lektorat Spanisch"
+                                    autoFocus
+                                    value={newSvc.name}
+                                    onChange={e => setNewSvc(s => ({ ...s, name: e.target.value }))}
+                                    className="w-full text-sm border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-all font-medium py-1"
+                                />
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1 space-y-1.5">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Einheit</label>
+                                    <select
+                                        value={newSvc.unit}
+                                        onChange={e => setNewSvc(s => ({ ...s, unit: e.target.value }))}
+                                        className="w-full text-sm border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-600 transition-all py-1.5"
+                                    >
+                                        {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                    </select>
+                                </div>
+                                <div className="w-32 space-y-1.5">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Grundpreis</label>
+                                    <div className="flex items-end gap-1">
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            placeholder="0,00"
+                                            value={newSvc.base_price}
+                                            onChange={e => setNewSvc(s => ({ ...s, base_price: e.target.value }))}
+                                            className="w-full text-right text-sm font-mono border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-all py-1"
+                                        />
+                                        <span className="text-sm text-slate-400 pb-px font-medium italic">€</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex gap-3">
+                            <Button 
+                                variant="outline" 
+                                onClick={() => setShowCreate(false)} 
+                                className="flex-1 bg-white"
+                            >
+                                Abbrechen
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    if (!newSvc.name) return toast.error('Bitte geben Sie eine Bezeichnung ein');
+                                    createServiceMutation.mutate(newSvc);
+                                }}
+                                disabled={createServiceMutation.isPending}
+                                className="flex-1"
+                            >
+                                {createServiceMutation.isPending ? 'Speichern...' : 'Leistung anlegen'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 };

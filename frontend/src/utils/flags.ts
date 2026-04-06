@@ -92,6 +92,8 @@ export const getFlagUrl = (code: string) => {
 export const getLanguageName = (code: string): string => {
     if (!code) return code;
     const c = code.toLowerCase().trim();
+    const baseCode = c.split('-')[0];
+
     const names: Record<string, string> = {
         'af': 'Afrikaans', 'sq': 'Albanisch', 'am': 'Amharisch', 'ar': 'Arabisch',
         'hy': 'Armenisch', 'az': 'Aserbaidschanisch', 'be': 'Weißrussisch', 'bn': 'Bengalisch',
@@ -110,5 +112,6 @@ export const getLanguageName = (code: string): string => {
         'ps': 'Paschtu', 'ca': 'Katalanisch', 'eu': 'Baskisch', 'gl': 'Galizisch',
         'cy': 'Walisisch', 'so': 'Somali', 'sw': 'Swahili', 'ti': 'Tigrinya',
     };
-    return names[c] || code.toUpperCase();
+    
+    return names[c] || names[baseCode] || code.toUpperCase();
 };

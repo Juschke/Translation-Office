@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
 import { StatusBadge } from '../components/common/StatusBadge';
-import { FaEdit, FaTrash, FaEye, FaTrashRestore, FaFolderOpen, FaEnvelope, FaEllipsisV } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaTrashRestore, FaFolderOpen, FaEnvelope, FaEllipsisV, FaArchive, FaCheckCircle } from 'react-icons/fa';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../components/ui/dropdown-menu';
 import { ICON_ACTION_BUTTON_CLASS, ICON_COLOR_DANGER, ICON_COLOR_DEFAULT, ICON_COLOR_MUTED, ICON_COLOR_SUCCESS, ICON_DROPDOWN_ITEM_CLASS, ICON_SIZE_SM } from '../components/ui/icon-styles';
@@ -308,19 +308,27 @@ export function buildProjectColumns({
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 bg-white border border-slate-200 shadow-lg p-1 z-50">
+                            {/* Standard-Aktionen */}
                             <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => navigate(`/projects/${p.id}`)}>
                                 <FaEye className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_MUTED}`} />
-                                <span>{t('actions.details') || 'Details'}</span>
+                                <span>Details</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => setViewFilesProject(p)}>
                                 <FaFolderOpen className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_MUTED}`} />
-                                <span>{t('actions.show_files') || 'Dateien'}</span>
+                                <span>Dateien</span>
                             </DropdownMenuItem>
-                            
+
+                            {p.status !== 'deleted' && (
+                                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => navigate('/inbox', { state: { compose: true, to: p.customer?.email, subject: `Projekt: ${p.project_name} (${p.project_number || 'ID ' + p.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p.project_name}.\n\nMit freundlichen Grüßen\n${companySettings?.company_name || ''}` } })}>
+                                    <FaEnvelope className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_MUTED}`} />
+                                    <span>E-Mail</span>
+                                </DropdownMenuItem>
+                            )}
+
                             {p.status !== 'deleted' && (
                                 <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => { setEditingProject(p); setIsModalOpen(true); }}>
                                     <FaEdit className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DEFAULT}`} />
-                                    <span>{t('actions.edit') || 'Bearbeiten'}</span>
+                                    <span>Edit</span>
                                 </DropdownMenuItem>
                             )}
 
@@ -330,33 +338,51 @@ export function buildProjectColumns({
                                 <>
                                     <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50" onClick={() => bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'in_progress' } })}>
                                         <FaTrashRestore className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_SUCCESS}`} />
-                                        <span>{t('actions.restore') || 'Wiederherstellen'}</span>
+                                        <span>Restore</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => {
                                         setProjectToDelete(p.id);
-                                        setConfirmTitle('Endgültig löschen');
+                                        setConfirmTitle('Löschen?');
                                         setConfirmMessage('Dieses Projekt wird unwiderruflich gelöscht. Fortfahren?');
                                         setIsConfirmOpen(true);
                                     }}>
                                         <FaTrash className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DANGER}`} />
-                                        <span>{t('actions.delete_permanently') || 'Endgültig löschen'}</span>
+                                        <span>Löschen</span>
                                     </DropdownMenuItem>
                                 </>
                             ) : (
-                                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => {
-                                    if (p.status === 'archived') {
-                                        setProjectToDelete(p.id);
-                                        setConfirmTitle('In den Papierkorb?');
-                                        setConfirmMessage('Möchten Sie dieses archivierte Projekt in den Papierkorb verschieben?');
-                                        setIsConfirmOpen(true);
-                                    } else {
-                                        setProjectToDelete([p.id]);
-                                        bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'deleted' } });
-                                    }
-                                }}>
-                                    <FaTrash className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DANGER}`} />
-                                    <span>{t('actions.move_to_trash') || 'In den Papierkorb'}</span>
-                                </DropdownMenuItem>
+                                <>
+                                    {/* Kontextbezogene Status-Aktionen */}
+                                    {p.status !== 'completed' && p.status !== 'archived' && (
+                                        <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50" onClick={() => bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'completed' } })}>
+                                            <FaCheckCircle className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_SUCCESS}`} />
+                                            <span>Abschließen</span>
+                                        </DropdownMenuItem>
+                                    )}
+
+                                    {p.status !== 'archived' && (
+                                        <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'archived' } })}>
+                                            <FaArchive className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_MUTED}`} />
+                                            <span>Archivieren</span>
+                                        </DropdownMenuItem>
+                                    )}
+
+                                    <DropdownMenuSeparator className="my-1 bg-slate-100" />
+
+                                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => {
+                                        if (p.status === 'archived') {
+                                            setProjectToDelete(p.id);
+                                            setConfirmTitle('Löschen?');
+                                            setConfirmMessage('Möchten Sie dieses archivierte Projekt in den Papierkorb verschieben?');
+                                            setIsConfirmOpen(true);
+                                        } else {
+                                            bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'deleted' } });
+                                        }
+                                    }}>
+                                        <FaTrash className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DANGER}`} />
+                                        <span>Papierkorb</span>
+                                    </DropdownMenuItem>
+                                </>
                             )}
                         </DropdownMenuContent>
                     </DropdownMenu>

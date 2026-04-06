@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
 import { Button } from '../ui/button';
+import { useTranslation } from 'react-i18next';
 
 
 interface LanguageOption {
@@ -38,6 +39,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     onAddNew,
     id
 }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [activeIndex, setActiveIndex] = useState(-1);
@@ -96,8 +98,8 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
     );
 
     useEffect(() => {
-        setActiveIndex(filteredOptions.length > 0 ? 0 : -1);
-    }, [search, isOpen, filteredOptions.length]);
+        setActiveIndex(-1);
+    }, [search, isOpen]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (!isOpen) {
@@ -224,7 +226,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                     ref={dropdownRef}
                     className="fixed z-[9999] bg-white border border-slate-200 shadow-sm overflow-hidden animate-fadeIn fadeInUp flex flex-col max-h-[400px] language-select-portal"
                     style={{
-                        top: coords.top + 4,
+                        top: coords.top,
                         left: coords.left,
                         width: coords.width
                     }}
@@ -251,18 +253,18 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                     key={opt.code}
                                     className={clsx(
                                         "px-4 py-2.5 text-sm cursor-pointer transition flex items-center justify-between",
-                                        activeIndex === index ? "bg-transparent text-slate-900" : "",
-                                        values.includes(opt.code) ? "bg-white/30 text-slate-900 font-medium" : "text-slate-700 hover:bg-white"
+                                        activeIndex === index ? "bg-brand-primary text-white" : "text-slate-700 hover:bg-slate-50",
+                                        values.includes(opt.code) ? "bg-slate-50/80 text-slate-900 font-medium" : ""
                                     )}
                                     onClick={(e) => { e.stopPropagation(); handleSelect(opt.code); }}
                                 >
                                     <div className="flex items-center gap-3 flex-1 overflow-hidden">
                                         {isMulti && (
                                             <div className={clsx(
-                                                "w-4 h-4 border rounded-sm flex items-center justify-center transition-all shrink-0",
-                                                values.includes(opt.code) ? "bg-brand-primary border-brand-primary" : "border-slate-300 bg-white"
+                                                "w-4 h-4 border rounded-[3px] flex items-center justify-center transition-all shrink-0",
+                                                values.includes(opt.code) ? "bg-brand-primary border-brand-primary" : "border-slate-300 bg-white shadow-sm"
                                             )}>
-                                                {values.includes(opt.code) && <FaCheck className="text-white text-xs" />}
+                                                {values.includes(opt.code) && <FaCheck className="text-white text-[9px]" />}
                                             </div>
                                         )}
                                         <div className="w-8 py-0.5 flex items-center justify-center shrink-0">
@@ -270,7 +272,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                         </div>
                                         <span className="flex-1">{opt.name}</span>
                                     </div>
-                                    {!isMulti && values.includes(opt.code) && <FaCheck className="text-slate-700 text-xs shrink-0 ml-2" />}
+                                    {!isMulti && values.includes(opt.code) && <FaCheck className="text-brand-primary text-xs shrink-0 ml-2" />}
                                 </div>
                             ))
                         ) : (
@@ -283,15 +285,16 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                     {onAddNew && (
                         <div className="p-2 border-t border-slate-100 bg-white shrink-0">
                             <Button
-                                variant="secondary"
+                                variant="default"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onAddNew();
                                     setIsOpen(false);
                                 }}
-                                className="w-full py-2 text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm"
+                                className="w-full h-9 text-xs font-bold gap-2"
                             >
-                                <FaPlus className="text-[10px] text-brand-primary" />
+                                <FaPlus className="text-[10px] text-white" />
+                                {t('select.add_new_language', 'Neue Sprache anlegen')}
                             </Button>
                         </div>
                     )}

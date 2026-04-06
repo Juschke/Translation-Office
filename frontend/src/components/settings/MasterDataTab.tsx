@@ -166,7 +166,13 @@ const MasterDataTab = () => {
                             preSearchControls={(
                                 <div className="flex gap-3">
                                     <SearchableSelect
-                                        options={specializations.map((s: any) => ({ value: s.name, label: s.name }))}
+                                        options={[
+                                            { value: '', label: 'Alle Kategorien' },
+                                            ...Array.from(new Set(docTypes.map((d: any) => d.category).filter(Boolean))).map(cat => ({
+                                                value: cat as string,
+                                                label: cat as string
+                                            }))
+                                        ]}
                                         value={docTypeCategoryFilter}
                                         onChange={(val) => setDocTypeCategoryFilter(val)}
                                         placeholder={t('settings.master_data_category_placeholder')}

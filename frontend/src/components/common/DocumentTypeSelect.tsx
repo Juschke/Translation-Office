@@ -44,6 +44,89 @@ const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
 
   const queryClient = useQueryClient();
   const formRef = React.useRef<HTMLDivElement>(null);
+  const [searchInput, setSearchInput] = useState('');
+
+  const categories = React.useMemo(() => {
+    const list = options.map(opt => opt.group).filter(Boolean) as string[];
+    return [...new Set(list)].sort();
+  }, [options]);
+
+  const searchMatches = React.useMemo(() => {
+    if (!searchInput.trim()) return true;
+    return options.some(opt =>
+      opt.label.toLowerCase().includes(searchInput.toLowerCase())
+    );
+  }, [searchInput, options]);
+
+  const shouldShowAddNewOption = searchInput && !searchMatches;
+
+  const handleAddNewClick = () => {
+    setQuickAddData(prev => ({
+      ...prev,
+      name: searchInput.trim()
+    }));
+    setShowForm(true);
+    setIsExpanded(true);
+  };
+
+  const extendedOptions = React.useMemo(() => {
+    const baseOptions = options;
+    if (shouldShowAddNewOption) {
+      return [
+        ...baseOptions,
+        {
+          value: `__new_${searchInput}__`,
+          label: `+ ${searchInput} hinzufügen`
+        }
+      ];
+    }
+    return baseOptions;
+  }, [options, shouldShowAddNewOption, searchInput]);
+
+  const handleSelectChange = (val: any) => {
+    if (Array.isArray(val)) {
+        const lastVal = val[val.length - 1];
+        if (typeof lastVal === 'string' && lastVal.startsWith('__new_')) {
+            handleAddNewClick();
+            onChange(val.slice(0, -1)); // Remove the temp value
+            return;
+        }
+        onChange(val);
+    } else {
+        if (typeof val === 'string' && val.startsWith('__new_')) {
+            handleAddNewClick();
+        } else {
+            onChange([val]);
+        }
+    }
+  };
+
+  const [categorySearchInput, setCategorySearchInput] = useState('');
+
+  const extendedCategoryOptions = React.useMemo(() => {
+    const list = categories.map(cat => ({ value: cat, label: cat }));
+    const match = list.some(opt => opt.label.toLowerCase() === categorySearchInput.toLowerCase());
+    
+    if (categorySearchInput && !match) {
+        return [
+            ...list,
+            {
+                value: `__new_cat_${categorySearchInput}__`,
+                label: `+ "${categorySearchInput}" als neue Kategorie`
+            }
+        ];
+    }
+    return list;
+  }, [categories, categorySearchInput]);
+
+  const handleCategorySelect = (val: string) => {
+    if (val.startsWith('__new_cat_')) {
+        const newCat = val.replace('__new_cat_', '').replace(/__$/, ''); // Clean up temp markers
+        setQuickAddData(prev => ({ ...prev, category: newCat }));
+    } else {
+        setQuickAddData(prev => ({ ...prev, category: val }));
+    }
+  };
 
   const createDocTypeMutation = useMutation({
     mutationFn: settingsService.createDocType,
@@ -95,16 +178,18 @@ const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
       <div className="flex items-end gap-0">
         <div className="flex-1 min-w-0">
           <SearchableSelect
-            options={options}
+            options={extendedOptions}
             value={value}
-            onChange={onChange}
+            onChange={handleSelectChange}
             placeholder={placeholder ?? t('document_type_select.placeholder')}
             error={error}
             roundedSide="left"
             isMulti={isMulti}
+            onSearch={setSearchInput}
           />
         </div>
         <Button
+          variant="default"
           onClick={() => {
             if (showForm) {
               setIsExpanded(!isExpanded);
@@ -113,13 +198,13 @@ const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
               setIsExpanded(true);
             }
           }}
-          className="h-9 px-3 bg-white text-slate-400 border border-brand-border border-l-0 rounded-r-sm hover:bg-slate-50 hover:text-brand-primary transition flex items-center shadow-sm shrink-0"
+          className="h-9 px-3 border-l-0 rounded-r-sm shadow-sm shrink-0"
           title={showForm ? t('actions.close') : t('document_type_select.quick_add')}
         >
-          {showForm ? (
-            <FaChevronDown className={clsx('text-xs transition-transform', isExpanded ? 'rotate-180' : '')} />
+          {isExpanded ? (
+            <FaChevronDown className="text-xs text-white rotate-180 transition-transform" />
           ) : (
-            <FaPlus className="text-xs" />
+            <FaPlus className="text-xs text-white" />
           )}
         </Button>
       </div>
@@ -159,10 +244,12 @@ const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('document_type_select.category')} <span className="text-red-500 font-bold">*</span></label>
                   <div className={clsx(validationErrors.some(e => e === t('document_type_select.category_required')) && 'ring-2 ring-red-500/50 rounded-sm')}>
-                    <Input
-                      placeholder={t('document_type_select.category_placeholder')}
+                    <SearchableSelect
+                      options={extendedCategoryOptions}
                       value={quickAddData.category}
-                      onChange={(e) => setQuickAddData(prev => ({ ...prev, category: e.target.value }))}
+                      onChange={handleCategorySelect}
+                      placeholder={t('document_type_select.category_placeholder')}
+                      onSearch={setCategorySearchInput}
                     />
                   </div>
                 </div>
@@ -170,22 +257,23 @@ const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
 
               <div className="flex gap-3 border-t border-slate-200 pt-4">
                 <Button
+                  variant="secondary"
                   onClick={() => {
                     setShowForm(false);
                     setIsExpanded(false);
                     setQuickAddData({ name: '', category: '' });
                     setValidationErrors([]);
                   }}
-                  className="flex-1 bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  className="flex-1"
                 >
                   {t('actions.cancel')}
                 </Button>
                 <Button
                   onClick={handleQuickAddSubmit}
                   disabled={createDocTypeMutation.isPending}
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary/90"
+                  className="flex-1 flex items-center justify-center gap-2"
                 >
-                  <FaPlus className="text-xs" />
+                  <FaPlus className="text-xs text-white" />
                   {createDocTypeMutation.isPending ? t('actions.saving') : t('actions.save')}
                 </Button>
               </div>

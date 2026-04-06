@@ -43,7 +43,7 @@ const LABEL_CLASS = 'text-[13px] font-medium text-slate-500 flex items-center ga
 const INPUT_WRAP = 'flex-1 min-w-0';
 const ROW_CLASS = 'flex items-start gap-4 py-3 border-b border-slate-50';
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
-const SECTION_NUM = 'w-7 h-7 rounded-md bg-primary text-white flex items-center justify-center text-xs font-bold shadow-sm';
+const SECTION_NUM = 'w-7 h-7 rounded-md bg-brand-primary text-white flex items-center justify-center text-xs font-bold shadow-sm';
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
 const getStatusOptions = (t: any) => [
@@ -423,37 +423,9 @@ const NewProject = () => {
                     </div>
                 </div>
             </div>
-            <div 
-                className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-8" 
+            <div
+                className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-8"
                 id="project-scroll-container"
-                onScroll={(e) => {
-                    const target = e.currentTarget;
-                    const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 20;
-                    
-                    const sections = [
-                        'section-basis', 'section-kunde', 'section-sprachen', 
-                        'section-partner', 'section-leistungen', 'section-kalkulation', 
-                        'section-zahlungen', 'section-anmerkungen'
-                    ];
-
-                    if (isAtBottom) {
-                        setActiveSection('section-anmerkungen');
-                        return;
-                    }
-
-                    const containerRect = target.getBoundingClientRect();
-                    for (let i = sections.length - 1; i >= 0; i--) {
-                        const el = document.getElementById(sections[i]);
-                        if (el) {
-                            const rect = el.getBoundingClientRect();
-                            // Check if element's top is past the trigger line (e.g., 100px from top)
-                            if (rect.top <= containerRect.top + 100) {
-                                setActiveSection(sections[i]);
-                                break;
-                            }
-                        }
-                    }
-                }}
             >
                 <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-8">
                     {/* ── Sidebar: Navigation ── */}
@@ -466,14 +438,17 @@ const NewProject = () => {
                                 { id: 'section-sprachen', label: '03 Sprachen' },
                                 { id: 'section-partner', label: '04 Partner & Übersetzer' },
                                 { id: 'section-leistungen', label: '05 Leistungen & Optionen' },
-                                { id: 'section-kalkulation', label: '06 Kalkulation Positionen' },
-                                { id: 'section-zahlungen', label: '07 Anzahlungen / Teilzahlungen' },
+                                { id: 'section-kalkulation', label: '06 Positionen' },
+                                { id: 'section-zahlungen', label: '07 Anzahlungen' },
                                 { id: 'section-anmerkungen', label: '08 Anmerkungen' },
                             ].map(section => (
-                                <button 
-                                    key={section.id} 
+                                <button
+                                    key={section.id}
                                     type="button"
-                                    onClick={() => document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                    onClick={() => {
+                                        setActiveSection(section.id);
+                                        document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }}
                                     className={clsx(
                                         "w-full text-left px-2 py-1.5 text-xs font-medium rounded-md transition-colors",
                                         activeSection === section.id
@@ -510,7 +485,7 @@ const NewProject = () => {
                                     />
                                 </FormRow>
                                 <FormRow label="Status" tooltip="Aktueller Bearbeitungsstatus des Projekts." error={validationErrors.has('status')} id="field-status">
-                                    <SearchableSelect options={statusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} preserveOrder={true} />
+                                    <SearchableSelect options={statusOptions} value={status} onChange={setStatus} error={validationErrors.has('status')} preserveOrder={true} isClearable={false} />
                                 </FormRow>
                                 <FormRow label="Liefertermin" tooltip="Geplanter Abgabetermin inkl. Uhrzeit.">
                                     <div className="space-y-2 space-x-2">
@@ -738,9 +713,9 @@ const NewProject = () => {
                         <section id="section-kalkulation" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>06</div>
-                                <h3 className={SECTION_TITLE}>Kalkulation Positionen</h3>
+                                <h3 className={SECTION_TITLE}>Positionen</h3>
                             </div>
-                            <div className="px-6 pb-5">
+                            <div className="px-4 pb-5">
                                 <ProjectPositionsTable positions={positions} setPositions={setPositions} />
                             </div>
                         </section>
@@ -750,10 +725,7 @@ const NewProject = () => {
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
                                 <div className="flex items-center gap-3">
                                     <div className={SECTION_NUM}>07</div>
-                                    <h3 className={SECTION_TITLE}>Anzahlungen / Teilzahlungen</h3>
-                                    <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">
-                                        {payments.length}
-                                    </span>
+                                    <h3 className={SECTION_TITLE}>Anzahlungen</h3>
                                 </div>
                                 <Button
                                     onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}

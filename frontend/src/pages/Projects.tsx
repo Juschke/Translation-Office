@@ -439,7 +439,51 @@ const Projects = () => {
         companySettings,
     });
 
-    // Count projects by status for badges
+    const subTabCounts = useMemo(() => {
+        const counts = { all: 0, offer: 0, in_progress: 0, ready_for_pickup: 0, delivered: 0, invoiced: 0, completed: 0 };
+        const projectsArray = Array.isArray(projects) ? projects : ((projects as any)?.data || []);
+
+        const activeProjects = projectsArray.filter((p: any) => {
+            const s = p.status?.toLowerCase();
+            return s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht';
+        });
+
+        counts.all = activeProjects.length;
+        counts.offer = activeProjects.filter((p: any) => ['offer', 'pending', 'draft'].includes(p.status)).length;
+        counts.in_progress = activeProjects.filter((p: any) => ['in_progress', 'review'].includes(p.status)).length;
+        counts.ready_for_pickup = activeProjects.filter((p: any) => p.status === 'ready_for_pickup').length;
+        counts.delivered = activeProjects.filter((p: any) => p.status === 'delivered').length;
+        counts.invoiced = activeProjects.filter((p: any) => p.status === 'invoiced').length;
+        counts.completed = activeProjects.filter((p: any) => p.status === 'completed').length;
+
+        return counts;
+    }, [projects]);
+
+    const tabs = statusView === 'active' ? (
+        <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1 overflow-x-auto no-scrollbar">
+            <Button onClick={() => setFilter('all')} variant={filter === 'all' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">
+                <FaLayerGroup className="text-[10px]" /> {t('projects.filters.status_tabs.all')}
+            </Button>
+            <Button onClick={() => setFilter('offer')} variant={filter === 'offer' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">
+                <FaFileInvoiceDollar className="text-[10px]" /> {t('projects.filters.status_tabs.offer')} {subTabCounts.offer > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${filter === 'offer' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.offer}</span>}
+            </Button>
+            <Button onClick={() => setFilter('in_progress')} variant={filter === 'in_progress' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">
+                <FaClock className="text-[10px]" /> {t('projects.filters.status_tabs.in_progress')} {subTabCounts.in_progress > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${filter === 'in_progress' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.in_progress}</span>}
+            </Button>
+            <Button onClick={() => setFilter('ready_for_pickup')} variant={filter === 'ready_for_pickup' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">
+                <FaArrowRight className="text-[10px]" /> {t('projects.filters.status_tabs.ready_for_pickup')} {subTabCounts.ready_for_pickup > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${filter === 'ready_for_pickup' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.ready_for_pickup}</span>}
+            </Button>
+            <Button onClick={() => setFilter('delivered')} variant={filter === 'delivered' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">
+                <FaCheck className="text-[10px]" /> {t('projects.filters.status_tabs.delivered')} {subTabCounts.delivered > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${filter === 'delivered' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.delivered}</span>}
+            </Button>
+            <Button onClick={() => setFilter('invoiced')} variant={filter === 'invoiced' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">
+                <FaFileInvoiceDollar className="text-[10px]" /> {t('projects.filters.status_tabs.invoiced')} {subTabCounts.invoiced > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${filter === 'invoiced' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.invoiced}</span>}
+            </Button>
+            <Button onClick={() => setFilter('completed')} variant={filter === 'completed' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">
+                <FaArchive className="text-[10px]" /> {t('projects.filters.status_tabs.completed')} {subTabCounts.completed > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${filter === 'completed' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.completed}</span>}
+            </Button>
+        </div>
+    ) : null;
 
 
     const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (filter !== 'all' ? 1 : 0) + Object.values(advancedFilters).filter(v => v && v !== 'all').length;
@@ -630,67 +674,6 @@ const Projects = () => {
                     </div>
                 </div>
 
-                {/* ── Tabs-Leiste für Filter ── */}
-                <div className="bg-gradient-to-b from-white to-[#f0f0f0] border border-slate-200 rounded-sm p-1.5 flex flex-wrap items-center gap-1 shadow-sm">
-                    {[
-                        { id: 'all', label: t('projects.filters.status_tabs.all'), icon: <FaLayerGroup /> },
-                        { id: 'offer', label: t('projects.filters.status_tabs.offer'), icon: <FaFileInvoiceDollar /> },
-                        { id: 'in_progress', label: t('projects.filters.status_tabs.in_progress'), icon: <FaClock /> },
-                        { id: 'ready_for_pickup', label: t('projects.filters.status_tabs.ready_for_pickup'), icon: <FaArrowRight /> },
-                        { id: 'delivered', label: t('projects.filters.status_tabs.delivered'), icon: <FaCheck /> },
-                        { id: 'completed', label: t('projects.filters.status_tabs.completed'), icon: <FaArchive /> }
-                    ].map((tab) => {
-                        const isActive = filter === tab.id && statusView === 'active';
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => {
-                                    setStatusView('active');
-                                    setFilter(tab.id);
-                                }}
-                                className={clsx(
-                                    "px-3 py-1.5 rounded-[2px] text-xs font-bold transition flex items-center gap-2 border",
-                                    isActive
-                                        ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
-                                        : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm"
-                                )}
-                            >
-                                <span className={clsx("text-[11px]", isActive ? "text-[#8fb4b1]" : "text-slate-400")}>
-                                    {tab.icon}
-                                </span>
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-
-                    <div className="h-4 w-px bg-slate-300 mx-1" />
-
-                    {[
-                        { id: 'archive', label: t('projects.filters.archive'), icon: <FaArchive /> },
-                        { id: 'trash', label: t('projects.filters.trash'), icon: <FaTrash /> }
-                    ].map((tab) => {
-                        const isActive = statusView === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setStatusView(tab.id as any)}
-                                className={clsx(
-                                    "px-3 py-1.5 rounded-[2px] text-xs font-bold transition flex items-center gap-2 border",
-                                    isActive
-                                        ? (tab.id === 'trash' 
-                                            ? "bg-gradient-to-b from-red-600 to-red-700 text-white border-red-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]" 
-                                            : "bg-gradient-to-b from-slate-600 to-slate-700 text-white border-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]")
-                                        : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm"
-                                )}
-                            >
-                                <span className={clsx("text-[11px]", isActive ? "text-white/70" : "text-slate-400")}>
-                                    {tab.icon}
-                                </span>
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-                </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                     <KPICard
@@ -759,6 +742,7 @@ const Projects = () => {
                             searchPlaceholder={t('projects.search_placeholder')}
                             searchFields={['project_name', 'project_number'] as any[]}
                             onExport={handleExport}
+                            tabs={tabs}
                             onAddClick={() => navigate('/projects/new')}
                             selectable
                             selectedIds={selectedProjects}

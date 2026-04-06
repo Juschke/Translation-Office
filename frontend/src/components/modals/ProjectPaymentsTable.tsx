@@ -18,7 +18,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                 <div className="flex items-center gap-3">
                     <FaEuroSign className="text-brand-primary text-sm" />
                     <h4 className="text-sm font-medium text-slate-800">Anzahlungen / Teilzahlungen</h4>
-                    <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
+                    <span className="bg-brand-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                         {payments.length}
                     </span>
                 </div>

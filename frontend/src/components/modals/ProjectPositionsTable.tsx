@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
-import { FaPlus, FaTrash, FaBook, FaTimes, FaCheck, FaChevronDown, FaSave } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaBook, FaChevronDown, FaSave, FaSearch, FaGripVertical } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
 import { Button } from '../ui/button';
@@ -68,7 +68,7 @@ const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = f
     );
 
 /* ─── Generic Mini Dropdown ─── */
-export const MiniDropdown = ({ value, options, onChange, disabled, width = '140px' }: { value: string; options: { value: string; label: string }[]; onChange: (val: string) => void; disabled?: boolean; width?: string }) => {
+export const MiniDropdown = ({ value, options, onChange, disabled, width = '85px' }: { value: string; options: { value: string; label: string }[]; onChange: (val: string) => void; disabled?: boolean; width?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
@@ -137,7 +137,7 @@ export const MiniDropdown = ({ value, options, onChange, disabled, width = '140p
             {isOpen && createPortal(
                 <div
                     ref={dropdownRef}
-                    className="fixed z-[9999] bg-white border border-slate-200 shadow-xl rounded-sm overflow-hidden animate-fadeIn"
+                    className="fixed z-[9999] bg-white border border-slate-200 shadow-xl rounded-sm overflow-hidden searchable-dropdown flex flex-col"
                     style={{
                         top: coords.top,
                         left: coords.left,
@@ -146,19 +146,19 @@ export const MiniDropdown = ({ value, options, onChange, disabled, width = '140p
                 >
                     <div className="max-h-48 overflow-y-auto">
                         {options.map((o) => (
-                            <button
-                                key={o.value}
-                                type="button"
-                                onClick={() => handleSelect(o.value)}
-                                className={clsx(
-                                    ' text-left px-3 py-2 text-xs font-medium transition-colors border-b border-slate-50 last:border-0',
-                                    value === o.value
-                                        ? 'bg-slate-100 text-slate-900 border-l-2 border-brand-primary'
-                                        : 'text-slate-700 hover:bg-slate-50'
-                                )}
-                            >
-                                {o.label}
-                            </button>
+                                <button
+                                    key={o.value}
+                                    type="button"
+                                    onClick={() => handleSelect(o.value)}
+                                    className={clsx(
+                                        'w-full text-left px-2 py-2 text-xs font-medium transition-colors border-b border-slate-50 last:border-0',
+                                        value === o.value
+                                            ? 'bg-slate-100 text-slate-900 border-l-2 border-brand-primary'
+                                            : 'text-slate-700 hover:bg-slate-50'
+                                    )}
+                                >
+                                    {o.label}
+                                </button>
                         ))}
                     </div>
                 </div>,
@@ -196,6 +196,8 @@ const ProjectPositionsTable = ({
     const [search, setSearch] = useState('');
     const [showCreate, setShowCreate] = useState(false);
     const [newSvc, setNewSvc] = useState(EMPTY_SERVICE);
+    const [catalogCoords, setCatalogCoords] = useState({ top: 0, left: 0 });
+    const catalogRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
 
     const { data: catalog = [] } = useQuery<any[]>({
@@ -214,7 +216,43 @@ const ProjectPositionsTable = ({
     });
 
     useEffect(() => {
-        if (catalogOpen) setTimeout(() => searchRef.current?.focus(), 50);
+        const handleClickOutside = (event: MouseEvent) => {
+            const trigger = document.getElementById('catalog-trigger');
+            if (catalogRef.current && !catalogRef.current.contains(event.target as Node) && 
+                trigger && !trigger.contains(event.target as Node)) {
+                setCatalogOpen(false);
+            }
+        };
+        if (catalogOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+    }, [catalogOpen]);
+
+    const updateCatalogCoords = () => {
+        const trigger = document.getElementById('catalog-trigger');
+        if (trigger) {
+            const rect = trigger.getBoundingClientRect();
+            setCatalogCoords({
+                top: rect.bottom,
+                left: rect.right - 320
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (catalogOpen) {
+            updateCatalogCoords();
+            setTimeout(() => searchRef.current?.focus(), 50);
+            
+            const handleScroll = () => updateCatalogCoords();
+            window.addEventListener('scroll', handleScroll, true);
+            window.addEventListener('resize', updateCatalogCoords);
+            return () => {
+                window.removeEventListener('scroll', handleScroll, true);
+                window.removeEventListener('resize', updateCatalogCoords);
+            };
+        }
     }, [catalogOpen]);
 
     const update = (index: number, patch: Partial<ProjectPosition>) => {
@@ -261,7 +299,7 @@ const ProjectPositionsTable = ({
     return (
         <div className="bg-white">
             {!disabled && (
-                <div className="relative flex justify-end gap-2 px-3 py-2 border-b border-slate-100">
+                <div className="relative flex justify-end gap-2 py-2 border-b border-slate-100">
                     {onSave && (
                         <Button
                             onClick={onSave}
@@ -274,35 +312,42 @@ const ProjectPositionsTable = ({
                         </Button>
                     )}
                     <Button
+                        id="catalog-trigger"
                         onClick={() => { setCatalogOpen(o => !o); setShowCreate(false); setSearch(''); }}
-                        className="h-8 px-4 text-xs font-bold"
+                        className="h-8 px-4 text-xs font-bold gap-2"
                         variant="default"
                     >
-                        <FaBook className="text-[10px] mr-1.5" />
+                        <FaBook className="text-[10px]" />
                         Leistungskatalog
                     </Button>
 
-                    {!disabled && catalogOpen && (
-                        <div className="absolute top-full right-3 z-[100] mt-1 w-80 border border-slate-200 rounded-sm bg-white shadow-xl overflow-hidden animate-fadeIn">
-                            <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50">
-                                <input
-                                    ref={searchRef}
-                                    type="text"
-                                    placeholder="Leistung suchen…"
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    className="flex-1 text-xs outline-none bg-transparent text-slate-700 placeholder:text-slate-400"
-                                />
-                                <button
-                                    onClick={() => setCatalogOpen(false)}
-                                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                                >
-                                    <FaTimes className="text-[10px]" />
-                                </button>
+                    {!disabled && catalogOpen && createPortal(
+                        <div 
+                            ref={catalogRef}
+                            className="fixed z-[1000] w-80 border border-slate-200 rounded-sm bg-white shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200"
+                            style={{
+                                top: catalogCoords.top,
+                                left: catalogCoords.left
+                            }}
+                        >
+                            <div className="p-2 border-b border-slate-100 bg-white">
+                                <div className="relative group">
+                                    <input
+                                        ref={searchRef}
+                                        type="text"
+                                        placeholder="Leistung suchen…"
+                                        value={search}
+                                        onChange={e => setSearch(e.target.value)}
+                                        className="w-full h-9 pl-8 pr-3 text-xs border border-slate-200 rounded-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 outline-none transition-all placeholder:text-slate-400"
+                                    />
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors">
+                                        <FaSearch className="text-[10px]" />
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="max-h-60 overflow-y-auto">
-                                {activeItems.length === 0 && !showCreate ? (
+                                {activeItems.length === 0 ? (
                                     <p className="text-xs text-slate-400 text-center py-4 italic">
                                         {search ? 'Keine Treffer' : 'Noch keine Leistungen im Katalog'}
                                     </p>
@@ -330,34 +375,55 @@ const ProjectPositionsTable = ({
                                 )}
                             </div>
 
-                            <div className="border-t border-slate-100 bg-slate-50/30">
-                                {!showCreate ? (
-                                    <button
-                                        onClick={() => setShowCreate(true)}
-                                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-brand-primary hover:bg-slate-100 transition-colors"
-                                    >
-                                        <FaPlus className="text-[10px]" />
-                                        Neue Leistung anlegen
+                            <div className="border-t border-slate-100 bg-white p-2">
+                                <Button
+                                    variant="default"
+                                    onClick={() => { setShowCreate(true); setCatalogOpen(false); }}
+                                    className="w-full h-9 text-xs font-bold gap-2"
+                                >
+                                    <FaPlus className="text-[10px]" />
+                                    Neue Leistung anlegen
+                                </Button>
+                            </div>
+                        </div>,
+                        document.body
+                    )}
+
+                    {/* Neue Leistung Modal */}
+                    {showCreate && createPortal(
+                        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
+                            <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                    <h4 className="text-sm font-bold text-slate-800">Neue Leistung im Katalog anlegen</h4>
+                                    <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                        <FaPlus className="text-xs rotate-45" />
                                     </button>
-                                ) : (
-                                    <div className="p-3 space-y-2.5 bg-white">
-                                        <p className="text-[10px] font-bold text-slate-400">Schnellanlage</p>
+                                </div>
+                                <div className="p-6 space-y-5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bezeichnung</label>
                                         <input
                                             type="text"
-                                            placeholder="Bezeichnung *"
+                                            placeholder="z.B. Lektorat Spanisch"
                                             autoFocus
                                             value={newSvc.name}
                                             onChange={e => setNewSvc(s => ({ ...s, name: e.target.value }))}
-                                            className="w-full text-xs border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
+                                            className="w-full text-sm border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
                                         />
-                                        <div className="flex gap-2">
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="flex-1 space-y-1.5">
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Einheit</label>
                                             <select
                                                 value={newSvc.unit}
                                                 onChange={e => setNewSvc(s => ({ ...s, unit: e.target.value }))}
-                                                className="flex-1 text-xs border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-600 transition-colors"
+                                                className="w-full text-sm border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-600 transition-colors"
                                             >
                                                 {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                             </select>
+                                        </div>
+                                        <div className="w-32 space-y-1.5">
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Grundpreis</label>
                                             <div className="flex items-end gap-1">
                                                 <input
                                                     type="number"
@@ -366,47 +432,47 @@ const ProjectPositionsTable = ({
                                                     placeholder="0,00"
                                                     value={newSvc.base_price}
                                                     onChange={e => setNewSvc(s => ({ ...s, base_price: e.target.value }))}
-                                                    className="w-20 text-right text-xs font-mono border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
+                                                    className="w-full text-right text-sm font-mono border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors"
                                                 />
-                                                <span className="text-xs text-slate-400 pb-px">€</span>
+                                                <span className="text-sm text-slate-400 pb-px">€</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 pt-1">
-                                            <Button
-                                                size="sm"
-                                                disabled={!newSvc.name.trim() || createServiceMutation.isPending}
-                                                onClick={() => createServiceMutation.mutate({
-                                                    name: newSvc.name.trim(),
-                                                    unit: newSvc.unit,
-                                                    base_price: parseFloat(newSvc.base_price) || 0,
-                                                    status: 'active',
-                                                })}
-                                                className="flex-1"
-                                            >
-                                                <FaCheck className="text-[8px] mr-1" />
-                                                Hinzufügen
-                                            </Button>
-                                            <button
-                                                onClick={() => { setShowCreate(false); setNewSvc(EMPTY_SERVICE()); }}
-                                                className="px-2 py-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
-                                            >
-                                                Abbrechen
-                                            </button>
-                                        </div>
                                     </div>
-                                )}
+                                </div>
+                                <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex gap-3">
+                                    <Button 
+                                        variant="secondary" 
+                                        onClick={() => setShowCreate(false)} 
+                                        className="flex-1"
+                                    >
+                                        Abbrechen
+                                    </Button>
+                                    <Button
+                                        disabled={!newSvc.name.trim() || createServiceMutation.isPending}
+                                        onClick={() => createServiceMutation.mutate({
+                                            name: newSvc.name.trim(),
+                                            unit: newSvc.unit,
+                                            base_price: parseFloat(newSvc.base_price) || 0,
+                                            status: 'active',
+                                        })}
+                                        className="flex-1"
+                                    >
+                                        {createServiceMutation.isPending ? 'Speichern…' : 'Leistung anlegen'}
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>
             )}
 
-            <div className="overflow-auto custom-scrollbar max-h-[calc(100vh-400px)]">
+            <div className="overflow-auto custom-scrollbar max-h-[calc(100vh-400px)] border border-slate-200 rounded-sm shadow-sm">
                 <DragDropContext onDragEnd={onDragEnd}>
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead className="sticky top-0 z-10 bg-slate-50 shadow-sm">
                             <tr className="border-b border-slate-200">
-                                <th className="px-2 py-1.5 w-7 text-center text-[10px] font-bold text-slate-400 bg-slate-50"></th>
+                                <th className="px-2 py-1.5 w-7 text-center text-[10px] font-bold text-slate-400 bg-slate-100"></th>
                                 <th className="px-2 py-1.5 min-w-[180px] text-[10px] font-bold text-slate-400">Leistungsbezeichnung</th>
                                 <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold text-slate-400">Menge</th>
                                 <th className="px-2 py-1.5 w-24 text-right text-[10px] font-bold text-slate-400">Einheit</th>
@@ -419,7 +485,7 @@ const ProjectPositionsTable = ({
                             {(provided) => (
                                 <tbody {...provided.droppableProps} ref={provided.innerRef}>
                                     {positions.map((pos, index) => {
-                                        const qtyInvalid = !disabled && (parseFloat(pos.quantity) || 0) < 0; // Changed from <= to < to allow 0 (though 0 qty is rare, user asked for 0 formatting)
+                                        const qtyInvalid = !disabled && (parseFloat(pos.quantity) || 0) < 0;
                                         const descInvalid = !disabled && pos.description.trim() === '';
                                         const isPriceZero = (parseFloat(pos.customerRate) || 0) === 0;
                                         const rateInvalid = !disabled && (parseFloat(pos.customerRate) || 0) < 0;
@@ -435,12 +501,16 @@ const ProjectPositionsTable = ({
                                                             snapshot.isDragging ? "bg-slate-50 shadow-md ring-1 ring-slate-200 z-50" : "hover:bg-slate-50/50"
                                                         )}
                                                     >
-                                                        <td className="px-3 py-2.5 text-center text-[11px] font-bold text-slate-400">
-                                                            <div className="flex items-center gap-1">
-                                                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-200 hover:text-slate-400 transition-colors">
-
+                                                        <td className="px-1 py-2.5 text-center text-[11px] font-bold text-slate-400 bg-slate-100/50">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <div 
+                                                                    {...provided.dragHandleProps} 
+                                                                    className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-brand-primary transition-colors p-1 -ml-1"
+                                                                    title="Gedrückt halten zum Verschieben"
+                                                                >
+                                                                    <FaGripVertical className="text-[10px]" />
                                                                 </div>
-                                                                {index + 1}
+                                                                <span className="min-w-[14px]">{index + 1}</span>
                                                             </div>
                                                         </td>
 
