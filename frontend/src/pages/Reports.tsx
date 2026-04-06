@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next';
 import KPICard from '../components/common/KPICard';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { reportService } from '../api/services';
+import { reportService, dashboardService } from '../api/services';
 import ReportsSkeleton from '../components/common/ReportsSkeleton';
 import { Button } from '../components/ui/button';
+import { getLanguageName } from '../utils/flags';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import 'dayjs/locale/de';
@@ -78,6 +79,16 @@ const Reports = () => {
         enabled: activeTab === 'finance' && financeSubTab === 'bwa',
         staleTime: 5 * 60 * 1000,
     });
+
+    const { data: dashboardData } = useQuery({
+        queryKey: ['dashboard', 'stats', queryParams],
+        queryFn: () => dashboardService.getStats(queryParams),
+        enabled: activeTab === 'analytics',
+        staleTime: 5 * 60 * 1000,
+    });
+    const sourceLanguageRevenue = dashboardData?.source_language_revenue || [];
+    const targetLanguageRevenue = dashboardData?.target_language_revenue || [];
+    const monthlyRevenue = dashboardData?.stats?.monthly_revenue || 0;
 
     const isLoading = activeTab === 'analytics'
         ? isSummaryLoading
@@ -387,6 +398,79 @@ const Reports = () => {
                                 ) : (
                                     <EmptyChart />
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Umsatz nach Sprache */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+                                <div className="px-5 py-3.5 border-b border-slate-200 flex justify-between items-center">
+                                    <h3 className="text-xs font-medium text-slate-900">Umsatz nach Quellsprache</h3>
+                                    <span className="text-xs text-slate-400 tabular-nums">{dashboardData?.period?.label || 'Zeitraum'}</span>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left min-w-[220px]">
+                                        <thead className="text-xs font-medium text-slate-500 bg-slate-50">
+                                            <tr>
+                                                <th className="px-4 py-2 border-b border-slate-200">Sprache</th>
+                                                <th className="px-4 py-2 border-b border-slate-200 text-right">Umsatz (€)</th>
+                                                <th className="px-4 py-2 border-b border-slate-200 text-right">Anteil</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {sourceLanguageRevenue.map((item: any, i: number) => {
+                                                const share = monthlyRevenue > 0 ? (item.value / monthlyRevenue) * 100 : 0;
+                                                return (
+                                                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="px-4 py-2 text-xs font-medium text-slate-900">{getLanguageName(item.label)}</td>
+                                                        <td className="px-4 py-2 text-xs text-slate-700 text-right tabular-nums">
+                                                            {item.value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                                        </td>
+                                                        <td className="px-4 py-2 text-xs text-slate-400 text-right tabular-nums">{share.toFixed(1)}%</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {sourceLanguageRevenue.length === 0 && (
+                                                <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-400 text-xs">Keine Daten</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div className="bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+                                <div className="px-5 py-3.5 border-b border-slate-200 flex justify-between items-center">
+                                    <h3 className="text-xs font-medium text-slate-900">Umsatz nach Zielsprache</h3>
+                                    <span className="text-xs text-slate-400 tabular-nums">{dashboardData?.period?.label || 'Zeitraum'}</span>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left min-w-[220px]">
+                                        <thead className="text-xs font-medium text-slate-500 bg-slate-50">
+                                            <tr>
+                                                <th className="px-4 py-2 border-b border-slate-200">Sprache</th>
+                                                <th className="px-4 py-2 border-b border-slate-200 text-right">Umsatz (€)</th>
+                                                <th className="px-4 py-2 border-b border-slate-200 text-right">Anteil</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {targetLanguageRevenue.map((item: any, i: number) => {
+                                                const share = monthlyRevenue > 0 ? (item.value / monthlyRevenue) * 100 : 0;
+                                                return (
+                                                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="px-4 py-2 text-xs font-medium text-slate-900">{getLanguageName(item.label)}</td>
+                                                        <td className="px-4 py-2 text-xs text-slate-700 text-right tabular-nums">
+                                                            {item.value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                                        </td>
+                                                        <td className="px-4 py-2 text-xs text-slate-400 text-right tabular-nums">{share.toFixed(1)}%</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {targetLanguageRevenue.length === 0 && (
+                                                <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-400 text-xs">Keine Daten</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </>

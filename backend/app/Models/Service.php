@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Service extends Model
 {
-    use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity;
+    use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity, \App\Traits\HasSequentialCode;
 
     protected $fillable = [
         'tenant_id',

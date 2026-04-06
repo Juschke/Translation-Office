@@ -11,6 +11,7 @@ use App\Models\Specialization;
 use App\Models\Unit;
 use App\Models\Currency;
 use App\Models\Tenant;
+use App\Models\ProjectStatus;
 
 class MasterDataSeeder extends Seeder
 {
@@ -28,7 +29,7 @@ class MasterDataSeeder extends Seeder
             ['iso_code' => 'sq-AL', 'name_internal' => 'Albanisch', 'name_native' => 'Shqip', 'flag_icon' => 'al'],
             ['iso_code' => 'am-ET', 'name_internal' => 'Amharisch', 'name_native' => 'አማርኛ', 'flag_icon' => 'et'],
             ['iso_code' => 'ar-SA', 'name_internal' => 'Arabisch', 'name_native' => 'العربية', 'flag_icon' => 'sa'],
-            ['iso_code' => 'hy-AM', 'name_internal' => 'Armenisch', 'name_native' => 'Հայերեն', 'flag_icon' => 'am'],
+            ['iso_code' => 'hy-AM', 'name_internal' => 'Armenisch', 'name_native' => 'Հայերen', 'flag_icon' => 'am'],
             ['iso_code' => 'az-AZ', 'name_internal' => 'Aserbaidschanisch', 'name_native' => 'Azərbaycanca', 'flag_icon' => 'az'],
             ['iso_code' => 'eu-ES', 'name_internal' => 'Baskisch', 'name_native' => 'Euskara', 'flag_icon' => 'es-pv'],
             ['iso_code' => 'be-BY', 'name_internal' => 'Belarussisch', 'name_native' => 'Беларуская', 'flag_icon' => 'by'],
@@ -86,13 +87,14 @@ class MasterDataSeeder extends Seeder
             ['iso_code' => 'hu-HU', 'name_internal' => 'Ungarisch', 'name_native' => 'Magyar', 'flag_icon' => 'hu'],
             ['iso_code' => 'uz-UZ', 'name_internal' => 'Usbekisch', 'name_native' => 'Oʻzbekcha', 'flag_icon' => 'uz'],
             ['iso_code' => 'vi-VN', 'name_internal' => 'Vietnamesisch', 'name_native' => 'Tiếng Việt', 'flag_icon' => 'vn'],
-            ['iso_code' => 'am-ET', 'name_internal' => 'Amharisch', 'name_native' => 'አማርኛ', 'flag_icon' => 'et'],
             ['iso_code' => 'so-SO', 'name_internal' => 'Somali', 'name_native' => 'Soomaali', 'flag_icon' => 'so'],
             ['iso_code' => 'sw-KE', 'name_internal' => 'Suaheli', 'name_native' => 'Kiswahili', 'flag_icon' => 'ke'],
             ['iso_code' => 'ti-ER', 'name_internal' => 'Tigrinya', 'name_native' => 'ትግርኛ', 'flag_icon' => 'er'],
         ];
 
+        $i = 1;
         foreach ($languages as $lang) {
+            $lang['code'] = str_pad($i++, 3, '0', STR_PAD_LEFT);
             Language::updateOrCreate(
                 ['tenant_id' => $tenantId, 'iso_code' => $lang['iso_code']],
                 $lang
@@ -100,8 +102,7 @@ class MasterDataSeeder extends Seeder
         }
 
         // 2. Categorized Document Types A-Z
-        $docTypes = [
-            // Personenstand & Identität
+        $docTypesData = [
             ['category' => 'Personenstand & Identität', 'name' => 'Aufenthaltsbescheinigung'],
             ['category' => 'Personenstand & Identität', 'name' => 'Aufenthaltstitel / Visum'],
             ['category' => 'Personenstand & Identität', 'name' => 'Eheurkunde / Heiratsurkunde'],
@@ -118,8 +119,6 @@ class MasterDataSeeder extends Seeder
             ['category' => 'Personenstand & Identität', 'name' => 'Sterbeurkunde'],
             ['category' => 'Personenstand & Identität', 'name' => 'Vaterschaftsanerkennung'],
             ['category' => 'Personenstand & Identität', 'name' => 'Wohnsitzbescheinigung'],
-
-            // Bildung & Karriere
             ['category' => 'Bildung & Karriere', 'name' => 'Abiturzeugnis'],
             ['category' => 'Bildung & Karriere', 'name' => 'Approbationsurkunde'],
             ['category' => 'Bildung & Karriere', 'name' => 'Arbeitsbuch'],
@@ -138,12 +137,10 @@ class MasterDataSeeder extends Seeder
             ['category' => 'Bildung & Karriere', 'name' => 'Schulzeugnis'],
             ['category' => 'Bildung & Karriere', 'name' => 'Studienbescheinigung'],
             ['category' => 'Bildung & Karriere', 'name' => 'Transcript of Records'],
-
-            // Recht & Behörden
             ['category' => 'Recht & Behörden', 'name' => 'Anklageschrift'],
             ['category' => 'Recht & Behörden', 'name' => 'Apostille'],
             ['category' => 'Recht & Behörden', 'name' => 'Beglaubigungsvermerk'],
-            ['category' => 'Recht & Behörden', 'name' => 'Eerbschein'],
+            ['category' => 'Recht & Behörden', 'name' => 'Erbschein'],
             ['category' => 'Recht & Behörden', 'name' => 'Eidesstattliche Versicherung'],
             ['category' => 'Recht & Behörden', 'name' => 'Ermittlungsakte'],
             ['category' => 'Recht & Behörden', 'name' => 'Führerschein'],
@@ -160,8 +157,6 @@ class MasterDataSeeder extends Seeder
             ['category' => 'Recht & Behörden', 'name' => 'Testament'],
             ['category' => 'Recht & Behörden', 'name' => 'Vollmacht'],
             ['category' => 'Recht & Behörden', 'name' => 'Vollstreckungsbescheid'],
-
-            // Wirtschaft & Verträge
             ['category' => 'Wirtschaft & Verträge', 'name' => 'AGB (Allgemeine Geschäftsbedingungen)'],
             ['category' => 'Wirtschaft & Verträge', 'name' => 'Arbeitsvertrag'],
             ['category' => 'Wirtschaft & Verträge', 'name' => 'Bankauszug'],
@@ -178,8 +173,6 @@ class MasterDataSeeder extends Seeder
             ['category' => 'Wirtschaft & Verträge', 'name' => 'Rentenbescheid'],
             ['category' => 'Wirtschaft & Verträge', 'name' => 'Steuerbescheid / Steuererklärung'],
             ['category' => 'Wirtschaft & Verträge', 'name' => 'Versicherungspolice'],
-
-            // Medizin & Technik
             ['category' => 'Medizin & Technik', 'name' => 'Arztbericht / Attest'],
             ['category' => 'Medizin & Technik', 'name' => 'Bedienungsanleitung'],
             ['category' => 'Medizin & Technik', 'name' => 'Beipackzettel'],
@@ -190,8 +183,6 @@ class MasterDataSeeder extends Seeder
             ['category' => 'Medizin & Technik', 'name' => 'Sicherheitsdatenblatt'],
             ['category' => 'Medizin & Technik', 'name' => 'Technische Dokumentation / Zeichnung'],
             ['category' => 'Medizin & Technik', 'name' => 'Zulassungsbescheinigung (KFZ)'],
-
-            // Marketing & Sonstiges
             ['category' => 'Marketing & Sonstiges', 'name' => 'Broschüre / Flyer'],
             ['category' => 'Marketing & Sonstiges', 'name' => 'Katalog'],
             ['category' => 'Marketing & Sonstiges', 'name' => 'Newsletter'],
@@ -202,152 +193,51 @@ class MasterDataSeeder extends Seeder
             ['category' => 'Marketing & Sonstiges', 'name' => 'Werbetext'],
         ];
 
-        foreach ($docTypes as $type) {
+        $i = 1;
+        foreach ($docTypesData as $type) {
+            $type['code'] = str_pad($i++, 3, '0', STR_PAD_LEFT);
             DocumentType::updateOrCreate(
                 ['tenant_id' => $tenantId, 'name' => $type['name']],
-                ['category' => $type['category'], 'status' => 'active']
+                array_merge($type, ['status' => 'active'])
             );
         }
 
         // 3. Standard Service Packages
-        $services = [
-            ['service_code' => 'ÜB-01', 'name' => 'Übersetzung (Standard)', 'unit' => 'word', 'base_price' => 0.12, 'status' => 'active'],
-            ['service_code' => 'ÜB-02', 'name' => 'Fachübersetzung (Jura / Medizin)', 'unit' => 'word', 'base_price' => 0.18, 'status' => 'active'],
-            ['service_code' => 'BÜ-01', 'name' => 'Beglaubigte Übersetzung', 'unit' => 'piece', 'base_price' => 15.00, 'status' => 'active'],
-            ['service_code' => 'BÜ-02', 'name' => 'Beglaubigungspauschale', 'unit' => 'piece', 'base_price' => 10.00, 'status' => 'active'],
-            ['service_code' => 'AP-01', 'name' => 'Apostille-Service', 'unit' => 'piece', 'base_price' => 25.00, 'status' => 'active'],
-            ['service_code' => 'DO-01', 'name' => 'Dolmetschen (Simultan)', 'unit' => 'hour', 'base_price' => 120.00, 'status' => 'active'],
-            ['service_code' => 'DO-02', 'name' => 'Dolmetschen (Konsekutiv)', 'unit' => 'hour', 'base_price' => 95.00, 'status' => 'active'],
-            ['service_code' => 'LE-01', 'name' => 'Lektorat / Korrekturlesen', 'unit' => 'word', 'base_price' => 0.05, 'status' => 'active'],
-            ['service_code' => 'TR-01', 'name' => 'Transkription (Audio/Video)', 'unit' => 'minute', 'base_price' => 2.50, 'status' => 'active'],
+        $servicesData = [
+            ['name' => 'Übersetzung (Standard)', 'unit' => 'word', 'base_price' => 0.12, 'status' => 'active'],
+            ['name' => 'Fachübersetzung (Jura / Medizin)', 'unit' => 'word', 'base_price' => 0.18, 'status' => 'active'],
+            ['name' => 'Beglaubigte Übersetzung', 'unit' => 'piece', 'base_price' => 15.00, 'status' => 'active'],
+            ['name' => 'Beglaubigungspauschale', 'unit' => 'piece', 'base_price' => 10.00, 'status' => 'active'],
+            ['name' => 'Apostille-Service', 'unit' => 'piece', 'base_price' => 25.00, 'status' => 'active'],
+            ['name' => 'Dolmetschen (Simultan)', 'unit' => 'hour', 'base_price' => 120.00, 'status' => 'active'],
+            ['name' => 'Dolmetschen (Konsekutiv)', 'unit' => 'hour', 'base_price' => 95.00, 'status' => 'active'],
+            ['name' => 'Lektorat / Korrekturlesen', 'unit' => 'word', 'base_price' => 0.05, 'status' => 'active'],
+            ['name' => 'Transkription (Audio/Video)', 'unit' => 'minute', 'base_price' => 2.50, 'status' => 'active'],
         ];
 
-        foreach ($services as $service) {
+        $i = 1;
+        foreach ($servicesData as $service) {
+            $service['service_code'] = str_pad($i++, 3, '0', STR_PAD_LEFT);
             Service::updateOrCreate(['tenant_id' => $tenantId, 'name' => $service['name']], $service);
         }
 
         // 4. Email Templates
-        $emailTemplates = [
-            [
-                'name' => 'Angebot Standard',
-                'type' => 'Angebot',
-                'subject' => 'Angebot {{project_number}} – {{project_name}}',
-                'status' => 'active',
-                'body' => implode("\n", [
-                    "Sehr geehrte Damen und Herren,",
-                    "",
-                    "vielen Dank für Ihre Anfrage.",
-                    "",
-                    "Anbei erhalten Sie unser Angebot für Ihr Projekt:",
-                    "",
-                    "Projekt:      {{project_name}} ({{project_number}})",
-                    "Sprachpaar:   {{source_language}} → {{target_language}}",
-                    "Nettobetrag:  {{price_net}}",
-                    "",
-                    "Bei Fragen stehen wir Ihnen gerne zur Verfügung.",
-                    "",
-                    "Mit freundlichen Grüßen",
-                    "{{sender_name}}",
-                    "{{company_name}}",
-                ]),
-            ],
-            [
-                'name' => 'Rechnung Standard',
-                'type' => 'Rechnung',
-                'subject' => 'Rechnung {{invoice_number}} – {{project_name}}',
-                'status' => 'active',
-                'body' => implode("\n", [
-                    "Sehr geehrte Damen und Herren,",
-                    "",
-                    "anbei erhalten Sie die Rechnung für folgendes Projekt:",
-                    "",
-                    "Rechnungsnr.: {{invoice_number}}",
-                    "Projekt:      {{project_name}}",
-                    "Betrag:       {{price_gross}} (inkl. MwSt.)",
-                    "Zahlungsziel: {{due_date}}",
-                    "",
-                    "Bankverbindung:",
-                    "{{bank_name}}",
-                    "IBAN: {{bank_iban}}",
-                    "BIC:  {{bank_bic}}",
-                    "",
-                    "Vielen Dank für die gute Zusammenarbeit.",
-                    "",
-                    "Mit freundlichen Grüßen",
-                    "{{sender_name}}",
-                    "{{company_name}}",
-                ]),
-            ],
-            [
-                'name' => 'Auftragsbestätigung',
-                'type' => 'Auftragsbestätigung',
-                'subject' => 'Auftragsbestätigung – {{project_number}}',
-                'status' => 'active',
-                'body' => implode("\n", [
-                    "Sehr geehrte Damen und Herren,",
-                    "",
-                    "hiermit bestätigen wir die Bearbeitung Ihres Auftrags:",
-                    "",
-                    "Projekt:      {{project_name}} ({{project_number}})",
-                    "Sprachpaar:   {{source_language}} → {{target_language}}",
-                    "Liefertermin: {{deadline}}",
-                    "",
-                    "Bei Fragen melden Sie sich gerne bei uns.",
-                    "",
-                    "Mit freundlichen Grüßen",
-                    "{{sender_name}}",
-                    "{{company_name}}",
-                ]),
-            ],
-            [
-                'name' => 'Partner-Anfrage (Übersetzung)',
-                'type' => 'Partner-Anfrage',
-                'subject' => 'Verfügbarkeitsanfrage – {{project_name}} ({{source_language}} › {{target_language}})',
-                'status' => 'active',
-                'body' => implode("\n", [
-                    "Guten Tag {{partner_name}},",
-                    "",
-                    "wir haben einen neuen Auftrag erhalten und fragen an, ob Sie aktuell Kapazitäten haben.",
-                    "",
-                    "Projekt:      {{project_name}}",
-                    "Sprachpaar:   {{source_language}} → {{target_language}}",
-                    "Volumen:      {{price_net}}",
-                    "Liefertermin: {{deadline}}",
-                    "",
-                    "Bitte melden Sie sich kurz, ob Sie verfügbar sind.",
-                    "",
-                    "Viele Grüße",
-                    "{{sender_name}}",
-                    "{{company_name}}",
-                ]),
-            ],
-            [
-                'name' => 'Abholbestätigung',
-                'type' => 'Abholbestätigung',
-                'subject' => 'Ihr Auftrag ist abholbereit – {{project_number}}',
-                'status' => 'active',
-                'body' => implode("\n", [
-                    "Sehr geehrte Damen und Herren,",
-                    "",
-                    "Ihr Auftrag ist fertiggestellt und steht zur Abholung bereit.",
-                    "",
-                    "Projekt: {{project_name}} ({{project_number}})",
-                    "",
-                    "Sie können Ihre Unterlagen während unserer Öffnungszeiten bei uns abholen.",
-                    "",
-                    "Mit freundlichen Grüßen",
-                    "{{sender_name}}",
-                    "{{company_name}}",
-                ]),
-            ],
+        $emailTemplatesData = [
+            ['name' => 'Angebot Standard', 'type' => 'Angebot', 'subject' => 'Angebot {{project_number}} – {{project_name}}', 'status' => 'active', 'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage..."],
+            ['name' => 'Rechnung Standard', 'type' => 'Rechnung', 'subject' => 'Rechnung {{invoice_number}} – {{project_name}}', 'status' => 'active', 'body' => "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die Rechnung..."],
+            ['name' => 'Auftragsbestätigung', 'type' => 'Auftragsbestätigung', 'subject' => 'Auftragsbestätigung – {{project_number}}', 'status' => 'active', 'body' => "Sehr geehrte Damen und Herren,\n\nhiermit bestätigen wir..."],
+            ['name' => 'Partner-Anfrage', 'type' => 'Partner-Anfrage', 'subject' => 'Verfügbarkeitsanfrage – {{project_name}}', 'status' => 'active', 'body' => "Guten Tag {{partner_name}},\n\nwir haben einen neuen Auftrag..."],
+            ['name' => 'Abholbestätigung', 'type' => 'Abholbestätigung', 'subject' => 'Ihr Auftrag ist abholbereit – {{project_number}}', 'status' => 'active', 'body' => "Sehr geehrte Damen und Herren,\n\nIhr Auftrag ist fertiggestellt..."],
         ];
 
-        foreach ($emailTemplates as $tpl) {
+        $i = 1;
+        foreach ($emailTemplatesData as $tpl) {
+            $tpl['code'] = str_pad($i++, 3, '0', STR_PAD_LEFT);
             EmailTemplate::updateOrCreate(['tenant_id' => $tenantId, 'name' => $tpl['name']], $tpl);
         }
 
         // 5. Specializations (Fachgebiete)
-        $specializations = [
+        $specializationsData = [
             ['name' => 'Recht & Verträge', 'status' => 'active'],
             ['name' => 'Medizin & Pharmazie', 'status' => 'active'],
             ['name' => 'Technik & Ingenieurwesen', 'status' => 'active'],
@@ -362,38 +252,90 @@ class MasterDataSeeder extends Seeder
             ['name' => 'Architektur & Bauwesen', 'status' => 'active'],
         ];
 
-        foreach ($specializations as $spec) {
+        $i = 1;
+        foreach ($specializationsData as $spec) {
+            $spec['code'] = str_pad($i++, 3, '0', STR_PAD_LEFT);
             Specialization::updateOrCreate(['tenant_id' => $tenantId, 'name' => $spec['name']], $spec);
         }
 
         // 6. Units (Einheiten)
-        $units = [
-            ['name' => 'Wort', 'abbreviation' => 'Wrt', 'status' => 'active'],
-            ['name' => 'Zeile', 'abbreviation' => 'Zl', 'status' => 'active'],
-            ['name' => 'Normseite', 'abbreviation' => 'NS', 'status' => 'active'],
-            ['name' => 'Seite', 'abbreviation' => 'S.', 'status' => 'active'],
-            ['name' => 'Stunde', 'abbreviation' => 'Std', 'status' => 'active'],
-            ['name' => 'Minute', 'abbreviation' => 'Min', 'status' => 'active'],
-            ['name' => 'Pauschal', 'abbreviation' => 'Psch', 'status' => 'active'],
-            ['name' => 'Anschlag', 'abbreviation' => 'Anschl.', 'status' => 'active'],
+        $unitsData = [
+            ['name' => 'Wort', 'abbreviation' => 'Wrt', 'status' => 'active', 'type' => 'quantity'],
+            ['name' => 'Zeile', 'abbreviation' => 'Zl', 'status' => 'active', 'type' => 'quantity'],
+            ['name' => 'Normseite', 'abbreviation' => 'NS', 'status' => 'active', 'type' => 'quantity'],
+            ['name' => 'Seite', 'abbreviation' => 'S.', 'status' => 'active', 'type' => 'quantity'],
+            ['name' => 'Stunde', 'abbreviation' => 'Std', 'status' => 'active', 'type' => 'time'],
+            ['name' => 'Minute', 'abbreviation' => 'Min', 'status' => 'active', 'type' => 'time'],
+            ['name' => 'Pauschal', 'abbreviation' => 'Psch', 'status' => 'active', 'type' => 'fixed'],
         ];
 
-        foreach ($units as $unit) {
+        $i = 1;
+        foreach ($unitsData as $unit) {
+            $unit['code'] = str_pad($i++, 3, '0', STR_PAD_LEFT);
             Unit::updateOrCreate(['tenant_id' => $tenantId, 'name' => $unit['name']], $unit);
         }
 
-        // 7. Currencies (Währungen)
-        $currencies = [
-            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'is_default' => true, 'status' => 'active'],
-            ['code' => 'USD', 'name' => 'US-Dollar', 'symbol' => '$', 'is_default' => false, 'status' => 'active'],
-            ['code' => 'CHF', 'name' => 'Schweizer Franken', 'symbol' => 'Fr.', 'is_default' => false, 'status' => 'active'],
-            ['code' => 'GBP', 'name' => 'Britisches Pfund', 'symbol' => '£', 'is_default' => false, 'status' => 'active'],
-            ['code' => 'PLN', 'name' => 'Polnischer Zloty', 'symbol' => 'zł', 'is_default' => false, 'status' => 'active'],
-            ['code' => 'TRY', 'name' => 'Türkische Lira', 'symbol' => '₺', 'is_default' => false, 'status' => 'active'],
+        // 7. Project Statuses
+        $statusesData = [
+            ['name' => 'neu', 'label' => 'Neu', 'color' => 'slate', 'style' => 'bg-slate-50 text-slate-600 border-slate-200', 'sort_order' => 1],
+            ['name' => 'angebot_erstellt', 'label' => 'Angebot erstellt', 'color' => 'blue', 'style' => 'bg-blue-50 text-blue-700 border-blue-200', 'sort_order' => 2],
+            ['name' => 'bestatigt', 'label' => 'Bestätigt', 'color' => 'emerald', 'style' => 'bg-emerald-50 text-emerald-700 border-emerald-200', 'sort_order' => 3],
+            ['name' => 'in_bearbeitung', 'label' => 'In Bearbeitung', 'color' => 'amber', 'style' => 'bg-amber-50 text-amber-700 border-amber-200', 'sort_order' => 4],
+            ['name' => 'geliefert', 'label' => 'Geliefert', 'color' => 'indigo', 'style' => 'bg-indigo-50 text-indigo-700 border-indigo-200', 'sort_order' => 5],
+            ['name' => 'abgeschlossen', 'label' => 'Abgeschlossen', 'color' => 'green', 'style' => 'bg-green-50 text-green-700 border-green-200', 'sort_order' => 6],
+            ['name' => 'storniert', 'label' => 'Storniert', 'color' => 'rose', 'style' => 'bg-rose-50 text-rose-700 border-rose-200', 'sort_order' => 7],
         ];
 
-        foreach ($currencies as $currency) {
-            Currency::updateOrCreate(['tenant_id' => $tenantId, 'name' => $currency['name']], $currency);
+        $i = 1;
+        foreach ($statusesData as $status) {
+            $status['code'] = str_pad($i++, 3, '0', STR_PAD_LEFT);
+            ProjectStatus::updateOrCreate(['tenant_id' => $tenantId, 'name' => $status['name']], array_merge($status, ['is_active' => true]));
+        }
+
+        // 8. Currencies
+        $currenciesData = [
+            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'is_default' => true, 'status' => 'active'],
+            ['code' => 'USD', 'name' => 'US-Dollar', 'symbol' => '$', 'is_default' => false, 'status' => 'active'],
+        ];
+
+        foreach ($currenciesData as $currency) {
+            Currency::updateOrCreate(['tenant_id' => $tenantId, 'code' => $currency['code']], $currency);
+        }
+
+        // 9. Number Circle Settings
+        $numberSettings = [
+            'customer_id_prefix' => 'KD',
+            'customer_padding' => '5',
+            'customer_separator' => '-',
+            'customer_year_format' => 'YYYY',
+            'partner_id_prefix' => 'P',
+            'partner_padding' => '5',
+            'partner_separator' => '-',
+            'partner_year_format' => 'YYYY',
+            'project_id_prefix' => 'PRJ',
+            'project_padding' => '5',
+            'project_separator' => '-',
+            'project_year_format' => 'YY',
+            'invoice_prefix' => 'RE',
+            'invoice_padding' => '5',
+            'invoice_separator' => '-',
+            'invoice_year_format' => 'YYYY',
+            'invoice_reset_yearly' => '1',
+            'offer_id_prefix' => 'ANG',
+            'offer_padding' => '5',
+            'offer_separator' => '-',
+            'offer_year_format' => 'YYYY',
+            'credit_note_prefix' => 'GUT',
+            'credit_note_padding' => '5',
+            'credit_note_separator' => '-',
+            'credit_note_year_format' => 'YYYY',
+        ];
+
+        foreach ($numberSettings as $key => $value) {
+            \App\Models\TenantSetting::updateOrCreate(
+                ['tenant_id' => $tenantId, 'key' => $key],
+                ['value' => $value]
+            );
         }
     }
 }

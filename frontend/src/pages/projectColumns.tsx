@@ -2,8 +2,10 @@ import { type ReactNode } from 'react';
 import clsx from 'clsx';
 import type { NavigateFunction } from 'react-router-dom';
 import { StatusBadge } from '../components/common/StatusBadge';
-import { FaEdit, FaTrash, FaEye, FaTrashRestore, FaFolderOpen, FaEnvelope } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaTrashRestore, FaFolderOpen, FaEnvelope, FaEllipsisV } from 'react-icons/fa';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../components/ui/dropdown-menu';
+import { ICON_ACTION_BUTTON_CLASS, ICON_COLOR_DANGER, ICON_COLOR_DEFAULT, ICON_COLOR_MUTED, ICON_COLOR_SUCCESS, ICON_DROPDOWN_ITEM_CLASS, ICON_SIZE_SM } from '../components/ui/icon-styles';
 
 export function getStatusBadge(status: string, _t?: any): ReactNode {
     return <StatusBadge status={status} />;
@@ -112,14 +114,6 @@ export function buildProjectColumns({
                                     {p.customer.address_zip} {p.customer.address_city}
                                 </div>
                             )}
-                            <div className="flex items-center gap-1.5 overflow-hidden">
-                                {p.customer?.email && (
-                                    <div className="flex items-center gap-1 min-w-0">
-                                        <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
-                                        <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.customer.email}>{p.customer.email}</span>
-                                    </div>
-                                )}
-                            </div>
                         </div>
                     </div>
                 );
@@ -148,7 +142,7 @@ export function buildProjectColumns({
                             <span className="font-semibold text-slate-800 truncate group-hover/part:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
                             {p.partner.email && (
                                 <div className="flex items-center gap-1 min-w-0 mt-0.5">
-                                    <FaEnvelope className="text-[10px] text-slate-300 shrink-0" />
+                                    <FaEnvelope className="shrink-0 text-[10px] text-slate-300" />
                                     <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.partner.email}>{p.partner.email}</span>
                                 </div>
                             )}
@@ -306,36 +300,66 @@ export function buildProjectColumns({
                 </div>
             ),
             accessor: (p: any) => (
-                <div className="flex justify-end gap-0.5 relative" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/projects/${p.id}`)} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.details')}><FaEye size={12} /></button>
-                    <button onClick={() => setViewFilesProject(p)} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.show_files')}><FaFolderOpen size={12} /></button>
-                    {p.status !== 'deleted' && (
-                        <button onClick={() => { setEditingProject(p); setIsModalOpen(true); }} className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit size={12} /></button>
-                    )}
-                    {p.status === 'deleted' ? (
-                        <div className="flex gap-0.5">
-                            <button onClick={() => bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'in_progress' } })} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-sm transition" title={t('actions.restore')}><FaTrashRestore size={12} /></button>
-                            <button onClick={() => {
-                                setProjectToDelete(p.id);
-                                setConfirmTitle('Endgültig löschen');
-                                setConfirmMessage('Dieses Projekt wird unwiderruflich gelöscht. Fortfahren?');
-                                setIsConfirmOpen(true);
-                            }} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete_permanently')}><FaTrash size={12} /></button>
-                        </div>
-                    ) : (
-                        <button onClick={() => {
-                            if (p.status === 'archived') {
-                                setProjectToDelete(p.id);
-                                setConfirmTitle('In den Papierkorb?');
-                                setConfirmMessage('Möchten Sie dieses archivierte Projekt in den Papierkorb verschieben?');
-                            } else {
-                                setProjectToDelete([p.id]);
-                                bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'deleted' } });
-                                return;
-                            }
-                            bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'deleted' } });
-                        }} className="p-1 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.move_to_trash')}><FaTrash size={12} /></button>
-                    )}
+                <div className="flex justify-end relative" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button className={ICON_ACTION_BUTTON_CLASS}>
+                                <FaEllipsisV className={ICON_SIZE_SM} />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 bg-white border border-slate-200 shadow-lg p-1 z-50">
+                            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => navigate(`/projects/${p.id}`)}>
+                                <FaEye className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_MUTED}`} />
+                                <span>{t('actions.details') || 'Details'}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => setViewFilesProject(p)}>
+                                <FaFolderOpen className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_MUTED}`} />
+                                <span>{t('actions.show_files') || 'Dateien'}</span>
+                            </DropdownMenuItem>
+                            
+                            {p.status !== 'deleted' && (
+                                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => { setEditingProject(p); setIsModalOpen(true); }}>
+                                    <FaEdit className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DEFAULT}`} />
+                                    <span>{t('actions.edit') || 'Bearbeiten'}</span>
+                                </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuSeparator className="my-1 bg-slate-100" />
+
+                            {p.status === 'deleted' ? (
+                                <>
+                                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50" onClick={() => bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'in_progress' } })}>
+                                        <FaTrashRestore className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_SUCCESS}`} />
+                                        <span>{t('actions.restore') || 'Wiederherstellen'}</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => {
+                                        setProjectToDelete(p.id);
+                                        setConfirmTitle('Endgültig löschen');
+                                        setConfirmMessage('Dieses Projekt wird unwiderruflich gelöscht. Fortfahren?');
+                                        setIsConfirmOpen(true);
+                                    }}>
+                                        <FaTrash className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DANGER}`} />
+                                        <span>{t('actions.delete_permanently') || 'Endgültig löschen'}</span>
+                                    </DropdownMenuItem>
+                                </>
+                            ) : (
+                                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => {
+                                    if (p.status === 'archived') {
+                                        setProjectToDelete(p.id);
+                                        setConfirmTitle('In den Papierkorb?');
+                                        setConfirmMessage('Möchten Sie dieses archivierte Projekt in den Papierkorb verschieben?');
+                                        setIsConfirmOpen(true);
+                                    } else {
+                                        setProjectToDelete([p.id]);
+                                        bulkUpdateMutation.mutate({ ids: [p.id], data: { status: 'deleted' } });
+                                    }
+                                }}>
+                                    <FaTrash className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DANGER}`} />
+                                    <span>{t('actions.move_to_trash') || 'In den Papierkorb'}</span>
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             ),
             align: 'right' as const,

@@ -5,12 +5,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FaUserTie, FaPlus, FaEye, FaEdit, FaTrash, FaStar, FaHandshake,
     FaCheck, FaBan, FaEnvelope, FaTrashRestore,
-    FaEuroSign, FaArchive
+    FaEuroSign, FaArchive, FaFilter, FaTimes, FaUndo, FaChevronDown
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
 import KPICard from '../components/common/KPICard';
-import DataTable, { type FilterDef } from '../components/common/DataTable';
+import DataTable from '../components/common/DataTable';
 import { Button } from '../components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { partnerService, projectService } from '../api/services';
@@ -18,7 +18,6 @@ import { getFlagUrl, getLanguageName } from '../utils/flags';
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
 import { useTranslation } from 'react-i18next';
-
 
 const Partners = () => {
     const { t } = useTranslation();
@@ -30,14 +29,12 @@ const Partners = () => {
     const [selectedPartners, setSelectedPartners] = useState<number[]>([]);
     const [editingPartner, setEditingPartner] = useState<any>(null);
     const [isDetailLoading, setIsDetailLoading] = useState(false);
-
-
+    const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
 
     useEffect(() => {
         if (location.state?.openNewModal) {
             setIsModalOpen(true);
             setEditingPartner(null);
-            // Clear location state to prevent modal from reopening on refresh or navigation
             navigate(location.pathname, { replace: true, state: {} });
         }
     }, [location.state, navigate, location.pathname]);
@@ -65,9 +62,7 @@ const Partners = () => {
             setIsModalOpen(false);
             toast.success(t('partners.messages.create_success'));
         },
-        onError: () => {
-            toast.error(t('partners.messages.create_error'));
-        }
+        onError: () => toast.error(t('partners.messages.create_error'))
     });
 
     const updateMutation = useMutation({
@@ -79,9 +74,7 @@ const Partners = () => {
             setEditingPartner(null);
             toast.success(t('partners.messages.update_success'));
         },
-        onError: () => {
-            toast.error(t('partners.messages.update_error'));
-        }
+        onError: () => toast.error(t('partners.messages.update_error'))
     });
 
     const deleteMutation = useMutation({
@@ -92,9 +85,7 @@ const Partners = () => {
             setSelectedPartners([]);
             toast.success(t('partners.messages.delete_success'));
         },
-        onError: () => {
-            toast.error(t('partners.messages.delete_error'));
-        }
+        onError: () => toast.error(t('partners.messages.delete_error'))
     });
 
     const bulkUpdateMutation = useMutation({
@@ -105,12 +96,11 @@ const Partners = () => {
             setSelectedPartners([]);
             toast.success(t('partners.messages.bulk_update_success', { count: variables.ids.length }));
         },
-        onError: () => {
-            toast.error(t('projects.messages.bulk_error'));
-        }
+        onError: () => toast.error(t('projects.messages.bulk_error'))
     });
 
     const activePartnersList = useMemo(() => {
+        if (!Array.isArray(partners)) return [];
         return partners.filter((p: any) => {
             const s = p.status?.toLowerCase();
             return s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht';
@@ -124,7 +114,6 @@ const Partners = () => {
 
     const partnerFinancials = useMemo(() => {
         const projects = Array.isArray(allProjectsData) ? allProjectsData : (allProjectsData?.data || []);
-        // Only consider projects that have a partner assigned
         const partnerProjects = projects.filter((p: any) => p.partner_id);
         const totalCost = partnerProjects.reduce((sum: number, p: any) => sum + (parseFloat(p.partner_cost_net) || 0), 0);
         const avgCost = partnerProjects.length > 0 ? totalCost / partnerProjects.length : 0;
@@ -145,25 +134,21 @@ const Partners = () => {
         return partners.filter((p: any) => {
             const status = p.status?.toLowerCase();
 
-            // Priority 1: Filter by status view (active/archive/trash)
             if (statusView === 'trash') {
                 if (status !== 'deleted' && status !== 'gelöscht') return false;
             } else if (statusView === 'archive') {
                 if (status !== 'archived' && status !== 'archiviert') return false;
             } else {
-                // Active view: exclude deleted and archived
                 if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
             }
 
-            // Priority 2: Type filter (only for active view)
             if (statusView === 'active') {
-                if (typeFilter === 'all') return true;
-
-                if (typeFilter === 'service_providers') {
-                    return p.type === 'translator' || p.type === 'interpreter' || p.type === 'trans_interp';
+                if (typeFilter === 'all' || typeFilter === 'service_providers') {
+                    if (typeFilter === 'service_providers') {
+                        return p.type === 'translator' || p.type === 'interpreter' || p.type === 'trans_interp';
+                    }
+                    return true;
                 }
-
-                // Map German filter names to English type values
                 const mappedType = p.type === 'translator' ? 'Übersetzer' : p.type === 'interpreter' ? 'Dolmetscher' : p.type === 'trans_interp' ? 'Übersetzer & Dolmetscher' : p.type === 'agency' ? 'Agentur' : p.type;
                 return mappedType === typeFilter;
             }
@@ -185,6 +170,14 @@ const Partners = () => {
 
     const columns = [
         {
+            id: 'code',
+            header: t('fields.code'),
+            accessor: (p: any) => <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-50/50 px-2 py-1 border border-slate-200/50 rounded-sm">{p.display_id || '-'}</span>,
+            className: 'w-32',
+            sortable: true,
+            sortKey: 'display_id'
+        },
+        {
             id: 'partner',
             header: t('partners.table.partner'),
             accessor: (p: any) => (
@@ -195,12 +188,7 @@ const Partners = () => {
                     <div className="flex flex-col min-w-0">
                         <span className="font-medium text-slate-800 truncate" title={p.company || `${p.first_name} ${p.last_name}`}>{p.company || `${p.first_name} ${p.last_name}`}</span>
                         <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-xs text-slate-400 font-medium shrink-0">{p.display_id}</span>
-                            <span className="text-xs text-slate-300 shrink-0">•</span>
-                            <span
-                                className="text-xs text-slate-500 font-medium truncate shrink"
-                                title={p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
-                            >
+                            <span className="text-xs text-slate-500 font-medium truncate shrink">
                                 {p.type === 'translator' ? t('partners.filters.types.translator') : p.type === 'interpreter' ? t('partners.filters.types.interpreter') : p.type === 'trans_interp' ? t('partners.filters.types.translator') + ' & ' + t('partners.filters.types.interpreter') : p.type === 'agency' ? t('partners.filters.types.agency') : p.type}
                             </span>
                         </div>
@@ -213,11 +201,7 @@ const Partners = () => {
         {
             id: 'projects_count',
             header: t('partners.table.projects'),
-            accessor: (p: any) => (
-                <div className="flex flex-col items-center">
-                    <span className="text-xs font-semibold text-slate-700">{p.projects_count || 0}</span>
-                </div>
-            ),
+            accessor: (p: any) => <div className="flex flex-col items-center"><span className="text-xs font-semibold text-slate-700">{p.projects_count || 0}</span></div>,
             sortable: true,
             sortKey: 'projects_count',
             align: 'center' as const
@@ -243,11 +227,7 @@ const Partners = () => {
                     'deleted': t('partners.status.deleted')
                 };
                 const status = p.status?.toLowerCase();
-                return (
-                    <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
-                        {labels[status] || p.status}
-                    </span>
-                );
+                return <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border tracking-tight ${styles[status] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>{labels[status] || p.status}</span>;
             },
             sortable: true,
             sortKey: 'status',
@@ -260,7 +240,6 @@ const Partners = () => {
                 const languages = Array.isArray(p.languages) ? p.languages : (p.languages ? [p.languages] : []);
                 const visibleLangs = languages.slice(0, 2);
                 const hiddenCount = languages.length - 2;
-
                 return (
                     <div className="flex flex-col gap-1.5 max-w-[200px]">
                         <div className="flex flex-wrap gap-1">
@@ -270,30 +249,19 @@ const Partners = () => {
                                     <span className="truncate max-w-[60px]" title={getLanguageName(lang)}>{getLanguageName(lang)}</span>
                                 </span>
                             ))}
-                            {hiddenCount > 0 && (
-                                <span
-                                    className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-sm border border-slate-200 text-xs font-medium shadow-sm cursor-help"
-                                    title={languages.slice(2).map((l: string) => getLanguageName(l)).join(', ')}
-                                >
-                                    +{hiddenCount}
-                                </span>
-                            )}
+                            {hiddenCount > 0 && <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-sm border border-slate-200 text-xs font-medium shadow-sm cursor-help" title={languages.slice(2).map((l: string) => getLanguageName(l)).join(', ')}>+{hiddenCount}</span>}
                         </div>
                     </div>
                 );
-            },
+            }
         },
         {
             id: 'location',
             header: t('partners.table.location'),
             accessor: (p: any) => (
                 <div className="flex flex-col max-w-[180px]">
-                    <span className="text-slate-700 text-xs font-medium truncate" title={[p.address_street, p.address_house_no].filter(Boolean).join(' ')}>
-                        {[p.address_street, p.address_house_no].filter(Boolean).join(' ') || '-'}
-                    </span>
-                    <span className="text-xs text-slate-500 truncate" title={[p.address_zip, p.address_city].filter(Boolean).join(' ')}>
-                        {[p.address_zip, p.address_city].filter(Boolean).join(' ')}
-                    </span>
+                    <span className="text-slate-700 text-xs font-medium truncate" title={[p.address_street, p.address_house_no].filter(Boolean).join(' ')}>{[p.address_street, p.address_house_no].filter(Boolean).join(' ') || '-'}</span>
+                    <span className="text-xs text-slate-500 truncate" title={[p.address_zip, p.address_city].filter(Boolean).join(' ')}>{[p.address_zip, p.address_city].filter(Boolean).join(' ')}</span>
                     <span className="text-xs text-slate-400">{p.address_country || ''}</span>
                 </div>
             ),
@@ -321,15 +289,7 @@ const Partners = () => {
                 <div className="flex items-center gap-1.5">
                     <span className="text-xs font-medium text-slate-600">{p.rating || 0}</span>
                     <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <FaStar
-                                key={star}
-                                className={clsx(
-                                    "text-xs",
-                                    star <= (p.rating || 0) ? "text-amber-400" : "text-slate-200"
-                                )}
-                            />
-                        ))}
+                        {[1, 2, 3, 4, 5].map((star) => <FaStar key={star} className={clsx("text-xs", star <= (p.rating || 0) ? "text-amber-400" : "text-slate-200")} />)}
                     </div>
                 </div>
             ),
@@ -342,21 +302,15 @@ const Partners = () => {
             header: '',
             accessor: (p: any) => (
                 <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => navigate(`/partners/${p.id}`)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('common.details')}><FaEye /></button>
-                    <button onClick={async () => {
-                        setEditingPartner(p);
-                        setIsModalOpen(true);
-                        setIsDetailLoading(true);
+                    <Button onClick={() => navigate(`/partners/${p.id}`)} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700" title={t('common.details')}><FaEye /></Button>
+                    <Button onClick={async () => {
+                        setEditingPartner(p); setIsModalOpen(true); setIsDetailLoading(true);
                         try {
                             const fullData = await partnerService.getById(p.id);
                             setEditingPartner(fullData);
-                        } catch (err) {
-                            // Error already handled by axios interceptor
-                        } finally {
-                            setIsDetailLoading(false);
-                        }
-                    }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-sm transition" title={t('actions.edit')}><FaEdit /></button>
-                    <button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-sm transition" title={t('actions.delete')}><FaTrash /></button>
+                        } catch (err) { } finally { setIsDetailLoading(false); }
+                    }} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700" title={t('actions.edit')}><FaEdit /></Button>
+                    <Button onClick={() => { setPartnerToDelete(p.id); setIsConfirmOpen(true); }} variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:bg-red-50 hover:text-red-600" title={t('actions.delete')}><FaTrash /></Button>
                 </div>
             ),
             align: 'right' as const
@@ -369,26 +323,62 @@ const Partners = () => {
         setTypeFilter('service_providers');
     };
 
-    const tableFilters: FilterDef[] = [
-        {
-            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setTypeFilter('service_providers'); },
-            options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
-        },
-        ...(statusView === 'active' ? [{
-            id: 'type', label: t('partners.filters.type'), type: 'select' as const, value: typeFilter, onChange: (v: any) => setTypeFilter(v),
-            options: [
-                { value: 'service_providers', label: t('partners.filters.types.all') },
-                { value: 'translator', label: t('partners.filters.types.translator') },
-                { value: 'interpreter', label: t('partners.filters.types.interpreter') },
-                { value: 'agency', label: t('partners.filters.types.agency') }
-            ]
-        }] : [])
-    ];
-
-
-
     return (
         <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            {/* ── Filter Sidebar ── */}
+            <>
+                {isFilterSidebarOpen && (
+                    <div className="fixed inset-0 z-30 bg-black/[0.03]" onClick={() => setIsFilterSidebarOpen(false)} />
+                )}
+                <div className={clsx(
+                    "fixed top-12 right-0 bottom-0 z-40 w-72 bg-white border-l border-[#D1D9D8] shadow-[-4px_0_20px_rgba(0,0,0,0.08)] flex flex-col transition-transform duration-300 ease-in-out",
+                    isFilterSidebarOpen ? "translate-x-0" : "translate-x-full"
+                )}>
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#D1D9D8] bg-gradient-to-b from-white to-[#f0f0f0] shrink-0">
+                        <div className="flex items-center gap-2">
+                            <FaFilter className="text-[#1B4D4F] text-xs" />
+                            <span className="text-sm font-bold text-slate-700">Filter</span>
+                            {activeFilterCount > 0 && <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{activeFilterCount}</span>}
+                        </div>
+                        <Button onClick={() => setIsFilterSidebarOpen(false)} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700"><FaTimes className="text-xs" /></Button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3 flex flex-col gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">{t('projects.filters.status_view')}</label>
+                            <div className="relative">
+                                <select className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                    value={statusView} onChange={e => { setStatusView(e.target.value as any); setTypeFilter('service_providers'); }}>
+                                    <option value="active">{t('projects.filters.active')}</option>
+                                    <option value="archive">{t('projects.filters.archive')}</option>
+                                    <option value="trash">{t('projects.filters.trash')}</option>
+                                </select>
+                                <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                            </div>
+                        </div>
+                        {statusView === 'active' && (
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">{t('partners.filters.type')}</label>
+                                <div className="relative">
+                                    <select className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                        value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+                                        <option value="service_providers">{t('partners.filters.types.all')}</option>
+                                        <option value="translator">{t('partners.filters.types.translator')}</option>
+                                        <option value="interpreter">{t('partners.filters.types.interpreter')}</option>
+                                        <option value="agency">{t('partners.filters.types.agency')}</option>
+                                    </select>
+                                    <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="px-4 py-3 border-t border-[#D1D9D8] bg-[#f6f8f8] shrink-0">
+                        <Button onClick={resetFilters} variant="secondary" className="w-full justify-center gap-2 text-xs">
+                            <FaUndo className="text-xs" /> Filter zurücksetzen
+                        </Button>
+                    </div>
+                </div>
+            </>
+
             <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
@@ -396,9 +386,7 @@ const Partners = () => {
                         <p className="text-slate-500 text-sm hidden sm:block">{t('partners.subtitle')}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                        <Button
-                            onClick={() => { setEditingPartner(null); setIsModalOpen(true); }}
-                        >
+                        <Button onClick={() => { setEditingPartner(null); setIsModalOpen(true); }}>
                             <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('partners.new_partner')}</span><span className="inline sm:hidden">{t('partners.new_short')}</span>
                         </Button>
                     </div>
@@ -406,18 +394,8 @@ const Partners = () => {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                     <KPICard label={t('partners.kpi.active_partners')} value={activePartnersCount} icon={<FaUserTie />} />
-                    <KPICard
-                        label={t('partners.kpi.partner_costs')}
-                        value={partnerFinancials.totalCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                        icon={<FaEuroSign />}
-                        subValue={t('partners.kpi.avg_per_project', { amount: partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) })}
-                    />
-                    <KPICard
-                        label={t('partners.kpi.quality_average')}
-                        value={`${partnerQuality.toFixed(1)} / 5.0`}
-                        icon={<FaStar />}
-                        subValue={t('partners.kpi.rating_sub')}
-                    />
+                    <KPICard label={t('partners.kpi.partner_costs')} value={partnerFinancials.totalCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaEuroSign />} subValue={t('partners.kpi.avg_per_project', { amount: partnerFinancials.avgCost.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) })} />
+                    <KPICard label={t('partners.kpi.quality_average')} value={`${partnerQuality.toFixed(1)} / 5.0`} icon={<FaStar />} subValue={t('partners.kpi.rating_sub')} />
                     <KPICard label={t('partners.kpi.collaboration')} value={stats?.collaboration_count || 0} icon={<FaHandshake />} subValue={t('partners.kpi.projects_this_month')} />
                 </div>
 
@@ -435,61 +413,21 @@ const Partners = () => {
                         selectedIds={selectedPartners}
                         onSelectionChange={(ids) => setSelectedPartners(ids as number[])}
                         bulkActions={[
+                            { label: t('customers.actions.activate'), icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }), variant: 'success', show: statusView === 'active' },
                             {
-                                label: t('customers.actions.activate'),
-                                icon: <FaCheck className="text-xs" />,
-                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
-                                variant: 'success',
-                                show: statusView === 'active'
+                                label: t('projects.actions.bulk.send_email'), icon: <FaEnvelope className="text-xs" />, onClick: () => {
+                                    const selectedEmails = partners.filter((p: any) => selectedPartners.includes(p.id)).map((p: any) => p.email).filter(Boolean).join(', ');
+                                    if (selectedEmails) navigate('/inbox', { state: { compose: true, to: selectedEmails, subject: 'Nachricht an Partner' } });
+                                }, variant: 'primary', show: statusView === 'active'
                             },
-                            {
-                                label: t('projects.actions.bulk.send_email'),
-                                icon: <FaEnvelope className="text-xs" />,
-                                onClick: () => {
-                                    const selectedEmails = partners
-                                        .filter((p: any) => selectedPartners.includes(p.id))
-                                        .map((p: any) => p.email)
-                                        .filter(Boolean)
-                                        .join(', ');
-                                    if (selectedEmails) {
-                                        navigate('/inbox', { state: { compose: true, to: selectedEmails, subject: 'Nachricht an Partner' } });
-                                    }
-                                },
-                                variant: 'primary',
-                                show: statusView === 'active'
-                            },
-                            {
-                                label: t('partners.actions.lock'),
-                                icon: <FaBan className="text-xs" />,
-                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'blacklisted' } }),
-                                variant: 'danger',
-                                show: statusView === 'active'
-                            },
-                            {
-                                label: t('projects.actions.bulk.archive'),
-                                icon: <FaArchive className="text-xs" />,
-                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'archived' } }),
-                                variant: 'default',
-                                show: statusView === 'active'
-                            },
-                            {
-                                label: t('projects.actions.bulk.trash'),
-                                icon: <FaTrash className="text-xs" />,
-                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'deleted' } }),
-                                variant: 'danger',
-                                show: statusView === 'active'
-                            },
-                            {
-                                label: t('projects.actions.bulk.restore'),
-                                icon: <FaTrashRestore className="text-xs" />,
-                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }),
-                                variant: 'success',
-                                show: statusView === 'trash' || statusView === 'archive'
-                            }
+                            { label: t('partners.actions.lock'), icon: <FaBan className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'blacklisted' } }), variant: 'danger', show: statusView === 'active' },
+                            { label: t('projects.actions.bulk.archive'), icon: <FaArchive className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'archived' } }), variant: 'default', show: statusView === 'active' },
+                            { label: t('projects.actions.bulk.trash'), icon: <FaTrash className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'deleted' } }), variant: 'danger', show: statusView === 'active' },
+                            { label: t('projects.actions.bulk.restore'), icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedPartners, data: { status: 'available' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' }
                         ] as BulkActionItem[]}
-                        filters={tableFilters}
                         activeFilterCount={activeFilterCount}
-                        onResetFilters={resetFilters}
+                        onFilterToggle={() => setIsFilterSidebarOpen(v => !v)}
+                        isFilterOpen_external={isFilterSidebarOpen}
                     />
                 </div>
 
@@ -497,17 +435,10 @@ const Partners = () => {
                     isOpen={isModalOpen}
                     onClose={() => { setIsModalOpen(false); setEditingPartner(null); }}
                     onSubmit={(data) => {
-                        if (editingPartner) {
-                            updateMutation.mutate({ ...data, id: editingPartner.id });
-                        } else {
-                            createMutation.mutate(data);
-                        }
+                        if (editingPartner) updateMutation.mutate({ ...data, id: editingPartner.id });
+                        else createMutation.mutate(data);
                     }}
-                    initialData={editingPartner || (
-                        ['Übersetzer', 'Dolmetscher', 'Agentur', 'service_providers'].includes(typeFilter)
-                            ? { type: typeFilter === 'Übersetzer' ? 'translator' : typeFilter === 'Dolmetscher' ? 'interpreter' : typeFilter === 'service_providers' ? 'trans_interp' : 'agency' }
-                            : undefined
-                    )}
+                    initialData={editingPartner || (['Übersetzer', 'Dolmetscher', 'Agentur', 'service_providers'].includes(typeFilter) ? { type: typeFilter === 'Übersetzer' ? 'translator' : typeFilter === 'Dolmetscher' ? 'interpreter' : typeFilter === 'service_providers' ? 'trans_interp' : 'agency' } : undefined)}
                     isLoading={isDetailLoading || createMutation.isPending || updateMutation.isPending}
                 />
 
@@ -516,12 +447,7 @@ const Partners = () => {
                     onClose={() => { setIsConfirmOpen(false); setPartnerToDelete(null); }}
                     onConfirm={() => {
                         if (partnerToDelete) {
-                            deleteMutation.mutate(partnerToDelete, {
-                                onSuccess: () => {
-                                    setIsConfirmOpen(false);
-                                    setPartnerToDelete(null);
-                                }
-                            });
+                            deleteMutation.mutate(partnerToDelete, { onSuccess: () => { setIsConfirmOpen(false); setPartnerToDelete(null); } });
                         }
                     }}
                     title={t('partners.messages.delete_success')}

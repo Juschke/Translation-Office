@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Language extends Model
 {
-    use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity;
+    use \App\Traits\BelongsToTenant, \App\Traits\LogsAllActivity, \App\Traits\HasSequentialCode;
 
     protected $fillable = [
+        'tenant_id',
+        'code',
         'iso_code',
         'name_internal',
         'name_native',

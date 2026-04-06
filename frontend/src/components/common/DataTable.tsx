@@ -8,6 +8,7 @@ import Switch from './Switch';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
 import TableSkeleton from './TableSkeleton';
 import { Button } from '../ui/button';
+import { ICON_ACTION_BUTTON_CLASS, ICON_COLOR_BRAND, ICON_COLOR_DANGER, ICON_COLOR_SUCCESS, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_XS } from '../ui/icon-styles';
 import { useTranslation } from 'react-i18next';
 import SearchableSelect from './SearchableSelect';
 
@@ -59,6 +60,8 @@ interface DataTableProps<T> {
     filterLayout?: 'top' | 'sidebar';
     onFilterToggle?: () => void;
     isFilterOpen_external?: boolean;
+    preSearchControls?: React.ReactNode;
+    searchLabel?: string;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
@@ -78,7 +81,7 @@ const BulkActionBtn = ({ label, icon, onClick, variant = 'default' }: BulkAction
     <button
         onClick={onClick}
         className={clsx(
-            'px-2.5 py-1 rounded-[3px] text-xs font-semibold transition flex items-center gap-1.5 border',
+            'px-2.5 py-1 rounded-[3px] text-xs font-semibold transition flex items-center gap-1.5 border [&_svg]:text-[11px]',
             'shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_1px_rgba(0,0,0,0.09)]',
             'active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)]',
             variantStyles[variant] ?? variantStyles.default
@@ -113,6 +116,8 @@ const DataTable = <T extends { id: string | number }>({
     filterLayout = 'top',
     onFilterToggle,
     isFilterOpen_external,
+    preSearchControls,
+    searchLabel,
 }: DataTableProps<T>) => {
     const { t } = useTranslation();
     const [currentPage, setCurrentPage] = useState(1);
@@ -300,16 +305,7 @@ const DataTable = <T extends { id: string | number }>({
             className: col.className,
             showSorterTooltip: false,
             width: columnWidths[col.id],
-            title: (
-                <div className="relative w-full group/header">
-                    <div className="w-full">{col.header}</div>
-                    <div
-                        className="dt-column-resizer"
-                        onMouseDown={(e) => handleResize(col.id, e)}
-                        onClick={e => e.stopPropagation()}
-                    />
-                </div>
-            ),
+            title: col.header,
         };
     });
 
@@ -344,27 +340,28 @@ const DataTable = <T extends { id: string | number }>({
     const isEmpty = paginatedData.length === 0 && !isLoading;
 
     const emptyNode = (
-        <div className="flex flex-col items-center justify-center gap-4 py-12 h-full w-full ">
-            <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
-                < FaPlus className="text-2xl text-slate-300" />
-            </div >
-            <div className="space-y-1 text-center">
-                <p className="text-base font-bold text-slate-600">Noch kein Eintrag</p>
-                <p className="text-xs text-slate-400">Klicken Sie auf den Button unten, um den ersten Eintrag zu erstellen.</p>
+        <div className="flex flex-col items-center justify-center text-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
+                <FaPlus className="text-xl text-slate-300" />
             </div>
-            {
-                onAddClick && (
-                    <Button
-                        variant="default"
-                        onClick={onAddClick}
-                        className="mt-2 px-6 py-2.5 font-bold flex items-center gap-2"
-                    >
-                        <FaPlus className="text-xs" /> Neuer Eintrag
-                    </Button>
-                )
-            }
-        </div >
+            <div className="flex flex-col gap-1">
+                <p className="text-sm font-bold text-slate-600">{t('data_table.empty_title')}</p>
+                <p className="text-[11px] text-slate-400">{t('data_table.empty_description')}</p>
+            </div>
+            {onAddClick && (
+                <Button
+                    variant="default"
+                    onClick={onAddClick}
+                    className="mt-1 px-5 py-2 font-bold flex items-center gap-2 h-9"
+                >
+                    <FaPlus className="text-[10px]" /> {t('data_table.new_entry')}
+                </Button>
+            )}
+        </div>
     );
+
+
+
 
     // ── Sidebar filter panel ──
     const sidebarFilterPanel = filterLayout === 'sidebar' && filters && filters.length > 0 && (
@@ -376,7 +373,7 @@ const DataTable = <T extends { id: string | number }>({
         >
             <div className="w-56 flex flex-col gap-0 overflow-y-auto custom-scrollbar flex-1">
                 <div className="px-3 pt-3 pb-2 border-b border-[#D1D9D8] bg-gradient-to-b from-white to-[#f0f0f0]">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Filter</span>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{t('common.filter')}</span>
                 </div>
                 <div className="p-3 flex flex-col gap-3 flex-1">
                     {filters.map(filter => (
@@ -403,7 +400,7 @@ const DataTable = <T extends { id: string | number }>({
                                             </option>
                                         ))}
                                     </select>
-                                    <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none" />
+                                    <FaChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 ${ICON_SIZE_XS}`} />
                                 </div>
                             ) : (
                                 <input
@@ -423,7 +420,7 @@ const DataTable = <T extends { id: string | number }>({
                             onClick={() => onResetFilters()}
                             className="w-full px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center gap-1.5"
                         >
-                            <FaUndo className="text-xs" /> Zurücksetzen
+                            <FaUndo className={ICON_SIZE_XS} /> {t('data_table.reset')}
                         </button>
                     </div>
                 )}
@@ -468,7 +465,7 @@ const DataTable = <T extends { id: string | number }>({
                                                     </option>
                                                 ))}
                                             </select>
-                                            <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                                    <FaChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 ${ICON_SIZE_XS}`} />
                                         </div>
                                     ) : (
                                         <input
@@ -488,7 +485,7 @@ const DataTable = <T extends { id: string | number }>({
                                     onClick={() => { onResetFilters(); setIsFilterOpen(false); }}
                                     className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center gap-1.5"
                                 >
-                                    <FaUndo className="text-xs" /> Filter zurücksetzen
+                                    <FaUndo className={ICON_SIZE_XS} /> {t('data_table.reset_filters')}
                                 </button>
                             </div>
                         )}
@@ -498,8 +495,8 @@ const DataTable = <T extends { id: string | number }>({
 
             {/* ── Controls Bar ── */}
             <div className="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-[#D1D9D8] flex flex-col md:flex-row gap-3 items-center justify-between bg-gradient-to-b from-white to-[#f0f0f0] shadow-[0_1px_0_rgba(255,255,255,0.8)] relative z-10">
-                <div className="flex gap-2 sm:gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0 scroll-smooth items-center">
-                    {(onExport || actions) && (
+                {(onExport || actions) && (
+                    <div className="flex gap-2 sm:gap-4 text-sm font-medium text-slate-600 w-full md:w-auto overflow-x-auto no-scrollbar shrink-0 scroll-smooth items-center">
                         <div className="flex items-center gap-2">
                             {onExport && (
                                 <div className="relative">
@@ -511,39 +508,46 @@ const DataTable = <T extends { id: string | number }>({
                                             isExportOpen && "border-[#adadad] bg-[#f0f0f0]"
                                         )}
                                     >
-                                        <FaDownload className="text-xs" /> {t('common.export')}
+                                        <FaDownload className={ICON_SIZE_XS} /> {t('common.export')}
                                     </button>
                                 </div>
                             )}
                             {actions}
                         </div>
-                    )}
-                    {tabs}
-                </div>
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-64 shrink-0">
-                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
-                        <input
-                            type="search"
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            placeholder={searchPlaceholder}
-                            className="w-full pl-8 pr-4 py-1.5 border border-[#D1D9D8] rounded-[3px] text-sm focus:outline-none focus:border-[#1B4D4F] bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.07)] transition-colors"
-                        />
+                    </div>
+                )}
+                <div className="flex-1 flex items-end justify-between gap-2">
+                    {preSearchControls}
+                    <div className="relative flex-1 md:w-64 shrink-0 flex flex-col">
+                        {searchLabel && (
+                            <label className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider leading-none">
+                                {searchLabel}
+                            </label>
+                        )}
+                        <div className="relative">
+                            <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 ${ICON_SIZE_XS}`} />
+                            <input
+                                type="search"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                placeholder={searchPlaceholder}
+                                className="w-full pl-8 pr-4 py-1.5 border border-[#D1D9D8] rounded-[3px] text-sm focus:outline-none focus:border-[#1B4D4F] bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.07)] transition-colors"
+                            />
+                        </div>
                     </div>
                     {extraControls}
                     {(filters && filters.length > 0 || onFilterToggle) && (
                         <button
                             onClick={() => onFilterToggle ? onFilterToggle() : setIsFilterOpen(v => !v)}
                             className={clsx(
-                                "p-2 border transition rounded-[3px] shadow-[0_1px_2px_rgba(0,0,0,0.08)] flex items-center justify-center relative",
+                                `${ICON_ACTION_BUTTON_CLASS} relative h-9 w-9 shadow-[0_1px_2px_rgba(0,0,0,0.08)]`,
                                 (onFilterToggle ? isFilterOpen_external : isFilterOpen) || activeFilterCount
                                     ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
                                     : "text-slate-500 hover:text-[#1B4D4F] bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc]"
                             )}
-                            title="Filter"
+                            title={t('common.filter')}
                         >
-                            <FaFilter className="text-sm" />
+                            <FaFilter className={ICON_SIZE_MD} />
                             {activeFilterCount ? (
                                 <span className={clsx(
                                     "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-xs font-bold flex items-center justify-center border",
@@ -561,25 +565,32 @@ const DataTable = <T extends { id: string | number }>({
                             ref={settingsBtnRef}
                             onClick={openSettings}
                             className={clsx(
-                                "p-2 border text-slate-500 hover:text-[#1B4D4F] transition rounded-[3px] shadow-[0_1px_2px_rgba(0,0,0,0.08)]",
+                                `${ICON_ACTION_BUTTON_CLASS} h-9 w-9 shadow-[0_1px_2px_rgba(0,0,0,0.08)]`,
                                 isSettingsOpen
                                     ? "bg-[#e8e8e8] border-[#aaa] text-slate-700"
                                     : "bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc]"
                             )}
-                            title="Spalten anpassen"
+                            title={t('data_table.adjust_columns')}
                         >
-                            <FaColumns className="text-sm" />
+                            <FaColumns className={ICON_SIZE_MD} />
                         </button>
                     )}
                 </div>
             </div>
+
+            {/* ── Tabs Bar ── */}
+            {tabs && (
+                <div className="px-3 sm:px-4 py-2 border-b border-[#D1D9D8] bg-gradient-to-b from-white to-[#f0f0f0] flex items-center overflow-x-auto no-scrollbar shadow-[0_1px_0_rgba(255,255,255,0.8)] relative z-10 w-full">
+                    {tabs}
+                </div>
+            )}
 
             {/* ── BulkActions bar — connected to controls, same gradient ── */}
             {hasSelection && (
                 <div className="border-b border-[#D1D9D8] px-4 py-2 bg-gradient-to-b from-[#eaeaea] to-[#e0e0e0] flex items-center justify-between gap-4 animate-fadeIn shadow-[inset_0_-1px_0_rgba(255,255,255,0.5)]">
                     <div className="flex items-center gap-3 flex-wrap">
                         <span className="text-xs font-bold text-[#1B4D4F] bg-[#dff0ef] border border-[#b8cecd] px-2 py-0.5 rounded-[2px] whitespace-nowrap shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]">
-                            {selectedIds.length} ausgewählt
+                            {t('data_table.selected_count', { count: selectedIds.length })}
                         </span>
                         {visibleBulkActions.length > 0 && (
                             <div className="h-3.5 w-px bg-[#bbb]" />
@@ -593,9 +604,9 @@ const DataTable = <T extends { id: string | number }>({
                     <button
                         onClick={() => onSelectionChange?.([])}
                         className="shrink-0 p-1 text-slate-400 hover:text-slate-700 hover:bg-[#d0d0d0] rounded-[2px] transition"
-                        title="Auswahl aufheben"
+                        title={t('data_table.clear_selection')}
                     >
-                        <FaTimes className="text-xs" />
+                        <FaTimes className={ICON_SIZE_XS} />
                     </button>
                 </div>
             )}
@@ -605,9 +616,13 @@ const DataTable = <T extends { id: string | number }>({
                 {sidebarFilterPanel}
 
                 {/* ── Ant Design Table ── */}
-                <div className={clsx("flex-1 min-h-0 relative overflow-auto custom-scrollbar")}>
+                <div className={clsx("flex flex-col flex-1 min-h-0 relative overflow-auto custom-scrollbar bg-gray-200")}>
                     {isLoading ? (
                         <TableSkeleton rows={pageSize === ALL_SENTINEL ? 10 : pageSize} columns={activeColumns.length + (selectable ? 1 : 0)} />
+                    ) : isEmpty ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8">
+                            {emptyNode}
+                        </div>
                     ) : (
                         <Table<T>
                             columns={antdColumns}
@@ -619,25 +634,25 @@ const DataTable = <T extends { id: string | number }>({
                             showSorterTooltip={false}
                             onChange={handleTableChange}
                             rowSelection={rowSelection}
-                            sticky
+                            sticky={{ offsetHeader: 0 }}
                             tableLayout="auto"
-                            scroll={!isEmpty ? { x: 'max-content' } : undefined}
+                            scroll={{ x: 'max-content' }}
                             onRow={record => ({
                                 onClick: () => {
-                                    setSelectedRowKey(record.id);
+                                    setSelectedRowKey((record as any).id);
                                     onRowClick?.(record);
                                 },
                                 className: clsx(
                                     onRowClick && 'cursor-pointer',
-                                    record.id === selectedRowKey && 'dt-row-selected'
+                                    (record as any).id === selectedRowKey && 'dt-row-selected'
                                 ),
                             })}
                             rowClassName={(_, index) => index % 2 !== 0 ? 'dt-row-odd' : 'dt-row-even'}
-                            locale={{ emptyText: emptyNode }}
                             className="dt-antd-table"
                         />
                     )}
                 </div>
+
             </div>
 
             {/* ── Footer ── */}
@@ -653,10 +668,10 @@ const DataTable = <T extends { id: string | number }>({
                                 <span className="font-semibold text-slate-800">
                                     {Math.min(currentPage * effectivePageSize, sortedData.length)}
                                 </span>
-                                {' von '}
+                                {` ${t('data_table.of')} `}
                                 <span className="font-semibold text-slate-800">{sortedData.length}</span>
                             </>
-                        ) : '0 Datensätze'}
+                        ) : t('data_table.zero_records')}
                     </span>
 
                     <div className="relative inline-flex items-center">
@@ -666,11 +681,11 @@ const DataTable = <T extends { id: string | number }>({
                             className="appearance-none pr-6 pl-2.5 py-1 border border-[#ccc] rounded-[3px] bg-gradient-to-b from-white to-[#ebebeb] text-xs font-semibold text-slate-700 shadow-[0_1px_2px_rgba(0,0,0,0.08)] focus:outline-none focus:border-[#1B4D4F] cursor-pointer transition-colors hover:border-[#adadad]"
                         >
                             {PAGE_SIZE_OPTIONS.map(n => (
-                                <option key={n} value={n}>{n} pro Seite</option>
+                                <option key={n} value={n}>{t('data_table.per_page', { count: n })}</option>
                             ))}
-                            <option value={ALL_SENTINEL}>Alle anzeigen</option>
+                            <option value={ALL_SENTINEL}>{t('data_table.show_all')}</option>
                         </select>
-                        <FaChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                        <FaChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 ${ICON_SIZE_XS}`} />
                     </div>
                 </div>
 
@@ -681,7 +696,7 @@ const DataTable = <T extends { id: string | number }>({
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             className="p-1.5 border border-[#ccc] rounded-[3px] text-slate-500 bg-gradient-to-b from-white to-[#ebebeb] hover:to-[#e0e0e0] hover:text-[#1B4D4F] disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_1px_1px_rgba(0,0,0,0.08)] transition"
                         >
-                            <FaChevronLeft className="text-xs" />
+                            <FaChevronLeft className={ICON_SIZE_SM} />
                         </button>
                         <div className="flex gap-1 overflow-x-auto max-w-[220px] md:max-w-none no-scrollbar">
                             {[...Array(totalPages)].map((_, i) => (
@@ -704,7 +719,7 @@ const DataTable = <T extends { id: string | number }>({
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             className="p-1.5 border border-[#ccc] rounded-[3px] text-slate-500 bg-gradient-to-b from-white to-[#ebebeb] hover:to-[#e0e0e0] hover:text-[#1B4D4F] disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_1px_1px_rgba(0,0,0,0.08)] transition"
                         >
-                            <FaChevronRight className="text-xs" />
+                            <FaChevronRight className={ICON_SIZE_SM} />
                         </button>
                     </div>
                 )}
@@ -744,12 +759,12 @@ const DataTable = <T extends { id: string | number }>({
                         ))}
                     </div>
                     <div className="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">{visibleColumns.size} Aktiv</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">{t('data_table.active_columns', { count: visibleColumns.size })}</span>
                         <button
                             onClick={() => setIsSettingsOpen(false)}
                             className="text-xs font-bold text-brand-primary uppercase tracking-widest hover:underline"
                         >
-                            Schließen
+                            {t('actions.close')}
                         </button>
                     </div>
                 </div>,
@@ -769,19 +784,19 @@ const DataTable = <T extends { id: string | number }>({
                         onClick={() => { onExport('xlsx'); setIsExportOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"
                     >
-                        <FaFileExcel className="text-emerald-600 text-[14px]" /> Excel (.xlsx)
+                        <FaFileExcel className={`${ICON_SIZE_MD} ${ICON_COLOR_SUCCESS}`} /> Excel (.xlsx)
                     </button>
                     <button
                         onClick={() => { onExport('csv'); setIsExportOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"
                     >
-                        <FaFileCsv className="text-blue-600 text-[14px]" /> CSV (.csv)
+                        <FaFileCsv className={`${ICON_SIZE_MD} ${ICON_COLOR_BRAND}`} /> CSV (.csv)
                     </button>
                     <button
                         onClick={() => { onExport('pdf'); setIsExportOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"
                     >
-                        <FaFilePdf className="text-rose-600 text-[14px]" /> PDF Report
+                        <FaFilePdf className={`${ICON_SIZE_MD} ${ICON_COLOR_DANGER}`} /> PDF Report
                     </button>
                 </div>,
                 document.body

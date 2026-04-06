@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface StatusTabButtonProps {
@@ -12,13 +13,15 @@ interface StatusTabButtonProps {
 const StatusTabButton = ({ active, onClick, icon, label, count }: StatusTabButtonProps) => (
     <Tooltip>
         <TooltipTrigger asChild>
-            <button
+            <Button
                 onClick={onClick}
+                variant={active ? 'outline' : 'ghost'}
+                size="sm"
                 className={clsx(
-                    'flex items-center gap-2 px-4 py-2 text-xs transition-all rounded-sm font-medium',
+                    'h-9 gap-2 rounded-md px-4 text-xs font-medium',
                     active
-                        ? 'bg-gradient-to-b from-[#f0f7f7] to-[#e4efef] text-brand-primary font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] border border-brand-primary/20'
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 border border-transparent',
+                        ? 'border-brand-primary/20 bg-[linear-gradient(180deg,#f0f7f7_0%,#e4efef_100%)] font-semibold text-brand-primary'
+                        : 'text-slate-500 hover:text-slate-700',
                 )}
             >
                 <span className={clsx('text-sm', active ? 'text-brand-primary' : 'text-slate-400')}>{icon}</span>
@@ -31,7 +34,7 @@ const StatusTabButton = ({ active, onClick, icon, label, count }: StatusTabButto
                         {count}
                     </span>
                 )}
-            </button>
+            </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
             {label}

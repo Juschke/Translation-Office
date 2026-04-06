@@ -23,9 +23,9 @@ interface TeamUser {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-    owner: 'Inhaber',
-    manager: 'Manager',
-    employee: 'Mitarbeiter',
+    owner: 'team.role.owner',
+    manager: 'team.role.manager',
+    employee: 'team.role.employee',
 };
 
 const ROLE_COLORS: Record<string, string> = {
@@ -71,29 +71,29 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('team.form.name')}</label>
                 <input
                     type="text"
                     value={form.name}
                     onChange={e => set('name', e.target.value)}
                     required
                     className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-                    placeholder="Max Mustermann"
+                    placeholder={t('placeholders.example_name')}
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">E-Mail</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('team.form.email')}</label>
                 <input
                     type="email"
                     value={form.email}
                     onChange={e => set('email', e.target.value)}
                     required
                     className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-                    placeholder="max@beispiel.de"
+                    placeholder={t('placeholders.example_email')}
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Rolle</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('team.form.role')}</label>
                 <select
                     value={form.role}
                     onChange={e => set('role', e.target.value as Role)}
@@ -102,13 +102,11 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
                     <option value="employee">{t('team.role_employee')}</option>
                     <option value="manager">{t('team.role_manager')}</option>
                 </select>
-                <p className="text-xs text-slate-500 mt-1">
-                    Manager haben Zugriff auf Rechnungen, Berichte und Einstellungen.
-                </p>
+                <p className="text-xs text-slate-500 mt-1">{t('team.form.role_hint')}</p>
             </div>
             <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                    {isEdit ? 'Neues Passwort (leer lassen = unverändert)' : 'Passwort'}
+                    {isEdit ? t('team.form.password_edit') : t('team.form.password')}
                 </label>
                 <input
                     type="password"
@@ -122,7 +120,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
             </div>
             {isEdit && (
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('team.form.status')}</label>
                     <select
                         value={form.status}
                         onChange={e => set('status', e.target.value)}
@@ -135,13 +133,10 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSubmit, onCancel, loadin
             )}
             <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={onCancel} className="px-4 py-2 text-sm border border-slate-200 rounded-sm hover:bg-slate-50">
-                    Abbrechen
+                    {t('actions.cancel')}
                 </button>
-                <Button
-                    type="submit"
-                    disabled={loading}
-                >
-                    {loading ? 'Speichern…' : isEdit ? 'Speichern' : 'Hinzufügen'}
+                <Button type="submit" disabled={loading}>
+                    {loading ? t('actions.saving') : isEdit ? t('actions.save') : t('actions.add')}
                 </Button>
             </div>
         </form>
@@ -166,7 +161,7 @@ const Team: React.FC = () => {
             toast.success(t('team.member_added'));
             setModal(null);
         },
-        onError: (e: any) => toast.error(e.response?.data?.message ?? 'Fehler beim Erstellen.'),
+        onError: (e: any) => toast.error(e.response?.data?.message ?? t('team.errors.create')),
     });
 
     const updateMutation = useMutation({
@@ -176,7 +171,7 @@ const Team: React.FC = () => {
             toast.success(t('team.member_updated'));
             setModal(null);
         },
-        onError: (e: any) => toast.error(e.response?.data?.message ?? 'Fehler beim Aktualisieren.'),
+        onError: (e: any) => toast.error(e.response?.data?.message ?? t('team.errors.update')),
     });
 
     const deleteMutation = useMutation({
@@ -186,7 +181,7 @@ const Team: React.FC = () => {
             toast.success(t('team.member_deleted'));
             setModal(null);
         },
-        onError: (e: any) => toast.error(e.response?.data?.message ?? 'Fehler beim Löschen.'),
+        onError: (e: any) => toast.error(e.response?.data?.message ?? t('team.errors.delete')),
     });
 
     const formatDate = (d: string | null) => {
@@ -196,23 +191,20 @@ const Team: React.FC = () => {
 
     return (
         <div className="p-4 sm:p-6 max-w-5xl mx-auto">
-            {/* Header */}
             <div className="flex items-center justify-between mb-6 gap-4">
                 <div className="min-w-0">
-                    <h1 className="text-xl font-medium text-slate-800 truncate">Team & Mitarbeiter</h1>
-                    <p className="text-sm text-slate-500 mt-0.5 hidden sm:block">Verwalten Sie die Benutzer Ihres Mandanten.</p>
+                    <h1 className="text-xl font-medium text-slate-800 truncate">{t('team.title')}</h1>
+                    <p className="text-sm text-slate-500 mt-0.5 hidden sm:block">{t('team.subtitle')}</p>
                 </div>
                 <div className="shrink-0">
-                    <Button
-                        onClick={() => setModal({ type: 'add' })}
-                        className="flex items-center gap-2"
-                    >
-                        <FaPlus className="text-xs" /> <span className="hidden xs:inline">Mitarbeiter hinzufügen</span><span className="xs:hidden">Hinzufügen</span>
+                    <Button onClick={() => setModal({ type: 'add' })} className="flex items-center gap-2">
+                        <FaPlus className="text-xs" />
+                        <span className="hidden xs:inline">{t('team.add_member')}</span>
+                        <span className="xs:hidden">{t('actions.add')}</span>
                     </Button>
                 </div>
             </div>
 
-            {/* Table Container */}
             <div className="bg-white rounded-sm border border-slate-200 overflow-x-auto shadow-sm custom-scrollbar">
                 {isLoading ? (
                     <TableSkeleton rows={5} columns={6} />
@@ -220,11 +212,11 @@ const Team: React.FC = () => {
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">Name</th>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">E-Mail</th>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">Rolle</th>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">Status</th>
-                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">Letzter Login</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">{t('team.columns.name')}</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">{t('team.columns.email')}</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">{t('team.columns.role')}</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">{t('team.columns.status')}</th>
+                                <th className="text-left px-4 py-3 font-semibold text-slate-600 text-xs">{t('team.columns.last_login')}</th>
                                 <th className="px-4 py-3"></th>
                             </tr>
                         </thead>
@@ -239,7 +231,7 @@ const Team: React.FC = () => {
                                             <span className="font-medium text-slate-800">
                                                 {u.name}
                                                 {u.id === currentUser?.id && (
-                                                    <span className="ml-1.5 text-xs text-slate-400 font-normal">(Sie)</span>
+                                                    <span className="ml-1.5 text-xs text-slate-400 font-normal">{t('team.you')}</span>
                                                 )}
                                             </span>
                                         </div>
@@ -248,12 +240,12 @@ const Team: React.FC = () => {
                                     <td className="px-4 py-3">
                                         <span className={clsx('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium', ROLE_COLORS[u.role])}>
                                             <RoleIcon role={u.role} />
-                                            {ROLE_LABELS[u.role] ?? u.role}
+                                            {t(ROLE_LABELS[u.role] ?? u.role)}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500')}>
-                                            {u.status === 'active' ? 'Aktiv' : 'Inaktiv'}
+                                            {u.status === 'active' ? t('team.status_active') : t('team.status_inactive')}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-slate-500">{formatDate(u.last_login_at)}</td>
@@ -282,7 +274,7 @@ const Team: React.FC = () => {
                             {users.length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-400">
-                                        Noch keine weiteren Mitarbeiter vorhanden.
+                                        {t('team.empty')}
                                     </td>
                                 </tr>
                             )}
@@ -291,19 +283,17 @@ const Team: React.FC = () => {
                 )}
             </div>
 
-            {/* Role legend */}
             <div className="mt-4 flex items-center gap-6 text-xs text-slate-500">
-                <span className="font-medium text-slate-600">Rollenübersicht:</span>
-                <span className="flex items-center gap-1"><FaUserShield className="text-amber-500" /> Inhaber – Vollzugriff, Abonnement, Team</span>
-                <span className="flex items-center gap-1"><FaUserTie className="text-slate-600" /> Manager – Rechnungen, Berichte, Einstellungen</span>
-                <span className="flex items-center gap-1"><FaUser className="text-slate-400" /> Mitarbeiter – Projekte, Kunden</span>
+                <span className="font-medium text-slate-600">{t('team.role_overview')}</span>
+                <span className="flex items-center gap-1"><FaUserShield className="text-amber-500" /> {t('team.role_owner_desc')}</span>
+                <span className="flex items-center gap-1"><FaUserTie className="text-slate-600" /> {t('team.role_manager_desc')}</span>
+                <span className="flex items-center gap-1"><FaUser className="text-slate-400" /> {t('team.role_employee_desc')}</span>
             </div>
 
-            {/* Add Modal */}
             {modal?.type === 'add' && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-sm shadow-sm w-full max-w-md p-6">
-                        <h2 className="text-base font-medium text-slate-800 mb-4">Mitarbeiter hinzufügen</h2>
+                        <h2 className="text-base font-medium text-slate-800 mb-4">{t('team.modal.add_title')}</h2>
                         <UserForm
                             onSubmit={data => createMutation.mutate(data)}
                             onCancel={() => setModal(null)}
@@ -313,15 +303,14 @@ const Team: React.FC = () => {
                 </div>
             )}
 
-            {/* Edit Modal */}
             {modal?.type === 'edit' && modal.user && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-sm shadow-sm w-full max-w-md p-6">
-                        <h2 className="text-base font-medium text-slate-800 mb-4">Mitarbeiter bearbeiten</h2>
+                        <h2 className="text-base font-medium text-slate-800 mb-4">{t('team.modal.edit_title')}</h2>
                         <UserForm
                             initial={modal.user}
                             isEdit
-                            onSubmit={data => updateMutation.mutate({ id: modal.user!.id, data })}
+                            onSubmit={data => modal.user && updateMutation.mutate({ id: modal.user.id, data })}
                             onCancel={() => setModal(null)}
                             loading={updateMutation.isPending}
                         />
@@ -329,13 +318,12 @@ const Team: React.FC = () => {
                 </div>
             )}
 
-            {/* Delete Confirm */}
             <ConfirmModal
                 isOpen={modal?.type === 'delete'}
                 onClose={() => setModal(null)}
                 onConfirm={() => modal?.user && deleteMutation.mutate(modal.user.id)}
-                title="Mitarbeiter löschen"
-                message={`Möchten Sie „${modal?.user?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                title={t('team.modal.delete_title')}
+                message={t('team.modal.delete_message', { name: modal?.user?.name ?? '' })}
                 confirmLabel={t('actions.delete')}
                 variant="danger"
                 isLoading={deleteMutation.isPending}

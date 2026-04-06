@@ -14,6 +14,7 @@ interface ProjectFinancesTabProps {
     onDeletePayment?: (id: string) => void;
     isPendingSave: boolean;
     onCreateInvoice?: () => void;
+    onPreviewInvoice?: (invoice: any) => void;
 }
 
 const ProjectFinancesTab = ({
@@ -24,6 +25,7 @@ const ProjectFinancesTab = ({
     onDeletePayment,
     isPendingSave,
     onCreateInvoice,
+    onPreviewInvoice,
 }: ProjectFinancesTabProps) => {
     const [positions, setPositions] = useState<ProjectPosition[]>(() => {
         if (projectData.positions && Array.isArray(projectData.positions)) {
@@ -251,15 +253,18 @@ const ProjectFinancesTab = ({
                     <div className="bg-white rounded-sm border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                             <div className="flex items-center gap-3">
-                                <FaCalculator className="text-slate-400 text-sm" />
+                                <FaCalculator className="text-brand-primary text-sm" />
                                 <div className="flex items-center gap-3">
-                                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Leistungs-Kalkulation</h3>
+                                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Positionen</h3>
                                     {isLocked && (
-                                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 border border-amber-100 rounded text-amber-600">
-                                            <FaInfoCircle size={10} />
+                                        <button 
+                                            onClick={() => onPreviewInvoice ? onPreviewInvoice(activeInvoice) : onCreateInvoice?.()}
+                                            className="flex items-center gap-1.5 px-2 py-0.5 bg-gradient-to-b from-amber-50 to-amber-100 border border-amber-200 rounded text-amber-700 hover:from-amber-100 hover:to-amber-200 transition shadow-sm group/lock"
+                                        >
+                                            <FaInfoCircle size={10} className="text-amber-500 group-hover/lock:text-amber-600 transition-colors" />
                                             <span className="text-xs font-bold uppercase tracking-tight">Gesperrt</span>
                                             <span className="text-xs font-medium opacity-70">({activeInvoice.invoice_number})</span>
-                                        </div>
+                                        </button>
                                     )}
                                 </div>
                             </div>

@@ -3,6 +3,8 @@ import AppLayout from './layouts/AppLayout';
 import Dashboard from './pages/Dashboard';
 
 import Projects from './pages/Projects';
+import Requests from './pages/Requests';
+import Quotes from './pages/Quotes';
 import ProjectDetail from './pages/ProjectDetail';
 import NewProject from './pages/NewProject';
 import Customers from './pages/Customers';
@@ -34,11 +36,22 @@ import Documents from './pages/Documents';
 
 
 import { AuthProvider } from './context/AuthContext';
+import { PortalProvider } from './context/PortalContext';
 import { ProtectedRoute, PublicRoute, RoleGuard } from './components/auth/AuthGuard';
 import { Toaster } from 'react-hot-toast';
 import { ConfigProvider } from 'antd';
 import deDE from 'antd/locale/de_DE';
 import { antdTheme } from './lib/antd-theme';
+
+import PortalLayout from './layouts/PortalLayout';
+import PortalLogin from './pages/portal/PortalLogin';
+import PortalVerify from './pages/portal/PortalVerify';
+import PortalDashboard from './pages/portal/PortalDashboard';
+import PortalProjects from './pages/portal/PortalProjects';
+import PortalProjectDetail from './pages/portal/PortalProjectDetail';
+import PortalInvoices from './pages/portal/PortalInvoices';
+import PortalNewRequest from './pages/portal/PortalNewRequest';
+import PortalProfile from './pages/portal/PortalProfile';
 
 
 
@@ -68,6 +81,8 @@ function App() {
                         {/* Protected Routes (Authenticated & Tenant) */}
                         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                             <Route path="/" element={<Dashboard />} />
+                            <Route path="/requests" element={<Requests />} />
+                            <Route path="/quotes" element={<Quotes />} />
                             <Route path="/projects" element={<Projects />} />
                             <Route path="/projects/new" element={<NewProject />} />
                             <Route path="/projects/:id/edit" element={<NewProject />} />
@@ -92,6 +107,30 @@ function App() {
                             <Route path="/team" element={<RoleGuard minRole="owner"><Team /></RoleGuard>} />
 
                         </Route>
+
+                        {/* Portal Routes — public */}
+                        <Route path="/portal/login" element={<PortalLogin />} />
+                        <Route path="/portal/verify" element={
+                            <PortalProvider>
+                                <PortalVerify />
+                            </PortalProvider>
+                        } />
+
+                        {/* Portal Routes — authenticated */}
+                        <Route path="/portal/*" element={
+                            <PortalProvider>
+                                <Routes>
+                                    <Route element={<PortalLayout />}>
+                                        <Route index element={<PortalDashboard />} />
+                                        <Route path="projects" element={<PortalProjects />} />
+                                        <Route path="projects/:id" element={<PortalProjectDetail />} />
+                                        <Route path="invoices" element={<PortalInvoices />} />
+                                        <Route path="new-request" element={<PortalNewRequest />} />
+                                        <Route path="profile" element={<PortalProfile />} />
+                                    </Route>
+                                </Routes>
+                            </PortalProvider>
+                        } />
 
                         {/* Catch all */}
                         <Route path="*" element={<Navigate to="/" replace />} />

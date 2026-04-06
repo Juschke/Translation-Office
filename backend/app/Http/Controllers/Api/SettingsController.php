@@ -107,6 +107,56 @@ class SettingsController extends Controller
             'show_footer' => 'nullable',
             'show_sender_line' => 'nullable',
             'show_labor_cost_hint' => 'nullable',
+
+            // Number Circle Custom Fields (Padding, Separator, Dates, Resets)
+            'customer_year_format' => 'nullable|string',
+            'customer_month_format' => 'nullable|string',
+            'customer_day_format' => 'nullable|string',
+            'customer_separator' => 'nullable|string',
+            'customer_padding' => 'nullable|string',
+            'customer_reset_yearly' => 'nullable',
+
+            'partner_year_format' => 'nullable|string',
+            'partner_month_format' => 'nullable|string',
+            'partner_day_format' => 'nullable|string',
+            'partner_separator' => 'nullable|string',
+            'partner_padding' => 'nullable|string',
+            'partner_reset_yearly' => 'nullable',
+
+            'project_year_format' => 'nullable|string',
+            'project_month_format' => 'nullable|string',
+            'project_day_format' => 'nullable|string',
+            'project_separator' => 'nullable|string',
+            'project_padding' => 'nullable|string',
+            'project_reset_yearly' => 'nullable',
+
+            'appointment_year_format' => 'nullable|string',
+            'appointment_month_format' => 'nullable|string',
+            'appointment_day_format' => 'nullable|string',
+            'appointment_separator' => 'nullable|string',
+            'appointment_padding' => 'nullable|string',
+            'appointment_reset_yearly' => 'nullable',
+
+            'offer_year_format' => 'nullable|string',
+            'offer_month_format' => 'nullable|string',
+            'offer_day_format' => 'nullable|string',
+            'offer_separator' => 'nullable|string',
+            'offer_padding' => 'nullable|string',
+            'offer_reset_yearly' => 'nullable',
+
+            'invoice_year_format' => 'nullable|string',
+            'invoice_month_format' => 'nullable|string',
+            'invoice_day_format' => 'nullable|string',
+            'invoice_separator' => 'nullable|string',
+            'invoice_padding' => 'nullable|string',
+            'invoice_reset_yearly' => 'nullable',
+
+            'credit_note_year_format' => 'nullable|string',
+            'credit_note_month_format' => 'nullable|string',
+            'credit_note_day_format' => 'nullable|string',
+            'credit_note_separator' => 'nullable|string',
+            'credit_note_padding' => 'nullable|string',
+            'credit_note_reset_yearly' => 'nullable',
         ]);
 
         // Fields that exist in the Tenant model and should be synced

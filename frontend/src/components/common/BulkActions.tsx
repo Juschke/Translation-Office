@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import clsx from 'clsx';
+import { Button } from '../ui/button';
 
 export type BulkActionVariant = 'default' | 'primary' | 'danger' | 'dangerSolid' | 'success' | 'warning';
 
@@ -40,38 +41,38 @@ export const BulkActions = ({ selectedCount, onClearSelection, actions, classNam
  ))}
  </div>
  </div>
- <button
+ <Button
  onClick={onClearSelection}
- className="text-slate-400 hover:text-slate-600 transition p-1 hover:bg-white/60 rounded-[3px]"
+ variant="ghost"
+ size="icon"
+ className="h-8 w-8 text-slate-400 hover:bg-white/60 hover:text-slate-600"
  title="Auswahl aufheben"
  >
  <FaTimes />
- </button>
+ </Button>
  </div>
  );
 };
 
 const BulkActionButton = ({ label, icon, onClick, variant = 'default' }: BulkActionItem) => {
- const variants: Record<BulkActionVariant, string> = {
- default:     'bg-gradient-to-b from-white to-[#ebebeb] text-[#444] border-[#ccc] hover:border-[#adadad] hover:text-[#1B4D4F]',
- primary:     'bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#2a7073] hover:to-[#235e62]',
- danger:      'bg-gradient-to-b from-white to-[#ebebeb] text-red-600 border-[#ccc] hover:border-red-300',
- dangerSolid: 'bg-gradient-to-b from-[#e05050] to-[#c9302c] text-white border-[#9c2320] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#e85555]',
- success:     'bg-gradient-to-b from-[#62bb62] to-[#449d44] text-white border-[#398439] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#6ec86e]',
- warning:     'bg-gradient-to-b from-[#f5b85a] to-[#ec971f] text-white border-[#d58512] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#f7c168]',
+ const variants: Record<BulkActionVariant, { variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning'; className?: string }> = {
+ default: { variant: 'secondary' },
+ primary: { variant: 'default' },
+ danger: { variant: 'secondary', className: 'text-red-600 hover:text-red-700' },
+ dangerSolid: { variant: 'destructive' },
+ success: { variant: 'success' },
+ warning: { variant: 'warning' },
  };
+ const config = variants[variant];
 
  return (
- <button
+ <Button
  onClick={onClick}
- className={clsx(
-  'px-2.5 py-1 rounded-[3px] text-xs font-semibold transition flex items-center gap-1.5 border',
-  'shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_1px_rgba(0,0,0,0.09)]',
-  'active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)]',
-  variants[variant]
- )}
+ variant={config.variant}
+ size="sm"
+ className={clsx('h-8 gap-1.5 px-2.5 text-xs font-semibold', config.className)}
  >
  {icon} {label}
- </button>
+ </Button>
  );
 };

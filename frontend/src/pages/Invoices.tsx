@@ -7,11 +7,12 @@ import { parseISO, startOfDay, isValid } from 'date-fns';
 import {
     FaPlus, FaCheck, FaCheckCircle, FaHistory,
     FaFileInvoiceDollar, FaTrashRestore, FaPaperPlane, FaArchive,
+    FaFilter, FaTimes, FaUndo, FaChevronDown
 } from 'react-icons/fa';
 import { buildInvoiceColumns } from './invoiceColumns';
 import { Button } from '../components/ui/button';
-
-import DataTable, { type FilterDef } from '../components/common/DataTable';
+import SearchableSelect from '../components/common/SearchableSelect';
+import DataTable from '../components/common/DataTable';
 import KPICard from '../components/common/KPICard';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +21,6 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
 import { useTranslation } from 'react-i18next';
 
-
 const Invoices = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -28,13 +28,13 @@ const Invoices = () => {
     const [statusView, setStatusView] = useState<'active' | 'archive' | 'trash'>('active');
     const [statusFilter, setStatusFilter] = useState(location.state?.filter || 'all');
     const [customerId, setCustomerId] = useState('');
+    const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
+    const [previewInvoice, setPreviewInvoice] = useState<any>(null);
+    const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+
     useEffect(() => {
         setSelectedInvoices([]);
     }, [statusFilter]);
-    const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
-    const [previewInvoice, setPreviewInvoice] = useState<any>(null);
-
-
 
     useEffect(() => {
         if (location.state?.openNewModal) {
@@ -45,6 +45,10 @@ const Invoices = () => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => { });
+    const [confirmVariant, setConfirmVariant] = useState<'danger' | 'warning' | 'info'>('danger');
+    const [confirmLabel, setConfirmLabel] = useState('Bestätigen');
+    const [cancelReason, setCancelReason] = useState('');
 
     const queryClient = useQueryClient();
 
@@ -53,23 +57,22 @@ const Invoices = () => {
         queryFn: invoiceService.getAll
     });
 
-    // Query for external costs (this month)
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const { data: customers = [] } = useQuery({
         queryKey: ['customers'],
         queryFn: customerService.getAll
     });
 
+    const today = new Date();
+    const startOfMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonthDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
     const { data: externalCostsStats } = useQuery({
-        queryKey: ['external-costs', 'stats', startOfMonth.toISOString(), endOfMonth.toISOString()],
+        queryKey: ['external-costs', 'stats', startOfMonthDate.toISOString(), endOfMonthDate.toISOString()],
         queryFn: () => externalCostService.getStats({
-            start_date: startOfMonth.toISOString().split('T')[0],
-            end_date: endOfMonth.toISOString().split('T')[0],
+            start_date: startOfMonthDate.toISOString().split('T')[0],
+            end_date: endOfMonthDate.toISOString().split('T')[0],
         }),
     });
-
 
     const deleteMutation = useMutation({
         mutationFn: invoiceService.delete,
@@ -79,15 +82,8 @@ const Invoices = () => {
             setSelectedInvoices([]);
             toast.success(t('invoices.messages.delete_success'));
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error || t('invoices.messages.delete_error'));
-        }
+        onError: (error: any) => toast.error(error?.response?.data?.error || t('invoices.messages.delete_error'))
     });
-
-    const [confirmAction, setConfirmAction] = useState<() => void>(() => { });
-    const [confirmVariant, setConfirmVariant] = useState<'danger' | 'warning' | 'info'>('danger');
-    const [confirmLabel, setConfirmLabel] = useState('Bestätigen');
-    const [cancelReason, setCancelReason] = useState('');
 
     const issueMutation = useMutation({
         mutationFn: (id: number) => invoiceService.issue(id),
@@ -96,9 +92,7 @@ const Invoices = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             toast.success(t('invoices.messages.issue_success'));
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error || t('invoices.messages.issue_error'));
-        }
+        onError: (error: any) => toast.error(error?.response?.data?.error || t('invoices.messages.issue_error'))
     });
 
     const cancelMutation = useMutation({
@@ -108,9 +102,7 @@ const Invoices = () => {
             queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
             toast.success(data?.message || t('invoices.messages.cancel_success'));
         },
-        onError: (error: any) => {
-            toast.error(error?.response?.data?.error || t('invoices.messages.cancel_error'));
-        }
+        onError: (error: any) => toast.error(error?.response?.data?.error || t('invoices.messages.cancel_error'))
     });
 
     const bulkUpdateMutation = useMutation({
@@ -121,9 +113,7 @@ const Invoices = () => {
             setSelectedInvoices([]);
             toast.success(t('invoices.messages.bulk_update_success', { count: variables.ids.length }));
         },
-        onError: () => {
-            toast.error(t('invoices.messages.bulk_error'));
-        }
+        onError: () => toast.error(t('invoices.messages.bulk_error'))
     });
 
     const markAsPaidMutation = useMutation({
@@ -138,62 +128,46 @@ const Invoices = () => {
 
     const filteredInvoices = useMemo(() => {
         if (!Array.isArray(invoices)) return [];
-        const today = startOfDay(new Date());
+        const todayRef = startOfDay(new Date());
 
         return invoices.filter((inv: any) => {
             const status = inv.status?.toLowerCase() || 'pending';
             const matchesCustomer = !customerId || String(inv.customer_id) === String(customerId);
             if (!matchesCustomer) return false;
 
-            // Parse due_date safely with date-fns
             let dueDate: Date | null = null;
             if (inv.due_date) {
                 const parsed = typeof inv.due_date === 'string' ? parseISO(inv.due_date) : new Date(inv.due_date);
                 dueDate = isValid(parsed) ? startOfDay(parsed) : null;
             }
 
-            const isOverdue = dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'deleted', 'gelöscht', 'archived', 'archiviert', 'draft'].includes(status);
+            const isOverdue = dueDate && dueDate < todayRef && !['paid', 'bezahlt', 'cancelled', 'storniert', 'deleted', 'gelöscht', 'archived', 'archiviert', 'draft'].includes(status);
 
-            // Priority 1: Filter by status view (active/archive/trash)
             if (statusView === 'trash') {
                 if (status !== 'deleted' && status !== 'gelöscht') return false;
             } else if (statusView === 'archive') {
                 if (status !== 'archived' && status !== 'archiviert') return false;
             } else {
-                // Active view: exclude deleted and archived
                 if (status === 'deleted' || status === 'gelöscht' || status === 'archived' || status === 'archiviert') return false;
             }
 
-            // Priority 2: Status filter (only for active view)
             if (statusView === 'active') {
                 if (statusFilter === 'credit_notes') return inv.type === 'credit_note';
-
-                // Main tabs (exclude credit notes by default to avoid confusion)
                 if (statusFilter !== 'all' && inv.type === 'credit_note') return false;
-
                 if (statusFilter === 'paid') return status === 'paid' || status === 'bezahlt';
                 if (statusFilter === 'cancelled') return status === 'cancelled' || status === 'storniert';
                 if (statusFilter === 'overdue') return isOverdue || status === 'overdue' || status === 'überfällig';
                 if (statusFilter === 'reminders') return (inv.reminder_level > 0 || isOverdue) && !(status === 'paid' || status === 'bezahlt' || status === 'cancelled' || status === 'storniert');
-                if (statusFilter === 'pending') {
-                    return (status === 'pending' || status === 'draft' || status === 'issued') && !isOverdue;
-                }
-                if (statusFilter === 'all') return true;
-
-                return status === statusFilter;
+                if (statusFilter === 'pending') return (status === 'pending' || status === 'draft' || status === 'issued') && !isOverdue;
+                if (statusFilter !== 'all' && status !== statusFilter) return false;
             }
-
             return true;
         });
     }, [invoices, statusView, statusFilter, customerId]);
 
     const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
-        const ids = selectedInvoices.length > 0
-            ? selectedInvoices
-            : filteredInvoices.map((inv: any) => inv.id);
-
+        const ids = selectedInvoices.length > 0 ? selectedInvoices : filteredInvoices.map((inv: any) => inv.id);
         if (ids.length === 0) return;
-
         if (format === 'csv') {
             try {
                 const response = await invoiceService.datevExport(ids);
@@ -201,27 +175,17 @@ const Invoices = () => {
                 const link = document.createElement('a');
                 link.href = url;
                 link.setAttribute('download', `DATEV_Export_${new Date().toISOString().split('T')[0]}.csv`);
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
+                document.body.appendChild(link); link.click(); link.remove();
                 window.URL.revokeObjectURL(url);
                 toast.success(t('invoices.messages.datev_success'));
-            } catch (error) {
-                toast.error(t('invoices.messages.datev_error'));
-            }
+            } catch (error) { toast.error(t('invoices.messages.datev_error')); }
             return;
         }
-
-        // Keep other formats as is or placeholder
-        const headers = [t('fields.invoice_number_short') || 'Nr', t('fields.date'), t('fields.customer'), t('fields.project'), t('fields.due_date_short') || 'Fällig', t('fields.amount'), t('common.status')];
+        const headers = [t('fields.invoice_number') || 'Nr', t('fields.date'), t('fields.recipient'), t('fields.project'), t('fields.due_date') || 'Fällig', t('fields.amount'), t('common.status')];
         const rows = filteredInvoices.filter((inv: any) => ids.includes(inv.id)).map((inv: any) => [
-            inv.invoice_number,
-            new Date(inv.date).toLocaleDateString('de-DE'),
-            inv.snapshot_customer_name || inv.customer?.company_name || '',
-            inv.snapshot_project_name || inv.project?.project_name || '',
-            new Date(inv.due_date).toLocaleDateString('de-DE'),
-            (inv.amount_gross_eur ?? (inv.amount_gross / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            inv.status || ''
+            inv.invoice_number, new Date(inv.date).toLocaleDateString('de-DE'), inv.snapshot_customer_name || inv.customer?.company_name || '',
+            inv.snapshot_project_name || inv.project?.project_name || '', new Date(inv.due_date).toLocaleDateString('de-DE'),
+            (inv.amount_gross_eur ?? (inv.amount_gross / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), inv.status || ''
         ]);
         const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -230,66 +194,33 @@ const Invoices = () => {
 
     const handlePrint = async (inv: any, rebuild: boolean = false) => {
         try {
-            // Show a small toast or indicator if possible, but the print dialog is the goal
             const response = await invoiceService.print(inv.id, rebuild);
-
-            // Create blob URL
             const blob = response.data;
             const url = window.URL.createObjectURL(blob);
-
-            // Create an iframe for direct printing without opening a new window
             const iframe = document.createElement('iframe');
-            iframe.style.position = 'fixed';
-            iframe.style.right = '0';
-            iframe.style.bottom = '0';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = 'none';
+            iframe.style.position = 'fixed'; iframe.style.right = '0'; iframe.style.bottom = '0'; iframe.style.width = '0'; iframe.style.height = '0'; iframe.style.border = 'none';
             iframe.src = url;
-
             document.body.appendChild(iframe);
-
             iframe.onload = () => {
-                try {
-                    iframe.contentWindow?.focus();
-                    iframe.contentWindow?.print();
-                } catch (e) {
-                    // Fallback to new window if iframe print fails
+                try { iframe.contentWindow?.focus(); iframe.contentWindow?.print(); } catch (e) {
                     const printWindow = window.open(url, '_blank');
-                    if (printWindow) {
-                        printWindow.onload = () => printWindow.print();
-                    }
+                    if (printWindow) printWindow.onload = () => printWindow.print();
                 }
-
-                // Cleanup after print dialog is closed or started
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                    window.URL.revokeObjectURL(url);
-                }, 2000);
+                setTimeout(() => { document.body.removeChild(iframe); window.URL.revokeObjectURL(url); }, 2000);
             };
-        } catch (error) {
-            toast.error(t('invoices.messages.print_error'));
-        }
+        } catch (error) { toast.error(t('invoice.messages.print_error')); }
     };
 
     const handleDownload = async (inv: any, rebuild: boolean = false) => {
         try {
-            // Use the authenticated download endpoint
             const response = await invoiceService.download(inv.id, rebuild);
-
-            // Create blob and trigger download
             const blob = response.data;
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `${inv.invoice_number}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            link.href = url; link.setAttribute('download', `${inv.invoice_number}.pdf`);
+            document.body.appendChild(link); link.click(); link.remove();
             window.URL.revokeObjectURL(url);
-        } catch (error) {
-            toast.error(t('invoices.messages.pdf_error'));
-        }
+        } catch (error) { toast.error(t('invoice.messages.pdf_error')); }
     };
 
     const handleDownloadXml = async (inv: any) => {
@@ -298,242 +229,180 @@ const Invoices = () => {
             const blob = response.data;
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `${inv.invoice_number}.xml`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            link.href = url; link.setAttribute('download', `${inv.invoice_number}.xml`);
+            document.body.appendChild(link); link.click(); link.remove();
             window.URL.revokeObjectURL(url);
-        } catch (error) {
-            toast.error(t('invoices.messages.xml_error'));
-        }
+        } catch (error) { toast.error(t('invoice.messages.xml_error')); }
     };
 
     const columns = buildInvoiceColumns({
-        t,
-        setPreviewInvoice,
-        onEditInvoice: (inv: any) => navigate(`/invoices/${inv.id}/edit`),
-        issueMutation,
-        cancelMutation,
-        markAsPaidMutation,
-        archiveMutation: bulkUpdateMutation,
-        deleteMutation,
-        handlePrint,
-        handleDownload,
-        handleDownloadXml,
-        cancelReason,
-        setCancelReason,
-        setConfirmTitle,
-        setConfirmMessage,
-        setConfirmLabel,
-        setConfirmVariant,
-        setConfirmAction,
-        setIsConfirmOpen,
+        t, setPreviewInvoice, onEditInvoice: (inv: any) => navigate(`/invoices/${inv.id}/edit`),
+        issueMutation, cancelMutation, markAsPaidMutation, archiveMutation: bulkUpdateMutation, deleteMutation,
+        handlePrint, handleDownload, handleDownloadXml, cancelReason, setCancelReason, setConfirmTitle, setConfirmMessage, setConfirmLabel, setConfirmVariant, setConfirmAction, setIsConfirmOpen,
     });
 
     const subTabCounts = useMemo(() => {
-        const defaultCounts = {
-            all: 0,
-            pending: 0,
-            paid: 0,
-            overdue: 0,
-            reminders: 0,
-            cancelled: 0,
-            credit_notes: 0
-        };
-
+        const defaultCounts = { all: 0, pending: 0, paid: 0, overdue: 0, reminders: 0, cancelled: 0, credit_notes: 0 };
         if (!Array.isArray(invoices)) return defaultCounts;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
+        const todayRef = startOfDay(new Date());
         const active = invoices.filter((inv: any) => {
             const s = (inv.status || 'pending').toLowerCase();
             return s !== 'deleted' && s !== 'gelöscht' && s !== 'archived' && s !== 'archiviert';
         });
-
         const overdueInvs = active.filter((inv: any) => {
             const s = (inv.status || 'pending').toLowerCase();
             const dueDateRaw = inv.due_date ? new Date(inv.due_date) : null;
-            const dueDate = dueDateRaw ? new Date(dueDateRaw.getFullYear(), dueDateRaw.getMonth(), dueDateRaw.getDate()) : null;
-            return (s === 'overdue' || s === 'überfällig') || (dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s));
+            const dueDate = dueDateRaw ? startOfDay(dueDateRaw) : null;
+            return (s === 'overdue' || s === 'überfällig') || (dueDate && dueDate < todayRef && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s));
         });
-
         return {
             all: active.length,
             pending: active.filter((inv: any) => {
                 const s = (inv.status || 'pending').toLowerCase();
                 const dueDateRaw = inv.due_date ? new Date(inv.due_date) : null;
-                const dueDate = dueDateRaw ? new Date(dueDateRaw.getFullYear(), dueDateRaw.getMonth(), dueDateRaw.getDate()) : null;
-                const isOverdue = dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s);
+                const dueDate = dueDateRaw ? startOfDay(dueDateRaw) : null;
+                const isOverdue = dueDate && dueDate < todayRef && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s);
                 return (s === 'pending' || s === 'draft' || s === 'issued') && !isOverdue;
             }).length,
-            paid: active.filter((inv: any) => {
-                const s = (inv.status || 'pending').toLowerCase();
-                return s === 'paid' || s === 'bezahlt';
-            }).length,
+            paid: active.filter((inv: any) => { const s = (inv.status || 'pending').toLowerCase(); return s === 'paid' || s === 'bezahlt'; }).length,
             overdue: overdueInvs.length,
             reminders: active.filter((inv: any) => {
                 const s = (inv.status || 'pending').toLowerCase();
                 const dueDateRaw = inv.due_date ? new Date(inv.due_date) : null;
-                const dueDate = dueDateRaw ? new Date(dueDateRaw.getFullYear(), dueDateRaw.getMonth(), dueDateRaw.getDate()) : null;
-                const isOverdue = dueDate && dueDate < today && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s);
+                const dueDate = dueDateRaw ? startOfDay(dueDateRaw) : null;
+                const isOverdue = dueDate && dueDate < todayRef && !['paid', 'bezahlt', 'cancelled', 'storniert', 'draft'].includes(s);
                 return (inv.reminder_level > 0 || isOverdue) && !['paid', 'bezahlt', 'cancelled', 'storniert'].includes(s);
             }).length,
-            cancelled: active.filter((inv: any) => {
-                const s = (inv.status || 'pending').toLowerCase();
-                return s === 'cancelled' || s === 'storniert';
-            }).length,
+            cancelled: active.filter((inv: any) => { const s = (inv.status || 'pending').toLowerCase(); return s === 'cancelled' || s === 'storniert'; }).length,
             credit_notes: active.filter((inv: any) => inv.type === 'credit_note').length,
         };
     }, [invoices]);
 
     const tabs = statusView === 'active' ? (
         <div className="flex items-center gap-2 whitespace-nowrap px-1 py-1 overflow-x-auto no-scrollbar">
-            <button
-                onClick={() => setStatusFilter('all')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'all' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                {t('invoices.tabs.all')}
-            </button>
-            <button
-                onClick={() => setStatusFilter('pending')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'pending' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                {t('invoices.tabs.open')}
-                {subTabCounts.pending > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'pending' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.pending}</span>}
-            </button>
-            <button
-                onClick={() => setStatusFilter('paid')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'paid' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                {t('invoices.tabs.paid')}
-            </button>
-            <button
-                onClick={() => setStatusFilter('overdue')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'overdue' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                {t('invoices.tabs.overdue')}
-                {subTabCounts.overdue > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'overdue' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.overdue}</span>}
-            </button>
-            <button
-                onClick={() => setStatusFilter('reminders')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'reminders' ? 'bg-amber-600 border-amber-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                {t('invoices.tabs.reminders')}
-                {subTabCounts.reminders > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'reminders' ? 'bg-white text-amber-600' : 'bg-amber-50 text-amber-600'}`}>{subTabCounts.reminders}</span>}
-            </button>
-            <button
-                onClick={() => setStatusFilter('cancelled')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'cancelled' ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                {t('invoices.tabs.cancelled')}
-            </button>
-            <button
-                onClick={() => setStatusFilter('credit_notes')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-sm transition-all border ${statusFilter === 'credit_notes' ? 'bg-red-600 border-red-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-            >
-                {t('invoices.tabs.credit_notes')}
-                {subTabCounts.credit_notes > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'credit_notes' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.credit_notes}</span>}
-            </button>
+            <Button onClick={() => setStatusFilter('all')} variant={statusFilter === 'all' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">{t('invoices.tabs.all')}</Button>
+            <Button onClick={() => setStatusFilter('pending')} variant={statusFilter === 'pending' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">{t('invoices.tabs.open')} {subTabCounts.pending > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'pending' ? 'bg-white text-brand-primary' : 'bg-slate-100 text-slate-600'}`}>{subTabCounts.pending}</span>}</Button>
+            <Button onClick={() => setStatusFilter('paid')} variant={statusFilter === 'paid' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">{t('invoices.tabs.paid')}</Button>
+            <Button onClick={() => setStatusFilter('overdue')} variant={statusFilter === 'overdue' ? 'destructive' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">{t('invoices.tabs.overdue')} {subTabCounts.overdue > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'overdue' ? 'bg-white text-red-600' : 'bg-red-50 text-red-600'}`}>{subTabCounts.overdue}</span>}</Button>
+            <Button onClick={() => setStatusFilter('reminders')} variant={statusFilter === 'reminders' ? 'warning' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">{t('invoices.tabs.reminders')} {subTabCounts.reminders > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'reminders' ? 'bg-white text-amber-600' : 'bg-amber-50 text-amber-600'}`}>{subTabCounts.reminders}</span>}</Button>
+            <Button onClick={() => setStatusFilter('cancelled')} variant={statusFilter === 'cancelled' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">{t('invoices.tabs.cancelled')}</Button>
+            <Button onClick={() => setStatusFilter('credit_notes')} variant={statusFilter === 'credit_notes' ? 'default' : 'secondary'} size="sm" className="h-8 gap-2 px-4 text-xs">{t('invoices.tabs.credit_notes')} {subTabCounts.credit_notes > 0 && <span className={`flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] ${statusFilter === 'credit_notes' ? 'bg-white text-brand-primary' : 'bg-brand-primary/10 text-brand-primary'}`}>{subTabCounts.credit_notes}</span>}</Button>
         </div>
     ) : null;
 
-
-    const activeInvoices = useMemo(() => {
+    const activeInvoicesCount = useMemo(() => {
         const invoicesArray = Array.isArray(invoices) ? invoices : ((invoices as any)?.data || []);
         return invoicesArray.filter((inv: any) => {
             const s = inv.status?.toLowerCase();
-            const matchesCustomer = !customerId || String(inv.customer_id) === String(customerId);
-            return (s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht') && matchesCustomer;
+            return matchesCustomerId(inv) && (s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht');
+        }).length;
+        function matchesCustomerId(inv: any) { return !customerId || String(inv.customer_id) === String(customerId); }
+    }, [invoices, customerId]);
+
+    const activeInvoicesList = useMemo(() => {
+        const invoicesArray = Array.isArray(invoices) ? invoices : ((invoices as any)?.data || []);
+        return invoicesArray.filter((inv: any) => {
+            const s = inv.status?.toLowerCase();
+            return (s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht') && (!customerId || String(inv.customer_id) === String(customerId));
         });
     }, [invoices, customerId]);
 
-    // Count invoices by status for badges
-
-    const totalOpenAmount = activeInvoices
+    const totalOpenAmount = activeInvoicesList
         .filter((i: any) => i.status !== 'paid' && i.status !== 'bezahlt' && i.status !== 'cancelled' && i.status !== 'storniert' && i.type !== 'credit_note')
         .reduce((acc: number, curr: any) => acc + (curr.amount_gross_eur ?? (curr.amount_gross / 100)), 0);
 
-    const totalPaidMonth = activeInvoices
+    const totalPaidMonth = activeInvoicesList
         .filter((i: any) => i.status === 'paid' || i.status === 'bezahlt')
         .reduce((acc: number, curr: any) => acc + (curr.amount_gross_eur ?? (curr.amount_gross / 100)), 0);
 
-    const overdueCount = subTabCounts.overdue || 0;
-    const reminderCount = subTabCounts.reminders || 0;
-    const paidCount = subTabCounts.paid || 0;
-
-    const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0);
-    const resetFilters = () => {
-        setStatusView('active');
-        setStatusFilter('all');
-        setCustomerId('');
-    };
-
-    const tableFilters: FilterDef[] = [
-        {
-            id: 'statusView', label: t('projects.filters.status_view'), type: 'select' as const, value: statusView, onChange: (v: any) => { setStatusView(v as 'active' | 'archive' | 'trash'); setStatusFilter('all'); setCustomerId(''); },
-            options: [{ value: 'active', label: t('projects.filters.active') }, { value: 'archive', label: t('projects.filters.archive') }, { value: 'trash', label: t('projects.filters.trash') }]
-        },
-        {
-            id: 'customer', label: t('projects.filters.customers.label'), type: 'searchableSelect' as const, value: customerId, onChange: (v: any) => setCustomerId(v),
-            options: [{ value: '', label: t('projects.filters.customers.all') }, ...customers.map((c: any) => ({ value: String(c.id), label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]
-        },
-        ...(statusView === 'active' ? [{
-            id: 'statusFilter', label: t('invoices.filters.invoice_status'), type: 'select' as const, value: statusFilter, onChange: (v: any) => setStatusFilter(v),
-            options: [
-                { value: 'all', label: t('invoices.tabs.all') },
-                { value: 'pending', label: t('invoices.tabs.open') },
-                { value: 'paid', label: t('invoices.tabs.paid') },
-                { value: 'overdue', label: t('invoices.tabs.overdue') },
-                { value: 'reminders', label: t('invoices.tabs.reminders') },
-                { value: 'cancelled', label: t('invoices.tabs.cancelled') },
-                { value: 'credit_notes', label: t('invoices.tabs.credit_notes') }
-            ]
-        }] : [])
-    ];
-
-
+    const activeFilterCount = (statusView !== 'active' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0) + (customerId ? 1 : 0);
+    const resetFilters = () => { setStatusView('active'); setStatusFilter('all'); setCustomerId(''); };
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            {/* ── Filter Sidebar ── */}
+            <>
+                {isFilterSidebarOpen && (
+                    <div className="fixed inset-0 z-30 bg-black/[0.03]" onClick={() => setIsFilterSidebarOpen(false)} />
+                )}
+                <div className={clsx(
+                    "fixed top-12 right-0 bottom-0 z-40 w-72 bg-white border-l border-[#D1D9D8] shadow-[-4px_0_20px_rgba(0,0,0,0.08)] flex flex-col transition-transform duration-300 ease-in-out",
+                    isFilterSidebarOpen ? "translate-x-0" : "translate-x-full"
+                )}>
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#D1D9D8] bg-gradient-to-b from-white to-[#f0f0f0] shrink-0">
+                        <div className="flex items-center gap-2">
+                            <FaFilter className="text-[#1B4D4F] text-xs" />
+                            <span className="text-sm font-bold text-slate-700">Filter</span>
+                            {activeFilterCount > 0 && <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{activeFilterCount}</span>}
+                        </div>
+                        <Button onClick={() => setIsFilterSidebarOpen(false)} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700"><FaTimes className="text-xs" /></Button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3 flex flex-col gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">{t('projects.filters.status_view')}</label>
+                            <div className="relative">
+                                <select className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                    value={statusView} onChange={e => { setStatusView(e.target.value as any); setStatusFilter('all'); }}>
+                                    <option value="active">{t('projects.filters.active')}</option>
+                                    <option value="archive">{t('projects.filters.archive')}</option>
+                                    <option value="trash">{t('projects.filters.trash')}</option>
+                                </select>
+                                <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">{t('projects.filters.customers.label')}</label>
+                            <SearchableSelect
+                                options={[{ value: '', label: t('projects.filters.customers.all') }, ...customers.map((c: any) => ({ value: String(c.id), label: (c.company_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() }))]}
+                                value={customerId}
+                                onChange={setCustomerId}
+                                placeholder={t('projects.filters.customers.placeholder')}
+                            />
+                        </div>
+                        {statusView === 'active' && (
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">{t('invoices.filters.invoice_status')}</label>
+                                <div className="relative">
+                                    <select className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                        value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                                        <option value="all">{t('invoices.tabs.all')}</option>
+                                        <option value="pending">{t('invoices.tabs.open')}</option>
+                                        <option value="paid">{t('invoices.tabs.paid')}</option>
+                                        <option value="overdue">{t('invoices.tabs.overdue')}</option>
+                                        <option value="reminders">{t('invoices.tabs.reminders')}</option>
+                                        <option value="cancelled">{t('invoices.tabs.cancelled')}</option>
+                                        <option value="credit_notes">{t('invoices.tabs.credit_notes')}</option>
+                                    </select>
+                                    <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="px-4 py-3 border-t border-[#D1D9D8] bg-[#f6f8f8] shrink-0">
+                        <Button onClick={resetFilters} variant="secondary" className="w-full justify-center gap-2 text-xs">
+                            <FaUndo className="text-xs" /> Filter zurücksetzen
+                        </Button>
+                    </div>
+                </div>
+            </>
+
             <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
                         <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('invoices.title')}</h1>
                         <p className="text-slate-500 text-sm hidden sm:block">{t('invoices.subtitle')}</p>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                        <Button
-                            onClick={() => navigate(statusFilter === 'credit_notes' ? '/invoices/new?type=credit_note' : '/invoices/new')}
-                            className={clsx(
-                                "text-white font-bold shadow-sm flex items-center justify-center gap-2 transition px-4 py-2",
-                                statusFilter === 'credit_notes' ? "bg-red-600 hover:bg-red-700" : "bg-brand-primary hover:bg-brand-primary/90"
-                            )}
-                        >
-                            <FaPlus className="text-xs" />
-                            <span className="hidden sm:inline">
-                                {statusFilter === 'credit_notes' ? t('invoices.new_credit_note') : t('invoices.new_invoice')}
-                            </span>
-                            <span className="inline sm:hidden">
-                                {t('common.new_short') || 'Neu'}
-                            </span>
-                        </Button>
-                    </div>
+                    <Button onClick={() => navigate(statusFilter === 'credit_notes' ? '/invoices/new?type=credit_note' : '/invoices/new')} className="text-white font-bold transition px-4 py-2">
+                        <FaPlus className="mr-2 h-4 w-4" /> {statusFilter === 'credit_notes' ? t('invoices.new_credit_note') : t('invoices.new_invoice')}
+                    </Button>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                    <KPICard label={t('invoices.kpi.open_amount')} value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={t('invoices.kpi.overdue_sub', { count: overdueCount })} />
-                    <KPICard label={t('invoices.kpi.paid_total')} value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={t('invoices.kpi.transactions_sub', { count: paidCount })} />
-                    <KPICard label={t('invoices.kpi.reminders')} value={`${reminderCount}`} icon={<FaPaperPlane className="text-amber-600" />} subValue={t('invoices.kpi.reminders_sub')} />
-                    <KPICard
-                        label={t('invoices.kpi.external_costs')}
-                        value={(externalCostsStats?.total_costs ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                        icon={<FaHistory />}
-                        subValue={t('invoices.kpi.this_month')}
-                    />
+                    <KPICard label={t('invoices.kpi.open_amount')} value={totalOpenAmount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaFileInvoiceDollar />} subValue={t('invoices.kpi.overdue_sub', { count: subTabCounts.overdue })} />
+                    <KPICard label={t('invoices.kpi.paid_total')} value={totalPaidMonth.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaCheckCircle className="text-green-600" />} subValue={t('invoices.kpi.transactions_sub', { count: subTabCounts.paid })} />
+                    <KPICard label={t('invoices.kpi.reminders')} value={`${subTabCounts.reminders}`} icon={<FaPaperPlane className="text-amber-600" />} subValue={t('invoices.kpi.reminders_sub')} />
+                    <KPICard label={t('invoices.kpi.external_costs')} value={(externalCostsStats?.total_costs ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} icon={<FaHistory />} subValue={t('invoices.kpi.this_month')} />
                 </div>
-
-
 
                 <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
                     <DataTable
@@ -549,87 +418,38 @@ const Invoices = () => {
                         selectedIds={selectedInvoices}
                         onSelectionChange={(ids) => setSelectedInvoices(ids as number[])}
                         bulkActions={[
+                            { label: t('invoices.actions.paid'), icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }), variant: 'success', show: statusView === 'active' && statusFilter !== 'cancelled' && statusFilter !== 'paid' },
                             {
-                                label: t('invoices.actions.paid'),
-                                icon: <FaCheck className="text-xs" />,
-                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }),
-                                variant: 'success',
-                                show: statusView === 'active' && statusFilter !== 'cancelled' && statusFilter !== 'paid'
-                            },
-                            {
-                                label: t('invoices.actions.send_reminder'),
-                                icon: <FaPaperPlane className="text-xs text-amber-500" />,
-                                onClick: () => {
+                                label: t('invoices.actions.send_reminder'), icon: <FaPaperPlane className="text-xs text-amber-500" />, onClick: () => {
                                     setConfirmTitle(t('invoices.confirm.reminder_title'));
                                     setConfirmMessage(t('invoices.confirm.reminder_message', { count: selectedInvoices.length }));
                                     setConfirmLabel(t('invoices.confirm.reminders_btn'));
                                     setConfirmVariant('warning');
                                     setConfirmAction(() => () => {
-                                        toast.loading('Mahnungen werden verarbeitet...');
                                         const invoicesArray = Array.isArray(invoices) ? invoices : ((invoices as any)?.data || []);
                                         selectedInvoices.forEach(id => {
                                             const inv = invoicesArray.find((i: any) => i.id === id);
-                                            const nextLevel = (inv?.reminder_level || 0) + 1;
-                                            bulkUpdateMutation.mutate({
-                                                ids: [id],
-                                                data: { reminder_level: nextLevel, last_reminder_date: new Date().toISOString().split('T')[0] }
-                                            });
+                                            bulkUpdateMutation.mutate({ ids: [id], data: { reminder_level: (inv?.reminder_level || 0) + 1, last_reminder_date: new Date().toISOString().split('T')[0] } });
                                         });
                                     });
                                     setIsConfirmOpen(true);
-                                },
-                                variant: 'primary',
-                                show: statusView === 'active' && (statusFilter === 'reminders' || statusFilter === 'overdue')
+                                }, variant: 'primary', show: statusView === 'active' && (statusFilter === 'reminders' || statusFilter === 'overdue')
                             },
-                            {
-                                label: t('projects.actions.bulk.archive'),
-                                icon: <FaArchive className="text-xs" />,
-                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'archived' } }),
-                                variant: 'default',
-                                show: statusView === 'active' && statusFilter === 'paid'
-                            },
-                            {
-                                label: t('projects.actions.bulk.restore'),
-                                icon: <FaTrashRestore className="text-xs" />,
-                                onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'draft' } }),
-                                variant: 'success',
-                                show: statusView === 'trash' || statusView === 'archive'
-                            }
+                            { label: t('projects.actions.bulk.archive'), icon: <FaArchive className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'archived' } }), variant: 'default', show: statusView === 'active' && statusFilter === 'paid' },
+                            { label: t('projects.actions.bulk.restore'), icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'draft' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' }
                         ] as BulkActionItem[]}
-                        filters={tableFilters}
                         activeFilterCount={activeFilterCount}
-                        onResetFilters={resetFilters}
+                        onFilterToggle={() => setIsFilterSidebarOpen(v => !v)}
+                        isFilterOpen_external={isFilterSidebarOpen}
                     />
                 </div>
 
                 <InvoicePreviewModal isOpen={!!previewInvoice} onClose={() => setPreviewInvoice(null)} invoice={previewInvoice} />
-
-
-                <ConfirmModal
-                    isOpen={isConfirmOpen}
-                    onClose={() => {
-                        setIsConfirmOpen(false);
-                    }}
-                    onConfirm={() => {
-                        confirmAction();
-                        setIsConfirmOpen(false);
-                    }}
-                    title={confirmTitle}
-                    message={confirmMessage}
-                    confirmLabel={confirmLabel}
-                    variant={confirmVariant}
-                    isLoading={deleteMutation.isPending || issueMutation.isPending || cancelMutation.isPending || bulkUpdateMutation.isPending}
-                >
+                <ConfirmModal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={() => { confirmAction(); setIsConfirmOpen(false); }} title={confirmTitle} message={confirmMessage} confirmLabel={confirmLabel} variant={confirmVariant} isLoading={deleteMutation.isPending || issueMutation.isPending || cancelMutation.isPending || bulkUpdateMutation.isPending}>
                     {confirmTitle === t('invoices.confirm.cancel_title') && (
                         <div className="mt-4">
                             <label className="block text-xs font-medium text-slate-500 mb-1">{t('invoices.confirm.cancel_reason')}</label>
-                            <textarea
-                                value={cancelReason}
-                                onChange={(e) => setCancelReason(e.target.value)}
-                                className="w-full border border-slate-200 rounded-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                placeholder={t('invoices.confirm.cancel_placeholder')}
-                                rows={3}
-                            />
+                            <textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} className="w-full border border-slate-200 rounded-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder={t('invoices.confirm.cancel_placeholder')} rows={3} />
                         </div>
                     )}
                 </ConfirmModal>

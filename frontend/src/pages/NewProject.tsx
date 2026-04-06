@@ -128,6 +128,7 @@ const NewProject = () => {
     const [notes, setNotes] = useState('');
     const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
     const [partnerSearch, setPartnerSearch] = useState('');
+    const [activeSection, setActiveSection] = useState('section-basis');
 
     // UI modals
     const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -281,6 +282,8 @@ const NewProject = () => {
         }
     }, [initialData]);
 
+    // Let's remove the IntersectionObserver logic and handle it via onScroll on the container instead for better edge cases (like bottom of page)
+
     // ── Mutations ──
     const createMutation = useMutation({
         mutationFn: projectService.create,
@@ -420,13 +423,75 @@ const NewProject = () => {
                     </div>
                 </div>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-8">
+            <div 
+                className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-16 py-8" 
+                id="project-scroll-container"
+                onScroll={(e) => {
+                    const target = e.currentTarget;
+                    const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 20;
+                    
+                    const sections = [
+                        'section-basis', 'section-kunde', 'section-sprachen', 
+                        'section-partner', 'section-leistungen', 'section-kalkulation', 
+                        'section-zahlungen', 'section-anmerkungen'
+                    ];
+
+                    if (isAtBottom) {
+                        setActiveSection('section-anmerkungen');
+                        return;
+                    }
+
+                    const containerRect = target.getBoundingClientRect();
+                    for (let i = sections.length - 1; i >= 0; i--) {
+                        const el = document.getElementById(sections[i]);
+                        if (el) {
+                            const rect = el.getBoundingClientRect();
+                            // Check if element's top is past the trigger line (e.g., 100px from top)
+                            if (rect.top <= containerRect.top + 100) {
+                                setActiveSection(sections[i]);
+                                break;
+                            }
+                        }
+                    }
+                }}
+            >
                 <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-8">
+                    {/* ── Sidebar: Navigation ── */}
+                    <div className="hidden xl:block w-56 shrink-0 space-y-2 sticky top-0 lg:self-start">
+                        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-3 space-y-1">
+                            <h4 className="text-xs font-semibold text-slate-500 pb-2 mb-2 border-b border-slate-100 uppercase tracking-widest px-2">Navigation</h4>
+                            {[
+                                { id: 'section-basis', label: '01 Basis-Daten' },
+                                { id: 'section-kunde', label: '02 Kunde' },
+                                { id: 'section-sprachen', label: '03 Sprachen' },
+                                { id: 'section-partner', label: '04 Partner & Übersetzer' },
+                                { id: 'section-leistungen', label: '05 Leistungen & Optionen' },
+                                { id: 'section-kalkulation', label: '06 Kalkulation Positionen' },
+                                { id: 'section-zahlungen', label: '07 Anzahlungen / Teilzahlungen' },
+                                { id: 'section-anmerkungen', label: '08 Anmerkungen' },
+                            ].map(section => (
+                                <button 
+                                    key={section.id} 
+                                    type="button"
+                                    onClick={() => document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                    className={clsx(
+                                        "w-full text-left px-2 py-1.5 text-xs font-medium rounded-md transition-colors",
+                                        activeSection === section.id
+                                            ? "bg-brand-primary/10 text-brand-primary font-bold shadow-xs"
+                                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                    )}
+                                >
+                                    {section.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* ── Main Content ── */}
                     <div className="flex-1 min-w-0 space-y-8">
 
                         {/* Section 1: Basis-Daten */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-basis" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>01</div>
                                 <h3 className={SECTION_TITLE}>Basis-Daten</h3>
@@ -489,7 +554,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 2: Kunde */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-kunde" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>02</div>
                                 <h3 className={SECTION_TITLE}>Kunde</h3>
@@ -508,7 +573,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 3: Sprachen */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-sprachen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>03</div>
                                 <h3 className={SECTION_TITLE}>Sprachen</h3>
@@ -524,7 +589,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 4: Partner */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-partner" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>04</div>
                                 <h3 className={SECTION_TITLE}>Partner & Übersetzer</h3>
@@ -600,7 +665,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 5: Leistungen & Optionen */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-leistungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>05</div>
                                 <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
@@ -670,7 +735,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 6: Kalkulation */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-kalkulation" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>06</div>
                                 <h3 className={SECTION_TITLE}>Kalkulation Positionen</h3>
@@ -681,7 +746,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 7: Zahlungen */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden" id="field-payments">
+                        <section id="section-zahlungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
                                 <div className="flex items-center gap-3">
                                     <div className={SECTION_NUM}>07</div>
@@ -726,7 +791,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 8: Anmerkungen */}
-                        <section className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-anmerkungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>08</div>
                                 <h3 className={SECTION_TITLE}>Anmerkungen</h3>
@@ -740,7 +805,7 @@ const NewProject = () => {
                     </div>
 
                     {/* ── Sidebar: Financial Summary ── */}
-                    <div className="w-full lg:w-80 shrink-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
+                    <div className="w-full lg:w-80 shrink-0 space-y-4 lg:sticky lg:top-0 lg:self-start">
                         {/* Meta */}
                         <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-3">
                             <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
@@ -788,8 +853,10 @@ const NewProject = () => {
                     </div>
                 </div>
 
-                <div className="max-w-6xl mx-auto mt-10 border-t border-slate-200 pt-5 pb-6 flex justify-end gap-2">
-                    <div className="flex items-center gap-2">
+                <div className="max-w-[1600px] mx-auto mt-10 border-t border-slate-200 pt-5 pb-6 flex flex-col lg:flex-row gap-8">
+                    <div className="hidden xl:block w-56 shrink-0" />
+                    <div className="flex-1 min-w-0 flex justify-end lg:justify-start" />
+                    <div className="w-full lg:w-80 shrink-0 flex justify-start items-center gap-2">
                         {renderActionButtons()}
                     </div>
                 </div>

@@ -6,10 +6,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth, subMonths, startOfYear, subYears, isWithinInterval } from 'date-fns';
 import {
     FaPlus, FaLayerGroup,
-    FaListUl, FaColumns,
     FaCheck, FaArrowRight, FaEnvelope, FaArchive, FaTrash, FaTrashRestore,
     FaExclamationTriangle, FaChartPie, FaUserTimes,
-    FaFilter, FaTimes, FaUndo, FaChevronDown
+    FaFilter, FaTimes, FaUndo, FaChevronDown, FaFileInvoiceDollar, FaClock
 } from 'react-icons/fa';
 import SearchableSelect from '../components/common/SearchableSelect';
 import { buildProjectColumns } from './projectColumns';
@@ -42,7 +41,7 @@ const Projects = () => {
     const [editingProject, setEditingProject] = useState<any>(null);
     const [viewFilesProject, setViewFilesProject] = useState<any>(null);
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
-    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+    const [viewMode] = useState<'list' | 'kanban'>('list');
     const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
     const [advancedFilters, setAdvancedFilters] = useState<any>({
         customerId: '',
@@ -631,6 +630,68 @@ const Projects = () => {
                     </div>
                 </div>
 
+                {/* ── Tabs-Leiste für Filter ── */}
+                <div className="bg-gradient-to-b from-white to-[#f0f0f0] border border-slate-200 rounded-sm p-1.5 flex flex-wrap items-center gap-1 shadow-sm">
+                    {[
+                        { id: 'all', label: t('projects.filters.status_tabs.all'), icon: <FaLayerGroup /> },
+                        { id: 'offer', label: t('projects.filters.status_tabs.offer'), icon: <FaFileInvoiceDollar /> },
+                        { id: 'in_progress', label: t('projects.filters.status_tabs.in_progress'), icon: <FaClock /> },
+                        { id: 'ready_for_pickup', label: t('projects.filters.status_tabs.ready_for_pickup'), icon: <FaArrowRight /> },
+                        { id: 'delivered', label: t('projects.filters.status_tabs.delivered'), icon: <FaCheck /> },
+                        { id: 'completed', label: t('projects.filters.status_tabs.completed'), icon: <FaArchive /> }
+                    ].map((tab) => {
+                        const isActive = filter === tab.id && statusView === 'active';
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => {
+                                    setStatusView('active');
+                                    setFilter(tab.id);
+                                }}
+                                className={clsx(
+                                    "px-3 py-1.5 rounded-[2px] text-xs font-bold transition flex items-center gap-2 border",
+                                    isActive
+                                        ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                                        : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm"
+                                )}
+                            >
+                                <span className={clsx("text-[11px]", isActive ? "text-[#8fb4b1]" : "text-slate-400")}>
+                                    {tab.icon}
+                                </span>
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+
+                    <div className="h-4 w-px bg-slate-300 mx-1" />
+
+                    {[
+                        { id: 'archive', label: t('projects.filters.archive'), icon: <FaArchive /> },
+                        { id: 'trash', label: t('projects.filters.trash'), icon: <FaTrash /> }
+                    ].map((tab) => {
+                        const isActive = statusView === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setStatusView(tab.id as any)}
+                                className={clsx(
+                                    "px-3 py-1.5 rounded-[2px] text-xs font-bold transition flex items-center gap-2 border",
+                                    isActive
+                                        ? (tab.id === 'trash' 
+                                            ? "bg-gradient-to-b from-red-600 to-red-700 text-white border-red-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]" 
+                                            : "bg-gradient-to-b from-slate-600 to-slate-700 text-white border-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]")
+                                        : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm"
+                                )}
+                            >
+                                <span className={clsx("text-[11px]", isActive ? "text-white/70" : "text-slate-400")}>
+                                    {tab.icon}
+                                </span>
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                     <KPICard
                         label={t('projects.kpi.active_projects')}
@@ -660,7 +721,7 @@ const Projects = () => {
                     />
                 </div>
 
-                <div className="flex justify-end -mb-2">
+                {/* <div className="flex justify-end -mb-2">
                     <div className="flex bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-hidden">
                         <button
                             onClick={() => setViewMode('list')}
@@ -687,7 +748,7 @@ const Projects = () => {
                             <FaColumns className="text-xs" />
                         </button>
                     </div>
-                </div>
+                </div> */}
                 <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
                     {viewMode === 'list' ? (
                         <DataTable

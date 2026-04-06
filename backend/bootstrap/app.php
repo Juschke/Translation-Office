@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'tenant.role' => \App\Http\Middleware\EnsureTenantRole::class,
+            'portal.customer' => \App\Http\Middleware\EnsurePortalCustomer::class,
         ]);
         $middleware->appendToGroup('api', \App\Http\Middleware\SetLocaleMiddleware::class);
         $middleware->appendToGroup('api', \App\Http\Middleware\LogApiRequests::class);

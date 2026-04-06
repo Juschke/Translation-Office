@@ -3,87 +3,101 @@
 namespace App\Traits;
 
 use App\Models\TenantSetting;
+use Carbon\Carbon;
 
 trait HasDisplayId
 {
     /**
-     * Get the display ID with prefix.
+     * Get the display ID with prefix and custom formatting.
      * 
      * @return string
      */
     public function getDisplayIdAttribute()
     {
-        $prefix = $this->getDisplayPrefix();
-        $id = $this->id;
-
-        // If it's a project and has a project_number, use that instead of ID if it doesn't already have the prefix
+        // If it's a project and has a project_number, use that instead of ID
         if (isset($this->project_number) && $this->project_number) {
             return $this->project_number;
         }
 
-        return $prefix . str_pad($id, 4, '0', STR_PAD_LEFT);
+        return $this->generateFormattedDisplayId();
     }
 
     /**
-     * Get the prefix for the current model type.
+     * Build the display ID based on tenant settings.
      * 
      * @return string
      */
-    protected function getDisplayPrefix()
+    protected function generateFormattedDisplayId()
     {
         $tenantId = $this->tenant_id ?? 1;
         $class = class_basename($this);
+        $entityId = $this->id;
+        $date = $this->created_at ?? now();
 
-        $key = strtolower($class) . '_id_prefix';
-
-        // Map specific classes if names don't match setting keys exactly
+        // 1. Determine the setting group (e.g. 'customer_')
+        $group = strtolower($class);
         $mapping = [
-            'Customer' => 'customer_id_prefix',
-            'Project' => 'project_id_prefix',
-            'Partner' => 'partner_id_prefix',
-            'Appointment' => 'appointment_id_prefix',
-            'Invoice' => 'invoice_id_prefix',
+            'Customer' => 'customer',
+            'Project' => 'project',
+            'Partner' => 'partner',
+            'Appointment' => 'appointment',
+            'Invoice' => 'invoice',
+            'CreditNote' => 'credit_note',
+            'Offer' => 'offer',
         ];
 
         if (isset($mapping[$class])) {
-            $key = $mapping[$class];
+            $group = $mapping[$class];
         }
 
-        // Special handling for Partner types
+        // Special handling for Partner types if it's a Partner model
         if ($class === 'Partner') {
             $type = $this->type ?? 'translator';
-            if ($type === 'translator')
-                $key = 'translator_id_prefix';
-            elseif ($type === 'interpreter')
-                $key = 'interpreter_id_prefix';
-            elseif ($type === 'agency')
-                $key = 'agency_id_prefix';
-            elseif ($type === 'trans_interp')
-                $key = 'translator_id_prefix'; // Default for mixed
+            // Note: We use the partner group for all partner types for now to match frontend logic
+            // unless specific prefixes are set.
         }
 
-        $defaultPrefixes = [
-            'customer_id_prefix' => 'K',
-            'project_id_prefix' => 'P',
-            'partner_id_prefix' => 'PR',
-            'translator_id_prefix' => 'TR',
-            'interpreter_id_prefix' => 'IN',
-            'agency_id_prefix' => 'AG',
-            'appointment_id_prefix' => 'A',
-            'invoice_id_prefix' => 'RE',
-        ];
+        // 2. Fetch all relevant settings
+        $settings = TenantSetting::where('tenant_id', $tenantId)
+            ->where('key', 'like', $group . '_%')
+            ->pluck('value', 'key')
+            ->toArray();
 
-        $prefix = TenantSetting::where('tenant_id', $tenantId)
-            ->where('key', $key)
-            ->value('value');
+        // Keys mapping
+        $prefixKey = ($group === 'invoice' || $group === 'credit_note') ? $group . '_prefix' : $group . '_id_prefix';
+        $yearKey = $group . '_year_format';
+        $monthKey = $group . '_month_format';
+        $dayKey = $group . '_day_format';
+        $sepKey = $group . '_separator';
+        $padKey = $group . '_padding';
 
-        // Fallback for partners if specific prefix not set
-        if (!$prefix && $class === 'Partner') {
-            $prefix = TenantSetting::where('tenant_id', $tenantId)
-                ->where('key', 'partner_id_prefix')
-                ->value('value');
-        }
+        // 3. Build parts
+        $prefix = $settings[$prefixKey] ?? '';
+        $sep = ($settings[$sepKey] ?? '-') === 'none' ? '' : ($settings[$sepKey] ?? '-');
+        $padding = (int) ($settings[$padKey] ?? 5);
 
-        return $prefix ?? ($defaultPrefixes[$key] ?? '');
+        $yearPart = '';
+        $yearFormat = $settings[$yearKey] ?? 'none';
+        if ($yearFormat === 'YYYY')
+            $yearPart = $date->format('Y');
+        elseif ($yearFormat === 'YY')
+            $yearPart = $date->format('y');
+
+        $monthPart = '';
+        if (($settings[$monthKey] ?? 'none') === 'MM')
+            $monthPart = $date->format('m');
+
+        $dayPart = '';
+        if (($settings[$dayKey] ?? 'none') === 'DD')
+            $dayPart = $date->format('d');
+
+        $nrPart = str_pad($entityId, $padding, '0', STR_PAD_LEFT);
+
+        // 4. Join components
+        $parts = array_filter([$prefix, $yearPart, $monthPart, $dayPart, $nrPart], function ($p) {
+            return $p !== '';
+        });
+
+        return implode($sep, $parts);
     }
 }

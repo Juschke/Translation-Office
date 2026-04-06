@@ -19,8 +19,7 @@ const Navigation = () => {
     const queryClient = useQueryClient();
 
     // Menu States
-    const [isCustomersOpen, setIsCustomersOpen] = useState(false);
-    const [isPartnersOpen, setIsPartnersOpen] = useState(false);
+    const [isContactsOpen, setIsContactsOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -28,8 +27,7 @@ const Navigation = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Refs for Click-Outside
-    const customersRef = useRef<HTMLDivElement>(null);
-    const partnersRef = useRef<HTMLDivElement>(null);
+    const contactsRef = useRef<HTMLDivElement>(null);
     const settingsRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
@@ -40,8 +38,7 @@ const Navigation = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
-            if (customersRef.current && !customersRef.current.contains(target)) setIsCustomersOpen(false);
-            if (partnersRef.current && !partnersRef.current.contains(target)) setIsPartnersOpen(false);
+            if (contactsRef.current && !contactsRef.current.contains(target)) setIsContactsOpen(false);
             if (settingsRef.current && !settingsRef.current.contains(target)) setIsSettingsOpen(false);
             if (profileRef.current && !profileRef.current.contains(target)) setIsProfileOpen(false);
             if (notifRef.current && !notifRef.current.contains(target)) setIsNotifOpen(false);
@@ -57,8 +54,7 @@ const Navigation = () => {
         setIsMobileMenuOpen(false);
         setIsProfileOpen(false);
         setIsNotifOpen(false);
-        setIsCustomersOpen(false);
-        setIsPartnersOpen(false);
+        setIsContactsOpen(false);
         setIsSettingsOpen(false);
         setIsLangOpen(false);
     }, [location]);
@@ -121,14 +117,11 @@ const Navigation = () => {
                             dashboardData={dashboardData}
                             unreadEmails={unreadEmails}
                             hasMinRole={hasMinRole}
-                            isCustomersOpen={isCustomersOpen}
-                            setIsCustomersOpen={setIsCustomersOpen}
-                            isPartnersOpen={isPartnersOpen}
-                            setIsPartnersOpen={setIsPartnersOpen}
+                            isContactsOpen={isContactsOpen}
+                            setIsContactsOpen={setIsContactsOpen}
                             isSettingsOpen={isSettingsOpen}
                             setIsSettingsOpen={setIsSettingsOpen}
-                            customersRef={customersRef}
-                            partnersRef={partnersRef}
+                            contactsRef={contactsRef}
                             settingsRef={settingsRef}
                             navigate={navigate}
                             setIsProfileOpen={setIsProfileOpen}

@@ -909,3 +909,62 @@ body,
     overflow: visible !important;
   }
 }
+
+/* ── Ant Design Table Row & Container Refinements ── */
+.ant-table-wrapper .ant-table {
+  background-color: #b8b8b8 !important;
+  /* contrast for empty space below rows */
+}
+
+.ant-table-thead>tr>th,
+thead,
+.ant-table-thead {
+  background-color: #f1f5f9 !important;
+  /* slate-100 for header */
+  border-bottom: 2px solid #cbd5e1 !important;
+  /* slate-300 - thicker for sticky visibility */
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+.ant-table-header,
+.ant-table-content {
+  overflow: visible !important;
+}
+
+
+.ant-table-tbody>tr>td {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  /* ensure consistent border between rows */
+}
+
+/* Force border-bottom on the last row and handle interaction effects */
+.ant-table-tbody>tr:last-child>td {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.ant-table-tbody>tr:hover>td {
+  background-color: #f1f5f9 !important;
+  /* slate-100 on hover */
+}
+
+.ant-table-placeholder {
+  background-color: #ffffff !important;
+}
+
+/* ====================================================
+   EMPTY STATE CENTERED — MINIMALIST
+   ==================================================== */
+
+
+.empty-state-centered {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center;
+  color: #94a3b8;
+  /* slate-400 */
+}

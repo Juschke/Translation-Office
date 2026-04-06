@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { openBlobInNewTab } from '../utils/download';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -182,8 +182,16 @@ const ProjectDetail = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
-    const [activeTab, setActiveTab] = useState('overview');
+    const [searchParams, setSearchParams] = useState(new URLSearchParams(location.search));
+    const activeTab = searchParams.get('tab') || 'overview';
     const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
+
+    const setActiveTab = (tab: string) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('tab', tab);
+        setSearchParams(newParams);
+        navigate({ search: newParams.toString() }, { replace: true });
+    };
 
     const {
         isPartnerModalOpen, setIsPartnerModalOpen,
@@ -249,6 +257,13 @@ const ProjectDetail = () => {
 
         return `${prefix}${showYear ? `-${year}` : ''}-${num}`;
     }, [projectData, companyData]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.toString() !== searchParams.toString()) {
+            setSearchParams(params);
+        }
+    }, [location.search]);
 
     useEffect(() => {
         if (projectResponse) {
@@ -771,7 +786,7 @@ const ProjectDetail = () => {
 
                                         {tab === 'overview' ? 'Stammdaten' :
                                             tab === 'files' ? 'Dokumente' :
-                                                tab === 'finances' ? 'Kalkulation' :
+                                                tab === 'finances' ? 'Positionen' :
                                                     tab === 'history' ? 'Historie' : 'Kommunikation'}
 
                                         {tab !== 'overview' && tab !== 'history' && (
@@ -843,7 +858,7 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 max-w-[1800px] mx-auto w-full px-3 sm:px-4 pt-0 transition-all duration-300 pb-10">
+                <div className="flex-1 max-w-[1800px] mx-auto w-full px-3 sm:px-4 pt-6 transition-all duration-300 pb-10">
                     {activeTab === "overview" && (
                         <ProjectOverviewTabNew
                             projectData={projectData}
@@ -911,6 +926,7 @@ const ProjectDetail = () => {
                                 }}
                                 isPendingSave={updateProjectMutation.isPending}
                                 onCreateInvoice={() => navigate(`/invoices/new?project_id=${id}`)}
+                                onPreviewInvoice={setPreviewInvoice}
                             />
                         )
                     }
@@ -1082,6 +1098,10 @@ const ProjectDetail = () => {
                     isOpen={!!previewInvoice}
                     onClose={() => setPreviewInvoice(null)}
                     invoice={previewInvoice}
+                    onStatusChange={() => {
+                        queryClient.invalidateQueries({ queryKey: ['projects', id] });
+                        queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+                    }}
                 />
 
                 <EmailComposeModal

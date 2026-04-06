@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import {
-    FaHome, FaLayerGroup, FaFileAlt, FaUsers, FaUserTie,
-    FaCommentDots, FaFileInvoiceDollar, FaEnvelope, FaCalendarAlt, FaChartBar
+    FaHome, FaLayerGroup, FaUsers, FaUserTie,
+    FaCommentDots, FaFileInvoiceDollar, FaEnvelope, FaCalendarAlt, FaChartBar,
+    FaInbox, FaFileContract, FaCog
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
@@ -32,11 +33,9 @@ const MobileMenu = ({
 
     const menuItems = [
         { path: '/', label: 'Dashboard', icon: <FaHome />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute" },
-        { path: '/projects', label: 'Projekte', icon: <FaLayerGroup />, count: dashboardData?.stats?.open_projects, badgeLabel: "Offene Projekte" },
-        { path: '/documents', label: 'Dokumente', icon: <FaFileAlt />, count: dashboardData?.stats?.total_files, badgeLabel: "Dokumente Gesamt" },
-        { path: '/customers', label: 'Kunden', icon: <FaUsers />, count: dashboardData?.stats?.active_customers, badgeLabel: "Aktive Kunden", color: "bg-slate-500" },
-        { path: '/partners', label: 'Partner', icon: <FaUserTie />, count: dashboardData?.stats?.active_partners, badgeLabel: "Aktive Partner", color: "bg-slate-500" },
-        { path: '/interpreting', label: 'Dolmetscher', icon: <FaCommentDots />, count: dashboardData?.stats?.active_interpreting, badgeLabel: "Anstehende Einsätze", color: "bg-slate-500" },
+        { path: '/requests', label: 'Anfragen', icon: <FaInbox />, count: dashboardData?.stats?.open_requests, badgeLabel: "Offene Anfragen", color: "bg-slate-300" },
+        { path: '/quotes', label: 'Angebote', icon: <FaFileContract />, count: dashboardData?.stats?.open_quotes, badgeLabel: "Offene Angebote", color: "bg-slate-300" },
+        { path: '/projects', label: 'Projekte', icon: <FaLayerGroup />, count: dashboardData?.stats?.open_projects, badgeLabel: "Offene Projekte", color: "bg-slate-300" },
         {
             path: '/invoices',
             label: 'Rechnungen',
@@ -46,9 +45,13 @@ const MobileMenu = ({
             badgeLabel: "Offene Rechnungen",
             color: dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"
         },
-        { path: '/inbox', label: 'Email', icon: <FaEnvelope />, role: 'manager', count: unreadEmails, badgeLabel: "Ungelesene E-Mails" },
+        { path: '/customers', label: 'Kunden', icon: <FaUsers />, count: dashboardData?.stats?.active_customers, badgeLabel: "Kunden", color: "bg-slate-500" },
+        { path: '/partners', label: 'Partner', icon: <FaUserTie />, count: dashboardData?.stats?.active_partners, badgeLabel: "Partner", color: "bg-slate-500" },
+        { path: '/interpreting', label: 'Dolmetscher', icon: <FaCommentDots />, count: dashboardData?.stats?.active_interpreting, badgeLabel: "Dolmetscher Einsätze", color: "bg-slate-500" },
+        { path: '/inbox', label: 'E-Mail', icon: <FaEnvelope />, role: 'manager', count: unreadEmails, badgeLabel: "Ungelesene E-Mails" },
         { path: '/calendar', label: 'Kalender', icon: <FaCalendarAlt /> },
         { path: '/reports', label: 'Auswertung', icon: <FaChartBar />, role: 'manager' },
+        { path: '/settings', label: 'Einstellungen', icon: <FaCog />, role: 'manager' },
     ];
 
     return (

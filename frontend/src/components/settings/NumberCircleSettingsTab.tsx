@@ -1,130 +1,213 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { settingsService } from '../../api/services';
-import { FaListOl, FaEye, FaSave, FaInfoCircle } from 'react-icons/fa';
+import {
+    FaListOl, FaSave
+} from 'react-icons/fa';
 import { Button } from '../ui/button';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Switch } from '../ui/switch';
+import { Select } from '../ui/select';
+import clsx from 'clsx';
 
-// To avoid losing focus on input during re-renders,
-// components must be defined OUTSIDE the parent component and ideally memoized.
-const ConfigRow = React.memo(({ title, prefixKey, startKey, showYearKey, formData, handleChange, preview }: any) => (
-    <div className="py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50/30 px-4 -mx-4 transition-colors rounded-sm grid grid-cols-12 gap-4 items-center">
-        <div className="col-span-12 md:col-span-4 flex flex-col justify-center h-full">
-            <span className="text-sm font-medium text-slate-700">{title}</span>
+const SettingRow = ({ label, description, children, className, required }: any) => (
+    <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
+        <div className="col-span-12 md:col-span-4 space-y-1">
+            <label className="block text-sm font-medium text-slate-700">
+                {label}
+                {required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            {description && <p className="text-xs text-slate-500 leading-relaxed font-normal">{description}</p>}
         </div>
-
-        <div className="col-span-12 md:col-span-8 flex flex-col gap-1.5">
-            <div className="flex gap-3">
-                <div className="flex flex-col gap-0.5 flex-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Präfix</span>
-                    <input
-                        type="text"
-                        value={formData[prefixKey] || ''}
-                        onChange={(e) => handleChange(prefixKey, e.target.value)}
-                        placeholder="z.B. RE"
-                        className="w-full h-8 border border-slate-200 rounded-sm px-2.5 text-xs font-semibold text-slate-800 focus:border-brand-primary outline-none transition shadow-sm bg-white"
-                    />
-                </div>
-                <div className="flex flex-col gap-0.5 flex-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Start-Nummer</span>
-                    <input
-                        type="number"
-                        value={formData[startKey] || ''}
-                        onChange={(e) => handleChange(startKey, e.target.value)}
-                        placeholder="00001"
-                        className="w-full h-8 border border-slate-200 rounded-sm px-2.5 text-xs font-semibold text-slate-800 focus:border-brand-primary outline-none transition shadow-sm bg-white"
-                    />
-                </div>
-                <div className="flex flex-col gap-0.5 w-20 items-center shrink-0">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Jahr</span>
-                    <div className="h-8 flex items-center justify-center">
-                        <Switch
-                            checked={formData[showYearKey] || false}
-                            onCheckedChange={(val) => handleChange(showYearKey, val)}
-                            className="scale-75"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-100 rounded-sm px-2 py-1 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-slate-400">
-                    <FaEye className="text-[10px]" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest italic leading-none">Vorschau:</span>
-                </div>
-                <span className="text-xs font-mono font-bold text-slate-900 tracking-tight leading-none">{preview}</span>
-            </div>
+        <div className="col-span-12 md:col-span-8">
+            {children}
         </div>
     </div>
-));
+);
+
+const NumberCategory = ({ items, formData, handleChange, previews, t }: any) => (
+    <div className="space-y-4">
+        {items.map((item: any) => (
+            <div key={item.id} className="pb-10 border-b border-slate-200 last:border-0 last:pb-0 mb-10 last:mb-0">
+                <SettingRow
+                    label={item.label}
+                    description={t('settings.number_circles.base_desc', { label: item.label.toLowerCase() })}
+                    className="py-4"
+                >
+                    <div className="flex flex-wrap items-end gap-6 w-full">
+                        <div className="w-24 space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">{t('settings.number_circles.prefix_label')}</label>
+                            <input
+                                type="text"
+                                value={formData[item.prefixKey] || ''}
+                                onChange={(e) => handleChange(item.prefixKey, e.target.value)}
+                                className="w-full h-10 border border-slate-200 rounded-sm px-3 text-sm font-semibold text-slate-800 focus:border-brand-primary outline-none transition bg-white shadow-sm"
+                            />
+                        </div>
+                        <div className="w-32 space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">{t('settings.number_circles.start_nr_label')}</label>
+                            <input
+                                type="number"
+                                value={formData[item.startKey] || ''}
+                                onChange={(e) => handleChange(item.startKey, e.target.value)}
+                                className="w-full h-10 border border-slate-200 rounded-sm px-3 text-sm font-semibold text-slate-800 focus:border-brand-primary outline-none transition bg-white shadow-sm"
+                            />
+                        </div>
+
+                        <div className="flex-1 flex justify-end">
+                            <div className="bg-slate-50 px-4 py-2 border border-slate-200 rounded-sm shadow-sm flex items-center gap-3">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('settings.number_circles.preview_label')}</span>
+                                <span className="text-sm font-mono font-bold text-brand-primary tracking-widest select-all">{previews[item.id]}</span>
+                            </div>
+                        </div>
+                    </div>
+                </SettingRow>
+
+                <SettingRow
+                    label={t('settings.number_circles.format_label')}
+                    description={t('settings.number_circles.format_desc')}
+                    className="py-4 bg-slate-50/30 -mx-4 px-4 rounded-sm"
+                >
+                    <div className="flex flex-wrap items-end gap-8">
+                        <div className="w-32 space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">{t('settings.number_circles.separator_label')}</label>
+                            <Select
+                                value={formData[item.separatorKey] || '-'}
+                                onChange={(e) => handleChange(item.separatorKey, e.target.value)}
+                                className="h-10 text-xs shadow-sm bg-white"
+                            >
+                                <option value="none">{t('settings.number_circles.sep_none')}</option>
+                                <option value="-">{t('settings.number_circles.sep_dash')}</option>
+                                <option value="/">{t('settings.number_circles.sep_slash')}</option>
+                                <option value=".">{t('settings.number_circles.sep_dot')}</option>
+                                <option value="_">{t('settings.number_circles.sep_underscore')}</option>
+                            </Select>
+                        </div>
+
+                        <div className="w-32 space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">{t('settings.number_circles.padding_label')}</label>
+                            <Select
+                                value={String(formData[item.paddingKey] || '5')}
+                                onChange={(e) => handleChange(item.paddingKey, e.target.value)}
+                                className="h-10 text-xs shadow-sm bg-white"
+                            >
+                                {[3, 4, 5, 6].map(n => (
+                                    <option key={n} value={String(n)}>{t('settings.number_circles.padding_n', { n })}</option>
+                                ))}
+                            </Select>
+                        </div>
+
+                        <div className="flex items-center gap-6 pb-0.5">
+                            <div className="flex items-center gap-2.5">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('settings.number_circles.year_label')}</span>
+                                <Switch
+                                    checked={formData[item.yearKey] !== 'none'}
+                                    onCheckedChange={(val) => handleChange(item.yearKey, val ? 'YYYY' : 'none')}
+                                    className="scale-90"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2.5 border-l border-slate-200 pl-6">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('settings.number_circles.month_label')}</span>
+                                <Switch
+                                    checked={formData[item.monthKey] !== 'none'}
+                                    onCheckedChange={(val) => handleChange(item.monthKey, val ? 'MM' : 'none')}
+                                    className="scale-90"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2.5 border-l border-slate-200 pl-6">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('settings.number_circles.day_label')}</span>
+                                <Switch
+                                    checked={formData[item.dayKey] !== 'none'}
+                                    onCheckedChange={(val) => handleChange(item.dayKey, val ? 'DD' : 'none')}
+                                    className="scale-90"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </SettingRow>
+
+                <SettingRow
+                    label={t('settings.number_circles.reset_label')}
+                    description={t('settings.number_circles.reset_desc')}
+                    className="py-4 border-0"
+                >
+                    <div className="flex items-center gap-4">
+                        <Switch
+                            checked={formData[item.resetKey] || false}
+                            onCheckedChange={(val) => handleChange(item.resetKey, val)}
+                        />
+                        <div>
+                            <span className="text-sm font-bold text-slate-700 block leading-tight">{t('settings.number_circles.reset_yearly')}</span>
+                            <span className="text-[11px] text-slate-500 font-medium">{t('settings.number_circles.reset_yearly_desc')}</span>
+                        </div>
+                    </div>
+                </SettingRow>
+            </div>
+        ))}
+    </div>
+);
 
 const NumberCircleSettingsTab = () => {
+    const { t } = useTranslation();
+    const [searchParams] = useSearchParams();
     const queryClient = useQueryClient();
     const { data: companyData } = useQuery({
         queryKey: ['companySettings'],
         queryFn: settingsService.getCompany
     });
 
-    const [formData, setFormData] = useState<any>({
-        customer_id_prefix: 'K',
-        customer_start_number: '1',
-        customer_show_year: false,
-        partner_id_prefix: 'P',
-        partner_start_number: '1',
-        partner_show_year: false,
-        project_id_prefix: 'PR',
-        project_start_number: '1',
-        project_show_year: true,
-        appointment_id_prefix: 'A',
-        appointment_start_number: '1',
-        appointment_show_year: true,
-        offer_id_prefix: 'AG',
-        offer_start_number: '1',
-        offer_show_year: true,
-        invoice_prefix: 'RE',
-        invoice_start_number: '1',
-        invoice_show_year: true,
-        credit_note_prefix: 'GS',
-        credit_note_start_number: '1',
-        credit_note_show_year: true
-    });
+    const categoriesList = useMemo(() => [
+        { id: 'customer', label: t('settings.number_circles.cat_customer'), prefixKey: 'customer_id_prefix', defaultPrefix: 'KD', startKey: 'customer_start_number', yearKey: 'customer_year_format', monthKey: 'customer_month_format', dayKey: 'customer_day_format', separatorKey: 'customer_separator', paddingKey: 'customer_padding', resetKey: 'customer_reset_yearly' },
+        { id: 'partner', label: t('settings.number_circles.cat_partner'), prefixKey: 'partner_id_prefix', defaultPrefix: 'P', startKey: 'partner_start_number', yearKey: 'partner_year_format', monthKey: 'partner_month_format', dayKey: 'partner_day_format', separatorKey: 'partner_separator', paddingKey: 'partner_padding', resetKey: 'partner_reset_yearly' },
+        { id: 'project', label: t('settings.number_circles.cat_project'), prefixKey: 'project_id_prefix', defaultPrefix: 'PRJ', startKey: 'project_start_number', yearKey: 'project_year_format', monthKey: 'project_month_format', dayKey: 'project_day_format', separatorKey: 'project_separator', paddingKey: 'project_padding', resetKey: 'project_reset_yearly' },
+        { id: 'appointment', label: t('settings.number_circles.cat_appointment'), prefixKey: 'appointment_id_prefix', defaultPrefix: 'TRM', startKey: 'appointment_start_number', yearKey: 'appointment_year_format', monthKey: 'appointment_month_format', dayKey: 'appointment_day_format', separatorKey: 'appointment_separator', paddingKey: 'appointment_padding', resetKey: 'appointment_reset_yearly' },
+        { id: 'offer', label: t('settings.number_circles.cat_offer'), prefixKey: 'offer_id_prefix', defaultPrefix: 'ANG', startKey: 'offer_start_number', yearKey: 'offer_year_format', monthKey: 'offer_month_format', dayKey: 'offer_day_format', separatorKey: 'offer_separator', paddingKey: 'offer_padding', resetKey: 'offer_reset_yearly' },
+        { id: 'invoice', label: t('settings.number_circles.cat_invoice'), prefixKey: 'invoice_prefix', defaultPrefix: 'RE', startKey: 'invoice_start_number', yearKey: 'invoice_year_format', monthKey: 'invoice_month_format', dayKey: 'invoice_day_format', separatorKey: 'invoice_separator', paddingKey: 'invoice_padding', resetKey: 'invoice_reset_yearly' },
+        { id: 'credit_note', label: t('settings.number_circles.cat_credit_note'), prefixKey: 'credit_note_prefix', defaultPrefix: 'GUT', startKey: 'credit_note_start_number', yearKey: 'credit_note_year_format', monthKey: 'credit_note_month_format', dayKey: 'credit_note_day_format', separatorKey: 'credit_note_separator', paddingKey: 'credit_note_padding', resetKey: 'credit_note_reset_yearly' }
+    ], [t]);
+
+    const [formData, setFormData] = useState<any>({});
 
     useEffect(() => {
         if (companyData) {
-            setFormData({
-                customer_id_prefix: companyData.customer_id_prefix || 'K',
-                customer_start_number: companyData.customer_start_number || '1',
-                customer_show_year: companyData.customer_show_year ?? false,
-                partner_id_prefix: companyData.partner_id_prefix || 'P',
-                partner_start_number: companyData.partner_start_number || '1',
-                partner_show_year: companyData.partner_show_year ?? false,
-                project_id_prefix: companyData.project_id_prefix || 'PR',
-                project_start_number: companyData.project_start_number || '1',
-                project_show_year: companyData.project_show_year ?? true,
-                appointment_id_prefix: companyData.appointment_id_prefix || 'A',
-                appointment_start_number: companyData.appointment_start_number || '1',
-                appointment_show_year: companyData.appointment_show_year ?? true,
-                offer_id_prefix: companyData.offer_id_prefix || 'AG',
-                offer_start_number: companyData.offer_start_number || '1',
-                offer_show_year: companyData.offer_show_year ?? true,
-                invoice_prefix: companyData.invoice_prefix || 'RE',
-                invoice_start_number: companyData.invoice_start_number || '1',
-                invoice_show_year: companyData.invoice_show_year ?? true,
-                credit_note_prefix: companyData.credit_note_prefix || 'GS',
-                credit_note_start_number: companyData.credit_note_start_number || '1',
-                credit_note_show_year: companyData.credit_note_show_year ?? true
+            const initial: any = {};
+            categoriesList.forEach(cat => {
+                // Initialize with values from DB or defaults if empty
+                initial[cat.prefixKey] = companyData[cat.prefixKey] || cat.defaultPrefix;
+                initial[cat.startKey] = companyData[cat.startKey] || '1';
+                initial[cat.yearKey] = companyData[cat.yearKey] || 'YYYY';
+                initial[cat.monthKey] = companyData[cat.monthKey] || 'none';
+                initial[cat.dayKey] = companyData[cat.dayKey] || 'none';
+                initial[cat.separatorKey] = companyData[cat.separatorKey] || '-';
+                initial[cat.paddingKey] = String(companyData[cat.paddingKey] || '5');
+                initial[cat.resetKey] = companyData[cat.resetKey] || false;
             });
+
+            setFormData(initial);
         }
-    }, [companyData]);
+    }, [companyData, categoriesList]);
+
+    useEffect(() => {
+        const section = searchParams.get('section');
+        if (section) {
+            setTimeout(() => {
+                const element = document.getElementById(`section-${section}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+    }, [searchParams]);
 
     const updateMutation = useMutation({
         mutationFn: settingsService.updateCompany,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['companySettings'] });
-            toast.success('Nummernkreise gespeichert!');
+            toast.success(t('settings.number_circles.save_success'));
         },
-        onError: () => toast.error('Fehler beim Speichern.')
+        onError: () => toast.error(t('settings.number_circles.save_error'))
     });
 
     const handleSave = useCallback(() => updateMutation.mutate(formData), [formData, updateMutation]);
@@ -133,25 +216,50 @@ const NumberCircleSettingsTab = () => {
     }, []);
 
     const previews = useMemo(() => {
-        const year = new Date().getFullYear();
+        const date = new Date();
+        const yearFull = date.getFullYear();
+        const yearShort = String(yearFull).slice(-2);
+        const monthShort = String(date.getMonth() + 1).padStart(2, '0');
+        const dayShort = String(date.getDate()).padStart(2, '0');
 
-        return {
-            customer: `${formData.customer_id_prefix || 'K'}${formData.customer_show_year ? '-' + year : ''}-${String(formData.customer_start_number || '1').padStart(5, '0')}`,
-            partner: `${formData.partner_id_prefix || 'P'}${formData.partner_show_year ? '-' + year : ''}-${String(formData.partner_start_number || '1').padStart(5, '0')}`,
-            project: `${formData.project_id_prefix || 'PR'}${formData.project_show_year ? '-' + year : ''}-${String(formData.project_start_number || '1').padStart(5, '0')}`,
-            appointment: `${formData.appointment_id_prefix || 'A'}${formData.appointment_show_year ? '-' + year : ''}-${String(formData.appointment_start_number || '1').padStart(5, '0')}`,
-            offer: `${formData.offer_id_prefix || 'AG'}${formData.offer_show_year ? '-' + year : ''}-${String(formData.offer_start_number || '1').padStart(5, '0')}`,
-            invoice: `${formData.invoice_prefix || 'RE'}${formData.invoice_show_year ? '-' + year : ''}-${String(formData.invoice_start_number || '1').padStart(5, '0')}`,
-            credit_note: `${formData.credit_note_prefix || 'GS'}${formData.credit_note_show_year ? '-' + year : ''}-${String(formData.credit_note_start_number || '1').padStart(5, '0')}`
+        const generate = (cat: any) => {
+            // CRITICAL FIX: Use the correct keys from the category object
+            const prefix = formData[cat.prefixKey] || '';
+            const nrValue = formData[cat.startKey] || '1';
+            const paddingValue = Number(formData[cat.paddingKey] || 5);
+            const nr = String(nrValue).padStart(paddingValue, '0');
+
+            const sep = formData[cat.separatorKey] === 'none' ? '' : formData[cat.separatorKey] || '-';
+
+            let yearPart = '';
+            if (formData[cat.yearKey] === 'YYYY') yearPart = yearFull.toString();
+            else if (formData[cat.yearKey] === 'YY') yearPart = yearShort;
+
+            let monthPart = '';
+            if (formData[cat.monthKey] === 'MM') monthPart = monthShort;
+
+            let dayPart = '';
+            if (formData[cat.dayKey] === 'DD') dayPart = dayShort;
+
+            const parts = [prefix, yearPart, monthPart, dayPart, nr].filter(p => p !== '');
+            return parts.join(sep);
         };
-    }, [formData]);
+
+        const result: any = {};
+        categoriesList.forEach(cat => {
+            result[cat.id] = generate(cat);
+        });
+        return result;
+    }, [formData, categoriesList]);
 
     return (
-        <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden animate-fadeIn flex-1 min-h-0 flex flex-col">
-            <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10 shrink-0">
-                <div className="flex items-center gap-2.5">
-                    <FaListOl className="text-brand-primary" />
-                    <h3 className="text-sm font-bold text-slate-800 tracking-tight italic">Nummernkreise</h3>
+        <div className="bg-white shadow-sm border border-slate-100 rounded-sm overflow-hidden animate-fadeIn flex-1 min-h-0 flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-slate-200/50 text-slate-700 flex items-center justify-center text-xs font-medium border border-slate-200 rounded-sm">
+                        <FaListOl />
+                    </div>
+                    <h3 className="text-sm font-medium text-slate-800">{t('settings.number_circles.header')}</h3>
                 </div>
                 <Button
                     variant="default"
@@ -159,103 +267,52 @@ const NumberCircleSettingsTab = () => {
                     disabled={updateMutation.isPending}
                     className="flex items-center gap-2"
                 >
-                    <FaSave /> {updateMutation.isPending ? 'Speichert...' : 'Speichern'}
+                    <FaSave /> {updateMutation.isPending ? t('settings.saving') : t('settings.save')}
                 </Button>
             </div>
 
-            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-                <div className="mb-6">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
-                        Stammdaten
-                    </h4>
-                    <ConfigRow
-                        title="Kunden"
-                        prefixKey="customer_id_prefix"
-                        startKey="customer_start_number"
-                        showYearKey="customer_show_year"
+            <div className="p-10 overflow-y-auto custom-scrollbar flex-1">
+                <div id="section-master_data" className="mb-12 scroll-mt-20">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">{t('settings.number_circles.section_master_data') || 'BASIS'}</h4>
+                    <NumberCategory
                         formData={formData}
                         handleChange={handleChange}
-                        preview={previews.customer}
-                    />
-                    <ConfigRow
-                        title="Partner / Übersetzer"
-                        prefixKey="partner_id_prefix"
-                        startKey="partner_start_number"
-                        showYearKey="partner_show_year"
-                        formData={formData}
-                        handleChange={handleChange}
-                        preview={previews.partner}
+                        previews={previews}
+                        t={t}
+                        items={[
+                            categoriesList.find(c => c.id === 'customer'),
+                            categoriesList.find(c => c.id === 'partner'),
+                        ].filter(Boolean)}
                     />
                 </div>
 
-                <div className="mb-6">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
-                        Projektmanagement
-                    </h4>
-                    <ConfigRow
-                        title="Projekte"
-                        prefixKey="project_id_prefix"
-                        startKey="project_start_number"
-                        showYearKey="project_show_year"
+                <div id="section-projects" className="mb-12 scroll-mt-20">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">{t('settings.number_circles.section_projects') || 'PROJEKTE'}</h4>
+                    <NumberCategory
                         formData={formData}
                         handleChange={handleChange}
-                        preview={previews.project}
-                    />
-                    <ConfigRow
-                        title="Termine"
-                        prefixKey="appointment_id_prefix"
-                        startKey="appointment_start_number"
-                        showYearKey="appointment_show_year"
-                        formData={formData}
-                        handleChange={handleChange}
-                        preview={previews.appointment}
-                    />
-                    <ConfigRow
-                        title="Angebote"
-                        prefixKey="offer_id_prefix"
-                        startKey="offer_start_number"
-                        showYearKey="offer_show_year"
-                        formData={formData}
-                        handleChange={handleChange}
-                        preview={previews.offer}
+                        previews={previews}
+                        t={t}
+                        items={[
+                            categoriesList.find(c => c.id === 'project'),
+                            categoriesList.find(c => c.id === 'appointment'),
+                            categoriesList.find(c => c.id === 'offer'),
+                        ].filter(Boolean)}
                     />
                 </div>
 
-                <div className="mb-2">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 border-b border-slate-100 pb-1.5 flex items-center gap-2">
-                        Finanzwesen
-                    </h4>
-                    <ConfigRow
-                        title="Rechnungen"
-                        prefixKey="invoice_prefix"
-                        startKey="invoice_start_number"
-                        showYearKey="invoice_show_year"
+                <div id="section-finance" className="mb-0 scroll-mt-20">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">{t('settings.number_circles.section_finance') || 'FINANZEN'}</h4>
+                    <NumberCategory
                         formData={formData}
                         handleChange={handleChange}
-                        preview={previews.invoice}
+                        previews={previews}
+                        t={t}
+                        items={[
+                            categoriesList.find(c => c.id === 'invoice'),
+                            categoriesList.find(c => c.id === 'credit_note'),
+                        ].filter(Boolean)}
                     />
-                    <ConfigRow
-                        title="Gutschriften"
-                        prefixKey="credit_note_prefix"
-                        startKey="credit_note_start_number"
-                        showYearKey="credit_note_show_year"
-                        formData={formData}
-                        handleChange={handleChange}
-                        preview={previews.credit_note}
-                    />
-                </div>
-            </div>
-
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-start gap-3 shrink-0">
-                <div className="w-8 h-8 rounded-sm bg-brand-primary/10 text-brand-primary flex items-center justify-center shrink-0 border border-brand-primary/10">
-                    <FaInfoCircle className="text-xs" />
-                </div>
-                <div className="space-y-0.5">
-                    <p className="text-[11px] font-bold text-slate-700 leading-none">Wichtiger Hinweis zur Nummerierung</p>
-                    <p className="text-[10px] text-slate-500 leading-relaxed italic">
-                        Startnummern dienen als Basis für neue Einträge. Das System zählt ab dieser Nummer automatisch fortlaufend hoch.
-                        Standardmäßig werden 5-stellige Nummern (z.B. 00001) generiert.
-                    </p>
                 </div>
             </div>
         </div>

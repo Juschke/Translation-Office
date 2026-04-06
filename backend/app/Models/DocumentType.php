@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DocumentType extends Model
 {
-    use \App\Traits\BelongsToTenant;
+    use \App\Traits\BelongsToTenant, \App\Traits\HasSequentialCode;
 
     protected $fillable = [
         'tenant_id',

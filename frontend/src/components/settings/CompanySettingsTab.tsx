@@ -39,34 +39,35 @@ const SettingRow = ({ label, description, children, className, required }: any) 
 );
 
 const LogoUpload = ({ logoPath, onUploaded }: { logoPath?: string; onUploaded: () => void }) => {
+    const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
     const uploadMutation = useMutation({
         mutationFn: settingsService.uploadLogo,
         onSuccess: () => {
-            toast.success('Logo erfolgreich hochgeladen');
+            toast.success(t('settings.company.logo_upload_success'));
             onUploaded();
         },
-        onError: () => toast.error('Fehler beim Hochladen')
+        onError: () => toast.error(t('settings.company.logo_upload_error'))
     });
 
     const deleteMutation = useMutation({
         mutationFn: settingsService.deleteLogo,
         onSuccess: () => {
-            toast.success('Logo entfernt');
+            toast.success(t('settings.company.logo_remove_success'));
             onUploaded();
         },
-        onError: () => toast.error('Fehler beim Entfernen')
+        onError: () => toast.error(t('settings.company.logo_remove_error'))
     });
 
     const handleFile = (file: File) => {
         if (file.size > 4 * 1024 * 1024) {
-            toast.error('Datei zu groß (max. 4 MB)');
+            toast.error(t('settings.company.logo_too_large'));
             return;
         }
         if (!file.type.startsWith('image/')) {
-            toast.error('Nur Bilddateien erlaubt');
+            toast.error(t('settings.company.logo_invalid_type'));
             return;
         }
         uploadMutation.mutate(file);
@@ -85,21 +86,21 @@ const LogoUpload = ({ logoPath, onUploaded }: { logoPath?: string; onUploaded: (
             {logoUrl ? (
                 <div className="flex items-center gap-4">
                     <div className="w-48 h-28 border border-slate-200 rounded-sm bg-slate-50 flex items-center justify-center p-3 overflow-hidden">
-                        <img src={logoUrl} alt="Firmenlogo" className="max-w-full max-h-full object-contain" />
+                        <img src={logoUrl} alt={t('settings.company.logo_alt')} className="max-w-full max-h-full object-contain" />
                     </div>
                     <div className="flex flex-col gap-2">
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-200 rounded-sm hover:bg-slate-50 transition"
                         >
-                            <FaUpload className="text-slate-400" /> Ersetzen
+                            <FaUpload className="text-slate-400" /> {t('settings.company.logo_replace')}
                         </button>
                         <button
                             onClick={() => deleteMutation.mutate()}
                             disabled={deleteMutation.isPending}
                             className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-sm hover:bg-red-50 transition disabled:opacity-50"
                         >
-                            <FaTrash /> Entfernen
+                            <FaTrash /> {t('settings.company.logo_remove')}
                         </button>
                     </div>
                 </div>
@@ -115,8 +116,8 @@ const LogoUpload = ({ logoPath, onUploaded }: { logoPath?: string; onUploaded: (
                     )}
                 >
                     <FaImage className="mx-auto text-2xl text-slate-300 mb-2" />
-                    <p className="text-sm text-slate-500 font-medium">Logo hierher ziehen oder <span className="text-slate-900 underline">Datei auswählen</span></p>
-                    <p className="text-xs text-slate-400 mt-1">PNG, JPG oder SVG · max. 4 MB</p>
+                    <p className="text-sm text-slate-500 font-medium">{t('settings.company.logo_drop')} <span className="text-slate-900 underline">{t('settings.company.logo_select')}</span></p>
+                    <p className="text-xs text-slate-400 mt-1">{t('settings.company.logo_hint')}</p>
                 </div>
             )}
             <input
@@ -129,7 +130,7 @@ const LogoUpload = ({ logoPath, onUploaded }: { logoPath?: string; onUploaded: (
             {uploadMutation.isPending && (
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                     <div className="w-3.5 h-3.5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-                    Logo wird hochgeladen…
+                    {t('settings.company.logo_uploading')}
                 </div>
             )}
         </div>
@@ -203,10 +204,10 @@ const CompanySettingsTab = () => {
         mutationFn: settingsService.updateCompany,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['companySettings'] });
-            toast.success('Einstellungen erfolgreich gespeichert!');
+            toast.success(t('settings.company.save_success'));
         },
         onError: () => {
-            toast.error('Fehler beim Speichern der Einstellungen.');
+            toast.error(t('settings.company.save_error'));
         }
     });
 
@@ -250,29 +251,29 @@ const CompanySettingsTab = () => {
 
     const validateCompanyData = () => {
         const newErrors: Record<string, string> = {};
-        if (!companyData.company_name) newErrors.company_name = 'Firmenname ist erforderlich';
-        if (!companyData.managing_director) newErrors.managing_director = 'Geschäftsführer ist erforderlich';
-        
-        if (!companyData.address_street) newErrors.address_street = 'Straße ist erforderlich';
-        if (!companyData.address_house_no) newErrors.address_house_no = 'Hausnummer ist erforderlich';
-        if (!companyData.address_zip) newErrors.address_zip = 'PLZ ist erforderlich';
-        if (!companyData.address_city) newErrors.address_city = 'Stadt ist erforderlich';
-        if (!companyData.address_country) newErrors.address_country = 'Land ist erforderlich';
-        
-        if (!companyData.phone) newErrors.phone = 'Festnetztelefon ist erforderlich';
-        if (!companyData.mobile) newErrors.mobile = 'Mobiltelefon ist erforderlich';
-        if (!companyData.email) newErrors.email = 'E-Mail ist erforderlich';
-        
-        if (!companyData.legal_form) newErrors.legal_form = 'Rechtsform ist erforderlich';
-        if (!companyData.tax_office) newErrors.tax_office = 'Finanzbehörde ist erforderlich';
-        if (!companyData.vat_id) newErrors.vat_id = 'USt-IdNr. ist erforderlich';
-        
-        if (!companyData.bank_account_holder) newErrors.bank_account_holder = 'Kontoinhaber ist erforderlich';
-        if (!companyData.bank_iban) newErrors.bank_iban = 'IBAN ist erforderlich';
-        if (!companyData.bank_name) newErrors.bank_name = 'Bankname ist erforderlich';
-        if (!companyData.bank_code) newErrors.bank_code = 'BLZ ist erforderlich';
-        if (!companyData.bank_bic) newErrors.bank_bic = 'BIC ist erforderlich';
-        
+        if (!companyData.company_name) newErrors.company_name = t('settings.company.validation_company_name');
+        if (!companyData.managing_director) newErrors.managing_director = t('settings.company.validation_managing_director');
+
+        if (!companyData.address_street) newErrors.address_street = t('settings.company.validation_street');
+        if (!companyData.address_house_no) newErrors.address_house_no = t('settings.company.validation_house_no');
+        if (!companyData.address_zip) newErrors.address_zip = t('settings.company.validation_zip');
+        if (!companyData.address_city) newErrors.address_city = t('settings.company.validation_city');
+        if (!companyData.address_country) newErrors.address_country = t('settings.company.validation_country');
+
+        if (!companyData.phone) newErrors.phone = t('settings.company.validation_phone');
+        if (!companyData.mobile) newErrors.mobile = t('settings.company.validation_mobile');
+        if (!companyData.email) newErrors.email = t('settings.company.validation_email');
+
+        if (!companyData.legal_form) newErrors.legal_form = t('settings.company.validation_legal_form');
+        if (!companyData.tax_office) newErrors.tax_office = t('settings.company.validation_tax_office');
+        if (!companyData.vat_id) newErrors.vat_id = t('settings.company.validation_vat_id');
+
+        if (!companyData.bank_account_holder) newErrors.bank_account_holder = t('settings.company.validation_account_holder');
+        if (!companyData.bank_iban) newErrors.bank_iban = t('settings.company.validation_bank_iban');
+        if (!companyData.bank_name) newErrors.bank_name = t('settings.company.validation_bank_name');
+        if (!companyData.bank_code) newErrors.bank_code = t('settings.company.validation_bank_code');
+        if (!companyData.bank_bic) newErrors.bank_bic = t('settings.company.validation_bank_bic');
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -285,7 +286,7 @@ const CompanySettingsTab = () => {
             };
             updateCompanyMutation.mutate(dataToSave);
         } else {
-            toast.error('Bitte füllen Sie alle Pflichtfelder aus.');
+            toast.error(t('settings.company.validation_required_fields'));
         }
     };
 
@@ -304,7 +305,7 @@ const CompanySettingsTab = () => {
                         address_street: prev.address_street || fa.hausanschrift?.strasse || '',
                         address_house_no: prev.address_house_no || fa.hausanschrift?.hausNr || ''
                     }));
-                    toast.success(`Finanzamt für ${fa.name} erkannt`);
+                    toast.success(t('settings.company.tax_office_detected', { name: fa.name }));
                 }
             }
         } catch (error) {
@@ -323,10 +324,10 @@ const CompanySettingsTab = () => {
             const exactNameMatch = candidates.find((fa: any) => fa.name.toLowerCase() === city.toLowerCase());
             if (exactNameMatch) {
                 setCompanyData((prev: any) => ({ ...prev, tax_office: `Finanzamt ${exactNameMatch.name}` }));
-                toast.success(`Finanzamt für ${exactNameMatch.name} automatisch erkannt`);
+                toast.success(t('settings.company.tax_office_auto_detected', { name: exactNameMatch.name }));
             } else {
                 setCompanyData((prev: any) => ({ ...prev, tax_office: `Finanzamt ${candidates[0].name}` }));
-                toast.success(`Finanzamt für ${candidates[0].name} automatisch erkannt`);
+                toast.success(t('settings.company.tax_office_auto_detected', { name: candidates[0].name }));
             }
         }
     };
@@ -349,7 +350,7 @@ const CompanySettingsTab = () => {
                         );
                         if (candidates.length > 0) {
                             setCompanyData((prev: any) => ({ ...prev, tax_office: `Finanzamt ${candidates[0].name}` }));
-                            toast.success(`Finanzamt für ${candidates[0].name} automatisch erkannt`);
+                            toast.success(t('settings.company.tax_office_auto_detected', { name: candidates[0].name }));
                         }
                     }
                 }
@@ -377,9 +378,9 @@ const CompanySettingsTab = () => {
                         bank_code: data.bankData?.bankCode || prev.bank_code
                     }));
                     setErrors(prev => ({ ...prev, bank_iban: '' }));
-                    toast.success(`Bank erkannt: ${data.bankData?.name || 'IBAN valide'}`);
+                    toast.success(t('settings.company.bank_detected', { name: data.bankData?.name || 'IBAN' }));
                 } else {
-                    setErrors(prev => ({ ...prev, bank_iban: 'Ungültige IBAN' }));
+                    setErrors(prev => ({ ...prev, bank_iban: t('settings.company.iban_invalid') }));
                 }
             }
         } catch (error) {
@@ -437,10 +438,76 @@ const CompanySettingsTab = () => {
 
     return (
         <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-y-auto custom-scrollbar flex-1 min-h-0 animate-fadeIn">
+            <style>{`
+                .phone-input-group {
+                    display: flex !important;
+                    align-items: center;
+                }
+                .phone-input-group .PhoneInputCountry {
+                    display: flex !important;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0 12px;
+                    margin-right: 0 !important;
+                    background-color: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-right: 0;
+                    border-radius: 2px 0 0 2px;
+                    height: 36px;
+                    min-width: 60px;
+                    transition: all 0.2s;
+                }
+                .phone-input-group:hover .PhoneInputCountry {
+                    background-color: rgb(18, 58, 60);
+                    border-color: rgb(18, 58, 60);
+                }
+                .phone-input-group .PhoneInputCountry:focus-within {
+                    border-color: rgb(18, 58, 60);
+                    z-index: 2;
+                }
+                .phone-input-group:hover .PhoneInputCountrySelectArrow {
+                    color: white !important;
+                    opacity: 1;
+                }
+                .phone-input-group .PhoneInputCountrySelect {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    height: 100%;
+                    width: 100%;
+                    z-index: 1;
+                    border: 0;
+                    opacity: 0;
+                    cursor: pointer;
+                }
+                .phone-input-group .PhoneInputCountryIcon {
+                    width: 20px;
+                    height: 14px;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                    border-radius: 1px;
+                }
+                .phone-input-group .PhoneInputCountrySelectArrow {
+                    margin-left: 6px;
+                    color: #94a3b8;
+                    transition: color 0.2s;
+                }
+                .phone-input-group input {
+                    text-align: left !important;
+                    transition: all 0.2s !important;
+                }
+                .phone-input-group:hover input,
+                .phone-input-group input:focus {
+                    border-color: rgb(18, 58, 60) !important;
+                    z-index: 2;
+                }
+                .phone-input-group input:focus {
+                    box-shadow: 0 0 0 2px rgba(18, 58, 60, 0.1);
+                }
+            `}</style>
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded-sm"><FaBuilding /></div>
-                    <h3 className="text-sm font-medium text-slate-800">Unternehmensdaten</h3>
+                    <h3 className="text-sm font-medium text-slate-800">{t('settings.company.header')}</h3>
                 </div>
                 <Button
                     variant="default"
@@ -455,19 +522,19 @@ const CompanySettingsTab = () => {
             <div className="p-8">
                 {/* Basisinformationen */}
                 <div id="section-basis" className="mb-8 scroll-mt-20">
-                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Basisinformationen</h4>
-                    <SettingRow label="Firmenname" required={true} description="Der offizielle Name Ihres Unternehmens, wie er auf Rechnungen erscheint.">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">{t('settings.company.section_basis')}</h4>
+                    <SettingRow label={t('settings.company.company_name_label')} required={true} description={t('settings.company.company_name_desc')}>
                         <Input
-                            placeholder="Beispiel GmbH & Co. KG"
+                            placeholder={t('settings.company.company_name_placeholder')}
                             value={companyData.company_name || ''}
                             onChange={(e) => handleInputMetaChange('company_name', e.target.value)}
                             error={!!errors.company_name}
                             required={true}
                         />
                     </SettingRow>
-                    <SettingRow label="Geschäftsführer" description="Name des vertretungsberechtigten Geschäftsführers.">
+                    <SettingRow label={t('settings.company.managing_director_label')} description={t('settings.company.managing_director_desc')}>
                         <Input
-                            placeholder="Vorname Nachname"
+                            placeholder={t('settings.company.managing_director_placeholder')}
                             required={true}
                             value={companyData.managing_director || ''}
                             onChange={(e) => handleInputMetaChange('managing_director', e.target.value)}
@@ -478,15 +545,15 @@ const CompanySettingsTab = () => {
 
                 {/* Standort & Adresse */}
                 <div id="section-location" className="mb-8 scroll-mt-20">
-                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Standort & Adresse</h4>
-                    <SettingRow label="Anschrift" required={true} description="Der Hauptsitz Ihres Unternehmens.">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">{t('settings.company.section_location')}</h4>
+                    <SettingRow label={t('settings.company.address_label')} required={true} description={t('settings.company.address_desc')}>
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                 <div className="sm:col-span-3">
                                     <Input
-                                        label="Straße"
+                                        label={t('settings.company.street_label')}
                                         required={true}
-                                        placeholder="Straße"
+                                        placeholder={t('settings.company.street_label')}
                                         list="street-suggestions"
                                         value={companyData.address_street || ''}
                                         onChange={(e) => handleInputMetaChange('address_street', e.target.value)}
@@ -497,9 +564,9 @@ const CompanySettingsTab = () => {
                                     </datalist>
                                 </div>
                                 <Input
-                                    label="Nr."
+                                    label={t('settings.company.house_no_label')}
                                     required={true}
-                                    placeholder="Nr."
+                                    placeholder={t('settings.company.house_no_label')}
                                     value={companyData.address_house_no || ''}
                                     onChange={(e) => handleInputMetaChange('address_house_no', e.target.value)}
                                     error={!!errors.address_house_no}
@@ -508,9 +575,9 @@ const CompanySettingsTab = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="relative">
                                     <Input
-                                        label="PLZ"
+                                        label={t('settings.company.zip_label')}
                                         required={true}
-                                        placeholder="PLZ"
+                                        placeholder={t('settings.company.zip_label')}
                                         value={companyData.address_zip || ''}
                                         onChange={(e) => handleInputMetaChange('address_zip', e.target.value)}
                                         onBlur={handleZipBlur}
@@ -520,9 +587,9 @@ const CompanySettingsTab = () => {
                                 </div>
                                 <div className="sm:col-span-2">
                                     <Input
-                                        label="Stadt"
+                                        label={t('settings.company.city_label')}
                                         required={true}
-                                        placeholder="Stadt"
+                                        placeholder={t('settings.company.city_label')}
                                         value={companyData.address_city || ''}
                                         onChange={(e) => handleInputMetaChange('address_city', e.target.value)}
                                         onBlur={handleCityBlur}
@@ -533,57 +600,57 @@ const CompanySettingsTab = () => {
                             <CountrySelect
                                 value={companyData.address_country || t('countries.de_default')}
                                 onChange={(val) => handleInputMetaChange('address_country', val)}
-                                label="Land"
+                                label={t('settings.company.country_label')}
                                 required={true}
                                 error={!!errors.address_country}
                             />
                         </div>
                     </SettingRow>
-                    <SettingRow label="Kontaktdaten" required={true} description="Öffentliche Kontaktdaten für Ihre Kunden.">
+                    <SettingRow label={t('settings.company.contact_label')} required={true} description={t('settings.company.contact_desc')}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex flex-col">
                                 <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
-                                    Festnetztelefon
+                                    {t('settings.company.phone_label')}
                                     <span className="text-red-500 ml-0.5">*</span>
                                 </label>
                                 <PhoneInput
                                     international
                                     defaultCountry="DE"
-                                    placeholder="+49 123 456789"
+                                    placeholder={t('settings.company.phone_placeholder')}
                                     value={companyData.phone || ''}
                                     onChange={(val) => handleInputMetaChange('phone', val || '')}
                                     numberInputProps={{
                                         className: clsx(
-                                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all outline-none",
-                                            "border border-brand-border hover:border-brand-primary",
+                                            "flex h-9 w-full rounded-r-sm bg-white px-3 py-1 text-sm text-brand-text transition-all outline-none",
+                                            "border border-brand-border border-l-0 hover:border-brand-primary",
                                             "focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
                                             errors.phone && "border-red-500 focus:border-red-500 focus:ring-red-500/10"
                                         )
                                     }}
-                                    className="phone-input-custom"
+                                    className="phone-input-group"
                                 />
                                 {errors.phone && <p className="text-[10px] text-red-500 mt-1 ml-1 font-medium">{errors.phone}</p>}
                             </div>
                             <div className="flex flex-col">
                                 <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
-                                    Mobiltelefon
+                                    {t('settings.company.mobile_label')}
                                     <span className="text-red-500 ml-0.5">*</span>
                                 </label>
                                 <PhoneInput
                                     international
                                     defaultCountry="DE"
-                                    placeholder="+49 160 1234567"
+                                    placeholder={t('settings.company.mobile_placeholder')}
                                     value={companyData.mobile || ''}
                                     onChange={(val) => handleInputMetaChange('mobile', val || '')}
                                     numberInputProps={{
                                         className: clsx(
-                                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all outline-none",
-                                            "border border-brand-border hover:border-brand-primary",
+                                            "flex h-9 w-full rounded-r-sm bg-white px-3 py-1 text-sm text-brand-text transition-all outline-none",
+                                            "border border-brand-border border-l-0 hover:border-brand-primary",
                                             "focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
                                             errors.mobile && "border-red-500 focus:border-red-500 focus:ring-red-500/10"
                                         )
                                     }}
-                                    className="phone-input-custom"
+                                    className="phone-input-group"
                                 />
                                 {errors.mobile && <p className="text-[10px] text-red-500 mt-1 ml-1 font-medium">{errors.mobile}</p>}
                             </div>
@@ -592,7 +659,7 @@ const CompanySettingsTab = () => {
                                     label="E-Mail"
                                     required={true}
                                     startIcon={<FaEnvelope />}
-                                    placeholder="info@ihrefirma.de"
+                                    placeholder={t('settings.company.email_placeholder')}
                                     value={companyData.email || ''}
                                     onChange={(e) => handleInputMetaChange('email', e.target.value)}
                                     error={!!errors.email}
@@ -600,14 +667,14 @@ const CompanySettingsTab = () => {
                             </div>
                             <div className="col-span-1 md:col-span-2">
                                 <div className="flex flex-col">
-                                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">Webseite</label>
+                                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">{t('settings.company.website_label')}</label>
                                     <div className="flex relative">
                                         <div className="flex items-center justify-center px-3 bg-slate-50 border border-brand-border border-r-0 rounded-l-sm text-slate-500 text-sm font-medium">
                                             https://
                                         </div>
                                         <input
                                             type="text"
-                                            placeholder="www.beispiel.de"
+                                            placeholder={t('settings.company.website_placeholder')}
                                             value={(companyData.website || '').replace(/^https?:\/\//, '')}
                                             onChange={(e) => {
                                                 const val = e.target.value;
@@ -625,16 +692,16 @@ const CompanySettingsTab = () => {
                             </div>
                             <div className="col-span-1 md:col-span-2">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Öffnungszeiten</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{t('settings.company.opening_hours_label')}</label>
                                     <button
                                         onClick={() => setIsOpeningHoursModalOpen(true)}
                                         className="w-full flex items-center justify-between px-4 py-2 bg-white border border-slate-200 rounded-sm hover:border-slate-900 transition-all text-sm font-medium text-slate-700"
                                     >
                                         <div className="flex items-center gap-2">
                                             <FaClock className="text-slate-400" />
-                                            <span>Öffnungszeiten konfigurieren</span>
+                                            <span>{t('settings.company.opening_hours_btn')}</span>
                                         </div>
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bearbeiten</span>
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{t('settings.company.opening_hours_edit')}</span>
                                     </button>
                                 </div>
                             </div>
@@ -644,11 +711,11 @@ const CompanySettingsTab = () => {
 
                 {/* Bankverbindung */}
                 <div id="section-bank" className="mb-8 scroll-mt-20">
-                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Bankverbindung</h4>
-                    <SettingRow label="Bankdaten" required={true} description="Ihre IBAN und BIC für Überweisungen (erscheint auf Rechnungen).">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">{t('settings.company.section_bank')}</h4>
+                    <SettingRow label={t('settings.company.bank_label')} required={true} description={t('settings.company.bank_desc')}>
                         <div className="space-y-4">
                             <Input
-                                label="Kontoinhaber"
+                                label={t('settings.company.account_holder_label')}
                                 required={true}
                                 placeholder={user?.name || 'Vorname Nachname'}
                                 value={companyData.bank_account_holder || ''}
@@ -688,9 +755,9 @@ const CompanySettingsTab = () => {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <Input
-                                    label="Bankname"
+                                    label={t('settings.company.bank_name_label')}
                                     required={true}
-                                    placeholder="Musterbank AG"
+                                    placeholder={t('settings.company.bank_name_placeholder')}
                                     value={companyData.bank_name || ''}
                                     onChange={(e) => handleInputMetaChange('bank_name', e.target.value)}
                                     error={!!errors.bank_name}
@@ -742,26 +809,26 @@ const CompanySettingsTab = () => {
 
                 {/* Steuern & Identifikation */}
                 <div id="section-tax" className="mb-8 scroll-mt-20">
-                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Steuern & Identifikation</h4>
-                    <SettingRow label="Rechtsform" required={true} description="Die offizielle Rechtsform Ihres Unternehmens (z.B. GmbH).">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">{t('settings.company.section_tax')}</h4>
+                    <SettingRow label={t('settings.company.legal_form_label')} required={true} description={t('settings.company.legal_form_desc')}>
                         <SearchableSelect
-                            placeholder="Rechtsform wählen..."
+                            placeholder={t('settings.company.legal_form_placeholder')}
                             options={legalFormOptions}
                             value={companyData.legal_form || ''}
                             onChange={(val) => handleInputMetaChange('legal_form', val)}
                             error={!!errors.legal_form}
                         />
                     </SettingRow>
-                    <SettingRow label="Finanzbehörde" required={true} description="Zugeordnetes Finanzamt für Ihre Steuererklärung.">
+                    <SettingRow label={t('settings.company.tax_office_label')} required={true} description={t('settings.company.tax_office_desc')}>
                         <SearchableSelect
-                            placeholder="Finanzamt suchen oder auswählen..."
+                            placeholder={t('settings.company.tax_office_placeholder')}
                             options={taxOfficeOptions.map(opt => ({ ...opt, label: `${opt.label} (${opt.bufa})` }))}
                             value={companyData.tax_office || ''}
                             onChange={(val) => handleInputMetaChange('tax_office', val)}
                             error={!!errors.tax_office}
                         />
                     </SettingRow>
-                    <SettingRow label="Steuernummer" description="Ihre beim Finanzamt geführte Steuernummer.">
+                    <SettingRow label={t('settings.company.tax_number_label')} description={t('settings.company.tax_number_desc')}>
                         <IMaskInput
                             mask="00/000/00000"
                             lazy={false}
@@ -779,7 +846,7 @@ const CompanySettingsTab = () => {
                             )}
                         />
                     </SettingRow>
-                    <SettingRow label="USt-IdNr." required={true} description="Umsatzsteuer-Identifikationsnummer für den EU-weiten Handel.">
+                    <SettingRow label={t('settings.company.vat_id_label')} required={true} description={t('settings.company.vat_id_desc')}>
                         <IMaskInput
                             mask="aa000000000"
                             definitions={{ 'a': /[a-zA-Z]/ }}
@@ -796,7 +863,7 @@ const CompanySettingsTab = () => {
                             )}
                         />
                     </SettingRow>
-                    <SettingRow label="Wirtschafts-ID" description="Die bundeseinheitliche Wirtschafts-Identifikationsnummer (W-IdNr.).">
+                    <SettingRow label={t('settings.company.tax_id_label')} description={t('settings.company.tax_id_desc')}>
                         <IMaskInput
                             mask="aa00000000000000"
                             definitions={{ 'a': /[a-zA-Z]/ }}
@@ -814,9 +881,9 @@ const CompanySettingsTab = () => {
                         />
                     </SettingRow>
 
-                    <SettingRow label="Währung" description="Die Standardwährung für Ihr System.">
+                    <SettingRow label={t('settings.company.currency_label')} description={t('settings.company.currency_desc')}>
                         <SearchableSelect
-                            placeholder="Währung auswählen..."
+                            placeholder={t('settings.company.currency_placeholder')}
                             options={currencyOptions}
                             value={companyData.currency || 'EUR'}
                             onChange={(val) => handleInputMetaChange('currency', val)}
@@ -826,8 +893,8 @@ const CompanySettingsTab = () => {
 
                 {/* Firmenlogo */}
                 <div id="section-logo" className="mb-0 scroll-mt-20">
-                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">Firmenlogo</h4>
-                    <SettingRow label="Logo hochladen" description="Ihr Logo erscheint auf Rechnungen und Dokumenten. Max. 4 MB (PNG, JPG, SVG).">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-4 border-b border-slate-100 pb-2">{t('settings.company.section_logo')}</h4>
+                    <SettingRow label={t('settings.company.logo_upload_label')} description={t('settings.company.logo_upload_desc')}>
                         <LogoUpload logoPath={companyData.company_logo} onUploaded={() => queryClient.invalidateQueries({ queryKey: ['companySettings'] })} />
                     </SettingRow>
                 </div>
@@ -839,7 +906,7 @@ const CompanySettingsTab = () => {
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                             <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                                 <FaClock className="text-brand-primary" />
-                                Öffnungszeiten bearbeiten
+                                {t('settings.company.opening_hours_modal_title')}
                             </h3>
                             <button
                                 onClick={() => setIsOpeningHoursModalOpen(false)}
@@ -852,13 +919,13 @@ const CompanySettingsTab = () => {
                         <div className="p-6 space-y-3">
                             {Object.entries(openingHours).map(([day, hours]: [string, any]) => {
                                 const dayLabels: Record<string, string> = {
-                                    monday: 'Montag',
-                                    tuesday: 'Dienstag',
-                                    wednesday: 'Mittwoch',
-                                    thursday: 'Donnerstag',
-                                    friday: 'Freitag',
-                                    saturday: 'Samstag',
-                                    sunday: 'Sonntag'
+                                    monday: t('settings.company.days.monday'),
+                                    tuesday: t('settings.company.days.tuesday'),
+                                    wednesday: t('settings.company.days.wednesday'),
+                                    thursday: t('settings.company.days.thursday'),
+                                    friday: t('settings.company.days.friday'),
+                                    saturday: t('settings.company.days.saturday'),
+                                    sunday: t('settings.company.days.sunday')
                                 };
                                 return (
                                     <div key={day} className="flex items-center gap-4 p-4 bg-slate-50 rounded-sm border border-slate-200 hover:border-slate-300 transition-colors">
@@ -905,7 +972,7 @@ const CompanySettingsTab = () => {
                                                 />
                                             </div>
                                         ) : (
-                                            <span className="text-sm text-slate-400 italic flex-1">Geschlossen</span>
+                                            <span className="text-sm text-slate-400 italic flex-1">{t('settings.company.closed')}</span>
                                         )}
                                     </div>
                                 );
@@ -917,9 +984,9 @@ const CompanySettingsTab = () => {
                                 onClick={() => setIsOpeningHoursModalOpen(false)}
                                 className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
                             >
-                                Schließen
+                                {t('settings.company.close')}
                             </button>
-                            <p className="text-[10px] text-slate-400 self-center">* Änderungen werden beim Speichern der Firmeneinstellungen übernommen</p>
+                            <p className="text-[10px] text-slate-400 self-center">{t('settings.company.opening_hours_note')}</p>
                         </div>
                     </div>
                 </div>

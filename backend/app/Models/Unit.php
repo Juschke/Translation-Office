@@ -4,7 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Unit extends Model
 {
-    use \App\Traits\BelongsToTenant;
+    use \App\Traits\BelongsToTenant, \App\Traits\HasSequentialCode;
 
-    protected $fillable = ['name', 'abbreviation', 'status'];
+    protected $fillable = ['tenant_id', 'code', 'name', 'abbreviation', 'status', 'type', 'description'];
 }

@@ -59,7 +59,7 @@ class InvoiceController extends Controller
             ->max('invoice_number_sequence') ?? 0;
 
         $newSeq = $lastSeq + 1;
-        $invoiceNumber = sprintf('RE-%s-%05d', $year, $newSeq);
+        $invoiceNumber = $this->generateSequentialNumber($request->user(), 'invoice', $newSeq, $year);
 
         return response()->json([
             'next_number' => $invoiceNumber,
@@ -90,7 +90,7 @@ class InvoiceController extends Controller
     {
         $validated = $request->validate([
             'type' => 'nullable|string|in:invoice,credit_note',
-            'project_id' => 'required|exists:projects,id',
+            'project_id' => 'nullable|exists:projects,id',
             'customer_id' => 'required|exists:customers,id',
             'date' => 'required|date',
             'due_date' => 'required|date',
@@ -136,11 +136,12 @@ class InvoiceController extends Controller
                         ->max('invoice_number_sequence') ?? 0;
 
                     $newSeq = $lastSeq + 1;
-                    $invoiceNumber = sprintf('RE-%s-%05d', $year, $newSeq);
+                    $type = $validated['type'] ?? 'invoice';
+                    $invoiceNumber = $this->generateSequentialNumber($request->user(), $type, $newSeq, $year);
 
                     // 2. Load related data for snapshot
                     $customer = \App\Models\Customer::findOrFail($validated['customer_id']);
-                    $project = \App\Models\Project::with('positions')->findOrFail($validated['project_id']);
+                    $project = isset($validated['project_id']) ? \App\Models\Project::with('positions')->find($validated['project_id']) : null;
                     $tenant = \App\Models\Tenant::findOrFail($tenantId);
 
                     // 3. Create invoice with cent-based amounts + snapshots
@@ -148,7 +149,7 @@ class InvoiceController extends Controller
                         'type' => $validated['type'] ?? Invoice::TYPE_INVOICE,
                         'invoice_number' => $invoiceNumber,
                         'invoice_number_sequence' => $newSeq,
-                        'project_id' => $validated['project_id'],
+                        'project_id' => $validated['project_id'] ?? null,
                         'customer_id' => $validated['customer_id'],
                         'date' => $validated['date'],
                         'due_date' => $validated['due_date'],
@@ -164,7 +165,7 @@ class InvoiceController extends Controller
                         'shipping_cents' => (int) round(($validated['shipping'] ?? 0) * 100),
                         'discount_cents' => (int) round(($validated['discount'] ?? 0) * 100),
                         'paid_amount_cents' => (int) round(
-                            ($validated['paid_amount'] ?? $project->payments()->sum('amount') ?? 0) * 100
+                            ($validated['paid_amount'] ?? ($project ? $project->payments()->sum('amount') : 0)) * 100
                         ),
                         'currency' => $validated['currency'] ?? 'EUR',
                         'notes' => $validated['notes'] ?? null,
@@ -195,8 +196,8 @@ class InvoiceController extends Controller
                         'snapshot_seller_bank_bic' => $tenant->bank_bic,
 
                         // --- Project snapshot ---
-                        'snapshot_project_name' => $project->project_name,
-                        'snapshot_project_number' => $project->project_number,
+                        'snapshot_project_name' => $project?->project_name ?? 'Manuelle Rechnung',
+                        'snapshot_project_number' => $project?->project_number,
                     ]);
 
                     // 4. Create frozen line items (either from request or from project positions)
@@ -213,14 +214,16 @@ class InvoiceController extends Controller
                                 'tax_rate' => $validated['tax_rate'] ?? 19,
                             ]);
                         }
-                    } else {
+                    } elseif ($project) {
                         $this->createInvoiceItems($invoice, $project, $validated['tax_rate'] ?? 19);
                     }
 
                     // 5. Auto-advance project status to "ready_for_pickup" when invoice is created
-                    $advancedStatuses = ['ready_for_pickup', 'completed', 'invoiced', 'archived'];
-                    if (!in_array($project->status, $advancedStatuses)) {
-                        $project->update(['status' => 'ready_for_pickup']);
+                    if ($project) {
+                        $advancedStatuses = ['ready_for_pickup', 'completed', 'invoiced', 'archived'];
+                        if (!in_array($project->status, $advancedStatuses)) {
+                            $project->update(['status' => 'ready_for_pickup']);
+                        }
                     }
 
                     // 6. Audit log
@@ -1307,5 +1310,44 @@ class InvoiceController extends Controller
             'metadata' => $metadata,
             'ip_address' => $request->ip(),
         ]);
+    }
+
+    /**
+     * Generate a sequential document number based on tenant settings.
+     */
+    private function generateSequentialNumber($user, string $type, int $sequence, $year)
+    {
+        $tenantId = $user->tenant_id ?? 1;
+        $settings = \App\Models\TenantSetting::where('tenant_id', $tenantId)
+            ->where('key', 'like', $type . '_%')
+            ->pluck('value', 'key');
+
+        $prefix = $settings[$type . '_prefix'] ?? ($type === 'credit_note' ? 'GUT' : 'RE');
+        $sep = ($settings[$type . '_separator'] ?? '-') === 'none' ? '' : ($settings[$type . '_separator'] ?? '-');
+        $padding = (int) ($settings[$type . '_padding'] ?? 5);
+        $date = Carbon::now();
+
+        $yearPart = '';
+        $yearFormat = $settings[$type . '_year_format'] ?? 'YYYY';
+        if ($yearFormat === 'YYYY')
+            $yearPart = $year;
+        elseif ($yearFormat === 'YY')
+            $yearPart = substr($year, -2);
+        elseif ($yearFormat === 'none')
+            $yearPart = '';
+
+        $monthPart = '';
+        if (($settings[$type . '_month_format'] ?? 'none') === 'MM')
+            $monthPart = $date->format('m');
+
+        $dayPart = '';
+        if (($settings[$type . '_day_format'] ?? 'none') === 'DD')
+            $dayPart = $date->format('d');
+
+        $nrPart = str_pad($sequence, $padding, '0', STR_PAD_LEFT);
+
+        return implode($sep, array_filter([$prefix, $yearPart, $monthPart, $dayPart, $nrPart], function ($p) {
+            return $p !== '';
+        }));
     }
 }

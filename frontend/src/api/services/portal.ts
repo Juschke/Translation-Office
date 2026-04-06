@@ -1,0 +1,146 @@
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import type {
+  PortalCustomer,
+  PortalProject,
+  PortalInvoice,
+  PortalDashboardData,
+  PortalMessage,
+} from '../../types/portal';
+
+const portalApi = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  headers: {
+    Accept: 'application/json',
+  },
+  withCredentials: true,
+});
+
+portalApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('portal_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+portalApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!error.response) {
+      toast.error('Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.');
+      return Promise.reject(error);
+    }
+
+    const status = error.response.status;
+    const errorData = error.response.data;
+
+    switch (status) {
+      case 401:
+        localStorage.removeItem('portal_token');
+        window.location.href = '/portal/login';
+        break;
+      case 403:
+        toast.error(errorData?.message || 'Sie haben keine Berechtigung für diese Aktion.');
+        break;
+      case 422:
+        if (errorData?.errors) {
+          const firstError = Object.values(errorData.errors)[0];
+          toast.error(Array.isArray(firstError) ? firstError[0] as string : firstError as string);
+        } else {
+          toast.error(errorData?.message || 'Validierungsfehler.');
+        }
+        break;
+      case 429:
+        toast.error('Zu viele Anfragen. Bitte versuchen Sie es später erneut.');
+        break;
+      case 500:
+      case 502:
+      case 503:
+        toast.error(errorData?.message || 'Serverfehler. Bitte versuchen Sie es später erneut.');
+        break;
+      default:
+        if (errorData?.message) {
+          toast.error(errorData.message);
+        }
+        break;
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export const portalAuthService = {
+  requestLink: async (email: string): Promise<void> => {
+    await portalApi.post('/portal/auth/request-link', { email });
+  },
+
+  verify: async (token: string): Promise<{ token: string }> => {
+    const response = await portalApi.post('/portal/auth/verify', { token });
+    return response.data;
+  },
+
+  logout: async (): Promise<void> => {
+    await portalApi.post('/portal/auth/logout');
+  },
+
+  me: async (): Promise<PortalCustomer> => {
+    const response = await portalApi.get('/portal/auth/me');
+    return response.data;
+  },
+};
+
+export const portalDashboardService = {
+  getDashboard: async (): Promise<PortalDashboardData> => {
+    const response = await portalApi.get('/portal/dashboard');
+    return response.data;
+  },
+};
+
+export const portalProjectService = {
+  getAll: async (): Promise<PortalProject[]> => {
+    const response = await portalApi.get('/portal/projects');
+    return response.data;
+  },
+
+  getById: async (id: number | string): Promise<PortalProject> => {
+    const response = await portalApi.get(`/portal/projects/${id}`);
+    return response.data;
+  },
+
+  sendMessage: async (id: number | string, body: string): Promise<PortalMessage> => {
+    const response = await portalApi.post(`/portal/projects/${id}/messages`, { body });
+    return response.data;
+  },
+};
+
+export const portalInvoiceService = {
+  getAll: async (): Promise<PortalInvoice[]> => {
+    const response = await portalApi.get('/portal/invoices');
+    return response.data;
+  },
+
+  download: async (id: number | string): Promise<Blob> => {
+    const response = await portalApi.get(`/portal/invoices/${id}/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+};
+
+export const portalRequestService = {
+  create: async (data: FormData): Promise<void> => {
+    await portalApi.post('/portal/requests', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
+export const portalProfileService = {
+  update: async (data: Partial<PortalCustomer>): Promise<PortalCustomer> => {
+    const response = await portalApi.put('/portal/profile', data);
+    return response.data;
+  },
+};
+
+export { portalApi };

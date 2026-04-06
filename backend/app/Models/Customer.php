@@ -42,12 +42,18 @@ class Customer extends Model
         'vat_id',
         'created_by',
         'updated_by',
+        'portal_access',
+        'portal_last_login_at',
     ];
 
     protected $casts = [
         'additional_emails' => 'array',
         'additional_phones' => 'array',
         'payment_terms_days' => 'integer',
+        'portal_access' => 'boolean',
+        'portal_token_expires_at' => 'datetime',
+        'portal_session_expires_at' => 'datetime',
+        'portal_last_login_at' => 'datetime',
     ];
 
     public function priceMatrix()
@@ -73,6 +79,21 @@ class Customer extends Model
     public function editor()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function isPortalSessionValid(): bool
+    {
+        return $this->portal_session_token &&
+               $this->portal_session_expires_at &&
+               $this->portal_session_expires_at->isFuture();
+    }
+
+    public function hasValidMagicLink(string $token): bool
+    {
+        return $this->portal_token &&
+               $this->portal_token_expires_at &&
+               $this->portal_token_expires_at->isFuture() &&
+               hash_equals($this->portal_token, hash('sha256', $token));
     }
 
     protected static function boot()

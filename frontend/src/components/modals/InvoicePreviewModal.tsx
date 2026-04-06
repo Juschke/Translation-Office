@@ -11,9 +11,10 @@ interface InvoicePreviewModalProps {
     isOpen: boolean;
     onClose: () => void;
     invoice: any;
+    onStatusChange?: () => void;
 }
 
-const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClose, invoice }) => {
+const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClose, invoice, onStatusChange }) => {
     const queryClient = useQueryClient();
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [isFetchingPreview, setIsFetchingPreview] = useState(false);
@@ -56,6 +57,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             toast.success('Entwurf gelöscht');
+            if (onStatusChange) onStatusChange();
             onClose();
         },
         onError: (error: any) => {
@@ -69,6 +71,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             toast.success('Rechnung ausgestellt und gesperrt (GoBD-konform)');
+            if (onStatusChange) onStatusChange();
             onClose();
         },
         onError: (error: any) => {
@@ -82,6 +85,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
         onSuccess: (data: any) => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             toast.success(data?.message || 'Rechnung storniert, Gutschrift erstellt');
+            if (onStatusChange) onStatusChange();
             onClose();
         },
         onError: (error: any) => {

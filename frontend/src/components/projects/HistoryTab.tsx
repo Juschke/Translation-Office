@@ -2,10 +2,11 @@ import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../../api/services';
 import TableSkeleton from '../common/TableSkeleton';
-import DataTable, { type FilterDef } from '../common/DataTable';
+import DataTable from '../common/DataTable';
 import { useMemo, useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { FaFilter, FaTimes, FaUndo, FaChevronDown } from 'react-icons/fa';
 
 const ATTRIBUTE_LABELS: Record<string, string> = {
     project_name: 'Projektname',
@@ -89,6 +90,10 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
         enabled: !!projectId,
     });
 
+    const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+    const [eventType, setEventType] = useState('all');
+    const [userFilter, setUserFilter] = useState('all');
+
     // Flatten activities into individual changes for better table display
     const flattenedChanges = useMemo(() => {
         const result: any[] = [];
@@ -152,9 +157,6 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
         return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [activities]);
 
-    const [eventType, setEventType] = useState('all');
-    const [userFilter, setUserFilter] = useState('all');
-
     const filteredChanges = useMemo(() => {
         return flattenedChanges.filter(change => {
             if (eventType !== 'all' && change.event !== eventType) return false;
@@ -168,33 +170,6 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
         flattenedChanges.forEach(c => set.add(c.user));
         return Array.from(set).sort();
     }, [flattenedChanges]);
-
-    const tableFilters: FilterDef[] = [
-        {
-            id: 'eventType',
-            label: 'Aktionstyp',
-            type: 'select',
-            value: eventType,
-            onChange: setEventType,
-            options: [
-                { value: 'all', label: 'Alle Aktionen' },
-                { value: 'created', label: 'Erstellt' },
-                { value: 'updated', label: 'Aktualisiert' },
-                { value: 'deleted', label: 'Gelöscht' },
-            ]
-        },
-        {
-            id: 'userFilter',
-            label: 'Benutzer',
-            type: 'select',
-            value: userFilter,
-            onChange: setUserFilter,
-            options: [
-                { value: 'all', label: 'Alle Benutzer' },
-                ...users.map(u => ({ value: u, label: u }))
-            ]
-        }
-    ];
 
     const activeFilterCount = (eventType !== 'all' ? 1 : 0) + (userFilter !== 'all' ? 1 : 0);
 
@@ -302,21 +277,72 @@ const HistoryTab = ({ projectId }: HistoryTabProps) => {
 
     return (
         <div className="flex flex-col gap-4 animate-fadeIn pb-10">
+            {/* ── Filter Sidebar ── */}
+            <>
+                {isFilterSidebarOpen && (
+                    <div className="fixed inset-0 z-30 bg-black/[0.03]" onClick={() => setIsFilterSidebarOpen(false)} />
+                )}
+                <div className={clsx(
+                    "fixed top-12 right-0 bottom-0 z-40 w-72 bg-white border-l border-[#D1D9D8] shadow-[-4px_0_20px_rgba(0,0,0,0.08)] flex flex-col transition-transform duration-300 ease-in-out",
+                    isFilterSidebarOpen ? "translate-x-0" : "translate-x-full"
+                )}>
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#D1D9D8] bg-gradient-to-b from-white to-[#f0f0f0] shrink-0">
+                        <div className="flex items-center gap-2">
+                            <FaFilter className="text-[#1B4D4F] text-xs" />
+                            <span className="text-sm font-bold text-slate-700">Filter</span>
+                            {activeFilterCount > 0 && (
+                                <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{activeFilterCount}</span>
+                            )}
+                        </div>
+                        <button onClick={() => setIsFilterSidebarOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-sm transition"><FaTimes className="text-xs" /></button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3 flex flex-col gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">Aktionstyp</label>
+                            <div className="relative">
+                                <select className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                    value={eventType} onChange={e => setEventType(e.target.value)}>
+                                    <option value="all">Alle Aktionen</option>
+                                    <option value="created">Erstellt</option>
+                                    <option value="updated">Aktualisiert</option>
+                                    <option value="deleted">Gelöscht</option>
+                                </select>
+                                <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">Benutzer</label>
+                            <div className="relative">
+                                <select className="w-full h-9 text-xs border border-[#ccc] rounded-[3px] px-2.5 bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus:border-[#1B4D4F] outline-none appearance-none pr-8 cursor-pointer hover:border-[#adadad] transition"
+                                    value={userFilter} onChange={e => setUserFilter(e.target.value)}>
+                                    <option value="all">Alle Benutzer</option>
+                                    {users.map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                                <FaChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-4 py-3 border-t border-[#D1D9D8] bg-[#f6f8f8] shrink-0">
+                        <button onClick={() => { setEventType('all'); setUserFilter('all'); }} className="w-full px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-[#ccc] rounded-[3px] hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center gap-2">
+                            <FaUndo className="text-xs" /> Filter zurücksetzen
+                        </button>
+                    </div>
+                </div>
+            </>
+
             <DataTable
                 data={filteredChanges}
                 columns={columns as any}
                 pageSize={15}
                 searchPlaceholder="Historie filtern..."
                 showSettings={true}
-                filters={tableFilters}
+                onFilterToggle={() => setIsFilterSidebarOpen(v => !v)}
+                isFilterOpen_external={isFilterSidebarOpen}
                 activeFilterCount={activeFilterCount}
-                onResetFilters={() => {
-                    setEventType('all');
-                    setUserFilter('all');
-                }}
             />
         </div>
     );
 };
 
 export default HistoryTab;
+

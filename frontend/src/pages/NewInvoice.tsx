@@ -917,7 +917,7 @@ const NewInvoice = () => {
                                             variant="outline"
                                             size="sm"
                                             onClick={addItem}
-                                            className="h-9 text-xs font-bold border-brand-primary/30 text-brand-primary hover:text-white hover:bg-brand-primary bg-brand-primary/5 shadow-sm px-8"
+                                            className="h-9 px-8 text-xs font-bold"
                                         >
                                             <FaPlus className="mr-2 text-[10px]" /> Position hinzufügen
                                         </Button>
@@ -1067,23 +1067,24 @@ const NewInvoice = () => {
                 <div className="max-w-[1400px] mx-auto px-4 py-8">
                     <div className="flex justify-end items-center gap-3 border-t border-slate-200 pt-8">
                         <Button
-                            variant="outline"
+                            variant="secondary"
                             onClick={() => navigate('/invoices')}
-                            className="px-5 h-9 text-xs font-semibold border-slate-200 text-slate-500 hover:bg-slate-50"
+                            className="h-9 px-5 text-xs font-semibold bg-white bg-none text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-700"
                         >
                             Abbrechen
                         </Button>
                         <Button
+                            variant="outline"
                             onClick={() => handleSubmit('draft')}
                             disabled={!formData.customer_id || isLoading}
-                            className="px-5 h-9 text-xs font-bold border-brand-primary/20 text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10"
+                            className="h-9 px-5 text-xs font-bold"
                         >
                             Als Entwurf speichern
                         </Button>
                         <Button
                             onClick={() => handleSubmit('issued')}
                             disabled={!formData.customer_id || items.length === 0 || isLoading}
-                            className="px-8 h-9 text-xs font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm flex items-center gap-2"
+                            className="h-9 px-8 text-xs font-bold"
                         >
                             <FaSave className="text-[10px]" />
                             {isLoading ? 'Speichern...' : (isEditMode ? 'Änderungen übernehmen' : 'Beleg jetzt buchen')}

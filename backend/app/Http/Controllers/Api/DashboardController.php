@@ -37,6 +37,12 @@ class DashboardController extends Controller
             $openProjectsCount = Project::whereIn('status', ['offer', 'in_progress', 'review', 'ready_for_pickup'])
                 ->count();
 
+            $openRequestsCount = Project::whereIn('status', ['draft', 'pending', 'offer'])
+                ->count();
+
+            $openQuotesCount = Project::whereIn('status', ['offer', 'quote_sent'])
+                ->count();
+
             $deadlinesTodayCount = Project::whereDate('deadline', $today)
                 ->whereIn('status', ['offer', 'pending', 'draft', 'in_progress', 'review', 'ready_for_pickup'])
                 ->count();
@@ -103,6 +109,8 @@ class DashboardController extends Controller
             return [
                 'stats' => [
                     'open_projects' => $openProjectsCount,
+                    'open_requests' => $openRequestsCount,
+                    'open_quotes' => $openQuotesCount,
                     'deadlines_today' => $deadlinesTodayCount,
                     'monthly_revenue' => (float) $monthlyRevenue,
                     'revenue_trend' => round($revenueTrend, 2),

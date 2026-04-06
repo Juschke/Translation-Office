@@ -195,6 +195,29 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('notifications/{id}', [\App\Http\Controllers\Api\NotificationController::class, 'destroy']);
 });
 
+// ── Customer Portal ────────────────────────────────────────────────────────
+// Public: Magic Link Auth
+Route::prefix('portal')->group(function () {
+    Route::post('auth/request-link', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'requestMagicLink']);
+    Route::get('auth/verify/{token}', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'verifyMagicLink']);
+});
+
+// Protected: Portal Features
+Route::prefix('portal')
+    ->middleware(['portal.customer', 'throttle:60,1'])
+    ->group(function () {
+        Route::get('me', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'me']);
+        Route::post('logout', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'logout']);
+        Route::get('dashboard', [\App\Http\Controllers\Api\Portal\PortalController::class, 'dashboard']);
+        Route::get('projects', [\App\Http\Controllers\Api\Portal\PortalController::class, 'projects']);
+        Route::get('projects/{id}', [\App\Http\Controllers\Api\Portal\PortalController::class, 'showProject']);
+        Route::post('projects/{id}/message', [\App\Http\Controllers\Api\Portal\PortalController::class, 'postMessage']);
+        Route::get('invoices', [\App\Http\Controllers\Api\Portal\PortalController::class, 'invoices']);
+        Route::get('invoices/{id}/download', [\App\Http\Controllers\Api\Portal\PortalController::class, 'downloadInvoice']);
+        Route::put('profile', [\App\Http\Controllers\Api\Portal\PortalController::class, 'updateProfile']);
+        Route::post('requests', [\App\Http\Controllers\Api\Portal\PortalRequestController::class, 'store']);
+    });
+
 // Admin routes - only accessible by platform admin users
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureUserIsAdmin::class, 'throttle:120,1'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminController::class, 'dashboard']);

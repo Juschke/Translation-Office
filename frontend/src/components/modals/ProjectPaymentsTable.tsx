@@ -16,7 +16,7 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
         {!hideHeader && (
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                    <FaEuroSign className="text-slate-400 text-sm" />
+                    <FaEuroSign className="text-brand-primary text-sm" />
                     <h4 className="text-sm font-medium text-slate-800">Anzahlungen / Teilzahlungen</h4>
                     <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
                         {payments.length}
@@ -29,8 +29,8 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
                         onClick={onAddPayment}
                         disabled={disabledAdd}
                         className={clsx(
-                            "h-7 px-3 text-[10px] uppercase font-bold tracking-tight shadow-none rounded flex items-center gap-1.5",
-                            disabledAdd ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white"
+                            "h-7 px-3 text-[10px] uppercase font-bold tracking-tight shadow-none flex items-center gap-1.5",
+                            disabledAdd && "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
                         )}
                     >
                         <FaPlus className="text-[10px]" /> {disabledAdd ? 'Vollständig bezahlt' : 'Zahlung erfassen'}

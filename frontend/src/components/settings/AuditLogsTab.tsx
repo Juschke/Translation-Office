@@ -20,7 +20,7 @@ const AuditLogsTab = () => {
                     <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded-sm"><FaUserShield /></div>
                     <div>
                         <h3 className="text-sm font-semibold text-slate-800">{t('settings.tabs.audit')}</h3>
-                        <p className="text-xs text-slate-400 font-medium tracking-tight">Vollständige Historie aller Systemänderungen</p>
+                        <p className="text-xs text-slate-400 font-medium tracking-tight">{t('settings.audit.subtitle')}</p>
                     </div>
                 </div>
             </div>
@@ -30,11 +30,11 @@ const AuditLogsTab = () => {
                         isLoading={isLoading}
                         data={activities}
                         columns={[
-                            { id: 'time', header: 'Zeitpunkt', accessor: (a: any) => <span className="text-slate-500 text-xs font-medium">{new Date(a.created_at).toLocaleString('de-DE')}</span>, className: 'w-40' },
-                            { id: 'user', header: 'Benutzer', accessor: (a: any) => <span className="font-medium text-slate-800">{a.causer?.name || 'System'}</span> },
-                            { id: 'action', header: 'Aktion', accessor: (a: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', a.description === 'created' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : a.description === 'updated' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-red-50 text-red-700 border-red-200')}>{a.description}</span>, align: 'center' },
-                            { id: 'model', header: 'Modell', accessor: (a: any) => <span className="text-xs text-slate-400 italic">{a.subject_type.split('\\').pop()}</span> },
-                            { id: 'details', header: 'Details', accessor: (a: any) => <div className="max-w-xs truncate text-xs text-slate-500 font-brand bg-slate-50 p-1">{JSON.stringify(a.properties)}</div> }
+                            { id: 'time', header: t('settings.audit.col_time'), accessor: (a: any) => <span className="text-slate-500 text-xs font-medium">{new Date(a.created_at).toLocaleString('de-DE')}</span>, className: 'w-40' },
+                            { id: 'user', header: t('settings.audit.col_user'), accessor: (a: any) => <span className="font-medium text-slate-800">{a.causer?.name || t('settings.audit.system_user')}</span> },
+                            { id: 'action', header: t('settings.audit.col_action'), accessor: (a: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', a.description === 'created' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : a.description === 'updated' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-red-50 text-red-700 border-red-200')}>{a.description}</span>, align: 'center' },
+                            { id: 'model', header: t('settings.audit.col_model'), accessor: (a: any) => <span className="text-xs text-slate-400 italic">{a.subject_type.split('\\').pop()}</span> },
+                            { id: 'details', header: t('settings.audit.col_details'), accessor: (a: any) => <div className="max-w-xs truncate text-xs text-slate-500 font-brand bg-slate-50 p-1">{JSON.stringify(a.properties)}</div> }
                         ]}
                         pageSize={15}
                     />

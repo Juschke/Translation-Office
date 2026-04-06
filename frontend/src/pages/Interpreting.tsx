@@ -298,106 +298,111 @@ const Interpreting = () => {
     ];
 
     return (
-        <div className="flex flex-col gap-6 fade-in pb-10">
-            <div className="flex justify-between items-center gap-4">
-                <div className="min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('interpreting.title')}</h1>
-                    <p className="text-slate-500 text-sm hidden sm:block">{t('interpreting.subtitle')}</p>
+        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
+            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
+                <div className="flex justify-between items-center gap-4">
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">{t('interpreting.title')}</h1>
+                        <p className="text-slate-500 text-sm hidden sm:block">{t('interpreting.subtitle')}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        <Button
+                            onClick={() => setIsProjectSelectionOpen(true)}
+                        >
+                            <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('interpreting.new_assignment')}</span><span className="inline sm:hidden">{t('interpreting.new_short')}</span>
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                    <Button
-                        onClick={() => setIsProjectSelectionOpen(true)}
-                    >
-                        <FaPlus className="text-xs" /> <span className="hidden sm:inline">{t('interpreting.new_assignment')}</span><span className="inline sm:hidden">{t('interpreting.new_short')}</span>
-                    </Button>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <KPICard label={t('interpreting.kpi.upcoming')} value={stats.upcoming} icon={<FaCalendarAlt />} />
+                    <KPICard
+                        label={t('interpreting.kpi.completed')}
+                        value={stats.completed}
+                        icon={<FaCheckCircle />}
+                    />
+                    <KPICard
+                        label={t('interpreting.kpi.active_interpreters')}
+                        value={stats.uniquePartners}
+                        icon={<FaUserTie />}
+                        subValue={t('interpreting.kpi.deployed_partners')}
+                    />
+                    <KPICard
+                        label={t('interpreting.kpi.this_month')}
+                        value={stats.thisMonth}
+                        icon={<FaHandshake />}
+                        subValue={t('interpreting.kpi.assignments')}
+                    />
                 </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label={t('interpreting.kpi.upcoming')} value={stats.upcoming} icon={<FaCalendarAlt />} />
-                <KPICard
-                    label={t('interpreting.kpi.completed')}
-                    value={stats.completed}
-                    icon={<FaCheckCircle />}
-                />
-                <KPICard
-                    label={t('interpreting.kpi.active_interpreters')}
-                    value={stats.uniquePartners}
-                    icon={<FaUserTie />}
-                    subValue={t('interpreting.kpi.deployed_partners')}
-                />
-                <KPICard
-                    label={t('interpreting.kpi.this_month')}
-                    value={stats.thisMonth}
-                    icon={<FaHandshake />}
-                    subValue={t('interpreting.kpi.assignments')}
-                />
-            </div>
-
-            <DataTable<Appointment>
-                data={list}
-                columns={columns}
-                isLoading={isLoading}
-                searchPlaceholder={t('interpreting.search_placeholder')}
-                searchFields={['title', 'location', 'description']}
-                onExport={handleExport}
-                onRowClick={(row) => {
-                    setEditingAssignment(row);
-                    setIsModalOpen(true);
-                }}
-            />
+                <div className="flex-1 flex flex-col min-h-0 relative z-0 overflow-hidden">
+                    <DataTable<Appointment>
+                        data={list}
+                        columns={columns}
+                        isLoading={isLoading}
+                        searchPlaceholder={t('interpreting.search_placeholder')}
+                        searchFields={['title', 'location', 'description']}
+                        onExport={handleExport}
+                        onRowClick={(row) => {
+                            setEditingAssignment(row);
+                            setIsModalOpen(true);
+                        }}
+                        onAddClick={() => { setEditingAssignment(null); setIsModalOpen(true); }}
+                    />
+                </div>
 
 
-            <NewAppointmentModal
-                isOpen={isModalOpen}
-                onClose={() => { setIsModalOpen(false); setEditingAssignment(null); }}
-                onSubmit={(data) => {
-                    if (editingAssignment?.id) {
-                        updateMutation.mutate({ ...data, id: editingAssignment.id });
-                    } else {
-                        if (data.project) {
-                            setPendingProjectForConfirmation(data.project);
+                <NewAppointmentModal
+                    isOpen={isModalOpen}
+                    onClose={() => { setIsModalOpen(false); setEditingAssignment(null); }}
+                    onSubmit={(data) => {
+                        if (editingAssignment?.id) {
+                            updateMutation.mutate({ ...data, id: editingAssignment.id });
+                        } else {
+                            if (data.project) {
+                                setPendingProjectForConfirmation(data.project);
+                            }
+                            createMutation.mutate({ ...data, type: 'interpreting' });
                         }
-                        createMutation.mutate({ ...data, type: 'interpreting' });
-                    }
-                }}
-                initialData={editingAssignment}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-            />
-
-            <ConfirmModal
-                isOpen={isConfirmOpen}
-                onClose={() => { setIsConfirmOpen(false); setAssignmentToDelete(null); }}
-                onConfirm={() => {
-                    if (assignmentToDelete) {
-                        deleteMutation.mutate(assignmentToDelete.id);
-                    }
-                }}
-                title={t('interpreting.confirm.delete_title')}
-                message={t('interpreting.confirm.delete_message')}
-                isLoading={deleteMutation.isPending}
-            />
-
-            {selectedProjectForConfirmation && (
-                <InterpreterConfirmationModal
-                    isOpen={isInterpreterModalOpen}
-                    onClose={() => {
-                        setIsInterpreterModalOpen(false);
-                        setSelectedProjectForConfirmation(null);
                     }}
-                    project={selectedProjectForConfirmation}
+                    initialData={editingAssignment}
+                    isLoading={createMutation.isPending || updateMutation.isPending}
                 />
-            )}
 
-            <ProjectSelectionModal
-                isOpen={isProjectSelectionOpen}
-                onClose={() => setIsProjectSelectionOpen(false)}
-                onSelect={(project) => {
-                    setIsProjectSelectionOpen(false);
-                    setSelectedProjectForConfirmation(project);
-                    setIsInterpreterModalOpen(true);
-                }}
-            />
+                <ConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => { setIsConfirmOpen(false); setAssignmentToDelete(null); }}
+                    onConfirm={() => {
+                        if (assignmentToDelete) {
+                            deleteMutation.mutate(assignmentToDelete.id);
+                        }
+                    }}
+                    title={t('interpreting.confirm.delete_title')}
+                    message={t('interpreting.confirm.delete_message')}
+                    isLoading={deleteMutation.isPending}
+                />
+
+                {selectedProjectForConfirmation && (
+                    <InterpreterConfirmationModal
+                        isOpen={isInterpreterModalOpen}
+                        onClose={() => {
+                            setIsInterpreterModalOpen(false);
+                            setSelectedProjectForConfirmation(null);
+                        }}
+                        project={selectedProjectForConfirmation}
+                    />
+                )}
+
+                <ProjectSelectionModal
+                    isOpen={isProjectSelectionOpen}
+                    onClose={() => setIsProjectSelectionOpen(false)}
+                    onSelect={(project) => {
+                        setIsProjectSelectionOpen(false);
+                        setSelectedProjectForConfirmation(project);
+                        setIsInterpreterModalOpen(true);
+                    }}
+                />
+            </div>
         </div>
     );
 };

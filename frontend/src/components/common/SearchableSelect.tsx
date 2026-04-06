@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { FaChevronDown, FaSearch, FaCheck, FaTimes, FaPlus } from 'react-icons/fa';
 import clsx from 'clsx';
 import { Button } from '../ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface SearchableSelectProps {
     options: { value: string; label: string; icon?: string; group?: string }[];
@@ -27,6 +28,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     isMulti = false, onAddNew, onSearch, id, preserveOrder = false,
     maxVisibleItems = 2, roundedSide = 'both', disabled = false
 }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [activeIndex, setActiveIndex] = useState(-1);
@@ -181,7 +183,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 <input
                     type="text"
                     className="w-full pl-9 pr-8 py-2.5 border-none text-sm focus:outline-none"
-                    placeholder="Suchen..."
+                    placeholder={t('search.placeholder')}
                     value={search}
                     onChange={(e) => {
                         setSearch(e.target.value);
@@ -225,7 +227,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                             data-selected={isSelected}
                                             className={clsx(
                                                 "px-4 py-2 text-sm cursor-pointer transition flex justify-between items-center",
-                                                activeIndex === index ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50',
+                                                activeIndex === index ? 'bg-[rgb(18,58,60)] text-white' : 'text-slate-700 hover:bg-slate-50',
                                                 isSelected ? 'font-semibold bg-slate-50/30' : ''
                                             )}
                                             onClick={(e) => { e.stopPropagation(); handleSelect(opt.value); }}
@@ -252,7 +254,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             <div>
                                 {groupedOptions.sortedGroups.length > 0 && (
                                     <div className="px-4 py-1.5 bg-white text-xs font-semibold text-slate-400 tracking-[0.15em] border-y border-slate-100/50">
-                                        Sonstiges
+                                        {t('select.misc')}
                                     </div>
                                 )}
                                 {groupedOptions.noGroup.map((opt) => {
@@ -289,7 +291,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         )}
                     </>
                 ) : (
-                    <div className="px-4 py-8 text-sm text-slate-400 text-center italic">Keine Ergebnisse</div>
+                    <div className="px-4 py-8 text-sm text-slate-400 text-center italic">{t('empty.noResults')}</div>
                 )}
             </div>
             {onAddNew && (
@@ -307,6 +309,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         className="w-full"
                     >
                         <FaPlus className="text-xs text-brand-primary" />
+                        {t('select.add_new')}
                     </Button>
                 </div>
             )}
@@ -324,7 +327,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     roundedSide === 'left' && "rounded-l-sm",
                     roundedSide === 'right' && "rounded-r-sm",
                     roundedSide === 'none' && "rounded-none",
-                    isOpen ? "border-slate-400 ring-2 ring-slate-200 outline-none" : "border-brand-border hover:border-brand-primary shadow-sm",
+                    isOpen ? "border-[rgb(18,58,60)] ring-2 ring-[rgba(18,58,60,0.1)] outline-none" : "border-brand-border hover:border-brand-primary shadow-sm",
                     error && "border-red-500 ring-red-500/10",
                     disabled ? "bg-slate-50 border-brand-border/50 cursor-not-allowed opacity-60" : "bg-white",
                     className
@@ -357,12 +360,12 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             })}
                             {isMulti && values.length > maxVisibleItems && (
                                 <div className="bg-brand-accent/10 border border-brand-accent/20 px-1.5 py-0.5 rounded-sm text-xs font-medium text-brand-text whitespace-nowrap">
-                                    + {values.length - maxVisibleItems} weitere
+                                    + {values.length - maxVisibleItems} {t('select.more')}
                                 </div>
                             )}
                         </>
                     ) : (
-                        <span className="text-brand-muted">{placeholder}</span>
+                        <span className="text-brand-muted">{placeholder ?? t('select.choose')}</span>
                     )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">

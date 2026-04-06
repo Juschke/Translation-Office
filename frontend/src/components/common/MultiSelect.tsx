@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaChevronDown, FaTimes, FaSearch } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 interface Option {
     value: string;
@@ -14,7 +15,8 @@ interface MultiSelectProps {
     placeholder?: string;
 }
 
-const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChange, placeholder = 'Wählen...' }) => {
+const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChange, placeholder }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [activeIndex, setActiveIndex] = useState(-1);
@@ -26,7 +28,14 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
 
     useEffect(() => {
         setActiveIndex(filteredOptions.length > 0 ? 0 : -1);
-    }, [search, isOpen]);
+    }, [search, isOpen, filteredOptions.length]);
+
+    const toggleOption = (optionValue: string) => {
+        const newValue = value.includes(optionValue)
+            ? value.filter(v => v !== optionValue)
+            : [...value, optionValue];
+        onChange(newValue);
+    };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (!isOpen) {
@@ -64,13 +73,6 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const toggleOption = (optionValue: string) => {
-        const newValue = value.includes(optionValue)
-            ? value.filter(v => v !== optionValue)
-            : [...value, optionValue];
-        onChange(newValue);
-    };
-
     const removeValue = (e: React.MouseEvent, optionValue: string) => {
         e.stopPropagation();
         onChange(value.filter(v => v !== optionValue));
@@ -99,7 +101,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
                         );
                     })
                 ) : (
-                    <span className="text-slate-400 text-sm">{placeholder}</span>
+                    <span className="text-slate-400 text-sm">{placeholder ?? t('select.choose')}</span>
                 )}
                 <div className="ml-auto flex items-center gap-2">
                     {value.length > 0 && (
@@ -122,7 +124,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
                         <input
                             type="text"
                             className="w-full pl-9 pr-3 py-2.5 border-none text-sm focus:outline-none"
-                            placeholder="Suchen..."
+                            placeholder={t('search.placeholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={handleKeyDown}
@@ -134,9 +136,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
                             filteredOptions.map((option, index) => (
                                 <div
                                     key={option.value}
-                                    className={`px-4 py-2.5 text-sm cursor-pointer transition flex items-center gap-2 ${activeIndex === index ? 'bg-slate-50 text-slate-900' : ''
-                                        } ${value.includes(option.value) ? 'bg-brand-primary/5 text-brand-primary font-medium' : 'text-slate-600 hover:bg-slate-50'
-                                        }`}
+                                    className={`px-4 py-2.5 text-sm cursor-pointer transition flex items-center gap-2 ${activeIndex === index ? 'bg-slate-50 text-slate-900' : ''} ${value.includes(option.value) ? 'bg-brand-primary/5 text-brand-primary font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
                                     onClick={() => toggleOption(option.value)}
                                 >
                                     <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition ${value.includes(option.value) ? 'bg-brand-primary border-brand-primary' : 'border-slate-300 bg-white'}`}>
@@ -146,7 +146,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
                                 </div>
                             ))
                         ) : (
-                            <div className="px-4 py-3 text-sm text-slate-400 italic text-center">Keine Ergebnisse</div>
+                            <div className="px-4 py-3 text-sm text-slate-400 italic text-center">{t('empty.noResults')}</div>
                         )}
                     </div>
                 </div>
