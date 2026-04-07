@@ -107,7 +107,7 @@ const CustomerDetail = () => {
                         {/* Meta Info Bar */}
                         <div className="flex items-center gap-6 text-xs text-slate-400 flex-wrap border-t border-slate-100 pt-3 mt-1">
                             <div className="flex items-center gap-2">
-                                <span>Kunden-ID: <span className="text-slate-600 font-medium">{customer.customer_id}</span></span>
+                                <span>Kunden-ID: <span className="text-slate-600 font-medium">{customer.display_id || customer.customer_id || customer.id}</span></span>
                             </div>
                             <span className="text-slate-200">•</span>
                             <div className="flex items-center gap-2">
@@ -303,7 +303,7 @@ const RecentProjectsList = ({ customerId }: { customerId: string }) => {
                 <tbody className="text-xs divide-y divide-slate-50">
                     {list.slice(0, 5).map((p: any) => (
                         <tr key={p.id} onClick={() => navigate(`/projects/${p.id}`)} className="hover:bg-slate-50 cursor-pointer transition-colors group">
-                            <td className="px-6 py-3 font-medium text-slate-700 group-hover:underline">{p.title || `Projekt #${p.id}`}</td>
+                            <td className="px-6 py-3 font-medium text-slate-700 group-hover:underline">{p.project_name || p.display_id || p.project_number || p.title}</td>
                             <td className="px-6 py-3">
                                 <StatusBadge status={p.status} />
                             </td>

@@ -218,7 +218,7 @@ const Projects = () => {
         return projects.filter((p: any) => {
             if (advancedFilters.projectSearch) {
                 const searchLow = advancedFilters.projectSearch.toLowerCase();
-                if (!(p.project_name?.toLowerCase().includes(searchLow) || p.project_number?.toLowerCase().includes(searchLow))) return false;
+                if (!(p.project_name?.toLowerCase().includes(searchLow) || (p.display_id || p.project_number)?.toLowerCase().includes(searchLow))) return false;
             }
             if (advancedFilters.customerId && p.customer_id?.toString() !== advancedFilters.customerId) return false;
             if (advancedFilters.partnerId && p.partner_id?.toString() !== advancedFilters.partnerId) return false;
@@ -326,7 +326,7 @@ const Projects = () => {
         return result.filter((p: any) => {
             if (advancedFilters.projectSearch) {
                 const searchLow = advancedFilters.projectSearch.toLowerCase();
-                if (!(p.project_name?.toLowerCase().includes(searchLow) || p.project_number?.toLowerCase().includes(searchLow))) return false;
+                if (!(p.project_name?.toLowerCase().includes(searchLow) || (p.display_id || p.project_number)?.toLowerCase().includes(searchLow))) return false;
             }
             if (advancedFilters.customerId && p.customer_id?.toString() !== advancedFilters.customerId) return false;
             if (advancedFilters.partnerId && p.partner_id?.toString() !== advancedFilters.partnerId) return false;
@@ -403,7 +403,7 @@ const Projects = () => {
 
         const headers = [t('tables.id'), t('tables.project_name'), t('tables.customer'), t('tables.source_lang'), t('tables.target_lang'), t('tables.status'), t('tables.deadline'), t('tables.price')];
         const rows = filteredProjects.map((p: any) => [
-            p.project_number || p.id,
+            p.display_id || p.project_number || p.id,
             p.project_name,
             p.customer?.company_name || `${p.customer?.first_name} ${p.customer?.last_name}`,
             p.source_language?.iso_code || '',
@@ -740,7 +740,7 @@ const Projects = () => {
                             columns={columns as any}
                             onRowClick={(p) => navigate(`/projects/${p.id}`)}
                             searchPlaceholder={t('projects.search_placeholder')}
-                            searchFields={['project_name', 'project_number'] as any[]}
+                            searchFields={['project_name', 'display_id', 'project_number'] as any[]}
                             onExport={handleExport}
                             tabs={tabs}
                             onAddClick={() => navigate('/projects/new')}
@@ -750,7 +750,28 @@ const Projects = () => {
                             bulkActions={[
                                 { label: t('projects.actions.bulk.complete'), icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'completed', progress: 100 } }), variant: 'success', show: statusView === 'active' && filter !== 'completed' },
                                 { label: t('projects.actions.bulk.reset'), icon: <FaArrowRight className="text-xs rotate-180" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'default', show: statusView === 'active' && filter === 'completed' },
-                                { label: t('projects.actions.bulk.send_email'), icon: <FaEnvelope className="text-xs" />, onClick: () => { if (selectedProjects.length === 1) { const p = projects.find((pro: any) => pro.id === selectedProjects[0]); navigate('/inbox', { state: { compose: true, to: p?.customer?.email, subject: `Projekt: ${p?.project_name} (${p?.project_number || 'ID ' + p?.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p?.project_name}.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`, attachments: p?.files || [] } }); } }, variant: 'primary', show: selectedProjects.length === 1 && statusView === 'active' },
+                                {
+                                    label: t('projects.actions.bulk.send_email'), icon: <FaEnvelope className="text-xs" />, onClick: () => {
+                                        if (selectedProjects.length >= 1) {
+                                            const p_list = projects.filter((p: any) => selectedProjects.includes(p.id));
+                                            const unique_emails = Array.from(new Set(p_list.map((p: any) => p.customer?.email).filter(Boolean)));
+                                            const emails_str = unique_emails.join(', ');
+                                            const subject = selectedProjects.length === 1 && p_list[0] ? `Projekt: ${p_list[0].project_name} (${p_list[0].display_id || p_list[0].project_number || p_list[0].id})` : 'Projekt-Informationen';
+                                            const body = `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen.\n\nMit freundlichen Grüßen\n${user?.tenant?.company_name || user?.name || ''}`;
+
+                                            const storageId = `compose_${Math.random().toString(36).substring(2, 9)}`;
+                                            const emailData = {
+                                                to: emails_str,
+                                                subject: subject,
+                                                body: body,
+                                                projectId: selectedProjects.length === 1 ? selectedProjects[0] : null
+                                            };
+                                            localStorage.setItem(storageId, JSON.stringify(emailData));
+
+                                            window.open(`/email/send?sid=${storageId}`, '_blank', 'width=1250,height=900,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes');
+                                        }
+                                    }, variant: 'primary', show: selectedProjects.length >= 1 && statusView === 'active'
+                                },
                                 { label: t('projects.actions.bulk.archive'), icon: <FaArchive className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'archived' } }), variant: 'default', show: statusView === 'active' },
                                 { label: t('projects.actions.bulk.trash'), icon: <FaTrash className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'deleted' } }), variant: 'danger', show: statusView === 'active' },
                                 { label: t('projects.actions.bulk.restore'), icon: <FaTrashRestore className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedProjects, data: { status: 'in_progress' } }), variant: 'success', show: statusView === 'trash' || statusView === 'archive' },

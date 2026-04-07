@@ -25,7 +25,21 @@
     "total": "Total",
     "show": "Show",
     "loading_data": "Loading data...",
-    "empty_value": "–"
+    "empty_value": "–",
+    "activated": "Activated",
+    "deactivated": "Deactivated",
+    "from": "From",
+    "to": "To",
+    "units": {
+      "words": "Words",
+      "line": "Line",
+      "pages": "Pages",
+      "hours": "Hours",
+      "flat": "Flat rate",
+      "piece": "Piece",
+      "minutes": "Minutes",
+      "days": "Days"
+    }
   },
   "actions": {
     "save": "Save",
@@ -468,6 +482,7 @@
     "contacts": "Contacts",
     "interpreters": "Interpreters",
     "invoices": "Invoices",
+    "finance": "Finance",
     "inbox": "E-Mail",
     "settings": "Settings",
     "reports": "Reports",
@@ -1569,7 +1584,41 @@
     "subtitle": "Overview of all invoices, credit notes, and reminders.",
     "new_invoice": "New Invoice",
     "new_credit_note": "New Credit Note",
-    "search_placeholder": "Search invoices..."
+    "search_placeholder": "Search invoices...",
+    "form": {
+      "header": "Header Section",
+      "intro_text": "Introductory Text",
+      "intro_text_placeholder": "Thank you for your order...",
+      "positions": "Service Overview",
+      "catalog": "Service Catalog",
+      "add_position": "Add Position",
+      "sum_net": "Total Net",
+      "plus_tax": "plus VAT",
+      "tax_at": "plus VAT {{rate}}%",
+      "total_amount": "Total Amount",
+      "payment_terms": "Payment Terms",
+      "payment_terms_placeholder": "E.g. Payable within 14 days...",
+      "footer_text": "Free Text (Footer)",
+      "footer_text_placeholder": "Optional concluding text (e.g. Thank you for your business!)",
+      "description": "Description",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "price": "Price",
+      "tax": "Tax",
+      "discount": "Discount",
+      "total_price": "Total Price",
+      "x_rechnung": "X-Invoice",
+      "additional_info_xrechnung": "Additional Information (X-Invoice)",
+      "leitweg_id": "Route ID (Leitweg-ID)",
+      "supplier_number": "Supplier Number",
+      "delivery_types": {
+        "delivery_date": "Delivery Date",
+        "service_date": "Service Date",
+        "delivery_period": "Delivery Period",
+        "service_period": "Service Period",
+        "none": "No delivery date"
+      }
+    }
   },
   "messages": {
     "success": "Operation successful",

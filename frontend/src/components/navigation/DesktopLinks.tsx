@@ -25,9 +25,12 @@ interface DesktopLinksProps {
     hasMinRole: (role: UserRole) => boolean;
     isContactsOpen: boolean;
     setIsContactsOpen: (open: boolean) => void;
+    isFinanceOpen: boolean;
+    setIsFinanceOpen: (open: boolean) => void;
     isSettingsOpen: boolean;
     setIsSettingsOpen: (open: boolean) => void;
     contactsRef: React.RefObject<HTMLDivElement | null>;
+    financeRef: React.RefObject<HTMLDivElement | null>;
     settingsRef: React.RefObject<HTMLDivElement | null>;
     navigate: (path: string) => void;
     setIsProfileOpen: (open: boolean) => void;
@@ -41,9 +44,12 @@ const DesktopLinks = ({
     hasMinRole,
     isContactsOpen,
     setIsContactsOpen,
+    isFinanceOpen,
+    setIsFinanceOpen,
     isSettingsOpen,
     setIsSettingsOpen,
     contactsRef,
+    financeRef,
     settingsRef,
     navigate,
     setIsProfileOpen,
@@ -55,7 +61,7 @@ const DesktopLinks = ({
     const isStartsWith = (path: string) => location.pathname.startsWith(path);
 
     const navLinkClass = (path: string, activeOverride?: boolean) => clsx(
-        "px-2 sm:px-2.5 py-4 text-[13px] font-semibold border-b-2 transition h-full flex items-center gap-1.5",
+        "px-2 sm:px-2.5 py-4 text-[13px] font-semibold border-b-2 transition h-full flex items-center gap-1.5 whitespace-nowrap",
         (activeOverride !== undefined ? activeOverride : isActive(path))
             ? "border-white text-white"
             : "border-transparent text-emerald-100/60 hover:text-white"
@@ -63,6 +69,7 @@ const DesktopLinks = ({
 
     const closeAllDropdowns = () => {
         setIsContactsOpen(false);
+        setIsFinanceOpen(false);
         setIsSettingsOpen(false);
         setIsProfileOpen(false);
         setIsNotifOpen(false);
@@ -78,6 +85,7 @@ const DesktopLinks = ({
     ];
 
     const isContactsActive = isStartsWith('/customers') || isStartsWith('/partners') || isStartsWith('/interpreting');
+    const isFinanceActive = isStartsWith('/requests') || isStartsWith('/quotes') || isStartsWith('/invoices') || isStartsWith('/reports');
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -97,34 +105,6 @@ const DesktopLinks = ({
                     </TooltipContent>
                 </Tooltip>
 
-                {/* Anfragen */}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link to="/requests" className={navLinkClass("/requests")}>
-                            <FaInbox className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">{t('nav.requests')}</span>
-                            <NavBadge count={dashboardData?.stats?.open_requests} label="Offene Anfragen" activeColor="bg-white/25" />
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <span className="font-semibold text-sm">Anfragen</span>
-                    </TooltipContent>
-                </Tooltip>
-
-                {/* Angebote */}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link to="/quotes" className={navLinkClass("/quotes")}>
-                            <FaFileContract className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">{t('nav.quotes')}</span>
-                            <NavBadge count={dashboardData?.stats?.open_quotes} label="Offene Angebote" activeColor="bg-white/25" />
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <span className="font-semibold text-sm">Angebote</span>
-                    </TooltipContent>
-                </Tooltip>
-
                 {/* Aufträge */}
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -138,35 +118,6 @@ const DesktopLinks = ({
                         <span className="font-semibold text-sm">Projekte</span>
                     </TooltipContent>
                 </Tooltip>
-
-                {/* Rechnungen */}
-                {hasMinRole('manager') && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Link to="/invoices" className={navLinkClass("/invoices")}>
-                                <FaFileInvoiceDollar className="text-base lg:hidden" />
-                                <span className="hidden lg:inline">{t('nav.invoices')}</span>
-                                <NavBadge
-                                    count={dashboardData?.stats?.unpaid_invoices}
-                                    label="Offene Rechnungen"
-                                    activeColor={dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-600" : "bg-rose-400"}
-                                />
-                            </Link>
-                        </TooltipTrigger>
-                        <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                            <div className="flex flex-col gap-1">
-                                <span className="font-semibold text-sm">Rechnungen</span>
-                                {dashboardData?.stats?.unpaid_invoices > 0 && (
-                                    <div className={clsx("flex items-center gap-2 text-xs", dashboardData?.stats?.overdue_invoices > 0 ? "text-rose-400" : "text-slate-400")}>
-                                        <div className={clsx("w-1.5 h-1.5 rounded-full", dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-500" : "bg-slate-500")}></div>
-                                        {dashboardData?.stats?.unpaid_invoices} offene Rechnungen
-                                        {dashboardData?.stats?.overdue_invoices > 0 && ` (${dashboardData.stats.overdue_invoices} überfällig)`}
-                                    </div>
-                                )}
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                )}
 
                 {/* Kontakte Dropdown */}
                 <div className="relative h-full" ref={contactsRef}>
@@ -231,7 +182,7 @@ const DesktopLinks = ({
                                 >
                                     <div className="flex items-center gap-3">
                                         <FaCommentDots className="text-slate-400 w-3.5 h-3.5" />
-                                        <span>Dolmetscher</span>
+                                        <span>{t('nav.interpreters')}</span>
                                     </div>
                                     {dashboardData?.stats?.active_interpreting > 0 && (
                                         <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
@@ -239,6 +190,106 @@ const DesktopLinks = ({
                                         </span>
                                     )}
                                 </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Finanzen Dropdown */}
+                <div className="relative h-full" ref={financeRef}>
+                    <button
+                        onClick={() => {
+                            const next = !isFinanceOpen;
+                            closeAllDropdowns();
+                            setIsFinanceOpen(next);
+                        }}
+                        className={navLinkClass("", isFinanceOpen || isFinanceActive)}
+                    >
+                        <FaFileInvoiceDollar className="text-base lg:hidden" />
+                        <span className="hidden lg:inline">{t('nav.finance')}</span>
+                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isFinanceOpen && "rotate-180")} />
+                    </button>
+
+                    {isFinanceOpen && (
+                        <div className="absolute left-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
+                            <div className="py-1">
+                                {/* Anfragen */}
+                                <Link
+                                    to="/requests"
+                                    className={clsx(
+                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
+                                        isActive('/requests') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FaInbox className="text-slate-400 w-3.5 h-3.5" />
+                                        <span>{t('nav.requests')}</span>
+                                    </div>
+                                    {dashboardData?.stats?.open_requests > 0 && (
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                            {dashboardData.stats.open_requests}
+                                        </span>
+                                    )}
+                                </Link>
+
+                                {/* Angebote */}
+                                <Link
+                                    to="/quotes"
+                                    className={clsx(
+                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                        isActive('/quotes') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FaFileContract className="text-slate-400 w-3.5 h-3.5" />
+                                        <span>{t('nav.quotes')}</span>
+                                    </div>
+                                    {dashboardData?.stats?.open_quotes > 0 && (
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                            {dashboardData.stats.open_quotes}
+                                        </span>
+                                    )}
+                                </Link>
+
+                                {/* Rechnungen */}
+                                {hasMinRole('manager') && (
+                                    <Link
+                                        to="/invoices"
+                                        className={clsx(
+                                            "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                            isStartsWith('/invoices') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <FaFileInvoiceDollar className="text-slate-400 w-3.5 h-3.5" />
+                                            <span>{t('nav.invoices')}</span>
+                                        </div>
+                                        {dashboardData?.stats?.unpaid_invoices > 0 && (
+                                            <span className={clsx(
+                                                "px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white",
+                                                dashboardData?.stats?.overdue_invoices > 0 ? "bg-rose-500" : "bg-brand-primary"
+                                            )}>
+                                                {dashboardData.stats.unpaid_invoices}
+                                            </span>
+                                        )}
+                                    </Link>
+                                )}
+
+                                {/* Auswertung */}
+                                {hasMinRole('manager') && (
+                                    <Link
+                                        to="/reports"
+                                        className={clsx(
+                                            "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                            isActive('/reports') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <FaChartBar className="text-slate-400 w-3.5 h-3.5" />
+                                            <span>{t('nav.reports')}</span>
+                                        </div>
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     )}
@@ -281,30 +332,14 @@ const DesktopLinks = ({
                     </TooltipContent>
                 </Tooltip>
 
-                {/* Auswertung */}
-                {hasMinRole('manager') && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Link to="/reports" className={navLinkClass("/reports")}>
-                                <FaChartBar className="text-base lg:hidden" />
-                                <span className="hidden lg:inline">{t('nav.reports')}</span>
-                            </Link>
-                        </TooltipTrigger>
-                        <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                            <span className="font-semibold text-sm">{t('nav.reports')}</span>
-                        </TooltipContent>
-                    </Tooltip>
-                )}
-
                 {/* Einstellungen Dropdown */}
                 {hasMinRole('manager') && (
                     <div className="relative h-full" ref={settingsRef}>
                         <button
                             onClick={() => {
-                                setIsSettingsOpen(!isSettingsOpen);
-                                setIsContactsOpen(false);
-                                setIsProfileOpen(false);
-                                setIsNotifOpen(false);
+                                const next = !isSettingsOpen;
+                                closeAllDropdowns();
+                                setIsSettingsOpen(next);
                             }}
                             className={navLinkClass("", isSettingsOpen || isStartsWith('/settings'))}
                         >
@@ -371,6 +406,7 @@ const DesktopLinks = ({
                         )}
                     </div>
                 )}
+
             </div>
         </TooltipProvider>
     );

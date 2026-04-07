@@ -293,6 +293,7 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
             error={error}
             roundedSide={roundedSide === 'both' || roundedSide === 'left' ? 'left' : 'none'}
             onSearch={setSearchInput}
+            className={className}
           />
         </div>
         <Button
@@ -303,7 +304,8 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
             setIsExpanded(nextShow);
           }}
           className={clsx(
-            "h-9 px-3 border-l-0 shadow-sm shrink-0",
+            "px-3 border-l-0 shadow-sm shrink-0",
+            className?.includes('h-11') ? 'h-11' : 'h-9',
             (roundedSide === 'both' || roundedSide === 'right') && "rounded-r-sm"
           )}
           title={showForm ? "Schließen" : "Schnellanlage Kunde"}

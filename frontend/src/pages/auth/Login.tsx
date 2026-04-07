@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FaUser, FaLock, FaExclamationCircle, FaShieldAlt } from 'react-icons/fa';
@@ -17,6 +17,30 @@ const LoginPage = () => {
     // 2FA State
     const [showTwoFactor, setShowTwoFactor] = useState(false);
     const [twoFactorCode, setTwoFactorCode] = useState('');
+
+    useEffect(() => {
+        // Callback for Google Sign-In
+        (window as any).onSignIn = (googleUser: any) => {
+            const profile = googleUser.getBasicProfile();
+
+            console.log('ID: ' + profile.getId());
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail());
+        };
+
+        (window as any).signOut = () => {
+            const auth2 = (window as any).gapi.auth2.getAuthInstance();
+            auth2.signOut().then(() => {
+                console.log('User signed out.');
+            });
+        };
+
+        return () => {
+            delete (window as any).onSignIn;
+            delete (window as any).signOut;
+        };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -202,6 +226,26 @@ const LoginPage = () => {
                             </button>
                         </div>
                     </form>
+
+                    {!showTwoFactor && (
+                        <div className="mt-6">
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-slate-200" />
+                                </div>
+                                <div className="relative flex justify-center text-xs">
+                                    <span className="bg-white px-2 text-slate-500 uppercase tracking-widest font-bold">Oder</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 flex flex-col items-center gap-4">
+                                <div className="g-signin2" data-onsuccess="onSignIn" data-theme="dark" data-width="full"></div>
+                                <a href="#" onClick={(e) => { e.preventDefault(); (window as any).signOut(); }} className="text-xs text-slate-500 hover:text-slate-700 underline">
+                                    Von Google abmelden
+                                </a>
+                            </div>
+                        </div>
+                    )}
 
                     {!showTwoFactor && (
                         <div className="mt-6">

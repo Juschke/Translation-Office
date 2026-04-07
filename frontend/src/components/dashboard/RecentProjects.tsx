@@ -126,7 +126,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
                                                     {p.project_name || p.name}
                                                 </span>
                                                 <span className="text-xs text-slate-400 font-mono tracking-tighter group-hover:text-brand-primary transition">
-                                                    {p.project_number || `#${p.id}`}
+                                                    {p.display_id || p.project_number}
                                                 </span>
                                             </div>
                                         </td>

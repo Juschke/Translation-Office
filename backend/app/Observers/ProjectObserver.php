@@ -14,29 +14,57 @@ class ProjectObserver
     public function creating(Project $project): void
     {
         if (empty($project->project_number)) {
-            // Format: P-YYMM-Sequence (e.g., P-2501-0001)
-            $prefix = TenantSetting::where('key', 'project_id_prefix')->value('value') ?? 'P-';
+            $tenantId = $project->tenant_id ?? 1;
 
-            // Allow dynamic YEAR-MONTH in prefix
-            $datePart = date('ym');
+            // Load all project number settings for this tenant
+            $settings = TenantSetting::where('tenant_id', $tenantId)
+                ->where('key', 'like', 'project_%')
+                ->pluck('value', 'key')
+                ->toArray();
 
-            $basePrefix = $prefix . (str_contains($prefix, '-') ? '' : '-') . $datePart . '-';
+            $prefix    = $settings['project_id_prefix'] ?? 'P';
+            $sep       = ($settings['project_separator'] ?? '-') === 'none' ? '' : ($settings['project_separator'] ?? '-');
+            $padding   = (int) ($settings['project_padding'] ?? 5);
+            $yearFmt   = $settings['project_year_format'] ?? 'YYYY';
+            $monthFmt  = $settings['project_month_format'] ?? 'none';
+            $dayFmt    = $settings['project_day_format'] ?? 'none';
 
-            $latest = Project::where('project_number', 'like', "{$basePrefix}%")
+            $now = now();
+
+            // Build the date parts (same logic as HasDisplayId)
+            $yearPart = '';
+            if ($yearFmt === 'YYYY') {
+                $yearPart = $now->format('Y');
+            } elseif ($yearFmt === 'YY') {
+                $yearPart = $now->format('y');
+            }
+
+            $monthPart = ($monthFmt === 'MM') ? $now->format('m') : '';
+            $dayPart   = ($dayFmt === 'DD')   ? $now->format('d') : '';
+
+            // Build the static prefix used to find existing numbers in the same period
+            $staticParts = array_filter([$prefix, $yearPart, $monthPart, $dayPart], fn($p) => $p !== '');
+            $basePrefix  = implode($sep, $staticParts);
+            $searchBase  = $basePrefix . ($basePrefix !== '' ? $sep : '');
+
+            // Find the highest existing number with the same base prefix
+            $latest = Project::where('tenant_id', $tenantId)
+                ->where('project_number', 'like', $searchBase . '%')
                 ->orderByRaw('LENGTH(project_number) DESC')
                 ->orderBy('project_number', 'desc')
                 ->first();
 
             $number = 1;
             if ($latest) {
-                $str = str_replace($basePrefix, '', $latest->project_number);
-                if (is_numeric($str)) {
-                    $number = intval($str) + 1;
+                $tail = substr($latest->project_number, strlen($searchBase));
+                if (is_numeric($tail)) {
+                    $number = (int) $tail + 1;
                 }
             }
 
-            $project->project_number = $basePrefix . str_pad($number, 4, '0', STR_PAD_LEFT);
-            $project->custom_id = $project->project_number;
+            $nrPart = str_pad($number, $padding, '0', STR_PAD_LEFT);
+            $project->project_number = $searchBase . $nrPart;
+            $project->custom_id      = $project->project_number;
         }
     }
 

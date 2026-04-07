@@ -30,6 +30,7 @@ export function mapProjectResponse(projectResponse: any) {
                     (projectResponse.customer.last_name?.[0] || 'K')
                 ).toUpperCase(),
                 type: projectResponse.customer.type || 'client',
+                display_id: projectResponse.customer.display_id || '',
                 address_street: projectResponse.customer.address_street || '',
                 address_house_no: projectResponse.customer.address_house_no || '',
                 address_zip: projectResponse.customer.address_zip || '',
@@ -73,6 +74,7 @@ export function mapProjectResponse(projectResponse: any) {
                 name:
                     projectResponse.partner.company ||
                     `${projectResponse.partner.first_name} ${projectResponse.partner.last_name}`,
+                display_id: projectResponse.partner.display_id || '',
                 email: projectResponse.partner.email,
                 initials: (
                     (projectResponse.partner.first_name?.[0] || '') +
@@ -170,5 +172,7 @@ export function mapProjectResponse(projectResponse: any) {
         appointment_location: projectResponse.appointment_location || '',
         customer_reference: projectResponse.customer_reference || '',
         customer_date: projectResponse.customer_date || null,
+        project_number: projectResponse.project_number || '',
+        display_id: projectResponse.display_id || projectResponse.project_number || '',
     };
 }

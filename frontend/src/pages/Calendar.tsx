@@ -458,7 +458,7 @@ const Calendar = () => {
                                             <div className="flex flex-col gap-1.5">
                                                 <div className="flex justify-between items-start gap-2">
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                                        {p.project_number || `ID ${p.id}`}
+                                                        {p.display_id || p.project_number || p.project_name}
                                                     </span>
                                                     <span className={clsx(
                                                         "px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase shrink-0",

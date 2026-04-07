@@ -31,7 +31,7 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
     }));
 
     return (
-        <div className={className}>
+        <div className="w-full">
             {label && (
                 <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
                     {label}
@@ -44,7 +44,7 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
                 onChange={onChange}
                 placeholder={placeholder}
                 error={error}
-                className="h-9"
+                className={className}
             />
             {helperText && (
                 <p className={`mt-1 text-xs font-medium ml-1 ${error ? "text-red-500" : "text-slate-400"}`}>

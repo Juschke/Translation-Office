@@ -88,7 +88,7 @@ const ActiveTasksTable: React.FC<ActiveTasksTableProps> = ({ tasks }) => {
                                                     {task.name}
                                                 </span>
                                                 <span className="text-xs text-slate-400 font-medium">
-                                                    {task.project_number || task.id}
+                                                    {task.display_id || task.project_number}
                                                 </span>
                                             </div>
                                         </td>

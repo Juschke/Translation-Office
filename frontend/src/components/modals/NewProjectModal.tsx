@@ -156,12 +156,12 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     });
 
     const displayNr = useMemo(() => {
-        if (initialData?.project_number) return initialData.project_number;
+        if (initialData?.display_id || initialData?.project_number) return initialData.display_id || initialData.project_number;
         const prefix = companyData?.project_id_prefix || 'P';
         const datePart = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
         const nextNum = companyData?.project_start_number || '0001';
         return `${prefix}-${datePart}-${nextNum}`;
-    }, [initialData?.project_number, companyData]);
+    }, [initialData?.display_id, initialData?.project_number, companyData]);
 
     const custOptions = useMemo(() => {
         return Array.isArray(customersData) ? customersData.map((c: any) => ({
@@ -173,7 +173,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const partnerOptions = useMemo(() => {
         return Array.isArray(partnersData) ? partnersData.map((p: any) => ({
             value: p.id.toString(),
-            label: `${p.id} - ${p.company_name || `${p.first_name} ${p.last_name}`}`
+            label: `${p.display_id || p.id} - ${p.company_name || `${p.first_name} ${p.last_name}`}`
         })) : [];
     }, [partnersData]);
 

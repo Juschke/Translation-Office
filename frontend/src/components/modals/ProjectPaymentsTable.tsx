@@ -47,13 +47,13 @@ const ProjectPaymentsTable = ({ payments, onAddPayment, onEditPayment, onDeleteP
             <div className="border border-slate-200 rounded-sm overflow-hidden bg-white shadow-sm">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-white border-b border-slate-200">
-                            <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-12 text-center">#</th>
-                            <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 whitespace-nowrap">Datum & Uhrzeit</th>
-                            <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-32 text-right">Betrag (Brutto)</th>
-                            <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-40">Zahlmittel</th>
-                            <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-48">Mitarbeiter</th>
-                            <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 w-20 text-center">Aktion</th>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <th className="px-4 py-3 text-center bg-slate-50 border-b border-slate-200 font-bold text-slate-300 w-12">#</th>
+                            <th className="px-4 py-3">Datum & Uhrzeit</th>
+                            <th className="px-4 py-3 w-32 text-right">Betrag (Brutto)</th>
+                            <th className="px-4 py-3 w-40">Zahlmittel</th>
+                            <th className="px-4 py-3 w-48">Mitarbeiter</th>
+                            <th className="px-4 py-3 w-20 text-center">Aktion</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

@@ -20,6 +20,7 @@ const Navigation = () => {
 
     // Menu States
     const [isContactsOpen, setIsContactsOpen] = useState(false);
+    const [isFinanceOpen, setIsFinanceOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -28,6 +29,7 @@ const Navigation = () => {
 
     // Refs for Click-Outside
     const contactsRef = useRef<HTMLDivElement>(null);
+    const financeRef = useRef<HTMLDivElement>(null);
     const settingsRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
@@ -39,6 +41,7 @@ const Navigation = () => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
             if (contactsRef.current && !contactsRef.current.contains(target)) setIsContactsOpen(false);
+            if (financeRef.current && !financeRef.current.contains(target)) setIsFinanceOpen(false);
             if (settingsRef.current && !settingsRef.current.contains(target)) setIsSettingsOpen(false);
             if (profileRef.current && !profileRef.current.contains(target)) setIsProfileOpen(false);
             if (notifRef.current && !notifRef.current.contains(target)) setIsNotifOpen(false);
@@ -55,6 +58,7 @@ const Navigation = () => {
         setIsProfileOpen(false);
         setIsNotifOpen(false);
         setIsContactsOpen(false);
+        setIsFinanceOpen(false);
         setIsSettingsOpen(false);
         setIsLangOpen(false);
     }, [location]);
@@ -119,9 +123,12 @@ const Navigation = () => {
                             hasMinRole={hasMinRole}
                             isContactsOpen={isContactsOpen}
                             setIsContactsOpen={setIsContactsOpen}
+                            isFinanceOpen={isFinanceOpen}
+                            setIsFinanceOpen={setIsFinanceOpen}
                             isSettingsOpen={isSettingsOpen}
                             setIsSettingsOpen={setIsSettingsOpen}
                             contactsRef={contactsRef}
+                            financeRef={financeRef}
                             settingsRef={settingsRef}
                             navigate={navigate}
                             setIsProfileOpen={setIsProfileOpen}

@@ -458,7 +458,7 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                         {d.company_name || `${d.first_name} ${d.last_name}`}
                                                     </span>
                                                     <span className="text-[10px] text-slate-400 font-medium">
-                                                        ID: {d.id} • {d.email || 'Keine E-Mail'} • {d.phone || 'Kein Telefon'}
+                                                        {d.display_id || d.id} • {d.email || 'Keine E-Mail'} • {d.phone || 'Kein Telefon'}
                                                     </span>
                                                 </div>
                                                 <Link

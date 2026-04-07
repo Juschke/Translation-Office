@@ -173,6 +173,7 @@ interface ProjectData {
     customer_reference?: string;
     customer_date?: string | null;
     project_number?: string;
+    display_id?: string;
 }
 
 
@@ -240,23 +241,10 @@ const ProjectDetail = () => {
         enabled: !!id
     });
 
-    const { data: companyData } = useQuery({
-        queryKey: ['companySettings'],
-        queryFn: settingsService.getCompany
-    });
-
     const displayProjectNumber = useMemo(() => {
         if (!projectData) return '';
-        if (projectData.project_number) return projectData.project_number;
-
-        // Fallback or construction if project_number is missing but settings exist
-        const prefix = companyData?.project_id_prefix || 'PR';
-        const showYear = companyData?.project_show_year !== false;
-        const year = projectData.createdAtRaw ? new Date(projectData.createdAtRaw).getFullYear() : new Date().getFullYear();
-        const num = String(projectData.id).padStart(4, '0');
-
-        return `${prefix}${showYear ? `-${year}` : ''}-${num}`;
-    }, [projectData, companyData]);
+        return projectData.display_id || projectData.project_number || String(projectData.id);
+    }, [projectData]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -700,10 +688,6 @@ const ProjectDetail = () => {
                 <div className="border-t border-slate-100 bg-white">
                     <div className="max-w-[1800px] mx-auto px-3 sm:px-4 py-3">
                         <div className="flex items-center gap-4 sm:gap-6 text-[10px] sm:text-xs text-slate-400 flex-wrap">
-                            <div className="flex items-center gap-2">
-                                <span>Projekt: <span className="text-slate-600 font-medium">{projectData.project_number || projectData.id}</span></span>
-                            </div>
-                            <span className="text-slate-200 hidden sm:block">•</span>
                             <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                                 <span className="flex items-center gap-1 flex-wrap">

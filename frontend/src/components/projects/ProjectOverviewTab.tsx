@@ -75,12 +75,12 @@ const ProjectOverviewTab = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                         <div className="space-y-4">
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
-                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Projekt</span>
-                                <span className="font-medium text-slate-800 tracking-tight">{projectData.project_number || projectData.id || <span className="text-slate-300 italic font-normal">Keine Angabe</span>}</span>
-                            </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
                                 <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Bezeichnung</span>
                                 <span className="font-bold text-slate-800">{projectData.name || <span className="text-slate-300 italic font-normal">Keine Angabe</span>}</span>
+                            </div>
+                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-baseline">
+                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Projekt-ID</span>
+                                <span className="font-mono font-medium text-slate-800 tracking-tight">{projectData.display_id || projectData.project_number || projectData.id || <span className="text-slate-300 italic font-normal">Keine Angabe</span>}</span>
                             </div>
                             <div className="grid grid-cols-[120px_1fr] gap-2 text-sm items-center">
                                 <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Sprachpaar</span>

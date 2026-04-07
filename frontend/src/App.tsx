@@ -32,6 +32,7 @@ import Team from './pages/Team';
 import Calendar from './pages/Calendar';
 import Interpreting from './pages/Interpreting';
 import Documents from './pages/Documents';
+import EmailSendPage from './pages/EmailSendPage';
 
 
 
@@ -71,10 +72,15 @@ function App() {
                         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
                         <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-                        {/* Onboarding (Authenticated but no Tenant) */}
                         <Route path="/onboarding" element={
                             <ProtectedRoute>
                                 <Onboarding />
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/email/send" element={
+                            <ProtectedRoute>
+                                <EmailSendPage />
                             </ProtectedRoute>
                         } />
 

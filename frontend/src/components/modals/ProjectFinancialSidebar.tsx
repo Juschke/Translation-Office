@@ -6,7 +6,6 @@ export interface ProjectFinancialSidebarProps {
     creationDate: string;
     projectManager: string;
     baseNet: number;
-    extraCosts: number;
     calcNet: number;
     calcTax: number;
     calcGross: number;

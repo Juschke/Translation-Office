@@ -53,13 +53,7 @@ export function buildProjectColumns({
                 </div>
             ),
             accessor: (p: any) => {
-                const projectNumber = p.project_number || (() => {
-                    const prefix = companySettings?.project_id_prefix || 'PR';
-                    const showYear = companySettings?.project_show_year !== false;
-                    const year = p.createdAtRaw ? new Date(p.createdAtRaw).getFullYear() : new Date().getFullYear();
-                    const num = String(p.id).padStart(4, '0');
-                    return `${prefix}${showYear ? `-${year}` : ''}-${num}`;
-                })();
+                const projectNumber = p.display_id || p.project_number || String(p.id);
 
                 return (
                     <div className="flex flex-col cursor-pointer group/link w-fit">
@@ -319,7 +313,7 @@ export function buildProjectColumns({
                             </DropdownMenuItem>
 
                             {p.status !== 'deleted' && (
-                                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => navigate('/inbox', { state: { compose: true, to: p.customer?.email, subject: `Projekt: ${p.project_name} (${p.project_number || 'ID ' + p.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p.project_name}.\n\nMit freundlichen Grüßen\n${companySettings?.company_name || ''}` } })}>
+                                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-xs" onClick={() => navigate('/inbox', { state: { compose: true, to: p.customer?.email, subject: `Projekt: ${p.project_name} (${p.display_id || p.project_number || p.id})`, body: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die gewünschten Informationen zum Projekt ${p.project_name}.\n\nMit freundlichen Grüßen\n${companySettings?.company_name || ''}` } })}>
                                     <FaEnvelope className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_MUTED}`} />
                                     <span>E-Mail</span>
                                 </DropdownMenuItem>

@@ -358,7 +358,7 @@ const RecentPartnerProjects = ({ partnerId }: { partnerId: string }) => {
                 <tbody className="text-xs divide-y divide-slate-50">
                     {projects.map((p: any) => (
                         <tr key={p.id} onClick={() => navigate(`/projects/${p.id}`)} className="hover:bg-slate-50 cursor-pointer transition-colors group">
-                            <td className="px-6 py-3 font-medium text-slate-700 group-hover:underline">{p.project_name || p.title || `Projekt #${p.id}`}</td>
+                            <td className="px-6 py-3 font-medium text-slate-700 group-hover:underline">{p.project_name || p.title || p.display_id || p.project_number}</td>
                             <td className="px-6 py-3">
                                 <StatusBadge status={p.status} />
                             </td>
