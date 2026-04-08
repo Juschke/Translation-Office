@@ -575,6 +575,8 @@ return new class extends Migration
             $table->string('action');
             $table->string('old_status')->nullable();
             $table->string('new_status')->nullable();
+            $table->string('previous_hash', 64)->nullable();
+            $table->string('record_hash', 64)->unique();
             $table->json('metadata')->nullable();
             $table->string('ip_address')->nullable();
             $table->timestamp('created_at')->useCurrent();

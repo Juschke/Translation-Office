@@ -5,6 +5,7 @@ import clsx from 'clsx';
 
 interface Task {
     id: string;
+    display_id?: string;
     project_number?: string;
     name: string;
     status: string;

@@ -33,6 +33,8 @@ class InvoiceAuditLog extends Model
         'action',
         'old_status',
         'new_status',
+        'previous_hash',
+        'record_hash',
         'metadata',
         'ip_address',
     ];

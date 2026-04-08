@@ -9,26 +9,47 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            $table->string('pdf_sha256', 64)->nullable()->after('pdf_path');
-            $table->timestamp('pdf_generated_at')->nullable()->after('pdf_sha256');
-            $table->string('xml_path')->nullable()->after('pdf_generated_at');
-            $table->string('xml_sha256', 64)->nullable()->after('xml_path');
-            $table->timestamp('xml_generated_at')->nullable()->after('xml_sha256');
-            $table->timestamp('archived_at')->nullable()->after('xml_generated_at');
+            if (! Schema::hasColumn('invoices', 'pdf_sha256')) {
+                $table->string('pdf_sha256', 64)->nullable()->after('pdf_path');
+            }
+
+            if (! Schema::hasColumn('invoices', 'pdf_generated_at')) {
+                $table->timestamp('pdf_generated_at')->nullable()->after('pdf_sha256');
+            }
+
+            if (! Schema::hasColumn('invoices', 'xml_path')) {
+                $table->string('xml_path')->nullable()->after('pdf_generated_at');
+            }
+
+            if (! Schema::hasColumn('invoices', 'xml_sha256')) {
+                $table->string('xml_sha256', 64)->nullable()->after('xml_path');
+            }
+
+            if (! Schema::hasColumn('invoices', 'xml_generated_at')) {
+                $table->timestamp('xml_generated_at')->nullable()->after('xml_sha256');
+            }
+
+            if (! Schema::hasColumn('invoices', 'archived_at')) {
+                $table->timestamp('archived_at')->nullable()->after('xml_generated_at');
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            $table->dropColumn([
-                'pdf_sha256',
-                'pdf_generated_at',
-                'xml_path',
-                'xml_sha256',
-                'xml_generated_at',
-                'archived_at',
+            $columns = array_filter([
+                Schema::hasColumn('invoices', 'pdf_sha256') ? 'pdf_sha256' : null,
+                Schema::hasColumn('invoices', 'pdf_generated_at') ? 'pdf_generated_at' : null,
+                Schema::hasColumn('invoices', 'xml_path') ? 'xml_path' : null,
+                Schema::hasColumn('invoices', 'xml_sha256') ? 'xml_sha256' : null,
+                Schema::hasColumn('invoices', 'xml_generated_at') ? 'xml_generated_at' : null,
+                Schema::hasColumn('invoices', 'archived_at') ? 'archived_at' : null,
             ]);
+
+            if ($columns !== []) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

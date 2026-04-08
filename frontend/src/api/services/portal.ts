@@ -142,7 +142,7 @@ export const portalRequestService = {
 };
 
 export const portalProfileService = {
-  update: async (data: Record<string, unknown>): Promise<PortalCustomer> => {
+  update: async (data: Partial<Omit<PortalCustomer, 'id' | 'email'>>): Promise<PortalCustomer> => {
     const response = await portalApi.put('/portal/profile', data);
     return response.data;
   },

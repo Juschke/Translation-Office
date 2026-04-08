@@ -85,7 +85,9 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             customerTotal: '0.00',
             customerMode: 'flat',
             marginType: 'markup',
-            marginPercent: '0'
+            marginPercent: '0',
+            taxRate: '19.00',
+            discountPercent: '0.00'
         }
     ]);
 
@@ -271,7 +273,9 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             customerMode: 'flat',
             customerTotal: '0.00',
             marginType: 'markup',
-            marginPercent: '0.00'
+            marginPercent: '0.00',
+            taxRate: '19.00',
+            discountPercent: '0.00'
         }]);
         setTotalPrice('');
         setPartnerPrice('');
@@ -1274,7 +1278,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         creationDate={creationDate}
                         projectManager={projectManager}
                         baseNet={baseNet}
-                        extraCosts={extraCosts}
                         calcNet={calcNet}
                         calcTax={calcTax}
                         calcGross={calcGross}

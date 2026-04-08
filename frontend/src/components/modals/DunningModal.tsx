@@ -2,7 +2,6 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { useTranslation } from 'react-i18next';
 
 interface DunningModalProps {
     isOpen: boolean;

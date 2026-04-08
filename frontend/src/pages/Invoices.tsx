@@ -290,15 +290,6 @@ const Invoices = () => {
         </div>
     ) : null;
 
-    const activeInvoicesCount = useMemo(() => {
-        const invoicesArray = Array.isArray(invoices) ? invoices : ((invoices as any)?.data || []);
-        return invoicesArray.filter((inv: any) => {
-            const s = inv.status?.toLowerCase();
-            return matchesCustomerId(inv) && (s !== 'archived' && s !== 'archiviert' && s !== 'deleted' && s !== 'gelöscht');
-        }).length;
-        function matchesCustomerId(inv: any) { return !customerId || String(inv.customer_id) === String(customerId); }
-    }, [invoices, customerId]);
-
     const activeInvoicesList = useMemo(() => {
         const invoicesArray = Array.isArray(invoices) ? invoices : ((invoices as any)?.data || []);
         return invoicesArray.filter((inv: any) => {

@@ -137,7 +137,7 @@ const MasterDataTab = () => {
         setDeleteConfirm({ isOpen: false, item: null });
     };
 
-    const actions = (item: any) => ({
+    const actions = () => ({
         id: 'actions',
         header: '',
         accessor: (row: any) => (
@@ -212,7 +212,7 @@ const MasterDataTab = () => {
                                     accessor: (l: any) => <StatusDot active={l.status === 'active' || !l.status} />,
                                     className: 'w-24',
                                 },
-                                actions(null),
+                                actions(),
                             ]}
                         />
                     ))}
@@ -256,7 +256,7 @@ const MasterDataTab = () => {
                                     accessor: (d: any) => <StatusDot active={d.status === 'active' || !d.status} />,
                                     className: 'w-24',
                                 },
-                                actions(null),
+                                actions(),
                             ]}
                         />
                     ))}
@@ -290,7 +290,7 @@ const MasterDataTab = () => {
                                     accessor: (s: any) => <StatusDot active={s.status === 'active' || !s.status} />,
                                     className: 'w-24',
                                 },
-                                actions(null),
+                                actions(),
                             ]}
                         />
                     ))}
@@ -324,7 +324,7 @@ const MasterDataTab = () => {
                                     accessor: (tmpl: any) => <StatusDot active={tmpl.status === 'active' || !tmpl.status} />,
                                     className: 'w-24',
                                 },
-                                actions(null),
+                                actions(),
                             ]}
                         />
                     ))}
@@ -358,7 +358,7 @@ const MasterDataTab = () => {
                                     accessor: (s: any) => <StatusDot active={s.status === 'active' || !s.status} />,
                                     className: 'w-24',
                                 },
-                                actions(null),
+                                actions(),
                             ]}
                         />
                     ))}
@@ -404,7 +404,7 @@ const MasterDataTab = () => {
                                     accessor: (u: any) => <StatusDot active={u.status === 'active' || !u.status} />,
                                     className: 'w-24',
                                 },
-                                actions(null),
+                                actions(),
                             ]}
                         />
                     ))}
@@ -440,7 +440,7 @@ const MasterDataTab = () => {
                                     accessor: (c: any) => <StatusDot active={c.status === 'active' || !c.status} />,
                                     className: 'w-24',
                                 },
-                                actions(null),
+                                actions(),
                             ]}
                         />
                     ))}
@@ -480,7 +480,7 @@ const MasterDataTab = () => {
                                     accessor: (s: any) => <StatusDot active={!!s.is_active} />,
                                     className: 'w-24',
                                 },
-                                actions(null),
+                                actions(),
                             ]}
                         />
                     ))}

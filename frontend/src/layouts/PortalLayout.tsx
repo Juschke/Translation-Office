@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Button, Drawer } from 'antd';
+import { Outlet, NavLink } from 'react-router-dom';
+import { Drawer } from 'antd';
 import {
   MenuOutlined,
-  CloseOutlined,
+
   DashboardOutlined,
   ProjectOutlined,
   FileTextOutlined,
@@ -32,10 +32,9 @@ const NavItems: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
           end={item.end}
           onClick={onClose}
           className={({ isActive }) =>
-            `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive
-                ? 'bg-teal-700 text-white'
-                : 'text-teal-100 hover:bg-teal-700 hover:text-white'
+            `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
+              ? 'bg-teal-700 text-white'
+              : 'text-teal-100 hover:bg-teal-700 hover:text-white'
             }`
           }
         >

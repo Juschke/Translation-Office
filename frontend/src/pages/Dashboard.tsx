@@ -74,12 +74,8 @@ const Dashboard = () => {
 
     const allProjects: any[] = Array.isArray(projectsData) ? projectsData : [];
 
-    const kpiSummary = [
-        { label: t('dashboard.kpi.open_projects'), value: stats.open_projects, trend: stats.open_projects_trend?.toString() || '0', color: 'text-slate-900' },
-        { label: t('dashboard.kpi.failing_tasks'), value: stats.deadlines_today, trend: stats.deadlines_trend?.toString() || '0', color: stats.deadlines_today > 0 ? 'text-red-500' : 'text-slate-900' },
-        { label: t('dashboard.kpi.active_customers'), value: stats.active_customers, trend: stats.customers_trend?.toString() || '0', color: 'text-slate-900' },
-        { label: t('dashboard.kpi.email_inbox'), value: stats.unread_emails, trend: stats.unread_emails > 0 ? `+${stats.unread_emails}` : '0', color: stats.unread_emails > 0 ? 'text-slate-700' : 'text-slate-400' }
-    ];
+
+
 
     // Derive list data from projects
     const activeTasks = useMemo(() => allProjects

@@ -487,17 +487,6 @@ class InvoiceController extends Controller
             return response()->json($invoice->load('items'));
 
             // 3. Generate PDF + ZUGFeRD
-            try {
-                $this->generatePdfInternal($invoice);
-            } catch (\Throwable $e) {
-                Log::error('PDF generation failed during issue: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-                // Don't rollback — the invoice is still issued even if PDF fails
-            }
-
-            // 4. Audit log
-            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_ISSUED, $oldStatus, Invoice::STATUS_ISSUED);
-
-            return response()->json($invoice->load('items'));
         });
     }
 
@@ -630,13 +619,6 @@ class InvoiceController extends Controller
                 'invoice' => $invoice->fresh('creditNote'),
                 'credit_note' => $creditNote->fresh()->load('items'),
             ]);
-
-            // 2. Audit logs
-            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CANCELLED, $oldStatus, Invoice::STATUS_CANCELLED, [
-                'reason' => $request->input('reason') ?? 'Manuelle Stornierung'
-            ]);
-
-            return response()->json($invoice);
         });
     }
 
@@ -660,16 +642,41 @@ class InvoiceController extends Controller
             return response()->json(['error' => 'Keine erlaubten Felder für Massenaktualisierung.'], 422);
         }
 
-        $query = Invoice::whereIn('id', $validated['ids']);
+        $updated = [];
+        $skipped = [];
 
-        // If we are NOT archiving, we still block updating cancelled invoices
-        if (($updateData['status'] ?? '') !== Invoice::STATUS_ARCHIVED) {
-            $query->where('status', '!=', Invoice::STATUS_CANCELLED);
+        foreach (Invoice::whereIn('id', $validated['ids'])->get() as $invoice) {
+            $targetStatus = $updateData['status'] ?? null;
+
+            if ($targetStatus !== null && !$invoice->canTransitionToStatus($targetStatus)) {
+                $skipped[] = [
+                    'invoice_id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'reason' => 'Unzulaessiger Statuswechsel fuer diese Rechnung.',
+                ];
+                continue;
+            }
+
+            $oldStatus = $invoice->status;
+            $invoice->update($updateData);
+
+            if ($targetStatus !== null && $targetStatus !== $oldStatus) {
+                $this->logAuditEvent($invoice->fresh(), $request, 'status_change', $oldStatus, $targetStatus, [
+                    'origin' => 'bulk_update',
+                ]);
+            }
+
+            $updated[] = [
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+            ];
         }
 
-        $query->update($updateData);
-
-        return response()->json(['message' => 'Rechnungen aktualisiert']);
+        return response()->json([
+            'message' => 'Bulk-Update verarbeitet',
+            'updated' => $updated,
+            'skipped' => $skipped,
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -750,6 +757,27 @@ class InvoiceController extends Controller
 
         $dailyInvoice->render();
         $pdfContent = $dailyInvoice->output;
+
+        $xmlContent = $this->buildInvoiceXmlContent($invoice);
+        $pdfContent = $this->enhanceWithZugferd($invoice, $pdfContent);
+
+        $pdfFilename = 'invoice_' . $invoice->invoice_number . '.pdf';
+        $xmlFilename = 'invoice_' . $invoice->invoice_number . '.xml';
+
+        Storage::disk('public')->put('invoices/' . $pdfFilename, $pdfContent);
+        Storage::disk('public')->put('invoices/xml/' . $xmlFilename, $xmlContent);
+
+        $invoice->forceFill([
+            'pdf_path' => 'storage/invoices/' . $pdfFilename,
+            'pdf_sha256' => hash('sha256', $pdfContent),
+            'pdf_generated_at' => now(),
+            'xml_path' => 'storage/invoices/xml/' . $xmlFilename,
+            'xml_sha256' => hash('sha256', $xmlContent),
+            'xml_generated_at' => now(),
+            'archived_at' => now(),
+        ])->save();
+
+        return;
 
         // Enhance with ZUGFeRD XML
         $pdfContent = $this->enhanceWithZugferd($invoice, $pdfContent);
@@ -1078,6 +1106,28 @@ class InvoiceController extends Controller
     public function downloadXml(Request $request, Invoice $invoice)
     {
         try {
+            $filename = 'invoice_' . $invoice->invoice_number . '.xml';
+            $exists = Storage::disk('public')->exists('invoices/xml/' . $filename);
+
+            if (!$invoice->xml_path || !$exists || $request->has('rebuild')) {
+                $this->generatePdfInternal($invoice);
+                $invoice->refresh();
+            }
+
+            $xmlPath = storage_path('app/public/invoices/xml/' . $filename);
+            if (!file_exists($xmlPath)) {
+                return response()->json(['error' => 'XML konnte nicht generiert werden'], 404);
+            }
+
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_DOWNLOADED, null, null, [
+                'document_type' => 'xml',
+                'xml_sha256' => $invoice->xml_sha256,
+            ]);
+
+            return response()->download($xmlPath, $invoice->invoice_number . '.xml', [
+                'Content-Type' => 'application/xml',
+            ]);
+
             $documentBuilder = $this->createZugferdBuilder($invoice);
             $xmlContent = $documentBuilder->getContent();
 
@@ -1403,6 +1453,58 @@ class InvoiceController extends Controller
         return $dailyInvoice;
     }
 
+    private function validateIssueCompliance(Invoice $invoice): array
+    {
+        $errors = [];
+
+        if (!$invoice->invoice_number) {
+            $errors[] = 'Rechnungsnummer fehlt.';
+        }
+
+        if (!$invoice->date) {
+            $errors[] = 'Rechnungsdatum fehlt.';
+        }
+
+        if (!$invoice->due_date) {
+            $errors[] = 'Faelligkeitsdatum fehlt.';
+        }
+
+        if (!$invoice->snapshot_customer_name || !$invoice->snapshot_customer_address || !$invoice->snapshot_customer_zip || !$invoice->snapshot_customer_city) {
+            $errors[] = 'Kundendaten sind unvollstaendig.';
+        }
+
+        if (!$invoice->snapshot_seller_name || !$invoice->snapshot_seller_address || !$invoice->snapshot_seller_zip || !$invoice->snapshot_seller_city) {
+            $errors[] = 'Verkaeuferdaten sind unvollstaendig.';
+        }
+
+        if (!$invoice->snapshot_seller_tax_number && !$invoice->snapshot_seller_vat_id) {
+            $errors[] = 'Steuerliche Identifikation des Leistenden fehlt.';
+        }
+
+        if ($invoice->amount_gross <= 0) {
+            $errors[] = 'Bruttobetrag muss groesser als 0 sein.';
+        }
+
+        if ($invoice->items()->count() === 0) {
+            $errors[] = 'Mindestens eine Rechnungsposition ist erforderlich.';
+        }
+
+        if ($invoice->tax_exemption === Invoice::TAX_REVERSE_CHARGE && !$invoice->snapshot_customer_vat_id) {
+            $errors[] = 'Bei Reverse Charge wird eine USt-Id des Kunden benoetigt.';
+        }
+
+        if (!$invoice->snapshot_customer_email && !$invoice->snapshot_customer_leitweg_id) {
+            $errors[] = 'Fuer elektronische Rechnungen wird mindestens E-Mail oder Leitweg-ID des Empfaengers benoetigt.';
+        }
+
+        return $errors;
+    }
+
+    private function buildInvoiceXmlContent(Invoice $invoice): string
+    {
+        return $this->createZugferdBuilder($invoice)->getContent();
+    }
+
     /**
      * Log an audit event for a given invoice.
      */
@@ -1414,14 +1516,34 @@ class InvoiceController extends Controller
         ?string $newStatus = null,
         ?array $metadata = null
     ): void {
-        InvoiceAuditLog::create([
+        $previousHash = InvoiceAuditLog::where('invoice_id', $invoice->id)
+            ->latest('id')
+            ->value('record_hash');
+
+        $createdAt = now();
+        $payload = [
             'invoice_id' => $invoice->id,
             'user_id' => $request->user()?->id,
             'action' => $action,
             'old_status' => $oldStatus,
             'new_status' => $newStatus,
+            'previous_hash' => $previousHash,
             'metadata' => $metadata,
             'ip_address' => $request->ip(),
+            'created_at' => $createdAt->toIso8601String(),
+        ];
+
+        InvoiceAuditLog::create([
+            'invoice_id' => $payload['invoice_id'],
+            'user_id' => $payload['user_id'],
+            'action' => $payload['action'],
+            'old_status' => $payload['old_status'],
+            'new_status' => $payload['new_status'],
+            'previous_hash' => $payload['previous_hash'],
+            'record_hash' => hash('sha256', json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)),
+            'metadata' => $payload['metadata'],
+            'ip_address' => $payload['ip_address'],
+            'created_at' => $createdAt,
         ]);
     }
 

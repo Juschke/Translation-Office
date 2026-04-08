@@ -5,8 +5,7 @@ import toast from 'react-hot-toast';
 import {
     Building2, MapPin, CreditCard, Settings2,
     ChevronRight, ChevronLeft, Check, AlertCircle,
-    Info, ShieldCheck, Rocket, Globe, FileText, Users,
-    Banknote, Receipt, Code2
+    Info, ShieldCheck, Rocket, Globe, FileText, Users
 } from 'lucide-react';
 import clsx from 'clsx';
 // @ts-ignore
@@ -233,41 +232,41 @@ const SelectField = ({
 // ─── Konstanten ───────────────────────────────────────────────────────────────
 const STEPS = [
     { label: 'Firmenprofil', icon: Building2 },
-    { label: 'Adresse',      icon: MapPin },
-    { label: 'Finanzen',     icon: CreditCard },
-    { label: 'System',       icon: Settings2 },
+    { label: 'Adresse', icon: MapPin },
+    { label: 'Finanzen', icon: CreditCard },
+    { label: 'System', icon: Settings2 },
 ];
 
 const LEGAL_FORMS = ['GmbH', 'UG', 'e.K.', 'GbR', 'Einzelunternehmen', 'AG', 'Freiberufler', 'Sonstige'];
-const INDUSTRIES  = ['Übersetzungsbüro', 'Dolmetscherbüro', 'Sprachdienstleister', 'Beeidigter Übersetzer', 'Sonstige'];
+const INDUSTRIES = ['Übersetzungsbüro', 'Dolmetscherbüro', 'Sprachdienstleister', 'Beeidigter Übersetzer', 'Sonstige'];
 
 const COUNTRIES = [
-    { value: 'Deutschland',  label: 'Deutschland'  },
-    { value: 'Österreich',   label: 'Österreich'   },
-    { value: 'Schweiz',      label: 'Schweiz'       },
-    { value: 'Luxemburg',    label: 'Luxemburg'     },
-    { value: 'Frankreich',   label: 'Frankreich'   },
-    { value: 'Italien',      label: 'Italien'       },
-    { value: 'Spanien',      label: 'Spanien'       },
-    { value: 'Niederlande',  label: 'Niederlande'   },
-    { value: 'Belgien',      label: 'Belgien'       },
-    { value: 'Polen',        label: 'Polen'          },
-    { value: 'USA',          label: 'USA'            },
-    { value: 'Andere',       label: 'Andere'         },
+    { value: 'Deutschland', label: 'Deutschland' },
+    { value: 'Österreich', label: 'Österreich' },
+    { value: 'Schweiz', label: 'Schweiz' },
+    { value: 'Luxemburg', label: 'Luxemburg' },
+    { value: 'Frankreich', label: 'Frankreich' },
+    { value: 'Italien', label: 'Italien' },
+    { value: 'Spanien', label: 'Spanien' },
+    { value: 'Niederlande', label: 'Niederlande' },
+    { value: 'Belgien', label: 'Belgien' },
+    { value: 'Polen', label: 'Polen' },
+    { value: 'USA', label: 'USA' },
+    { value: 'Andere', label: 'Andere' },
 ];
 
 const PAYMENT_TERMS = [
-    { value: '0',  label: 'Sofort fällig'  },
-    { value: '7',  label: '7 Tage'          },
-    { value: '14', label: '14 Tage'         },
-    { value: '30', label: '30 Tage'         },
-    { value: '45', label: '45 Tage'         },
+    { value: '0', label: 'Sofort fällig' },
+    { value: '7', label: '7 Tage' },
+    { value: '14', label: '14 Tage' },
+    { value: '30', label: '30 Tage' },
+    { value: '45', label: '45 Tage' },
 ];
 
 const CURRENCIES = [
-    { value: 'EUR', label: 'EUR — Euro'            },
+    { value: 'EUR', label: 'EUR — Euro' },
     { value: 'CHF', label: 'CHF — Schweizer Franken' },
-    { value: 'USD', label: 'USD — US-Dollar'        },
+    { value: 'USD', label: 'USD — US-Dollar' },
 ];
 
 const LANGUAGE_PAIRS = [
@@ -327,41 +326,41 @@ const LEFT_PANEL = [
 // ─── Main ────────────────────────────────────────────────────────────────────
 export default function OnboardingPage() {
     const { onboard } = useAuth();
-    const navigate   = useNavigate();
+    const navigate = useNavigate();
 
-    const [step,        setStep]        = useState(0);
-    const [loading,     setLoading]     = useState(false);
+    const [step, setStep] = useState(0);
+    const [loading, setLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [errors,      setErrors]      = useState<Errors>({});
-    const [zipLoading,  setZipLoading]  = useState(false);
+    const [errors, setErrors] = useState<Errors>({});
+    const [zipLoading, setZipLoading] = useState(false);
 
     const [form, setForm] = useState<FormData>({
-        company_name:      '',
-        legal_form:        '',
-        industry:          '',
-        founded_year:      '',
+        company_name: '',
+        legal_form: '',
+        industry: '',
+        founded_year: '',
         managing_director: '',
-        website:           '',
-        address_street:    '',
-        address_house_no:  '',
-        address_zip:       '',
-        address_city:      '',
-        address_country:   'Deutschland',
-        bank_name:         '',
-        bank_iban:         '',
-        bank_bic:          '',
-        tax_number:        '',
-        tax_office:        '',
-        vat_id:            '',
+        website: '',
+        address_street: '',
+        address_house_no: '',
+        address_zip: '',
+        address_city: '',
+        address_country: 'Deutschland',
+        bank_name: '',
+        bank_iban: '',
+        bank_bic: '',
+        tax_number: '',
+        tax_office: '',
+        vat_id: '',
         is_small_business: false,
         payment_term_days: '30',
-        currency:          'EUR',
+        currency: 'EUR',
         project_id_prefix: 'PR',
-        invoice_prefix:    'RE',
+        invoice_prefix: 'RE',
         default_languages: [],
-        email_signature:   '',
+        email_signature: '',
         subscription_plan: 'pro',
-        license_key:       '',
+        license_key: '',
     });
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -397,7 +396,7 @@ export default function OnboardingPage() {
         if (form.address_city) return; // already filled
         setZipLoading(true);
         try {
-            const res  = await fetch(`https://openplzapi.org/de/Localities?postalCode=${zip}`);
+            const res = await fetch(`https://openplzapi.org/de/Localities?postalCode=${zip}`);
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
                 const city = data[0].name as string;
@@ -436,10 +435,10 @@ export default function OnboardingPage() {
             if (!form.company_name.trim()) e.company_name = 'Firmenname ist erforderlich.';
         }
         if (step === 1) {
-            if (!form.address_street.trim())   e.address_street   = 'Straße ist erforderlich.';
-            if (!form.address_house_no.trim())  e.address_house_no = 'Hausnummer ist erforderlich.';
-            if (!form.address_zip.trim())       e.address_zip       = 'PLZ ist erforderlich.';
-            if (!form.address_city.trim())      e.address_city      = 'Stadt ist erforderlich.';
+            if (!form.address_street.trim()) e.address_street = 'Straße ist erforderlich.';
+            if (!form.address_house_no.trim()) e.address_house_no = 'Hausnummer ist erforderlich.';
+            if (!form.address_zip.trim()) e.address_zip = 'PLZ ist erforderlich.';
+            if (!form.address_city.trim()) e.address_city = 'Stadt ist erforderlich.';
         }
         if (step === 2 && form.bank_iban && !isValidIBAN(form.bank_iban)) {
             e.bank_iban = 'Ungültige IBAN (z. B. DE89 3704 0044 0532 0130 00).';
@@ -979,9 +978,9 @@ export default function OnboardingPage() {
                                         key={i}
                                         className={clsx(
                                             'h-1 flex-1 rounded-full transition-all duration-300',
-                                            i < step  ? 'bg-[#9BCB56]'
-                                            : i === step ? 'bg-white'
-                                            : 'bg-white/20'
+                                            i < step ? 'bg-[#9BCB56]'
+                                                : i === step ? 'bg-white'
+                                                    : 'bg-white/20'
                                         )}
                                     />
                                 ))}
@@ -1007,16 +1006,16 @@ export default function OnboardingPage() {
                     {/* Step-Indicator */}
                     <div className="flex items-center px-10 pt-7 pb-5 border-b border-[#D1D9D8] gap-1">
                         {STEPS.map(({ label, icon: Icon }, i) => {
-                            const done   = i < step;
+                            const done = i < step;
                             const active = i === step;
                             return (
                                 <div key={i} className="flex items-center gap-1 flex-1 min-w-0">
                                     <div className="flex items-center gap-2 min-w-0">
                                         <div className={clsx(
                                             'w-6 h-6 rounded-full flex items-center justify-center shrink-0 border transition-all duration-200',
-                                            done   ? 'bg-[#9BCB56] border-[#7aaa3a]'
-                                            : active ? 'bg-[#1B4D4F] border-[#123a3c]'
-                                            : 'bg-white border-[#ccc]'
+                                            done ? 'bg-[#9BCB56] border-[#7aaa3a]'
+                                                : active ? 'bg-[#1B4D4F] border-[#123a3c]'
+                                                    : 'bg-white border-[#ccc]'
                                         )}>
                                             {done
                                                 ? <Check size={10} className="text-white" strokeWidth={3} />
@@ -1026,8 +1025,8 @@ export default function OnboardingPage() {
                                         <span className={clsx(
                                             'text-[11px] font-semibold whitespace-nowrap hidden md:block',
                                             active ? 'text-[#1B4D4F]'
-                                            : done  ? 'text-[#7aaa3a]'
-                                            : 'text-slate-400'
+                                                : done ? 'text-[#7aaa3a]'
+                                                    : 'text-slate-400'
                                         )}>{label}</span>
                                     </div>
                                     {i < STEPS.length - 1 && (
@@ -1098,8 +1097,8 @@ export default function OnboardingPage() {
                                         className={clsx(
                                             'rounded-full transition-all duration-300',
                                             i === step ? 'w-4 h-1.5 bg-[#1B4D4F]'
-                                            : i < step  ? 'w-1.5 h-1.5 bg-[#9BCB56]'
-                                            : 'w-1.5 h-1.5 bg-slate-200'
+                                                : i < step ? 'w-1.5 h-1.5 bg-[#9BCB56]'
+                                                    : 'w-1.5 h-1.5 bg-slate-200'
                                         )}
                                     />
                                 ))}

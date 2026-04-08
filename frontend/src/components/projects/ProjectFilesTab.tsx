@@ -2,10 +2,8 @@ import FileExplorer from './FileExplorer';
 
 interface ProjectFilesTabProps {
     projectData: any;
-    setIsUploadModalOpen: (open: boolean) => void;
     handlePreviewFile: (file: any) => Promise<void>;
     handleDownloadFile: (file: any) => Promise<void>;
-    toggleFileType: (file: any) => Promise<void>;
     onRenameFile: (file: any, newName: string) => Promise<void>;
     onMoveFile: (file: any, newType: string) => Promise<void>;
     onBulkMove: (ids: string[], newType: string) => Promise<void>;
@@ -19,10 +17,8 @@ interface ProjectFilesTabProps {
 
 const ProjectFilesTab = ({
     projectData,
-    setIsUploadModalOpen,
     handlePreviewFile,
     handleDownloadFile,
-    toggleFileType,
     onRenameFile,
     onMoveFile,
     onBulkMove,
@@ -37,10 +33,8 @@ const ProjectFilesTab = ({
         <div className="flex flex-col gap-4 animate-fadeIn pb-10">
             <FileExplorer
                 projectData={projectData}
-                setIsUploadModalOpen={setIsUploadModalOpen}
                 handlePreviewFile={handlePreviewFile}
                 handleDownloadFile={handleDownloadFile}
-                toggleFileType={toggleFileType}
                 onRenameFile={onRenameFile}
                 onMoveFile={onMoveFile}
                 onBulkMove={onBulkMove}

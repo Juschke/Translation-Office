@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import { portalProfileService } from '../../api/services/portal';
 import { usePortal } from '../../context/PortalContext';
 import { Button } from '../../components/ui/button';
-import type { PortalCustomer } from '../../types/portal';
+
 
 interface ProfileFormValues {
   first_name: string;

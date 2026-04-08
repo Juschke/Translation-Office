@@ -137,42 +137,13 @@ const DataTable = <T extends { id: string | number }>({
     const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
     const [exportDropdownPos, setExportDropdownPos] = useState({ top: 0, left: 0 });
 
-    // ── Resizing Logic ──
-    const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    const [columnWidths] = useState<Record<string, number>>(() => {
         const widths: Record<string, number> = {};
         columns.forEach(col => {
             if (col.width) widths[col.id] = col.width;
         });
         return widths;
     });
-
-    const resizingCol = useRef<{ id: string; startX: number; startWidth: number } | null>(null);
-
-    const handleResize = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        const startX = e.pageX;
-        const startWidth = columnWidths[id] || 150; // Default width if not set
-
-        resizingCol.current = { id, startX, startWidth };
-        document.body.classList.add('dt-column-resizing');
-
-        const onMouseMove = (moveEvent: MouseEvent) => {
-            if (!resizingCol.current) return;
-            const diff = moveEvent.pageX - resizingCol.current.startX;
-            const newWidth = Math.max(50, resizingCol.current.startWidth + diff);
-            setColumnWidths(prev => ({ ...prev, [resizingCol.current!.id]: newWidth }));
-        };
-
-        const onMouseUp = () => {
-            resizingCol.current = null;
-            document.body.classList.remove('dt-column-resizing');
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    };
 
     const activeColumns = useMemo(
         () => columns.filter(col => visibleColumns.has(col.id)),
@@ -463,7 +434,7 @@ const DataTable = <T extends { id: string | number }>({
                                                     </option>
                                                 ))}
                                             </select>
-                                    <FaChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 ${ICON_SIZE_XS}`} />
+                                            <FaChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 ${ICON_SIZE_XS}`} />
                                         </div>
                                     ) : (
                                         <input

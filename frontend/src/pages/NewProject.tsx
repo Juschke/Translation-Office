@@ -118,7 +118,8 @@ const NewProject = () => {
         id: Date.now().toString(), description: 'Übersetzung',
         unit: 'Normzeile', amount: '1.00', quantity: '1.00', partnerRate: '0.00', partnerMode: 'unit',
         partnerTotal: '0.00', customerRate: '0.00', customerTotal: '0.00',
-        customerMode: 'rate', marginType: 'markup', marginPercent: '0.00'
+        customerMode: 'rate', marginType: 'markup', marginPercent: '0.00',
+        taxRate: '19.00', discountPercent: '0.00'
     }]);
     const [docType, setDocType] = useState<string[]>([]);
     const [translator, setTranslator] = useState('');

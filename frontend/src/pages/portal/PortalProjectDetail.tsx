@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Card, Tag, Spin, Alert, Form, Input, Divider, Tooltip } from 'antd';
+import { Card, Tag, Spin, Alert, Form, Input, Divider } from 'antd';
 import {
   ArrowLeftOutlined,
   FileOutlined,
@@ -223,11 +223,10 @@ const PortalProjectDetail: React.FC = () => {
                     className={`flex ${isCustomer ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-xl px-4 py-2.5 ${
-                        isCustomer
+                      className={`max-w-[80%] rounded-xl px-4 py-2.5 ${isCustomer
                           ? 'bg-teal-600 text-white rounded-br-sm'
                           : 'bg-slate-100 text-slate-800 rounded-bl-sm'
-                      }`}
+                        }`}
                     >
                       <div className="text-xs font-semibold mb-1 opacity-75 flex items-center gap-1">
                         {isCustomer ? (

@@ -4,7 +4,6 @@ interface NavBadgeProps {
     count: number | undefined;
     label: string;
     activeColor?: string;
-    isPriority?: boolean;
     isMobile?: boolean;
 }
 
@@ -12,7 +11,6 @@ const NavBadge = ({
     count,
     label,
     activeColor = "bg-rose-500",
-    isPriority = false,
     isMobile = false
 }: NavBadgeProps) => {
     const displayCount = count || 0;

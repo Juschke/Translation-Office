@@ -15,7 +15,7 @@ import DunningSettingsTab from '../components/settings/DunningSettingsTab';
 
 const Settings: React.FC = () => {
     const { t } = useTranslation();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'master_data';
 
     // Manage expanded state as a single active ID to ensure only one is open at a time

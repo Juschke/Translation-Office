@@ -16,10 +16,8 @@ import { Button } from '../ui/button';
 
 interface FileExplorerProps {
     projectData: any;
-    setIsUploadModalOpen: (open: boolean) => void;
     handlePreviewFile: (file: any) => Promise<void>;
     handleDownloadFile: (file: any) => Promise<void>;
-    toggleFileType: (file: any) => Promise<void>;
     onRenameFile: (file: any, newName: string) => Promise<void>;
     onMoveFile: (file: any, newType: string) => Promise<void>;
     onBulkMove: (ids: string[], newType: string) => Promise<void>;
@@ -76,10 +74,8 @@ const FILTERS: { value: ActiveFilter; labelKey: string; defaultLabel: string }[]
 
 const FileExplorer: React.FC<FileExplorerProps> = ({
     projectData,
-    setIsUploadModalOpen,
     handlePreviewFile,
     handleDownloadFile,
-    toggleFileType,
     onRenameFile,
     onMoveFile,
     onBulkMove,

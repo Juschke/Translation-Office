@@ -462,16 +462,7 @@ const ProjectDetail = () => {
         }
     };
 
-    const toggleFileType = async (file: any) => {
-        try {
-            const newType = file.type === 'source' ? 'target' : 'source';
-            await projectService.updateFile(id!, file.id, { type: newType });
-            queryClient.invalidateQueries({ queryKey: ['projects', id] });
-            toast.success(`Dateityp zu "${newType === 'source' ? 'Quelle' : 'Ziel'}" geändert`);
-        } catch (error) {
-            toast.error(t('messages.file_type_change_error'));
-        }
-    };
+
 
     const deleteFileMutation = useMutation({
         mutationFn: async (fileId: string) => {
@@ -959,10 +950,8 @@ const ProjectDetail = () => {
                         activeTab === 'files' && (
                             <ProjectFilesTab
                                 projectData={projectData}
-                                setIsUploadModalOpen={setIsUploadModalOpen}
                                 handlePreviewFile={handlePreviewFile}
                                 handleDownloadFile={handleDownloadFile}
-                                toggleFileType={toggleFileType}
                                 onRenameFile={handleRenameFile}
                                 onMoveFile={handleMoveFile}
                                 onBulkMove={handleBulkFilesMove}
