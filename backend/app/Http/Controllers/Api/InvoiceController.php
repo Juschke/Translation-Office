@@ -71,12 +71,28 @@ class InvoiceController extends Controller
     /**
      * Show a single invoice.
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return response()->json(
-            Invoice::with(['items', 'auditLogs.user', 'creditNote', 'cancelledInvoice'])
-                ->findOrFail($id)
-        );
+        $invoice = Invoice::with(['items', 'auditLogs.user', 'creditNote', 'cancelledInvoice'])
+            ->findOrFail($id);
+
+        if ($request->user()) {
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_VIEWED);
+        }
+
+        return response()->json($invoice);
+    }
+
+    public function auditLogs($id)
+    {
+        $invoice = Invoice::findOrFail($id);
+
+        $logs = InvoiceAuditLog::with('user:id,name')
+            ->where('invoice_id', $invoice->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($logs);
     }
 
     /**
@@ -106,6 +122,10 @@ class InvoiceController extends Controller
             'notes' => 'nullable|string',
             'service_period' => 'nullable|string',
             'tax_exemption' => 'nullable|string|in:none,§19_ustg,reverse_charge',
+            'tax_exemption_reason' => 'nullable|string',
+            'order_reference' => 'nullable|string',
+            'buyer_reference' => 'nullable|string',
+            'payment_reference' => 'nullable|string',
             'leitweg_id' => 'nullable|string',
             'intro_text' => 'nullable|string',
             'footer_text' => 'nullable|string',
@@ -113,6 +133,8 @@ class InvoiceController extends Controller
             'items.*.description' => 'required|string',
             'items.*.quantity' => 'required|numeric',
             'items.*.unit' => 'nullable|string',
+            'items.*.unit_code' => 'nullable|string',
+            'items.*.tax_category' => 'nullable|string',
             'items.*.price' => 'required|numeric',
             'items.*.total' => 'required|numeric',
         ]);
@@ -174,6 +196,11 @@ class InvoiceController extends Controller
                         'intro_text' => $validated['intro_text'] ?? null,
                         'footer_text' => $validated['footer_text'] ?? null,
 
+                        'tax_exemption_reason' => $validated['tax_exemption_reason'] ?? null,
+                        'order_reference' => $validated['order_reference'] ?? null,
+                        'buyer_reference' => $validated['buyer_reference'] ?? null,
+                        'payment_reference' => $validated['payment_reference'] ?? null,
+
                         // --- Customer snapshot (§ 14 UStG Pflichtangaben) ---
                         'snapshot_customer_name' => $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name),
                         'snapshot_customer_address' => trim(($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '')),
@@ -209,6 +236,8 @@ class InvoiceController extends Controller
                                 'description' => $itemData['description'],
                                 'quantity' => (float) $itemData['quantity'],
                                 'unit' => $itemData['unit'] ?? 'Words',
+                                'unit_code' => $itemData['unit_code'] ?? null,
+                                'tax_category' => $itemData['tax_category'] ?? null,
                                 'unit_price_cents' => (int) round($itemData['price'] * 100),
                                 'total_cents' => (int) round($itemData['total'] * 100),
                                 'tax_rate' => $validated['tax_rate'] ?? 19,
@@ -258,7 +287,7 @@ class InvoiceController extends Controller
             $allowed = $request->only(['status']);
             if (isset($allowed['status']) && $allowed['status'] === Invoice::STATUS_ARCHIVED) {
                 $invoice->update(['status' => Invoice::STATUS_ARCHIVED]);
-                $this->logAuditEvent($invoice, $request, 'status_change', Invoice::STATUS_CANCELLED, Invoice::STATUS_ARCHIVED);
+                $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_MODIFIED, Invoice::STATUS_CANCELLED, Invoice::STATUS_ARCHIVED);
                 return response()->json($invoice);
             }
 
@@ -280,7 +309,7 @@ class InvoiceController extends Controller
             $invoice->update($allowed);
 
             if (isset($allowed['status']) && $allowed['status'] !== $oldStatus) {
-                $this->logAuditEvent($invoice, $request, 'status_change', $oldStatus, $allowed['status']);
+                $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_MODIFIED, $oldStatus, $allowed['status']);
             }
 
             return response()->json($invoice);
@@ -562,7 +591,7 @@ class InvoiceController extends Controller
                 'status' => Invoice::STATUS_ISSUED,
                 'is_locked' => true,
                 'issued_at' => now(),
-                'notes' => trim(($request->input('reason') ? 'Storno-Grund: '.$request->input('reason')."\n\n" : '').($invoice->notes ?? '')),
+                'notes' => trim(($request->input('reason') ? 'Storno-Grund: ' . $request->input('reason') . "\n\n" : '') . ($invoice->notes ?? '')),
                 'tax_exemption' => $invoice->tax_exemption,
                 'snapshot_customer_name' => $invoice->snapshot_customer_name,
                 'snapshot_customer_address' => $invoice->snapshot_customer_address,
@@ -661,7 +690,7 @@ class InvoiceController extends Controller
             $invoice->update($updateData);
 
             if ($targetStatus !== null && $targetStatus !== $oldStatus) {
-                $this->logAuditEvent($invoice->fresh(), $request, 'status_change', $oldStatus, $targetStatus, [
+                $this->logAuditEvent($invoice->fresh(), $request, InvoiceAuditLog::ACTION_MODIFIED, $oldStatus, $targetStatus, [
                     'origin' => 'bulk_update',
                 ]);
             }
@@ -843,7 +872,7 @@ class InvoiceController extends Controller
             $tempPdf = $tempDir . '/zugferd_' . uniqid() . '.pdf';
             Log::info("Merging ZUGFeRD into temporary PDF: {$tempPdf}");
 
-            /** @var mixed $documentBuilder */
+            /** @var \horstoeko\zugferdlaravel\Facades\ZugferdDocumentBuilder $documentBuilder */
             ZugferdLaravel::buildMergedPdfByDocumentBuilder($documentBuilder, $pdfContent, $tempPdf);
 
             if (file_exists($tempPdf) && filesize($tempPdf) > 0) {
@@ -965,6 +994,28 @@ class InvoiceController extends Controller
         if ($invoice->snapshot_customer_vat_id) {
             $documentBuilder->addDocumentBuyerVATRegistrationNumber($invoice->snapshot_customer_vat_id);
         }
+
+        // BT-13: Order Reference (Bestellnummer)
+        if ($invoice->order_reference) {
+            if (method_exists($documentBuilder, 'setDocumentOrderReferencedDocument')) {
+                $documentBuilder->setDocumentOrderReferencedDocument($invoice->order_reference);
+            }
+        }
+
+        // BT-10: Buyer Reference (Käuferreferenz)
+        if ($invoice->buyer_reference) {
+            if (method_exists($documentBuilder, 'setDocumentBuyerReference')) {
+                $documentBuilder->setDocumentBuyerReference($invoice->buyer_reference);
+            }
+        }
+
+        // BT-83: Payment Reference
+        if ($invoice->payment_reference) {
+            if (method_exists($documentBuilder, 'setDocumentPaymentReference')) {
+                $documentBuilder->setDocumentPaymentReference($invoice->payment_reference);
+            }
+        }
+
         // Rule PEPPOL-EN16931-R010 (R02): Buyer electronic address MUST be provided
         if ($invoice->snapshot_customer_leitweg_id) {
             $documentBuilder->setDocumentBuyerCommunication('0183', $invoice->snapshot_customer_leitweg_id);
@@ -1034,7 +1085,7 @@ class InvoiceController extends Controller
         // Line Items (from frozen InvoiceItem records)
         if ($invoice->items->isNotEmpty()) {
             foreach ($invoice->items as $item) {
-                $unitCode = $this->mapUnitToUNECE($item->unit);
+                $unitCode = $item->unit_code ?: $this->mapUnitToUNECE($item->unit);
 
                 // BR-24: BT-131 (line net amount) is mandatory
                 // BT-146 (net price) is mandatory
@@ -1065,22 +1116,43 @@ class InvoiceController extends Controller
             );
         }
 
-        // Totals (cents → EUR, abs for credit notes display)
-        $netEur = $invoice->amount_net_eur;
-        $taxEur = $invoice->amount_tax_eur;
-        $grossEur = $invoice->amount_gross_eur;
+        // Totals & Tax Calculation (Ensuring XRechnung mathematical compliance BR-S-09 / BR-CO-17)
+        // BT-110 (TaxTotal) = sum of all BT-117 (VAT breakdown tax amounts)
+        // BT-117 (Breakdown tax) = BT-116 (Breakdown basis) * (BT-119 (Rate) / 100)
+
+        $totalNetEur = round(abs($invoice->amount_net_eur), 2);
+        $taxRate = (float) ($invoice->tax_rate ?? 19.00);
+        $discountEur = round(abs($invoice->discount_eur), 2);
+        $shippingEur = round(abs($invoice->shipping_eur), 2);
+
+        // Handle exemptions (Rate must be 0 for Small Business / EXEM_FROM_TAX)
+        if ($taxCategory === ZugferdVatCategoryCodes::EXEM_FROM_TAX) {
+            $taxRate = 0;
+            $totalTaxEur = 0;
+        } else {
+            // Recalculate tax for the breakdown basis to ensure perfect consistency
+            // BT-116 (Taxable Amount) is usually the LineTotal minus allowances
+            $taxBasisEur = round($totalNetEur - $discountEur + $shippingEur, 2);
+            $totalTaxEur = round($taxBasisEur * ($taxRate / 100), 2);
+        }
+
+        $paidAmountEur = round(abs($invoice->paid_amount_eur), 2);
+
+        // BT-112 (Grand Total) = BT-109 (Tax Basis) + BT-110 (Tax Total)
+        $totalGrossEur = round(($totalNetEur - $discountEur + $shippingEur) + $totalTaxEur, 2);
+        $duePayableAmount = round($totalGrossEur - $paidAmountEur, 2);
 
         $documentBuilder->setDocumentSummation(
-            round(abs($grossEur), 2),  // grandTotalAmount
-            round(abs($grossEur), 2),  // duePayableAmount
-            round(abs($netEur), 2),    // lineTotalAmount
-            0,                         // chargeTotalAmount
-            0,                         // allowanceTotalAmount
-            round(abs($netEur), 2),    // taxBasisTotalAmount
-            round(abs($taxEur), 2)     // taxTotalAmount
+            $totalGrossEur,            // BT-112: grandTotalAmount
+            $duePayableAmount,         // BT-115: duePayableAmount
+            $totalNetEur,              // BT-106: lineTotalAmount
+            $shippingEur,              // BT-108: chargeTotalAmount
+            $discountEur,              // BT-107: allowanceTotalAmount
+            round($totalNetEur - $discountEur + $shippingEur, 2), // BT-109: taxBasisTotalAmount
+            $totalTaxEur               // BT-110: taxTotalAmount
         );
 
-        // Add tax breakdown
+        // Add tax breakdown (§ 14 UStG / EN16931 compliance)
         $exemptionReason = null;
         if ($taxCategory === ZugferdVatCategoryCodes::VAT_REVE_CHAR) {
             $exemptionReason = 'Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge gem. § 13b UStG)';
@@ -1091,9 +1163,9 @@ class InvoiceController extends Controller
         $documentBuilder->addDocumentTax(
             $taxCategory,
             'VAT',
-            abs($netEur),
-            abs($taxEur),
-            (float) $invoice->tax_rate,
+            round($totalNetEur - $discountEur + $shippingEur, 2), // BT-116: Basis Amount
+            $totalTaxEur,              // BT-117: Tax Amount (MATCHES BT-110)
+            $taxRate,                  // BT-119: Rate
             $exemptionReason
         );
 
@@ -1277,6 +1349,10 @@ class InvoiceController extends Controller
                 return response()->json(['error' => 'PDF konnte nicht generiert werden'], 404);
             }
 
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_PRINTED, null, null, [
+                'document_type' => 'pdf',
+            ]);
+
             return response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => 'inline; filename="' . $invoice->invoice_number . '.pdf"'
@@ -1285,6 +1361,265 @@ class InvoiceController extends Controller
             Log::error("Print error: " . $e->getMessage());
             return response()->json(['error' => 'Drucken fehlgeschlagen: ' . $e->getMessage()], 500);
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // GOBD EXPORT
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * GoBD-konformer Datenexport für Betriebsprüfungen.
+     *
+     * Erzeugt ein ZIP-Archiv mit:
+     * - invoices.csv   — alle Rechnungsdaten (strukturiert)
+     * - audit_log.csv  — unveränderlicher Audit-Trail
+     * - index.xml      — maschinenlesbare Datenbeschreibung für IDEA-Prüfsoftware
+     *
+     * Entspricht den Anforderungen des GoBD-Datenzugriffsrechts (Z1/Z2/Z3)
+     * und dem Beschreibungsstandard gemäß BMF-Schreiben.
+     */
+    public function gobdExport(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date|after_or_equal:date_from',
+            'ids'       => 'nullable|array',
+            'ids.*'     => 'integer|exists:invoices,id',
+        ]);
+
+        $tenantId = $request->user()->tenant_id;
+
+        $query = Invoice::with(['items', 'auditLogs.user'])
+            ->where('tenant_id', $tenantId)
+            ->where('status', '!=', Invoice::STATUS_DRAFT); // Nur festgeschriebene Rechnungen
+
+        if (!empty($validated['ids'])) {
+            $query->whereIn('id', $validated['ids']);
+        }
+        if (!empty($validated['date_from'])) {
+            $query->whereDate('date', '>=', $validated['date_from']);
+        }
+        if (!empty($validated['date_to'])) {
+            $query->whereDate('date', '<=', $validated['date_to']);
+        }
+
+        $invoices = $query->orderBy('invoice_number_sequence')->get();
+
+        if ($invoices->isEmpty()) {
+            return response()->json(['error' => 'Keine Rechnungen im gewählten Zeitraum gefunden.'], 404);
+        }
+
+        // ── Temporäres Verzeichnis ───────────────────────────────────────
+        $tmpDir  = sys_get_temp_dir() . '/gobd_export_' . uniqid();
+        $zipPath = $tmpDir . '.zip';
+        mkdir($tmpDir, 0700, true);
+
+        // ── 1. invoices.csv ─────────────────────────────────────────────
+        $invoicesCsvPath   = $tmpDir . '/invoices.csv';
+        $invoicesCsvHandle = fopen($invoicesCsvPath, 'w');
+        fprintf($invoicesCsvHandle, "\xEF\xBB\xBF"); // UTF-8 BOM für Excel
+
+        $invoiceHeaders = [
+            'Rechnungsnummer', 'Typ', 'Status', 'Rechnungsdatum', 'Fälligkeitsdatum',
+            'Leistungsdatum', 'Ausgestellt am',
+            'Kunde ID', 'Kundenname', 'Kundenadresse', 'Kunden PLZ', 'Kunden Ort',
+            'Kunden Land', 'Kunden USt-IdNr.',
+            'Verkäufer Name', 'Verkäufer Steuernummer', 'Verkäufer USt-IdNr.',
+            'Nettobetrag (EUR)', 'MwSt-Betrag (EUR)', 'Bruttobetrag (EUR)',
+            'MwSt-Satz (%)', 'Steuerbefreiung',
+            'Projektname', 'Projektnummer',
+            'Storno-Rechnungsnummer', 'PDF SHA256', 'XML SHA256',
+        ];
+        fputcsv($invoicesCsvHandle, $invoiceHeaders, ';');
+
+        foreach ($invoices as $inv) {
+            fputcsv($invoicesCsvHandle, [
+                $inv->invoice_number,
+                $inv->type === 'credit_note' ? 'Gutschrift' : 'Rechnung',
+                $inv->status,
+                $inv->date ? Carbon::parse($inv->date)->format('d.m.Y') : '',
+                $inv->due_date ? Carbon::parse($inv->due_date)->format('d.m.Y') : '',
+                $inv->delivery_date ? Carbon::parse($inv->delivery_date)->format('d.m.Y') : '',
+                $inv->issued_at ? Carbon::parse($inv->issued_at)->format('d.m.Y H:i:s') : '',
+                $inv->customer_id ?? '',
+                $inv->snapshot_customer_name ?? '',
+                $inv->snapshot_customer_address ?? '',
+                $inv->snapshot_customer_zip ?? '',
+                $inv->snapshot_customer_city ?? '',
+                $inv->snapshot_customer_country ?? '',
+                $inv->snapshot_customer_vat_id ?? '',
+                $inv->snapshot_seller_name ?? '',
+                $inv->snapshot_seller_tax_number ?? '',
+                $inv->snapshot_seller_vat_id ?? '',
+                number_format(($inv->amount_net ?? 0) / 100, 2, ',', ''),
+                number_format(($inv->amount_tax ?? 0) / 100, 2, ',', ''),
+                number_format(($inv->amount_gross ?? 0) / 100, 2, ',', ''),
+                $inv->tax_rate ?? '',
+                $inv->tax_exemption_type ?? '',
+                $inv->snapshot_project_name ?? '',
+                $inv->snapshot_project_number ?? '',
+                $inv->cancelledInvoice?->invoice_number ?? '',
+                $inv->pdf_sha256 ?? '',
+                $inv->xml_sha256 ?? '',
+            ], ';');
+        }
+        fclose($invoicesCsvHandle);
+
+        // ── 2. audit_log.csv ────────────────────────────────────────────
+        $auditCsvPath   = $tmpDir . '/audit_log.csv';
+        $auditCsvHandle = fopen($auditCsvPath, 'w');
+        fprintf($auditCsvHandle, "\xEF\xBB\xBF");
+
+        fputcsv($auditCsvHandle, [
+            'Log ID', 'Rechnungsnummer', 'Aktion', 'Alter Status', 'Neuer Status',
+            'Benutzer', 'IP-Adresse', 'Zeitstempel', 'Record Hash', 'Vorheriger Hash',
+        ], ';');
+
+        $invoiceIds     = $invoices->pluck('id');
+        $auditLogs      = InvoiceAuditLog::with('user:id,first_name,last_name')
+            ->whereIn('invoice_id', $invoiceIds)
+            ->orderBy('id')
+            ->get();
+
+        $invoiceNumberMap = $invoices->pluck('invoice_number', 'id');
+
+        foreach ($auditLogs as $log) {
+            $userName = $log->user
+                ? trim(($log->user->first_name ?? '') . ' ' . ($log->user->last_name ?? ''))
+                : 'System';
+
+            fputcsv($auditCsvHandle, [
+                $log->id,
+                $invoiceNumberMap[$log->invoice_id] ?? $log->invoice_id,
+                $log->action,
+                $log->old_status ?? '',
+                $log->new_status ?? '',
+                $userName,
+                $log->ip_address ?? '',
+                $log->created_at->format('d.m.Y H:i:s'),
+                $log->record_hash ?? '',
+                $log->previous_hash ?? '',
+            ], ';');
+        }
+        fclose($auditCsvHandle);
+
+        // ── 3. index.xml (IDEA-Beschreibungsstandard) ────────────────────
+        $exportDate   = now()->format('Y-m-d\TH:i:s');
+        $dateFrom     = $validated['date_from'] ?? $invoices->min('date');
+        $dateTo       = $validated['date_to']   ?? $invoices->max('date');
+        $tenantName   = \App\Models\Tenant::find($tenantId)?->company_name ?? 'Unbekannt';
+        $invoiceCount = $invoices->count();
+
+        $indexXml = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<DataDescription xmlns="http://www.gdpdu-ev.de/schema/gdpdu/0.1/">
+  <Exportinformation>
+    <ExportDate>{$exportDate}</ExportDate>
+    <ExportingApplication>Translation Office TMS</ExportingApplication>
+    <Company>{$tenantName}</Company>
+    <Period>
+      <DateFrom>{$dateFrom}</DateFrom>
+      <DateTo>{$dateTo}</DateTo>
+    </Period>
+    <RecordCount>{$invoiceCount}</RecordCount>
+    <Remark>GoBD-konformer Datenexport gemäß BMF-Schreiben vom 28.11.2019</Remark>
+  </Exportinformation>
+
+  <DataSet name="Rechnungen" filename="invoices.csv">
+    <FieldDelimiter>;</FieldDelimiter>
+    <RecordDelimiter>CRLF</RecordDelimiter>
+    <TextEncapsulator>&quot;</TextEncapsulator>
+    <Encoding>UTF-8</Encoding>
+    <FieldDescription>
+      <Field name="Rechnungsnummer" type="Text" maxLength="50"/>
+      <Field name="Typ" type="Text" maxLength="20"/>
+      <Field name="Status" type="Text" maxLength="20"/>
+      <Field name="Rechnungsdatum" type="Date" format="DD.MM.YYYY"/>
+      <Field name="Fälligkeitsdatum" type="Date" format="DD.MM.YYYY"/>
+      <Field name="Leistungsdatum" type="Date" format="DD.MM.YYYY"/>
+      <Field name="Ausgestellt am" type="DateTime" format="DD.MM.YYYY HH:MM:SS"/>
+      <Field name="Kunde ID" type="Numeric"/>
+      <Field name="Kundenname" type="Text" maxLength="255"/>
+      <Field name="Kundenadresse" type="Text" maxLength="255"/>
+      <Field name="Kunden PLZ" type="Text" maxLength="10"/>
+      <Field name="Kunden Ort" type="Text" maxLength="100"/>
+      <Field name="Kunden Land" type="Text" maxLength="2"/>
+      <Field name="Kunden USt-IdNr." type="Text" maxLength="20"/>
+      <Field name="Verkäufer Name" type="Text" maxLength="255"/>
+      <Field name="Verkäufer Steuernummer" type="Text" maxLength="30"/>
+      <Field name="Verkäufer USt-IdNr." type="Text" maxLength="20"/>
+      <Field name="Nettobetrag (EUR)" type="Amount" accuracy="2"/>
+      <Field name="MwSt-Betrag (EUR)" type="Amount" accuracy="2"/>
+      <Field name="Bruttobetrag (EUR)" type="Amount" accuracy="2"/>
+      <Field name="MwSt-Satz (%)" type="Amount" accuracy="2"/>
+      <Field name="Steuerbefreiung" type="Text" maxLength="30"/>
+      <Field name="Projektname" type="Text" maxLength="255"/>
+      <Field name="Projektnummer" type="Text" maxLength="50"/>
+      <Field name="Storno-Rechnungsnummer" type="Text" maxLength="50"/>
+      <Field name="PDF SHA256" type="Text" maxLength="64"/>
+      <Field name="XML SHA256" type="Text" maxLength="64"/>
+    </FieldDescription>
+  </DataSet>
+
+  <DataSet name="Audit-Trail" filename="audit_log.csv">
+    <FieldDelimiter>;</FieldDelimiter>
+    <RecordDelimiter>CRLF</RecordDelimiter>
+    <TextEncapsulator>&quot;</TextEncapsulator>
+    <Encoding>UTF-8</Encoding>
+    <FieldDescription>
+      <Field name="Log ID" type="Numeric"/>
+      <Field name="Rechnungsnummer" type="Text" maxLength="50"/>
+      <Field name="Aktion" type="Text" maxLength="30"/>
+      <Field name="Alter Status" type="Text" maxLength="20"/>
+      <Field name="Neuer Status" type="Text" maxLength="20"/>
+      <Field name="Benutzer" type="Text" maxLength="100"/>
+      <Field name="IP-Adresse" type="Text" maxLength="45"/>
+      <Field name="Zeitstempel" type="DateTime" format="DD.MM.YYYY HH:MM:SS"/>
+      <Field name="Record Hash" type="Text" maxLength="64"/>
+      <Field name="Vorheriger Hash" type="Text" maxLength="64"/>
+    </FieldDescription>
+  </DataSet>
+</DataDescription>
+XML;
+
+        file_put_contents($tmpDir . '/index.xml', $indexXml);
+
+        // ── ZIP erzeugen ─────────────────────────────────────────────────
+        $zip = new \ZipArchive();
+        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFile($invoicesCsvPath,       'invoices.csv');
+        $zip->addFile($auditCsvPath,          'audit_log.csv');
+        $zip->addFile($tmpDir . '/index.xml', 'index.xml');
+        $zip->close();
+
+        // Cleanup tmp files (nicht ZIP selbst)
+        @unlink($invoicesCsvPath);
+        @unlink($auditCsvPath);
+        @unlink($tmpDir . '/index.xml');
+        @rmdir($tmpDir);
+
+        // Audit-Log für den Export selbst (Sammelaktion — erste Rechnung als Anker)
+        if ($invoices->isNotEmpty()) {
+            $this->logAuditEvent(
+                $invoices->first(),
+                $request,
+                InvoiceAuditLog::ACTION_EXPORTED,
+                null,
+                null,
+                [
+                    'export_format' => 'gobd_zip',
+                    'invoice_count' => $invoiceCount,
+                    'date_from'     => $dateFrom,
+                    'date_to'       => $dateTo,
+                ]
+            );
+        }
+
+        $filename = 'GoBD_Export_' . now()->format('Ymd_His') . '.zip';
+
+        return response()->download($zipPath, $filename, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -1361,7 +1696,18 @@ class InvoiceController extends Controller
             fclose($file);
         };
 
-        return response()->stream($callback, 200, $headers);
+        $response = response()->stream($callback, 200, $headers);
+
+        // GoBD: Audit-Log für jeden exportierten Datensatz
+        $invoiceCount = $invoices->count();
+        foreach ($invoices as $inv) {
+            $this->logAuditEvent($inv, $request, InvoiceAuditLog::ACTION_EXPORTED, null, null, [
+                'export_format' => 'datev_csv',
+                'invoice_count' => $invoiceCount,
+            ]);
+        }
+
+        return $response;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -1469,19 +1815,26 @@ class InvoiceController extends Controller
             $errors[] = 'Faelligkeitsdatum fehlt.';
         }
 
+        // EU/DE Standards: Mandatory Address details
         if (!$invoice->snapshot_customer_name || !$invoice->snapshot_customer_address || !$invoice->snapshot_customer_zip || !$invoice->snapshot_customer_city) {
-            $errors[] = 'Kundendaten sind unvollstaendig.';
+            $errors[] = 'Kundendaten sind unvollstaendig (Name, Strasse, PLZ, Ort sind Pflicht).';
         }
 
         if (!$invoice->snapshot_seller_name || !$invoice->snapshot_seller_address || !$invoice->snapshot_seller_zip || !$invoice->snapshot_seller_city) {
-            $errors[] = 'Verkaeuferdaten sind unvollstaendig.';
+            $errors[] = 'Eigene Unternehmensdaten (Absender) sind unvollstaendig.';
         }
 
+        // GoBD: Seller Tax info is mandatory
         if (!$invoice->snapshot_seller_tax_number && !$invoice->snapshot_seller_vat_id) {
-            $errors[] = 'Steuerliche Identifikation des Leistenden fehlt.';
+            $errors[] = 'Steuerliche Identifikation des Leistenden fehlt (Steuernummer oder USt-IdNr.).';
         }
 
-        if ($invoice->amount_gross <= 0) {
+        // ISO/EU: Bank details are critical for payment processing in E-Invoices
+        if (!$invoice->snapshot_seller_bank_iban) {
+            $errors[] = 'Eigene Bankverbindung (IBAN) fehlt. Diese ist fuer elektronische Rechnungen zwingend erforderlich.';
+        }
+
+        if ($invoice->amount_gross <= 0 && !$invoice->isCreditNote()) {
             $errors[] = 'Bruttobetrag muss groesser als 0 sein.';
         }
 
@@ -1489,12 +1842,19 @@ class InvoiceController extends Controller
             $errors[] = 'Mindestens eine Rechnungsposition ist erforderlich.';
         }
 
+        // EU Reverse Charge rules
         if ($invoice->tax_exemption === Invoice::TAX_REVERSE_CHARGE && !$invoice->snapshot_customer_vat_id) {
-            $errors[] = 'Bei Reverse Charge wird eine USt-Id des Kunden benoetigt.';
+            $errors[] = 'Bei Reverse Charge ist die USt-Id des Empfaengers zwingend erforderlich.';
         }
 
+        // XRechnung/Best Practice: Electronic endpoint
         if (!$invoice->snapshot_customer_email && !$invoice->snapshot_customer_leitweg_id) {
             $errors[] = 'Fuer elektronische Rechnungen wird mindestens E-Mail oder Leitweg-ID des Empfaengers benoetigt.';
+        }
+
+        // XRechnung 3.0: Buyer Reference (BT-10) is often required by public authorities
+        if ((str_contains($invoice->snapshot_customer_name, 'Stadt') || str_contains($invoice->snapshot_customer_name, 'Amt') || $invoice->leitweg_id) && !$invoice->buyer_reference) {
+            $errors[] = 'Fuer Behoerdenrechnungen wird meist eine Kaeuferreferenz (BT-10) benoetigt.';
         }
 
         return $errors;

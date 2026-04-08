@@ -260,13 +260,13 @@ class MasterDataSeeder extends Seeder
 
         // 6. Units (Einheiten)
         $unitsData = [
-            ['name' => 'Wort', 'abbreviation' => 'Wrt', 'status' => 'active', 'type' => 'quantity'],
-            ['name' => 'Zeile', 'abbreviation' => 'Zl', 'status' => 'active', 'type' => 'quantity'],
-            ['name' => 'Normseite', 'abbreviation' => 'NS', 'status' => 'active', 'type' => 'quantity'],
-            ['name' => 'Seite', 'abbreviation' => 'S.', 'status' => 'active', 'type' => 'quantity'],
-            ['name' => 'Stunde', 'abbreviation' => 'Std', 'status' => 'active', 'type' => 'time'],
-            ['name' => 'Minute', 'abbreviation' => 'Min', 'status' => 'active', 'type' => 'time'],
-            ['name' => 'Pauschal', 'abbreviation' => 'Psch', 'status' => 'active', 'type' => 'fixed'],
+            ['name' => 'Wort', 'abbreviation' => 'Wrt', 'status' => 'active', 'type' => 'quantity', 'iso_unit_code' => 'WSD'],
+            ['name' => 'Zeile', 'abbreviation' => 'Zl', 'status' => 'active', 'type' => 'quantity', 'iso_unit_code' => '7I'],
+            ['name' => 'Normseite', 'abbreviation' => 'NS', 'status' => 'active', 'type' => 'quantity', 'iso_unit_code' => 'ZZ'],
+            ['name' => 'Seite', 'abbreviation' => 'S.', 'status' => 'active', 'type' => 'quantity', 'iso_unit_code' => 'C62'],
+            ['name' => 'Stunde', 'abbreviation' => 'Std', 'status' => 'active', 'type' => 'time', 'iso_unit_code' => 'HUR'],
+            ['name' => 'Minute', 'abbreviation' => 'Min', 'status' => 'active', 'type' => 'time', 'iso_unit_code' => 'MIN'],
+            ['name' => 'Pauschal', 'abbreviation' => 'Psch', 'status' => 'active', 'type' => 'fixed', 'iso_unit_code' => 'C62'],
         ];
 
         $i = 1;

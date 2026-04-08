@@ -421,17 +421,17 @@ const ProjectPositionsTable = ({
 
             <div className="overflow-x-auto custom-scrollbar border border-slate-200 rounded-lg shadow-sm bg-white overflow-visible">
                 <DragDropContext onDragEnd={onDragEnd}>
-                    <table className="w-full text-left border-collapse min-w-[1000px]">
+                    <table className="w-full text-left border-collapse min-w-[750px]">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                <th className="px-4 py-3 text-center w-[70px]"></th>
-                                <th className="px-4 py-3">{t('invoice.form.description')}</th>
-                                <th className="px-3 py-3 w-20 text-right">{t('invoice.form.quantity')}</th>
-                                <th className="px-3 py-3 w-28 text-right">{t('invoice.form.unit')}</th>
-                                <th className="px-3 py-3 w-28 text-right">Preis (€)</th>
-                                <th className="px-2 py-3 w-20 text-right">MwSt</th>
-                                <th className="px-2 py-3 w-20 text-right">Rabatt</th>
-                                <th className="px-6 py-3 w-32 text-right">{t('invoice.form.total_price')}</th>
+                                <th className="px-3 py-3 text-center w-[50px]"></th>
+                                <th className="px-4 py-3 min-w-[200px]">{t('invoice.form.description')}</th>
+                                <th className="px-2 py-3 w-20 text-right">{t('invoice.form.quantity')}</th>
+                                <th className="px-2 py-3 w-20 text-right">{t('invoice.form.unit')}</th>
+                                <th className="px-2 py-3 w-24 text-right">Preis (€)</th>
+                                <th className="px-2 py-3 w-16 text-right">MwSt</th>
+                                <th className="px-2 py-3 w-24 text-right">Rabatt</th>
+                                <th className="px-4 py-3 w-28 text-right">{t('invoice.form.total_price')}</th>
                                 <th className="px-4 py-3 w-10"></th>
                             </tr>
                         </thead>
@@ -455,10 +455,10 @@ const ProjectPositionsTable = ({
                                                             snapshot.isDragging ? "bg-white shadow-xl ring-1 ring-brand-primary/20 scale-[1.01] z-50" : "hover:bg-slate-50/50"
                                                         )}
                                                     >
-                                                        <td className="w-[70px] bg-slate-50/30 border-r border-slate-50 text-center py-2 relative group-hover:bg-slate-100/50 transition-colors">
+                                                        <td className="w-[50px] bg-slate-50/30 border-r border-slate-50 text-center py-2 relative group-hover:bg-slate-100/50 transition-colors">
                                                             <div
                                                                 {...provided.dragHandleProps}
-                                                                className="flex flex-row items-center justify-center gap-2 cursor-grab active:cursor-grabbing text-slate-200 hover:text-brand-primary transition-colors py-1"
+                                                                className="flex flex-row items-center justify-center gap-1.5 cursor-grab active:cursor-grabbing text-slate-200 hover:text-brand-primary transition-colors py-1"
                                                                 title="Gedrückt halten zum Verschieben"
                                                             >
                                                                 <FaGripVertical size={11} />

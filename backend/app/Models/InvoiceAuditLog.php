@@ -54,6 +54,11 @@ class InvoiceAuditLog extends Model
     public const ACTION_CANCELLED     = 'cancelled';
     public const ACTION_REMINDER_SENT = 'reminder_sent';
     public const ACTION_DOWNLOADED    = 'downloaded';
+    public const ACTION_VIEWED        = 'viewed';
+    public const ACTION_PRINTED       = 'printed';
+    public const ACTION_EXPORTED      = 'exported';   // DATEV, GoBD-Export
+    public const ACTION_ARCHIVED      = 'archived';
+    public const ACTION_MODIFIED      = 'status_change'; // bulk-update / status changes
 
     // ─── Relationships ───────────────────────────────────────────────
 

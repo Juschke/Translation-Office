@@ -69,6 +69,14 @@ export const invoiceService = {
         const response = await api.post('/invoices/datev-export', { ids }, { responseType: 'blob' });
         return response;
     },
+    getAuditLogs: async (id: number) => {
+        const response = await api.get(`/invoices/${id}/audit-logs`);
+        return response.data;
+    },
+    gobdExport: async (params: { date_from?: string; date_to?: string; ids?: number[] }) => {
+        const response = await api.post('/invoices/gobd-export', params, { responseType: 'blob' });
+        return response;
+    },
 };
 
 export const dunningService = {

@@ -144,4 +144,9 @@ export const settingsService = {
         const response = await api.get('/settings/activities');
         return response.data;
     },
+    // Compliance & Security
+    getComplianceSummary: async () => {
+        const response = await api.get('/compliance/summary');
+        return response.data;
+    },
 };

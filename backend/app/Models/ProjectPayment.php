@@ -14,6 +14,7 @@ class ProjectPayment extends Model
         'amount',
         'payment_date',
         'payment_method',
+        'reference',
         'note',
     ];
 

@@ -17,6 +17,7 @@ import KPICard from '../components/common/KPICard';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService, externalCostService, customerService } from '../api/services';
+
 import ConfirmModal from '../components/common/ConfirmModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
 import { useTranslation } from 'react-i18next';
@@ -125,6 +126,10 @@ const Invoices = () => {
         },
         onError: () => toast.error(t('common.error')),
     });
+
+
+
+
 
     const filteredInvoices = useMemo(() => {
         if (!Array.isArray(invoices)) return [];
@@ -235,10 +240,35 @@ const Invoices = () => {
         } catch (error) { toast.error(t('invoice.messages.xml_error')); }
     };
 
+    const datevExportSingle = async (inv: any) => {
+        try {
+            const response = await invoiceService.datevExport([inv.id]);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `DATEV_${inv.invoice_number}_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link); link.click(); link.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success(`DATEV-Export für ${inv.invoice_number} heruntergeladen`);
+        } catch { toast.error('DATEV-Export fehlgeschlagen'); }
+    };
+
+
+
+    const createCreditNote = (inv: any) => {
+        setConfirmTitle('Gutschrift erstellen');
+        setConfirmMessage(`Für Rechnung ${inv.invoice_number} eine Gutschrift (Storno) erstellen? Die Rechnung wird damit als storniert markiert.`);
+        setConfirmLabel('Gutschrift erstellen');
+        setConfirmVariant('warning');
+        setConfirmAction(() => () => cancelMutation.mutate({ id: inv.id, reason: 'Gutschrift' }));
+        setIsConfirmOpen(true);
+    };
+
     const columns = buildInvoiceColumns({
-        t, setPreviewInvoice, onEditInvoice: (inv: any) => navigate(`/invoices/${inv.id}/edit`),
-        issueMutation, cancelMutation, markAsPaidMutation, archiveMutation: bulkUpdateMutation, deleteMutation,
-        handlePrint, handleDownload, handleDownloadXml, cancelReason, setCancelReason, setConfirmTitle, setConfirmMessage, setConfirmLabel, setConfirmVariant, setConfirmAction, setIsConfirmOpen,
+        t, onEditInvoice: (inv: any) => navigate(`/invoices/${inv.id}/edit`),
+        issueMutation, markAsPaidMutation, deleteMutation,
+        datevExportSingle, createCreditNote,
+        handlePrint, handleDownload, handleDownloadXml, setConfirmTitle, setConfirmMessage, setConfirmLabel, setConfirmVariant, setConfirmAction, setIsConfirmOpen,
     });
 
     const subTabCounts = useMemo(() => {

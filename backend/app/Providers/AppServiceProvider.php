@@ -29,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
         }
         \App\Models\User::observe(\App\Observers\UserObserver::class);
         \App\Models\Project::observe(\App\Observers\ProjectObserver::class);
+        \App\Models\Customer::observe(\App\Observers\CustomerObserver::class);
+        \App\Models\Partner::observe(\App\Observers\PartnerObserver::class);
 
         Gate::define('viewPulse', function (User $user) {
             return $user->isPlatformAdmin();

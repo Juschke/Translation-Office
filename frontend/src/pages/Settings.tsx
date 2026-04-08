@@ -12,6 +12,7 @@ import MasterDataTab from '../components/settings/MasterDataTab';
 import AuditLogsTab from '../components/settings/AuditLogsTab';
 import NotificationSettingsTab from '../components/settings/NotificationSettingsTab';
 import DunningSettingsTab from '../components/settings/DunningSettingsTab';
+import ComplianceSettingsTab from '@/components/settings/ComplianceSettingsTab';
 
 const Settings: React.FC = () => {
     const { t } = useTranslation();
@@ -46,7 +47,8 @@ const Settings: React.FC = () => {
         invoice: { label: t('settings.tabs.invoices'), icon: FaFileInvoice, description: t('settings.tabs.invoices_desc') },
         notifications: { label: t('settings.tabs.notifications'), icon: FaBell, description: t('settings.tabs.notifications_desc') },
         dunning: { label: 'Mahnwesen', icon: FaGavel, description: 'Automatisierte Zahlungserinnerungen und Mahngebühren.' },
-        audit: { label: t('settings.tabs.audit'), icon: FaShieldAlt, description: t('settings.tabs.audit_log_desc') },
+        compliance: { label: 'Compliance & Sicherheit', icon: FaShieldAlt, description: 'GoBD, DSGVO und Sicherheits-Monitoring.' },
+        audit: { label: t('settings.tabs.audit'), icon: FaListOl, description: t('settings.tabs.audit_log_desc') },
     };
 
     const MASTER_DATA_SUBTABS = [
@@ -229,6 +231,7 @@ const Settings: React.FC = () => {
                             {activeTab === 'master_data' && <MasterDataTab />}
                             {activeTab === 'notifications' && <NotificationSettingsTab />}
                             {activeTab === 'dunning' && <DunningSettingsTab />}
+                            {activeTab === 'compliance' && <ComplianceSettingsTab />}
                             {activeTab === 'audit' && <AuditLogsTab />}
                         </div>
                     </main>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { FaChevronDown, FaSearch, FaCheck, FaTimes, FaPlus } from 'react-icons/fa';
+import { FaChevronDown, FaSearch, FaCheck, FaTimes, FaPlus, FaEdit } from 'react-icons/fa';
 import clsx from 'clsx';
 import { Button } from '../ui/button';
 import { useTranslation } from 'react-i18next';
@@ -22,12 +22,13 @@ interface SearchableSelectProps {
     roundedSide?: 'left' | 'right' | 'both' | 'none';
     disabled?: boolean;
     isClearable?: boolean;
+    onEdit?: () => void;
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
     isMulti = false, onAddNew, onSearch, id, preserveOrder = false,
-    maxVisibleItems = 2, roundedSide = 'both', disabled = false, isClearable = true
+    maxVisibleItems = 2, roundedSide = 'both', disabled = false, isClearable = true, onEdit
 }) => {
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
@@ -240,7 +241,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             const isCollapsed = collapsedGroups.has(group.name) && !search;
                             return (
                                 <div key={group.name} className="flex flex-col">
-                                    <div 
+                                    <div
                                         className="px-4 py-2 bg-slate-50/50 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-y border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors group/header"
                                         onClick={(e) => toggleGroup(e, group.name)}
                                     >
@@ -385,7 +386,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                         <span className="truncate">{opt.label}</span>
                                         {isMulti && (
                                             <FaTimes
-                                                className="ml-1 text-brand-muted hover:text-red-500 transition-colors shrink-0"
+                                                className="ml-1 text-slate-400 hover:text-red-500 transition-colors shrink-0"
                                                 onClick={(e) => { e.stopPropagation(); handleSelect(v); }}
                                             />
                                         )}
@@ -403,9 +404,18 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
+                    {onEdit && (
+                        <FaEdit
+                            className="text-slate-400 hover:text-brand-primary cursor-pointer text-xs transition-colors"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit();
+                            }}
+                        />
+                    )}
                     {!isMulti && value && !disabled && isClearable && (
                         <FaTimes
-                            className="text-brand-muted hover:text-red-500 cursor-pointer text-xs transition-colors"
+                            className="text-slate-400 hover:text-red-500 cursor-pointer text-xs transition-colors"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleSelect('');

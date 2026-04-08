@@ -1,25 +1,24 @@
 import {
-    FaCheck, FaPrint, FaFilePdf, FaEye,
+    FaCheck, FaPrint, FaFilePdf,
     FaStamp, FaBan, FaPen, FaFileCode, FaTrash, FaHistory, FaEllipsisV,
+    FaFileInvoiceDollar,
 } from 'react-icons/fa';
 import { Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
 import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
-import { ICON_ACTION_BUTTON_CLASS, ICON_COLOR_BRAND, ICON_COLOR_DANGER, ICON_COLOR_DEFAULT, ICON_COLOR_MUTED, ICON_COLOR_SUCCESS, ICON_COLOR_WARNING, ICON_DROPDOWN_ITEM_CLASS, ICON_SIZE_XS } from '../components/ui/icon-styles';
+import { ICON_ACTION_BUTTON_CLASS, ICON_SIZE_XS } from '../components/ui/icon-styles';
 
 export interface BuildInvoiceColumnsParams {
     t: (key: string, options?: any) => string;
-    setPreviewInvoice: (inv: any) => void;
     onEditInvoice: (inv: any) => void;
     issueMutation: any;
-    cancelMutation: any;
     markAsPaidMutation: any;
-    archiveMutation: any;
     deleteMutation: any;
     handlePrint: (inv: any, rebuild?: boolean) => void;
     handleDownload: (inv: any, rebuild?: boolean) => void;
     handleDownloadXml: (inv: any) => void;
-    cancelReason: string;
-    setCancelReason: (r: string) => void;
+    datevExportSingle: (inv: any) => void;
+    createCreditNote: (inv: any) => void;
     setConfirmTitle: (t: string) => void;
     setConfirmMessage: (m: string) => void;
     setConfirmLabel: (l: string) => void;
@@ -30,17 +29,15 @@ export interface BuildInvoiceColumnsParams {
 
 export function buildInvoiceColumns({
     t,
-    setPreviewInvoice,
     onEditInvoice,
     issueMutation,
-    cancelMutation,
     markAsPaidMutation,
-    archiveMutation,
     deleteMutation,
     handlePrint,
     handleDownload,
     handleDownloadXml,
-    cancelReason,
+    datevExportSingle,
+    createCreditNote,
     setConfirmTitle,
     setConfirmMessage,
     setConfirmLabel,
@@ -90,9 +87,9 @@ export function buildInvoiceColumns({
             id: 'due_date',
             header: t('fields.due_date'),
             accessor: (inv: any) => (
-                <div className="flex flex-col">
-                    <span className="text-slate-600 font-medium">{new Date(inv.due_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                </div>
+                <span className="text-slate-600 font-medium">
+                    {new Date(inv.due_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                </span>
             ),
             sortable: true,
             sortKey: 'due_date',
@@ -151,116 +148,103 @@ export function buildInvoiceColumns({
             id: 'actions',
             header: '',
             accessor: (inv: any) => {
-                const actionMenuItems = [
+                // ── Primäre Schnellaktionen (sichtbar) ──────────────────────
+                // Nur die eine wichtigste Aktion je Status direkt anzeigen.
+
+                // ── Dropdown-Menü (flach, nach Häufigkeit sortiert) ─────────
+                const items: MenuProps['items'] = [];
+
+                // 1. Bearbeiten — nur Entwurf
+                if (inv.status === 'draft') {
+                    items.push({
+                        key: 'edit',
+                        icon: <FaPen className="text-slate-400 text-xs" />,
+                        label: <span className="text-xs text-slate-700">Bearbeiten</span>,
+                        onClick: () => onEditInvoice(inv),
+                    });
+                    items.push({ type: 'divider' });
+                }
+
+                // 2. Drucken
+                items.push({
+                    key: 'print',
+                    icon: <FaPrint className="text-slate-400 text-xs" />,
+                    label: <span className="text-xs text-slate-700">Drucken</span>,
+                    onClick: () => handlePrint(inv),
+                });
+
+                // 3. Download
+                items.push({
+                    key: 'pdf',
+                    icon: <FaFilePdf className="text-slate-400 text-xs" />,
+                    label: <span className="text-xs text-slate-700">Download</span>,
+                    onClick: () => handleDownload(inv),
+                });
+
+                // 4. Stornieren (Gutschrift)
+                if (['issued', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note_id && !inv.creditNote) {
+                    items.push({
+                        key: 'credit_note',
+                        icon: <FaBan className="text-slate-400 text-xs" />,
+                        label: <span className="text-xs text-slate-700">Stornieren (Gutschrift)</span>,
+                        onClick: () => createCreditNote(inv),
+                    });
+                }
+
+                items.push({ type: 'divider' });
+
+                // 6. Weitere Optionen
+                const moreChildren: NonNullable<MenuProps['items']> = [
                     {
-                        key: 'mgmt_header',
-                        type: 'group' as const,
-                        label: <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.management')}</span>,
-                        children: [
-                            {
-                                key: 'view',
-                                icon: <FaEye className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_MUTED}`} />,
-                                label: <span className="text-xs">{t('common.details')}</span>,
-                                onClick: () => setPreviewInvoice(inv),
-                            },
-                            ...(inv.status === 'draft' ? [{
-                                key: 'edit',
-                                icon: <FaPen className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_BRAND}`} />,
-                                label: <span className="text-xs">{t('actions.edit')}</span>,
-                                onClick: () => onEditInvoice(inv),
-                            }] : []),
-                        ]
+                        key: 'datev',
+                        icon: <FaFileInvoiceDollar className="text-slate-400 text-xs" />,
+                        label: <span className="text-xs text-slate-700">DATEV</span>,
+                        onClick: () => datevExportSingle(inv),
                     },
                     {
-                        key: 'fin_header',
-                        type: 'group' as const,
-                        label: <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.finance')}</span>,
-                        children: [
-                            ...(inv.status === 'cancelled' ? [{
-                                key: 'archive',
-                                icon: <FaHistory className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DEFAULT}`} />,
-                                label: <span className="text-xs">{t('buttons.archive')}</span>,
-                                onClick: () => {
-                                    setConfirmTitle(t('projects.actions.bulk.archive'));
-                                    setConfirmMessage(t('projects.confirm.archive_message', { count: 1 }));
-                                    setConfirmLabel(t('projects.actions.bulk.archive'));
-                                    setConfirmVariant('info');
-                                    setConfirmAction(() => () => archiveMutation.mutate({ ids: [inv.id], data: { status: 'archived' } }));
-                                    setIsConfirmOpen(true);
-                                },
-                            }] : []),
-                            ...(['issued', 'paid', 'overdue'].includes(inv.status) && !inv.credit_note ? [{
-                                key: 'cancel',
-                                icon: <FaBan className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_WARNING}`} />,
-                                label: <span className="text-xs">{t('invoice.confirm.cancel_title')}</span>,
-                                onClick: () => {
-                                    setConfirmTitle(t('invoice.confirm.cancel_title'));
-                                    setConfirmMessage(t('invoice.confirm.cancel_message_note'));
-                                    setConfirmLabel(t('invoice.confirm.cancel_title'));
-                                    setConfirmVariant('warning');
-                                    setConfirmAction(() => () => cancelMutation.mutate({ id: inv.id, reason: cancelReason || undefined }));
-                                    setIsConfirmOpen(true);
-                                },
-                            }] : []),
-                        ]
+                        key: 'xml',
+                        icon: <FaFileCode className="text-slate-400 text-xs" />,
+                        label: <span className="text-xs text-slate-700">ZUGFeRD</span>,
+                        onClick: () => handleDownloadXml(inv),
                     },
                     {
-                        key: 'docs_header',
-                        type: 'group' as const,
-                        label: <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest pl-1">{t('common.documents')}</span>,
-                        children: [
-                            {
-                                key: 'print',
-                                icon: <FaPrint className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DEFAULT}`} />,
-                                label: <span className="text-xs">{t('invoice.actions.print')}</span>,
-                                onClick: () => handlePrint(inv),
-                            },
-                            {
-                                key: 'pdf',
-                                icon: <FaFilePdf className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DANGER}`} />,
-                                label: <span className="text-xs">{t('common.download')} PDF</span>,
-                                onClick: () => handleDownload(inv),
-                            },
-                            {
-                                key: 'xml',
-                                icon: <FaFileCode className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_SUCCESS}`} />,
-                                label: <span className="text-xs">{t('invoice.actions.download_xml')}</span>,
-                                onClick: () => handleDownloadXml(inv),
-                            },
-                            {
-                                key: 'rebuild',
-                                icon: <FaHistory className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_BRAND}`} />,
-                                label: <span className="text-xs">{t('invoice.actions.rebuild')}</span>,
-                                onClick: () => handleDownload(inv, true),
-                            },
-                        ]
+                        key: 'rebuild',
+                        icon: <FaHistory className="text-slate-400 text-xs" />,
+                        label: <span className="text-xs text-slate-700">Neu erstellen</span>,
+                        onClick: () => handleDownload(inv, true),
                     },
-                    ...(inv.status === 'draft' ? [{
-                        key: 'danger_header',
-                        type: 'group' as const,
-                        label: <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest pl-1">{t('common.danger_zone')}</span>,
-                        children: [
-                            {
-                                key: 'delete',
-                                icon: <FaTrash className={`${ICON_DROPDOWN_ITEM_CLASS} ${ICON_COLOR_DANGER}`} />,
-                                label: <span className="text-xs font-medium">{t('actions.delete')}</span>,
-                                danger: true,
-                                onClick: () => {
-                                    setConfirmTitle(t('invoice.confirm.delete_title'));
-                                    setConfirmMessage(t('invoice.confirm.delete_message'));
-                                    setConfirmLabel(t('actions.delete'));
-                                    setConfirmVariant('danger');
-                                    setConfirmAction(() => () => deleteMutation.mutate(inv.id));
-                                    setIsConfirmOpen(true);
-                                },
-                            }
-                        ]
-                    }] : []),
                 ];
 
+                items.push({
+                    key: 'more',
+                    icon: <FaEllipsisV className="text-slate-400 text-xs" />,
+                    label: <span className="text-xs text-slate-500 font-medium">Weitere</span>,
+                    children: moreChildren,
+                });
+
+                // 7. Löschen — nur Entwurf
+                if (inv.status === 'draft') {
+                    items.push({ type: 'divider' });
+                    items.push({
+                        key: 'delete',
+                        icon: <FaTrash className="text-red-400 text-xs" />,
+                        label: <span className="text-xs text-red-500">Löschen</span>,
+                        danger: true,
+                        onClick: () => {
+                            setConfirmTitle(t('invoice.confirm.delete_title'));
+                            setConfirmMessage(t('invoice.confirm.delete_message'));
+                            setConfirmLabel(t('actions.delete'));
+                            setConfirmVariant('danger');
+                            setConfirmAction(() => () => deleteMutation.mutate(inv.id));
+                            setIsConfirmOpen(true);
+                        },
+                    });
+                }
+
                 return (
-                    <div className="flex justify-end gap-1.5 items-center" onClick={(e) => e.stopPropagation()}>
-                        {/* Primary Actions (Visible) */}
+                    <div className="flex justify-end gap-1.5 items-center" onClick={e => e.stopPropagation()}>
+
+                        {/* Ausstellen — Entwurf */}
                         {inv.status === 'draft' && (
                             <button
                                 onClick={() => {
@@ -271,31 +255,30 @@ export function buildInvoiceColumns({
                                     setConfirmAction(() => () => issueMutation.mutate(inv.id));
                                     setIsConfirmOpen(true);
                                 }}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/20 rounded-sm text-[10px] font-bold uppercase transition-all shadow-sm"
+                                className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-sm text-[10px] font-semibold transition-all"
                                 title={t('invoice.actions.issue')}
                             >
                                 <FaStamp className={ICON_SIZE_XS} />
-                                <span>{t('invoice.actions.issue_short')}</span>
+                                <span>Ausstellen</span>
                             </button>
                         )}
 
-                        {['issued', 'overdue'].includes(inv.status) && (inv.amount_due_eur > 0) && (
+                        {/* Als bezahlt markieren — offen / überfällig */}
+                        {['issued', 'overdue'].includes(inv.status) && inv.amount_due_eur > 0 && (
                             <button
                                 onClick={() => markAsPaidMutation.mutate(inv.id)}
                                 disabled={markAsPaidMutation.isPending}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-sm text-[10px] font-bold uppercase transition-all shadow-sm disabled:opacity-40"
+                                className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-sm text-[10px] font-semibold transition-all disabled:opacity-40"
                                 title={t('invoice.actions.paid')}
                             >
                                 <FaCheck className={ICON_SIZE_XS} />
-                                <span>{t('invoice.actions.paid')}</span>
+                                <span>Bezahlt</span>
                             </button>
                         )}
 
+                        {/* Mehr-Menü */}
                         <Dropdown
-                            menu={{
-                                items: actionMenuItems,
-                                className: 'invoice-action-menu-dropdown',
-                            }}
+                            menu={{ items, className: 'invoice-action-menu-dropdown' }}
                             trigger={['click']}
                             placement="bottomRight"
                         >

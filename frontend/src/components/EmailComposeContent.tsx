@@ -80,8 +80,9 @@ const EmailComposeContent = ({
 
     const createAccountMutation = useMutation({
         mutationFn: (data: any) => mailService.createAccount(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['mail-accounts'] });
+        onSuccess: (newAccount) => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+            setSelectedAccount(newAccount);
             toast.success('Konto erfolgreich erstellt');
             setIsAccountModalOpen(false);
         },
@@ -90,8 +91,9 @@ const EmailComposeContent = ({
 
     const createTemplateMutation = useMutation({
         mutationFn: (data: any) => mailService.createTemplate(data),
-        onSuccess: () => {
+        onSuccess: (newTemplate) => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+            handleApplyTemplate(newTemplate);
             toast.success('Vorlage erfolgreich erstellt');
             setIsTemplateModalOpen(false);
         },
@@ -100,8 +102,9 @@ const EmailComposeContent = ({
 
     const createSignatureMutation = useMutation({
         mutationFn: (data: any) => mailService.createSignature(data),
-        onSuccess: () => {
+        onSuccess: (newSignature) => {
             queryClient.invalidateQueries({ queryKey: ['mail', 'signatures'] });
+            setSelectedSignature(newSignature);
             toast.success('Signatur erfolgreich erstellt');
             setIsSignatureModalOpen(false);
         },
@@ -390,7 +393,7 @@ const EmailComposeContent = ({
                             </Button>
 
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 group">
-                                <span className="text-[9px] font-bold text-brand-primary tracking-widest sm:w-10 shrink-0">PROJEKT</span>
+                                <span className="text-[9px] font-bold text-slate-400 tracking-widest sm:w-10 shrink-0">PROJEKT</span>
                                 <div className="flex-1 flex min-w-0">
                                     <div className="flex-1 group/project">
                                         <SearchableSelect
@@ -400,6 +403,7 @@ const EmailComposeContent = ({
                                             })) : []}
                                             value={selectedProjectId?.toString() || ''}
                                             onChange={(val) => setSelectedProjectId(val)}
+                                            onEdit={selectedProjectId ? () => window.open(`/projects/${selectedProjectId}`, '_blank') : undefined}
                                             placeholder="Projekt zuordnen (optional)..."
                                             className="h-[42px]"
                                             roundedSide="left"
@@ -429,19 +433,12 @@ const EmailComposeContent = ({
                                         }))}
                                         value={selectedAccount?.id?.toString() || ''}
                                         onChange={(val) => setSelectedAccount(accounts.find((a: any) => a.id.toString() === val))}
+                                        onEdit={() => { setAccountToEdit(selectedAccount); setIsAccountModalOpen(true); }}
                                         placeholder="Sender wählen..."
                                         className="h-[42px]"
                                         roundedSide="left"
                                         isClearable={false}
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => { setAccountToEdit(selectedAccount); setIsAccountModalOpen(true); }}
-                                        className="absolute right-10 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-brand-primary transition-all z-20"
-                                        title="Konto bearbeiten"
-                                    >
-                                        <FaEdit size={12} />
-                                    </button>
                                 </div>
                                 <Button
                                     onClick={() => { setAccountToEdit(null); setIsAccountModalOpen(true); }}
@@ -1064,8 +1061,9 @@ const EmailComposeContent = ({
                 onClose={() => setIsAccountModalOpen(false)}
                 onSubmit={(data) => {
                     if (accountToEdit) {
-                        mailService.updateAccount(accountToEdit.id, data).then(() => {
+                        mailService.updateAccount(accountToEdit.id, data).then((updatedAccount) => {
                             queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+                            setSelectedAccount(updatedAccount);
                             setIsAccountModalOpen(false);
                             setAccountToEdit(null);
                         });

@@ -11,6 +11,7 @@ class Customer extends Model
     protected $appends = ['display_id'];
 
     protected $fillable = [
+        'custom_id',
         'type',
         'salutation',
         'first_name',

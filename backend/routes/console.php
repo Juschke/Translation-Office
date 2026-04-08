@@ -39,3 +39,8 @@ Schedule::command('invoices:process-recurring')
     ->dailyAt('06:00')
     ->withoutOverlapping()
     ->runInBackground();
+
+// GoBD: Hash-Ketten-Verifikation täglich – bei Fehler Alert per E-Mail
+Schedule::command('invoices:verify-audit-chain')
+    ->daily()
+    ->emailOutputOnFailure('admin@localhost');

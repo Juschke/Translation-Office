@@ -108,7 +108,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
     const [langTrigger, setLangTrigger] = useState<'source' | 'target' | null>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState<'general' | 'services' | 'details'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'services'>('general');
 
     // API Data
     const { data: customersData = [] } = useQuery({
@@ -521,11 +521,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             errors.push("Dokumentenart ist ein Pflichtfeld");
             newErrorSet.add('docType');
         }
-        if (!translator) {
-            errors.push("Übersetzer ist ein Pflichtfeld");
-            newErrorSet.add('translator');
-        }
-
         const hasActiveInvoice = initialData?.invoices?.some((inv: any) => inv.status !== 'cancelled') ||
             initialData?.invoices_count > 0;
 
@@ -563,7 +558,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             );
 
             const firstErrorField = Array.from(newErrorSet)[0];
-            if (['customer', 'source', 'target', 'docType', 'deadline', 'status', 'translator'].includes(firstErrorField)) {
+            if (['customer', 'source', 'target', 'docType', 'deadline', 'status'].includes(firstErrorField)) {
                 setActiveTab('general');
             }
 
@@ -727,19 +722,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                             Nr: {displayNr}
                         </span>
                     </div>
-                    <div className="flex items-center justify-between w-full sm:w-auto gap-3">
-                        <div className="flex bg-slate-200/50 rounded-sm p-0.5 border border-slate-300/50 h-8 sm:h-9">
-                            {['low', 'medium', 'high'].map(p => (
-                                <button key={p} onClick={() => setPriority(p as any)} className={clsx("px-2 sm:px-3 h-full text-[10px] sm:text-xs font-medium rounded-sm transition-all flex items-center gap-1 sm:gap-2", priority === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}>
-                                    {p === 'low' && <FaClock className="text-[10px] sm:text-xs" />}
-                                    {p === 'medium' && <FaFlag className="text-[10px] sm:text-xs" />}
-                                    {p === 'high' && <FaBolt className="text-[10px] sm:text-xs" />}
-                                    <span className="hidden xs:inline">{p === 'low' ? 'Standard' : p === 'medium' ? 'Dringend' : 'Express'}</span>
-                                </button>
-                            ))}
-                        </div>
-                        <button onClick={onClose} className="w-8 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
-                    </div>
+                    <button onClick={onClose} className="w-8 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
                 </div>
 
                 <div className="flex-1 lg:overflow-hidden overflow-y-auto flex flex-col lg:flex-row">
@@ -750,133 +733,128 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                         <div className="flex space-x-1 border-b border-slate-200 mb-4 shrink-0 overflow-x-auto custom-scrollbar pb-1 sticky top-0 bg-white z-[30] py-2">
                             <button type="button" onClick={() => setActiveTab('general')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'general' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Allgemein</button>
                             <button type="button" onClick={() => setActiveTab('services')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'services' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Leistungen & Finanzen</button>
-                            <button type="button" onClick={() => setActiveTab('details')} className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'details' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>Erweitert</button>
                         </div>
 
                         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-1">
 
                             {/* TAB: Allgemein */}
                             <div className={clsx("space-y-6", activeTab !== 'general' && "hidden")}>
-                                {/* 01: Basis-Daten */}
-                                <div className="space-y-4">
+
+                                {/* 01: Kunde */}
+                                <div className="space-y-3">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                         <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">01</div>
-                                        <h4 className="text-sm font-medium text-slate-800">Basis-Daten</h4>
+                                        <h4 className="text-sm font-medium text-slate-800">Auftraggeber</h4>
                                     </div>
-
-                                    <div className="grid grid-cols-12 gap-x-4 gap-y-3">
-                                        <div className="col-span-12">
-                                            <Input
-                                                label="Projektname"
-                                                placeholder="Projektname eingeben..."
-                                                value={name}
-                                                onChange={e => setName(e.target.value)}
-                                                helperText="Der Name darf keine Leerzeichen enthalten (autom. Korrektur)."
-                                                className="bg-white"
-                                            />
-                                        </div>
-
-                                        <div className="col-span-12" id="field-container-docType">
-                                            <DocumentTypeSelect
-                                                options={docTypes
-                                                    .sort((a: any, b: any) => {
-                                                        const catA = a.category?.toLowerCase() || '';
-                                                        const catB = b.category?.toLowerCase() || '';
-                                                        const isTopA = catA.includes('personal') || catA.includes('identität');
-                                                        const isTopB = catB.includes('personal') || catB.includes('identität');
-                                                        if (isTopA && !isTopB) return -1;
-                                                        if (!isTopA && isTopB) return 1;
-                                                        return catA.localeCompare(catB);
-                                                    })
-                                                    .map((dt: any) => ({
-                                                        value: dt.id.toString(),
-                                                        label: dt.name,
-                                                        group: dt.category
-                                                    }))}
-                                                value={docType}
-                                                onChange={setDocType}
-                                                error={validationErrors.has('docType')}
-                                                isMulti={true}
-                                                placeholder="Dokumentart auswählen..."
-                                            />
-                                        </div>
-
-                                        <div className="col-span-12 md:col-span-6" id="field-container-status">
-                                            <SearchableSelect
-                                                label="Status"
-                                                options={statusOptions}
-                                                value={status}
-                                                onChange={setStatus}
-                                                error={validationErrors.has('status')}
-                                                preserveOrder={true}
-                                            />
-                                        </div>
-
-                                        <div className="col-span-12 md:col-span-6 " id="field-container-deadline">
-                                            <Label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Liefertermin</Label>
-                                            <DatePicker
-                                                showTime
-                                                format="DD.MM.YYYY HH:mm"
-                                                value={deadline ? dayjs(deadline) : null}
-                                                onChange={(date) => {
-                                                    if (date) {
-                                                        setDeadline(date.toISOString());
-                                                    } else {
-                                                        setDeadline('');
-                                                    }
-                                                }}
-                                                className={clsx(
-                                                    "w-full h-9",
-                                                    validationErrors.has('deadline') && "ant-picker-status-error"
-                                                )}
-                                                placeholder="Datum & Zeit wählen"
-                                            />
-                                        </div>
+                                    <div id="field-container-customer">
+                                        <CustomerSelect
+                                            options={custOptions}
+                                            value={customer}
+                                            onChange={setCustomer}
+                                            error={validationErrors.has('customer')}
+                                            placeholder="Kunde auswählen..."
+                                        />
                                     </div>
                                 </div>
 
-                                {/* 02: Kunde */}
-                                <div className="space-y-4">
+                                {/* 02: Sprachen */}
+                                <div className="space-y-3">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
                                         <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">02</div>
-                                        <h4 className="text-sm font-medium text-slate-800">Kunde</h4>
+                                        <h4 className="text-sm font-medium text-slate-800">Sprachpaar</h4>
                                     </div>
-
-                                    <div className="grid grid-cols-12 gap-x-4 gap-y-3">
-                                        <div className="col-span-12" id="field-container-customer">
-                                            <CustomerSelect
-                                                options={custOptions}
-                                                value={customer}
-                                                onChange={setCustomer}
-                                                error={validationErrors.has('customer')}
-                                                placeholder="Kunde auswählen..."
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* 03: Sprachen */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">03</div>
-                                        <h4 className="text-sm font-medium text-slate-800">Sprachen</h4>
-                                    </div>
-
-                                    <div className="grid grid-cols-12 gap-x-4 gap-y-3">
-                                        <div className="col-span-6" id="field-container-source">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div id="field-container-source">
                                             <LanguageSelect id="source" label="Von *" value={source} onChange={setSource} error={validationErrors.has('source')} onAddNew={() => { setLangTrigger('source'); setIsLanguageModalOpen(true); }} />
                                         </div>
-                                        <div className="col-span-6" id="field-container-target">
+                                        <div id="field-container-target">
                                             <LanguageSelect id="target" label="Nach *" value={target} onChange={setTarget} isMulti={true} error={validationErrors.has('target')} onAddNew={() => { setLangTrigger('target'); setIsLanguageModalOpen(true); }} />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* 04: Partner Auswahl */}
+                                {/* 03: Dokumentart */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">03</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Dokumentart</h4>
+                                    </div>
+                                    <div id="field-container-docType">
+                                        <DocumentTypeSelect
+                                            options={docTypes
+                                                .sort((a: any, b: any) => {
+                                                    const catA = a.category?.toLowerCase() || '';
+                                                    const catB = b.category?.toLowerCase() || '';
+                                                    const isTopA = catA.includes('personal') || catA.includes('identität');
+                                                    const isTopB = catB.includes('personal') || catB.includes('identität');
+                                                    if (isTopA && !isTopB) return -1;
+                                                    if (!isTopA && isTopB) return 1;
+                                                    return catA.localeCompare(catB);
+                                                })
+                                                .map((dt: any) => ({
+                                                    value: dt.id.toString(),
+                                                    label: dt.name,
+                                                    group: dt.category
+                                                }))}
+                                            value={docType}
+                                            onChange={setDocType}
+                                            error={validationErrors.has('docType')}
+                                            isMulti={true}
+                                            placeholder="Dokumentart auswählen..."
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* 04: Deadline + Priorität */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">04</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Termin & Dringlichkeit</h4>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div id="field-container-deadline">
+                                            <Label className={clsx(
+                                                "block text-xs font-medium mb-1 ml-1",
+                                                !deadline ? "text-amber-500" : "text-slate-400"
+                                            )}>
+                                                Liefertermin{!deadline && <span className="ml-1 text-amber-400">— noch nicht gesetzt</span>}
+                                            </Label>
+                                            <DatePicker
+                                                showTime
+                                                format="DD.MM.YYYY HH:mm"
+                                                value={deadline ? dayjs(deadline) : null}
+                                                onChange={(date) => {
+                                                    if (date) { setDeadline(date.toISOString()); } else { setDeadline(''); }
+                                                }}
+                                                className={clsx(
+                                                    "w-full h-9",
+                                                    validationErrors.has('deadline') && "ant-picker-status-error",
+                                                    !deadline && "border-amber-300"
+                                                )}
+                                                placeholder="Datum & Zeit wählen"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Priorität</label>
+                                            <div className="flex bg-slate-100 rounded-sm p-0.5 border border-slate-200 h-9">
+                                                {(['low', 'medium', 'high'] as const).map(p => (
+                                                    <button key={p} type="button" onClick={() => setPriority(p)} className={clsx("flex-1 h-full text-[10px] font-semibold rounded-sm transition-all flex items-center justify-center gap-1", priority === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600")}>
+                                                        {p === 'low' && <FaClock size={10} />}
+                                                        {p === 'medium' && <FaFlag size={10} />}
+                                                        {p === 'high' && <FaBolt size={10} />}
+                                                        <span>{p === 'low' ? 'Standard' : p === 'medium' ? 'Dringend' : 'Express'}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 05: Partner & Beteiligte */}
                                 <div className="space-y-4 pt-2">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">04</div>
-                                        <h4 className="text-sm font-medium text-slate-800">Partner & Beteiligte</h4>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">05</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Übersetzer <span className="text-slate-400 font-normal text-xs">(optional)</span></h4>
                                     </div>
 
                                     <div className="grid grid-cols-12 gap-x-4 gap-y-3">
@@ -885,8 +863,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 options={partnerOptions}
                                                 value={translator}
                                                 onChange={setTranslator}
-                                                error={validationErrors.has('translator')}
-                                                placeholder="Übersetzer auswählen..."
+                                                error={false}
+                                                placeholder="Übersetzer auswählen (optional)..."
                                             />
                                         </div>
                                     </div>
@@ -1048,13 +1026,62 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         onSubmit={handleApplyCustomer}
                                     />
                                 </div>
+
+                                {/* 06: Status — nur beim Bearbeiten editierbar */}
+                                {initialData ? (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                            <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">06</div>
+                                            <h4 className="text-sm font-medium text-slate-800">Projektstatus</h4>
+                                        </div>
+                                        <div id="field-container-status">
+                                            <SearchableSelect
+                                                label=""
+                                                options={statusOptions}
+                                                value={status}
+                                                onChange={setStatus}
+                                                error={validationErrors.has('status')}
+                                                preserveOrder={true}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm">
+                                        <div className="w-2 h-2 rounded-full bg-slate-400" />
+                                        <span className="text-xs text-slate-500">Neues Projekt startet als <span className="font-semibold text-slate-700">Neu / Angebot</span></span>
+                                    </div>
+                                )}
+
+                                {/* 07: Projektname + Notizen */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">07</div>
+                                        <h4 className="text-sm font-medium text-slate-800">Weitere Details</h4>
+                                    </div>
+                                    <Input
+                                        label="Projektname"
+                                        placeholder="Projektname eingeben..."
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        helperText="Wird automatisch generiert — bei Bedarf anpassen."
+                                        className="bg-white"
+                                    />
+                                    <Input
+                                        isTextArea
+                                        label="Interne Anmerkungen (Optional)"
+                                        placeholder="Wichtige Hinweise zum Projekt..."
+                                        value={notes}
+                                        onChange={e => setNotes(e.target.value)}
+                                    />
+                                </div>
+
                             </div>
 
                             {/* TAB: Leistungen & Finanzen */}
                             <div className={clsx("space-y-6", activeTab !== 'services' && "hidden")}>
                                 <div className="space-y-6 pt-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">04</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">01</div>
                                         <h4 className="text-sm font-medium text-slate-800">Leistungen & Optionen</h4>
                                     </div>
 
@@ -1222,7 +1249,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
 
                                 <div className="space-y-6 pt-4">
                                     <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">05</div>
+                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">02</div>
                                         <h4 className="text-sm font-medium text-slate-800">Kalkulation Positionen</h4>
                                     </div>
 
@@ -1232,7 +1259,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                 <div className="space-y-6 pt-6">
                                     <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">06</div>
+                                            <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">03</div>
                                             <h4 className="text-sm font-medium text-slate-800">Anzahlungen / Teilzahlungen</h4>
                                             <span className="bg-white border border-slate-200 text-slate-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">{payments.length}</span>
                                         </div>
@@ -1240,13 +1267,13 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                             variant="default"
                                             size="sm"
                                             onClick={() => { setEditingPayment(null); setIsPaymentModalOpen(true); }}
-                                            disabled={remainingBalance <= 0.01}
+                                            disabled={calcGross > 0 && remainingBalance <= 0.01}
                                             className={clsx(
                                                 "h-7 px-3 text-[10px] uppercase font-bold tracking-tight shadow-none rounded flex items-center gap-1.5",
-                                                remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white"
+                                                calcGross > 0 && remainingBalance <= 0.01 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" : "bg-brand-primary hover:bg-brand-primary/90 text-white"
                                             )}
                                         >
-                                            <FaPlus className="text-[10px]" /> {remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                                            <FaPlus className="text-[10px]" /> {calcGross > 0 && remainingBalance <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
                                         </Button>
                                     </div>
 
@@ -1256,17 +1283,6 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         onDeletePayment={handleDeletePayment}
                                         hideHeader
                                     />
-                                </div>
-                            </div>
-
-                            {/* TAB: Erweitert */}
-                            <div className={clsx("space-y-6", activeTab !== 'details' && "hidden")}>
-                                <div className="space-y-6 pt-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-medium shadow-sm">07</div>
-                                        <h4 className="text-sm font-medium text-slate-800">Anmerkungen</h4>
-                                    </div>
-                                    <Input isTextArea label="Interne Anmerkungen" placeholder="Wichtige Hinweise zum Projekt..." value={notes} onChange={e => setNotes(e.target.value)} />
                                 </div>
                             </div>
 

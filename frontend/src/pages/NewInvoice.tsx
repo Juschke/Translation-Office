@@ -74,6 +74,10 @@ const NewInvoice = () => {
         salutation: '',
         is_xrechnung: false,
         supplier_number: '',
+        order_reference: '',
+        buyer_reference: '',
+        payment_reference: '',
+        tax_exemption_reason: '',
     });
 
     const [items, setItems] = useState<any[]>([]);
@@ -245,6 +249,10 @@ const NewInvoice = () => {
                 delivery_date_type: inv.delivery_date_type || 'delivery_date',
                 delivery_date_start: (inv.delivery_date_start || inv.delivery_date || dayjs().format('YYYY-MM-DD')).split('T')[0],
                 delivery_date_end: (inv.delivery_date_end || dayjs().format('YYYY-MM-DD')).split('T')[0],
+                order_reference: (inv as any).order_reference || '',
+                buyer_reference: (inv as any).buyer_reference || '',
+                payment_reference: (inv as any).payment_reference || '',
+                tax_exemption_reason: (inv as any).tax_exemption_reason || '',
             });
             if (inv.items) {
                 setItems(inv.items.map((i: any) => ({
@@ -868,23 +876,51 @@ const NewInvoice = () => {
                                         </div>
 
                                         {formData.is_xrechnung && (
-                                            <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <div className="relative">
-                                                    <label className="absolute -top-1.5 left-2 px-1 text-[9px] font-bold text-slate-400 bg-white z-10">{t('invoice.form.leitweg_id')}</label>
-                                                    <Input
-                                                        value={formData.leitweg_id}
-                                                        onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
-                                                        className="h-11 bg-white"
-                                                        placeholder="z.B. 0101-12345-67"
-                                                    />
+                                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="relative">
+                                                        <label className="absolute -top-1.5 left-2 px-1 text-[9px] font-bold text-slate-400 bg-white z-10">{t('invoice.form.leitweg_id')}</label>
+                                                        <Input
+                                                            value={formData.leitweg_id}
+                                                            onChange={e => setFormData({ ...formData, leitweg_id: e.target.value })}
+                                                            className="h-11 bg-white"
+                                                            placeholder="z.B. 0101-12345-67"
+                                                        />
+                                                    </div>
+                                                    <div className="relative">
+                                                        <label className="absolute -top-1.5 left-2 px-1 text-[9px] font-bold text-slate-400 bg-white z-10">{t('invoice.form.supplier_number')}</label>
+                                                        <Input
+                                                            value={formData.supplier_number}
+                                                            onChange={e => setFormData({ ...formData, supplier_number: e.target.value })}
+                                                            className="h-11 bg-white"
+                                                            placeholder="Wird für X-Rechnung benötigt"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="relative">
+                                                        <label className="absolute -top-1.5 left-2 px-1 text-[9px] font-bold text-slate-400 bg-white z-10">Bestellnummer (BT-13)</label>
+                                                        <Input
+                                                            value={formData.order_reference}
+                                                            onChange={e => setFormData({ ...formData, order_reference: e.target.value })}
+                                                            className="h-11 bg-white"
+                                                        />
+                                                    </div>
+                                                    <div className="relative">
+                                                        <label className="absolute -top-1.5 left-2 px-1 text-[9px] font-bold text-slate-400 bg-white z-10">Käuferreferenz (BT-10)</label>
+                                                        <Input
+                                                            value={formData.buyer_reference}
+                                                            onChange={e => setFormData({ ...formData, buyer_reference: e.target.value })}
+                                                            className="h-11 bg-white"
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <div className="relative">
-                                                    <label className="absolute -top-1.5 left-2 px-1 text-[9px] font-bold text-slate-400 bg-white z-10">{t('invoice.form.supplier_number')}</label>
+                                                    <label className="absolute -top-1.5 left-2 px-1 text-[9px] font-bold text-slate-400 bg-white z-10">Zahlungsreferenz (BT-83)</label>
                                                     <Input
-                                                        value={formData.supplier_number}
-                                                        onChange={e => setFormData({ ...formData, supplier_number: e.target.value })}
+                                                        value={formData.payment_reference}
+                                                        onChange={e => setFormData({ ...formData, payment_reference: e.target.value })}
                                                         className="h-11 bg-white"
-                                                        placeholder="Wird für X-Rechnung benötigt"
                                                     />
                                                 </div>
                                             </div>

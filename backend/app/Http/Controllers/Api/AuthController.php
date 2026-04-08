@@ -151,6 +151,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         $tenantData = [
+            'name' => $validated['company_name'] ?: ($user->name . 's Büro'),
             'company_name' => $validated['company_name'] ?: ($user->name . 's Büro'),
             'legal_form' => $validated['legal_form'] ?? null,
             'address_street' => $validated['address_street'] ?? null,
