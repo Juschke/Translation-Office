@@ -6,6 +6,7 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-p
 import { FaPlus, FaTrash, FaBook, FaChevronDown, FaSearch, FaGripVertical } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
+import ConfirmModal from './ConfirmModal';
 import { Button } from '../ui/button';
 import type { ProjectPosition } from './projectTypes';
 
@@ -45,12 +46,12 @@ const fmt2 = (v: string | number) =>
 
 const inlineInput = (invalid = false, align: 'left' | 'right' = 'left', mono = false) =>
     clsx(
-        'w-full bg-transparent outline-none transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 border-none',
+        'w-full bg-transparent outline-none transition-colors duration-200 disabled:cursor-not-allowed border-none',
         mono ? 'font-mono text-[11px]' : 'font-medium text-xs',
         align === 'right' ? 'text-right' : 'text-left',
         invalid
             ? 'text-red-500 placeholder:text-red-300'
-            : 'text-slate-700 placeholder:text-slate-300 focus:placeholder:opacity-0',
+            : 'text-slate-700 placeholder:text-slate-300 focus:placeholder:opacity-0 disabled:text-slate-600',
     );
 
 /* ─── Generic Mini Dropdown ─── */
@@ -129,11 +130,11 @@ export const MiniDropdown = ({
                 onClick={() => !disabled && setIsOpen(o => !o)}
                 className={clsx(
                     'px-2 py-1 text-[10px] font-bold text-slate-500 border border-transparent hover:bg-slate-100 rounded-sm transition-colors flex items-center justify-between gap-1.5 min-w-fit whitespace-nowrap',
-                    disabled && 'opacity-40 cursor-not-allowed'
+                    disabled && 'cursor-default'
                 )}
             >
                 {displayLabel}
-                <FaChevronDown className={clsx('text-[7px] transition-transform opacity-40', isOpen ? 'rotate-180' : '')} />
+                {!disabled && <FaChevronDown className={clsx('text-[7px] transition-transform opacity-40', isOpen ? 'rotate-180' : '')} />}
             </button>
 
             {isOpen && createPortal(
@@ -205,6 +206,7 @@ const ProjectPositionsTable = ({
     const [showCreate, setShowCreate] = useState(false);
     const [newSvc, setNewSvc] = useState(EMPTY_SERVICE);
     const [catalogCoords, setCatalogCoords] = useState({ top: 0, left: 0 });
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; index: number | null }>({ isOpen: false, index: null });
     const catalogRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
 
@@ -559,7 +561,7 @@ const ProjectPositionsTable = ({
                                                         </td>
                                                         <td className="px-4 py-2 text-center">
                                                             {!disabled && positions.length > 1 ? (
-                                                                <button onClick={() => setPositions(positions.filter(p => p.id !== pos.id))} className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100" title={t('actions.delete')}><FaTrash size={10} /></button>
+                                                                <button onClick={() => setDeleteConfirm({ isOpen: true, index })} className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100" title={t('actions.delete')}><FaTrash size={10} /></button>
                                                             ) : (
                                                                 <span className="p-1.5 block text-slate-100"><FaTrash size={10} /></span>
                                                             )}
@@ -585,6 +587,22 @@ const ProjectPositionsTable = ({
                     </button>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, index: null })}
+                onConfirm={() => {
+                    if (deleteConfirm.index !== null) {
+                        const newPositions = [...positions];
+                        newPositions.splice(deleteConfirm.index, 1);
+                        setPositions(newPositions);
+                    }
+                    setDeleteConfirm({ isOpen: false, index: null });
+                }}
+                title="Position löschen"
+                message="Möchten Sie diese Position wirklich entfernen?"
+                confirmText="Entfernen"
+            />
         </div>
     );
 };

@@ -58,6 +58,7 @@ class PartnerController extends Controller
             'status' => 'nullable|in:available,busy,vacation,blacklisted,deleted',
             'rating' => 'nullable|integer',
             'notes' => 'nullable|string',
+            'portal_access' => 'nullable|boolean',
         ]);
 
         $partner = Partner::create($validated);
@@ -102,6 +103,7 @@ class PartnerController extends Controller
             'status' => 'nullable|in:available,busy,vacation,blacklisted,deleted',
             'rating' => 'nullable|integer',
             'notes' => 'nullable|string',
+            'portal_access' => 'nullable|boolean',
         ]);
 
         $partner->update($validated);

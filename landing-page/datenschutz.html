@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datenschutzerklärung — TranslationOffice</title>
-    <meta name="description" content="Datenschutzerklärung von TranslationOffice GmbH — DSGVO-konform">
+    <title>Datenschutz - TranslationOffice</title>
+    <meta name="description" content="Datenschutzhinweise fuer die Website von TranslationOffice.">
     <meta name="robots" content="index, follow">
-
-    <!-- Tailwind CSS CDN -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Custom Tailwind Config -->
     <script>
         tailwind.config = {
             theme: {
@@ -18,231 +15,222 @@
                     colors: {
                         primary: '#1B4D4F',
                         'primary-dark': '#143A3C',
+                        accent: '#B49765',
+                        sand: '#F5F0E7',
+                        ink: '#172423'
                     }
                 }
             }
         }
     </script>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="bg-white text-gray-900">
-
-    <!-- Navigation -->
-    <nav id="navbar" class="fixed w-full bg-white border-b border-gray-200 z-100 transition-all duration-300">
+<body class="bg-stone-50 text-ink">
+    <nav id="navbar" class="fixed top-0 w-full bg-white/95 backdrop-blur border-b border-stone-200 z-50 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
-                <a href="index.html" class="flex items-center gap-2">
-                    <svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948-.684l1.498-4.493a1 1 0 011.502-.684l1.498 4.493a1 1 0 00.948.684H19a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
-                    </svg>
-                    <span class="text-xl font-bold text-primary hidden sm:inline">TranslationOffice</span>
+                <a href="index.html#hero" class="flex items-center gap-3 text-primary">
+                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white font-extrabold shadow-lg shadow-primary/15">TO</span>
+                    <span class="text-xl font-extrabold hidden sm:inline">TranslationOffice</span>
                 </a>
-
-                <div class="hidden md:flex items-center gap-8">
-                    <a href="index.html#features" class="text-gray-700 hover:text-primary transition font-medium">Funktionen</a>
-                    <a href="index.html#preise" class="text-gray-700 hover:text-primary transition font-medium">Preise</a>
-                    <a href="index.html#referenzen" class="text-gray-700 hover:text-primary transition font-medium">Referenzen</a>
-                    <a href="index.html#workflow" class="text-gray-700 hover:text-primary transition font-medium">Über uns</a>
+                <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-stone-700">
+                    <a href="index.html#funktionen" class="hover:text-primary">Funktionen</a>
+                    <a href="index.html#preise" class="hover:text-primary">Preise</a>
+                    <a href="impressum.html" class="hover:text-primary">Impressum</a>
+                    <a href="cookie.html" class="hover:text-primary">Cookies</a>
                 </div>
-
-                <div class="flex items-center gap-3">
-                    <a href="index.html#demo" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 sm:px-6 py-2 rounded-lg transition font-semibold text-sm sm:text-base">
-                        Kostenlos testen
-                    </a>
-                </div>
+                <a href="index.html#demo" class="hidden sm:inline-flex bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl font-semibold transition shadow-lg shadow-primary/15">
+                    Produktdemo anfragen
+                </a>
             </div>
         </div>
     </nav>
 
-    <!-- Legal Content -->
-    <main class="legal-page">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="legal-content">
-                <h1>Datenschutzerklärung</h1>
-                <p class="updated">Zuletzt aktualisiert: 28. März 2026</p>
+    <main class="legal-shell">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="legal-grid">
+                <article class="legal-card legal-prose">
+                    <p class="legal-meta">Zuletzt aktualisiert: 7. April 2026</p>
+                    <h1>Datenschutzerklaerung</h1>
+                    <p class="legal-meta">Hinweise nach Art. 13 DSGVO fuer die oeffentliche Website von TranslationOffice</p>
 
-                <h2>1. Verantwortlicher für die Datenverarbeitung</h2>
-                <p>
-                    <strong>TranslationOffice GmbH</strong><br>
-                    Unter den Linden 10<br>
-                    10117 Berlin<br>
-                    Deutschland<br><br>
-                    <strong>E-Mail:</strong> <a href="mailto:datenschutz@translationoffice.de">datenschutz@translationoffice.de</a>
-                </p>
+                    <div class="legal-note">
+                        <strong>Wichtiger Hinweis vor dem Livegang:</strong> Diese Fassung deckt die Marketing-Website, Demo-Anfragen und allgemeine Kontaktaufnahme ab. Wenn Sie zusaetzlich die produktive SaaS-Anwendung, Kundenportale oder einen Kunden-Login oeffentlich betreiben, sollten Sie diese Datenschutzerklaerung um produktbezogene Verarbeitungen und gegebenenfalls eine AVV-Dokumentation erweitern.
+                    </div>
 
-                <h2>2. Übersicht der Verarbeitungen</h2>
-                <p>
-                    Nachstehend geben wir einen Überblick über die Verarbeitung personenbezogener Daten bei der Nutzung unserer Website und Dienstleistungen:
-                </p>
-                <ul>
-                    <li>Erhebung von Zugriffsdaten (Server-Logs)</li>
-                    <li>Verarbeitung von Kontaktformularen</li>
-                    <li>Registrierung und Nutzerverwaltung</li>
-                    <li>Cookie-basierte Technologien</li>
-                    <li>Analytische Auswertungen</li>
-                </ul>
+                    <h2>1. Verantwortlicher</h2>
+                    <p>
+                        Verantwortlich fuer die Datenverarbeitung auf dieser Website ist:<br>
+                        TranslationOffice GmbH<br>
+                        [Strasse Hausnummer]<br>
+                        [PLZ Ort]<br>
+                        Deutschland<br><br>
+                        E-Mail: <a href="mailto:info@translationoffice.de">info@translationoffice.de</a>
+                    </p>
 
-                <h2>3. Erhebung personenbezogener Daten beim Besuch der Website</h2>
-                <p>
-                    Bei jedem Zugriff auf unsere Website erfasst unser System automatisch folgende Daten:
-                </p>
-                <ul>
-                    <li>Ihre IP-Adresse</li>
-                    <li>Datum und Uhrzeit des Zugriffs</li>
-                    <li>Aufgerufene Seiten und Ressourcen</li>
-                    <li>Referrer-URL (von wo Sie kamen)</li>
-                    <li>Browser-Typ und Betriebssystem</li>
-                    <li>HTTP-Statuscode</li>
-                </ul>
-                <p>
-                    <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an Systemsicherheit und Website-Optimierung).
-                </p>
+                    <h2>2. Welche Daten wir auf dieser Website verarbeiten</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Verarbeitung</th>
+                                <th>Daten</th>
+                                <th>Zweck und Rechtsgrundlage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Aufruf der Website</td>
+                                <td>IP-Adresse, Datum und Uhrzeit, abgerufene Seite, Referrer, Browser- und Geraeteinformationen, HTTP-Status</td>
+                                <td>Sicherer und stabiler Betrieb der Website; Art. 6 Abs. 1 lit. f DSGVO</td>
+                            </tr>
+                            <tr>
+                                <td>Demo- und Kontaktanfragen</td>
+                                <td>Name, E-Mail-Adresse, Unternehmen, Nachricht und sonstige freiwillige Angaben</td>
+                                <td>Bearbeitung Ihrer Anfrage und Vertragsanbahnung; Art. 6 Abs. 1 lit. b DSGVO sowie Art. 6 Abs. 1 lit. f DSGVO</td>
+                            </tr>
+                            <tr>
+                                <td>Auslieferung externer Frontend-Ressourcen</td>
+                                <td>Insbesondere IP-Adresse und technische Verbindungsdaten beim Abruf externer Skripte oder Styles</td>
+                                <td>Darstellung und technische Bereitstellung der Website; Art. 6 Abs. 1 lit. f DSGVO</td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-                <h2>4. Kontaktformular und Demo-Anfragen</h2>
-                <p>
-                    Wenn Sie unser Kontaktformular ausfüllen, werden die eingegebenen Daten (Name, E-Mail, Unternehmen, Telefon, Nachricht) verarbeitet. Diese Daten verwenden wir ausschließlich zur Beantwortung Ihrer Anfrage.
-                </p>
-                <p>
-                    <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO (Erfüllung von Vertraglichen Verpflichtungen).
-                </p>
+                    <h2>3. Server-Logfiles</h2>
+                    <p>
+                        Beim Aufruf dieser Website verarbeitet der Webserver automatisch Verbindungs- und Protokolldaten. Diese Verarbeitung ist technisch erforderlich, um die Website auszuliefern, Angriffe zu erkennen und die Stabilitaet des Angebots sicherzustellen.
+                    </p>
+                    <p>
+                        Die Speicherdauer fuer Server-Logfiles sollte vor dem Livegang in Abstimmung mit Ihrem Hosting-Anbieter konkret festgelegt und hier dokumentiert werden. Ueblich sind kurze Fristen, soweit keine sicherheitsrelevante laengere Aufbewahrung erforderlich ist.
+                    </p>
 
-                <h2>5. Registrierung und Nutzerkonto</h2>
-                <p>
-                    Bei der Registrierung für TranslationOffice erfassen wir: Name, E-Mail-Adresse, Passwort (gehashed), Unternehmensinformationen und optional Telefonnummer. Diese Daten sind erforderlich zur Erbringung unserer Dienstleistung.
-                </p>
-                <p>
-                    <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung).
-                </p>
+                    <h2>4. Demo-Formular und Kontaktaufnahme</h2>
+                    <p>
+                        Wenn Sie uns ueber das Demo-Formular oder per E-Mail kontaktieren, verarbeiten wir Ihre Angaben ausschliesslich zur Bearbeitung Ihrer Anfrage, zur Kommunikation mit Ihnen und gegebenenfalls zur Vorbereitung eines Vertragsverhaeltnisses.
+                    </p>
+                    <p>
+                        Pflichtangaben im Demo-Formular sind als solche gekennzeichnet. Ohne diese Angaben kann die Anfrage moeglicherweise nicht bearbeitet werden.
+                    </p>
 
-                <h2>6. Cookies und ähnliche Technologien</h2>
-                <p>
-                    Wir verwenden folgende Arten von Cookies:
-                </p>
-                <ul>
-                    <li><strong>Sitzungs-Cookies:</strong> Erforderlich für Login und Sessionverwaltung</li>
-                    <li><strong>Consent-Cookies:</strong> Speichern Ihre Cookie-Einwilligung</li>
-                    <li><strong>Analytische Cookies:</strong> Zur Verstehung von Nutzerverhalten (nur mit Einwilligung)</li>
-                </ul>
-                <p>
-                    Weitere Informationen finden Sie in unserer <a href="cookie.html">Cookie-Richtlinie</a>.
-                </p>
+                    <h2>5. Externe Dienste und technische Einbindungen</h2>
+                    <p>
+                        Diese Website nutzt derzeit externe Frontend-Ressourcen, insbesondere das Tailwind CDN unter <code>cdn.tailwindcss.com</code>. Dabei werden beim Aufruf der Seite technische Verbindungsdaten, insbesondere Ihre IP-Adresse, an den jeweiligen Anbieter uebermittelt.
+                    </p>
+                    <p>
+                        Wenn Sie weitere externe Dienste aktivieren, etwa Analyse-, Marketing-, Chat-, Karten- oder Schrift-Dienste, muessen diese Einbindungen vor dem Livegang gesondert in dieser Datenschutzerklaerung ergaenzt und datenschutzrechtlich geprueft werden.
+                    </p>
 
-                <h2>7. Hosting und Infrastruktur</h2>
-                <p>
-                    Unsere Website wird auf Servern gehostet, die sich in Deutschland befinden. Der Hosting-Anbieter verarbeitet Daten als Auftragsverarbeiter gemäß Art. 28 DSGVO.
-                </p>
+                    <h2>6. Cookies, Local Storage und aehnliche Technologien</h2>
+                    <p>
+                        Auf der oeffentlichen Landingpage werden nach dem Stand vom 7. April 2026 keine optionalen Analyse- oder Marketing-Cookies gesetzt. Informationen zu technisch erforderlichen Speicherungen und zu moeglichen Cookies in geschuetzten Anwendungsbereichen finden Sie in den <a href="cookie.html">Cookie-Hinweisen</a>.
+                    </p>
 
-                <h2>8. Berechtigungen und Rollen</h2>
-                <p>
-                    Wenn Sie Ihre TranslationOffice-Anwendung mit anderen Nutzern teilen, müssen Sie ihre E-Mail-Adressen eingeben. Diese Daten werden verwendet, um die Nutzer zur Zusammenarbeit einzuladen.
-                </p>
+                    <h2>7. Empfaenger von Daten</h2>
+                    <p>
+                        Personenbezogene Daten koennen an Dienstleister weitergegeben werden, soweit dies fuer den Betrieb der Website oder die Bearbeitung Ihrer Anfrage erforderlich ist. Dazu gehoeren insbesondere Hosting-Anbieter, IT-Dienstleister, E-Mail-Dienste und gegebenenfalls Anbieter externer Frontend-Ressourcen.
+                    </p>
 
-                <h2>9. Ihre Rechte als betroffene Person</h2>
-                <p>
-                    Nach der DSGVO haben Sie folgende Rechte:
-                </p>
-                <ul>
-                    <li><strong>Auskunftsrecht (Art. 15 DSGVO):</strong> Sie können Auskunft darüber verlangen, welche Daten wir über Sie speichern.</li>
-                    <li><strong>Berichtigungsrecht (Art. 16 DSGVO):</strong> Sie können falsche Daten korrigieren lassen.</li>
-                    <li><strong>Löschungsrecht (Art. 17 DSGVO):</strong> Unter bestimmten Bedingungen können Sie die Löschung Ihrer Daten verlangen.</li>
-                    <li><strong>Einschränkungsrecht (Art. 18 DSGVO):</strong> Sie können die Verarbeitung einschränken lassen.</li>
-                    <li><strong>Datenübertragbarkeit (Art. 20 DSGVO):</strong> Sie können Ihre Daten in einem strukturierten Format herunterladen.</li>
-                    <li><strong>Widerspruchsrecht (Art. 21 DSGVO):</strong> Sie können der Verarbeitung widersprechen.</li>
-                </ul>
+                    <h2>8. Speicherdauer</h2>
+                    <p>
+                        Wir speichern personenbezogene Daten nur so lange, wie dies fuer die jeweiligen Zwecke erforderlich ist oder gesetzliche Aufbewahrungspflichten bestehen.
+                    </p>
+                    <ul>
+                        <li>Anfragen und Demo-Kontakte: grundsaetzlich bis zur abschliessenden Bearbeitung sowie darueber hinaus, soweit handels- oder steuerrechtliche Aufbewahrungspflichten oder Verjaehrungsfristen dies erfordern</li>
+                        <li>Server-Logfiles: fuer die in der Hosting-Konfiguration festgelegte kurze Sicherheits- und Betriebsfrist</li>
+                    </ul>
 
-                <h2>10. Datensicherheit</h2>
-                <p>
-                    Wir setzen technische und organisatorische Maßnahmen ein, um Ihre Daten zu schützen:
-                </p>
-                <ul>
-                    <li>SSL/TLS-Verschlüsselung für alle Datenübertragungen</li>
-                    <li>Sichere Passwort-Hashing-Algorithmen</li>
-                    <li>Zugriffskontrolle und Authentifizierung</li>
-                    <li>Regelmäßige Sicherheitsaudits</li>
-                    <li>Backup und Disaster Recovery</li>
-                </ul>
+                    <h2>9. Ihre Rechte</h2>
+                    <p>Sie haben nach der DSGVO insbesondere folgende Rechte:</p>
+                    <ul>
+                        <li>Auskunft nach Art. 15 DSGVO</li>
+                        <li>Berichtigung nach Art. 16 DSGVO</li>
+                        <li>Loeschung nach Art. 17 DSGVO</li>
+                        <li>Einschraenkung der Verarbeitung nach Art. 18 DSGVO</li>
+                        <li>Datenuebertragbarkeit nach Art. 20 DSGVO</li>
+                        <li>Widerspruch nach Art. 21 DSGVO</li>
+                        <li>Widerruf einer erteilten Einwilligung mit Wirkung fuer die Zukunft</li>
+                    </ul>
 
-                <h2>11. Weitergabe an Dritte</h2>
-                <p>
-                    Ihre personenbezogenen Daten werden nicht an Dritte weitergegeben, außer:
-                </p>
-                <ul>
-                    <li>Wenn gesetzlich erforderlich (z.B. Strafverfolgungsbehörden)</li>
-                    <li>Zahlungsdienstleister (für Rechnungsverarbeitung)</li>
-                    <li>Auftragsverarbeiter (unter Art. 28 DSGVO Vereinbarung)</li>
-                </ul>
+                    <h2>10. Beschwerderecht</h2>
+                    <p>
+                        Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehoerde zu beschweren, insbesondere an Ihrem gewoehnlichen Aufenthaltsort, Ihrem Arbeitsplatz oder am Sitz des Verantwortlichen.
+                    </p>
 
-                <h2>12. Datenschutzbeauftragter</h2>
-                <p>
-                    Sie können unseren Datenschutzbeauftragten unter <a href="mailto:datenschutz@translationoffice.de">datenschutz@translationoffice.de</a> kontaktieren.
-                </p>
+                    <h2>11. Pflicht zur Bereitstellung von Daten</h2>
+                    <p>
+                        Soweit wir Pflichtangaben erheben, dienen diese der Bearbeitung Ihrer Anfrage oder der Vertragsanbahnung. Ohne diese Angaben koennen wir bestimmte Anliegen moeglicherweise nicht bearbeiten.
+                    </p>
 
-                <h2>13. Beschwerderecht bei Aufsichtsbehörde</h2>
-                <p>
-                    Sie haben das Recht, sich bei einer Aufsichtsbehörde zu beschweren. In Berlin ist dies:
-                </p>
-                <p>
-                    <strong>Berliner Beauftragte für Datenschutz und Informationsfreiheit</strong><br>
-                    Französische Straße 47<br>
-                    10117 Berlin<br>
-                    Deutschland<br>
-                    E-Mail: <a href="mailto:poststelle@privacy.berlin.de">poststelle@privacy.berlin.de</a>
-                </p>
+                    <h2>12. Keine automatisierte Entscheidungsfindung</h2>
+                    <p>
+                        Auf der oeffentlichen Website findet keine automatisierte Entscheidungsfindung einschliesslich Profiling im Sinne von Art. 22 DSGVO statt.
+                    </p>
 
-                <h2>14. Änderungen dieser Datenschutzerklärung</h2>
-                <p>
-                    Wir behalten uns das Recht vor, diese Datenschutzerklärung jederzeit anzupassen. Alle Änderungen werden auf dieser Seite veröffentlicht. Wesentliche Änderungen werden Ihnen per E-Mail mitgeteilt.
-                </p>
+                    <h2>13. Aktualisierung dieser Datenschutzerklaerung</h2>
+                    <p>
+                        Wir passen diese Datenschutzerklaerung an, wenn sich gesetzliche Vorgaben, technische Einbindungen oder unsere Verarbeitungen aendern.
+                    </p>
+                </article>
+
+                <aside class="legal-side-card">
+                    <h2>Vor dem Livegang pruefen</h2>
+                    <ul>
+                        <li>echte Unternehmensanschrift eintragen</li>
+                        <li>Hosting-Anbieter und Speicherfristen konkretisieren</li>
+                        <li>ggf. produktive App-Verarbeitungen ergaenzen</li>
+                        <li>ggf. Drittlandtransfers und Zusatzdienste dokumentieren</li>
+                        <li>Datenschutzkontakt pruefen</li>
+                    </ul>
+
+                    <div class="legal-links">
+                        <a href="impressum.html">Zum Impressum</a>
+                        <a href="cookie.html">Zu den Cookie-Hinweisen</a>
+                        <a href="agb.html">Zu den AGB</a>
+                        <a href="index.html">Zur Startseite</a>
+                    </div>
+                </aside>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-20 mt-20">
+    <footer class="bg-[#141716] text-white py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="footer-content">
+            <div class="grid md:grid-cols-4 gap-10">
                 <div>
-                    <div class="footer-logo">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948-.684l1.498-4.493a1 1 0 011.502-.684l1.498 4.493a1 1 0 00.948.684H19a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
-                        </svg>
-                        TO
+                    <div class="flex items-center gap-3 font-extrabold text-xl mb-4">
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary">TO</span>
+                        TranslationOffice
                     </div>
-                    <p class="footer-tagline">Das smarte TMS für Übersetzungsbüros im DACH-Raum.</p>
+                    <p class="text-stone-400 leading-7">
+                        Software fuer Uebersetzungsbueros mit Fokus auf Anfrage, Projekt, Portal, Abrechnung und technisch anschlussfaehige Prozesse.
+                    </p>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Produkt</h3>
-                    <a href="index.html#features">Funktionen</a>
-                    <a href="index.html#preize">Preise</a>
-                    <a href="#">API-Dokumentation</a>
+                <div>
+                    <h3 class="font-bold mb-4">Produkt</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="index.html#funktionen" class="footer-link">Funktionen</a>
+                        <a href="index.html#preise" class="footer-link">Preise</a>
+                        <a href="api.html" class="footer-link">API</a>
+                        <a href="sicherheit.html" class="footer-link">Sicherheit</a>
+                    </div>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Unternehmen</h3>
-                    <a href="#">Über uns</a>
-                    <a href="#">Blog</a>
-                    <a href="mailto:info@translationoffice.de">Kontakt</a>
+                <div>
+                    <h3 class="font-bold mb-4">Rechtliches</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="impressum.html" class="footer-link">Impressum</a>
+                        <a href="datenschutz.html" class="footer-link">Datenschutz</a>
+                        <a href="cookie.html" class="footer-link">Cookies</a>
+                        <a href="agb.html" class="footer-link">AGB</a>
+                    </div>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Rechtliches</h3>
-                    <a href="impressum.html">Impressum</a>
-                    <a href="datenschutz.html">Datenschutz</a>
-                    <a href="agb.html">AGB</a>
-                    <a href="cookie.html">Cookie-Richtlinie</a>
+                <div>
+                    <h3 class="font-bold mb-4">Kontakt</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="kontakt.html" class="footer-link">Kontakt</a>
+                        <a href="mailto:info@translationoffice.de" class="footer-link">info@translationoffice.de</a>
+                        <a href="index.html#demo" class="footer-link">Produktdemo</a>
+                    </div>
                 </div>
-            </div>
-
-            <div class="footer-bottom">
-                <p class="footer-copyright">© 2026 TranslationOffice GmbH. Alle Rechte vorbehalten.</p>
             </div>
         </div>
     </footer>

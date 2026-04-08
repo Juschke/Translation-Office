@@ -8,14 +8,16 @@ import { useEmailVariables } from '../hooks/useEmailVariables';
 import Checkbox from './common/Checkbox';
 import {
     FaPaperPlane, FaTimes, FaPaperclip, FaFileAlt, FaEye,
-    FaProjectDiagram, FaSearchPlus, FaCode, FaCheckCircle, FaLayerGroup,
-    FaSignature, FaChevronRight, FaPlus, FaInfoCircle
+    FaProjectDiagram, FaSearchPlus, FaCheckCircle, FaLayerGroup,
+    FaSignature, FaChevronRight, FaPlus, FaEdit, FaEyeSlash, FaCode, FaSearch, FaTools
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
 import NewEmailAccountModal from './modals/NewEmailAccountModal';
+import NewEmailTemplateModal from './modals/NewEmailTemplateModal';
+import NewEmailSignatureModal from './modals/NewEmailSignatureModal';
 import {
     Badge,
     ScrollArea,
@@ -24,6 +26,7 @@ import {
     DialogContent,
     DialogTitle
 } from "./ui";
+import SearchableSelect from './common/SearchableSelect';
 
 interface EmailComposeContentProps {
     onClose?: () => void;
@@ -31,7 +34,9 @@ interface EmailComposeContentProps {
     to?: string;
     subject?: string;
     body?: string;
+    attachments?: string[];
     isStandalone?: boolean;
+    onSuccess?: () => void;
 }
 
 const EmailComposeContent = ({
@@ -40,7 +45,9 @@ const EmailComposeContent = ({
     to: initialTo,
     subject: initialSubject,
     body: initialBody,
+    attachments: initialAttachments = [],
     isStandalone = false,
+    onSuccess,
 }: EmailComposeContentProps) => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
@@ -48,10 +55,28 @@ const EmailComposeContent = ({
     const [selectedAccount, setSelectedAccount] = useState<any>(null);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isHtmlMode, setIsHtmlMode] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const editorRef = useRef<HTMLTextAreaElement>(null);
+    const gutterRef = useRef<HTMLDivElement>(null);
+    const quillRef = useRef<any>(null);
+
+    const handleHtmlScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+        if (gutterRef.current) {
+            gutterRef.current.scrollTop = e.currentTarget.scrollTop;
+        }
+    };
+
+    const [selectedSignature, setSelectedSignature] = useState<{ id: number; name: string; content: string } | null>(null);
     const [varSearch, setVarSearch] = useState('');
     const [sigSearch, setSigSearch] = useState('');
+    const [tplSearch, setTplSearch] = useState('');
     const [sidebarTab, setSidebarTab] = useState<'templates' | 'variables' | 'signatures'>('templates');
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+    const [accountToEdit, setAccountToEdit] = useState<any>(null);
+    const [templateToEdit, setTemplateToEdit] = useState<any>(null);
+    const [signatureToEdit, setSignatureToEdit] = useState<any>(null);
 
     const createAccountMutation = useMutation({
         mutationFn: (data: any) => mailService.createAccount(data),
@@ -61,6 +86,26 @@ const EmailComposeContent = ({
             setIsAccountModalOpen(false);
         },
         onError: () => toast.error('Fehler beim Erstellen des Kontos')
+    });
+
+    const createTemplateMutation = useMutation({
+        mutationFn: (data: any) => mailService.createTemplate(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+            toast.success('Vorlage erfolgreich erstellt');
+            setIsTemplateModalOpen(false);
+        },
+        onError: () => toast.error('Fehler beim Erstellen der Vorlage')
+    });
+
+    const createSignatureMutation = useMutation({
+        mutationFn: (data: any) => mailService.createSignature(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'signatures'] });
+            toast.success('Signatur erfolgreich erstellt');
+            setIsSignatureModalOpen(false);
+        },
+        onError: () => toast.error('Fehler beim Erstellen der Signatur')
     });
 
     const {
@@ -103,15 +148,32 @@ const EmailComposeContent = ({
         queryFn: mailService.getSignatures
     });
 
+    const { data: projects = [] } = useQuery({
+        queryKey: ['projects', 'all'],
+        queryFn: () => projectService.getAll().then(res => res.data || res)
+    });
+
     const { data: customers = [] } = useQuery({
         queryKey: ['customers'],
         queryFn: customerService.getAll
     });
 
-    const { data: partners = [] } = useQuery({
-        queryKey: ['partners'],
-        queryFn: () => queryClient.getQueryData(['partners']) || []
-    });
+    const contactSuggestions = useMemo(() => {
+        const list: any[] = [];
+        customers.forEach((c: any) => {
+            if (c.email) list.push({ label: `${c.company_name || (c.first_name + ' ' + c.last_name)}`, value: c.email, type: 'Kunde' });
+        });
+        return list;
+    }, [customers]);
+
+    const filteredToSuggestions = useMemo(() => {
+        if (!composeTo || !showToSuggestions) return [];
+        const search = composeTo.toLowerCase();
+        return contactSuggestions.filter(s =>
+            s.label.toLowerCase().includes(search) ||
+            s.value.toLowerCase().includes(search)
+        ).slice(0, 10);
+    }, [contactSuggestions, composeTo, showToSuggestions]);
 
     // Auto-fill when component mounts
     useEffect(() => {
@@ -126,30 +188,32 @@ const EmailComposeContent = ({
         };
     }, [initialProjectId, initialTo, initialSubject, initialBody, isStandalone]);
 
+    // Handle initial attachments from standalone pre-fill
+    const didAttachRef = useRef(false);
+    useEffect(() => {
+        if (initialAttachments.length > 0 && projectDetails?.files && !didAttachRef.current) {
+            const filesToAttach = projectDetails.files.filter((f: any) => initialAttachments.includes(f.id.toString()) || initialAttachments.includes(f.id));
+            if (filesToAttach.length > 0) {
+                handleAddProjectFiles(filesToAttach);
+                didAttachRef.current = true;
+            }
+        }
+    }, [initialAttachments, projectDetails]);
+
     useEffect(() => {
         if (accounts.length > 0 && !selectedAccount) {
             setSelectedAccount(accounts.find((a: any) => a.is_default) || accounts[0]);
         }
     }, [accounts, selectedAccount]);
 
+    useEffect(() => {
+        if (signatures.length > 0 && selectedSignature === null) {
+            const def = signatures.find((s: any) => s.is_default) || null;
+            if (def) setSelectedSignature(def);
+        }
+    }, [signatures]);
+
     const { ALL_VARIABLES, VAR_GROUPS, getPreviewHtml } = useEmailVariables();
-
-    const contactSuggestions = useMemo(() => {
-        const list: any[] = [];
-        customers.forEach((c: any) => {
-            if (c.email) list.push({ label: `${c.company_name || (c.first_name + ' ' + c.last_name)}`, value: c.email, type: 'Kunde' });
-        });
-        return list;
-    }, [customers, partners]);
-
-    const filteredToSuggestions = useMemo(() => {
-        if (!composeTo || !showToSuggestions) return [];
-        const search = composeTo.toLowerCase();
-        return contactSuggestions.filter(s =>
-            s.label.toLowerCase().includes(search) ||
-            s.value.toLowerCase().includes(search)
-        ).slice(0, 10);
-    }, [contactSuggestions, composeTo, showToSuggestions]);
 
     const handleAddProjectFiles = async (filesToAttach: any[]) => {
         const toastId = toast.loading(t('messages.preparing_project_files'));
@@ -174,6 +238,41 @@ const EmailComposeContent = ({
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
+    const insertAtCursor = (text: string) => {
+        if (isHtmlMode) {
+            const textarea = editorRef.current;
+            if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const value = textarea.value;
+                const newValue = value.substring(0, start) + text + value.substring(end);
+                setComposeBody(newValue);
+
+                // Focus and set selection after React re-renders with new value
+                setTimeout(() => {
+                    textarea.focus();
+                    textarea.setSelectionRange(start + text.length, start + text.length);
+                }, 10);
+            } else {
+                setComposeBody(prev => prev + text);
+            }
+        } else {
+            const quill = quillRef.current?.getEditor();
+            if (quill) {
+                const range = quill.getSelection(true);
+                if (range) {
+                    quill.insertText(range.index, text);
+                    quill.setSelection(range.index + text.length);
+                } else {
+                    const length = quill.getLength();
+                    quill.insertText(length - 1, text);
+                }
+            } else {
+                setComposeBody(prev => prev + text);
+            }
+        }
     };
 
     const quillModules = {
@@ -211,11 +310,31 @@ const EmailComposeContent = ({
         }
     };
 
-    const handleSend = () => {
-        sendMutation.mutate(selectedAccount?.id, {
+    const handleSaveDraft = () => {
+        const bodyOverride = selectedSignature
+            ? composeBody + '<br><br><hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0">' + selectedSignature.content
+            : undefined;
+        sendMutation.mutate({ accountId: selectedAccount?.id, bodyOverride, isDraft: true }, {
             onSuccess: () => {
+                toast.success('Entwurf gespeichert');
                 if (isStandalone) {
-                    toast.success('E-Mail erfolgreich gesendet');
+                    setTimeout(() => window.close(), 1000);
+                } else if (onClose) {
+                    onClose();
+                }
+            }
+        });
+    };
+
+    const handleSend = () => {
+        const bodyOverride = selectedSignature
+            ? composeBody + '<br><br><hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0">' + selectedSignature.content
+            : undefined;
+        sendMutation.mutate({ accountId: selectedAccount?.id, bodyOverride, isDraft: false }, {
+            onSuccess: () => {
+                toast.success('E-Mail erfolgreich gesendet');
+                onSuccess?.();
+                if (isStandalone) {
                     setTimeout(() => window.close(), 1500);
                 } else if (onClose) {
                     onClose();
@@ -226,7 +345,11 @@ const EmailComposeContent = ({
 
     return (
         <div
-            className={clsx("flex-1 flex flex-col overflow-hidden bg-white font-inter", isStandalone && "h-screen")}
+            className={clsx(
+                "flex-1 flex flex-col overflow-hidden bg-white font-inter min-h-0 min-w-[360px]",
+                isStandalone ? "h-screen" : "h-full min-h-px"
+            )}
+            style={!isStandalone ? { maxHeight: 'calc(90vh - 64px)' } : {}}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -237,54 +360,93 @@ const EmailComposeContent = ({
                 <div className="bg-brand-primary shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)] text-white px-4 py-2 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3 overflow-hidden">
                         <FaProjectDiagram className="opacity-70 shrink-0" size={14} />
-                        <span className="text-[11px] font-bold tracking-tight uppercase whitespace-nowrap truncate">
+                        <span className="text-[11px] font-bold tracking-tight  whitespace-nowrap truncate">
                             {projectDetails.display_id || projectDetails.project_number} — {projectDetails.project_name || projectDetails.name}
                         </span>
-                        <Badge variant="outline" className="text-[9px] border-white/30 text-white font-bold h-5 uppercase tracking-widest px-1.5 leading-none">Verknüpft</Badge>
+                        <Badge variant="outline" className="text-[9px] border-white/30 text-white font-bold h-5  tracking-widest px-1.5 leading-none">Verknüpft</Badge>
                     </div>
                 </div>
             )}
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden min-h-0 relative">
                 {/* 2. MAIN COMPOSER AREA */}
-                <div className="flex-1 flex flex-col overflow-hidden relative">
+                <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden relative min-h-0 min-w-0 bg-white">
                     {/* INPUT SECTION */}
-                    <div className="px-6 pt-6 pb-2 space-y-3 shrink-0 bg-white z-10">
-                        {/* VON (Sender) */}
-                        <div className="flex items-center gap-4 group">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-12 shrink-0">VON</span>
-                            <div className="flex-1 flex items-center gap-2 min-w-0">
-                                {accounts.length > 0 ? (
-                                    <div className="relative flex-1 group/select">
-                                        <select
-                                            value={selectedAccount?.id}
-                                            onChange={(e) => setSelectedAccount(accounts.find((a: any) => a.id === parseInt(e.target.value)))}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-sm px-3 py-1.5 text-xs font-semibold text-slate-700 cursor-pointer appearance-none focus:border-brand-primary outline-none transition-all pr-8"
-                                        >
-                                            {accounts.map((acc: any) => (
-                                                <option key={acc.id} value={acc.id}>{acc.name} &lt;{acc.email}&gt;</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            <FaChevronRight className="rotate-90" size={8} />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setIsAccountModalOpen(true)}
-                                        className="text-[10px] font-bold border-dashed border-slate-200 text-slate-400 hover:text-brand-primary hover:border-brand-primary h-8"
-                                    >
-                                        <FaPlus size={8} className="mr-2" /> E-MAIL KONTO HINZUFÜGEN
-                                    </Button>
+                    <div className="px-4 pt-4 pb-2 space-y-2.5 shrink-0 bg-white z-10">
+                        {/* PROJEKT (Project Selection) */}
+                        <div className="pb-3 border-b border-slate-100 mb-2 relative">
+                            {/* Mobile Sidebar Toggle Button */}
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                className={clsx(
+                                    "md:hidden absolute -top-5 right-0 h-7 px-2 text-[9px] font-bold transition-all border border-slate-100 shadow-sm",
+                                    isSidebarOpen ? "text-brand-primary bg-brand-primary/5 border-brand-primary/20" : "text-slate-500 bg-white hover:bg-slate-50"
                                 )}
+                                title={isSidebarOpen ? "Tools schließen" : "Tools öffnen"}
+                            >
+                                <FaTools size={10} className="mr-2" /> WERKZEUGE
+                            </Button>
+
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 group">
+                                <span className="text-[9px] font-bold text-brand-primary tracking-widest sm:w-10 shrink-0">PROJEKT</span>
+                                <div className="flex-1 flex min-w-0">
+                                    <div className="flex-1 group/project">
+                                        <SearchableSelect
+                                            options={Array.isArray(projects) ? projects.map((p: any) => ({
+                                                value: p.id.toString(),
+                                                label: `${p.project_number || p.display_id}`,
+                                            })) : []}
+                                            value={selectedProjectId?.toString() || ''}
+                                            onChange={(val) => setSelectedProjectId(val)}
+                                            placeholder="Projekt zuordnen (optional)..."
+                                            className="h-[42px]"
+                                            roundedSide="left"
+                                            isClearable={true}
+                                        />
+                                    </div>
+                                    <Button
+                                        onClick={() => { /* Link to create project if needed */ }}
+                                        className="h-[42px] px-4 rounded-r-sm border border-l-0 border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white shadow-md hover:from-[#2a7073] hover:to-[#235e62] active:shadow-inner transition-all flex items-center justify-center group/add shrink-0"
+                                        title="Neues Projekt erstellen"
+                                    >
+                                        <FaPlus size={10} />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* VON (Sender) */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 group">
+                            <span className="text-[9px] font-bold text-slate-400 tracking-widest sm:w-10 shrink-0">VON</span>
+                            <div className="flex-1 flex min-w-0">
+                                <div className="relative flex-1 group/sender">
+                                    <SearchableSelect
+                                        options={accounts.map((acc: any) => ({
+                                            value: acc.id.toString(),
+                                            label: acc.email,
+                                        }))}
+                                        value={selectedAccount?.id?.toString() || ''}
+                                        onChange={(val) => setSelectedAccount(accounts.find((a: any) => a.id.toString() === val))}
+                                        placeholder="Sender wählen..."
+                                        className="h-[42px]"
+                                        roundedSide="left"
+                                        isClearable={false}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAccountToEdit(selectedAccount); setIsAccountModalOpen(true); }}
+                                        className="absolute right-10 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-brand-primary transition-all z-20"
+                                        title="Konto bearbeiten"
+                                    >
+                                        <FaEdit size={12} />
+                                    </button>
+                                </div>
                                 <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setIsAccountModalOpen(true)}
-                                    className="h-8 w-8 text-slate-400 hover:text-brand-primary shrink-0"
-                                    title="Konten verwalten"
+                                    onClick={() => { setAccountToEdit(null); setIsAccountModalOpen(true); }}
+                                    className="h-[42px] px-4 rounded-r-sm border border-l-0 border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white shadow-md hover:from-[#2a7073] hover:to-[#235e62] active:shadow-inner transition-all flex items-center justify-center group/add shrink-0"
+                                    title="E-Mail Konto hinzufügen"
                                 >
                                     <FaPlus size={10} />
                                 </Button>
@@ -292,8 +454,8 @@ const EmailComposeContent = ({
                         </div>
 
                         {/* AN (Recipient) */}
-                        <div className="flex items-start gap-4 group">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-12 pt-2.5 shrink-0">AN</span>
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 group">
+                            <span className="text-[9px] font-bold text-slate-400 tracking-widest sm:w-10 sm:pt-2.5 shrink-0">AN</span>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-2">
                                     <div className="relative flex-1">
@@ -325,7 +487,7 @@ const EmailComposeContent = ({
                                                         )}
                                                     >
                                                         <div className="flex flex-col">
-                                                            <span className="text-[10px] font-bold text-slate-900 uppercase tracking-tight">{s.label}</span>
+                                                            <span className="text-[10px] font-bold text-slate-900  tracking-tight">{s.label}</span>
                                                             <span className="text-[10px] font-mono text-slate-400 tracking-tight">{s.value}</span>
                                                         </div>
                                                     </button>
@@ -335,32 +497,36 @@ const EmailComposeContent = ({
                                     </div>
                                     <div className="flex gap-1 shrink-0">
                                         {projectDetails?.customer?.email && (
-                                            <button
+                                            <Button
                                                 type="button"
-                                                onClick={() => setComposeTo(projectDetails.customer.email)}
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => setComposeTo(composeTo === projectDetails.customer.email ? '' : projectDetails.customer.email)}
                                                 className={clsx(
-                                                    "px-2 py-1 rounded-sm text-[9px] font-bold border transition-all uppercase tracking-wider",
+                                                    "h-6 px-2 text-[9px] font-bold border transition-all  tracking-wider rounded-sm",
                                                     composeTo === projectDetails.customer.email
-                                                        ? "bg-brand-primary text-white border-brand-primary shadow-sm"
+                                                        ? "bg-brand-primary text-white border-brand-primary active:bg-brand-primary shadow-sm"
                                                         : "bg-slate-50 text-slate-400 border-slate-200 hover:border-brand-primary hover:text-brand-primary"
                                                 )}
                                             >
                                                 Kunde
-                                            </button>
+                                            </Button>
                                         )}
                                         {projectDetails?.translator?.email && (
-                                            <button
+                                            <Button
                                                 type="button"
-                                                onClick={() => setComposeTo(projectDetails.translator.email)}
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => setComposeTo(composeTo === projectDetails.translator.email ? '' : projectDetails.translator.email)}
                                                 className={clsx(
-                                                    "px-2 py-1 rounded-sm text-[9px] font-bold border transition-all uppercase tracking-wider",
+                                                    "h-6 px-2 text-[9px] font-bold border transition-all  tracking-wider rounded-sm",
                                                     composeTo === projectDetails.translator.email
-                                                        ? "bg-brand-primary text-white border-brand-primary shadow-sm"
+                                                        ? "bg-brand-primary text-white border-brand-primary active:bg-brand-primary shadow-sm"
                                                         : "bg-slate-50 text-slate-400 border-slate-200 hover:border-brand-primary hover:text-brand-primary"
                                                 )}
                                             >
                                                 Partner
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
                                 </div>
@@ -368,8 +534,8 @@ const EmailComposeContent = ({
                         </div>
 
                         {/* BETREFF (Subject) */}
-                        <div className="flex items-center gap-4 group">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-12 shrink-0">BETREFF</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 group">
+                            <span className="text-[9px] font-bold text-slate-400 tracking-widest sm:w-10 shrink-0">BETREFF</span>
                             <div className="flex-1 flex items-center gap-3">
                                 <input
                                     value={composeSubject}
@@ -389,7 +555,7 @@ const EmailComposeContent = ({
                                         <div key={i} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-sm px-2 py-1 shrink-0 group hover:border-brand-primary transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                                             <FaPaperclip className="text-slate-400 group-hover:text-brand-primary" size={8} />
                                             <span className="text-[10px] font-bold text-slate-700 truncate max-w-[150px]">{f.name}</span>
-                                            <span className="text-[9px] font-mono text-slate-300 uppercase">{formatFileSize(f.size)}</span>
+                                            <span className="text-[9px] font-mono text-slate-300 ">{formatFileSize(f.size)}</span>
                                             <button onClick={() => removeAttachment(i)} className="text-slate-300 hover:text-red-500 transition-colors ml-1">
                                                 <FaTimes size={10} />
                                             </button>
@@ -409,40 +575,46 @@ const EmailComposeContent = ({
                     </div>
 
                     {/* EDITOR BODY */}
-                    <div className="flex-1 flex flex-col overflow-hidden px-6 pb-6 mt-2">
-                        <div className="flex-1 flex flex-col border border-slate-100 rounded-sm bg-white overflow-hidden shadow-sm shadow-slate-200/50">
+                    <div className="flex-none flex flex-col px-4 pb-6 mt-2 min-h-[450px]">
+                        <div className="flex-1 flex flex-col border border-slate-100 rounded-sm bg-white overflow-hidden shadow-sm shadow-slate-200/50 min-h-0">
                             {/* Editor Sub-Header / Tool buttons */}
-                            <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                            <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
                                 <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => setIsHtmlMode(!isHtmlMode)}
-                                        className={clsx(
-                                            "h-7 px-3 rounded-sm text-[10px] font-bold uppercase tracking-tight flex items-center gap-1.5 transition-all border",
-                                            isHtmlMode ? "bg-slate-900 text-emerald-400 border-slate-900 shadow-sm" : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
-                                        )}
-                                    >
-                                        <FaCode size={10} /> {isHtmlMode ? 'Editor' : 'HTML'}
-                                    </button>
-                                    <div className="h-4 w-px bg-slate-200 mx-1"></div>
                                     <button
                                         onClick={() => setIsComposePreview(!isComposePreview)}
                                         className={clsx(
-                                            "h-7 px-3 rounded-sm text-[10px] font-bold uppercase tracking-tight flex items-center gap-1.5 transition-all border",
-                                            isComposePreview ? "bg-brand-primary text-white border-brand-primary shadow-sm" : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                                            "h-7 px-3 rounded-sm text-[10px] font-bold  tracking-tight flex items-center gap-1.5 transition-all border",
+                                            isComposePreview
+                                                ? "bg-brand-primary text-white border-brand-primary shadow-sm"
+                                                : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
                                         )}
                                     >
-                                        {isComposePreview ? <><FaCode size={10} /> Editar</> : <><FaEye size={10} /> Vorschau</>}
+                                        {isComposePreview ? <><FaEyeSlash size={10} /> Live Vorschau</> : <><FaEye size={10} /> Live Vorschau</>}
+                                    </button>
+                                    <button
+                                        onClick={() => setIsHtmlMode(!isHtmlMode)}
+                                        className={clsx(
+                                            "h-7 px-3 rounded-sm text-[10px] font-bold tracking-tight flex items-center gap-1.5 transition-all border",
+                                            isHtmlMode
+                                                ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] shadow-sm"
+                                                : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                                        )}
+                                        title="HTML Quellcode bearbeiten"
+                                    >
+                                        <FaCode size={10} /> HTML
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => setIsProjectFilesModalOpen(true)}
-                                        className="h-7 px-2 text-[10px] font-bold text-slate-500 hover:text-brand-primary"
-                                    >
-                                        <FaLayerGroup size={10} className="mr-1.5" /> PROJEKT-DATEIEN
-                                    </Button>
+                                    {selectedProjectId && (
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => setIsProjectFilesModalOpen(true)}
+                                            className="h-7 px-2 text-[10px] font-bold text-slate-500 hover:text-brand-primary animate-in fade-in slide-in-from-right-2 duration-300"
+                                        >
+                                            <FaLayerGroup size={10} className="mr-1.5" /> PROJEKT-DATEIEN
+                                        </Button>
+                                    )}
                                     <Button
                                         size="sm"
                                         variant="ghost"
@@ -454,31 +626,71 @@ const EmailComposeContent = ({
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-hidden flex flex-col">
+                            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
                                 {isComposePreview ? (
-                                    <div className="p-8 h-full bg-slate-50/20 overflow-y-auto">
+                                    <div className="p-4 h-full bg-white animate-in fade-in duration-300">
                                         <div
-                                            className="prose prose-slate max-w-none text-sm text-slate-800 font-medium leading-relaxed"
+                                            className="text-[12px] text-slate-800 font-medium leading-relaxed"
                                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(getPreviewHtml(composeBody)) }}
                                         />
                                     </div>
                                 ) : isHtmlMode ? (
-                                    <textarea
-                                        value={composeBody}
-                                        onChange={e => setComposeBody(e.target.value)}
-                                        className="w-full h-full p-6 font-mono text-sm bg-slate-900 text-emerald-400 outline-none resize-none border-none selection:bg-emerald-500/20"
-                                        spellCheck={false}
-                                    />
+                                    <div className="flex-1 flex overflow-hidden bg-[#1e1e1e]">
+                                        <div className="flex-1 flex relative overflow-hidden">
+                                            {/* Line Numbers Gutter */}
+                                            <div
+                                                ref={gutterRef}
+                                                className="w-8 bg-[#1e1e1e] text-[#858585] text-right pr-2 py-6 font-mono text-[12px] select-none border-r border-[#333333] shrink-0 leading-[1.6] overflow-hidden"
+                                            >
+                                                {composeBody.split('\n').map((_, i) => (
+                                                    <div key={i}>{i + 1}</div>
+                                                ))}
+                                            </div>
+                                            {/* Editor Area */}
+                                            <textarea
+                                                ref={editorRef}
+                                                value={composeBody}
+                                                onScroll={handleHtmlScroll}
+                                                onChange={e => setComposeBody(e.target.value)}
+                                                className="w-full p-4 font-mono text-[12px] bg-[#1e1e1e] text-[#d4d4d4] outline-none resize-none border-none selection:bg-[#264f78] leading-[1.6] min-h-[400px] h-auto overflow-hidden"
+                                                spellCheck={false}
+                                                placeholder="<p>Schreiben Sie HTML hier...</p>"
+                                            />
+                                        </div>
+                                    </div>
                                 ) : (
-                                    <div className="flex-1 flex flex-col overflow-hidden">
+                                    <div className="flex-none flex flex-col h-auto">
                                         <ReactQuill
+                                            ref={quillRef}
                                             theme="snow"
                                             value={composeBody}
                                             onChange={setComposeBody}
                                             modules={quillModules}
-                                            className="quill-modern border-none flex-1 flex flex-col overflow-hidden"
+                                            className="quill-modern border-none flex-none h-auto overflow-visible"
                                             placeholder="Schreiben Sie Ihre Nachricht hier..."
+                                            style={{ minHeight: '400px' }}
                                         />
+                                    </div>
+                                )}
+                                {selectedSignature && (
+                                    <div className="shrink-0 border-t border-slate-200 bg-white animate-in slide-in-from-bottom-2 duration-200 relative mt-4 shadow-[0_-5px_15px_-10px_rgba(0,0,0,0.1)] h-auto">
+                                        <label className="absolute -top-2.5 left-3 bg-white px-1 text-[10px] font-bold text-slate-900 tracking-wide z-10">
+                                            Signatur
+                                        </label>
+                                        <div className="px-4 pt-4 pb-4 h-auto">
+                                            <div
+                                                className="text-xs text-slate-500 leading-relaxed font-medium mb-1"
+                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedSignature.content) }}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedSignature(null)}
+                                            className="absolute top-1.5 right-2 text-slate-300 hover:text-red-400 transition-colors"
+                                            title="Signatur entfernen"
+                                        >
+                                            <FaTimes size={9} />
+                                        </button>
                                     </div>
                                 )}
                                 {isDragOver && (
@@ -488,8 +700,8 @@ const EmailComposeContent = ({
                                                 <FaPaperclip size={32} />
                                             </div>
                                             <div className="text-center">
-                                                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Dateien hier ablegen</h3>
-                                                <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase">Anhänge automatisch hinzufügen</p>
+                                                <h3 className="text-sm font-bold text-slate-900  tracking-widest">Dateien hier ablegen</h3>
+                                                <p className="text-[10px] font-medium text-slate-400 mt-1 ">Anhänge automatisch hinzufügen</p>
                                             </div>
                                         </div>
                                     </div>
@@ -497,223 +709,351 @@ const EmailComposeContent = ({
                             </div>
                         </div>
                     </div>
-
-                    {/* EDITOR BODY CONTENT ENDS HERE */}
                 </div>
 
                 {/* 3. MULTI-TOOL SIDEBAR */}
-                <div className="hidden lg:flex w-80 border-l border-slate-100 bg-slate-50/30 flex-col shrink-0 overflow-hidden shadow-[inset_1px_0_0_rgba(0,0,0,0.01)]">
+                <div className={clsx(
+                    "border-l border-slate-100 flex-col shrink-0 overflow-hidden min-h-0 transition-all duration-300 ease-in-out z-30",
+                    "bg-white md:bg-slate-50/30",
+                    "fixed inset-y-0 right-0 w-64 md:relative md:flex md:w-80 md:translate-x-0 md:shadow-none shadow-2xl",
+                    isSidebarOpen ? "flex translate-x-0" : "flex translate-x-full md:translate-x-0",
+                    !isSidebarOpen && "hidden md:flex"
+                )}>
+                    {/* Mobile Overlay */}
+                    {isSidebarOpen && (
+                        <div
+                            className="md:hidden fixed inset-0 bg-slate-900/20 backdrop-blur-[1px] z-[-1]"
+                            onClick={() => setIsSidebarOpen(false)}
+                        />
+                    )}
                     {/* Tabs Header */}
-                    <div className="flex p-2 bg-white border-b border-slate-100 shrink-0">
-                        <button
+                    <div className="flex bg-white border-b border-slate-100 shrink-0 h-[60px] relative">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="md:hidden h-full px-3 text-slate-400 hover:text-brand-primary border-r border-slate-50"
+                            title="Tools einklappen"
+                        >
+                            <FaChevronRight size={12} />
+                        </Button>
+                        <Button
+                            variant="ghost"
                             onClick={() => setSidebarTab('templates')}
                             className={clsx(
-                                "flex-1 pb-2 pt-2.5 px-2 text-center rounded-sm transition-all relative overflow-hidden",
-                                sidebarTab === 'templates' ? "bg-slate-50 text-brand-primary" : "text-slate-400 hover:text-slate-600"
+                                "flex-1 flex-col h-full rounded-none transition-all relative overflow-hidden flex items-center justify-center",
+                                sidebarTab === 'templates' ? "text-brand-primary" : "text-slate-400 hover:text-slate-600"
                             )}
                         >
-                            <FaFileAlt size={12} className="mx-auto mb-1.5" />
-                            <span className="text-[9px] font-bold uppercase tracking-widest block">Vorlagen</span>
+                            <div className="relative">
+                                <FaFileAlt size={12} className="mb-1" />
+                                {templates.length > 0 && <span className="absolute -top-1.5 -right-2.5 text-[7px] font-black bg-slate-200 text-slate-500 px-1 py-px rounded-sm leading-none">{templates.length}</span>}
+                            </div>
+                            <span className="text-[9px] font-bold tracking-widest block">Vorlagen</span>
                             {sidebarTab === 'templates' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary"></div>}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
                             onClick={() => setSidebarTab('variables')}
                             className={clsx(
-                                "flex-1 pb-2 pt-2.5 px-2 text-center rounded-sm transition-all relative overflow-hidden",
-                                sidebarTab === 'variables' ? "bg-slate-50 text-brand-primary" : "text-slate-400 hover:text-slate-600"
+                                "flex-1 flex-col h-full rounded-none transition-all relative overflow-hidden flex items-center justify-center",
+                                sidebarTab === 'variables' ? "text-brand-primary" : "text-slate-400 hover:text-slate-600"
                             )}
                         >
-                            <FaSearchPlus size={12} className="mx-auto mb-1.5" />
-                            <span className="text-[9px] font-bold uppercase tracking-widest block">Variable</span>
+                            <div className="relative">
+                                <FaSearchPlus size={12} className="mb-1" />
+                                <span className="absolute -top-1.5 -right-2.5 text-[7px] font-black bg-slate-200 text-slate-500 px-1 py-px rounded-sm leading-none">{ALL_VARIABLES.length}</span>
+                            </div>
+                            <span className="text-[9px] font-bold tracking-widest block">Variable</span>
                             {sidebarTab === 'variables' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary"></div>}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
                             onClick={() => setSidebarTab('signatures')}
                             className={clsx(
-                                "flex-1 pb-2 pt-2.5 px-2 text-center rounded-sm transition-all relative overflow-hidden",
-                                sidebarTab === 'signatures' ? "bg-slate-50 text-brand-primary" : "text-slate-400 hover:text-slate-600"
+                                "flex-1 flex-col h-full rounded-none transition-all relative overflow-hidden flex items-center justify-center",
+                                sidebarTab === 'signatures' ? "text-brand-primary" : "text-slate-400 hover:text-slate-600"
                             )}
                         >
-                            <FaSignature size={12} className="mx-auto mb-1.5" />
-                            <span className="text-[9px] font-bold uppercase tracking-widest block">Signatur</span>
+                            <div className="relative">
+                                <FaSignature size={12} className="mx-auto mb-1" />
+                                {signatures.length > 0 && <span className="absolute -top-1.5 -right-2.5 text-[7px] font-black bg-slate-200 text-slate-500 px-1 py-px rounded-sm leading-none">{signatures.length}</span>}
+                            </div>
+                            <span className="text-[9px] font-bold tracking-widest block">Signatur</span>
                             {sidebarTab === 'signatures' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary"></div>}
-                        </button>
+                        </Button>
                     </div>
 
-                    <ScrollArea className="flex-1">
-                        {/* SIDEBAR CONTENT SCROLLS HERE */}
-                        <div className="p-4">
-                            {sidebarTab === 'templates' && (
-                                <div className="space-y-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                                    <div className="flex items-center justify-between mb-4 mt-2">
-                                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verfügbare Vorlagen</h4>
-                                        <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-sm">{templates.length}</span>
-                                    </div>
-                                    {templates.map((tpl: any) => (
-                                        <button
-                                            key={tpl.id}
-                                            onClick={() => handleApplyTemplate(tpl)}
-                                            className="w-full text-left p-3 bg-white border border-slate-200 hover:border-brand-primary hover:shadow-md transition-all rounded-sm group relative overflow-hidden"
-                                        >
-                                            <div className="font-bold text-slate-800 text-[10px] mb-0.5 uppercase tracking-tight group-hover:text-brand-primary">{tpl.name}</div>
-                                            <div className="text-slate-400 text-[9px] truncate leading-tight font-medium uppercase">{tpl.subject}</div>
-                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-brand-primary">
-                                                <FaChevronRight size={10} />
-                                            </div>
-                                        </button>
-                                    ))}
-                                    {templates.length === 0 && (
-                                        <div className="text-center py-12 px-4 rounded-sm border border-dashed border-slate-200 bg-white">
-                                            <FaFileAlt size={24} className="mx-auto text-slate-100 mb-3" />
-                                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Keine Vorlagen gefunden</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {sidebarTab === 'variables' && (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
-                                    <div className="relative mt-2">
+                    <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+                        {/* TEMPLATES SEARCH */}
+                        {sidebarTab === 'templates' && (
+                            <div className="p-4 bg-white border-b border-slate-100 shrink-0">
+                                <div className="flex items-stretch h-[38px]">
+                                    <div className="relative flex-1">
                                         <input
                                             type="text"
-                                            value={varSearch}
-                                            onChange={e => setVarSearch(e.target.value)}
-                                            placeholder="VARIABLE SUCHEN..."
-                                            className="w-full bg-white border border-slate-200 rounded-sm px-3 py-2 text-[10px] font-bold uppercase tracking-widest placeholder:text-slate-300 focus:border-brand-primary outline-none transition-all"
+                                            value={tplSearch}
+                                            onChange={e => setTplSearch(e.target.value)}
+                                            placeholder="Vorlage suchen..."
+                                            className="w-full h-full bg-white border border-slate-200 rounded-l-sm rounded-r-none px-3 pr-8 text-[11px] font-bold tracking-tight placeholder:text-slate-300 focus:border-brand-primary outline-none transition-all placeholder:font-normal"
                                         />
-                                        <FaSearchPlus size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <FaSearch size={11} className="text-slate-300" />
+                                        </div>
                                     </div>
+                                    <Button
+                                        onClick={() => {
+                                            setTemplateToEdit(null);
+                                            setIsTemplateModalOpen(true);
+                                        }}
+                                        className="h-full w-[38px] min-w-0 p-0 rounded-r-sm rounded-l-none border border-l-0 border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white shadow-none hover:from-[#2a7073] hover:to-[#235e62] transition-all flex items-center justify-center shrink-0"
+                                        title="Neue Vorlage erstellen"
+                                    >
+                                        <FaPlus size={10} />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
 
-                                    <div className="space-y-3">
-                                        {(() => {
-                                            const q = varSearch.toLowerCase();
-                                            const filtered = ALL_VARIABLES.filter(v =>
-                                                !q || v.label.toLowerCase().includes(q) || v.key.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q)
-                                            );
-                                            if (filtered.length === 0) return <p className="px-4 py-12 text-[10px] text-slate-300 text-center font-bold uppercase tracking-widest italic border border-dashed border-slate-200 bg-white">Keine Variable gefunden</p>;
-                                            const groups = varSearch ? [''] : VAR_GROUPS;
-                                            return groups.map(group => {
-                                                const items = varSearch ? filtered : filtered.filter(v => v.group === group);
-                                                if (items.length === 0) return null;
-                                                return (
-                                                    <div key={group} className="space-y-1">
-                                                        {!varSearch && <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 mt-4 ml-1 flex items-center gap-2"><div className="w-1 h-3 bg-slate-200 rounded-full"></div> {group}</div>}
-                                                        {items.map(v => {
-                                                            const isSelected = composeBody.includes(`{{${v.key}}}`) || composeBody.includes(`{${v.key}}`);
-                                                            return (
-                                                                <button
-                                                                    key={v.key}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        if (isSelected) {
-                                                                            const regex = new RegExp(`\\s?{{${v.key}}}|\\s?{${v.key}}`, 'g');
-                                                                            setComposeBody(prev => prev.replace(regex, ''));
-                                                                        } else {
-                                                                            setComposeBody(prev => prev + ` {{${v.key}}}`);
-                                                                        }
-                                                                    }}
-                                                                    className="w-full text-left p-2.5 bg-white border border-slate-100 hover:border-brand-primary transition-all rounded-sm group flex items-start gap-3 relative shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                                                                >
-                                                                    <div className="mt-0.5 shrink-0">
-                                                                        <Checkbox checked={isSelected} onChange={() => { }} />
-                                                                    </div>
-                                                                    <div className="min-w-0 pr-12">
-                                                                        <div className="text-[10px] font-bold text-slate-700 uppercase tracking-tight group-hover:text-brand-primary">{v.label}</div>
-                                                                        <div className="text-[9px] text-slate-400 font-medium leading-normal mt-0.5">{v.desc}</div>
-                                                                    </div>
-                                                                    <code className="absolute right-2 top-2 text-[8px] font-mono text-slate-300 shrink-0 bg-slate-50 px-1 py-0.5 border border-slate-100 rounded group-hover:border-brand-primary group-hover:text-brand-primary transition-all">
-                                                                        {`{{${v.key}}}`}
-                                                                    </code>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                );
-                                            });
-                                        })()}
+                        {/* VARIABLES SEARCH */}
+                        {sidebarTab === 'variables' && (
+                            <div className="p-4 bg-white border-b border-slate-100 shrink-0">
+                                <div className="relative h-[38px]">
+                                    <input
+                                        type="text"
+                                        value={varSearch}
+                                        onChange={e => setVarSearch(e.target.value)}
+                                        placeholder="Variable suchen..."
+                                        className="w-full h-full bg-white border border-slate-200 rounded-sm px-3 pr-8 text-[11px] font-bold tracking-tight placeholder:text-slate-300 focus:border-brand-primary outline-none transition-all placeholder:font-normal"
+                                    />
+                                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <FaSearch size={11} className="text-slate-300" />
                                     </div>
                                 </div>
-                            )}
+                            </div>
+                        )}
 
-                            {sidebarTab === 'signatures' && (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-300">
-                                    <div className="relative mt-2">
+                        {/* SIGNATURES SEARCH */}
+                        {sidebarTab === 'signatures' && (
+                            <div className="p-4 bg-white border-b border-slate-100 shrink-0">
+                                <div className="flex items-stretch h-[38px]">
+                                    <div className="relative flex-1">
                                         <input
                                             type="text"
                                             value={sigSearch}
                                             onChange={e => setSigSearch(e.target.value)}
-                                            placeholder="SIGNATUR SUCHEN..."
-                                            className="w-full bg-white border border-slate-200 rounded-sm px-3 py-2 text-[10px] font-bold uppercase tracking-widest placeholder:text-slate-300 focus:border-brand-primary outline-none transition-all"
+                                            placeholder="Signatur suchen..."
+                                            className="w-full h-full bg-white border border-slate-200 rounded-l-sm rounded-r-none px-3 pr-8 text-[11px] font-bold tracking-tight placeholder:text-slate-300 focus:border-brand-primary outline-none transition-all placeholder:font-normal"
                                         />
-                                        <FaSignature size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <FaSearch size={11} className="text-slate-300" />
+                                        </div>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        {signatures.filter((s: any) => !sigSearch || s.name.toLowerCase().includes(sigSearch.toLowerCase())).map((s: any) => (
-                                            <button
-                                                key={s.id}
-                                                type="button"
-                                                onClick={() => { setComposeBody(prev => prev + `<br><br>${s.content}`); }}
-                                                className="w-full text-left p-3 bg-white border border-slate-200 hover:border-brand-primary hover:shadow-md transition-all rounded-sm group relative"
-                                            >
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="text-[10px] font-bold text-slate-800 uppercase tracking-tight group-hover:text-brand-primary">{s.name}</div>
-                                                    {s.is_default && <span className="text-[8px] font-black bg-brand-primary text-white px-1.5 py-0.5 rounded-sm tracking-widest">DEFAULT</span>}
-                                                </div>
-                                                <div className="text-slate-400 text-[9px] line-clamp-2 leading-tight italic uppercase font-medium">{s.content.replace(/<[^>]*>/g, '')}</div>
-                                                <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity text-brand-primary">
-                                                    <FaPlus size={10} />
-                                                </div>
-                                            </button>
-                                        ))}
-                                        {signatures.length === 0 && (
-                                            <div className="text-center py-12 px-4 rounded-sm border border-dashed border-slate-200 bg-white">
-                                                <FaSignature size={24} className="mx-auto text-slate-100 mb-3" />
-                                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Keine Signaturen gefunden</p>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <Button
+                                        onClick={() => {
+                                            setSignatureToEdit(null);
+                                            setIsSignatureModalOpen(true);
+                                        }}
+                                        className="h-full w-[38px] min-w-0 p-0 rounded-r-sm rounded-l-none border border-l-0 border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white shadow-none hover:from-[#2a7073] hover:to-[#235e62] transition-all flex items-center justify-center shrink-0"
+                                        title="Neue Signatur erstellen"
+                                    >
+                                        <FaPlus size={10} />
+                                    </Button>
                                 </div>
-                            )}
-                        </div>
-                    </ScrollArea>
+                            </div>
+                        )}
 
-                    <div className="p-4 bg-white border-t border-slate-100 shrink-0">
-                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 border border-slate-200">
-                                <FaInfoCircle size={14} />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Status</p>
-                                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-tight leading-none">Entwurf wird erstellt...</p>
-                            </div>
+                        <div className="flex-1 min-h-0 overflow-hidden">
+                            <ScrollArea className="h-full">
+                                <div className="p-3 pb-8 overflow-x-hidden w-full">
+                                    {sidebarTab === 'templates' && (
+                                        <div className="w-full space-y-2 animate-in fade-in slide-in-from-right-2 duration-300 overflow-hidden">
+                                            {templates.filter((tpl: any) => !tplSearch || tpl.name.toLowerCase().includes(tplSearch.toLowerCase()) || tpl.subject?.toLowerCase().includes(tplSearch.toLowerCase())).map((tpl: any) => (
+                                                <div key={tpl.id} className="relative group/tpl shadow-sm">
+                                                    <button
+                                                        onClick={() => handleApplyTemplate(tpl)}
+                                                        className="w-full text-left p-3 pr-10 bg-white border border-slate-200 hover:border-brand-primary hover:shadow-md transition-all rounded-sm relative overflow-hidden max-h-24 min-w-0 flex flex-col"
+                                                    >
+                                                        <div className="font-bold text-slate-800 text-[10px] mb-0.5 tracking-tight group-hover:text-brand-primary line-clamp-2 break-words uppercase">{tpl.name}</div>
+                                                        <div className="text-slate-400 text-[9px] line-clamp-2 leading-tight font-medium break-words">{tpl.subject}</div>
+                                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-brand-primary">
+                                                            <FaChevronRight size={10} />
+                                                        </div>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTemplateToEdit(tpl);
+                                                            setIsTemplateModalOpen(true);
+                                                        }}
+                                                        className="absolute right-7 bottom-2 w-6 h-6 flex items-center justify-center bg-transparent text-slate-300 hover:text-brand-primary transition-all opacity-0 group-hover/tpl:opacity-100"
+                                                        title="Vorlage bearbeiten"
+                                                    >
+                                                        <FaEdit size={10} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {templates.filter((tpl: any) => !tplSearch || tpl.name.toLowerCase().includes(tplSearch.toLowerCase()) || tpl.subject?.toLowerCase().includes(tplSearch.toLowerCase())).length === 0 && (
+                                                <div className="text-center py-12 px-4 rounded-sm border border-dashed border-slate-200 bg-white">
+                                                    <FaFileAlt size={24} className="mx-auto text-slate-100 mb-3" />
+                                                    <p className="text-[10px] font-bold text-slate-300 tracking-widest uppercase">Keine Vorlagen gefunden</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {sidebarTab === 'variables' && (
+                                        <div className="animate-in fade-in slide-in-from-right-2 duration-300">
+                                            <div className="space-y-3">
+                                                {(() => {
+                                                    const q = varSearch.toLowerCase();
+                                                    const filtered = ALL_VARIABLES.filter(v =>
+                                                        !q || v.label.toLowerCase().includes(q) || v.key.toLowerCase().includes(q) || v.desc.toLowerCase().includes(q)
+                                                    );
+                                                    if (filtered.length === 0) return <p className="px-4 py-12 text-[10px] text-slate-300 text-center font-bold  tracking-widest italic border border-dashed border-slate-200 bg-white uppercase">Keine Variable gefunden</p>;
+                                                    const groups = varSearch ? [''] : VAR_GROUPS;
+                                                    return groups.map(group => {
+                                                        const items = varSearch ? filtered : filtered.filter(v => v.group === group);
+                                                        if (items.length === 0) return null;
+                                                        return (
+                                                            <div key={group} className="space-y-1">
+                                                                {!varSearch && <div className="text-[9px] font-bold text-slate-400  tracking-widest mb-2 mt-4 ml-1 flex items-center gap-2 uppercase"><div className="w-1 h-3 bg-slate-200 rounded-full"></div> {group}</div>}
+                                                                {items.map(v => {
+                                                                    const isSelected = composeBody.includes(`{{${v.key}}}`) || composeBody.includes(`{${v.key}}`);
+                                                                    return (
+                                                                        <div
+                                                                            key={v.key}
+                                                                            onClick={() => {
+                                                                                if (isSelected) {
+                                                                                    const regex = new RegExp(`\\s?{{${v.key}}}\\s?|\\s?{${v.key}}\\s?`, 'g');
+                                                                                    setComposeBody(prev => prev.replace(regex, ' '));
+                                                                                } else {
+                                                                                    insertAtCursor(` {{${v.key}}} `);
+                                                                                }
+                                                                            }}
+                                                                            className="w-full text-left p-2.5 bg-white border border-slate-100 hover:border-brand-primary cursor-pointer transition-all rounded-sm group flex items-start gap-3 relative shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                                                                        >
+                                                                            <div className="mt-0.5 shrink-0">
+                                                                                <Checkbox
+                                                                                    checked={isSelected}
+                                                                                    onChange={() => {
+                                                                                        if (isSelected) {
+                                                                                            const regex = new RegExp(`\\s?{{${v.key}}}\\s?|\\s?{${v.key}}\\s?`, 'g');
+                                                                                            setComposeBody(prev => prev.replace(regex, ' '));
+                                                                                        } else {
+                                                                                            insertAtCursor(` {{${v.key}}} `);
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="min-w-0 pr-12">
+                                                                                <div className="text-[10px] font-bold text-slate-700  tracking-tight group-hover:text-brand-primary">{v.label}</div>
+                                                                                <div className="text-[9px] text-slate-400 font-medium leading-normal mt-0.5">{v.desc}</div>
+                                                                            </div>
+                                                                            <code className="absolute right-2 top-2 text-[8px] font-mono text-slate-300 shrink-0 bg-slate-50 px-1 py-0.5 border border-slate-100 rounded group-hover:border-brand-primary group-hover:text-brand-primary transition-all">
+                                                                                {`{{${v.key}}}`}
+                                                                            </code>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        );
+                                                    });
+                                                })()}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {sidebarTab === 'signatures' && (
+                                        <div className="w-full space-y-2 animate-in fade-in slide-in-from-right-2 duration-300 overflow-hidden">
+                                            {signatures.filter((s: any) => !sigSearch || s.name.toLowerCase().includes(sigSearch.toLowerCase())).map((s: any) => (
+                                                <div key={s.id} className="relative group/sig shadow-sm">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedSignature(prev => prev?.id === s.id ? null : s)}
+                                                        className={clsx(
+                                                            "w-full text-left p-3 pr-10 border hover:shadow-md transition-all rounded-sm relative overflow-hidden max-h-24 min-w-0 flex flex-col",
+                                                            selectedSignature?.id === s.id
+                                                                ? "bg-white border-brand-primary shadow-sm"
+                                                                : "bg-white border-slate-200 hover:border-brand-primary"
+                                                        )}
+                                                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-0.5 min-w-0 w-full">
+                                                            <div className={clsx("text-[10px] font-bold tracking-tight line-clamp-2 mr-2 uppercase break-words", selectedSignature?.id === s.id ? "text-brand-primary" : "text-slate-800 group-hover/sig:text-brand-primary")}>{s.name}</div>
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                {s.is_default && !selectedSignature && <span className="text-[8px] font-black bg-brand-primary text-white px-1.5 py-0.5 rounded-sm tracking-widest">DEFAULT</span>}
+                                                            </div>
+                                                            {selectedSignature?.id === s.id && (
+                                                                <span className="absolute top-1 right-1 text-[7px] font-black bg-brand-primary text-white px-1 py-0.5 rounded-[2px] tracking-widest shadow-sm">
+                                                                    AKTIV
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-slate-400 text-[9px] line-clamp-2 leading-tight italic font-medium break-words">{s.content.replace(/<[^>]*>/g, '')}</div>
+                                                        {selectedSignature?.id !== s.id && (
+                                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/sig:opacity-100 transition-opacity text-brand-primary">
+                                                                <FaChevronRight size={10} />
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSignatureToEdit(s);
+                                                            setIsSignatureModalOpen(true);
+                                                        }}
+                                                        className="absolute right-7 bottom-2 w-6 h-6 flex items-center justify-center bg-transparent text-slate-300 hover:text-brand-primary transition-all opacity-0 group-hover/sig:opacity-100"
+                                                        title="Signatur bearbeiten"
+                                                    >
+                                                        <FaEdit size={10} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {signatures.length === 0 && (
+                                                <div className="text-center py-12 px-4 rounded-sm border border-dashed border-slate-200 bg-white">
+                                                    <FaSignature size={24} className="mx-auto text-slate-100 mb-3" />
+                                                    <p className="text-[10px] font-bold text-slate-300  tracking-widest uppercase">Keine Signaturen gefunden</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </ScrollArea>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* FOOTER ACTIONS */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-white flex justify-between items-center shrink-0">
+            <div className="px-4 py-5 border-t border-slate-100 bg-white flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2">
                     <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileChange} />
                     {onClose && (
-                        <Button variant="ghost" size="sm" onClick={onClose} className="h-10 text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:text-red-500 transition-all hover:bg-slate-50">
+                        <Button
+                            variant="secondary"
+                            onClick={onClose}
+                            className="h-9 px-6 text-slate-500 text-[11px] font-bold tracking-widest transition-all rounded-sm border border-slate-200 bg-white hover:bg-slate-50 shadow-sm"
+                        >
                             Abbrechen
                         </Button>
                     )}
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="text-right mr-4 hidden sm:block">
-                        <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-0.5">Empfänger</div>
-                        <div className="text-[10px] font-bold text-slate-700 truncate max-w-[200px]">{composeTo || 'Kein Empfänger'}</div>
-                    </div>
+                    <Button
+                        variant="ghost"
+                        onClick={handleSaveDraft}
+                        disabled={sendMutation.isPending || !selectedAccount}
+                        className="text-slate-400 hover:text-slate-900 text-[10px] font-bold tracking-widest px-4 h-9 uppercase transition-all rounded-sm border border-transparent hover:border-slate-100"
+                    >
+                        {sendMutation.isPending ? 'Warten...' : 'Als Entwurf speichern'}
+                    </Button>
                     <Button
                         onClick={handleSend}
                         disabled={sendMutation.isPending || !composeTo || !composeSubject}
-                        className="bg-brand-primary hover:bg-[#1B4D4F] text-white text-[11px] uppercase font-bold tracking-widest px-10 h-11 shadow-lg shadow-brand-primary/20 transition-all group"
+                        className="bg-gradient-to-b from-[#235e62] to-[#1B4D4F] hover:from-[#2a7073] hover:to-[#235e62] text-white text-[11px] font-bold tracking-widest px-8 h-9 border border-[#123a3c] shadow-[0_2px_8px_rgba(27,77,79,0.2)] transition-all group rounded-sm"
                     >
                         {sendMutation.isPending ? 'Sende...' : 'Nachricht senden'}
-                        <FaPaperPlane size={10} className="ml-2.5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                        <FaPaperPlane size={10} className="ml-3 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                     </Button>
                 </div>
             </div>
@@ -722,26 +1062,71 @@ const EmailComposeContent = ({
             <NewEmailAccountModal
                 isOpen={isAccountModalOpen}
                 onClose={() => setIsAccountModalOpen(false)}
-                onSubmit={(data) => createAccountMutation.mutate(data)}
+                onSubmit={(data) => {
+                    if (accountToEdit) {
+                        mailService.updateAccount(accountToEdit.id, data).then(() => {
+                            queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+                            setIsAccountModalOpen(false);
+                            setAccountToEdit(null);
+                        });
+                    } else {
+                        createAccountMutation.mutate(data);
+                    }
+                }}
+                initialData={accountToEdit}
+            />
+
+            <NewEmailTemplateModal
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                onSubmit={(data) => {
+                    if (templateToEdit) {
+                        mailService.updateTemplate(templateToEdit.id, data).then(() => {
+                            queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+                            setIsTemplateModalOpen(false);
+                            setTemplateToEdit(null);
+                        });
+                    } else {
+                        createTemplateMutation.mutate(data);
+                    }
+                }}
+                initialData={templateToEdit}
+            />
+
+            <NewEmailSignatureModal
+                isOpen={isSignatureModalOpen}
+                onClose={() => setIsSignatureModalOpen(false)}
+                onSubmit={(data) => {
+                    if (signatureToEdit) {
+                        mailService.updateSignature(signatureToEdit.id, data).then(() => {
+                            queryClient.invalidateQueries({ queryKey: ['mail', 'signatures'] });
+                            setIsSignatureModalOpen(false);
+                            setSignatureToEdit(null);
+                        });
+                    } else {
+                        createSignatureMutation.mutate({ ...data, mail_account_id: selectedAccount?.id });
+                    }
+                }}
+                initialData={signatureToEdit}
             />
 
             {/* Project Files Selector Modal */}
             <Dialog open={isProjectFilesModalOpen} onOpenChange={setIsProjectFilesModalOpen}>
-                <DialogContent hideClose className="max-w-2xl bg-white p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-sm">
-                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                        <DialogTitle className="text-sm font-bold tracking-tight text-slate-900 flex items-center gap-2 uppercase">
+                <DialogContent hideClose className="max-w-2xl bg-white p-0 gap-0 overflow-hidden border-none shadow-2xl rounded-sm min-h-0">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                        <DialogTitle className="text-sm font-bold tracking-tight text-slate-900 flex items-center gap-2 ">
                             <FaProjectDiagram className="text-slate-400" /> Dateiauswahl aus Projekt
                         </DialogTitle>
                         <Button variant="ghost" size="icon" onClick={() => setIsProjectFilesModalOpen(false)} className="h-8 w-8 text-slate-400">
                             <FaTimes />
                         </Button>
                     </div>
-                    <div className="p-6">
-                        <div className="mb-6">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Verknüpftes Projekt</h4>
+                    <div className="p-6 overflow-hidden flex flex-col min-h-0">
+                        <div className="mb-6 shrink-0">
+                            <h4 className="text-[10px] font-bold text-slate-400  tracking-widest mb-1">Verknüpftes Projekt</h4>
                             <p className="text-sm font-bold text-slate-800">{projectDetails?.project_number} — {projectDetails?.project_name || projectDetails?.name}</p>
                         </div>
-                        <ScrollArea className="h-[400px]">
+                        <ScrollArea className="flex-1 min-h-0">
                             <div className="space-y-1.5">
                                 {projectDetails?.files?.length > 0 ? (
                                     projectDetails.files.map((file: any) => {
@@ -765,7 +1150,7 @@ const EmailComposeContent = ({
                                             </div>
                                         );
                                     })
-                                ) : <p className="text-center text-slate-400 text-sm py-10">Keine Dateien im Projekt gefunden.</p>}
+                                ) : <p className="text-center text-slate-400 text-sm py-10 uppercase">Keine Dateien im Projekt gefunden.</p>}
                             </div>
                         </ScrollArea>
                     </div>

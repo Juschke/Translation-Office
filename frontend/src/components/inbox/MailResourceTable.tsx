@@ -1,94 +1,100 @@
-import { useTranslation } from 'react-i18next';
-import { FaEdit, FaFolderOpen, FaTrashAlt } from 'react-icons/fa';
+import React from 'react';
+import { FaPlus, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { Button } from '../ui/button';
 
 interface MailResourceTableProps {
     title: string;
     items: any[];
     headers: string[];
-    renderRow: (item: any) => React.ReactNode;
+    addLabel: string;
     onAdd: () => void;
-    addLabel?: string;
-    onEdit?: (item: any) => void;
-    onDelete?: (item: any) => void;
+    onEdit: (item: any) => void;
+    onDelete: (item: any) => void;
+    renderRow: (item: any) => React.ReactNode;
 }
 
-const MailResourceTable = ({
+const MailResourceTable: React.FC<MailResourceTableProps> = ({
     title,
     items,
     headers,
-    renderRow,
+    addLabel,
     onAdd,
-    addLabel = 'Neu+',
     onEdit,
     onDelete,
-}: MailResourceTableProps) => {
-    const { t } = useTranslation();
+    renderRow
+}) => {
+    // Simplify title (remove "E-Mail " prefix if present)
+    const displayTitle = title.replace(/^E-Mail\s+/, '');
 
     return (
-        <div className="bg-white">
-            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8] sticky top-0 z-10 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_2px_rgba(0,0,0,0.06)]">
-                <h2 className="text-xs font-semibold text-slate-700 [text-shadow:0_1px_0_rgba(255,255,255,0.8)]">{title}</h2>
-                <button
+        <div className="flex flex-col h-full bg-white animate-in fade-in duration-500">
+            {/* Header Area */}
+            <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-20 shrink-0">
+                <h3 className="text-[13px] font-bold text-slate-900 uppercase tracking-[0.15em]">{displayTitle}</h3>
+                <Button
                     onClick={onAdd}
-                    className="text-xs font-semibold bg-gradient-to-b from-brand-primary/80 to-brand-primary text-white px-3 py-1.5 rounded-[3px] border border-[#123a3c] shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_1px_rgba(0,0,0,0.12)] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-brand-primary/70 hover:to-brand-primary/80 transition active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.15)]"
+                    className="h-8 px-4 text-[10px] font-bold rounded-[3px] border border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white shadow-md hover:from-[#2a7073] hover:to-[#235e62] transition flex items-center gap-2 uppercase tracking-wider"
                 >
-                    {addLabel}
-                </button>
+                    <FaPlus size={9} /> {addLabel}
+                </Button>
             </div>
-            <table className="w-full text-left border-collapse">
-                <thead>
-                    <tr className="border-b-2 border-[#c8c8c8] bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8]">
-                        {headers.map(h => (
-                            <th key={h} className="px-6 py-3 text-xs font-semibold text-slate-500 [text-shadow:0_1px_0_rgba(255,255,255,0.8)] border-r border-[#e0e0e0] last:border-r-0">
-                                {h}
+
+            {/* Table Area - No side spacing/padding on container */}
+            <div className="flex-1 overflow-auto custom-scrollbar-minimal">
+                <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10">
+                        <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
+                            {headers.map((header, idx) => (
+                                <th
+                                    key={idx}
+                                    className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest"
+                                >
+                                    {header}
+                                </th>
+                            ))}
+                            <th className="px-6 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest w-24">
+                                Aktionen
                             </th>
-                        ))}
-                        <th className="px-6 py-3 text-xs font-semibold text-slate-500 [text-shadow:0_1px_0_rgba(255,255,255,0.8)] text-right">Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-[#eeeeee]">
-                    {items.length === 0 ? (
-                        <tr>
-                            <td
-                                colSpan={headers.length + 1}
-                                className="px-6 py-10 text-center text-xs text-slate-400 font-medium"
-                            >
-                                Keine Daten vorhanden
-                            </td>
                         </tr>
-                    ) : (
-                        items.map((item: any) => (
-                            <tr key={item.id} className="hover:bg-[#f0f0f0] transition-colors">
-                                {renderRow(item)}
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex items-center justify-end gap-1">
-                                        <button
-                                            onClick={() => onEdit?.(item)}
-                                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-[#ccc] rounded-[3px] transition shadow-none hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                                            title={t('actions.edit')}
-                                        >
-                                            <FaEdit size={12} />
-                                        </button>
-                                        <button
-                                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-[#ccc] rounded-[3px] transition shadow-none hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                                            title={t('actions.details')}
-                                        >
-                                            <FaFolderOpen size={12} />
-                                        </button>
-                                        <button
-                                            onClick={() => onDelete?.(item)}
-                                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-[3px] transition shadow-none hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                                            title="Entfernen"
-                                        >
-                                            <FaTrashAlt size={12} />
-                                        </button>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {items.length === 0 ? (
+                            <tr>
+                                <td colSpan={headers.length + 1} className="px-6 py-12 text-center">
+                                    <div className="flex flex-col items-center gap-3 opacity-40">
+                                        <div className="text-3xl">📭</div>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Keine Einträge vorhanden</p>
                                     </div>
                                 </td>
                             </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
+                        ) : (
+                            items.map((item, idx) => (
+                                <tr key={item.id || idx} className="hover:bg-slate-50/50 transition-colors group">
+                                    {renderRow(item)}
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => onEdit(item)}
+                                                className="p-1.5 text-slate-400 hover:text-brand-primary hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all shadow-sm"
+                                                title="Bearbeiten"
+                                            >
+                                                <FaEdit size={12} />
+                                            </button>
+                                            <button
+                                                onClick={() => onDelete(item)}
+                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all shadow-sm"
+                                                title="Löschen"
+                                            >
+                                                <FaTrashAlt size={12} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

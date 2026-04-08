@@ -37,9 +37,13 @@ export const reportService = {
         const response = await api.get('/reports/profitability', { params });
         return response.data;
     },
-    getOposReport: async (params?: any) => {
+    getOposReport: async (params?: { customer_id?: number | string }) => {
         const response = await api.get('/reports/opos', { params });
         return response.data;
+    },
+    exportOposReport: async (params?: { customer_id?: number | string }) => {
+        const response = await api.get('/reports/opos/export', { params, responseType: 'blob' });
+        return response.data as Blob;
     },
     getBwaReport: async (params?: any) => {
         const response = await api.get('/reports/bwa', { params });

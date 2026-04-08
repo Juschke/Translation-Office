@@ -461,12 +461,30 @@ class InvoiceController extends Controller
                 $invoice->snapshot_project_number = $project->project_number;
             }
 
+            $complianceErrors = $this->validateIssueCompliance($invoice);
+            if ($complianceErrors !== []) {
+                return response()->json([
+                    'error' => 'Die Rechnung kann noch nicht ausgestellt werden.',
+                    'compliance_errors' => $complianceErrors,
+                ], 422);
+            }
+
             // 2. Lock and set status
             $oldStatus = $invoice->status;
             $invoice->status = Invoice::STATUS_ISSUED;
             $invoice->issued_at = now();
             $invoice->is_locked = true;
             $invoice->save();
+
+            $invoice = $invoice->fresh();
+            $this->generatePdfInternal($invoice);
+            $invoice = $invoice->fresh();
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_ISSUED, $oldStatus, Invoice::STATUS_ISSUED, [
+                'pdf_sha256' => $invoice->pdf_sha256,
+                'xml_sha256' => $invoice->xml_sha256,
+            ]);
+
+            return response()->json($invoice->load('items'));
 
             // 3. Generate PDF + ZUGFeRD
             try {
@@ -513,10 +531,105 @@ class InvoiceController extends Controller
         }
 
         return DB::transaction(function () use ($invoice, $request) {
+            $tenantId = $request->user()->tenant_id;
+            $year = (string) now()->year;
+            $lastSeq = DB::table('invoices')
+                ->where('tenant_id', $tenantId)
+                ->whereYear('date', $year)
+                ->lockForUpdate()
+                ->max('invoice_number_sequence') ?? 0;
+
+            $newSeq = $lastSeq + 1;
+            $creditNoteNumber = $this->generateSequentialNumber($request->user(), Invoice::TYPE_CREDIT_NOTE, $newSeq, $year);
+
             // 1. Mark original as cancelled
             $oldStatus = $invoice->status;
             $invoice->status = Invoice::STATUS_CANCELLED;
             $invoice->save();
+
+            $creditNote = Invoice::create([
+                'tenant_id' => $invoice->tenant_id,
+                'type' => Invoice::TYPE_CREDIT_NOTE,
+                'invoice_number' => $creditNoteNumber,
+                'invoice_number_sequence' => $newSeq,
+                'project_id' => $invoice->project_id,
+                'customer_id' => $invoice->customer_id,
+                'cancelled_invoice_id' => $invoice->id,
+                'date' => today(),
+                'due_date' => today(),
+                'delivery_date' => $invoice->delivery_date,
+                'service_period_start' => $invoice->service_period_start,
+                'service_period_end' => $invoice->service_period_end,
+                'service_period' => $invoice->service_period,
+                'amount_net' => $invoice->amount_net,
+                'tax_rate' => $invoice->tax_rate,
+                'amount_tax' => $invoice->amount_tax,
+                'amount_gross' => $invoice->amount_gross,
+                'shipping_cents' => $invoice->shipping_cents,
+                'discount_cents' => $invoice->discount_cents,
+                'paid_amount_cents' => 0,
+                'currency' => $invoice->currency,
+                'payment_method' => $invoice->payment_method,
+                'status' => Invoice::STATUS_ISSUED,
+                'is_locked' => true,
+                'issued_at' => now(),
+                'notes' => trim(($request->input('reason') ? 'Storno-Grund: '.$request->input('reason')."\n\n" : '').($invoice->notes ?? '')),
+                'tax_exemption' => $invoice->tax_exemption,
+                'snapshot_customer_name' => $invoice->snapshot_customer_name,
+                'snapshot_customer_address' => $invoice->snapshot_customer_address,
+                'snapshot_customer_zip' => $invoice->snapshot_customer_zip,
+                'snapshot_customer_city' => $invoice->snapshot_customer_city,
+                'snapshot_customer_country' => $invoice->snapshot_customer_country,
+                'snapshot_customer_vat_id' => $invoice->snapshot_customer_vat_id,
+                'snapshot_customer_email' => $invoice->snapshot_customer_email,
+                'snapshot_customer_leitweg_id' => $invoice->snapshot_customer_leitweg_id,
+                'snapshot_seller_name' => $invoice->snapshot_seller_name,
+                'snapshot_seller_email' => $invoice->snapshot_seller_email,
+                'snapshot_seller_address' => $invoice->snapshot_seller_address,
+                'snapshot_seller_zip' => $invoice->snapshot_seller_zip,
+                'snapshot_seller_city' => $invoice->snapshot_seller_city,
+                'snapshot_seller_country' => $invoice->snapshot_seller_country,
+                'snapshot_seller_tax_number' => $invoice->snapshot_seller_tax_number,
+                'snapshot_seller_vat_id' => $invoice->snapshot_seller_vat_id,
+                'snapshot_seller_bank_name' => $invoice->snapshot_seller_bank_name,
+                'snapshot_seller_bank_iban' => $invoice->snapshot_seller_bank_iban,
+                'snapshot_seller_bank_bic' => $invoice->snapshot_seller_bank_bic,
+                'snapshot_project_name' => $invoice->snapshot_project_name,
+                'snapshot_project_number' => $invoice->snapshot_project_number,
+                'intro_text' => $invoice->intro_text,
+                'footer_text' => $invoice->footer_text,
+            ]);
+
+            foreach ($invoice->items as $item) {
+                InvoiceItem::create([
+                    'tenant_id' => $invoice->tenant_id,
+                    'invoice_id' => $creditNote->id,
+                    'position' => $item->position,
+                    'description' => $item->description,
+                    'quantity' => $item->quantity,
+                    'unit' => $item->unit,
+                    'unit_price_cents' => $item->unit_price_cents,
+                    'total_cents' => $item->total_cents,
+                    'tax_rate' => $item->tax_rate,
+                ]);
+            }
+
+            $this->generatePdfInternal($creditNote->fresh());
+
+            $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CANCELLED, $oldStatus, Invoice::STATUS_CANCELLED, [
+                'reason' => $request->input('reason') ?? 'Manuelle Stornierung',
+                'credit_note_id' => $creditNote->id,
+                'credit_note_number' => $creditNote->invoice_number,
+            ]);
+            $this->logAuditEvent($creditNote->fresh(), $request, InvoiceAuditLog::ACTION_CREATED, null, Invoice::STATUS_ISSUED, [
+                'created_as_counter_document_for_invoice_id' => $invoice->id,
+                'created_as_counter_document_for_invoice_number' => $invoice->invoice_number,
+            ]);
+
+            return response()->json([
+                'invoice' => $invoice->fresh('creditNote'),
+                'credit_note' => $creditNote->fresh()->load('items'),
+            ]);
 
             // 2. Audit logs
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_CANCELLED, $oldStatus, Invoice::STATUS_CANCELLED, [

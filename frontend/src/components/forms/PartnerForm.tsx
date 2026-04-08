@@ -92,7 +92,8 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
     bic: '',
     notes: '',
     status: 'available',
-    rating: 0
+    rating: 0,
+    portal_access: false
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -163,7 +164,8 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
         phones: initialData.phones || (initialData.phone ? [initialData.phone] : (initialData.additional_phones ? [initialData.phone, ...initialData.additional_phones] : [''])),
         mobile: initialData.mobile || '',
         languages: Array.isArray(initialData.languages) ? initialData.languages : (typeof initialData.languages === 'string' ? initialData.languages.split(',').map((l: string) => l.trim()) : []),
-        domains: Array.isArray(initialData.domains) ? initialData.domains : (typeof initialData.domains === 'string' ? initialData.domains.split(',').map((d: string) => d.trim()) : [])
+        domains: Array.isArray(initialData.domains) ? initialData.domains : (typeof initialData.domains === 'string' ? initialData.domains.split(',').map((d: string) => d.trim()) : []),
+        portal_access: initialData.portal_access ?? false
       }));
     }
   }, [initialData]);
@@ -447,59 +449,59 @@ const PartnerForm: React.FC<PartnerFormProps> = ({
                     </button>
                   )}
                 </div>
-                     <div className="col-span-12 md:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div data-field="phone">
-                  <PhoneInput
-                    label="Festnetz (Primär) *"
-                    value={formData.phones[0] || ''}
-                    error={duplicates.some(d => (d.phone === formData.phones[0] || d.phones?.[0] === formData.phones[0]) && formData.phones[0] !== '')}
-                    onChange={val => {
-                      const newPhones = [...formData.phones];
-                      newPhones[0] = val;
-                      updateFormData({ phones: newPhones });
-                    }}
-                    helperText="Direkte Erreichbarkeit"
-                  />
-                </div>
-                <div data-field="mobile">
-                  <PhoneInput
-                    label="Mobil"
-                    value={formData.mobile || ''}
-                    error={duplicates.some(d => (d.mobile === formData.mobile) && formData.mobile !== '')}
-                    onChange={val => updateFormData({ mobile: val })}
-                    helperText="Mobilnummer"
-                  />
-                </div>
-                <div className="col-span-full space-y-4">
-                  {formData.phones.slice(1).map((phone, i) => (
-                    <div key={i + 1} className="flex gap-2 group animate-fadeIn items-end">
-                      <div className="flex-1">
-                        <PhoneInput
-                          label={`Zusätzliche Nummer ${i + 1}`}
-                          value={phone}
-                          onChange={val => {
-                            const newPhones = [...formData.phones];
-                            newPhones[i + 1] = val;
-                            updateFormData({ phones: newPhones });
-                          }}
-                        />
+                <div className="col-span-12 md:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div data-field="phone">
+                    <PhoneInput
+                      label="Festnetz (Primär) *"
+                      value={formData.phones[0] || ''}
+                      error={duplicates.some(d => (d.phone === formData.phones[0] || d.phones?.[0] === formData.phones[0]) && formData.phones[0] !== '')}
+                      onChange={val => {
+                        const newPhones = [...formData.phones];
+                        newPhones[0] = val;
+                        updateFormData({ phones: newPhones });
+                      }}
+                      helperText="Direkte Erreichbarkeit"
+                    />
+                  </div>
+                  <div data-field="mobile">
+                    <PhoneInput
+                      label="Mobil"
+                      value={formData.mobile || ''}
+                      error={duplicates.some(d => (d.mobile === formData.mobile) && formData.mobile !== '')}
+                      onChange={val => updateFormData({ mobile: val })}
+                      helperText="Mobilnummer"
+                    />
+                  </div>
+                  <div className="col-span-full space-y-4">
+                    {formData.phones.slice(1).map((phone, i) => (
+                      <div key={i + 1} className="flex gap-2 group animate-fadeIn items-end">
+                        <div className="flex-1">
+                          <PhoneInput
+                            label={`Zusätzliche Nummer ${i + 1}`}
+                            value={phone}
+                            onChange={val => {
+                              const newPhones = [...formData.phones];
+                              newPhones[i + 1] = val;
+                              updateFormData({ phones: newPhones });
+                            }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePhone(i + 1)}
+                          className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-sm transition flex-shrink-0"
+                        >
+                          <FaTrash size={12} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removePhone(i + 1)}
-                        className="h-9 px-3 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-200 rounded-sm transition flex-shrink-0"
-                      >
-                        <FaTrash size={12} />
+                    ))}
+                    {!isCompact && formData.phones.length < 3 && (
+                      <button type="button" onClick={addPhone} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-1 ml-1">
+                        <FaPlus className="text-xs" /> Weitere Nummer hinzufügen
                       </button>
-                    </div>
-                  ))}
-                  {!isCompact && formData.phones.length < 3 && (
-                    <button type="button" onClick={addPhone} className="text-xs text-slate-700 font-medium flex items-center gap-1.5 hover:text-slate-900 transition-colors py-1 ml-1">
-                      <FaPlus className="text-xs" /> Weitere Nummer hinzufügen
-                    </button>
-                  )}
-                </div>
-              </div>             </div>
+                    )}
+                  </div>
+                </div>             </div>
             </div>
           </div>
 

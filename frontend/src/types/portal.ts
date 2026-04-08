@@ -1,13 +1,15 @@
 export interface PortalCustomer {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
+  company_name?: string;
   email: string;
-  company?: string;
   phone?: string;
-  address?: string;
-  city?: string;
-  zip?: string;
-  country?: string;
+  address_street?: string;
+  address_zip?: string;
+  address_city?: string;
+  address_country?: string;
+  portal_last_login_at?: string;
 }
 
 export interface PortalFile {
@@ -29,12 +31,14 @@ export interface PortalMessage {
 export interface PortalProject {
   id: number;
   title: string;
+  project_number?: string;
   status: string;
   source_language?: string;
   target_language?: string;
   deadline?: string;
   created_at: string;
   price?: number; // in cents
+  is_certified?: boolean;
   notes?: string;
   files?: PortalFile[];
   messages?: PortalMessage[];
@@ -51,7 +55,6 @@ export interface PortalInvoice {
 }
 
 export interface PortalDashboardData {
-  customer: PortalCustomer;
   stats: {
     open_projects: number;
     completed_projects: number;

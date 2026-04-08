@@ -44,12 +44,19 @@ class MailController extends Controller
     {
         $validated = $request->validate([
             'mail_account_id' => 'required|exists:mail_accounts,id',
-            'to' => 'required|string',
+            'to' => 'nullable|string',
             'cc' => 'nullable|string',
             'subject' => 'nullable|string',
             'body' => 'nullable|string',
             'project_id' => 'nullable|exists:projects,id',
+            'is_draft' => 'nullable|boolean'
         ]);
+
+        $isDraft = $validated['is_draft'] ?? false;
+
+        if (!$isDraft && empty($validated['to'])) {
+            return response()->json(['message' => 'Bitte geben Sie einen Empfänger an.'], 422);
+        }
 
         $account = \App\Models\MailAccount::findOrFail($validated['mail_account_id']);
         $tenant = $request->user()->tenant;
@@ -70,61 +77,62 @@ class MailController extends Controller
         $finalBody = $mailTemplateService->parseTemplate($validated['body'] ?? '', $variables, $tenant, $user);
 
         // Convert plain-text body to HTML (nl2br) if it contains no HTML tags.
-        // Bodies from the Quill editor already contain <p>/<br> tags and are left untouched.
         $isHtml = $finalBody !== strip_tags($finalBody);
         $htmlBody = $isHtml
             ? $finalBody
             : nl2br(htmlspecialchars($finalBody, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
 
         $attachments = [];
-        $email = (new \Symfony\Component\Mime\Email())
-            ->from($account->email)
-            ->to(...array_map('trim', explode(',', $validated['to'])))
-            ->subject($finalSubject)
-            ->html($htmlBody);
 
-        if (!empty($validated['cc'])) {
-            $email->cc(...array_map('trim', explode(',', $validated['cc'])));
-        }
+        if (!$isDraft) {
+            $email = (new \Symfony\Component\Mime\Email())
+                ->from($account->email)
+                ->to(...array_map('trim', explode(',', $validated['to'])))
+                ->subject($finalSubject)
+                ->html($htmlBody);
 
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('mail_attachments');
-                $attachments[] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'size' => $file->getSize(),
-                    'mime' => $file->getMimeType()
-                ];
-                $email->attachFromPath(\Storage::path($path), $file->getClientOriginalName());
+            if (!empty($validated['cc'])) {
+                $email->cc(...array_map('trim', explode(',', $validated['cc'])));
             }
-        }
 
-        // Send the email
-        try {
-            // Use smtps:// for SSL (port 465), smtp:// for TLS/STARTTLS (port 587)
-            $scheme = ((int) $account->smtp_port === 465 || ($account->smtp_encryption ?? 'ssl') === 'ssl') ? 'smtps' : 'smtp';
-            $transport = \Symfony\Component\Mailer\Transport::fromDsn(sprintf(
-                '%s://%s:%s@%s:%s',
-                $scheme,
-                urlencode($account->username),
-                urlencode($account->password),
-                $account->smtp_host,
-                $account->smtp_port
-            ));
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('mail_attachments');
+                    $attachments[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'size' => $file->getSize(),
+                        'mime' => $file->getMimeType()
+                    ];
+                    $email->attachFromPath(\Storage::path($path), $file->getClientOriginalName());
+                }
+            }
 
-            $mailer = new \Symfony\Component\Mailer\Mailer($transport);
-            $mailer->send($email);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Fehler beim Senden: ' . $e->getMessage()], 500);
+            // Send the email
+            try {
+                $scheme = ((int) $account->smtp_port === 465 || ($account->smtp_encryption ?? 'ssl') === 'ssl') ? 'smtps' : 'smtp';
+                $transport = \Symfony\Component\Mailer\Transport::fromDsn(sprintf(
+                    '%s://%s:%s@%s:%s',
+                    $scheme,
+                    urlencode($account->username),
+                    urlencode($account->password),
+                    $account->smtp_host,
+                    $account->smtp_port
+                ));
+
+                $mailer = new \Symfony\Component\Mailer\Mailer($transport);
+                $mailer->send($email);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Fehler beim Senden: ' . $e->getMessage()], 500);
+            }
         }
 
         $mail = Mail::create([
             'tenant_id' => $request->user()->tenant_id ?? 1,
             'mail_account_id' => $validated['mail_account_id'],
-            'folder' => 'sent',
+            'folder' => $isDraft ? 'drafts' : 'sent',
             'from_email' => $account->email,
-            'to_emails' => array_map('trim', explode(',', $validated['to'])),
+            'to_emails' => !empty($validated['to']) ? array_map('trim', explode(',', $validated['to'])) : [],
             'cc_emails' => !empty($validated['cc']) ? array_map('trim', explode(',', $validated['cc'])) : [],
             'subject' => $finalSubject,
             'body' => $finalBody,
@@ -133,7 +141,7 @@ class MailController extends Controller
             'attachments' => $attachments
         ]);
 
-        return response()->json($mail, 201);
+        return response()->json($mail, $isDraft ? 200 : 201);
     }
 
     public function markAsRead($id)
@@ -187,6 +195,30 @@ class MailController extends Controller
         Mail::whereIn('id', $ids)->where('folder', 'trash')->update(['folder' => 'inbox']);
 
         return response()->json(['message' => 'Mails restored successfully']);
+    }
+
+    public function bulkArchive(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:mails,id',
+        ]);
+
+        Mail::whereIn('id', $validated['ids'])->update(['folder' => 'archive']);
+
+        return response()->json(['message' => 'Mails archived successfully']);
+    }
+
+    public function bulkUnarchive(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:mails,id',
+        ]);
+
+        Mail::whereIn('id', $validated['ids'])->where('folder', 'archive')->update(['folder' => 'inbox']);
+
+        return response()->json(['message' => 'Mails restored from archive']);
     }
     public function sync(Request $request)
     {

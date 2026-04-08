@@ -27,3 +27,15 @@ Schedule::command('monitor:api-errors --threshold=10')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Mahnwesen: Auto-Eskalation täglich
+Schedule::command('dunning:auto-escalate')
+    ->dailyAt('08:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Wiederkehrende Rechnungen: täglich früh verarbeiten
+Schedule::command('invoices:process-recurring')
+    ->dailyAt('06:00')
+    ->withoutOverlapping()
+    ->runInBackground();

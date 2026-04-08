@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cookie-Richtlinie — TranslationOffice</title>
-    <meta name="description" content="Cookie-Richtlinie von TranslationOffice — Informationen zu Cookies und Tracking">
+    <title>Cookie-Hinweise - TranslationOffice</title>
+    <meta name="description" content="Hinweise zu Cookies, Local Storage und technisch erforderlichen Speicherungen bei TranslationOffice.">
     <meta name="robots" content="index, follow">
-
-    <!-- Tailwind CSS CDN -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Custom Tailwind Config -->
     <script>
         tailwind.config = {
             theme: {
@@ -18,226 +15,149 @@
                     colors: {
                         primary: '#1B4D4F',
                         'primary-dark': '#143A3C',
+                        accent: '#B49765',
+                        sand: '#F5F0E7',
+                        ink: '#172423'
                     }
                 }
             }
         }
     </script>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="bg-white text-gray-900">
-
-    <!-- Navigation -->
-    <nav id="navbar" class="fixed w-full bg-white border-b border-gray-200 z-100 transition-all duration-300">
+<body class="bg-stone-50 text-ink">
+    <nav id="navbar" class="fixed top-0 w-full bg-white/95 backdrop-blur border-b border-stone-200 z-50 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
-                <a href="index.html" class="flex items-center gap-2">
-                    <svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948-.684l1.498-4.493a1 1 0 011.502-.684l1.498 4.493a1 1 0 00.948.684H19a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
-                    </svg>
-                    <span class="text-xl font-bold text-primary hidden sm:inline">TranslationOffice</span>
+                <a href="index.html#hero" class="flex items-center gap-3 text-primary">
+                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white font-extrabold shadow-lg shadow-primary/15">TO</span>
+                    <span class="text-xl font-extrabold hidden sm:inline">TranslationOffice</span>
                 </a>
-
-                <div class="hidden md:flex items-center gap-8">
-                    <a href="index.html#features" class="text-gray-700 hover:text-primary transition font-medium">Funktionen</a>
-                    <a href="index.html#preise" class="text-gray-700 hover:text-primary transition font-medium">Preise</a>
-                    <a href="index.html#referenzen" class="text-gray-700 hover:text-primary transition font-medium">Referenzen</a>
-                    <a href="index.html#workflow" class="text-gray-700 hover:text-primary transition font-medium">Über uns</a>
+                <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-stone-700">
+                    <a href="index.html#funktionen" class="hover:text-primary">Funktionen</a>
+                    <a href="datenschutz.html" class="hover:text-primary">Datenschutz</a>
+                    <a href="impressum.html" class="hover:text-primary">Impressum</a>
+                    <a href="agb.html" class="hover:text-primary">AGB</a>
                 </div>
-
-                <div class="flex items-center gap-3">
-                    <a href="index.html#demo" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 sm:px-6 py-2 rounded-lg transition font-semibold text-sm sm:text-base">
-                        Kostenlos testen
-                    </a>
-                </div>
+                <a href="index.html#demo" class="hidden sm:inline-flex bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl font-semibold transition shadow-lg shadow-primary/15">
+                    Produktdemo anfragen
+                </a>
             </div>
         </div>
     </nav>
 
-    <!-- Legal Content -->
-    <main class="legal-page">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="legal-content">
-                <h1>Cookie-Richtlinie</h1>
-                <p class="updated">Zuletzt aktualisiert: 28. März 2026</p>
+    <main class="legal-shell">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="legal-grid">
+                <article class="legal-card legal-prose">
+                    <p class="legal-meta">Zuletzt aktualisiert: 7. April 2026</p>
+                    <h1>Cookie-Hinweise</h1>
+                    <p class="legal-meta">Hinweise zu Cookies, Local Storage und technisch erforderlichen Speicherungen</p>
 
-                <h2>Was sind Cookies?</h2>
-                <p>
-                    Cookies sind kleine Textdateien, die auf Ihrem Computer, Smartphone oder Tablet gespeichert werden, wenn Sie unsere Website besuchen. Sie ermöglichen es uns und Dritten, Ihr Gerät zu erkennen und bestimmte Informationen über Ihre Browsing-Gewohnheiten zu speichern.
-                </p>
+                    <div class="legal-note">
+                        <strong>Aktueller Stand:</strong> Auf der oeffentlichen Landingpage werden nach dem Stand vom 7. April 2026 keine optionalen Analyse- oder Marketing-Cookies gesetzt. Wenn Sie spaeter Tracking-, Marketing-, Chat- oder Komfortfunktionen aktivieren, muessen diese Hinweise und gegebenenfalls das Consent-Management vor dem Livegang ergaenzt werden.
+                    </div>
 
-                <h2>Welche Cookies verwenden wir?</h2>
-                <p>
-                    Nachstehend finden Sie eine detaillierte Liste aller Cookies, die auf unserer Website verwendet werden:
-                </p>
+                    <h2>1. Was sind Cookies und aehnliche Technologien?</h2>
+                    <p>
+                        Cookies sind kleine Textdateien, die im Browser gespeichert werden. Vergleichbare Informationen koennen auch ueber Local Storage, Session Storage oder andere Techniken in Ihrer Endeinrichtung gespeichert oder ausgelesen werden.
+                    </p>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Cookie-Name</th>
-                            <th>Anbieter</th>
-                            <th>Zweck</th>
-                            <th>Laufzeit</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>session_id</td>
-                            <td>TranslationOffice</td>
-                            <td>Sitzungsverwaltung und Login</td>
-                            <td>Sitzung</td>
-                        </tr>
-                        <tr>
-                            <td>cookie_consent</td>
-                            <td>TranslationOffice</td>
-                            <td>Speichert Ihre Cookie-Einwilligung</td>
-                            <td>1 Jahr</td>
-                        </tr>
-                        <tr>
-                            <td>_ga</td>
-                            <td>Google Analytics</td>
-                            <td>Besucherstatistiken und Nutzerverhalten</td>
-                            <td>2 Jahre (nur mit Einwilligung)</td>
-                        </tr>
-                        <tr>
-                            <td>_gid</td>
-                            <td>Google Analytics</td>
-                            <td>Session-ID für Google Analytics</td>
-                            <td>24 Stunden (nur mit Einwilligung)</td>
-                        </tr>
-                        <tr>
-                            <td>csrf_token</td>
-                            <td>TranslationOffice</td>
-                            <td>Sicherheitsschutz gegen CSRF-Attacken</td>
-                            <td>Sitzung</td>
-                        </tr>
-                    </tbody>
-                </table>
+                    <h2>2. Was wird auf der oeffentlichen Website derzeit verwendet?</h2>
+                    <p>
+                        Auf der oeffentlichen Landingpage werden derzeit keine optionalen Tracking- oder Marketing-Cookies eingesetzt. Die Website zeigt Inhalte an und verarbeitet dabei technische Verbindungsdaten, die fuer die Auslieferung erforderlich sind.
+                    </p>
 
-                <h2>Unterschiedliche Arten von Cookies</h2>
+                    <h2>3. Technisch notwendige Speicherungen</h2>
+                    <p>
+                        Sofern technisch notwendige Speicherungen eingesetzt werden, dienen diese ausschliesslich dazu, einen von Ihnen ausdruecklich gewuenschten digitalen Dienst bereitzustellen oder die Uebertragung einer Nachricht zu ermoeglichen. Beispiele koennen Sitzungs- oder Sicherheitsfunktionen in geschuetzten Anwendungsbereichen sein.
+                    </p>
+                    <p>
+                        Wenn Sie nur die oeffentliche Landingpage besuchen, ist nach dem Stand dieser Seite keine separate Einwilligung fuer optionale Tracking-Technologien erforderlich.
+                    </p>
 
-                <h3>Notwendige Cookies</h3>
-                <p>
-                    Diese Cookies sind erforderlich für die Grundfunktionalität unserer Website und können nicht deaktiviert werden. Sie ermöglichen Login, Sitzungsverwaltung und Sicherheit.
-                </p>
+                    <h2>4. Geschuetzte Anwendungsbereiche</h2>
+                    <p>
+                        Falls Sie zusaetzlich die eigentliche Anwendung, ein Kundenportal oder einen Login-Bereich nutzen, koennen dort technisch notwendige Sitzungs-, Sicherheits- oder Authentifizierungs-Cookies eingesetzt werden. Diese Hinweise betreffen in erster Linie die oeffentliche Website und sollten fuer produktive Anwendungsbereiche bei Bedarf erweitert werden.
+                    </p>
 
-                <h3>Analytische Cookies</h3>
-                <p>
-                    Diese Cookies helfen uns zu verstehen, wie Besucher unsere Website nutzen. Sie messen Seitenabrufe, Absprungrate und Dauer des Besuchs. Sie werden nur mit Ihrer Einwilligung gesetzt.
-                </p>
+                    <h2>5. Rechtsgrundlagen</h2>
+                    <p>
+                        Nach Paragraf 25 Abs. 1 TDDDG ist das Speichern von Informationen in Ihrer Endeinrichtung oder der Zugriff darauf grundsaetzlich nur mit Einwilligung zulaessig. Eine Einwilligung ist nach Paragraf 25 Abs. 2 TDDDG insbesondere dann nicht erforderlich, wenn der alleinige Zweck technisch notwendig ist, um einen ausdruecklich gewuenschten digitalen Dienst bereitzustellen.
+                    </p>
+                    <p>
+                        Soweit personenbezogene Daten verarbeitet werden, richtet sich die zusaetzliche datenschutzrechtliche Bewertung nach der DSGVO. Weitere Informationen dazu finden Sie in der <a href="datenschutz.html">Datenschutzerklaerung</a>.
+                    </p>
 
-                <h3>Marketing und Tracking Cookies</h3>
-                <p>
-                    Diese Cookies werden nur mit Ihrer ausdrücklichen Zustimmung gesetzt und dienen der Erfolgsmessung von Kampagnen und Werbeanzeigen.
-                </p>
+                    <h2>6. Browser-Einstellungen</h2>
+                    <p>
+                        Sie koennen Cookies und aehnliche Speicherungen ueber die Einstellungen Ihres Browsers verwalten, blockieren oder loeschen. Bitte beachten Sie, dass geschuetzte oder interaktive Bereiche ohne technisch notwendige Speicherungen moeglicherweise nicht ordnungsgemaess funktionieren.
+                    </p>
 
-                <h2>Wie können Sie Cookies verwalten oder löschen?</h2>
+                    <h2>7. Aenderungen dieser Hinweise</h2>
+                    <p>
+                        Wenn sich eingesetzte Technologien, Anbieter oder Zwecke aendern, werden diese Hinweise entsprechend aktualisiert.
+                    </p>
+                </article>
 
-                <h3>Google Chrome</h3>
-                <ol>
-                    <li>Öffnen Sie Chrome und klicken Sie auf das Menü (☰) oben rechts</li>
-                    <li>Wählen Sie "Einstellungen"</li>
-                    <li>Klicken Sie auf "Datenschutz und Sicherheit" → "Cookies und andere Websitedaten"</li>
-                    <li>Wählen Sie Ihre gewünschten Einstellungen oder löschen Sie Cookies</li>
-                </ol>
+                <aside class="legal-side-card">
+                    <h2>Vor dem Livegang pruefen</h2>
+                    <ul>
+                        <li>werden spaeter Analyse- oder Marketingtools aktiviert?</li>
+                        <li>gibt es Login-, Portal- oder Session-Cookies im Produkt?</li>
+                        <li>ist ein Consent-Banner fuer Zusatzdienste erforderlich?</li>
+                        <li>sind alle eingesetzten Anbieter in der Datenschutzerklaerung genannt?</li>
+                    </ul>
 
-                <h3>Mozilla Firefox</h3>
-                <ol>
-                    <li>Öffnen Sie Firefox und klicken Sie auf das Menü (≡) oben rechts</li>
-                    <li>Wählen Sie "Einstellungen"</li>
-                    <li>Klicken Sie auf "Datenschutz & Sicherheit"</li>
-                    <li>Unter "Cookies und Website-Daten" können Sie Ihre Einstellungen anpassen</li>
-                </ol>
-
-                <h3>Apple Safari</h3>
-                <ol>
-                    <li>Öffnen Sie Safari und klicken Sie auf "Safari" in der Menüleiste</li>
-                    <li>Wählen Sie "Einstellungen..."</li>
-                    <li>Klicken Sie auf den Tab "Datenschutz"</li>
-                    <li>Sie können Cookies unter "Website-Tracking" und "Cookies" verwalten</li>
-                </ol>
-
-                <h3>Microsoft Edge</h3>
-                <ol>
-                    <li>Öffnen Sie Edge und klicken Sie auf das Menü (⋯) oben rechts</li>
-                    <li>Wählen Sie "Einstellungen"</li>
-                    <li>Klicken Sie auf "Datenschutz, Suche und Dienste"</li>
-                    <li>Verwalten Sie Cookies unter "Cookies und andere Websitedaten"</li>
-                </ol>
-
-                <h2>Rechtsgrundlage für Cookie-Nutzung</h2>
-                <p>
-                    <strong>Notwendige Cookies:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)<br>
-                    <strong>Analytische Cookies:</strong> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)<br>
-                    <strong>Marketing Cookies:</strong> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)
-                </p>
-
-                <h2>Ablehnung und Widerruf</h2>
-                <p>
-                    Sie können Ihre Einwilligung jederzeit durch unser Cookie-Banner oder in Ihren Browsereinstellungen verwalten oder widerrufen. Wenn Sie Cookies ablehnen, können Sie die Website noch nutzen, allerdings möglicherweise mit eingeschränktem Funktionsumfang.
-                </p>
-
-                <h2>Änderungen dieser Cookie-Richtlinie</h2>
-                <p>
-                    Wir behalten uns das Recht vor, diese Cookie-Richtlinie jederzeit anzupassen. Alle Änderungen werden auf dieser Seite veröffentlicht. Die Aktualisierung tritt unmittelbar nach Veröffentlichung in Kraft.
-                </p>
-
-                <h2>Kontakt</h2>
-                <p>
-                    Falls Sie Fragen zu unserer Cookie-Nutzung haben, kontaktieren Sie bitte:<br><br>
-                    <strong>TranslationOffice GmbH</strong><br>
-                    <a href="mailto:datenschutz@translationoffice.de">datenschutz@translationoffice.de</a>
-                </p>
+                    <div class="legal-links">
+                        <a href="datenschutz.html">Zur Datenschutzerklaerung</a>
+                        <a href="impressum.html">Zum Impressum</a>
+                        <a href="agb.html">Zu den AGB</a>
+                        <a href="index.html">Zur Startseite</a>
+                    </div>
+                </aside>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-20 mt-20">
+    <footer class="bg-[#141716] text-white py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="footer-content">
+            <div class="grid md:grid-cols-4 gap-10">
                 <div>
-                    <div class="footer-logo">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948-.684l1.498-4.493a1 1 0 011.502-.684l1.498 4.493a1 1 0 00.948.684H19a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
-                        </svg>
-                        TO
+                    <div class="flex items-center gap-3 font-extrabold text-xl mb-4">
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary">TO</span>
+                        TranslationOffice
                     </div>
-                    <p class="footer-tagline">Das smarte TMS für Übersetzungsbüros im DACH-Raum.</p>
+                    <p class="text-stone-400 leading-7">
+                        Software fuer Uebersetzungsbueros mit Fokus auf Anfrage, Projekt, Portal, Abrechnung und technisch anschlussfaehige Prozesse.
+                    </p>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Produkt</h3>
-                    <a href="index.html#features">Funktionen</a>
-                    <a href="index.html#preise">Preise</a>
-                    <a href="#">API-Dokumentation</a>
+                <div>
+                    <h3 class="font-bold mb-4">Produkt</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="index.html#funktionen" class="footer-link">Funktionen</a>
+                        <a href="index.html#preise" class="footer-link">Preise</a>
+                        <a href="api.html" class="footer-link">API</a>
+                        <a href="sicherheit.html" class="footer-link">Sicherheit</a>
+                    </div>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Unternehmen</h3>
-                    <a href="#">Über uns</a>
-                    <a href="#">Blog</a>
-                    <a href="mailto:info@translationoffice.de">Kontakt</a>
+                <div>
+                    <h3 class="font-bold mb-4">Rechtliches</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="impressum.html" class="footer-link">Impressum</a>
+                        <a href="datenschutz.html" class="footer-link">Datenschutz</a>
+                        <a href="cookie.html" class="footer-link">Cookies</a>
+                        <a href="agb.html" class="footer-link">AGB</a>
+                    </div>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Rechtliches</h3>
-                    <a href="impressum.html">Impressum</a>
-                    <a href="datenschutz.html">Datenschutz</a>
-                    <a href="agb.html">AGB</a>
-                    <a href="cookie.html">Cookie-Richtlinie</a>
+                <div>
+                    <h3 class="font-bold mb-4">Kontakt</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="kontakt.html" class="footer-link">Kontakt</a>
+                        <a href="mailto:info@translationoffice.de" class="footer-link">info@translationoffice.de</a>
+                        <a href="index.html#demo" class="footer-link">Produktdemo</a>
+                    </div>
                 </div>
-            </div>
-
-            <div class="footer-bottom">
-                <p class="footer-copyright">© 2026 TranslationOffice GmbH. Alle Rechte vorbehalten.</p>
             </div>
         </div>
     </footer>

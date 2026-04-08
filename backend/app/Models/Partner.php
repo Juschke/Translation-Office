@@ -39,6 +39,13 @@ class Partner extends Model
         'status',
         'rating',
         'notes',
+        'password',
+        'portal_access',
+        'portal_token',
+        'portal_token_expires_at',
+        'portal_session_token',
+        'portal_session_expires_at',
+        'portal_last_login_at',
     ];
 
     protected $casts = [
@@ -50,10 +57,28 @@ class Partner extends Model
         'flat_rates' => 'array',
         'rating' => 'integer',
         'payment_terms' => 'integer',
+        'password' => 'hashed',
+        'portal_access' => 'boolean',
+        'portal_token_expires_at' => 'datetime',
+        'portal_session_expires_at' => 'datetime',
+        'portal_last_login_at' => 'datetime',
     ];
 
     public function projects()
     {
         return $this->hasMany(Project::class);
+    }
+
+    public function hasValidMagicLink(string $token): bool
+    {
+        if (!$this->portal_token || !$this->portal_token_expires_at) {
+            return false;
+        }
+
+        if ($this->portal_token_expires_at->isPast()) {
+            return false;
+        }
+
+        return hash_equals($this->portal_token, hash('sha256', $token));
     }
 }

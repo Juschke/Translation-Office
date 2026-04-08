@@ -113,7 +113,7 @@ const PortalDashboard: React.FC = () => {
       {/* Greeting */}
       <div>
         <h1 className="text-2xl font-bold text-slate-800">
-          Willkommen, {customer?.name?.split(' ')[0]}!
+          Willkommen, {customer?.first_name ?? customer?.company_name ?? 'Kunde'}!
         </h1>
         <p className="text-slate-500 text-sm mt-1">
           Hier finden Sie eine Übersicht Ihrer aktuellen Projekte und Rechnungen.

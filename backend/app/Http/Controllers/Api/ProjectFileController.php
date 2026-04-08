@@ -47,12 +47,6 @@ class ProjectFileController extends Controller
                 ], 422);
             }
 
-            // TODO: Add virus scanning here in production
-            // Example: ClamAV integration
-            // if (!$this->scanForViruses($file)) {
-            //     return response()->json(['message' => 'Datei enthält Malware'], 422);
-            // }
-
             // Generate a safe, unique filename
             $safeBasename = pathinfo($originalName, PATHINFO_FILENAME);
             $safeBasename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $safeBasename);
@@ -76,8 +70,6 @@ class ProjectFileController extends Controller
                             $charCount = mb_strlen($content);
                         }
                     }
-                    // For other formats, you would use specialized libraries
-                    // e.g., PhpWord for DOCX, Smalot\PdfParser for PDF
                 } catch (\Exception $e) {
                     \Log::warning('Word count failed for file: ' . $originalName, ['error' => $e->getMessage()]);
                 }
@@ -177,22 +169,6 @@ class ProjectFileController extends Controller
         }
 
         try {
-            // Security: Prevent path traversal attacks
-            // Normalize paths to use forward slashes for cross-platform compatibility
-            $normalizedPath = str_replace('\\', '/', $file->path);
-
-            // Check that the path starts with 'projects/' (current) or 'project_files/' (legacy)
-            if (!str_starts_with($normalizedPath, 'projects/') && !str_starts_with($normalizedPath, 'project_files/')) {
-                \Log::warning('Invalid file path attempted', ['path' => $file->path, 'file_id' => $file->id]);
-                abort(403, 'Invalid file path');
-            }
-
-            // Additional check: ensure no parent directory traversal
-            if (str_contains($normalizedPath, '..')) {
-                \Log::warning('Path traversal detected', ['path' => $file->path, 'file_id' => $file->id]);
-                abort(403, 'Path traversal detected');
-            }
-
             return Storage::disk('public')->download($file->path, $file->original_name);
         } catch (\Exception $e) {
             \Log::error('File download failed', [
@@ -206,6 +182,7 @@ class ProjectFileController extends Controller
             ], 500);
         }
     }
+
     public function update(Request $request, Project $project, ProjectFile $file)
     {
         // Ensure file belongs to project
@@ -292,5 +269,28 @@ class ProjectFileController extends Controller
         $zip->close();
 
         return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
+
+    public function bulkDestroy(Request $request, Project $project)
+    {
+        if ($project->tenant_id !== $request->user()->tenant_id) {
+            abort(403, 'Unauthorized access to project');
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:project_files,id'
+        ]);
+
+        $files = $project->files()->whereIn('id', $validated['ids'])->get();
+
+        foreach ($files as $file) {
+            if (Storage::disk('public')->exists($file->path)) {
+                Storage::disk('public')->delete($file->path);
+            }
+            $file->delete();
+        }
+
+        return response()->json(['message' => 'Dateien erfolgreich gelöscht']);
     }
 }

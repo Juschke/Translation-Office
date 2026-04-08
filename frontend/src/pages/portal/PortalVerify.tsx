@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, Spin, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { portalAuthService } from '../../api/services/portal';
 import { usePortal } from '../../context/PortalContext';
 
 const PortalVerify: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { login } = usePortal();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
     if (!token) {
       setErrorMessage('Kein Token in der URL gefunden. Bitte fordern Sie einen neuen Anmelde-Link an.');
       setStatus('error');

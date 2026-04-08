@@ -1,4 +1,4 @@
-import { FaFolderOpen, FaPaperPlane, FaTrashAlt, FaFileAlt, FaUserCircle } from 'react-icons/fa';
+import { FaFolderOpen, FaPaperPlane, FaTrashAlt, FaFileAlt, FaUserCircle, FaArchive, FaEdit } from 'react-icons/fa';
 import MailTabButton from '../../../components/inbox/MailTabButton';
 import { TooltipProvider } from '../../../components/ui/tooltip';
 
@@ -33,6 +33,18 @@ const InboxSidebar = ({ activeTab, setActiveTab }: InboxSidebarProps) => {
                             onClick={() => setActiveTab('trash')}
                             icon={<FaTrashAlt />}
                             label="Papierkorb"
+                        />
+                        <MailTabButton
+                            active={activeTab === 'archive'}
+                            onClick={() => setActiveTab('archive')}
+                            icon={<FaArchive />}
+                            label="Archiv"
+                        />
+                        <MailTabButton
+                            active={activeTab === 'drafts'}
+                            onClick={() => setActiveTab('drafts')}
+                            icon={<FaEdit />}
+                            label="Entwürfe"
                         />
                     </div>
 

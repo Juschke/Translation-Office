@@ -100,10 +100,20 @@ const NotificationSettingsTab = () => {
     return (
         <div className="flex flex-col gap-6 animate-fadeIn flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 pb-2">
             <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
-                    <FaBell className="text-slate-500" />
-                    <h3 className="text-sm font-medium text-slate-800">{t('notifications.settings.title')}</h3>
-                    <p className="text-xs text-slate-400 ml-auto">{t('notifications.settings.subtitle')}</p>
+                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
+                    <div className="flex items-center gap-3">
+                        <FaBell className="text-brand-primary" />
+                        <h3 className="text-sm font-medium text-slate-800">{t('notifications.settings.title')}</h3>
+                    </div>
+                    <Button
+                        variant="default"
+                        onClick={() => mutation.mutate(settings)}
+                        disabled={mutation.isPending}
+                        isLoading={mutation.isPending}
+                        className="flex items-center gap-2"
+                    >
+                        <FaSave /> Speichern
+                    </Button>
                 </div>
 
                 <div className="divide-y divide-slate-100">
@@ -156,17 +166,6 @@ const NotificationSettingsTab = () => {
                 </div>
             </div>
 
-            <div className="flex justify-end">
-                <Button
-                    variant="default"
-                    onClick={() => mutation.mutate(settings)}
-                    disabled={mutation.isPending}
-                    isLoading={mutation.isPending}
-                    className="px-6 py-2.5 text-xs font-medium flex items-center gap-2"
-                >
-                    <FaSave /> {mutation.isPending ? t('notifications.settings.saving') : t('notifications.settings.save')}
-                </Button>
-            </div>
         </div>
     );
 };

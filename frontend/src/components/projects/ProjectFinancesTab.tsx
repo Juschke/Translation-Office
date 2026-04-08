@@ -8,7 +8,6 @@ import { type ProjectPosition } from '../modals/projectTypes';
 import { Button } from '../ui/button';
 
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
-const SECTION_NUM = 'w-7 h-7 rounded-md bg-brand-primary text-white flex items-center justify-center text-xs font-bold shadow-sm';
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
 
 interface ProjectFinancesTabProps {
@@ -247,7 +246,6 @@ const ProjectFinancesTab = ({
                     <section id="section-kalkulation" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5 bg-white justify-between')}>
                             <div className="flex items-center gap-3">
-                                <div className={SECTION_NUM}>05</div>
                                 <h3 className={SECTION_TITLE}>Positionen</h3>
                                 {isLocked && (
                                     <button
@@ -287,7 +285,6 @@ const ProjectFinancesTab = ({
                     {!isLocked && (
                         <section id="section-leistungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5 bg-white')}>
-                                <div className={SECTION_NUM}>06</div>
                                 <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
                             </div>
                             <div className="px-6 py-6">
@@ -337,8 +334,8 @@ const ProjectFinancesTab = ({
                                         </div>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-12 gap-8 pt-6">
-                                    <div className="col-span-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                                    <div>
                                         <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Anzahl Kopien</label>
                                         <div className="flex items-center h-10 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm ring-1 ring-slate-100/50">
                                             <button onClick={() => setCopyData(d => ({ ...d, count: Math.max(0, d.count - 1) }))} className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100"><FaMinus className="text-xs" /></button>
@@ -346,17 +343,11 @@ const ProjectFinancesTab = ({
                                             <button onClick={() => setCopyData(d => ({ ...d, count: d.count + 1 }))} className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100"><FaPlus className="text-xs" /></button>
                                         </div>
                                     </div>
-                                    <div className="col-span-4">
+                                    <div>
                                         <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Preis pro Kopie</label>
                                         <div className="relative">
                                             <input type="number" step="0.01" value={copyData.price} onChange={(e) => setCopyData(d => ({ ...d, price: parseFloat(e.target.value) || 0 }))} className="w-full h-10 px-4 text-sm font-bold text-slate-700 border border-slate-200 rounded-md outline-none focus:ring-1 focus:ring-brand-primary/30 focus:border-brand-primary transition-all bg-white pr-8 shadow-sm" />
                                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-300">€</span>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-4 flex items-end pb-2">
-                                        <div className="bg-slate-50 px-4 py-2 rounded-md border border-slate-100 w-full h-10 flex items-center justify-between">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Summe Kopien</span>
-                                            <span className="text-sm font-bold text-slate-800 tabular-nums">{(copyData.count * copyData.price).toFixed(2)} €</span>
                                         </div>
                                     </div>
                                 </div>
@@ -368,7 +359,6 @@ const ProjectFinancesTab = ({
                     <section id="section-zahlungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center bg-white')}>
                             <div className="flex items-center gap-3">
-                                <div className={SECTION_NUM}>07</div>
                                 <h3 className={SECTION_TITLE}>Anzahlungen</h3>
                             </div>
                             <Button
@@ -423,3 +413,6 @@ const ProjectFinancesTab = ({
 };
 
 export default ProjectFinancesTab;
+
+
+

@@ -5,7 +5,7 @@ import {
     FaListOl, FaSave
 } from 'react-icons/fa';
 import { Button } from '../ui/button';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Switch } from '../ui/switch';
@@ -256,9 +256,7 @@ const NumberCircleSettingsTab = () => {
         <div className="bg-white shadow-sm border border-slate-100 rounded-sm overflow-hidden animate-fadeIn flex-1 min-h-0 flex flex-col">
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10 shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-200/50 text-slate-700 flex items-center justify-center text-xs font-medium border border-slate-200 rounded-sm">
-                        <FaListOl />
-                    </div>
+                    <FaListOl className="text-brand-primary" />
                     <h3 className="text-sm font-medium text-slate-800">{t('settings.number_circles.header')}</h3>
                 </div>
                 <Button

@@ -85,7 +85,7 @@ const DesktopLinks = ({
     ];
 
     const isContactsActive = isStartsWith('/customers') || isStartsWith('/partners') || isStartsWith('/interpreting');
-    const isFinanceActive = isStartsWith('/requests') || isStartsWith('/quotes') || isStartsWith('/invoices') || isStartsWith('/reports');
+    const isFinanceActive = isStartsWith('/requests') || isStartsWith('/quotes') || isStartsWith('/invoices') || isStartsWith('/reports') || isStartsWith('/dunning') || isStartsWith('/recurring-invoices');
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -97,7 +97,6 @@ const DesktopLinks = ({
                         <Link to="/" className={navLinkClass("/")}>
                             <FaHome className="text-base lg:hidden" />
                             <span className="hidden lg:inline">{t('nav.dashboard')}</span>
-                            <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
                         </Link>
                     </TooltipTrigger>
                     <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
@@ -119,81 +118,6 @@ const DesktopLinks = ({
                     </TooltipContent>
                 </Tooltip>
 
-                {/* Kontakte Dropdown */}
-                <div className="relative h-full" ref={contactsRef}>
-                    <button
-                        onClick={() => {
-                            const next = !isContactsOpen;
-                            closeAllDropdowns();
-                            setIsContactsOpen(next);
-                        }}
-                        className={navLinkClass("", isContactsOpen || isContactsActive)}
-                    >
-                        <FaAddressBook className="text-base lg:hidden" />
-                        <span className="hidden lg:inline">{t('nav.contacts')}</span>
-                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isContactsOpen && "rotate-180")} />
-                    </button>
-
-                    {isContactsOpen && (
-                        <div className="absolute left-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
-                            <div className="py-1">
-                                <Link
-                                    to="/customers"
-                                    className={clsx(
-                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
-                                        isStartsWith('/customers') ? "text-brand-primary bg-slate-50" : "text-slate-700"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FaUsers className="text-slate-400 w-3.5 h-3.5" />
-                                        <span>{t('nav.customers')}</span>
-                                    </div>
-                                    {dashboardData?.stats?.active_customers > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                                            {dashboardData.stats.active_customers}
-                                        </span>
-                                    )}
-                                </Link>
-
-                                <Link
-                                    to="/partners"
-                                    className={clsx(
-                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
-                                        isStartsWith('/partners') ? "text-brand-primary bg-slate-50" : "text-slate-700"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FaUserTie className="text-slate-400 w-3.5 h-3.5" />
-                                        <span>{t('nav.partners')}</span>
-                                    </div>
-                                    {dashboardData?.stats?.active_partners > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                                            {dashboardData.stats.active_partners}
-                                        </span>
-                                    )}
-                                </Link>
-
-                                <Link
-                                    to="/interpreting"
-                                    className={clsx(
-                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
-                                        isStartsWith('/interpreting') ? "text-brand-primary bg-slate-50" : "text-slate-700"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FaCommentDots className="text-slate-400 w-3.5 h-3.5" />
-                                        <span>{t('nav.interpreters')}</span>
-                                    </div>
-                                    {dashboardData?.stats?.active_interpreting > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                                            {dashboardData.stats.active_interpreting}
-                                        </span>
-                                    )}
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-                </div>
 
                 {/* Finanzen Dropdown */}
                 <div className="relative h-full" ref={financeRef}>
@@ -275,6 +199,43 @@ const DesktopLinks = ({
                                     </Link>
                                 )}
 
+                                {/* Serienrechnungen */}
+                                {hasMinRole('manager') && (
+                                    <Link
+                                        to="/recurring-invoices"
+                                        className={clsx(
+                                            "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                            isStartsWith('/recurring-invoices') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <FaHistory className="text-slate-400 w-3.5 h-3.5" />
+                                            <span>Serienrechnung</span>
+                                        </div>
+                                    </Link>
+                                )}
+
+                                {/* Mahnwesen */}
+                                {hasMinRole('manager') && (
+                                    <Link
+                                        to="/dunning"
+                                        className={clsx(
+                                            "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                            isStartsWith('/dunning') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <FaBell className="text-slate-400 w-3.5 h-3.5" />
+                                            <span>Mahnwesen</span>
+                                        </div>
+                                        {dashboardData?.stats?.overdue_invoices > 0 && (
+                                            <span className="bg-rose-500 text-white px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                                {dashboardData.stats.overdue_invoices}
+                                            </span>
+                                        )}
+                                    </Link>
+                                )}
+
                                 {/* Auswertung */}
                                 {hasMinRole('manager') && (
                                     <Link
@@ -294,6 +255,97 @@ const DesktopLinks = ({
                         </div>
                     )}
                 </div>
+
+                {/* Kontakte Dropdown */}
+                <div className="relative h-full" ref={contactsRef}>
+                    <button
+                        onClick={() => {
+                            const next = !isContactsOpen;
+                            closeAllDropdowns();
+                            setIsContactsOpen(next);
+                        }}
+                        className={navLinkClass("", isContactsOpen || isContactsActive)}
+                    >
+                        <FaAddressBook className="text-base lg:hidden" />
+                        <span className="hidden lg:inline">{t('nav.contacts')}</span>
+                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isContactsOpen && "rotate-180")} />
+                    </button>
+
+                    {isContactsOpen && (
+                        <div className="absolute left-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
+                            <div className="py-1">
+                                <Link
+                                    to="/customers"
+                                    className={clsx(
+                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
+                                        isStartsWith('/customers') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FaUsers className="text-slate-400 w-3.5 h-3.5" />
+                                        <span>{t('nav.customers')}</span>
+                                    </div>
+                                    {dashboardData?.stats?.active_customers > 0 && (
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-sm text-[10px] font-black border border-slate-200">
+                                            {dashboardData.stats.active_customers}
+                                        </span>
+                                    )}
+                                </Link>
+
+                                <Link
+                                    to="/partners"
+                                    className={clsx(
+                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                        isStartsWith('/partners') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FaUserTie className="text-slate-400 w-3.5 h-3.5" />
+                                        <span>{t('nav.partners')}</span>
+                                    </div>
+                                    {dashboardData?.stats?.active_partners > 0 && (
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-sm text-[10px] font-black border border-slate-200">
+                                            {dashboardData.stats.active_partners}
+                                        </span>
+                                    )}
+                                </Link>
+
+                                <Link
+                                    to="/interpreting"
+                                    className={clsx(
+                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                        isStartsWith('/interpreting') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FaCommentDots className="text-slate-400 w-3.5 h-3.5" />
+                                        <span>{t('nav.interpreters')}</span>
+                                    </div>
+                                    {dashboardData?.stats?.active_interpreting > 0 && (
+                                        <span className="bg-brand-primary text-white px-2 py-0.5 rounded-sm text-[10px] font-black shadow-sm">
+                                            {dashboardData.stats.active_interpreting}
+                                        </span>
+                                    )}
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+
+                {/* Kalender */}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Link to="/calendar" className={navLinkClass("/calendar")}>
+                            <FaCalendarAlt className="text-base lg:hidden" />
+                            <span className="hidden lg:inline">{t('nav.calendar')}</span>
+                            <NavBadge count={dashboardData?.stats?.deadlines_today} label="Termine Heute" activeColor="bg-rose-500" />
+                        </Link>
+                    </TooltipTrigger>
+                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
+                        <span className="font-semibold text-sm">{t('nav.calendar')}</span>
+                    </TooltipContent>
+                </Tooltip>
 
                 {/* E-Mail */}
                 {hasMinRole('manager') && (
@@ -318,19 +370,6 @@ const DesktopLinks = ({
                         </TooltipContent>
                     </Tooltip>
                 )}
-
-                {/* Kalender */}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link to="/calendar" className={navLinkClass("/calendar")}>
-                            <FaCalendarAlt className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">{t('nav.calendar')}</span>
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <span className="font-semibold text-sm">{t('nav.calendar')}</span>
-                    </TooltipContent>
-                </Tooltip>
 
                 {/* Einstellungen Dropdown */}
                 {hasMinRole('manager') && (

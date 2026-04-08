@@ -78,7 +78,7 @@ const PortalLayout: React.FC = () => {
               {/* User + Logout */}
               <div className="flex items-center gap-3">
                 <span className="hidden sm:block text-sm text-teal-200 max-w-[160px] truncate">
-                  {customer?.name}
+                  {customer ? (customer.company_name ?? `${customer.first_name} ${customer.last_name}`.trim()) : ''}
                 </span>
                 <button
                   onClick={logout}

@@ -26,7 +26,11 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects: allProjects }
     const itemsPerPage = 5;
 
     // Filter Logic
-    const filteredProjects = allProjects.filter(p => {
+    const activeProjects = allProjects.filter(p =>
+        !['deleted', 'completed', 'archived'].includes(String(p.status || '').toLowerCase())
+    );
+
+    const filteredProjects = activeProjects.filter(p => {
         if (filter === 'all') return true;
         if (filter === 'urgent') {
             if (!p.deadline) return false;

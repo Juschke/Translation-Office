@@ -44,12 +44,14 @@ class Customer extends Model
         'updated_by',
         'portal_access',
         'portal_last_login_at',
+        'password',
     ];
 
     protected $casts = [
         'additional_emails' => 'array',
         'additional_phones' => 'array',
         'payment_terms_days' => 'integer',
+        'password' => 'hashed',
         'portal_access' => 'boolean',
         'portal_token_expires_at' => 'datetime',
         'portal_session_expires_at' => 'datetime',
@@ -84,16 +86,16 @@ class Customer extends Model
     public function isPortalSessionValid(): bool
     {
         return $this->portal_session_token &&
-               $this->portal_session_expires_at &&
-               $this->portal_session_expires_at->isFuture();
+            $this->portal_session_expires_at &&
+            $this->portal_session_expires_at->isFuture();
     }
 
     public function hasValidMagicLink(string $token): bool
     {
         return $this->portal_token &&
-               $this->portal_token_expires_at &&
-               $this->portal_token_expires_at->isFuture() &&
-               hash_equals($this->portal_token, hash('sha256', $token));
+            $this->portal_token_expires_at &&
+            $this->portal_token_expires_at->isFuture() &&
+            hash_equals($this->portal_token, hash('sha256', $token));
     }
 
     protected static function boot()

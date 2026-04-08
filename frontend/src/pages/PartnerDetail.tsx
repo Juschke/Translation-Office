@@ -248,6 +248,35 @@ const PartnerDetail = () => {
                         {/* Statistics Card */}
                         <PartnerStats partnerId={id!} />
 
+                        {/* Portalzugang Card */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <h4 className="text-xs font-medium text-slate-500">Serviceportal</h4>
+                                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${partner.portal_access ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    {partner.portal_access ? 'Aktiviert' : 'Deaktiviert'}
+                                </div>
+                            </div>
+                            <div className="p-6">
+                                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                                    Über das Serviceportal kann der Partner Projekte einsehen, Dateien hochladen und Nachrichten senden.
+                                </p>
+                                <Button
+                                    variant={partner.portal_access ? "secondary" : "default"}
+                                    size="sm"
+                                    className="w-full text-xs"
+                                    onClick={() => updateMutation.mutate({ portal_access: !partner.portal_access })}
+                                    isLoading={updateMutation.isPending}
+                                >
+                                    {partner.portal_access ? 'Portalzugang deaktivieren' : 'Portalzugang aktivieren'}
+                                </Button>
+                                {partner.portal_last_login_at && (
+                                    <div className="mt-4 pt-4 border-t border-slate-100 text-[10px] text-slate-400">
+                                        Letzter Login: {new Date(partner.portal_last_login_at).toLocaleString('de-DE')}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Skills Card */}
                         <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
                             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">

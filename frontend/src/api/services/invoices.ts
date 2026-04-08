@@ -70,3 +70,57 @@ export const invoiceService = {
         return response;
     },
 };
+
+export const dunningService = {
+    getList: async (params?: { customer_id?: number; reminder_level?: number }) => {
+        const response = await api.get('/dunning', { params });
+        return response.data;
+    },
+    sendReminder: async (invoiceId: number, notes?: string) => {
+        const response = await api.post(`/dunning/${invoiceId}/send`, { notes });
+        return response.data;
+    },
+    downloadPdf: async (invoiceId: number, logId: number): Promise<Blob> => {
+        const response = await api.get(`/dunning/${invoiceId}/logs/${logId}/pdf`, { responseType: 'blob' });
+        return response.data;
+    },
+    getSettings: async () => {
+        const response = await api.get('/dunning/settings');
+        return response.data;
+    },
+    updateSettings: async (data: any) => {
+        const response = await api.put('/dunning/settings', data);
+        return response.data;
+    },
+};
+
+export const recurringInvoiceService = {
+    getAll: async () => {
+        const response = await api.get('/recurring-invoices');
+        return response.data;
+    },
+    create: async (data: any) => {
+        const response = await api.post('/recurring-invoices', data);
+        return response.data;
+    },
+    update: async (id: number, data: any) => {
+        const response = await api.put(`/recurring-invoices/${id}`, data);
+        return response.data;
+    },
+    pause: async (id: number) => {
+        const response = await api.post(`/recurring-invoices/${id}/pause`);
+        return response.data;
+    },
+    activate: async (id: number) => {
+        const response = await api.post(`/recurring-invoices/${id}/activate`);
+        return response.data;
+    },
+    delete: async (id: number) => {
+        const response = await api.delete(`/recurring-invoices/${id}`);
+        return response.data;
+    },
+    executeNow: async (id: number) => {
+        const response = await api.post(`/recurring-invoices/${id}/execute-now`);
+        return response.data;
+    },
+};

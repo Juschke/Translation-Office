@@ -12,7 +12,7 @@ const { TextArea } = Input;
 const { Dragger } = Upload;
 
 interface RequestFormValues {
-  title: string;
+  project_name: string;
   source_language: string;
   target_language: string;
   deadline?: any; // dayjs object
@@ -37,7 +37,7 @@ const PortalNewRequest: React.FC = () => {
 
   const handleSubmit = async (values: RequestFormValues) => {
     const formData = new FormData();
-    formData.append('title', values.title);
+    formData.append('project_name', values.project_name);
     formData.append('source_language', values.source_language);
     formData.append('target_language', values.target_language);
     if (values.deadline) {
@@ -72,7 +72,7 @@ const PortalNewRequest: React.FC = () => {
           disabled={mutation.isPending}
         >
           <Form.Item
-            name="title"
+            name="project_name"
             label="Projekttitel"
             rules={[{ required: true, message: 'Bitte geben Sie einen Projekttitel ein.' }]}
           >

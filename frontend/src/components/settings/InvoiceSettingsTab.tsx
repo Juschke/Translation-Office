@@ -164,7 +164,7 @@ const InvoiceSettingsTab = () => {
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-medium border border-slate-100 rounded-sm"><FaFileInvoice /></div>
+                    <FaFileInvoice className="text-brand-primary" />
                     <h3 className="text-sm font-medium text-slate-800">{t('settings.invoice.header')}</h3>
                 </div>
                 <Button

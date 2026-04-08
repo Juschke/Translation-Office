@@ -672,54 +672,101 @@ const Reports = () => {
                                 )}
 
                                 {financeSubTab === 'opos' && (
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
-                                                <th className="px-5 py-3">Rechnungs-Nr.</th>
-                                                <th className="px-5 py-3">Kunde</th>
-                                                <th className="px-5 py-3">Datum</th>
-                                                <th className="px-5 py-3">Fällig am</th>
-                                                <th className="px-5 py-3 text-right">Betrag (Brutto)</th>
-                                                <th className="px-5 py-3 text-right">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {oposData?.map((row: any) => (
-                                                <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-5 py-3 text-xs font-semibold text-slate-900">{row.invoice_number}</td>
-                                                    <td className="px-5 py-3 text-xs font-medium text-slate-700">{row.customer}</td>
-                                                    <td className="px-5 py-3 text-xs text-slate-500">{row.date}</td>
-                                                    <td className="px-5 py-3 text-xs text-slate-500">
-                                                        <span className={clsx(row.overdue && "text-red-500 font-bold")}>{row.due_date}</span>
-                                                        {row.overdue && <span className="ml-2 text-[10px] text-red-500">({row.days_overdue} Tage drüber)</span>}
-                                                    </td>
-                                                    <td className="px-5 py-3 text-xs font-semibold text-slate-900 text-right tabular-nums">{fmtNum(row.amount_gross)}</td>
-                                                    <td className="px-5 py-3 text-right">
-                                                        <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-sm bg-slate-100 text-slate-500">
-                                                            {row.status === 'issued' ? t('reports.invoice_issued') : row.status === 'overdue' ? t('reports.invoice_overdue') : row.status}
-                                                        </span>
-                                                    </td>
+                                    <div className="space-y-4 p-4">
+                                        {/* Aging-Bucket KPI-Karten */}
+                                        {oposData?.buckets && (
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+                                                {[
+                                                    { key: '0_30', label: '0–30 Tage', color: 'text-amber-600', bg: 'bg-amber-50' },
+                                                    { key: '31_60', label: '31–60 Tage', color: 'text-orange-600', bg: 'bg-orange-50' },
+                                                    { key: '61_90', label: '61–90 Tage', color: 'text-red-500', bg: 'bg-red-50' },
+                                                    { key: '90plus', label: '90+ Tage', color: 'text-red-700', bg: 'bg-red-100' },
+                                                ].map(({ key, label, color, bg }) => (
+                                                    <div key={key} className={`rounded-xl border border-slate-200 ${bg} p-4`}>
+                                                        <div className={`text-xs font-bold uppercase tracking-wide ${color} mb-1`}>{label}</div>
+                                                        <div className={`text-xl font-bold ${color} tabular-nums`}>{fmt(oposData.buckets[key]?.amount ?? 0)}</div>
+                                                        <div className="text-xs text-slate-500 mt-0.5">{oposData.buckets[key]?.count ?? 0} Rechnungen</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {/* CSV-Export */}
+                                        <div className="flex justify-end">
+                                            <Button variant="outline" className="text-xs h-8" onClick={async () => {
+                                                try {
+                                                    const blob = await reportService.exportOposReport();
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = `OPO_Export_${new Date().toISOString().slice(0,10)}.csv`;
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                } catch {}
+                                            }}>
+                                                CSV exportieren
+                                            </Button>
+                                        </div>
+                                        {/* Tabelle */}
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                                                    <th className="px-5 py-3">Rechnungs-Nr.</th>
+                                                    <th className="px-5 py-3">Kunde</th>
+                                                    <th className="px-5 py-3">Datum</th>
+                                                    <th className="px-5 py-3">Fällig am</th>
+                                                    <th className="px-5 py-3 text-right">Offen</th>
+                                                    <th className="px-5 py-3 text-center">Mahnstufe</th>
+                                                    <th className="px-5 py-3 text-right">Status</th>
                                                 </tr>
-                                            ))}
-                                            {(!oposData || oposData.length === 0) && (
-                                                <tr>
-                                                    <td colSpan={6} className="px-5 py-10 text-center text-slate-400 text-sm">Keine offenen Posten gefunden.</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        {oposData && oposData.length > 0 && (() => {
-                                            const total = oposData.reduce((a: number, r: any) => a + (r.amount_gross ?? 0), 0);
-                                            return (
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {oposData?.data?.map((row: any) => (
+                                                    <tr key={row.id} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="px-5 py-3 text-xs font-semibold text-slate-900">{row.invoice_number}</td>
+                                                        <td className="px-5 py-3 text-xs font-medium text-slate-700">{row.customer}</td>
+                                                        <td className="px-5 py-3 text-xs text-slate-500">{row.date}</td>
+                                                        <td className="px-5 py-3 text-xs text-slate-500">
+                                                            <span className={clsx(row.days_overdue > 0 && "text-red-500 font-bold")}>{row.due_date}</span>
+                                                            {row.days_overdue > 0 && <span className="ml-1 text-[10px] text-red-400">({row.days_overdue}d)</span>}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-xs font-semibold text-slate-900 text-right tabular-nums">{fmtNum(row.amount_due)}</td>
+                                                        <td className="px-5 py-3 text-center">
+                                                            {row.reminder_level > 0 ? (
+                                                                <span className={clsx(
+                                                                    "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                                                    row.reminder_level === 1 && "bg-amber-100 text-amber-700",
+                                                                    row.reminder_level === 2 && "bg-orange-100 text-orange-700",
+                                                                    row.reminder_level >= 3 && "bg-red-100 text-red-700",
+                                                                )}>Stufe {row.reminder_level}</span>
+                                                            ) : <span className="text-slate-300 text-xs">—</span>}
+                                                        </td>
+                                                        <td className="px-5 py-3 text-right">
+                                                            <span className={clsx(
+                                                                "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-sm",
+                                                                row.status === 'overdue' ? "bg-red-50 text-red-500" : "bg-slate-100 text-slate-500"
+                                                            )}>
+                                                                {row.status === 'issued' ? 'Ausgestellt' : row.status === 'overdue' ? 'Überfällig' : row.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {(!oposData?.data || oposData.data.length === 0) && (
+                                                    <tr>
+                                                        <td colSpan={7} className="px-5 py-10 text-center text-slate-400 text-sm">Keine offenen Posten gefunden.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                            {oposData?.total?.amount > 0 && (
                                                 <tfoot className="bg-slate-900 text-white font-semibold text-xs">
                                                     <tr>
-                                                        <td colSpan={4} className="px-5 py-3">Gesamt ausstehend</td>
-                                                        <td className="px-5 py-3 text-right bg-slate-900">{fmtNum(total)}</td>
-                                                        <td></td>
+                                                        <td colSpan={4} className="px-5 py-3">Gesamt ausstehend ({oposData.total.count} Rechnungen)</td>
+                                                        <td className="px-5 py-3 text-right tabular-nums">{fmtNum(oposData.total.amount)}</td>
+                                                        <td colSpan={2}></td>
                                                     </tr>
                                                 </tfoot>
-                                            );
-                                        })()}
-                                    </table>
+                                            )}
+                                        </table>
+                                    </div>
                                 )}
 
                                 {financeSubTab === 'bwa' && (

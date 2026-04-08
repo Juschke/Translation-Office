@@ -58,6 +58,18 @@ const PartnerInternalSection = ({ formData, updateFormData }: PartnerInternalSec
                     helperText="Informationen werden nicht an den Partner kommuniziert"
                 />
             </div>
+            <div className="col-span-2 flex items-center gap-2 p-4 bg-slate-50 border border-slate-200 rounded-sm">
+                <input
+                    type="checkbox"
+                    id="portal_access"
+                    checked={formData.portal_access || false}
+                    onChange={(e) => updateFormData({ portal_access: e.target.checked })}
+                    className="w-4 h-4 text-brand-primary border-slate-300 rounded focus:ring-brand-primary"
+                />
+                <label htmlFor="portal_access" className="text-xs font-medium text-slate-700 cursor-pointer">
+                    Portalzugang für diesen Partner aktivieren
+                </label>
+            </div>
         </div>
     </div>
 );

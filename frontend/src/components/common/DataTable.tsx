@@ -69,21 +69,19 @@ const ALL_SENTINEL = 9_999_999;
 
 // ── Inline BulkAction button with Bootstrap Skeuomorphism ──
 const variantStyles: Record<BulkActionVariant, string> = {
-    default: 'bg-gradient-to-b from-white to-[#ebebeb] text-[#444] border-[#ccc] hover:border-[#adadad] hover:text-[#1B4D4F]',
-    primary: 'bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#2a7073] hover:to-[#235e62]',
-    danger: 'bg-gradient-to-b from-white to-[#ebebeb] text-red-600 border-[#ccc] hover:border-red-300 hover:bg-red-50',
-    dangerSolid: 'bg-gradient-to-b from-[#e05050] to-[#c9302c] text-white border-[#9c2320] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#e85555]',
-    success: 'bg-gradient-to-b from-[#62bb62] to-[#449d44] text-white border-[#398439] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#6ec86e]',
-    warning: 'bg-gradient-to-b from-[#f5b85a] to-[#ec971f] text-white border-[#d58512] [text-shadow:0_-1px_0_rgba(0,0,0,0.2)] hover:from-[#f7c168]',
+    default: 'bg-white text-slate-600 border-slate-300 hover:border-slate-400 hover:text-[#1B4D4F]',
+    primary: 'bg-[#1B4D4F] text-white border-[#123a3c] hover:bg-[#235e62]',
+    danger: 'bg-white text-red-600 border-slate-300 hover:border-red-300 hover:bg-red-50',
+    dangerSolid: 'bg-red-600 text-white border-red-700 hover:bg-red-700',
+    success: 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700',
+    warning: 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600',
 };
 
 const BulkActionBtn = ({ label, icon, onClick, variant = 'default' }: BulkActionItem) => (
     <button
         onClick={onClick}
         className={clsx(
-            'px-2.5 py-1 rounded-[3px] text-xs font-semibold transition flex items-center gap-1.5 border [&_svg]:text-[11px]',
-            'shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_1px_rgba(0,0,0,0.09)]',
-            'active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)]',
+            'px-2.5 py-1 rounded-sm text-xs font-semibold transition-colors flex items-center gap-1.5 border [&_svg]:text-[11px]',
             variantStyles[variant] ?? variantStyles.default
         )}
     >

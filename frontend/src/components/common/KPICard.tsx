@@ -1,4 +1,5 @@
 import React, { type ReactNode } from 'react';
+import clsx from 'clsx';
 
 interface KPICardProps {
     label: string;
@@ -15,6 +16,7 @@ interface KPICardProps {
     progress?: number;
     progressColor?: string;
     onClick?: () => void;
+    className?: string;
 }
 
 const KPICard: React.FC<KPICardProps> = ({
@@ -27,12 +29,13 @@ const KPICard: React.FC<KPICardProps> = ({
     trend,
     progress,
     progressColor = 'bg-slate-900',
-    onClick
+    onClick,
+    className
 }) => {
     return (
         <div
             onClick={onClick}
-            className={`bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm transition-all ${onClick ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+            className={clsx(`bg-white px-4 py-3 rounded-md border border-slate-200 shadow-sm transition-colors ${onClick ? 'cursor-pointer hover:bg-slate-50' : ''}`, className)}
         >
             <div className="flex justify-between items-center gap-2">
                 <div className="min-w-0">
@@ -47,7 +50,7 @@ const KPICard: React.FC<KPICardProps> = ({
                     </div>
                     {subValue && <p className="text-[11px] text-slate-400 mt-0.5">{subValue}</p>}
                 </div>
-                <div className={`${iconColor} ${iconBg} text-sm shrink-0 w-8 h-8 rounded-full flex items-center justify-center`}>
+                <div className={`${iconColor} ${iconBg} text-sm shrink-0 w-8 h-8 rounded flex items-center justify-center`}>
                     {icon}
                 </div>
             </div>

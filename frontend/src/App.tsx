@@ -33,6 +33,9 @@ import Calendar from './pages/Calendar';
 import Interpreting from './pages/Interpreting';
 import Documents from './pages/Documents';
 import EmailSendPage from './pages/EmailSendPage';
+import FilePreviewPage from './pages/FilePreviewPage';
+import Dunning from './pages/Dunning';
+import RecurringInvoices from './pages/RecurringInvoices';
 
 
 
@@ -65,6 +68,7 @@ function App() {
                     <Routes>
                         {/* Public Routes */}
                         <Route path="/guest/project/:token" element={<GuestProjectView />} />
+                        <Route path="/file-preview" element={<FilePreviewPage />} />
                         <Route path="/verify-email" element={<VerifyEmail />} />
                         <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
                         <Route path="/login" element={<Navigate to="/auth" replace />} />
@@ -104,6 +108,8 @@ function App() {
                             <Route path="/invoices" element={<RoleGuard minRole="manager"><Invoices /></RoleGuard>} />
                             <Route path="/invoices/new" element={<RoleGuard minRole="manager"><NewInvoice /></RoleGuard>} />
                             <Route path="/invoices/:id/edit" element={<RoleGuard minRole="manager"><NewInvoice /></RoleGuard>} />
+                            <Route path="/dunning" element={<RoleGuard minRole="manager"><Dunning /></RoleGuard>} />
+                            <Route path="/recurring-invoices" element={<RoleGuard minRole="manager"><RecurringInvoices /></RoleGuard>} />
                             <Route path="/inbox" element={<RoleGuard minRole="manager"><Inbox /></RoleGuard>} />
                             <Route path="/reports" element={<RoleGuard minRole="manager"><Reports /></RoleGuard>} />
                             <Route path="/notifications" element={<Notifications />} />
@@ -116,7 +122,7 @@ function App() {
 
                         {/* Portal Routes — public */}
                         <Route path="/portal/login" element={<PortalLogin />} />
-                        <Route path="/portal/verify" element={
+                        <Route path="/portal/verify/:token" element={
                             <PortalProvider>
                                 <PortalVerify />
                             </PortalProvider>

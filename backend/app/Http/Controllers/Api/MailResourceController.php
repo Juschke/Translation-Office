@@ -115,4 +115,50 @@ class MailResourceController extends Controller
         return response()->json(null, 204);
     }
 
+    // Signatures
+    public function getSignatures()
+    {
+        return response()->json(\App\Models\MailSignature::all());
+    }
+
+    public function storeSignature(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'content' => 'required|string',
+            'is_default' => 'boolean',
+            'mail_account_id' => 'nullable|exists:mail_accounts,id',
+        ]);
+
+        if ($validated['is_default'] ?? false) {
+            \App\Models\MailSignature::where('is_default', true)->update(['is_default' => false]);
+        }
+
+        $signature = \App\Models\MailSignature::create($validated);
+        return response()->json($signature, 201);
+    }
+
+    public function updateSignature(Request $request, $id)
+    {
+        $signature = \App\Models\MailSignature::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'content' => 'required|string',
+            'is_default' => 'boolean',
+            'mail_account_id' => 'nullable|exists:mail_accounts,id',
+        ]);
+
+        if ($validated['is_default'] ?? false) {
+            \App\Models\MailSignature::where('id', '!=', $id)->update(['is_default' => false]);
+        }
+
+        $signature->update($validated);
+        return response()->json($signature);
+    }
+
+    public function deleteSignature($id)
+    {
+        \App\Models\MailSignature::destroy($id);
+        return response()->json(null, 204);
+    }
 }

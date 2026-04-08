@@ -12,6 +12,7 @@ import {
     AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -65,8 +66,14 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     {children}
                 </div>
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={onClose} disabled={isLoading}>
-                        {activeCancelLabel}
+                    <AlertDialogCancel asChild>
+                        <Button
+                            variant="secondary"
+                            onClick={onClose}
+                            disabled={isLoading}
+                        >
+                            {activeCancelLabel}
+                        </Button>
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={(e) => {

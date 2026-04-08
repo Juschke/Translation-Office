@@ -6,7 +6,7 @@ import { Button } from '../ui/button';
 import { useTranslation } from 'react-i18next';
 
 interface SearchableSelectProps {
-    options: { value: string; label: string; icon?: string; group?: string }[];
+    options: { value: string; label: string; icon?: React.ReactNode; group?: string }[];
     value: string | string[];
     onChange: (value: any) => void;
     placeholder?: string;
@@ -270,7 +270,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                                             {isSelected && <FaCheck className="text-white text-[9px]" />}
                                                         </div>
                                                     )}
-                                                    {opt.icon && <img src={opt.icon} className="w-5 h-3.5 object-cover shrink-0 shadow-sm" alt="" />}
+                                                    {opt.icon && <span className="shrink-0 text-slate-400">{opt.icon}</span>}
                                                     <span className={clsx(isSelected && !isMulti && "font-semibold text-brand-primary")}>
                                                         {opt.label}
                                                     </span>
@@ -312,7 +312,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                                         {isSelected && <FaCheck className="text-white text-[9px]" />}
                                                     </div>
                                                 )}
-                                                {opt.icon && <img src={opt.icon} className="w-5 h-3.5 object-cover shrink-0 shadow-sm" alt="" />}
+                                                {opt.icon && <span className="shrink-0 text-slate-400">{opt.icon}</span>}
                                                 <span className={clsx(isSelected && !isMulti && "font-semibold text-brand-primary")}>
                                                     {opt.label}
                                                 </span>
@@ -381,7 +381,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                         "flex items-center gap-1",
                                         isMulti ? "bg-brand-accent/10 border border-brand-accent/20 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-brand-text whitespace-nowrap" : "text-brand-text font-normal"
                                     )}>
-                                        {opt.icon && <img src={opt.icon} className="w-4 h-3 object-cover shrink-0 shadow-sm" alt="" />}
+                                        {opt.icon && <span className="shrink-0 text-slate-400">{opt.icon}</span>}
                                         <span className="truncate">{opt.label}</span>
                                         {isMulti && (
                                             <FaTimes

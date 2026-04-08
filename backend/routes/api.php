@@ -121,6 +121,23 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/reports/profitability', [\App\Http\Controllers\Api\ReportController::class, 'detailedProfitability']);
         Route::get('/reports/opos', [\App\Http\Controllers\Api\ReportController::class, 'oposReport']);
         Route::get('/reports/bwa', [\App\Http\Controllers\Api\ReportController::class, 'bwaReport']);
+        Route::get('/reports/opos/export', [\App\Http\Controllers\Api\FinanceExportController::class, 'exportOpos']);
+
+        // Mahnwesen (Dunning)
+        Route::get('/dunning', [\App\Http\Controllers\Api\DunningController::class, 'index']);
+        Route::post('/dunning/{invoice}/send', [\App\Http\Controllers\Api\DunningController::class, 'sendReminder']);
+        Route::get('/dunning/{invoice}/logs/{log}/pdf', [\App\Http\Controllers\Api\DunningController::class, 'downloadDunningPdf']);
+        Route::get('/dunning/settings', [\App\Http\Controllers\Api\DunningController::class, 'getSettings']);
+        Route::put('/dunning/settings', [\App\Http\Controllers\Api\DunningController::class, 'updateSettings']);
+
+        // Wiederkehrende Rechnungen
+        Route::get('/recurring-invoices', [\App\Http\Controllers\Api\RecurringInvoiceController::class, 'index']);
+        Route::post('/recurring-invoices', [\App\Http\Controllers\Api\RecurringInvoiceController::class, 'store']);
+        Route::put('/recurring-invoices/{recurringInvoice}', [\App\Http\Controllers\Api\RecurringInvoiceController::class, 'update']);
+        Route::delete('/recurring-invoices/{recurringInvoice}', [\App\Http\Controllers\Api\RecurringInvoiceController::class, 'destroy']);
+        Route::post('/recurring-invoices/{recurringInvoice}/pause', [\App\Http\Controllers\Api\RecurringInvoiceController::class, 'pause']);
+        Route::post('/recurring-invoices/{recurringInvoice}/activate', [\App\Http\Controllers\Api\RecurringInvoiceController::class, 'activate']);
+        Route::post('/recurring-invoices/{recurringInvoice}/execute-now', [\App\Http\Controllers\Api\RecurringInvoiceController::class, 'executeNow']);
 
 
 
@@ -130,6 +147,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('mails/sync', [\App\Http\Controllers\Api\MailController::class, 'sync']);
         Route::post('mails/bulk-delete', [\App\Http\Controllers\Api\MailController::class, 'bulkDelete']);
         Route::post('mails/bulk-restore', [\App\Http\Controllers\Api\MailController::class, 'bulkRestore']);
+        Route::post('mails/bulk-archive', [\App\Http\Controllers\Api\MailController::class, 'bulkArchive']);
+        Route::post('mails/bulk-unarchive', [\App\Http\Controllers\Api\MailController::class, 'bulkUnarchive']);
         Route::post('mails/{id}/read', [\App\Http\Controllers\Api\MailController::class, 'markAsRead']);
         Route::delete('mails/{id}', [\App\Http\Controllers\Api\MailController::class, 'destroy']);
 
@@ -142,6 +161,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('mail/templates', [\App\Http\Controllers\Api\MailResourceController::class, 'storeTemplate']);
         Route::put('mail/templates/{id}', [\App\Http\Controllers\Api\MailResourceController::class, 'updateTemplate']);
         Route::delete('mail/templates/{id}', [\App\Http\Controllers\Api\MailResourceController::class, 'deleteTemplate']);
+
+        Route::get('mail/signatures', [\App\Http\Controllers\Api\MailResourceController::class, 'getSignatures']);
+        Route::post('mail/signatures', [\App\Http\Controllers\Api\MailResourceController::class, 'storeSignature']);
+        Route::put('mail/signatures/{id}', [\App\Http\Controllers\Api\MailResourceController::class, 'updateSignature']);
+        Route::delete('mail/signatures/{id}', [\App\Http\Controllers\Api\MailResourceController::class, 'deleteSignature']);
 
         // Partner management
         Route::apiResource('partners', App\Http\Controllers\Api\PartnerController::class);
@@ -173,6 +197,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::put('projects/{project}/files/{file}', [\App\Http\Controllers\Api\ProjectFileController::class, 'update']);
     Route::get('projects/{project}/files/{file}/download', [\App\Http\Controllers\Api\ProjectFileController::class, 'download']);
     Route::post('projects/{project}/files/bulk-update', [\App\Http\Controllers\Api\ProjectFileController::class, 'bulkUpdate']);
+    Route::post('projects/{project}/files/bulk-delete', [\App\Http\Controllers\Api\ProjectFileController::class, 'bulkDestroy']);
     Route::get('projects/{project}/files/download-zip', [\App\Http\Controllers\Api\ProjectFileController::class, 'downloadZip']);
     Route::apiResource('projects', \App\Http\Controllers\Api\ProjectController::class);
     Route::post('projects/{project}/invite', [\App\Http\Controllers\Api\ProjectController::class, 'inviteParticipant']);
@@ -196,8 +221,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 });
 
 // ── Customer Portal ────────────────────────────────────────────────────────
-// Public: Magic Link Auth
+// Public: Auth
 Route::prefix('portal')->group(function () {
+    Route::post('auth/login', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'login']);
     Route::post('auth/request-link', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'requestMagicLink']);
     Route::get('auth/verify/{token}', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'verifyMagicLink']);
 });

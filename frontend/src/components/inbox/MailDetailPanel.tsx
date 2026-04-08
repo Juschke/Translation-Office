@@ -1,62 +1,79 @@
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
 import { FaTimes, FaReply, FaForward, FaTrashAlt, FaPaperclip, FaFileAlt } from 'react-icons/fa';
-import { ScrollArea, Separator } from '../ui';
+import { ScrollArea, Button } from '../ui';
 
 interface MailDetailPanelProps {
     mail: any;
     onClose: () => void;
-    onReply: (mail: any) => void;
-    onForward: (mail: any) => void;
     onDelete: (id: any) => void;
 }
 
-const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDetailPanelProps) => {
-    const { t } = useTranslation();
+const MailDetailPanel = ({ mail, onClose, onDelete }: MailDetailPanelProps) => {
+    const { } = useTranslation();
     if (!mail) return null;
+
+    const handleAction = (type: 'reply' | 'forward') => {
+        const sid = `compose_${Date.now()}`;
+        const data: any = {
+            subject: type === 'reply' ? `Re: ${mail.subject}` : `Fwd: ${mail.subject}`,
+            to: type === 'reply' ? mail.from : '',
+            body: `\n\n--- Ursprüngliche Nachricht ---\nVon: ${mail.from}\nGesendet: ${mail.full_time}\nAn: ${mail.to_emails?.join(', ') || mail.target_email}\nBetreff: ${mail.subject}\n\n${mail.body}`,
+            projectId: mail.project_id
+        };
+
+        // Attachments only for forward
+        if (type === 'forward' && mail.attachments) {
+            data.attachments = mail.attachments;
+        }
+
+        localStorage.setItem(sid, JSON.stringify(data));
+        window.open(`/email/send?sid=${sid}`, `compose_${sid}`, 'width=1250,height=850,scrollbars=yes');
+    };
 
     return (
         <div className="h-full flex flex-col bg-white overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
             {/* Header / Toolbar */}
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
-                <div className="flex items-center gap-1">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10 shrink-0">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={onClose}
                         className="md:hidden p-2 -ml-2 text-slate-400 hover:text-slate-900 transition"
                     >
                         <FaTimes size={16} />
                     </button>
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            onClick={() => onReply(mail)}
-                            className="h-8 px-3 text-xs font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-brand-primary active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
+                    <div className="hidden lg:flex items-center gap-1.5 ml-4 pl-0">
+                        <Button
+                            variant="secondary"
+                            onClick={() => handleAction('reply')}
+                            className="h-8 px-3 text-[10px] font-bold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#f5f5f5] text-slate-600 hover:border-[#adadad] hover:text-slate-900 active:bg-slate-100 transition flex items-center gap-1.5 uppercase tracking-tight shadow-sm"
                         >
-                            <FaReply size={10} /> Antworten
-                        </button>
-                        <button
-                            onClick={() => onForward(mail)}
-                            className="h-8 px-3 text-xs font-semibold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#ebebeb] text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_1px_rgba(0,0,0,0.08)] hover:border-[#adadad] hover:text-brand-primary active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.1)] transition flex items-center gap-1.5 uppercase tracking-tight"
+                            <FaReply size={9} /> Antworten
+                        </Button>
+                        <Button
+                            onClick={() => handleAction('forward')}
+                            className="h-8 px-4 text-[10px] font-bold rounded-[3px] border border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white hover:from-[#2a7073] hover:to-[#235e62] active:shadow-inner transition flex items-center gap-1.5 uppercase tracking-tight shadow-md"
                         >
-                            <FaForward size={10} /> Weiterleiten
-                        </button>
+                            <FaForward size={9} /> Weiterleiten
+                        </Button>
                     </div>
                 </div>
-                <div className="flex items-center gap-1">
-                    <button
+                <div className="flex items-center gap-0">
+                    <Button
+                        variant="ghost"
                         onClick={() => onDelete(mail.id)}
-                        className="p-2 text-slate-300 hover:text-red-500 transition rounded-sm"
-                        title={t('actions.delete')}
+                        className="h-8 px-3 text-[10px] font-bold rounded-[3px] border border-[#ccc] bg-gradient-to-b text-slate-600  hover:text-red-600 transition flex items-center gap-1.5 uppercase tracking-tight shadow-sm"
                     >
-                        <FaTrashAlt size={14} />
-                    </button>
-                    <div className="hidden md:block w-[1px] h-4 bg-slate-100 mx-2" />
-                    <button
+                        <FaTrashAlt size={9} /> Löschen
+                    </Button>
+                    <div className="hidden md:block w-[1px] h-4 bg-slate-200 mx-1" />
+                    <Button
+                        variant="ghost"
                         onClick={onClose}
-                        className="hidden md:block p-2 text-slate-300 hover:text-slate-900 transition rounded-sm"
-                        title="Schließen"
+                        className="h-8 px-3 text-[10px] font-bold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#f5f5f5] text-slate-600 hover:border-[#adadad] hover:text-slate-900 hover:bg-slate-50 transition flex items-center gap-1.5 uppercase tracking-tight shadow-sm"
                     >
-                        <FaTimes size={18} />
-                    </button>
+                        Schließen <FaTimes size={9} />
+                    </Button>
                 </div>
             </div>
 
@@ -69,16 +86,16 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                         </h2>
 
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-sm bg-brand-primary text-white flex items-center justify-center font-bold text-sm shrink-0 mt-1 shadow-sm border border-brand-primary/80">
-                                {mail.from.charAt(0).toUpperCase()}
+                            <div className="w-10 h-10 rounded-sm bg-brand-amary text-white flex items-center justify-center font-bold text-sm shrink-0 mt-1">
+                                {mail.from?.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 mb-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm font-bold text-slate-900 truncate">{mail.from}</span>
                                         <span className="text-xs text-slate-400 font-medium uppercase tracking-widest hidden sm:inline">
                                             VON
                                         </span>
+                                        <span className="text-sm font-bold text-slate-900 truncate">{mail.from}</span>
                                     </div>
                                     <span className="text-[11px] font-bold text-slate-400 font-mono tracking-tight uppercase">
                                         {mail.full_time}
@@ -94,7 +111,6 @@ const MailDetailPanel = ({ mail, onClose, onReply, onForward, onDelete }: MailDe
                         </div>
                     </div>
 
-                    <Separator className="bg-slate-100 my-8 opacity-50" />
 
                     {/* Body */}
                     <div className="email-body-container">

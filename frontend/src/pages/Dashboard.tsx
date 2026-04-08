@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/button';
 import {
     FaLayerGroup, FaClock, FaEuroSign, FaEnvelope, FaPlus, FaUserPlus, FaHandshake,
-    FaFileAlt, FaPaperPlane, FaSpinner, FaSearch, FaBoxOpen, FaTruck, FaCheckCircle,
-    FaFileInvoiceDollar, FaChevronRight
 } from 'react-icons/fa';
 import NewCustomerModal from '../components/modals/NewCustomerModal';
 import NewPartnerModal from '../components/modals/NewPartnerModal';
@@ -188,172 +186,6 @@ const Dashboard = () => {
                     />
                 </div>
 
-                {/* Zeile 2: Auftrags-Pipeline */}
-                {(() => {
-                    const stages = [
-                        {
-                            keys: ['draft', 'offer', 'quote_sent'],
-                            label: 'Angebot',
-                            icon: <FaFileAlt />,
-                            bg: 'bg-slate-50',
-                            iconBg: 'bg-slate-200',
-                            iconColor: 'text-slate-500',
-                            textColor: 'text-slate-700',
-                            border: 'border-slate-200',
-                            checklist: [
-                                'Kundenwunsch & Dokumente aufnehmen',
-                                'Angebot kalkulieren & erstellen',
-                                'Angebot per E-Mail versenden',
-                                'Auf Bestätigung des Kunden warten',
-                            ],
-                        },
-                        {
-                            keys: ['pending'],
-                            label: 'Vorbereitung',
-                            icon: <FaClock />,
-                            bg: 'bg-amber-50',
-                            iconBg: 'bg-amber-100',
-                            iconColor: 'text-amber-600',
-                            textColor: 'text-amber-800',
-                            border: 'border-amber-200',
-                            checklist: [
-                                'Auftragsbestätigung erhalten',
-                                'Originaldokumente hochladen',
-                                'Übersetzer auswählen & zuweisen',
-                                'Auftrag an Übersetzer weiterleiten',
-                            ],
-                        },
-                        {
-                            keys: ['in_progress'],
-                            label: 'In Bearbeitung',
-                            icon: <FaSpinner />,
-                            bg: 'bg-indigo-50',
-                            iconBg: 'bg-indigo-100',
-                            iconColor: 'text-indigo-600',
-                            textColor: 'text-indigo-800',
-                            border: 'border-indigo-200',
-                            checklist: [
-                                'Übersetzer hat Auftrag angenommen',
-                                'Übersetzung wird bearbeitet',
-                                'Auf Rücksendung des Übersetzers warten',
-                            ],
-                        },
-                        {
-                            keys: ['review', 'ready_for_pickup'],
-                            label: 'Prüfung & Freigabe',
-                            icon: <FaSearch />,
-                            bg: 'bg-violet-50',
-                            iconBg: 'bg-violet-100',
-                            iconColor: 'text-violet-600',
-                            textColor: 'text-violet-800',
-                            border: 'border-violet-200',
-                            checklist: [
-                                'Übersetzung eingegangen & geprüft',
-                                'Qualität & Vollständigkeit sicherstellen',
-                                'Ggf. Beglaubigung / Stempel anbringen',
-                                'Freigabe für Lieferung erteilen',
-                            ],
-                        },
-                        {
-                            keys: ['delivered'],
-                            label: 'Geliefert',
-                            icon: <FaTruck />,
-                            bg: 'bg-teal-50',
-                            iconBg: 'bg-teal-100',
-                            iconColor: 'text-teal-600',
-                            textColor: 'text-teal-800',
-                            border: 'border-teal-200',
-                            checklist: [
-                                'Dokument an Kunden übergeben / versendet',
-                                'Zustellung bestätigen',
-                                'Kundenzufriedenheit erfragen',
-                            ],
-                        },
-                        {
-                            keys: ['invoiced'],
-                            label: 'Rechnung gestellt',
-                            icon: <FaFileInvoiceDollar />,
-                            bg: 'bg-orange-50',
-                            iconBg: 'bg-orange-100',
-                            iconColor: 'text-orange-600',
-                            textColor: 'text-orange-800',
-                            border: 'border-orange-200',
-                            checklist: [
-                                'Rechnung im System erstellen',
-                                'Rechnung an Kunden versenden',
-                                'Zahlungseingang überwachen',
-                                'Bei Ausbleiben: Mahnung versenden',
-                            ],
-                        },
-                        {
-                            keys: ['completed'],
-                            label: 'Abgeschlossen',
-                            icon: <FaCheckCircle />,
-                            bg: 'bg-emerald-50',
-                            iconBg: 'bg-emerald-500',
-                            iconColor: 'text-white',
-                            textColor: 'text-emerald-800',
-                            border: 'border-emerald-200',
-                            checklist: [
-                                'Zahlungseingang verbucht',
-                                'Auftrag als abgeschlossen markieren',
-                                'Unterlagen archivieren',
-                            ],
-                        },
-                    ];
-                    const counts: Record<string, number> = {};
-                    allProjects.forEach((p: any) => {
-                        if (p.status) counts[p.status] = (counts[p.status] || 0) + 1;
-                    });
-                    const total = Object.values(counts).reduce((a, b) => a + b, 0);
-                    return (
-                        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Auftrags-Pipeline</span>
-                                <span className="text-xs text-slate-400 tabular-nums">{total} Aufträge gesamt</span>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7">
-                                {stages.map((stage, i) => {
-                                    const count = stage.keys.reduce((s, k) => s + (counts[k] || 0), 0);
-                                    const navKey = stage.keys[0];
-                                    return (
-                                        <div
-                                            key={navKey}
-                                            onClick={() => navigate(`/projects?status=${navKey}`)}
-                                            className={`${stage.bg} relative flex flex-col items-start justify-start px-3 pt-4 pb-4 gap-2 cursor-pointer hover:brightness-95 transition-all group border-r ${stage.border} last:border-r-0`}
-                                        >
-                                            {/* Pfeil */}
-                                            {i < stages.length - 1 && (
-                                                <FaChevronRight className="absolute -right-2 top-5 text-slate-300 text-[10px] z-10 hidden lg:block" />
-                                            )}
-                                            {/* Icon + Zahl nebeneinander */}
-                                            <div className="flex items-center gap-2 w-full">
-                                                <div className={`w-7 h-7 rounded-full ${stage.iconBg} flex items-center justify-center text-xs ${stage.iconColor} shrink-0`}>
-                                                    {stage.icon}
-                                                </div>
-                                                <span className={`text-2xl font-bold tabular-nums leading-none ${stage.textColor}`}>
-                                                    {count}
-                                                </span>
-                                            </div>
-                                            {/* Label */}
-                                            <p className={`text-[11px] font-bold leading-tight ${stage.textColor}`}>{stage.label}</p>
-                                            {/* Checkliste direkt sichtbar */}
-                                            <ol className="space-y-1 w-full">
-                                                {stage.checklist.map((item, idx) => (
-                                                    <li key={idx} className={`flex items-start gap-1.5 text-[10px] leading-tight ${stage.textColor} opacity-60`}>
-                                                        <span className="shrink-0 font-bold">{idx + 1}.</span>
-                                                        {item}
-                                                    </li>
-                                                ))}
-                                            </ol>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    );
-                })()}
-
                 {/* Zeile 2: 4 Listen-Widgets in 2×2 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6" style={{ minHeight: '280px' }}>
                     <ActiveTasksTable tasks={activeTasks} />
@@ -384,3 +216,12 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
+
+
+
+
+
+
+

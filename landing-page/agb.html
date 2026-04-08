@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Allgemeine Geschäftsbedingungen — TranslationOffice</title>
-    <meta name="description" content="Allgemeine Geschäftsbedingungen (AGB) von TranslationOffice GmbH">
+    <title>AGB - TranslationOffice</title>
+    <meta name="description" content="Allgemeine Geschaeftsbedingungen fuer die Nutzung von TranslationOffice.">
     <meta name="robots" content="index, follow">
-
-    <!-- Tailwind CSS CDN -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Custom Tailwind Config -->
     <script>
         tailwind.config = {
             theme: {
@@ -18,236 +15,218 @@
                     colors: {
                         primary: '#1B4D4F',
                         'primary-dark': '#143A3C',
+                        accent: '#B49765',
+                        sand: '#F5F0E7',
+                        ink: '#172423'
                     }
                 }
             }
         }
     </script>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="bg-white text-gray-900">
-
-    <!-- Navigation -->
-    <nav id="navbar" class="fixed w-full bg-white border-b border-gray-200 z-100 transition-all duration-300">
+<body class="bg-stone-50 text-ink">
+    <nav id="navbar" class="fixed top-0 w-full bg-white/95 backdrop-blur border-b border-stone-200 z-50 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
-                <a href="index.html" class="flex items-center gap-2">
-                    <svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948-.684l1.498-4.493a1 1 0 011.502-.684l1.498 4.493a1 1 0 00.948.684H19a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
-                    </svg>
-                    <span class="text-xl font-bold text-primary hidden sm:inline">TranslationOffice</span>
+                <a href="index.html#hero" class="flex items-center gap-3 text-primary">
+                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white font-extrabold shadow-lg shadow-primary/15">TO</span>
+                    <span class="text-xl font-extrabold hidden sm:inline">TranslationOffice</span>
                 </a>
-
-                <div class="hidden md:flex items-center gap-8">
-                    <a href="index.html#features" class="text-gray-700 hover:text-primary transition font-medium">Funktionen</a>
-                    <a href="index.html#preise" class="text-gray-700 hover:text-primary transition font-medium">Preise</a>
-                    <a href="index.html#referenzen" class="text-gray-700 hover:text-primary transition font-medium">Referenzen</a>
-                    <a href="index.html#workflow" class="text-gray-700 hover:text-primary transition font-medium">Über uns</a>
+                <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-stone-700">
+                    <a href="index.html#funktionen" class="hover:text-primary">Funktionen</a>
+                    <a href="index.html#preise" class="hover:text-primary">Preise</a>
+                    <a href="impressum.html" class="hover:text-primary">Impressum</a>
+                    <a href="datenschutz.html" class="hover:text-primary">Datenschutz</a>
                 </div>
-
-                <div class="flex items-center gap-3">
-                    <a href="index.html#demo" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 sm:px-6 py-2 rounded-lg transition font-semibold text-sm sm:text-base">
-                        Kostenlos testen
-                    </a>
-                </div>
+                <a href="index.html#demo" class="hidden sm:inline-flex bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl font-semibold transition shadow-lg shadow-primary/15">
+                    Produktdemo anfragen
+                </a>
             </div>
         </div>
     </nav>
 
-    <!-- Legal Content -->
-    <main class="legal-page">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="legal-content">
-                <h1>Allgemeine Geschäftsbedingungen (AGB)</h1>
-                <p class="updated">Zuletzt aktualisiert: 28. März 2026</p>
+    <main class="legal-shell">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="legal-grid">
+                <article class="legal-card legal-prose">
+                    <p class="legal-meta">Zuletzt aktualisiert: 7. April 2026</p>
+                    <h1>Allgemeine Geschaeftsbedingungen</h1>
+                    <p class="legal-meta">B2B-Muster fuer eine SaaS-Anwendung; vor dem Livegang rechtlich pruefen</p>
 
-                <h2>§1 Geltungsbereich</h2>
-                <p>
-                    Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Leistungen, die TranslationOffice GmbH (nachfolgend "TranslationOffice") Kunden (nachfolgend "Nutzer") über ihre Website www.translationoffice.de und ihre Softwareanwendung bereitstellt.
-                </p>
-                <p>
-                    Durch die Nutzung von TranslationOffice akzeptieren Sie diese AGB vollständig. Falls Sie einzelne Bedingungen nicht akzeptieren, können Sie den Service nicht nutzen.
-                </p>
+                    <div class="legal-note">
+                        <strong>Wichtiger Hinweis vor dem Livegang:</strong> Diese AGB sind als serioese B2B-Grundlage fuer eine SaaS-Anwendung formuliert. Sie ersetzen keine individuelle Rechtsberatung. Preise, Laufzeiten, Kuendigungsfristen, SLA, Supportmodell, AVV-Regelungen und Leistungsbeschreibung muessen auf Ihr tatsaechliches Angebot abgestimmt werden.
+                    </div>
 
-                <h2>§2 Vertragsschluss und Leistungsangebot</h2>
-                <p>
-                    Die Darstellung unserer Leistungen und Preise auf der Website stellt ein Angebot dar, das Sie durch Registrierung annehmen können. Mit der Registrierung wird ein Vertrag zwischen Ihnen und TranslationOffice geschlossen.
-                </p>
-                <p>
-                    TranslationOffice behält sich das Recht vor, Registrierungen abzulehnen, insbesondere wenn Angaben unvollständig oder unplausibel sind.
-                </p>
+                    <h2>1. Geltungsbereich</h2>
+                    <p>
+                        Diese Allgemeinen Geschaeftsbedingungen gelten fuer saemtliche Vertraege ueber die Nutzung der Software "TranslationOffice" zwischen der TranslationOffice GmbH und ihren Kunden.
+                    </p>
+                    <p>
+                        Das Angebot richtet sich ausschliesslich an Unternehmer im Sinne des Paragrafen 14 BGB, juristische Personen des oeffentlichen Rechts und oeffentlich-rechtliche Sondervermoegen. Verbraucher im Sinne des Paragrafen 13 BGB koennen keine Vertraege auf Grundlage dieser AGB schliessen.
+                    </p>
+                    <p>
+                        Individuelle Vereinbarungen, Angebote, Leistungsbeschreibungen oder Auftragsbestaetigungen gehen diesen AGB im Kollisionsfall vor.
+                    </p>
 
-                <h2>§3 Nutzungsrechte und Zugangsdaten</h2>
-                <p>
-                    TranslationOffice gewährt Ihnen ein nicht-exklusives, nicht übertragbares und widerrufbares Recht, die Software für Ihre internen geschäftlichen Zwecke zu nutzen.
-                </p>
-                <p>
-                    Sie sind verpflichtet:
-                </p>
-                <ul>
-                    <li>Ihre Zugangsdaten (Passwort, Login) zu schützen und nicht an Dritte weiterzugeben</li>
-                    <li>Die Nutzung zu unterlassen, wenn die Gefahr besteht, dass unbefugte Personen auf Ihren Account zugreifen</li>
-                    <li>TranslationOffice sofort zu benachrichtigen, falls Sie den Verdacht haben, dass Ihr Account kompromittiert wurde</li>
-                </ul>
+                    <h2>2. Vertragsgegenstand</h2>
+                    <p>
+                        TranslationOffice stellt eine webbasierte Software fuer Uebersetzungsbueros und Sprachdienstleister bereit. Der konkrete Leistungsumfang ergibt sich aus dem jeweils vereinbarten Tarif, einer Leistungsbeschreibung oder einer individuellen Vereinbarung.
+                    </p>
 
-                <h2>§4 Preise, Zahlung und Fälligkeit</h2>
-                <p>
-                    Die Preise sind in EUR angegeben und verstehen sich zzgl. der gesetzlichen Umsatzsteuer.
-                </p>
-                <p>
-                    Die Abrechnung erfolgt:
-                </p>
-                <ul>
-                    <li><strong>Monatliche Pläne:</strong> Monatliche Abrechnung zum vereinbarten Stichtag</li>
-                    <li><strong>Jährliche Pläne:</strong> Jährliche Vorauszahlung</li>
-                    <li><strong>Enterprise:</strong> Nach individueller Vereinbarung</li>
-                </ul>
-                <p>
-                    Zahlungsmethoden: SEPA-Lastschrift, Kreditkarte, auf Rechnung (nur Enterprise).
-                </p>
-                <p>
-                    Rechnungen sind zahlbar innerhalb von 14 Tagen nach Rechnungsdatum.
-                </p>
+                    <h2>3. Vertragsschluss</h2>
+                    <p>
+                        Angaben auf der Website stellen noch kein verbindliches Vertragsangebot dar. Ein Vertrag kommt erst zustande, wenn TranslationOffice eine Bestellung oder Beauftragung annimmt, den Zugang freischaltet oder eine Auftragsbestaetigung uebermittelt.
+                    </p>
 
-                <h2>§5 Laufzeit und Kündigung</h2>
-                <p>
-                    <strong>Kostenlose Testphase:</strong> 14 Tage, danach automatische Umwandlung zum bezahlten Plan, falls nicht gekündigt.
-                </p>
-                <p>
-                    <strong>Monatliche Verträge:</strong> Laufzeit unbegrenzt, Kündigung mit 30 Tagen Kündigungsfrist zum Ende eines Kalendermonats möglich.
-                </p>
-                <p>
-                    <strong>Jährliche Verträge:</strong> Laufzeit 1 Jahr, Kündigung mit 90 Tagen Kündigungsfrist zum Ende der Vertragslaufzeit möglich.
-                </p>
-                <p>
-                    <strong>Enterprise-Verträge:</strong> Laufzeit und Kündigungsfristen nach individueller Vereinbarung.
-                </p>
-                <p>
-                    Die Kündigung muss schriftlich (E-Mail: support@translationoffice.de) erfolgen.
-                </p>
+                    <h2>4. Nutzungsrechte</h2>
+                    <p>
+                        Der Kunde erhaelt fuer die Laufzeit des Vertrags das nicht ausschliessliche, nicht uebertragbare Recht, die Software im vereinbarten Umfang fuer eigene geschaeftliche Zwecke zu nutzen.
+                    </p>
+                    <p>
+                        Eine Weitergabe der Software an Dritte, Unterlizenzierung, Vermietung oder Nutzung fuer fremde Unternehmen ausserhalb der vertraglich vereinbarten Organisation ist ohne vorherige Zustimmung nicht zulaessig.
+                    </p>
 
-                <h2>§6 Verfügbarkeit und Service-Level</h2>
-                <p>
-                    TranslationOffice bemüht sich, eine hohe Verfügbarkeit zu gewährleisten. Für die Starter-Version: min. 99% Verfügbarkeit. Für Professional und Enterprise: 99.9% Verfügbarkeit (gemessen monatlich).
-                </p>
-                <p>
-                    Ausgenommen von dieser Zusage sind:
-                </p>
-                <ul>
-                    <li>Geplante Wartungsarbeiten (werden mit 48 Stunden Vorlauf angekündigt)</li>
-                    <li>Außergewöhnliche Ausfälle (Naturkatastrophen, Cyberangriffe)</li>
-                    <li>Ausfälle durch externe Dienstleister (z.B. Internetprovider, Cloud-Provider)</li>
-                </ul>
+                    <h2>5. Zugangs- und Nutzerkonten</h2>
+                    <p>
+                        Der Kunde ist verpflichtet, Zugangsdaten vertraulich zu behandeln und unbefugten Zugriff zu verhindern. Nutzerkonten duerfen nur von den jeweils zugeordneten Personen verwendet werden, sofern nicht abweichend vereinbart.
+                    </p>
 
-                <h2>§7 Datenschutz und Datensicherheit</h2>
-                <p>
-                    Die Verarbeitung personenbezogener Daten erfolgt gemäß unserer <a href="datenschutz.html">Datenschutzerklärung</a>. TranslationOffice speichert Ihre Daten auf Servern in Deutschland und gewährleistet Einhaltung aller DSGVO-Anforderungen.
-                </p>
-                <p>
-                    Sie sind für den Inhalt aller von Ihnen hochgeladenen Daten selbst verantwortlich und müssen sicherstellen, dass Sie das Recht haben, diese zu verarbeiten.
-                </p>
+                    <h2>6. Mitwirkungspflichten des Kunden</h2>
+                    <p>Der Kunde ist insbesondere verpflichtet,</p>
+                    <ul>
+                        <li>zutreffende Stamm-, Rechnungs- und Kontaktdaten bereitzustellen,</li>
+                        <li>die Software nur im gesetzlichen und vertraglich vereinbarten Rahmen zu nutzen,</li>
+                        <li>keine rechtswidrigen, schadcodehaltigen oder sonst unzulaessigen Inhalte einzubringen,</li>
+                        <li>erforderliche Mitwirkungshandlungen bei Einrichtung, Migration, Support oder Stoerungsaufklaerung rechtzeitig zu erbringen.</li>
+                    </ul>
 
-                <h2>§8 Pflichten des Nutzers</h2>
-                <p>
-                    Sie verpflichten sich:
-                </p>
-                <ul>
-                    <li>Die Software nur für legale Zwecke zu nutzen</li>
-                    <li>Keine Malware, Viren oder Schadsoftware zu verbreiten</li>
-                    <li>Keine Überbelastung oder DoS-Attacken durchzuführen</li>
-                    <li>Keine unbefugten Zugriffe zu versuchen</li>
-                    <li>Alle geltenden Gesetze einzuhalten</li>
-                    <li>Die Systeme von TranslationOffice nicht zu hacken oder zu reverse-engineern</li>
-                </ul>
+                    <h2>7. Verfuegbarkeit, Wartung und Weiterentwicklung</h2>
+                    <p>
+                        TranslationOffice bemueht sich um einen moeglichst stoerungsfreien Betrieb der Software. Eine jederzeitige und unterbrechungsfreie Verfuegbarkeit ist jedoch technisch nicht geschuldet, soweit nicht ausdruecklich ein Service Level vereinbart wurde.
+                    </p>
+                    <p>
+                        Geplante Wartungsfenster, Sicherheitsupdates, Weiterentwicklungen und technisch erforderliche Anpassungen bleiben vorbehalten, sofern hierdurch die berechtigten Interessen des Kunden angemessen beruecksichtigt werden.
+                    </p>
 
-                <h2>§9 Haftungsbeschränkung</h2>
-                <p>
-                    TranslationOffice haftet nicht für:
-                </p>
-                <ul>
-                    <li>Entgangene Gewinne oder Umsätze</li>
-                    <li>Datenverluste aufgrund unzureichender Backups durch den Nutzer</li>
-                    <li>Indirekte oder Folgeschäden</li>
-                    <li>Ausfallzeiten außerhalb der angegebenen SLA</li>
-                </ul>
-                <p>
-                    Unsere Haftung ist auf die Gebühren beschränkt, die Sie im Vormonat bezahlt haben.
-                </p>
+                    <h2>8. Verguetung und Zahlung</h2>
+                    <p>
+                        Es gelten die vertraglich vereinbarten Preise. Soweit nicht anders angegeben, verstehen sich alle Preise netto zuzueglich gesetzlicher Umsatzsteuer.
+                    </p>
+                    <p>
+                        Rechnungen sind ohne Abzug innerhalb von 14 Tagen ab Rechnungsdatum faellig, sofern keine abweichende Vereinbarung getroffen wurde.
+                    </p>
 
-                <h2>§10 Änderungen der AGB</h2>
-                <p>
-                    TranslationOffice kann diese AGB mit Wirkung zum 1. eines Monats ändern. Wir teilen Ihnen Änderungen per E-Mail mindestens 4 Wochen im Voraus mit. Falls Sie die neuen AGB nicht akzeptieren, können Sie Ihren Vertrag kündigen.
-                </p>
+                    <h2>9. Laufzeit und Kuendigung</h2>
+                    <p>
+                        Die Laufzeit sowie ordentliche Kuendigungsfristen richten sich nach dem jeweils gebuchten Tarif oder der individuellen Vereinbarung. Das Recht zur ausserordentlichen Kuendigung aus wichtigem Grund bleibt unberuehrt.
+                    </p>
+                    <p>
+                        Nach Vertragsende endet das Nutzungsrecht an der Software. Etwaige Herausgabe- oder Exportoptionen fuer Kundendaten richten sich nach der vertraglichen Vereinbarung und den datenschutzrechtlichen Vorgaben.
+                    </p>
 
-                <h2>§11 Schlussbestimmungen</h2>
-                <p>
-                    <strong>Gerichtsstand und anwendbares Recht:</strong> Es gilt deutsches Recht. Gerichtsstand ist Berlin.
-                </p>
-                <p>
-                    <strong>Salvatorische Klausel:</strong> Sollte eine Bestimmung dieser AGB unwirksam sein, bleibt der Rest gültig.
-                </p>
-                <p>
-                    <strong>Gesamter Vertrag:</strong> Diese AGB zusammen mit der Datenschutzerklärung und der Cookie-Richtlinie stellen die gesamte Vereinbarung dar.
-                </p>
+                    <h2>10. Kundendaten und Datenschutz</h2>
+                    <p>
+                        Der Kunde bleibt fuer die Rechtmaessigkeit der von ihm in die Software eingebrachten Inhalte und personenbezogenen Daten verantwortlich. Soweit TranslationOffice personenbezogene Daten im Auftrag des Kunden verarbeitet, schliessen die Parteien bei Bedarf eine Vereinbarung zur Auftragsverarbeitung.
+                    </p>
+                    <p>
+                        Ergaenzende Informationen zur Verarbeitung personenbezogener Daten auf der Website finden sich in der <a href="datenschutz.html">Datenschutzerklaerung</a>.
+                    </p>
 
-                <h2>Kontakt</h2>
-                <p>
-                    Bei Fragen zu diesen AGB kontaktieren Sie bitte:<br><br>
-                    <strong>TranslationOffice GmbH</strong><br>
-                    Unter den Linden 10<br>
-                    10117 Berlin<br>
-                    E-Mail: <a href="mailto:legal@translationoffice.de">legal@translationoffice.de</a>
-                </p>
+                    <h2>11. Gewaehrleistung</h2>
+                    <p>
+                        Fuer Sach- und Rechtsmaengel gelten die gesetzlichen Vorschriften, soweit diese AGB oder eine Individualvereinbarung nichts anderes vorsehen. Unerhebliche Abweichungen der Software, die ihre vertragsgemaesse Nutzung nicht wesentlich beeintraechtigen, begruenden keinen Mangel.
+                    </p>
+
+                    <h2>12. Haftung</h2>
+                    <p>
+                        TranslationOffice haftet unbeschraenkt bei Vorsatz und grober Fahrlaessigkeit sowie bei Schaeden aus der Verletzung des Lebens, des Koerpers oder der Gesundheit. Die Haftung nach dem Produkthaftungsgesetz bleibt unberuehrt.
+                    </p>
+                    <p>
+                        Bei leicht fahrlaessiger Verletzung einer wesentlichen Vertragspflicht ist die Haftung auf den vertragstypischen, vorhersehbaren Schaden begrenzt. Wesentliche Vertragspflichten sind solche Pflichten, deren Erfuellung die ordnungsgemaesse Durchfuehrung des Vertrags ueberhaupt erst ermoeglicht und auf deren Einhaltung der Kunde regelmaessig vertrauen darf.
+                    </p>
+                    <p>
+                        Im Uebrigen ist die Haftung ausgeschlossen, soweit gesetzlich zulaessig.
+                    </p>
+
+                    <h2>13. Aenderungen von Leistungen und AGB</h2>
+                    <p>
+                        TranslationOffice darf diese AGB sowie Leistungsbestandteile anpassen, soweit ein sachlicher Grund besteht, etwa zur Umsetzung gesetzlicher Anforderungen, zur Sicherheitsverbesserung, zur technischen Weiterentwicklung oder zur Angleichung von Prozessen. Wesentliche Aenderungen werden rechtzeitig angekuendigt.
+                    </p>
+
+                    <h2>14. Vertraulichkeit</h2>
+                    <p>
+                        Beide Parteien behandeln vertrauliche Informationen der jeweils anderen Partei vertraulich und verwenden sie nur fuer die Durchfuehrung des Vertrags, soweit keine gesetzliche Offenlegungspflicht besteht.
+                    </p>
+
+                    <h2>15. Schlussbestimmungen</h2>
+                    <p>
+                        Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. Sofern der Kunde Kaufmann, juristische Person des oeffentlichen Rechts oder oeffentlich-rechtliches Sondervermoegen ist, ist Gerichtsstand der Sitz von TranslationOffice.
+                    </p>
+                    <p>
+                        Sollten einzelne Bestimmungen dieser AGB ganz oder teilweise unwirksam sein oder werden, bleibt die Wirksamkeit der uebrigen Bestimmungen unberuehrt.
+                    </p>
+                </article>
+
+                <aside class="legal-side-card">
+                    <h2>Vor dem Livegang pruefen</h2>
+                    <ul>
+                        <li>Tarife, Laufzeiten und Kuendigungsfristen konkretisieren</li>
+                        <li>Support- und SLA-Regeln ergaenzen, falls angeboten</li>
+                        <li>AVV-Prozess und Datenexport regeln</li>
+                        <li>Leistungsbeschreibung und Preisdarstellung angleichen</li>
+                        <li>Sitz des Unternehmens fuer Gerichtsstand pruefen</li>
+                    </ul>
+
+                    <div class="legal-links">
+                        <a href="impressum.html">Zum Impressum</a>
+                        <a href="datenschutz.html">Zur Datenschutzerklaerung</a>
+                        <a href="cookie.html">Zu den Cookie-Hinweisen</a>
+                        <a href="index.html">Zur Startseite</a>
+                    </div>
+                </aside>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-20 mt-20">
+    <footer class="bg-[#141716] text-white py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="footer-content">
+            <div class="grid md:grid-cols-4 gap-10">
                 <div>
-                    <div class="footer-logo">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948-.684l1.498-4.493a1 1 0 011.502-.684l1.498 4.493a1 1 0 00.948.684H19a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
-                        </svg>
-                        TO
+                    <div class="flex items-center gap-3 font-extrabold text-xl mb-4">
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary">TO</span>
+                        TranslationOffice
                     </div>
-                    <p class="footer-tagline">Das smarte TMS für Übersetzungsbüros im DACH-Raum.</p>
+                    <p class="text-stone-400 leading-7">
+                        Software fuer Uebersetzungsbueros mit Fokus auf Anfrage, Projekt, Portal, Abrechnung und technisch anschlussfaehige Prozesse.
+                    </p>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Produkt</h3>
-                    <a href="index.html#features">Funktionen</a>
-                    <a href="index.html#preise">Preise</a>
-                    <a href="#">API-Dokumentation</a>
+                <div>
+                    <h3 class="font-bold mb-4">Produkt</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="index.html#funktionen" class="footer-link">Funktionen</a>
+                        <a href="index.html#preise" class="footer-link">Preise</a>
+                        <a href="api.html" class="footer-link">API</a>
+                        <a href="sicherheit.html" class="footer-link">Sicherheit</a>
+                    </div>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Unternehmen</h3>
-                    <a href="#">Über uns</a>
-                    <a href="#">Blog</a>
-                    <a href="mailto:info@translationoffice.de">Kontakt</a>
+                <div>
+                    <h3 class="font-bold mb-4">Rechtliches</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="impressum.html" class="footer-link">Impressum</a>
+                        <a href="datenschutz.html" class="footer-link">Datenschutz</a>
+                        <a href="cookie.html" class="footer-link">Cookies</a>
+                        <a href="agb.html" class="footer-link">AGB</a>
+                    </div>
                 </div>
-
-                <div class="footer-section">
-                    <h3>Rechtliches</h3>
-                    <a href="impressum.html">Impressum</a>
-                    <a href="datenschutz.html">Datenschutz</a>
-                    <a href="agb.html">AGB</a>
-                    <a href="cookie.html">Cookie-Richtlinie</a>
+                <div>
+                    <h3 class="font-bold mb-4">Kontakt</h3>
+                    <div class="space-y-2 text-stone-400">
+                        <a href="kontakt.html" class="footer-link">Kontakt</a>
+                        <a href="mailto:info@translationoffice.de" class="footer-link">info@translationoffice.de</a>
+                        <a href="index.html#demo" class="footer-link">Produktdemo</a>
+                    </div>
                 </div>
-            </div>
-
-            <div class="footer-bottom">
-                <p class="footer-copyright">© 2026 TranslationOffice GmbH. Alle Rechte vorbehalten.</p>
             </div>
         </div>
     </footer>

@@ -128,4 +128,60 @@ class FinanceExportController extends Controller
             ->header('Content-Type', 'text/csv; charset=utf-8')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
+
+    public function exportOpos(Request $request)
+    {
+        $query = Invoice::whereNotIn('status', ['paid', 'cancelled', 'deleted', 'draft'])
+            ->with('customer:id,company_name,first_name,last_name')
+            ->orderBy('due_date', 'asc');
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        $invoices = $query->get();
+
+        $headers = ['Rechnungsnr.', 'Kunde', 'Rechnungsdatum', 'Fälligkeit', 'Betrag (€)', 'Bezahlt (€)', 'Offen (€)', 'Tage überfällig', 'Mahnstufe', '0-30', '31-60', '61-90', '90+'];
+
+        $rows = $invoices->map(function ($inv) {
+            $customerName = $inv->snapshot_customer_name
+                ?? ($inv->customer?->company_name ?: trim(($inv->customer?->first_name ?? '') . ' ' . ($inv->customer?->last_name ?? '')))
+                ?? 'N/A';
+
+            $amountGross = $inv->amount_gross / 100;
+            $paidAmount  = $inv->paid_amount_eur ?? 0;
+            $amountDue   = max(0, $amountGross - $paidAmount);
+            $daysOverdue = $inv->due_date && Carbon::parse($inv->due_date)->isPast()
+                ? (int) Carbon::parse($inv->due_date)->diffInDays(now())
+                : 0;
+
+            return [
+                $inv->invoice_number,
+                $customerName,
+                $inv->date ? Carbon::parse($inv->date)->format('d.m.Y') : '',
+                $inv->due_date ? Carbon::parse($inv->due_date)->format('d.m.Y') : '',
+                number_format($amountGross, 2, ',', '.'),
+                number_format($paidAmount, 2, ',', '.'),
+                number_format($amountDue, 2, ',', '.'),
+                $daysOverdue,
+                $inv->reminder_level ?? 0,
+                ($daysOverdue > 0 && $daysOverdue <= 30) ? number_format($amountDue, 2, ',', '.') : '0,00',
+                ($daysOverdue > 30 && $daysOverdue <= 60) ? number_format($amountDue, 2, ',', '.') : '0,00',
+                ($daysOverdue > 60 && $daysOverdue <= 90) ? number_format($amountDue, 2, ',', '.') : '0,00',
+                ($daysOverdue > 90) ? number_format($amountDue, 2, ',', '.') : '0,00',
+            ];
+        });
+
+        $csv  = "\xEF\xBB\xBF"; // UTF-8 BOM für Excel
+        $csv .= implode(';', $headers) . "\r\n";
+        foreach ($rows as $row) {
+            $csv .= implode(';', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $row)) . "\r\n";
+        }
+
+        $filename = 'OPO_Export_' . now()->format('Ymd') . '.csv';
+
+        return response($csv)
+            ->header('Content-Type', 'text/csv; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
 }

@@ -376,43 +376,75 @@ class ReportController extends Controller
 
     public function oposReport(Request $request)
     {
-        [$startDate, $endDate] = $this->getDateRange($request);
+        $query = \App\Models\Invoice::whereNotIn('status', ['paid', 'cancelled', 'deleted', 'draft'])
+            ->with('customer:id,company_name,first_name,last_name')
+            ->orderBy('due_date', 'asc');
 
-        $invoices = \App\Models\Invoice::whereBetween('date', [$startDate, $endDate])
-            ->whereNotIn('status', ['paid', 'cancelled', 'deleted', 'draft'])
-            ->with(['project.customer'])
-            ->orderBy('due_date', 'asc')
-            ->get();
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        $invoices = $query->get();
 
         $data = $invoices->map(function ($inv) {
-            $customerName = 'N/A';
-            if ($inv->project && $inv->project->customer) {
-                $c = $inv->project->customer;
-                $customerName = $c->company_name ?: ($c->first_name . ' ' . $c->last_name);
-            }
+            $customerName = $inv->snapshot_customer_name
+                ?? ($inv->customer?->company_name ?: trim(($inv->customer?->first_name ?? '') . ' ' . ($inv->customer?->last_name ?? '')))
+                ?? 'N/A';
 
-            $amountGross = $inv->amount_gross / 100;
-            $overdue = false;
-            $daysOverdue = 0;
+            $amountGross  = $inv->amount_gross / 100;
+            $paidAmount   = $inv->paid_amount_eur ?? 0;
+            $amountDue    = max(0, $amountGross - $paidAmount);
+            $daysOverdue  = 0;
+
             if ($inv->due_date && Carbon::parse($inv->due_date)->isPast()) {
-                $overdue = true;
-                $daysOverdue = Carbon::parse($inv->due_date)->diffInDays(Carbon::now());
+                $daysOverdue = (int) Carbon::parse($inv->due_date)->diffInDays(Carbon::now());
             }
 
             return [
-                'id' => $inv->id,
+                'id'             => $inv->id,
                 'invoice_number' => $inv->invoice_number,
-                'date' => Carbon::parse($inv->date)->format('d.m.Y'),
-                'due_date' => $inv->due_date ? Carbon::parse($inv->due_date)->format('d.m.Y') : '-',
-                'customer' => $customerName,
-                'amount_gross' => $amountGross,
-                'status' => $inv->status,
-                'overdue' => $overdue,
-                'days_overdue' => $daysOverdue
+                'customer_id'    => $inv->customer_id,
+                'customer'       => $customerName,
+                'date'           => $inv->date ? Carbon::parse($inv->date)->format('d.m.Y') : '-',
+                'due_date'       => $inv->due_date ? Carbon::parse($inv->due_date)->format('d.m.Y') : '-',
+                'due_date_raw'   => $inv->due_date?->toDateString(),
+                'amount_gross'   => $amountGross,
+                'paid_amount'    => $paidAmount,
+                'amount_due'     => $amountDue,
+                'status'         => $inv->status,
+                'reminder_level' => $inv->reminder_level ?? 0,
+                'days_overdue'   => $daysOverdue,
+                'bucket'         => match (true) {
+                    $daysOverdue === 0 => 'current',
+                    $daysOverdue <= 30  => '0_30',
+                    $daysOverdue <= 60  => '31_60',
+                    $daysOverdue <= 90  => '61_90',
+                    default             => '90plus',
+                },
             ];
         });
 
-        return response()->json($data);
+        $buckets = [
+            'current' => ['count' => 0, 'amount' => 0],
+            '0_30'    => ['count' => 0, 'amount' => 0],
+            '31_60'   => ['count' => 0, 'amount' => 0],
+            '61_90'   => ['count' => 0, 'amount' => 0],
+            '90plus'  => ['count' => 0, 'amount' => 0],
+        ];
+        foreach ($data as $row) {
+            $b = $row['bucket'];
+            $buckets[$b]['count']++;
+            $buckets[$b]['amount'] = round($buckets[$b]['amount'] + $row['amount_due'], 2);
+        }
+
+        return response()->json([
+            'data'    => $data,
+            'buckets' => $buckets,
+            'total'   => [
+                'count'  => $data->count(),
+                'amount' => round($data->sum('amount_due'), 2),
+            ],
+        ]);
     }
 
     public function bwaReport(Request $request)

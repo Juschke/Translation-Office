@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+// DunningLog is in the same namespace — no additional import needed
 
 /**
  * Invoice — GoBD-Compliant Invoice Model
@@ -43,6 +44,7 @@ class Invoice extends Model
         'project_id',        // Reference only — NOT used for display
         'customer_id',       // Reference only — NOT used for display
         'cancelled_invoice_id',
+        'recurring_invoice_id',
         'date',
         'due_date',
         'delivery_date',
@@ -62,6 +64,12 @@ class Invoice extends Model
         'is_locked',
         'issued_at',
         'pdf_path',
+        'pdf_sha256',
+        'pdf_generated_at',
+        'xml_path',
+        'xml_sha256',
+        'xml_generated_at',
+        'archived_at',
         'notes',
         'shipping_cents',
         'discount_cents',
@@ -108,6 +116,9 @@ class Invoice extends Model
         'service_period_start' => 'date',
         'service_period_end' => 'date',
         'issued_at' => 'datetime',
+        'pdf_generated_at' => 'datetime',
+        'xml_generated_at' => 'datetime',
+        'archived_at' => 'datetime',
         'last_reminder_date' => 'date',
         'amount_net' => 'integer',
         'amount_tax' => 'integer',
@@ -135,7 +146,18 @@ class Invoice extends Model
     {
         static::saving(function (Invoice $invoice) {
             if ($invoice->is_locked && $invoice->getOriginal('is_locked')) {
-                $allowedFields = ['status', 'reminder_level', 'last_reminder_date', 'pdf_path'];
+                $allowedFields = [
+                    'status',
+                    'reminder_level',
+                    'last_reminder_date',
+                    'pdf_path',
+                    'pdf_sha256',
+                    'pdf_generated_at',
+                    'xml_path',
+                    'xml_sha256',
+                    'xml_generated_at',
+                    'archived_at',
+                ];
                 $dirty = array_keys($invoice->getDirty());
                 $forbidden = array_diff($dirty, $allowedFields);
 
@@ -260,6 +282,11 @@ class Invoice extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function dunningLogs()
+    {
+        return $this->hasMany(DunningLog::class)->orderBy('sent_at');
+    }
+
     // ─── Helper Methods ──────────────────────────────────────────────
 
     /**
@@ -296,6 +323,18 @@ class Invoice extends Model
             self::STATUS_PAID,
             self::STATUS_OVERDUE,
         ]);
+    }
+
+    public function canTransitionToStatus(string $targetStatus): bool
+    {
+        return match ($targetStatus) {
+            self::STATUS_ISSUED,
+            self::STATUS_PAID,
+            self::STATUS_OVERDUE,
+            self::STATUS_ARCHIVED => $this->is_locked,
+            self::STATUS_CANCELLED => $this->canBeCancelled(),
+            default => false,
+        };
     }
 
     /**

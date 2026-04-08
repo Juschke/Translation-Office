@@ -71,21 +71,26 @@ portalApi.interceptors.response.use(
 );
 
 export const portalAuthService = {
+  login: async (credentials: any): Promise<{ token: string; type: string; user: any }> => {
+    const response = await portalApi.post('/portal/auth/login', credentials);
+    return response.data;
+  },
+
   requestLink: async (email: string): Promise<void> => {
     await portalApi.post('/portal/auth/request-link', { email });
   },
 
-  verify: async (token: string): Promise<{ token: string }> => {
-    const response = await portalApi.post('/portal/auth/verify', { token });
+  verify: async (token: string): Promise<{ token: string; customer: PortalCustomer }> => {
+    const response = await portalApi.get(`/portal/auth/verify/${token}`);
     return response.data;
   },
 
   logout: async (): Promise<void> => {
-    await portalApi.post('/portal/auth/logout');
+    await portalApi.post('/portal/logout');
   },
 
   me: async (): Promise<PortalCustomer> => {
-    const response = await portalApi.get('/portal/auth/me');
+    const response = await portalApi.get('/portal/me');
     return response.data;
   },
 };
@@ -109,7 +114,7 @@ export const portalProjectService = {
   },
 
   sendMessage: async (id: number | string, body: string): Promise<PortalMessage> => {
-    const response = await portalApi.post(`/portal/projects/${id}/messages`, { body });
+    const response = await portalApi.post(`/portal/projects/${id}/message`, { content: body });
     return response.data;
   },
 };
@@ -137,7 +142,7 @@ export const portalRequestService = {
 };
 
 export const portalProfileService = {
-  update: async (data: Partial<PortalCustomer>): Promise<PortalCustomer> => {
+  update: async (data: Record<string, unknown>): Promise<PortalCustomer> => {
     const response = await portalApi.put('/portal/profile', data);
     return response.data;
   },

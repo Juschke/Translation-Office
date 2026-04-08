@@ -19,6 +19,9 @@ class Project extends Model
             if (empty($project->access_token)) {
                 $project->access_token = \Illuminate\Support\Str::random(32);
             }
+            if (empty($project->partner_access_token)) {
+                $project->partner_access_token = \Illuminate\Support\Str::random(32);
+            }
         });
     }
 

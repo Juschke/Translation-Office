@@ -5,12 +5,14 @@ interface ProjectFilesTabProps {
     setIsUploadModalOpen: (open: boolean) => void;
     handlePreviewFile: (file: any) => Promise<void>;
     handleDownloadFile: (file: any) => Promise<void>;
-    setDeleteFileConfirm: (confirm: { isOpen: boolean; fileId: string | null; fileName: string }) => void;
     toggleFileType: (file: any) => Promise<void>;
     onRenameFile: (file: any, newName: string) => Promise<void>;
     onMoveFile: (file: any, newType: string) => Promise<void>;
     onBulkMove: (ids: string[], newType: string) => Promise<void>;
     onBulkDownloadZip: (ids: string[]) => Promise<void>;
+    onBulkDelete: (ids: string[]) => Promise<void>;
+    onBulkRename: (ids: string[], prefix: string, suffix: string) => Promise<void>;
+    onBulkEmail: (ids: string[]) => void;
     formatFileSize: (bytes: any) => string;
     onUpload: (files: any[], onProgress: (id: string, progress: number) => void) => Promise<void>;
 }
@@ -20,12 +22,14 @@ const ProjectFilesTab = ({
     setIsUploadModalOpen,
     handlePreviewFile,
     handleDownloadFile,
-    setDeleteFileConfirm,
     toggleFileType,
     onRenameFile,
     onMoveFile,
     onBulkMove,
     onBulkDownloadZip,
+    onBulkDelete,
+    onBulkRename,
+    onBulkEmail,
     formatFileSize,
     onUpload,
 }: ProjectFilesTabProps) => {
@@ -36,12 +40,14 @@ const ProjectFilesTab = ({
                 setIsUploadModalOpen={setIsUploadModalOpen}
                 handlePreviewFile={handlePreviewFile}
                 handleDownloadFile={handleDownloadFile}
-                setDeleteFileConfirm={setDeleteFileConfirm}
                 toggleFileType={toggleFileType}
                 onRenameFile={onRenameFile}
                 onMoveFile={onMoveFile}
                 onBulkMove={onBulkMove}
                 onBulkDownloadZip={onBulkDownloadZip}
+                onBulkDelete={onBulkDelete}
+                onBulkRename={onBulkRename}
+                onBulkEmail={onBulkEmail}
                 formatFileSize={formatFileSize}
                 onUpload={onUpload}
             />

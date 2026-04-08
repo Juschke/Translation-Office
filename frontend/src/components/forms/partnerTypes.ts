@@ -29,4 +29,5 @@ export interface PartnerFormData {
   notes: string;
   status: string;
   rating: number;
+  portal_access?: boolean;
 }

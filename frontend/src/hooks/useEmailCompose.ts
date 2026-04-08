@@ -49,12 +49,15 @@ export function useEmailCompose() {
     };
 
     const sendMutation = useMutation({
-        mutationFn: (selectedAccountId: string | number) => {
+        mutationFn: ({ accountId, bodyOverride, isDraft }: { accountId: string | number; bodyOverride?: string; isDraft?: boolean }) => {
             const formData = new FormData();
-            formData.append('mail_account_id', selectedAccountId.toString());
+            formData.append('mail_account_id', accountId.toString());
             formData.append('to', composeTo);
             formData.append('subject', composeSubject);
-            formData.append('body', composeBody);
+            formData.append('body', bodyOverride ?? composeBody);
+            if (isDraft) {
+                formData.append('is_draft', '1');
+            }
             if (selectedProjectId) {
                 formData.append('project_id', selectedProjectId.toString());
             }

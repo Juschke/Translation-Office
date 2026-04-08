@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { FaPaperclip, FaTrashAlt } from 'react-icons/fa';
+import { FaPaperclip, FaTrashAlt, FaSyncAlt } from 'react-icons/fa';
 import Checkbox from '../common/Checkbox';
 
 interface MailListPanelProps {
@@ -11,24 +11,67 @@ interface MailListPanelProps {
     selectedMails: number[];
     onSelectMail: (id: number) => void;
     onSelectAll: () => void;
+    onSync: () => void;
+    isSyncing: boolean;
 }
 
-const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMails, onSelectMail, onSelectAll }: MailListPanelProps) => (
+const MailListPanel = ({
+    mails,
+    folder,
+    onView,
+    onDelete,
+    selectedId,
+    selectedMails,
+    onSelectMail,
+    onSelectAll,
+    onSync,
+    isSyncing
+}: MailListPanelProps) => (
     <div className="flex-1 flex flex-col min-h-0 bg-white">
-        {mails.length > 0 && (
-            <div className="px-3 py-2 border-b border-[#c8c8c8] border-b-2 flex items-center bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] shrink-0">
-                <Checkbox
-                    checked={selectedMails.length === mails.length && mails.length > 0}
-                    onChange={onSelectAll}
-                />
-                <span className="text-xs font-semibold text-slate-500 [text-shadow:0_1px_0_rgba(255,255,255,0.8)] uppercase ml-2">Alle auswählen</span>
+        {/* Modernized Header */}
+        <div className="px-3 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10 shrink-0 h-[60px]">
+            <div className="flex items-center gap-3">
+                {/* Aligned Bulk Checkbox */}
+                <div className="shrink-0">
+                    <Checkbox
+                        checked={selectedMails.length === mails.length && mails.length > 0}
+                        onChange={onSelectAll}
+                    />
+                </div>
+                <div className="h-4 w-[1px] bg-slate-200" />
+                <h3 className="text-[13px] font-bold text-slate-800 uppercase tracking-tight">
+                    {folder === 'inbox' ? 'Posteingang' :
+                        folder === 'sent' ? 'Gesendet' :
+                            folder === 'trash' ? 'Papierkorb' :
+                                folder === 'archive' ? 'Archiv' :
+                                    folder === 'templates' ? 'Vorlagen' :
+                                        folder === 'accounts' ? 'E-Mail Konten' :
+                                            'Entwürfe'}
+                </h3>
             </div>
-        )}
+
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={onSync}
+                    disabled={isSyncing}
+                    className="p-2 text-slate-400 hover:text-brand-primary transition-colors disabled:opacity-50"
+                    title="Aktualisieren"
+                >
+                    <FaSyncAlt className={clsx("text-sm", isSyncing && "animate-spin")} />
+                </button>
+            </div>
+        </div>
+
         <div className="flex-1 overflow-auto divide-y divide-slate-100 custom-scrollbar-minimal">
             {mails.length === 0 ? (
-                <p className="px-4 py-6 text-xs text-slate-400 font-bold uppercase tracking-widest text-center">
-                    Keine E-Mails vorhanden
-                </p>
+                <div className="px-4 py-12 flex flex-col items-center justify-center gap-3 text-slate-400 opacity-60">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-xl">
+                        {folder === 'inbox' ? '📥' : '✉️'}
+                    </div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-center">
+                        Keine E-Mails vorhanden
+                    </p>
+                </div>
             ) : (
                 mails.map((mail: any) => {
                     const senderLabel = folder === 'inbox' ? mail.from : mail.to_emails?.join(', ');
@@ -39,22 +82,22 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                             key={mail.id}
                             onClick={() => onView(mail)}
                             className={clsx(
-                                'px-3 py-2.5 hover:bg-slate-50 transition-colors cursor-pointer relative group',
+                                'px-3 py-3 hover:bg-slate-50 transition-colors cursor-pointer relative group',
                                 !mail.read && folder === 'inbox' ? 'bg-slate-50/50' : '',
-                                selectedId === mail.id ? 'bg-slate-100/80 ring-1 ring-inset ring-slate-200' : '',
+                                selectedId === mail.id ? 'bg-slate-100/80' : '',
                             )}
                         >
                             {selectedId === mail.id && (
                                 <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-primary" />
                             )}
                             <div className="flex items-start gap-3 min-w-0">
-                                <div className="pt-2 shrink-0" onClick={e => e.stopPropagation()}>
+                                <div className="pt-0.5 shrink-0" onClick={e => e.stopPropagation()}>
                                     <Checkbox
                                         checked={selectedMails.includes(mail.id)}
                                         onChange={() => onSelectMail(mail.id)}
                                     />
                                 </div>
-                                <div className="w-8 h-8 rounded-sm bg-brand-primary text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-sm border border-brand-primary/80">
+                                <div className="w-8 h-8 rounded-sm bg-brand-primary text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                                     {initial}
                                 </div>
                                 <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -69,7 +112,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                         >
                                             {senderLabel}
                                         </span>
-                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-tight shrink-0">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight shrink-0">
                                             {mail.full_time?.split(',')[0]}
                                         </span>
                                     </div>
@@ -77,7 +120,7 @@ const MailListPanel = ({ mails, folder, onView, onDelete, selectedId, selectedMa
                                         className={clsx(
                                             'text-[11px] leading-snug line-clamp-2',
                                             !mail.read && folder === 'inbox'
-                                                ? 'font-bold text-slate-900'
+                                                ? 'font-bold text-slate-900 border-l-[3px] border-brand-primary/10 pl-2 -ml-[11px]'
                                                 : 'font-medium text-slate-700',
                                         )}
                                     >

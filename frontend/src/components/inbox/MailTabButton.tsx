@@ -15,15 +15,15 @@ const MailTabButton = ({ active, onClick, icon, label }: MailTabButtonProps) => 
         <TooltipTrigger asChild>
             <Button
                 onClick={onClick}
-                variant={active ? 'outline' : 'ghost'}
+                variant="ghost"
                 className={clsx(
-                    'h-auto w-full justify-start gap-3 rounded-none px-4 py-2 text-xs',
+                    'h-auto w-full justify-start gap-3 rounded-none px-4 py-2.5 text-xs transition-all border-l-2 outline-none ring-0 focus-visible:ring-0',
                     active
-                        ? 'border-r-[3px] border-brand-primary bg-[linear-gradient(180deg,#f0f7f7_0%,#e4efef_100%)] text-brand-primary font-semibold shadow-none'
-                        : 'font-medium text-slate-500 hover:bg-[#f5f5f5] hover:text-slate-700 shadow-none',
+                        ? 'bg-brand-primary/5 text-brand-primary border-brand-primary font-bold shadow-none hover:bg-brand-primary/10 hover:text-brand-primary'
+                        : 'text-slate-600 hover:bg-slate-50 border-transparent shadow-none',
                 )}
             >
-                <span className={clsx('text-sm', active ? 'text-brand-primary' : 'text-slate-400')}>{icon}</span>
+                <span className={clsx('text-base transition-colors', active ? 'text-brand-primary' : 'text-slate-400')}>{icon}</span>
                 <span className="hidden md:inline">{label}</span>
             </Button>
         </TooltipTrigger>

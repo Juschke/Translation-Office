@@ -1,14 +1,17 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
     FaTrashAlt, FaSearch, FaCloudUploadAlt, FaCheckCircle,
     FaExclamationCircle, FaArrowRight, FaInbox, FaBookOpen, FaPrint,
     FaListUl, FaTh, FaFolderOpen, FaChevronRight, FaTimes, FaCheck,
+    FaChevronDown, FaDownload, FaEnvelope
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import SearchableSelect from '../common/SearchableSelect';
+import ConfirmModal from '../modals/ConfirmModal';
+import RenameFileModal from '../modals/RenameFileModal';
 import { Button } from '../ui/button';
 
 interface FileExplorerProps {
@@ -16,12 +19,14 @@ interface FileExplorerProps {
     setIsUploadModalOpen: (open: boolean) => void;
     handlePreviewFile: (file: any) => Promise<void>;
     handleDownloadFile: (file: any) => Promise<void>;
-    setDeleteFileConfirm: (confirm: { isOpen: boolean; fileId: string | null; fileName: string }) => void;
     toggleFileType: (file: any) => Promise<void>;
     onRenameFile: (file: any, newName: string) => Promise<void>;
     onMoveFile: (file: any, newType: string) => Promise<void>;
     onBulkMove: (ids: string[], newType: string) => Promise<void>;
     onBulkDownloadZip: (ids: string[]) => Promise<void>;
+    onBulkDelete: (ids: string[]) => Promise<void>;
+    onBulkRename: (ids: string[], prefix: string, suffix: string) => Promise<void>;
+    onBulkEmail: (ids: string[]) => void;
     formatFileSize: (bytes: any) => string;
     onUpload: (files: any[], onProgress: (id: string, progress: number) => void) => Promise<void>;
 }
@@ -71,13 +76,17 @@ const FILTERS: { value: ActiveFilter; labelKey: string; defaultLabel: string }[]
 
 const FileExplorer: React.FC<FileExplorerProps> = ({
     projectData,
+    setIsUploadModalOpen,
     handlePreviewFile,
     handleDownloadFile,
-    setDeleteFileConfirm,
+    toggleFileType,
     onRenameFile,
     onMoveFile,
     onBulkMove,
     onBulkDownloadZip,
+    onBulkDelete,
+    onBulkRename,
+    onBulkEmail,
     formatFileSize,
     onUpload,
 }) => {
@@ -91,7 +100,24 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all');
     const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
+    const [isMoveSubmenuOpen, setIsMoveSubmenuOpen] = useState(false);
+    const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+    const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+    const [renameMode, setRenameMode] = useState<'single' | 'bulk'>('single');
+    const [fileToRename, setFileToRename] = useState<any | null>(null);
+    const bulkActionsRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (bulkActionsRef.current && !bulkActionsRef.current.contains(e.target as Node)) {
+                setIsBulkActionsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isBulkActionsOpen]);
 
     const files = projectData.files || [];
 
@@ -236,7 +262,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             >
                 <div className="px-5 py-3 border-b border-[#D1D9D8] bg-white">
                     <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                        <FaCloudUploadAlt className="text-brand-primary" /> {t('files.uploadFiles', 'Dateien hochladen')}
+                        {t('files.uploadFiles', 'Dateien hochladen')}
                     </h3>
                 </div>
 
@@ -341,8 +367,8 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                 {/* ── Toolbar ── */}
                 <div className="px-5 py-3 border-b border-[#eee] flex flex-wrap items-center gap-4 bg-white min-h-[56px]">
                     <div className="flex items-center gap-1.5 animate-in fade-in duration-300">
-                        <FaFolderOpen className="text-brand-primary text-xs" />
-                        <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-800 leading-none">
+
+                        <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                             {t('common.documents', 'Dokumente')}
                         </h2>
                     </div>
@@ -389,73 +415,127 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
                 {/* ── NEW: Bulk Action Bar (Under Filters) ── */}
                 {selectedIds.size > 0 && (
-                    <div className="border-b border-[#D1D9D8] px-5 py-2 bg-gradient-to-b from-[#f0f0f0] to-[#e6e6e6] flex items-center justify-between gap-4 animate-in slide-in-from-top-1 duration-200 shadow-[inset_0_-1px_0_rgba(255,255,255,0.8)]">
+                    <div className="border-b border-[#D1D9D8] px-5 py-2.5 bg-gradient-to-b from-[#f8f9fa] to-[#eee] flex items-center justify-between gap-4 animate-in slide-in-from-top-1 duration-200 shadow-sm">
                         <div className="flex items-center gap-4 flex-wrap">
-                            <span className="text-[10px] sm:text-[11px] font-bold text-[#1B4D4F] bg-[#dff0ef] border border-[#b8cecd] px-2 py-0.5 rounded-[2px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] whitespace-nowrap">
-                                {selectedIds.size} {t('common.selected', 'Selected')}
+                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 bg-white border border-[#ccc] px-2 py-0.5 rounded-sm shadow-sm whitespace-nowrap">
+                                {selectedIds.size} {t('common.selected', 'Ausgewählt')}
                             </span>
-                            <div className="h-3.5 w-px bg-[#bbb]" />
+                            <div className="h-4 w-px bg-slate-300" />
                             <div className="flex items-center gap-2 flex-wrap">
-                                {/* Move Group */}
-                                <div className="flex items-center gap-1 bg-white/[0.4] border border-[#bbb] p-0.5 rounded-sm shadow-sm">
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase px-1.5">{t('common.move', 'Verschieben')}:</span>
-                                    {(['source', 'target', 'reference', 'delivery'] as FileType[]).map(type => (
-                                        <button
-                                            key={type}
-                                            className={clsx(
-                                                "px-2 py-0.5 text-[9px] font-black rounded-sm border uppercase transition-all whitespace-nowrap shadow-[0_1px_1px_rgba(0,0,0,0.05)]",
-                                                FILE_TYPE_CONFIG[type].bg,
-                                                "hover:opacity-80 active:scale-95"
-                                            )}
-                                            onClick={() => {
-                                                if (selectedIds.size === 1) onMoveFile(selectedFiles[0], type);
-                                                else onBulkMove(Array.from(selectedIds), type);
-                                                setSelectedIds(new Set());
-                                            }}
-                                        >
-                                            {t(`files.types.short.${type}`, FILE_TYPE_CONFIG[type].short)}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* Action Buttons (DataTable Style) */}
-                                <Button
-                                    onClick={() => {
-                                        const file = selectedFiles[0];
-                                        const newName = prompt(t('files.enterNewName', 'Neuer Name:'), file.name || file.original_name);
-                                        if (newName) onRenameFile(file, newName);
-                                    }}
-                                    disabled={selectedIds.size !== 1}
-                                    variant="secondary"
-                                    size="sm"
-                                    className="h-7 text-[10px] uppercase font-bold tracking-wider bg-white"
-                                >
-                                    {t('common.rename', 'Umbenennen')}
-                                </Button>
-                                <Button
-                                    onClick={() => {
-                                        if (selectedFiles.length === 1) {
-                                            setDeleteFileConfirm({ isOpen: true, fileId: selectedFiles[0].id, fileName: selectedFiles[0].name || selectedFiles[0].original_name });
-                                        } else {
-                                            toast(t('files.bulkDeleteHint', 'Bitte löschen Sie Dateien einzeln.'), { icon: 'ℹ️' });
-                                        }
-                                    }}
-                                    variant="secondary"
-                                    size="sm"
-                                    className="h-7 text-[10px] uppercase font-bold tracking-wider text-red-600 border-[#ccc] hover:border-red-300 bg-white"
-                                >
-                                    <FaTrashAlt className="text-[9px]" /> {t('common.delete', 'Löschen')}
-                                </Button>
+                                {/* Download Button - Primary/Header style */}
                                 <Button
                                     onClick={() => {
                                         if (selectedFiles.length === 1) handleDownloadFile(selectedFiles[0]);
                                         else onBulkDownloadZip(Array.from(selectedIds));
                                     }}
+                                    variant="secondary"
                                     size="sm"
-                                    className="h-7 text-[10px] uppercase font-bold tracking-wider"
+                                    className="h-8 px-4 text-[11px] font-bold uppercase tracking-wider shadow-sm"
                                 >
-                                    <FaCloudUploadAlt className="text-[9px] rotate-180" /> {t('common.download', 'Herunterladen')}
+                                    <FaDownload size={11} /> {t('common.download', 'Herunterladen')}
                                 </Button>
+
+                                <Button
+                                    onClick={() => onBulkEmail(Array.from(selectedIds))}
+                                    variant="default"
+                                    size="sm"
+                                    className="h-8 px-4 text-[11px] font-bold uppercase tracking-wider shadow-sm border-[#ccc]"
+                                >
+                                    <FaEnvelope size={11} className="" /> {t('common.send_email', 'Als E-Mail senden')}
+                                </Button>
+
+                                {/* Delete Button - Destructive/Header style */}
+                                <Button
+                                    onClick={() => {
+                                        setIsBulkDeleteModalOpen(true);
+                                    }}
+                                    variant="destructive"
+                                    size="sm"
+                                    className="h-8 px-4 text-[11px] font-bold uppercase tracking-wider shadow-sm"
+                                >
+                                    <FaTrashAlt size={11} /> {t('common.delete', 'Löschen')}
+                                </Button>
+
+                                {/* Dropdown for Move and others */}
+                                <div className="relative" ref={bulkActionsRef}>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => setIsBulkActionsOpen(!isBulkActionsOpen)}
+                                        className="h-8 px-4 text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm border-[#ccc]"
+                                    >
+                                        Mehr Aktionen <FaChevronDown className={clsx("text-[9px] transition-transform", isBulkActionsOpen && "rotate-180")} />
+                                    </Button>
+
+                                    {isBulkActionsOpen && (
+                                        <div className="absolute left-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-sm shadow-xl z-[60] py-1 animate-in fade-in slide-in-from-top-1">
+                                            {/* Verschieben Submenu */}
+                                            <div className="relative group">
+                                                <button
+                                                    onMouseEnter={() => setIsMoveSubmenuOpen(true)}
+                                                    className="w-full text-left px-4 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-50 flex items-center justify-between transition"
+                                                >
+                                                    <div className="flex items-center gap-3">Verschieben nach</div>
+                                                    <FaChevronRight size={8} />
+                                                </button>
+
+                                                {isMoveSubmenuOpen && (
+                                                    <div
+                                                        className="absolute left-full top-0 ml-0 w-40 bg-white border border-slate-200 rounded shadow-lg py-1 animate-in fade-in slide-in-from-left-1"
+                                                        onMouseLeave={() => setIsMoveSubmenuOpen(false)}
+                                                    >
+                                                        {(['source', 'target', 'reference', 'delivery'] as FileType[]).map(type => (
+                                                            <button
+                                                                key={type}
+                                                                className="w-full text-left px-4 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition capitalize"
+                                                                onClick={() => {
+                                                                    if (selectedIds.size === 1) onMoveFile(selectedFiles[0], type);
+                                                                    else onBulkMove(Array.from(selectedIds), type);
+                                                                    setSelectedIds(new Set());
+                                                                    setIsBulkActionsOpen(false);
+                                                                    setIsMoveSubmenuOpen(false);
+                                                                }}
+                                                            >
+                                                                {FILE_TYPE_CONFIG[type].label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <button
+                                                onClick={() => {
+                                                    setRenameMode('bulk');
+                                                    setIsRenameModalOpen(true);
+                                                    setIsBulkActionsOpen(false);
+                                                }}
+                                                onMouseEnter={() => setIsMoveSubmenuOpen(false)}
+                                                className="w-full text-left px-4 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition"
+                                            >
+                                                Präfix / Suffix hinzufügen
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    const file = selectedFiles[0];
+                                                    if (file) {
+                                                        setFileToRename(file);
+                                                        setRenameMode('single');
+                                                        setIsRenameModalOpen(true);
+                                                    }
+                                                    setIsBulkActionsOpen(false);
+                                                }}
+                                                onMouseEnter={() => setIsMoveSubmenuOpen(false)}
+                                                disabled={selectedIds.size !== 1}
+                                                className="w-full text-left px-4 py-2.5 text-[11px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                            >
+                                                Umbenennen
+                                            </button>
+
+
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <button
@@ -463,7 +543,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                             className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-black/5 rounded-sm transition"
                             title={t('common.clearSelection', 'Auswahl aufheben')}
                         >
-                            <FaTimes className="text-xs" />
+                            <FaTimes size={14} />
                         </button>
                     </div>
                 )}
@@ -578,67 +658,105 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             </div>
 
             {/* Helper Overlays */}
-            {uploadQueue.length > 0 && (
-                <div className="fixed bottom-6 right-6 w-80 bg-white border border-[#D1D9D8] rounded-sm shadow-2xl z-[100] animate-in slide-in-from-bottom-4">
-                    <div className="px-4 py-3 bg-[#1B4D4F] text-white flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-widest">{t('common.uploads', 'Hochladevorgänge')} ({uploadQueue.length})</span>
-                        <FaTimes className="cursor-pointer" onClick={() => setUploadQueue([])} />
-                    </div>
-                    <div className="p-4 max-h-64 overflow-y-auto custom-scrollbar space-y-3">
-                        {uploadQueue.map(f => (
-                            <div key={f.id} className="space-y-1.5">
-                                <div className="flex justify-between items-center text-[10px]">
-                                    <span className="font-bold text-slate-700 truncate w-40">{f.name}</span>
-                                    {f.status === 'saved' ? <FaCheck className="text-emerald-500" /> :
-                                        f.status === 'error' ? <FaExclamationCircle className="text-red-500" /> :
-                                            <span className="font-mono text-slate-400">{f.progress}%</span>}
-                                </div>
-                                <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className={clsx("h-full transition-all", f.status === 'saved' ? 'bg-emerald-500' : 'bg-brand-primary')} style={{ width: `${f.progress}%` }} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {showScanHint && (
-                <div className="fixed top-20 right-6 w-80 bg-white border border-[#D1D9D8] rounded-sm shadow-xl p-4 z-[9997] animate-in fade-in slide-in-from-right-4">
-                    <div className="flex items-start gap-3">
-                        <FaPrint className="text-brand-primary mt-1" />
-                        <div className="flex-1">
-                            <p className="text-[11px] font-bold text-slate-800 uppercase mb-1">Scan instruction</p>
-                            <p className="text-[11px] text-slate-500 leading-relaxed">Save your scan as PDF or JPEG and select it in the file dialog.</p>
+            {
+                uploadQueue.length > 0 && (
+                    <div className="fixed bottom-6 right-6 w-80 bg-white border border-[#D1D9D8] rounded-sm shadow-2xl z-[100] animate-in slide-in-from-bottom-4">
+                        <div className="px-4 py-3 bg-[#1B4D4F] text-white flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-widest">{t('common.uploads', 'Hochladevorgänge')} ({uploadQueue.length})</span>
+                            <FaTimes className="cursor-pointer" onClick={() => setUploadQueue([])} />
                         </div>
-                        <FaTimes className="text-slate-300 hover:text-slate-600 cursor-pointer" onClick={() => setShowScanHint(false)} />
-                    </div>
-                </div>
-            )}
-
-            {isDragging && (
-                <div className="fixed inset-0 bg-brand-primary/10 border-4 border-dashed border-brand-primary z-[9999] flex flex-col items-center justify-center backdrop-blur-[2px] pointer-events-none animate-in fade-in duration-200">
-                    <div className="bg-white p-8 rounded-full shadow-2xl border border-brand-primary/20 mb-6 scale-110">
-                        <FaCloudUploadAlt className="text-6xl text-brand-primary" />
-                    </div>
-                    <div className="text-2xl font-black text-brand-primary uppercase tracking-[0.2em]">{t('files.dropFilesHere', 'Drop files here')}</div>
-                </div>
-            )}
-
-            {pendingFiles && (
-                <div className="fixed inset-0 bg-black/30 z-[9998] flex items-center justify-center backdrop-blur-[2px]">
-                    <div className="bg-white rounded-sm border border-[#D1D9D8] shadow-2xl w-full max-w-xs p-5">
-                        <p className="text-[11px] font-bold text-slate-800 uppercase tracking-widest mb-4 text-center">Select category</p>
-                        <div className="grid gap-2">
-                            {(['source', 'target', 'reference', 'delivery'] as FileType[]).map(type => (
-                                <button key={type} onClick={() => confirmUpload(type)} className={clsx("px-4 py-2.5 rounded-sm border text-[11px] font-bold text-left transition hover:opacity-80 active:scale-95", FILE_TYPE_CONFIG[type].bg)}>
-                                    {FILE_TYPE_CONFIG[type].label}
-                                </button>
+                        <div className="p-4 max-h-64 overflow-y-auto custom-scrollbar space-y-3">
+                            {uploadQueue.map(f => (
+                                <div key={f.id} className="space-y-1.5">
+                                    <div className="flex justify-between items-center text-[10px]">
+                                        <span className="font-bold text-slate-700 truncate w-40">{f.name}</span>
+                                        {f.status === 'saved' ? <FaCheck className="text-emerald-500" /> :
+                                            f.status === 'error' ? <FaExclamationCircle className="text-red-500" /> :
+                                                <span className="font-mono text-slate-400">{f.progress}%</span>}
+                                    </div>
+                                    <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+                                        <div className={clsx("h-full transition-all", f.status === 'saved' ? 'bg-emerald-500' : 'bg-brand-primary')} style={{ width: `${f.progress}%` }} />
+                                    </div>
+                                </div>
                             ))}
                         </div>
-                        <button onClick={() => setPendingFiles(null)} className="w-full mt-4 text-[11px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest transition">Cancel</button>
                     </div>
-                </div>
-            )}
+                )
+            }
+
+            {
+                showScanHint && (
+                    <div className="fixed top-20 right-6 w-80 bg-white border border-[#D1D9D8] rounded-sm shadow-xl p-4 z-[9997] animate-in fade-in slide-in-from-right-4">
+                        <div className="flex items-start gap-3">
+                            <FaPrint className="text-brand-primary mt-1" />
+                            <div className="flex-1">
+                                <p className="text-[11px] font-bold text-slate-800 uppercase mb-1">Scan instruction</p>
+                                <p className="text-[11px] text-slate-500 leading-relaxed">Save your scan as PDF or JPEG and select it in the file dialog.</p>
+                            </div>
+                            <FaTimes className="text-slate-300 hover:text-slate-600 cursor-pointer" onClick={() => setShowScanHint(false)} />
+                        </div>
+                    </div>
+                )
+            }
+
+            {
+                isDragging && (
+                    <div className="fixed inset-0 bg-brand-primary/10 border-4 border-dashed border-brand-primary z-[9999] flex flex-col items-center justify-center backdrop-blur-[2px] pointer-events-none animate-in fade-in duration-200">
+                        <div className="bg-white p-8 rounded-full shadow-2xl border border-brand-primary/20 mb-6 scale-110">
+                            <FaCloudUploadAlt className="text-6xl text-brand-primary" />
+                        </div>
+                        <div className="text-2xl font-black text-brand-primary uppercase tracking-[0.2em]">{t('files.dropFilesHere', 'Drop files here')}</div>
+                    </div>
+                )
+            }
+
+            <ConfirmModal
+                isOpen={isBulkDeleteModalOpen}
+                onClose={() => setIsBulkDeleteModalOpen(false)}
+                onConfirm={() => {
+                    onBulkDelete(Array.from(selectedIds));
+                    setSelectedIds(new Set());
+                    setIsBulkDeleteModalOpen(false);
+                }}
+                title={t('files.bulkDeleteTitle', 'Dateien löschen')}
+                message={t('files.bulkDeleteConfirm', `Möchten Sie die ${selectedIds.size} ausgewählten Dateien wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)}
+                confirmText={t('common.delete', 'Löschen')}
+            />
+
+            {
+                pendingFiles && (
+                    <div className="fixed inset-0 bg-black/30 z-[9998] flex items-center justify-center backdrop-blur-[2px]">
+                        <div className="bg-white rounded-sm border border-[#D1D9D8] shadow-2xl w-full max-w-xs p-5">
+                            <p className="text-[11px] font-bold text-slate-800 uppercase tracking-widest mb-4 text-center">Select category</p>
+                            <div className="grid gap-2">
+                                {(['source', 'target', 'reference', 'delivery'] as FileType[]).map(type => (
+                                    <button key={type} onClick={() => confirmUpload(type)} className={clsx("px-4 py-2.5 rounded-sm border text-[11px] font-bold text-left transition hover:opacity-80 active:scale-95", FILE_TYPE_CONFIG[type].bg)}>
+                                        {FILE_TYPE_CONFIG[type].label}
+                                    </button>
+                                ))}
+                            </div>
+                            <button onClick={() => setPendingFiles(null)} className="w-full mt-4 text-[11px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest transition">Cancel</button>
+                        </div>
+                    </div>
+                )
+            }
+            <RenameFileModal
+                isOpen={isRenameModalOpen}
+                onClose={() => {
+                    setIsRenameModalOpen(false);
+                    setFileToRename(null);
+                }}
+                mode={renameMode}
+                initialName={fileToRename ? (fileToRename.file_name || fileToRename.original_name || '') : ''}
+                onSubmit={(data) => {
+                    if (renameMode === 'single' && fileToRename) {
+                        onRenameFile(fileToRename, data.name || '');
+                    } else if (renameMode === 'bulk') {
+                        onBulkRename(Array.from(selectedIds), data.prefix || '', data.suffix || '');
+                        setSelectedIds(new Set());
+                    }
+                }}
+            />
         </div>
     );
 };

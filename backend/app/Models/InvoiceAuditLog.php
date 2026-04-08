@@ -16,6 +16,17 @@ class InvoiceAuditLog extends Model
     // Disable updated_at since audit logs are immutable (append-only)
     const UPDATED_AT = null;
 
+    protected static function booted(): void
+    {
+        static::updating(function () {
+            throw new \RuntimeException('Invoice audit logs are append-only and may not be modified.');
+        });
+
+        static::deleting(function () {
+            throw new \RuntimeException('Invoice audit logs are append-only and may not be deleted.');
+        });
+    }
+
     protected $fillable = [
         'invoice_id',
         'user_id',

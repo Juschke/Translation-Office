@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import {
-    FaPlus, FaTrash, FaEdit
+    FaPlus, FaTrash, FaEdit, FaDatabase
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { Button } from '../ui/button';
@@ -14,6 +14,41 @@ import SearchableSelect from '../common/SearchableSelect';
 import NewMasterDataModal from '../modals/NewMasterDataModal';
 import ConfirmModal from '../modals/ConfirmModal';
 import { getFlagUrl } from '../../utils/flags';
+
+// ── Shared cell helpers ───────────────────────────────────────────────────────
+
+const NameCell = ({ name, sub }: { name: string; sub?: string }) => (
+    <div className="flex flex-col py-0.5">
+        <span className="text-sm font-medium text-slate-800 leading-snug">{name}</span>
+        {sub && <span className="text-[11px] text-slate-400 mt-0.5">{sub}</span>}
+    </div>
+);
+
+const StatusDot = ({ active }: { active: boolean }) => (
+    <span className="flex items-center gap-1.5 text-xs text-slate-500">
+        <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', active ? 'bg-emerald-400' : 'bg-slate-300')} />
+        {active ? 'Aktiv' : 'Inaktiv'}
+    </span>
+);
+
+const ActionButtons = ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) => (
+    <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+            onClick={onEdit}
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+        >
+            <FaEdit size={12} />
+        </button>
+        <button
+            onClick={onDelete}
+            className="p-1.5 text-slate-300 hover:text-red-500 rounded transition-colors"
+        >
+            <FaTrash size={12} />
+        </button>
+    </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const MasterDataTab = () => {
     const { t } = useTranslation();
@@ -37,23 +72,10 @@ const MasterDataTab = () => {
         }
     }, [searchParams]);
 
-    const { data: languages = [], isLoading: isLanguagesLoading } = useQuery<any[]>({
-        queryKey: ['settings', 'languages'],
-        queryFn: settingsService.getLanguages
-    });
-    const { data: docTypes = [], isLoading: isDocTypesLoading } = useQuery<any[]>({
-        queryKey: ['settings', 'docTypes'],
-        queryFn: settingsService.getDocTypes
-    });
-    const { data: services = [], isLoading: isServicesLoading } = useQuery<any[]>({
-        queryKey: ['settings', 'services'],
-        queryFn: settingsService.getServices
-    });
-    const { data: emailTemplates = [], isLoading: isTemplatesLoading } = useQuery<any[]>({
-        queryKey: ['emailTemplates'],
-        queryFn: settingsService.getEmailTemplates
-    });
-
+    const { data: languages = [], isLoading: isLanguagesLoading } = useQuery<any[]>({ queryKey: ['settings', 'languages'], queryFn: settingsService.getLanguages });
+    const { data: docTypes = [], isLoading: isDocTypesLoading } = useQuery<any[]>({ queryKey: ['settings', 'docTypes'], queryFn: settingsService.getDocTypes });
+    const { data: services = [], isLoading: isServicesLoading } = useQuery<any[]>({ queryKey: ['settings', 'services'], queryFn: settingsService.getServices });
+    const { data: emailTemplates = [], isLoading: isTemplatesLoading } = useQuery<any[]>({ queryKey: ['emailTemplates'], queryFn: settingsService.getEmailTemplates });
     const { data: specializations = [], isLoading: isSpecializationsLoading } = useQuery<any[]>({ queryKey: ['settings', 'specializations'], queryFn: settingsService.getSpecializations });
     const { data: units = [], isLoading: isUnitsLoading } = useQuery<any[]>({ queryKey: ['settings', 'units'], queryFn: settingsService.getUnits });
     const { data: currencies = [], isLoading: isCurrenciesLoading } = useQuery<any[]>({ queryKey: ['settings', 'currencies'], queryFn: settingsService.getCurrencies });
@@ -115,125 +137,354 @@ const MasterDataTab = () => {
         setDeleteConfirm({ isOpen: false, item: null });
     };
 
+    const actions = (item: any) => ({
+        id: 'actions',
+        header: '',
+        accessor: (row: any) => (
+            <ActionButtons
+                onEdit={() => handleOpenModal(row)}
+                onDelete={() => handleDeleteMasterData(row)}
+            />
+        ),
+        align: 'right' as const,
+        className: 'w-16',
+    });
+
     return (
         <>
             <div className="bg-white shadow-sm border border-slate-200 rounded-sm overflow-hidden flex flex-col h-full min-h-[500px] sm:min-h-0 animate-fadeIn">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0 sticky top-0 z-20">
-                    <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 italic">
-                        {t(`settings.master_data.${masterTab === 'languages' ? 'language_config' : masterTab === 'doc_types' ? 'doc_categories' : masterTab === 'services' ? 'service_catalog' : masterTab === 'email_templates' ? 'email_templates' : masterTab === 'specializations' ? 'specializations' : masterTab === 'units' ? 'units' : masterTab === 'currencies' ? 'currencies' : 'project_statuses'}`)}
-                    </h3>
-                    <Button variant="default" size="sm" onClick={() => handleOpenModal()} className="shrink-0 flex items-center gap-2">
-                        <FaPlus className="text-[10px]" /> {t('settings.master_data.add_new')}
+                    <div className="flex items-center gap-2.5">
+                        <FaDatabase className="text-slate-400" size={13} />
+                        <h3 className="text-sm font-medium text-slate-700">
+                            {t(`settings.master_data.${masterTab === 'languages' ? 'language_config' : masterTab === 'doc_types' ? 'doc_categories' : masterTab === 'services' ? 'service_catalog' : masterTab === 'email_templates' ? 'email_templates' : masterTab === 'specializations' ? 'specializations' : masterTab === 'units' ? 'units' : masterTab === 'currencies' ? 'currencies' : 'project_statuses'}`)}
+                        </h3>
+                    </div>
+                    <Button variant="default" size="sm" onClick={() => handleOpenModal()} className="shrink-0 flex items-center gap-1.5">
+                        <FaPlus size={10} /> {t('settings.master_data.add_new')}
                     </Button>
                 </div>
 
-
-
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                    {masterTab === 'languages' && (isLanguagesLoading ? <TableSkeleton rows={5} columns={6} /> : <DataTable isLoading={isLanguagesLoading} data={languages} columns={[
-                        { id: 'code', header: t('fields.code'), accessor: (l: any) => <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50/50 px-2 py-0.5 border border-slate-200/50 rounded-sm">{l.code || l.iso_code}</span>, className: 'w-24' },
-                        { id: 'iso', header: t('settings.master_data.code_iso'), accessor: (l: any) => <span className="text-[10px] font-medium text-slate-400 uppercase">{l.iso_code}</span>, className: 'w-24' },
-                        { id: 'name', header: t('fields.name'), accessor: (l: any) => <span className="font-medium text-slate-800 text-sm">{l.name_internal}</span> },
-                        { id: 'flag', header: t('settings.master_data_flag'), accessor: (l: any) => <div className="w-8 h-6 overflow-hidden shadow-sm border border-slate-200 bg-slate-50 rounded-sm flex items-center justify-center">{l.flag_icon ? <img src={getFlagUrl(l.flag_icon)} className="w-full h-full object-cover" /> : <span className="text-[10px] text-slate-300 uppercase font-bold">no</span>}</div>, align: 'center' },
-                        { id: 'native', header: t('settings.master_data.native'), accessor: 'name_native', className: 'text-slate-500 italic text-sm' },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (l: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', l.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{l.status || 'active'}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (l: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(l)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(l)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={1000} onAddClick={() => handleOpenModal()} />)}
 
+                    {/* LANGUAGES */}
+                    {masterTab === 'languages' && (isLanguagesLoading ? <TableSkeleton rows={5} columns={5} /> : (
+                        <DataTable
+                            isLoading={isLanguagesLoading}
+                            data={languages}
+                            pageSize={1000}
+                            onAddClick={() => handleOpenModal()}
+                            columns={[
+                                {
+                                    id: 'name',
+                                    header: 'Sprache',
+                                    accessor: (l: any) => (
+                                        <NameCell
+                                            name={l.name_internal}
+                                            sub={[l.code || l.iso_code, l.iso_code].filter(Boolean).join(' · ')}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: 'flag',
+                                    header: 'Flagge',
+                                    accessor: (l: any) => (
+                                        <div className="w-8 h-5 overflow-hidden border border-slate-200 rounded-sm flex items-center justify-center bg-slate-50">
+                                            {l.flag_icon
+                                                ? <img src={getFlagUrl(l.flag_icon)} className="w-full h-full object-cover" />
+                                                : <span className="text-[9px] text-slate-300">–</span>
+                                            }
+                                        </div>
+                                    ),
+                                    align: 'center',
+                                    className: 'w-16',
+                                },
+                                {
+                                    id: 'native',
+                                    header: 'Nativname',
+                                    accessor: (l: any) => <span className="text-sm text-slate-500">{l.name_native || '–'}</span>,
+                                },
+                                {
+                                    id: 'status',
+                                    header: 'Status',
+                                    accessor: (l: any) => <StatusDot active={l.status === 'active' || !l.status} />,
+                                    className: 'w-24',
+                                },
+                                actions(null),
+                            ]}
+                        />
+                    ))}
+
+                    {/* DOC TYPES */}
                     {masterTab === 'doc_types' && (isDocTypesLoading ? <TableSkeleton rows={5} columns={4} /> : (
                         <DataTable
                             isLoading={isDocTypesLoading}
                             data={docTypes.filter((d: any) => !docTypeCategoryFilter || d.category === docTypeCategoryFilter)}
-                            columns={[
-                                { id: 'code', header: t('fields.code'), accessor: (d: any) => <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50/50 px-2 py-0.5 border border-slate-200/50 rounded-sm">{d.code || '-'}</span>, className: 'w-28' },
-                                {
-                                    id: 'name',
-                                    header: t('fields.name'),
-                                    accessor: (d: any) => (
-                                        <div className="flex flex-col py-1">
-                                            <span className="font-semibold text-slate-800 text-sm leading-tight">{d.name}</span>
-                                            <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">{d.category || '-'}</span>
-                                        </div>
-                                    )
-                                },
-                                { id: 'status', header: t('settings.master_data.status'), accessor: (d: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', d.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{d.status || 'active'}</span>, align: 'center' },
-                                { id: 'actions', header: '', accessor: (d: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(d)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(d)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
-                            ]}
                             pageSize={100}
                             onAddClick={() => handleOpenModal()}
                             preSearchControls={(
-                                <div className="flex gap-3">
-                                    <SearchableSelect
-                                        options={[
-                                            { value: '', label: 'Alle Kategorien' },
-                                            ...Array.from(new Set(docTypes.map((d: any) => d.category).filter(Boolean))).map(cat => ({
-                                                value: cat as string,
-                                                label: cat as string
-                                            }))
-                                        ]}
-                                        value={docTypeCategoryFilter}
-                                        onChange={(val) => setDocTypeCategoryFilter(val)}
-                                        placeholder={t('settings.master_data_category_placeholder')}
-                                        className="min-w-[250px] !h-8  !shadow-none"
-                                    />
-                                </div>
+                                <SearchableSelect
+                                    options={[
+                                        { value: '', label: 'Alle Kategorien' },
+                                        ...Array.from(new Set(docTypes.map((d: any) => d.category).filter(Boolean))).map(cat => ({
+                                            value: cat as string,
+                                            label: cat as string,
+                                        }))
+                                    ]}
+                                    value={docTypeCategoryFilter}
+                                    onChange={(val) => setDocTypeCategoryFilter(val)}
+                                    placeholder={t('settings.master_data_category_placeholder')}
+                                    className="min-w-[220px] !h-8 !shadow-none"
+                                />
                             )}
+                            columns={[
+                                {
+                                    id: 'name',
+                                    header: 'Dokumentenart',
+                                    accessor: (d: any) => (
+                                        <NameCell
+                                            name={d.name}
+                                            sub={[d.code, d.category].filter(Boolean).join(' · ')}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: 'status',
+                                    header: 'Status',
+                                    accessor: (d: any) => <StatusDot active={d.status === 'active' || !d.status} />,
+                                    className: 'w-24',
+                                },
+                                actions(null),
+                            ]}
                         />
-
                     ))}
 
+                    {/* SERVICES */}
+                    {masterTab === 'services' && (isServicesLoading ? <TableSkeleton rows={5} columns={4} /> : (
+                        <DataTable
+                            isLoading={isServicesLoading}
+                            data={services}
+                            pageSize={1000}
+                            onAddClick={() => handleOpenModal()}
+                            columns={[
+                                {
+                                    id: 'name',
+                                    header: 'Dienstleistung',
+                                    accessor: (s: any) => (
+                                        <NameCell
+                                            name={s.name}
+                                            sub={s.service_code || undefined}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: 'description',
+                                    header: 'Beschreibung',
+                                    accessor: (s: any) => <span className="text-sm text-slate-400 line-clamp-1">{s.description || '–'}</span>,
+                                },
+                                {
+                                    id: 'status',
+                                    header: 'Status',
+                                    accessor: (s: any) => <StatusDot active={s.status === 'active' || !s.status} />,
+                                    className: 'w-24',
+                                },
+                                actions(null),
+                            ]}
+                        />
+                    ))}
 
-                    {masterTab === 'services' && (isServicesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isServicesLoading} data={services} columns={[
-                        { id: 'code', header: t('fields.code'), accessor: (s: any) => <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50/50 px-2 py-0.5 border border-slate-200/50 rounded-sm">{s.service_code || '-'}</span>, className: 'w-32' },
-                        { id: 'name', header: t('settings.master_data.service_name'), accessor: (s: any) => <span className="font-medium text-slate-800 text-sm">{s.name}</span> },
-                        { id: 'description', header: t('fields.description'), accessor: (s: any) => <span className="text-xs text-slate-400">{s.description || '-'}</span> },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (s: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', s.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{s.status || 'active'}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (s: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(s)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(s)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={1000} onAddClick={() => handleOpenModal()} />)}
+                    {/* EMAIL TEMPLATES */}
+                    {masterTab === 'email_templates' && (isTemplatesLoading ? <TableSkeleton rows={5} columns={4} /> : (
+                        <DataTable
+                            isLoading={isTemplatesLoading}
+                            data={emailTemplates}
+                            pageSize={1000}
+                            onAddClick={() => handleOpenModal()}
+                            columns={[
+                                {
+                                    id: 'name',
+                                    header: 'Vorlage',
+                                    accessor: (tmpl: any) => (
+                                        <NameCell
+                                            name={tmpl.name}
+                                            sub={tmpl.code || undefined}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: 'subject',
+                                    header: 'Betreff',
+                                    accessor: (tmpl: any) => <span className="text-sm text-slate-500 line-clamp-1">{tmpl.subject || '–'}</span>,
+                                },
+                                {
+                                    id: 'status',
+                                    header: 'Status',
+                                    accessor: (tmpl: any) => <StatusDot active={tmpl.status === 'active' || !tmpl.status} />,
+                                    className: 'w-24',
+                                },
+                                actions(null),
+                            ]}
+                        />
+                    ))}
 
-                    {masterTab === 'email_templates' && (isTemplatesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isTemplatesLoading} data={emailTemplates} columns={[
-                        { id: 'code', header: t('fields.code'), accessor: (t: any) => <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50/50 px-2 py-0.5 border border-slate-200/50 rounded-sm">{t.code || '-'}</span>, className: 'w-32' },
-                        { id: 'name', header: t('settings.master_data.template_name'), accessor: (t: any) => <span className="font-medium text-slate-800 text-sm">{t.name}</span> },
-                        { id: 'subject', header: t('settings.master_data.subject'), accessor: (t: any) => <span className="text-xs text-slate-500">{t.subject}</span> },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (t: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', t.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{t.status || 'active'}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (t: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(t)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(t)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={1000} onAddClick={() => handleOpenModal()} />)}
+                    {/* SPECIALIZATIONS */}
+                    {masterTab === 'specializations' && (isSpecializationsLoading ? <TableSkeleton rows={5} columns={4} /> : (
+                        <DataTable
+                            isLoading={isSpecializationsLoading}
+                            data={specializations}
+                            pageSize={1000}
+                            onAddClick={() => handleOpenModal()}
+                            columns={[
+                                {
+                                    id: 'name',
+                                    header: 'Fachgebiet',
+                                    accessor: (s: any) => (
+                                        <NameCell
+                                            name={s.name}
+                                            sub={s.code || undefined}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: 'description',
+                                    header: 'Beschreibung',
+                                    accessor: (s: any) => <span className="text-sm text-slate-400 line-clamp-1">{s.description || '–'}</span>,
+                                },
+                                {
+                                    id: 'status',
+                                    header: 'Status',
+                                    accessor: (s: any) => <StatusDot active={s.status === 'active' || !s.status} />,
+                                    className: 'w-24',
+                                },
+                                actions(null),
+                            ]}
+                        />
+                    ))}
 
-                    {masterTab === 'specializations' && (isSpecializationsLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isSpecializationsLoading} data={specializations} columns={[
-                        { id: 'code', header: t('fields.code'), accessor: (s: any) => <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50/50 px-2 py-0.5 border border-slate-200/50 rounded-sm">{s.code || '-'}</span>, className: 'w-32' },
-                        { id: 'name', header: t('fields.name'), accessor: (s: any) => <span className="font-medium text-slate-800 text-sm">{s.name}</span> },
-                        { id: 'description', header: t('fields.description'), accessor: (s: any) => <span className="text-xs text-slate-400">{s.description || '-'}</span> },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (s: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', s.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{s.status || 'active'}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (s: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(s)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(s)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={1000} onAddClick={() => handleOpenModal()} />)}
+                    {/* UNITS */}
+                    {masterTab === 'units' && (isUnitsLoading ? <TableSkeleton rows={5} columns={5} /> : (
+                        <DataTable
+                            isLoading={isUnitsLoading}
+                            data={units}
+                            pageSize={1000}
+                            onAddClick={() => handleOpenModal()}
+                            columns={[
+                                {
+                                    id: 'name',
+                                    header: 'Einheit',
+                                    accessor: (u: any) => (
+                                        <NameCell
+                                            name={u.name}
+                                            sub={u.code || undefined}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: 'abbreviation',
+                                    header: 'Kürzel',
+                                    accessor: (u: any) => <span className="text-sm font-medium text-slate-600">{u.abbreviation || '–'}</span>,
+                                    className: 'w-24',
+                                },
+                                {
+                                    id: 'type',
+                                    header: 'Typ',
+                                    accessor: (u: any) => <span className="text-sm text-slate-500">{t(`settings.master_data.unit_types.${u.type || 'quantity'}`)}</span>,
+                                    className: 'w-32',
+                                },
+                                {
+                                    id: 'description',
+                                    header: 'Beschreibung',
+                                    accessor: (u: any) => <span className="text-sm text-slate-400 line-clamp-1">{u.description || '–'}</span>,
+                                },
+                                {
+                                    id: 'status',
+                                    header: 'Status',
+                                    accessor: (u: any) => <StatusDot active={u.status === 'active' || !u.status} />,
+                                    className: 'w-24',
+                                },
+                                actions(null),
+                            ]}
+                        />
+                    ))}
 
-                    {masterTab === 'units' && (isUnitsLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isUnitsLoading} data={units} columns={[
-                        { id: 'code', header: t('fields.code'), accessor: (u: any) => <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50/50 px-2 py-0.5 border border-slate-200/50 rounded-sm">{u.code || '-'}</span>, className: 'w-32' },
-                        { id: 'name', header: t('fields.name'), accessor: (u: any) => <span className="font-medium text-slate-800 text-sm">{u.name}</span> },
-                        { id: 'abbreviation', header: t('settings.master_data.abbreviation'), accessor: (u: any) => <span className="text-xs font-medium text-slate-500">{u.abbreviation}</span> },
-                        { id: 'type', header: t('settings.master_data.type'), accessor: (u: any) => <span className="text-xs text-slate-400 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-full font-medium">{t(`settings.master_data.unit_types.${u.type || 'quantity'}`)}</span> },
-                        { id: 'description', header: t('fields.description'), accessor: (u: any) => <span className="text-xs text-slate-400 italic line-clamp-1 max-w-[200px]">{u.description || '-'}</span> },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (u: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', u.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{u.status || 'active'}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (u: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(u)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(u)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={1000} onAddClick={() => handleOpenModal()} />)}
+                    {/* CURRENCIES */}
+                    {masterTab === 'currencies' && (isCurrenciesLoading ? <TableSkeleton rows={5} columns={4} /> : (
+                        <DataTable
+                            isLoading={isCurrenciesLoading}
+                            data={currencies}
+                            pageSize={1000}
+                            onAddClick={() => handleOpenModal()}
+                            columns={[
+                                {
+                                    id: 'name',
+                                    header: 'Währung',
+                                    accessor: (c: any) => (
+                                        <NameCell
+                                            name={c.name || c.code}
+                                            sub={c.code !== (c.name || c.code) ? c.code : undefined}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: 'symbol',
+                                    header: 'Symbol',
+                                    accessor: (c: any) => <span className="text-base text-slate-600 font-medium">{c.symbol || '–'}</span>,
+                                    className: 'w-20',
+                                    align: 'center',
+                                },
+                                {
+                                    id: 'status',
+                                    header: 'Status',
+                                    accessor: (c: any) => <StatusDot active={c.status === 'active' || !c.status} />,
+                                    className: 'w-24',
+                                },
+                                actions(null),
+                            ]}
+                        />
+                    ))}
 
-                    {masterTab === 'currencies' && (isCurrenciesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isCurrenciesLoading} data={currencies} columns={[
-                        { id: 'code', header: t('fields.code'), accessor: (c: any) => <span className="font-medium text-slate-800 text-sm">{c.code}</span> },
-                        { id: 'symbol', header: t('settings.master_data.symbol'), accessor: (c: any) => <span className="text-xs text-slate-500">{c.symbol}</span> },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (c: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', c.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{c.status || 'active'}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (c: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(c)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(c)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={1000} onAddClick={() => handleOpenModal()} />)}
+                    {/* PROJECT STATUSES */}
+                    {masterTab === 'project_statuses' && (isProjectStatusesLoading ? <TableSkeleton rows={5} columns={4} /> : (
+                        <DataTable
+                            isLoading={isProjectStatusesLoading}
+                            data={projectStatuses}
+                            pageSize={1000}
+                            onAddClick={() => handleOpenModal()}
+                            columns={[
+                                {
+                                    id: 'name',
+                                    header: 'Status',
+                                    accessor: (s: any) => (
+                                        <NameCell
+                                            name={s.label}
+                                            sub={[s.code, s.name].filter(Boolean).join(' · ')}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: 'preview',
+                                    header: 'Vorschau',
+                                    accessor: (s: any) => (
+                                        <span className={clsx('px-2.5 py-0.5 rounded-sm text-xs font-medium border', s.style || 'bg-slate-50 text-slate-500 border-slate-200')}>
+                                            {s.label}
+                                        </span>
+                                    ),
+                                    align: 'center',
+                                    className: 'w-32',
+                                },
+                                {
+                                    id: 'active',
+                                    header: 'Status',
+                                    accessor: (s: any) => <StatusDot active={!!s.is_active} />,
+                                    className: 'w-24',
+                                },
+                                actions(null),
+                            ]}
+                        />
+                    ))}
 
-                    {masterTab === 'project_statuses' && (isProjectStatusesLoading ? <TableSkeleton rows={5} columns={4} /> : <DataTable isLoading={isProjectStatusesLoading} data={projectStatuses} columns={[
-                        { id: 'code', header: t('fields.code'), accessor: (s: any) => <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50/50 px-2 py-0.5 border border-slate-200/50 rounded-sm">{s.code || '-'}</span>, className: 'w-24' },
-                        { id: 'name', header: t('settings.master_data_key'), accessor: (s: any) => <span className="font-mono text-[10px] text-slate-400">{s.name}</span>, className: 'w-32' },
-                        { id: 'label', header: t('fields.name'), accessor: (s: any) => <span className="font-medium text-slate-800 text-sm">{s.label}</span> },
-                        { id: 'preview', header: t('settings.master_data_preview'), accessor: (s: any) => <span className={clsx('px-2.5 py-0.5 rounded-sm text-xs font-semibold border tracking-tight', s.style || 'bg-slate-50 text-slate-400 border-slate-200')}>{s.label}</span>, align: 'center' },
-                        { id: 'status', header: t('settings.master_data.status'), accessor: (s: any) => <span className={clsx('px-2 py-0.5 text-xs font-medium border tracking-tight rounded-[4px]', s.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-200')}>{s.is_active ? t('settings.master_data_active') : t('settings.master_data_inactive')}</span>, align: 'center' },
-                        { id: 'actions', header: '', accessor: (s: any) => <div className="flex justify-end gap-1"><button onClick={() => handleOpenModal(s)} className="p-2 text-slate-400 hover:text-slate-700 rounded-sm transition-colors"><FaEdit /></button><button onClick={() => handleDeleteMasterData(s)} className="p-2 text-slate-300 hover:text-red-500 rounded-sm transition-colors"><FaTrash /></button></div>, align: 'right' }
-                    ]} pageSize={1000} onAddClick={() => handleOpenModal()} />)}
                 </div>
             </div>
 

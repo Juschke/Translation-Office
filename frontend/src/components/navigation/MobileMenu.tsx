@@ -52,8 +52,8 @@ const MobileMenu = ({
         },
         { path: '/reports', label: t('nav.reports'), icon: <FaChartBar />, role: 'manager' },
 
+        { path: '/calendar', label: t('nav.calendar'), icon: <FaCalendarAlt />, count: dashboardData?.stats?.deadlines_today, badgeLabel: "Termine Heute", color: "bg-rose-500" },
         { path: '/inbox', label: t('nav.inbox'), icon: <FaEnvelope />, role: 'manager', count: unreadEmails, badgeLabel: "Ungelesene E-Mails" },
-        { path: '/calendar', label: t('nav.calendar'), icon: <FaCalendarAlt /> },
         { path: '/settings', label: t('nav.settings'), icon: <FaCog />, role: 'manager' },
     ];
 

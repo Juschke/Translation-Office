@@ -1,25 +1,43 @@
 import React from 'react';
 import { Card, Form, Input, Divider } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, HomeOutlined } from '@ant-design/icons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { portalProfileService } from '../../api/services/portal';
 import { usePortal } from '../../context/PortalContext';
 import { Button } from '../../components/ui/button';
 import type { PortalCustomer } from '../../types/portal';
 
+interface ProfileFormValues {
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  address_street?: string;
+  address_zip?: string;
+  address_city?: string;
+  address_country?: string;
+}
+
 const PortalProfile: React.FC = () => {
   const { customer } = usePortal();
-  const [form] = Form.useForm<Partial<PortalCustomer>>();
+  const [form] = Form.useForm<ProfileFormValues>();
 
   React.useEffect(() => {
     if (customer) {
-      form.setFieldsValue(customer);
+      form.setFieldsValue({
+        first_name: customer.first_name,
+        last_name: customer.last_name,
+        phone: customer.phone,
+        address_street: customer.address_street,
+        address_zip: customer.address_zip,
+        address_city: customer.address_city,
+        address_country: customer.address_country,
+      });
     }
   }, [customer]);
 
   const mutation = useMutation({
-    mutationFn: portalProfileService.update,
+    mutationFn: (data: ProfileFormValues) => portalProfileService.update(data),
     onSuccess: () => {
       toast.success('Profil wurde erfolgreich aktualisiert.');
     },
@@ -28,7 +46,7 @@ const PortalProfile: React.FC = () => {
     },
   });
 
-  const handleSubmit = (values: Partial<PortalCustomer>) => {
+  const handleSubmit = (values: ProfileFormValues) => {
     mutation.mutate(values);
   };
 
@@ -56,32 +74,30 @@ const PortalProfile: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Form.Item
-              name="name"
-              label="Name"
-              rules={[{ required: true, message: 'Bitte geben Sie Ihren Namen ein.' }]}
+              name="first_name"
+              label="Vorname"
+              rules={[{ required: true, message: 'Bitte geben Sie Ihren Vornamen ein.' }]}
             >
-              <Input prefix={<UserOutlined className="text-slate-400" />} placeholder="Max Mustermann" />
+              <Input prefix={<UserOutlined className="text-slate-400" />} placeholder="Max" />
             </Form.Item>
 
             <Form.Item
-              name="email"
-              label="E-Mail-Adresse"
-              rules={[
-                { required: true, message: 'Bitte geben Sie Ihre E-Mail-Adresse ein.' },
-                { type: 'email', message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' },
-              ]}
+              name="last_name"
+              label="Nachname"
+              rules={[{ required: true, message: 'Bitte geben Sie Ihren Nachnamen ein.' }]}
             >
-              <Input
-                prefix={<MailOutlined className="text-slate-400" />}
-                placeholder="ihre@email.de"
-                autoComplete="email"
-              />
+              <Input prefix={<UserOutlined className="text-slate-400" />} placeholder="Mustermann" />
             </Form.Item>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Form.Item name="company" label="Unternehmen (optional)">
-              <Input placeholder="Musterfirma GmbH" />
+            <Form.Item label="E-Mail-Adresse">
+              <Input
+                prefix={<MailOutlined className="text-slate-400" />}
+                value={customer?.email ?? ''}
+                disabled
+                className="bg-slate-50"
+              />
             </Form.Item>
 
             <Form.Item name="phone" label="Telefon (optional)">
@@ -99,7 +115,7 @@ const PortalProfile: React.FC = () => {
             Adresse
           </h3>
 
-          <Form.Item name="address" label="Straße und Hausnummer (optional)">
+          <Form.Item name="address_street" label="Straße und Hausnummer (optional)">
             <Input
               prefix={<HomeOutlined className="text-slate-400" />}
               placeholder="Musterstraße 12"
@@ -107,16 +123,16 @@ const PortalProfile: React.FC = () => {
           </Form.Item>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Form.Item name="zip" label="PLZ (optional)">
+            <Form.Item name="address_zip" label="PLZ (optional)">
               <Input placeholder="12345" />
             </Form.Item>
 
-            <Form.Item name="city" label="Stadt (optional)" className="sm:col-span-2">
+            <Form.Item name="address_city" label="Stadt (optional)" className="sm:col-span-2">
               <Input placeholder="Berlin" />
             </Form.Item>
           </div>
 
-          <Form.Item name="country" label="Land (optional)">
+          <Form.Item name="address_country" label="Land (optional)">
             <Input placeholder="Deutschland" />
           </Form.Item>
 

@@ -29,8 +29,8 @@ const EmailSendPage = () => {
     const projectId = emailData?.projectId || searchParams.get('projectId') || null;
 
     return (
-        <div className="h-screen w-screen overflow-auto flex flex-col bg-slate-100 items-center">
-            <div className="flex-1 w-full md:min-w-[1250px] max-w-[1400px] flex flex-col bg-white shadow-2xl">
+        <div className="h-screen w-screen overflow-hidden flex flex-col bg-slate-100 items-center">
+            <div className="h-full w-full md:min-w-[1250px] max-w-[1400px] flex flex-col bg-white shadow-2xl overflow-hidden">
                 <EmailComposeContent
                     isStandalone
                     onClose={() => window.close()}
@@ -38,6 +38,7 @@ const EmailSendPage = () => {
                     subject={subject}
                     body={body}
                     projectId={projectId}
+                    attachments={emailData?.attachments || []}
                 />
             </div>
         </div>

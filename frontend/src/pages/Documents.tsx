@@ -15,6 +15,7 @@ import { Badge } from '../components/ui';
 import DataTable from '../components/common/DataTable';
 import KPICard from '../components/common/KPICard';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../components/modals/ConfirmModal';
 import { useTranslation } from 'react-i18next';
 
 const formatFileSize = (bytes: number) => {
@@ -31,6 +32,7 @@ const Documents = () => {
     const queryClient = useQueryClient();
     const [typeFilter, setTypeFilter] = useState('all');
     const [extFilter, setExtFilter] = useState('all');
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; file: any | null }>({ isOpen: false, file: null });
 
     const { data: filesData, isLoading } = useQuery({
         queryKey: ['files'],
@@ -202,9 +204,7 @@ const Documents = () => {
                         size="icon"
                         className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50"
                         onClick={() => {
-                            if (window.confirm(t('common.confirm_delete') || 'Datei wirklich löschen?')) {
-                                deleteMutation.mutate({ projectId: file.project_id, fileId: file.id });
-                            }
+                            setDeleteConfirm({ isOpen: true, file });
                         }}
                         title={t('common.delete') || "Löschen"}
                     >
@@ -308,6 +308,23 @@ const Documents = () => {
                         onRowClick={(file) => navigate(`/projects/${file.project_id}`)}
                     />
                 </div>
+
+                <ConfirmModal
+                    isOpen={deleteConfirm.isOpen}
+                    onClose={() => setDeleteConfirm({ isOpen: false, file: null })}
+                    onConfirm={() => {
+                        if (deleteConfirm.file) {
+                            deleteMutation.mutate({
+                                projectId: deleteConfirm.file.project_id,
+                                fileId: deleteConfirm.file.id
+                            });
+                        }
+                        setDeleteConfirm({ isOpen: false, file: null });
+                    }}
+                    title={t('common.delete_file') || "Datei löschen"}
+                    message={t('common.confirm_delete_msg', { filename: deleteConfirm.file?.original_name }) || `Möchten Sie die Datei "${deleteConfirm.file?.original_name}" wirklich löschen?`}
+                    confirmText={t('common.delete') || "Löschen"}
+                />
             </div>
         </div>
     );

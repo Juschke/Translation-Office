@@ -12,54 +12,66 @@
         <priority>1.0</priority>
     </url>
 
-    <!-- Features Section -->
+    <!-- Core Pages -->
     <url>
-        <loc>https://translation-office.de/landing-page/#features</loc>
-        <lastmod>2026-03-01</lastmod>
+        <loc>https://translation-office.de/landing-page/funktionen.html</loc>
+        <lastmod>2026-04-07</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
-
-    <!-- Benefits Section -->
     <url>
-        <loc>https://translation-office.de/landing-page/#benefits</loc>
-        <lastmod>2026-03-01</lastmod>
+        <loc>https://translation-office.de/landing-page/preise.html</loc>
+        <lastmod>2026-04-07</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
-
-    <!-- Pricing Section -->
     <url>
-        <loc>https://translation-office.de/landing-page/#pricing</loc>
-        <lastmod>2026-03-01</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.9</priority>
-    </url>
-
-    <!-- Testimonials Section -->
-    <url>
-        <loc>https://translation-office.de/landing-page/#testimonials</loc>
-        <lastmod>2026-03-01</lastmod>
+        <loc>https://translation-office.de/landing-page/api.html</loc>
+        <lastmod>2026-04-07</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
-
-    <!-- Demo Section -->
     <url>
-        <loc>https://translation-office.de/landing-page/#demo</loc>
-        <lastmod>2026-03-01</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.9</priority>
+        <loc>https://translation-office.de/landing-page/sicherheit.html</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
     </url>
-
-    <!-- Add additional pages here as they are created -->
-    <!-- Example:
     <url>
-        <loc>https://translation-office.de/landing-page/blog</loc>
-        <lastmod>2026-03-01</lastmod>
-        <changefreq>weekly</changefreq>
+        <loc>https://translation-office.de/landing-page/ueber-uns.html</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
-    -->
+    <url>
+        <loc>https://translation-office.de/landing-page/kontakt.html</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://translation-office.de/landing-page/datenschutz.html</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>https://translation-office.de/landing-page/impressum.html</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>https://translation-office.de/landing-page/agb.html</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>https://translation-office.de/landing-page/cookie.html</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
 
 </urlset>

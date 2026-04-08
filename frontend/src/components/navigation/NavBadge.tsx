@@ -19,11 +19,10 @@ const NavBadge = ({
     return (
         <div className="relative group ml-1.5 flex items-center">
             <span className={clsx(
-                "text-xs w-5 h-5 flex items-center justify-center rounded-full font-semibold shadow-sm transition-all duration-300",
+                "text-[10px] min-w-4 h-4 px-1 flex items-center justify-center rounded-full font-semibold leading-none transition-colors",
                 displayCount === 0
                     ? (isMobile ? "bg-brand-primary text-white" : "bg-white/10 text-white/50 group-hover:bg-white/20 text-white")
                     : `${activeColor} text-white`,
-                isPriority && displayCount > 0 && "animate-pulse ring-2 ring-rose-500/20"
             )}>
                 {displayCount}
             </span>

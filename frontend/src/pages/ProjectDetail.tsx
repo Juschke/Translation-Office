@@ -20,16 +20,14 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
 import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
-import EmailComposeModal from '../components/modals/EmailComposeModal';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectService, customerService, partnerService, settingsService } from '../api/services';
+import { projectService, customerService, partnerService } from '../api/services';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
 import { Button } from '../components/ui/button';
 
 
 import DetailSkeleton from '../components/common/DetailSkeleton';
-import FilePreviewModal from '../components/modals/FilePreviewModal';
 import HistoryTab from '../components/projects/HistoryTab';
 import MessagesTab from '../components/projects/MessagesTab';
 import ProjectOverviewTabNew from '../components/projects/ProjectOverviewTabNew';
@@ -56,6 +54,8 @@ interface ProjectPosition {
 interface ProjectFile {
     id: string;
     name: string;
+    file_name?: string;
+    original_name?: string;
     ext: string;
     type: string;
     version: string;
@@ -205,19 +205,12 @@ const ProjectDetail = () => {
         isProjectDeleteConfirmOpen, setIsProjectDeleteConfirmOpen,
         isInviteModalOpen, setIsInviteModalOpen,
         isInterpreterModalOpen, setIsInterpreterModalOpen,
-        previewFile, setPreviewFile,
         deleteFileConfirm, setDeleteFileConfirm,
         paymentDeleteConfirm, setPaymentDeleteConfirm,
     } = useProjectModals();
 
     const [previewInvoice, setPreviewInvoice] = useState<any>(null);
-    const [isEmailComposeOpen, setIsEmailComposeOpen] = useState(false);
     const [editingPayment, setEditingPayment] = useState<any>(null);
-    const [emailComposeData, setEmailComposeData] = useState<{
-        to: string;
-        subject: string;
-        recipientType: 'customer' | 'partner' | 'none';
-    }>({ to: '', subject: '', recipientType: 'none' });
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -255,6 +248,7 @@ const ProjectDetail = () => {
 
     useEffect(() => {
         if (projectResponse) {
+            console.log('ProjectDetail: projectResponse updated, mapping data...');
             const mapped = mapProjectResponse(projectResponse) as ProjectData;
             setProjectData(mapped);
         }
@@ -440,12 +434,28 @@ const ProjectDetail = () => {
             }
 
             toast.dismiss(toastId);
-            setPreviewFile({
+
+            // Store file data for the pop-out window
+            const previewData = {
                 name: fileName,
                 url: url,
                 type: file.type,
-                id: file.id
-            });
+                id: file.id,
+                projectId: id
+            };
+            localStorage.setItem('previewFileData', JSON.stringify(previewData));
+
+            // Open window with specific dimensions
+            const width = Math.min(window.screen.width * 0.8, 1200);
+            const height = Math.min(window.screen.height * 0.9, 900);
+            const left = (window.screen.width - width) / 2;
+            const top = (window.screen.height - height) / 2;
+
+            window.open(
+                '/file-preview',
+                'FilePreview',
+                `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
+            );
         } catch (error) {
             toast.dismiss();
             toast.error(t('messages.preview_load_error'));
@@ -478,10 +488,20 @@ const ProjectDetail = () => {
 
     const handleRenameFile = async (file: any, newName: string) => {
         try {
-            await projectService.updateFile(id!, file.id, { file_name: newName });
-            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            await toast.promise(
+                projectService.updateFile(id!, file.id, { file_name: newName }),
+                {
+                    loading: t('messages.renaming_file', 'Benenne Datei um...'),
+                    success: t('messages.file_renamed_success', 'Datei erfolgreich umbenannt'),
+                    error: t('messages.file_rename_error', 'Fehler beim Umbenennen der Datei')
+                }
+            );
+            console.log('ProjectDetail: File renamed successfully. Invalidating queries...');
+            await queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            await queryClient.refetchQueries({ queryKey: ['projects', id] });
+            console.log('ProjectDetail: Query refetch triggered.');
         } catch (error) {
-            throw error;
+            console.error('Rename error:', error);
         }
     };
 
@@ -506,7 +526,7 @@ const ProjectDetail = () => {
 
     const handleBulkFilesDownloadZip = async (ids: string[]) => {
         try {
-            const toastId = toast.loading(t('messages.creating_zip'));
+            const toastId = toast.loading(t('messages.creating_zip', 'Erstelle ZIP...'));
             const response = await projectService.downloadFilesZip(id!, ids);
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
@@ -517,11 +537,64 @@ const ProjectDetail = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
             toast.dismiss(toastId);
-            toast.success(t('messages.zip_download_started'));
+            toast.success(t('messages.zip_download_started', 'ZIP-Download gestartet'));
         } catch (error) {
             toast.dismiss();
-            toast.error(t('messages.zip_creation_error'));
+            toast.error(t('messages.zip_creation_error', 'ZIP konnte nicht erstellt werden'));
         }
+    };
+
+    const handleBulkFilesDelete = async (ids: string[]) => {
+        try {
+            const toastId = toast.loading(t('messages.deleting_files', 'Lösche Dateien...'));
+            await projectService.bulkDeleteFiles(id!, ids);
+            queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            toast.dismiss(toastId);
+            toast.success(t('messages.files_deleted_success', 'Dateien erfolgreich gelöscht'));
+        } catch (error) {
+            toast.dismiss();
+            toast.error(t('messages.files_delete_error', 'Fehler beim Löschen der Dateien'));
+        }
+    };
+
+    const handleBulkFilesRename = async (ids: string[], prefix: string, suffix: string) => {
+        try {
+            if (!projectData) return;
+            const toastId = toast.loading(t('messages.renaming_files', 'Benenne Dateien um...'));
+            const files = projectData.files.filter((f: any) => ids.includes(f.id));
+
+            for (const file of files) {
+                const currentName = file.file_name || file.original_name || 'file';
+                const dotIndex = currentName.lastIndexOf('.');
+                const nameWithoutExt = dotIndex > -1 ? currentName.substring(0, dotIndex) : currentName;
+                const ext = dotIndex > -1 ? currentName.substring(dotIndex) : '';
+                const newName = `${prefix}${nameWithoutExt}${suffix}${ext}`;
+                await projectService.updateFile(id!, file.id, { file_name: newName });
+            }
+
+            console.log('ProjectDetail: Bulk rename complete. Invalidating queries...');
+            await queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            await queryClient.refetchQueries({ queryKey: ['projects', id] });
+            toast.dismiss(toastId);
+            toast.success(t('messages.files_renamed_success', 'Dateien erfolgreich umbenannt'));
+            console.log('ProjectDetail: Bulk rename queries invalidated/refetched.');
+        } catch (error) {
+            toast.dismiss();
+            toast.error(t('messages.files_rename_error', 'Fehler beim Umbenennen der Dateien'));
+        }
+    };
+
+    const handleBulkFilesEmail = (ids: string[]) => {
+        const sid = 'email_prefill_' + Date.now();
+        localStorage.setItem(sid, JSON.stringify({
+            projectId: id,
+            attachments: ids
+        }));
+        const w = 1250;
+        const h = 850;
+        const left = (window.screen.width - w) / 2;
+        const top = (window.screen.height - h) / 2;
+        window.open(`/email/send?sid=${sid}`, 'EmailSend', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
     };
 
     const handleFileUpload = async (newFiles: any[], onProgress: (id: string, p: number) => void) => {
@@ -614,12 +687,17 @@ const ProjectDetail = () => {
                                 <Button
                                     variant="default"
                                     onClick={() => {
-                                        setEmailComposeData({
-                                            to: projectData.translator?.email || '',
-                                            subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
-                                            recipientType: 'partner'
-                                        });
-                                        setIsEmailComposeOpen(true);
+                                        const sid = 'email_prefill_' + Date.now();
+                                        localStorage.setItem(sid, JSON.stringify({
+                                            to: projectData.translator?.email || projectData.customer?.email || '',
+                                            subject: projectData.name ? `Projekt: ${displayProjectNumber} — ${projectData.name}` : `Projekt: ${displayProjectNumber}`,
+                                            projectId: id
+                                        }));
+                                        const w = 1250;
+                                        const h = 850;
+                                        const left = (window.screen.width - w) / 2;
+                                        const top = (window.screen.height - h) / 2;
+                                        window.open(`/email/send?sid=${sid}`, 'EmailSend', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
                                     }}
                                     className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
@@ -862,12 +940,17 @@ const ProjectDetail = () => {
                                     ? (projectData.translator?.email || '')
                                     : (projectData.customer?.email || '');
 
-                                setEmailComposeData({
+                                const sid = 'email_prefill_' + Date.now();
+                                localStorage.setItem(sid, JSON.stringify({
                                     to,
-                                    subject: projectData.name ? `Projekt: ${projectData.name}` : 'Projekt',
-                                    recipientType
-                                });
-                                setIsEmailComposeOpen(true);
+                                    subject: projectData.name ? `Projekt: ${displayProjectNumber} — ${projectData.name}` : `Projekt: ${displayProjectNumber}`,
+                                    projectId: id
+                                }));
+                                const w = 1250;
+                                const h = 850;
+                                const left = (window.screen.width - w) / 2;
+                                const top = (window.screen.height - h) / 2;
+                                window.open(`/email/send?sid=${sid}`, 'EmailSend', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
                             }}
                         />
                     )}
@@ -879,12 +962,14 @@ const ProjectDetail = () => {
                                 setIsUploadModalOpen={setIsUploadModalOpen}
                                 handlePreviewFile={handlePreviewFile}
                                 handleDownloadFile={handleDownloadFile}
-                                setDeleteFileConfirm={setDeleteFileConfirm}
                                 toggleFileType={toggleFileType}
                                 onRenameFile={handleRenameFile}
                                 onMoveFile={handleMoveFile}
                                 onBulkMove={handleBulkFilesMove}
                                 onBulkDownloadZip={handleBulkFilesDownloadZip}
+                                onBulkDelete={handleBulkFilesDelete}
+                                onBulkRename={handleBulkFilesRename}
+                                onBulkEmail={handleBulkFilesEmail}
                                 formatFileSize={formatFileSize}
                                 onUpload={handleFileUpload}
                             />
@@ -1015,16 +1100,7 @@ const ProjectDetail = () => {
                     initialData={projectResponse?.partner}
                     isLoading={updatePartnerMutation.isPending}
                 />
-                <FilePreviewModal
-                    isOpen={!!previewFile}
-                    onClose={() => {
-                        if (previewFile?.url) window.URL.revokeObjectURL(previewFile.url);
-                        setPreviewFile(null);
-                    }}
-                    file={previewFile}
-                    onDownload={() => previewFile?.id && handleDownloadFile({ name: previewFile.name, id: previewFile.id })}
-                    onDelete={previewFile?.id ? () => setDeleteFileConfirm({ isOpen: true, fileId: previewFile.id!, fileName: previewFile.name }) : undefined}
-                />
+                {/* FilePreviewModal is now replaced by pop-out window */}
                 <ConfirmModal
                     isOpen={deleteFileConfirm.isOpen}
                     onClose={() => setDeleteFileConfirm({ isOpen: false, fileId: null, fileName: '' })}
@@ -1088,13 +1164,6 @@ const ProjectDetail = () => {
                     }}
                 />
 
-                <EmailComposeModal
-                    isOpen={isEmailComposeOpen}
-                    onClose={() => setIsEmailComposeOpen(false)}
-                    projectId={id}
-                    to={emailComposeData.to}
-                    subject={emailComposeData.subject}
-                />
             </div>
         </div>
     );

@@ -11,6 +11,7 @@ import EmailComposeContent from '../EmailComposeContent';
 interface EmailComposeModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
     projectId?: string | null;
     to?: string;
     subject?: string;
@@ -20,6 +21,7 @@ interface EmailComposeModalProps {
 const EmailComposeModal = ({
     isOpen,
     onClose,
+    onSuccess,
     projectId,
     to,
     subject,
@@ -28,7 +30,7 @@ const EmailComposeModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent hideClose className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden border-none shadow-2xl rounded-sm">
+            <DialogContent hideClose className="max-w-[900px] w-[95vw] h-[95vh] p-0 flex flex-col gap-0 overflow-hidden border-none shadow-2xl rounded-sm">
                 {/* Minimal Header */}
                 <div className="px-6 py-4 flex items-center justify-between bg-white border-b border-slate-100">
                     <DialogTitle className="flex flex-col">
@@ -46,6 +48,7 @@ const EmailComposeModal = ({
 
                 <EmailComposeContent
                     onClose={onClose}
+                    onSuccess={onSuccess}
                     projectId={projectId}
                     to={to}
                     subject={subject}

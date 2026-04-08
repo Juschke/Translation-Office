@@ -14,25 +14,27 @@ class PortalRequestController extends Controller
         $c = $request->attributes->get('portal_customer');
 
         $data = $request->validate([
-            'project_name'   => 'required|string|max:200',
-            'source_lang_id' => 'required|integer|exists:languages,id',
-            'target_lang_id' => 'required|integer|exists:languages,id',
-            'notes'          => 'nullable|string|max:2000',
-            'is_certified'   => 'boolean',
-            'files.*'        => 'nullable|file|max:20480',
+            'project_name'    => 'required|string|max:200',
+            'source_language' => 'required|string|max:100',
+            'target_language' => 'required|string|max:100',
+            'deadline'        => 'nullable|date',
+            'notes'           => 'nullable|string|max:2000',
+            'files.*'         => 'nullable|file|max:20480',
         ]);
+
+        // Build notes with language info since portal uses free-text languages
+        $langNote = "Quellsprache: {$data['source_language']}, Zielsprache: {$data['target_language']}";
+        $combinedNotes = $langNote . (isset($data['notes']) && $data['notes'] ? "\n\n" . $data['notes'] : '');
 
         // Bypass BelongsToTenant auto-set (no Sanctum user in session)
         // tenant_id is taken directly from the authenticated portal customer
         $project = Project::withoutGlobalScopes()->create([
-            'project_name'   => $data['project_name'],
-            'source_lang_id' => $data['source_lang_id'],
-            'target_lang_id' => $data['target_lang_id'],
-            'notes'          => $data['notes'] ?? null,
-            'is_certified'   => $data['is_certified'] ?? false,
-            'status'         => 'draft',
-            'customer_id'    => $c->id,
-            'tenant_id'      => $c->tenant_id,
+            'project_name' => $data['project_name'],
+            'notes'        => $combinedNotes,
+            'deadline'     => $data['deadline'] ?? null,
+            'status'       => 'draft',
+            'customer_id'  => $c->id,
+            'tenant_id'    => $c->tenant_id,
         ]);
 
         if ($request->hasFile('files')) {

@@ -7,7 +7,7 @@ import { useEmailCompose } from '../hooks/useEmailCompose';
 import MailListPanel from '../components/inbox/MailListPanel';
 import MailDetailPanel from '../components/inbox/MailDetailPanel';
 import MailResourceTable from '../components/inbox/MailResourceTable';
-import { FaTrashAlt, FaPlus, FaSyncAlt } from 'react-icons/fa';
+import { FaTrashAlt, FaPlus, FaSyncAlt, FaArchive } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import NewEmailAccountModal from '../components/modals/NewEmailAccountModal';
@@ -38,13 +38,12 @@ const CommunicationHub = () => {
     const [selectedMails, setSelectedMails] = useState<number[]>([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [mailToDelete, setMailToDelete] = useState<number | null>(null);
-    const [deleteType, setDeleteType] = useState<'single' | 'bulk'>('single');
+    const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+    const [deleteType, setDeleteType] = useState<'single' | 'bulk' | 'template' | 'account'>('single');
 
     const {
         isComposeOpen, setIsComposeOpen,
         setSelectedProjectId,
-        handleReply,
-        handleForward,
         resetCompose,
     } = useEmailCompose();
 
@@ -62,6 +61,16 @@ const CommunicationHub = () => {
     const { data: trashMessages = [] } = useQuery({
         queryKey: ['mails', 'trash'],
         queryFn: () => mailService.getAll('trash')
+    });
+
+    const { data: archiveMessages = [] } = useQuery({
+        queryKey: ['mails', 'archive'],
+        queryFn: () => mailService.getAll('archive')
+    });
+
+    const { data: draftsMessages = [] } = useQuery({
+        queryKey: ['mails', 'drafts'],
+        queryFn: () => mailService.getAll('drafts')
     });
 
     const { data: accounts = [] } = useQuery({
@@ -126,6 +135,26 @@ const CommunicationHub = () => {
         }
     });
 
+    const archiveMailsMutation = useMutation({
+        mutationFn: (ids: number[]) => mailService.archiveMails(ids),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mails'] });
+            setSelectedMails([]);
+            setViewingMail(null);
+            toast.success('Mails archiviert');
+        }
+    });
+
+    const unarchiveMailsMutation = useMutation({
+        mutationFn: (ids: number[]) => mailService.unarchiveMails(ids),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mails'] });
+            setSelectedMails([]);
+            setViewingMail(null);
+            toast.success('Mails aus dem Archiv wiederhergestellt');
+        }
+    });
+
     // Handlers
     const handleViewMail = (mail: any) => {
         setViewingMail(mail);
@@ -133,8 +162,27 @@ const CommunicationHub = () => {
     };
 
     const confirmDelete = () => {
-        const ids = deleteType === 'bulk' ? selectedMails : (mailToDelete ? [mailToDelete] : []);
-        if (ids.length > 0) deleteMailsMutation.mutate(ids);
+        if (deleteType === 'bulk') {
+            if (selectedMails.length > 0) deleteMailsMutation.mutate(selectedMails);
+        } else if (deleteType === 'single') {
+            if (mailToDelete) deleteMailsMutation.mutate([mailToDelete]);
+        } else if (deleteType === 'template') {
+            if (itemToDelete) {
+                mailService.deleteTemplate(itemToDelete.id).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+                    setIsConfirmOpen(false);
+                    setItemToDelete(null);
+                }).catch(() => toast.error('Fehler beim Löschen der Vorlage'));
+            }
+        } else if (deleteType === 'account') {
+            if (itemToDelete) {
+                mailService.deleteAccount(itemToDelete.id).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] });
+                    setIsConfirmOpen(false);
+                    setItemToDelete(null);
+                }).catch(() => toast.error('Fehler beim Löschen des Kontos'));
+            }
+        }
     };
 
     if (isLoadingInbox || isLoadingSent) return (
@@ -144,30 +192,25 @@ const CommunicationHub = () => {
     );
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-6 md:py-8">
-            <div className="flex flex-col gap-6 fade-in h-full overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-16 py-4 md:py-6">
+            <div className="flex flex-col fade-in h-full overflow-hidden">
 
-                {/* ── Seitenkopf ── */}
-                <div className="flex justify-between items-center gap-4">
-                    <div className="min-w-0">
-                        <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-tight truncate">E-Mail</h1>
-                        <p className="text-slate-500 text-sm hidden sm:block">Zentrale Postverwaltung aller ein- und ausgehenden Nachrichten</p>
+                <div className="mb-4 flex items-center justify-between gap-4 shrink-0 px-1">
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-xl font-bold text-slate-900 leading-tight">E-Mail</h1>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         <Button
-                            variant="secondary"
-                            onClick={() => syncMutation.mutate()}
-                            disabled={syncMutation.isPending}
-                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold"
+                            onClick={() => {
+                                const w = 1250;
+                                const h = 850;
+                                const left = (window.screen.width - w) / 2;
+                                const top = (window.screen.height - h) / 2;
+                                window.open('/email/send', 'email_composer', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-sm"
                         >
-                            <FaSyncAlt className={clsx("text-xs", syncMutation.isPending && "animate-spin")} />
-                            <span className="hidden sm:inline">{syncMutation.isPending ? 'Synchronisiert...' : 'E-Mails abrufen'}</span>
-                        </Button>
-                        <Button
-                            onClick={() => setIsComposeOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold"
-                        >
-                            <FaPlus className="text-xs" />
+                            <FaPlus className="text-[10px]" />
                             <span className="hidden sm:inline">E-Mail schreiben</span>
                             <span className="sm:hidden">Neu</span>
                         </Button>
@@ -180,7 +223,7 @@ const CommunicationHub = () => {
                         <InboxSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
                         <div className="flex-1 overflow-hidden flex flex-col bg-white">
-                            {['inbox', 'sent', 'trash'].includes(activeTab) && (
+                            {['inbox', 'sent', 'trash', 'archive', 'drafts'].includes(activeTab) && (
                                 <div className="flex-1 flex min-h-0 overflow-hidden">
                                     <div className={clsx(
                                         "flex flex-col border-r border-slate-200 transition-all overflow-hidden shrink-0",
@@ -195,9 +238,19 @@ const CommunicationHub = () => {
                                                         {
                                                             label: 'Wiederherstellen',
                                                             icon: <FaSyncAlt className="text-xs" />,
-                                                            onClick: () => restoreMailsMutation.mutate(selectedMails),
+                                                            onClick: () => {
+                                                                if (activeTab === 'trash') restoreMailsMutation.mutate(selectedMails);
+                                                                else if (activeTab === 'archive') unarchiveMailsMutation.mutate(selectedMails);
+                                                            },
                                                             variant: 'default',
-                                                            show: activeTab === 'trash'
+                                                            show: ['trash', 'archive'].includes(activeTab)
+                                                        },
+                                                        {
+                                                            label: 'Archivieren',
+                                                            icon: <FaArchive className="text-xs" />,
+                                                            onClick: () => archiveMailsMutation.mutate(selectedMails),
+                                                            variant: 'default',
+                                                            show: activeTab !== 'archive' && activeTab !== 'trash'
                                                         },
                                                         {
                                                             label: activeTab === 'trash' ? 'Endgültig löschen' : 'In den Papierkorb',
@@ -211,17 +264,30 @@ const CommunicationHub = () => {
                                             </div>
                                         )}
                                         <MailListPanel
-                                            mails={activeTab === 'inbox' ? inboxMessages : activeTab === 'sent' ? sentMessages : trashMessages}
+                                            mails={
+                                                activeTab === 'inbox' ? inboxMessages :
+                                                    activeTab === 'sent' ? sentMessages :
+                                                        activeTab === 'trash' ? trashMessages :
+                                                            activeTab === 'archive' ? archiveMessages :
+                                                                draftsMessages
+                                            }
                                             folder={activeTab}
                                             onView={handleViewMail}
                                             selectedId={viewingMail?.id}
                                             selectedMails={selectedMails}
                                             onSelectMail={(id) => setSelectedMails(prev => prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id])}
                                             onSelectAll={() => {
-                                                const currentMails = activeTab === 'inbox' ? inboxMessages : activeTab === 'sent' ? sentMessages : trashMessages;
+                                                const currentMails =
+                                                    activeTab === 'inbox' ? inboxMessages :
+                                                        activeTab === 'sent' ? sentMessages :
+                                                            activeTab === 'trash' ? trashMessages :
+                                                                activeTab === 'archive' ? archiveMessages :
+                                                                    draftsMessages;
                                                 setSelectedMails(selectedMails.length === currentMails.length ? [] : currentMails.map((m: any) => m.id));
                                             }}
                                             onDelete={(id: number) => { setMailToDelete(id); setDeleteType('single'); setIsConfirmOpen(true); }}
+                                            onSync={() => syncMutation.mutate()}
+                                            isSyncing={syncMutation.isPending}
                                         />
                                     </div>
 
@@ -230,8 +296,6 @@ const CommunicationHub = () => {
                                             <MailDetailPanel
                                                 mail={viewingMail}
                                                 onClose={() => setViewingMail(null)}
-                                                onReply={(mail) => { setViewingMail(null); handleReply(mail); }}
-                                                onForward={(mail) => { setViewingMail(null); handleForward(mail); }}
                                                 onDelete={(id: any) => { setMailToDelete(id); setDeleteType('single'); setIsConfirmOpen(true); }}
                                             />
                                         </div>
@@ -248,7 +312,7 @@ const CommunicationHub = () => {
                                         addLabel={t('forms.create_template')}
                                         onAdd={() => { setTemplateToEdit(null); setIsTemplateModalOpen(true); }}
                                         onEdit={(tpl: any) => { setTemplateToEdit(tpl); setIsTemplateModalOpen(true); }}
-                                        onDelete={(tpl: any) => { if (window.confirm('Vorlage wirklich löschen?')) mailService.deleteTemplate(tpl.id).then(() => queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] })); }}
+                                        onDelete={(tpl: any) => { setItemToDelete(tpl); setDeleteType('template'); setIsConfirmOpen(true); }}
                                         renderRow={(tpl: any) => (
                                             <>
                                                 <td className="px-6 py-4 text-xs font-medium text-slate-800">{tpl.name}</td>
@@ -271,7 +335,7 @@ const CommunicationHub = () => {
                                         addLabel={t('auth.add_account')}
                                         onAdd={() => { setAccountToEdit(null); setIsAccountModalOpen(true); }}
                                         onEdit={(acc: any) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }}
-                                        onDelete={(acc: any) => { if (window.confirm('Konto wirklich löschen?')) mailService.deleteAccount(acc.id).then(() => queryClient.invalidateQueries({ queryKey: ['mail', 'accounts'] })); }}
+                                        onDelete={(acc: any) => { setItemToDelete(acc); setDeleteType('account'); setIsConfirmOpen(true); }}
                                         renderRow={(acc: any) => (
                                             <>
                                                 <td className="px-6 py-4 text-xs font-medium text-slate-800">
@@ -341,10 +405,19 @@ const CommunicationHub = () => {
 
                 <ConfirmModal
                     isOpen={isConfirmOpen}
-                    onClose={() => setIsConfirmOpen(false)}
+                    onClose={() => { setIsConfirmOpen(false); setMailToDelete(null); setItemToDelete(null); }}
                     onConfirm={confirmDelete}
-                    title={deleteType === 'bulk' ? 'Mails löschen' : 'Mail löschen'}
-                    message={deleteType === 'bulk' ? `Wollen Sie wirklich ${selectedMails.length} Mails löschen?` : 'Wollen Sie diese Mail wirklich löschen?'}
+                    title={
+                        deleteType === 'bulk' ? 'Mails löschen' :
+                            deleteType === 'single' ? 'Mail löschen' :
+                                deleteType === 'template' ? 'Vorlage löschen' : 'Konto löschen'
+                    }
+                    message={
+                        deleteType === 'bulk' ? `Wollen Sie wirklich ${selectedMails.length} Mails löschen?` :
+                            deleteType === 'single' ? 'Wollen Sie diese Mail wirklich löschen?' :
+                                deleteType === 'template' ? `Wollen Sie die Vorlage "${itemToDelete?.name}" wirklich löschen?` :
+                                    `Wollen Sie das E-Mail-Konto "${itemToDelete?.name}" wirklich löschen?`
+                    }
                     confirmLabel="Löschen"
                     variant="danger"
                 />

@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use App\Models\Customer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -14,10 +13,11 @@ class PortalMagicLinkMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public readonly Customer $customer,
+        public readonly mixed $user,
         public readonly string $magicLink,
         public readonly string $companyName,
-    ) {}
+    ) {
+    }
 
     public function envelope(): Envelope
     {
