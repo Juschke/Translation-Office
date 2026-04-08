@@ -4,11 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
-        if (! Schema::hasTable('health_check_result_history_items')) {
+        if (!Schema::hasTable('health_check_result_history_items')) {
             Schema::create('health_check_result_history_items', function (Blueprint $table) {
                 $table->id();
                 $table->string('check_name');
@@ -25,11 +24,11 @@ return new class extends Migration
             });
         }
 
-        if (! Schema::hasTable('pulse_values')) {
+        if (!Schema::hasTable('pulse_values')) {
             Schema::create('pulse_values', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedInteger('timestamp')->index();
-                $table->string('type')->index();
+                $table->string('type', 60)->index();
                 $table->mediumText('key');
                 $table->char('key_hash', 16)->charset('binary')->virtualAs('unhex(md5(`key`))');
                 $table->mediumText('value');
@@ -38,11 +37,11 @@ return new class extends Migration
             });
         }
 
-        if (! Schema::hasTable('pulse_entries')) {
+        if (!Schema::hasTable('pulse_entries')) {
             Schema::create('pulse_entries', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedInteger('timestamp')->index();
-                $table->string('type')->index();
+                $table->string('type', 60)->index();
                 $table->mediumText('key');
                 $table->char('key_hash', 16)->charset('binary')->virtualAs('unhex(md5(`key`))');
                 $table->bigInteger('value')->nullable();
@@ -52,15 +51,15 @@ return new class extends Migration
             });
         }
 
-        if (! Schema::hasTable('pulse_aggregates')) {
+        if (!Schema::hasTable('pulse_aggregates')) {
             Schema::create('pulse_aggregates', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedInteger('bucket');
                 $table->unsignedMediumInteger('period');
-                $table->string('type');
+                $table->string('type', 60);
                 $table->mediumText('key');
                 $table->char('key_hash', 16)->charset('binary')->virtualAs('unhex(md5(`key`))');
-                $table->string('aggregate');
+                $table->string('aggregate', 60);
                 $table->decimal('value', 20, 2);
                 $table->unsignedInteger('count')->nullable();
 
@@ -71,7 +70,7 @@ return new class extends Migration
             });
         }
 
-        if (! Schema::hasTable('sent_emails')) {
+        if (!Schema::hasTable('sent_emails')) {
             Schema::create('sent_emails', function (Blueprint $table) {
                 $table->id();
                 $table->date('date')->nullable();
@@ -85,7 +84,7 @@ return new class extends Migration
             });
         }
 
-        if (! Schema::hasTable('telescope_entries')) {
+        if (!Schema::hasTable('telescope_entries')) {
             Schema::create('telescope_entries', function (Blueprint $table) {
                 $table->bigIncrements('sequence');
                 $table->uuid('uuid')->unique();
@@ -100,7 +99,7 @@ return new class extends Migration
             });
         }
 
-        if (! Schema::hasTable('telescope_entries_tags')) {
+        if (!Schema::hasTable('telescope_entries_tags')) {
             Schema::create('telescope_entries_tags', function (Blueprint $table) {
                 $table->uuid('entry_uuid');
                 $table->string('tag');
@@ -114,7 +113,7 @@ return new class extends Migration
             });
         }
 
-        if (! Schema::hasTable('telescope_monitoring')) {
+        if (!Schema::hasTable('telescope_monitoring')) {
             Schema::create('telescope_monitoring', function (Blueprint $table) {
                 $table->string('tag')->primary();
             });

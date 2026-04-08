@@ -24,7 +24,7 @@ import KanbanBoard from '../components/projects/KanbanBoard';
 import ConfirmModal from '../components/common/ConfirmModal';
 import ProjectFilesModal from '../components/modals/ProjectFilesModal';
 import type { BulkActionItem } from '../components/common/BulkActions';
-import echo from '../utils/echo';
+
 
 import { useTranslation } from 'react-i18next';
 
@@ -75,7 +75,7 @@ const Projects = () => {
     const [confirmMessage, setConfirmMessage] = useState('');
     const queryClient = useQueryClient();
 
-    // Listen to real-time project updates
+    /* 
     useEffect(() => {
         const channel = echo.channel('projects');
         channel.listen('ProjectUpdated', () => {
@@ -87,6 +87,7 @@ const Projects = () => {
             echo.leaveChannel('projects');
         };
     }, [queryClient]);
+    */
 
     // Clear selection when changing tabs
     useEffect(() => {
