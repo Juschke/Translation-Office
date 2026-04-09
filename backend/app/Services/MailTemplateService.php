@@ -23,20 +23,28 @@ class MailTemplateService
 
         // Add Tenant variables
         if ($tenant) {
-            $variables['company_name'] = $tenant->company_name ?? '';
-            $variables['company_email'] = $tenant->email ?? '';
-            $variables['company_phone'] = $tenant->phone ?? '';
+            $street = trim(($tenant->address_street ?? '') . ' ' . ($tenant->address_house_no ?? ''));
+            $cityLine = trim(($tenant->address_zip ?? '') . ' ' . ($tenant->address_city ?? ''));
+
+            $variables['company_name']    = $tenant->company_name ?? '';
+            $variables['company_email']   = $tenant->email ?? '';
+            $variables['company_phone']   = $tenant->phone ?? '';
             $variables['company_website'] = $tenant->website ?? '';
-            $variables['company_address'] = trim(($tenant->address_street ?? '') . ' ' . ($tenant->address_house_no ?? '') . ', ' . ($tenant->address_zip ?? '') . ' ' . ($tenant->address_city ?? ''));
+            $variables['company_street']  = $street;
+            $variables['company_city']    = $cityLine;
+            $variables['company_zip']     = $tenant->address_zip ?? '';
+            // Full address on one line: "Musterstr. 1, 12345 Berlin"
+            $variables['company_address'] = $street . ($street && $cityLine ? ', ' : '') . $cityLine;
+
             $variables['managing_director'] = $tenant->managing_director ?? '';
-            $variables['bank_name'] = $tenant->bank_name ?? '';
-            $variables['bank_iban'] = $tenant->bank_iban ?? '';
-            $variables['bank_bic'] = $tenant->bank_bic ?? '';
+            $variables['bank_name']   = $tenant->bank_name ?? '';
+            $variables['bank_iban']   = $tenant->bank_iban ?? '';
+            $variables['bank_bic']    = $tenant->bank_bic ?? '';
             $variables['bank_holder'] = $tenant->bank_account_holder ?? '';
-            $variables['vat_id'] = $tenant->vat_id ?? '';
-            $variables['tax_id'] = $tenant->tax_number ?? '';
-            $variables['tax_number'] = $tenant->tax_number ?? '';
-            $variables['tax_office'] = $tenant->tax_office ?? '';
+            $variables['vat_id']      = $tenant->vat_id ?? '';
+            $variables['tax_id']      = $tenant->tax_number ?? '';
+            $variables['tax_number']  = $tenant->tax_number ?? '';
+            $variables['tax_office']  = $tenant->tax_office ?? '';
         }
 
         // Add User (Sender) variables
@@ -100,38 +108,48 @@ class MailTemplateService
             'express' => 'Express',
         ];
 
+        $invoice = $project->invoices->first();
+
         return [
             // Kunde
-            'customer_name' => $this->formatValue($customerName),
-            'contact_person' => $this->formatValue($contactPerson),
-            'customer_email' => $this->formatValue($customer?->email),
-            'customer_phone' => $this->formatValue($customer?->phone),
+            'customer_name'    => $this->formatValue($customerName),
+            // contact_person: used as salutation line in templates (e.g. "Frau Müller,")
+            'contact_person'   => $this->formatValue($contactPerson),
+            'customer_number'  => $this->formatValue($customer?->customer_number ?? $customer?->id),
+            'customer_email'   => $this->formatValue($customer?->email),
+            'customer_phone'   => $this->formatValue($customer?->phone),
             'customer_address' => $this->formatValue(
                 trim(($customer?->address_street ?? '') . ' ' . ($customer?->address_house_no ?? ''))
             ),
-            'customer_city' => $this->formatValue($customer?->address_city),
-            'customer_zip' => $this->formatValue($customer?->address_zip),
+            'customer_city'    => $this->formatValue($customer?->address_city),
+            'customer_zip'     => $this->formatValue($customer?->address_zip),
             // Projekt
-            'project_number' => $this->formatValue($project->project_number ?? 'PRJ-' . $project->id),
-            'project_name' => $this->formatValue($project->project_name ?? $project->name),
-            'project_status' => $this->formatValue($project->status),
-            'source_language' => $this->formatValue($sourceLang),
-            'target_language' => $this->formatValue($targetLang),
+            'project_number'   => $this->formatValue($project->project_number ?? 'PRJ-' . $project->id),
+            'project_name'     => $this->formatValue($project->project_name ?? $project->name ?? ''),
+            'project_date'     => $project->created_at
+                ? $project->created_at->format('d.m.Y')
+                : \Carbon\Carbon::now()->format('d.m.Y'),
+            'project_status'   => $this->formatValue($project->status),
+            'source_language'  => $this->formatValue($sourceLang),
+            'target_language'  => $this->formatValue($targetLang),
             'project_languages' => $this->formatValue($sourceLang && $targetLang ? "$sourceLang → $targetLang" : ''),
-            'deadline' => $project->deadline
+            'deadline'         => $project->deadline
                 ? \Carbon\Carbon::parse($project->deadline)->format('d.m.Y H:i')
                 : 'Keine Angabe',
-            'document_type' => $this->formatValue($docType),
-            'priority' => $this->formatValue($priorityMap[$project->priority ?? ''] ?? $project->priority),
+            'delivery_date'    => $project->deadline
+                ? \Carbon\Carbon::parse($project->deadline)->format('d.m.Y')
+                : 'Keine Angabe',
+            'document_type'    => $this->formatValue($docType),
+            'priority'         => $this->formatValue($priorityMap[$project->priority ?? ''] ?? $project->priority),
             // Finanzen
-            'price_net' => number_format($priceNet, 2, ',', '.') . ' €',
-            'price_gross' => number_format($priceGross, 2, ',', '.') . ' €',
-            'payment_terms' => $paymentTerms ? $paymentTerms . ' Tage' : 'Keine Angabe',
-            'invoice_number' => $project->invoices->first()?->invoice_number ?? 'N/A',
-            'invoice_date' => $project->invoices->first() ? \Carbon\Carbon::parse($project->invoices->first()->date)->format('d.m.Y') : 'N/A',
-            'due_date' => $project->invoices->first() ? \Carbon\Carbon::parse($project->invoices->first()->due_date)->format('d.m.Y') : 'N/A',
+            'price_net'      => number_format($priceNet, 2, ',', '.') . ' €',
+            'price_gross'    => number_format($priceGross, 2, ',', '.') . ' €',
+            'payment_terms'  => $paymentTerms ? $paymentTerms . ' Tage' : 'Keine Angabe',
+            'invoice_number' => $invoice?->invoice_number ?? 'N/A',
+            'invoice_date'   => $invoice ? \Carbon\Carbon::parse($invoice->date)->format('d.m.Y') : 'N/A',
+            'due_date'       => $invoice ? \Carbon\Carbon::parse($invoice->due_date)->format('d.m.Y') : 'N/A',
             // Partner
-            'partner_name' => $this->formatValue($partnerName),
+            'partner_name'  => $this->formatValue($partnerName),
             'partner_email' => $this->formatValue($partner?->email),
         ];
     }

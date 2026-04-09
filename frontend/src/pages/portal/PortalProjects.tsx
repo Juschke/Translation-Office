@@ -95,8 +95,8 @@ const PortalProjects: React.FC = () => {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Meine Projekte</h1>
-        <p className="text-slate-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-white">Meine Projekte</h1>
+        <p className="text-white/70 text-sm mt-1">
           Übersicht aller Ihrer Übersetzungsprojekte.
         </p>
       </div>

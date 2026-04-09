@@ -2060,7 +2060,7 @@
     "var_company_address": "Firmenadresse",
     "var_company_website": "Website",
     "var_managing_director": "Geschäftsleitung",
-    "var_vat_id": "USt-IdNr.",
+    "var_vat_id": "USt-IdNr",
     "var_tax_id": "Steuernummer",
     "var_bank_name": "Bankname",
     "var_bank_iban": "IBAN",
@@ -2226,5 +2226,27 @@
   "placeholders": {
     "example_name": "Max Doe",
     "example_email": "max@company.de"
+  },
+  "auth": {
+    "sign_in": "Anmelden",
+    "sign_up": "Registrieren",
+    "register": "Konto erstellen",
+    "email": "E-Mail-Adresse",
+    "password": "Passwort",
+    "confirm_password": "Passwort bestätigen",
+    "forgot_password": "Passwort vergessen?",
+    "creating": "Konto wird erstellt...",
+    "signing_in": "Anmeldung läuft...",
+    "verifying": "Verifizierung...",
+    "confirming": "Bestätigen...",
+    "fill_all_fields": "Bitte füllen Sie alle Pflichtfelder aus.",
+    "passwords_no_match": "Die Passwörter stimmen nicht überein.",
+    "password_min_8": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+    "terms_accepted": "Ich akzeptiere die Nutzungsbedingungen",
+    "privacy_accepted": "Ich habe die Datenschutzerklärung gelesen",
+    "password_hint": "Mind. 8 Zeichen, inkl. Groß/Klein, Zahlen & Sonderzeichen",
+    "already_have_account": "Sie haben bereits ein Konto?",
+    "no_account_yet": "Noch kein Konto?",
+    "back_to_login": "Zurück zum Login"
   }
 }

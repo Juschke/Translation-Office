@@ -55,7 +55,7 @@ class LogApiRequests
         $user = $request->user();
 
         // Prepare request body (exclude sensitive data)
-        $requestBody = $request->except(['password', 'password_confirmation', 'token', 'api_token']);
+        $requestBody = $request->except(['password', 'password_confirmation', 'current_password', 'code', 'token', 'api_token']);
 
         // Prepare response body (limit size)
         $responseBody = null;

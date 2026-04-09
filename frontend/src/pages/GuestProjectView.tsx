@@ -1,8 +1,9 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { guestService } from '@/api/services';
-
+import { FaUserCircle, FaSignInAlt, FaTimes } from 'react-icons/fa';
+import { useState } from 'react';
 
 import { GuestProjectHeader } from '@/components/guest/GuestProjectHeader';
 import { GuestProjectDetails } from '@/components/guest/GuestProjectDetails';
@@ -14,6 +15,11 @@ const GuestProjectView = () => {
     const { t } = useTranslation();
     const { token } = useParams<{ token: string }>();
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const [portalBannerDismissed, setPortalBannerDismissed] = useState(false);
+
+    // Check if already logged into portal
+    const isPortalLoggedIn = !!localStorage.getItem('portal_token');
 
     // Data Fetching with polling
     const { data: project, isLoading, error } = useQuery({
@@ -84,6 +90,45 @@ const GuestProjectView = () => {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-16 space-y-6">
                 {/* Header */}
                 <GuestProjectHeader project={project} tenant={project.tenant} />
+
+                {/* Portal-Konto Banner */}
+                {!isPortalLoggedIn && !portalBannerDismissed && (
+                    <div className="rounded-sm border border-teal-200 bg-teal-50 px-5 py-4 flex items-start gap-4 relative">
+                        <div className="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center shrink-0 mt-0.5">
+                            <FaUserCircle className="text-white" size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-teal-900">
+                                Vollwertigen Portalzugang erhalten
+                            </p>
+                            <p className="text-xs text-teal-700 mt-0.5 leading-relaxed">
+                                Mit einem Kunden- oder Partnerkonto sehen Sie alle Ihre Aufträge, Rechnungen und Dokumente auf einen Blick — nicht nur diesen Auftrag.
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                <button
+                                    onClick={() => navigate('/portal/auth')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 transition-colors"
+                                >
+                                    <FaSignInAlt size={10} />
+                                    Anmelden
+                                </button>
+                                <button
+                                    onClick={() => navigate('/portal/auth?mode=activate')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-white border border-teal-300 text-teal-700 text-xs font-semibold hover:bg-teal-50 transition-colors"
+                                >
+                                    Konto aktivieren
+                                </button>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setPortalBannerDismissed(true)}
+                            className="text-teal-400 hover:text-teal-600 transition-colors shrink-0 mt-0.5"
+                            title="Banner ausblenden"
+                        >
+                            <FaTimes size={12} />
+                        </button>
+                    </div>
+                )}
 
                 {/* Main Grid Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -104,6 +104,10 @@ interface ProjectData {
     classification: string;
     copies: number;
     copyPrice: number;
+    certifiedCount: number;
+    apostilleCount: number;
+    expressCount: number;
+    classificationCount: number;
     certifiedPrice: number;
     apostillePrice: number;
     expressPrice: number;
@@ -370,6 +374,7 @@ const ProjectDetail = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects', id] });
+            queryClient.refetchQueries({ queryKey: ['projects', id] });
             toast.success(t('toast.files_uploaded'));
         },
         onError: () => {
@@ -478,21 +483,31 @@ const ProjectDetail = () => {
     });
 
     const handleRenameFile = async (file: any, newName: string) => {
+        if (!projectData) return;
+        
+        // Optimistic update
+        const updatedFiles = projectData.files.map((f: any) => 
+            f.id === file.id ? { ...f, name: newName, fileName: newName } : f
+        );
+        setProjectData({ ...projectData, files: updatedFiles });
+
         try {
             await toast.promise(
                 projectService.updateFile(id!, file.id, { file_name: newName }),
                 {
                     loading: t('messages.renaming_file', 'Benenne Datei um...'),
                     success: t('messages.file_renamed_success', 'Datei erfolgreich umbenannt'),
-                    error: t('messages.file_rename_error', 'Fehler beim Umbenennen der Datei')
+                    error: t('messages.file_rename_error', 'Fehler beim Umbenennen der Datei'),
                 }
             );
-            console.log('ProjectDetail: File renamed successfully. Invalidating queries...');
+
             await queryClient.invalidateQueries({ queryKey: ['projects', id] });
             await queryClient.refetchQueries({ queryKey: ['projects', id] });
-            console.log('ProjectDetail: Query refetch triggered.');
         } catch (error) {
-            console.error('Rename error:', error);
+            // Revert on error - effect [projectResponse] will catch this anyway, but for immediate consistency:
+            if (projectResponse) {
+                setProjectData(mapProjectResponse(projectResponse) as ProjectData);
+            }
         }
     };
 
@@ -549,29 +564,51 @@ const ProjectDetail = () => {
     };
 
     const handleBulkFilesRename = async (ids: string[], prefix: string, suffix: string) => {
+        if (!projectData) return;
+        const toastId = toast.loading(t('messages.renaming_files', 'Benenne Dateien um...'));
+
         try {
-            if (!projectData) return;
-            const toastId = toast.loading(t('messages.renaming_files', 'Benenne Dateien um...'));
-            const files = projectData.files.filter((f: any) => ids.includes(f.id));
+            const filesToRename = projectData.files.filter((f: any) => ids.includes(f.id));
+            
+            // 1. Prepare new names and optimistic update
+            const renameMap = new Map();
+            const updatedFiles = projectData.files.map((f: any) => {
+                if (ids.includes(f.id)) {
+                    const currentName = f.file_name || f.original_name || 'file';
+                    const dotIndex = currentName.lastIndexOf('.');
+                    const nameWithoutExt = dotIndex > -1 ? currentName.substring(0, dotIndex) : currentName;
+                    const ext = dotIndex > -1 ? currentName.substring(dotIndex) : '';
+                    const newName = `${prefix}${nameWithoutExt}${suffix}${ext}`;
+                    renameMap.set(f.id, newName);
+                    return { ...f, name: newName, fileName: newName };
+                }
+                return f;
+            });
 
-            for (const file of files) {
-                const currentName = file.file_name || file.original_name || 'file';
-                const dotIndex = currentName.lastIndexOf('.');
-                const nameWithoutExt = dotIndex > -1 ? currentName.substring(0, dotIndex) : currentName;
-                const ext = dotIndex > -1 ? currentName.substring(dotIndex) : '';
-                const newName = `${prefix}${nameWithoutExt}${suffix}${ext}`;
-                await projectService.updateFile(id!, file.id, { file_name: newName });
-            }
+            // Apply optimistic update immediately
+            setProjectData({ ...projectData, files: updatedFiles });
 
-            console.log('ProjectDetail: Bulk rename complete. Invalidating queries...');
+            // 2. Perform API calls in parallel for performance
+            await Promise.all(
+                filesToRename.map(file => 
+                    projectService.updateFile(id!, file.id, { file_name: renameMap.get(file.id) })
+                )
+            );
+
+            // 3. Finalize
             await queryClient.invalidateQueries({ queryKey: ['projects', id] });
             await queryClient.refetchQueries({ queryKey: ['projects', id] });
+            
             toast.dismiss(toastId);
             toast.success(t('messages.files_renamed_success', 'Dateien erfolgreich umbenannt'));
-            console.log('ProjectDetail: Bulk rename queries invalidated/refetched.');
         } catch (error) {
-            toast.dismiss();
+            toast.dismiss(toastId);
             toast.error(t('messages.files_rename_error', 'Fehler beim Umbenennen der Dateien'));
+            
+            // Revert optimistic update
+            if (projectResponse) {
+                setProjectData(mapProjectResponse(projectResponse) as ProjectData);
+            }
         }
     };
 
@@ -828,7 +865,7 @@ const ProjectDetail = () => {
                                 <span>Menü: {
                                     activeTab === 'overview' ? 'Stammdaten' :
                                         activeTab === 'files' ? 'Dateien' :
-                                            activeTab === 'finances' ? 'Kalkulation & Marge' :
+                                            activeTab === 'finances' ? 'Kalkulation' :
                                                 activeTab === 'history' ? 'Historie' : 'Kommunikation'
                                 }</span>
                                 <FaChevronDown className={clsx("ml-auto transition-transform", isTabMenuOpen && "rotate-180")} />
@@ -839,7 +876,7 @@ const ProjectDetail = () => {
                             {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
                                 let badgeCount = 0;
                                 if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                                if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                                if (tab === 'finances') badgeCount = projectData?.positions?.length || 0;
                                 if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
                                 const isActive = activeTab === tab;
 
@@ -865,7 +902,7 @@ const ProjectDetail = () => {
 
                                         {tab === 'overview' ? 'Stammdaten' :
                                             tab === 'files' ? 'Dokumente' :
-                                                tab === 'finances' ? 'Positionen' :
+                                                tab === 'finances' ? 'Kalkulation' :
                                                     tab === 'history' ? 'Historie' : 'Kommunikation'}
 
                                         {tab !== 'overview' && tab !== 'history' && (
@@ -889,7 +926,7 @@ const ProjectDetail = () => {
                                 {['overview', 'files', 'finances', 'messages', 'history'].map((tab) => {
                                     let badgeCount = 0;
                                     if (tab === 'files') badgeCount = projectData?.files?.length || 0;
-                                    if (tab === 'finances') badgeCount = (projectData?.positions?.length || 0) + (projectData?.payments?.length || 0);
+                                    if (tab === 'finances') badgeCount = projectData?.positions?.length || 0;
                                     if (tab === 'messages') badgeCount = projectData?.messages?.length || 0;
                                     const isActive = activeTab === tab;
 
@@ -916,7 +953,7 @@ const ProjectDetail = () => {
                                             <span className="flex-1 text-left">
                                                 {tab === 'overview' ? 'Stammdaten' :
                                                     tab === 'files' ? 'Dateien' :
-                                                        tab === 'finances' ? 'Kalkulation & Marge' :
+                                                        tab === 'finances' ? 'Kalkulation' :
                                                             tab === 'history' ? 'Historie' : 'Kommunikation'}
                                             </span>
 

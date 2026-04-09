@@ -27,13 +27,6 @@ class PortalAuthController extends Controller
         $password = $request->password;
         $accountType = $request->input('account_type');
 
-        if ($email === 'demo@itc-ks.com' && $password === 'demo1234') {
-            $user = Customer::where('portal_access', true)->first();
-            if ($user) {
-                return $this->createSession($user, 'customer', true);
-            }
-        }
-
         $user = User::where('email', $email)->first();
         if ($user && Hash::check($password, $user->password)) {
             return response()->json([
@@ -166,7 +159,7 @@ class PortalAuthController extends Controller
             return response()->json(['message' => 'Der Code ist ungültig oder abgelaufen.'], 422);
         }
 
-        $user->password = $request->password;
+        $user->password = Hash::make($request->password);
         $user->portal_token = null;
         $user->portal_token_expires_at = null;
         $user->save();

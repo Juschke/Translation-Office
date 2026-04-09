@@ -79,13 +79,13 @@ const PortalDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <section className="border border-slate-300 bg-[#f6f6f4] px-6 py-6 sm:px-8">
+      <section className="border border-white/20 bg-white/10 px-6 py-6 sm:px-8">
         <div className="max-w-3xl">
-          <div className="mb-2 text-sm font-medium uppercase tracking-[0.18em] text-[#0e5a67]">Start</div>
-          <h1 className="text-3xl font-normal tracking-tight text-slate-900">
+          <div className="mb-2 text-sm font-medium uppercase tracking-[0.18em] text-white/70">Start</div>
+          <h1 className="text-3xl font-normal tracking-tight text-white">
             Guten Tag, {displayName}
           </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
+          <p className="mt-3 text-sm leading-6 text-white/80">
             Hier finden Sie die wichtigsten Bereiche für Ihr Serviceportal. Sie können Projekte einsehen, Dateien und Nachrichten prüfen, Rechnungen herunterladen, neue Anfragen senden und Ihre Kontaktdaten pflegen.
           </p>
         </div>
@@ -215,12 +215,12 @@ const PortalDashboard: React.FC = () => {
         </div>
       </section>
 
-      <section className="border border-slate-300 bg-[#edf2f6] px-6 py-5">
-        <div className="mb-2 flex items-center gap-2 text-base font-medium text-slate-900">
-          <MessageSquare className="h-5 w-5 text-[#0e5a67]" />
+      <section className="border border-white/20 bg-white/10 px-6 py-5">
+        <div className="mb-2 flex items-center gap-2 text-base font-medium text-white">
+          <MessageSquare className="h-5 w-5 text-white/70" />
           <span>Was Sie hier direkt erledigen können</span>
         </div>
-        <div className="grid gap-2 text-sm leading-6 text-slate-700 md:grid-cols-2">
+        <div className="grid gap-2 text-sm leading-6 text-white/80 md:grid-cols-2">
           <div>Projektstatus prüfen und Dateien herunterladen</div>
           <div>Rückfragen direkt am Projekt senden</div>
           <div>Neue Anfrage an das Team übermitteln</div>

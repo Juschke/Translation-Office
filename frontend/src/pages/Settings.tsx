@@ -79,9 +79,13 @@ const Settings: React.FC = () => {
     ];
 
     const OBJECTS_SUBTABS = [
-        { id: 'master_data', label: t('settings.tabs.objects_master_data') },
-        { id: 'projects', label: t('settings.tabs.objects_projects') },
-        { id: 'finance', label: t('settings.tabs.objects_finance') },
+        { id: 'customer', label: t('settings.number_circles.cat_customer') },
+        { id: 'partner', label: t('settings.number_circles.cat_partner') },
+        { id: 'project', label: t('settings.number_circles.cat_project') },
+        { id: 'appointment', label: t('settings.number_circles.cat_appointment') },
+        { id: 'offer', label: t('settings.number_circles.cat_offer') },
+        { id: 'invoice', label: t('settings.number_circles.cat_invoice') },
+        { id: 'credit_note', label: t('settings.number_circles.cat_credit_note') },
     ];
 
     return (
@@ -205,7 +209,7 @@ const Settings: React.FC = () => {
                                                             to={`/settings?tab=objects&section=${sub.id}`}
                                                             className={clsx(
                                                                 "flex items-center pl-12 pr-4 py-1.5 text-[13px] font-medium transition-colors border-l-2",
-                                                                searchParams.get('section') === sub.id || (!searchParams.get('section') && sub.id === 'master_data')
+                                                                searchParams.get('section') === sub.id || (!searchParams.get('section') && sub.id === 'customer')
                                                                     ? "text-brand-primary border-brand-primary bg-brand-primary/5"
                                                                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-100 border-transparent"
                                                             )}

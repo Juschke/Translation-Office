@@ -77,7 +77,7 @@ const PortalProjectDetail: React.FC = () => {
   if (error || !project) {
     return (
       <div className="space-y-4">
-        <Link to="/portal/projects" className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700">
+        <Link to="/portal/projects" className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Zurück zu Projekten
         </Link>
         <Alert type="error" message="Projekt konnte nicht geladen werden." showIcon />
@@ -88,7 +88,7 @@ const PortalProjectDetail: React.FC = () => {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <Link to="/portal/projects" className="inline-flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700">
+        <Link to="/portal/projects" className="inline-flex items-center gap-2 text-sm font-medium text-white/80 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Zurück
         </Link>
       </div>

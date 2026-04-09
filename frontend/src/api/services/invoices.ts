@@ -65,6 +65,10 @@ export const invoiceService = {
         const response = await api.post('/invoices/bulk-update', { ids, data });
         return response.data;
     },
+    bulkDelete: async (ids: number[]) => {
+        const response = await api.post('/invoices/bulk-delete', { ids });
+        return response.data;
+    },
     datevExport: async (ids: number[]) => {
         const response = await api.post('/invoices/datev-export', { ids }, { responseType: 'blob' });
         return response;

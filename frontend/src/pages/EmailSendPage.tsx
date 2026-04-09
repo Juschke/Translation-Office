@@ -18,7 +18,6 @@ const EmailSendPage = () => {
     // Clear once retrieved to keep it clean
     useEffect(() => {
         if (sid) {
-            // Give it a tiny delay to ensure the component has read it (though it already has above)
             setTimeout(() => localStorage.removeItem(sid), 1000);
         }
     }, [sid]);
@@ -30,17 +29,17 @@ const EmailSendPage = () => {
     const draftId = emailData?.draftId || null;
 
     return (
-        <div className="h-screen w-screen overflow-hidden flex flex-col bg-slate-100 items-center">
-            <div className="h-full w-full md:min-w-[1250px] max-w-[1400px] flex flex-col bg-white shadow-2xl overflow-hidden">
+        <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
+            <div className="max-w-[1400px] mx-auto bg-white shadow-xl rounded-sm overflow-hidden h-full min-h-[800px]">
                 <EmailComposeContent
-                    isStandalone
-                    onClose={() => window.close()}
+                    isStandalone={false}
                     to={to}
                     subject={subject}
                     body={body}
                     projectId={projectId}
                     draftId={draftId}
                     attachments={emailData?.attachments || []}
+                    onClose={() => window.history.back()}
                 />
             </div>
         </div>

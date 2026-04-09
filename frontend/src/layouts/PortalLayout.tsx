@@ -85,7 +85,7 @@ const PortalLayout: React.FC = () => {
 
   return (
     <PortalGuard>
-      <div className="min-h-screen bg-white text-slate-900">
+      <div className="min-h-screen bg-[#0e5a67] text-slate-900">
         <header className="border-b border-white/10 bg-[#0e5a67] text-white">
           <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
@@ -225,16 +225,16 @@ const PortalLayout: React.FC = () => {
           </nav>
         </Drawer>
 
-        <main className="mx-auto w-full max-w-7xl bg-white px-4 py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <Outlet />
         </main>
 
-        <footer className="border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-500">
+        <footer className="border-none bg-[#0e5a67] py-5 text-center text-xs text-white/60">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-2 px-4">
             <span>&copy; {new Date().getFullYear()} Serviceportal</span>
-            <a href="/landing-page/impressum.html" className="hover:text-slate-800">Impressum</a>
-            <a href="/landing-page/datenschutz.html" className="hover:text-slate-800">Datenschutz</a>
-            <a href="/landing-page/agb.html" className="hover:text-slate-800">AGB</a>
+            <a href="/landing-page/impressum.html" className="hover:text-white/90">Impressum</a>
+            <a href="/landing-page/datenschutz.html" className="hover:text-white/90">Datenschutz</a>
+            <a href="/landing-page/agb.html" className="hover:text-white/90">AGB</a>
           </div>
         </footer>
       </div>

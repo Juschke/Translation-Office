@@ -710,6 +710,36 @@ class InvoiceController extends Controller
         ]);
     }
 
+    /**
+     * Bulk delete draft invoices.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:invoices,id',
+        ]);
+
+        $deletedCount = 0;
+        $skippedCount = 0;
+
+        foreach (Invoice::whereIn('id', $validated['ids'])->get() as $invoice) {
+            // Only allow deleting drafts
+            if (!$invoice->is_locked && $invoice->status === Invoice::STATUS_DRAFT) {
+                $invoice->delete();
+                $deletedCount++;
+            } else {
+                $skippedCount++;
+            }
+        }
+
+        return response()->json([
+            'message' => 'Verarbeitung abgeschlossen',
+            'deleted' => $deletedCount,
+            'skipped' => $skippedCount,
+        ]);
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // PDF & ZUGFERD GENERATION
     // ─────────────────────────────────────────────────────────────────
@@ -1953,13 +1983,13 @@ XML;
             ->where('key', 'like', $type . '_%')
             ->pluck('value', 'key');
 
-        $prefix = $settings[$type . '_prefix'] ?? ($type === 'credit_note' ? 'GUT' : 'RE');
+        $prefix = $settings[$type . '_prefix'] ?? ($type === 'credit_note' ? 'G' : 'RE');
         $sep = ($settings[$type . '_separator'] ?? '-') === 'none' ? '' : ($settings[$type . '_separator'] ?? '-');
-        $padding = (int) ($settings[$type . '_padding'] ?? 5);
+        $padding = (int) ($settings[$type . '_padding'] ?? 4);
         $date = Carbon::now();
 
         $yearPart = '';
-        $yearFormat = $settings[$type . '_year_format'] ?? 'YYYY';
+        $yearFormat = $settings[$type . '_year_format'] ?? 'YY';
         if ($yearFormat === 'YYYY')
             $yearPart = $year;
         elseif ($yearFormat === 'YY')
@@ -1968,12 +1998,18 @@ XML;
             $yearPart = '';
 
         $monthPart = '';
-        if (($settings[$type . '_month_format'] ?? 'none') === 'MM')
+        $monthFormat = $settings[$type . '_month_format'] ?? 'none';
+        if ($monthFormat === 'MM')
             $monthPart = $date->format('m');
+        elseif ($monthFormat === 'M')
+            $monthPart = $date->format('n');
 
         $dayPart = '';
-        if (($settings[$type . '_day_format'] ?? 'none') === 'DD')
+        $dayFormat = $settings[$type . '_day_format'] ?? 'none';
+        if ($dayFormat === 'DD')
             $dayPart = $date->format('d');
+        elseif ($dayFormat === 'D')
+            $dayPart = $date->format('j');
 
         $nrPart = str_pad($sequence, $padding, '0', STR_PAD_LEFT);
 

@@ -74,10 +74,10 @@ trait HasDisplayId
         // 3. Build parts
         $prefix = $settings[$prefixKey] ?? '';
         $sep = ($settings[$sepKey] ?? '-') === 'none' ? '' : ($settings[$sepKey] ?? '-');
-        $padding = (int) ($settings[$padKey] ?? 5);
+        $padding = (int) ($settings[$padKey] ?? 4);
 
         $yearPart = '';
-        $yearFormat = $settings[$yearKey] ?? 'none';
+        $yearFormat = $settings[$yearKey] ?? 'YY';
         if ($yearFormat === 'YYYY')
             $yearPart = $date->format('Y');
         elseif ($yearFormat === 'YY')

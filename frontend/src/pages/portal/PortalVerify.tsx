@@ -69,7 +69,7 @@ const PortalVerify: React.FC = () => {
               <h2 className="mb-3 text-xl font-semibold text-slate-800">Anmeldung fehlgeschlagen</h2>
               <Alert type="error" message={errorMessage} showIcon className="mb-6 text-left" />
               <Link
-                to="/portal/login"
+                to="/auth"
                 className="inline-block rounded-lg bg-teal-700 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800"
               >
                 Zurück zur Anmeldung

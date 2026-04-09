@@ -457,17 +457,14 @@ const CompanySettingsTab = () => {
                     min-width: 60px;
                     transition: all 0.2s;
                 }
-                .phone-input-group:hover .PhoneInputCountry {
-                    background-color: rgb(18, 58, 60);
-                    border-color: rgb(18, 58, 60);
-                }
                 .phone-input-group .PhoneInputCountry:focus-within {
                     border-color: rgb(18, 58, 60);
                     z-index: 2;
                 }
-                .phone-input-group:hover .PhoneInputCountrySelectArrow {
-                    color: white !important;
-                    opacity: 1;
+                .phone-input-group .PhoneInputCountrySelectArrow {
+                    margin-left: 6px;
+                    color: #94a3b8;
+                    transition: color 0.2s;
                 }
                 .phone-input-group .PhoneInputCountrySelect {
                     position: absolute;
@@ -495,7 +492,6 @@ const CompanySettingsTab = () => {
                     text-align: left !important;
                     transition: all 0.2s !important;
                 }
-                .phone-input-group:hover input,
                 .phone-input-group input:focus {
                     border-color: rgb(18, 58, 60) !important;
                     z-index: 2;

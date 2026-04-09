@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -21,18 +23,34 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                PasswordRule::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+            ],
+            'terms_accepted' => 'required|accepted',
+            'privacy_accepted' => 'required|accepted',
         ]);
 
         // Create user without tenant first
-        // tenant_id will be null initially, which is allowed by migration
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => User::ROLE_OWNER,
-            'status' => 'active',
+            'status' => 'pending', // Pending email verification
+            'terms_accepted_at' => now(),
+            'privacy_accepted_at' => now(),
         ]);
+
+        // Trigger Laravel's built-in registration event (sends verification email)
+        event(new Registered($user));
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -40,7 +58,7 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user->load('tenant'),
-            'message' => 'Registrierung erfolgreich! Bitte vervollständigen Sie Ihr Profil.',
+            'message' => 'Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse und vervollständigen Sie Ihr Profil.',
         ], 201);
     }
 
@@ -242,7 +260,18 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed|different:current_password',
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                'different:current_password',
+                PasswordRule::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+            ],
         ]);
 
         $user = $request->user();

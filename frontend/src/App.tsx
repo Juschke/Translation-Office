@@ -48,7 +48,7 @@ import deDE from 'antd/locale/de_DE';
 import { antdTheme } from './lib/antd-theme';
 
 import PortalLayout from './layouts/PortalLayout';
-import PortalLogin from './pages/portal/PortalLogin';
+import PortalAuthPage from './pages/portal/PortalAuthPage';
 import PortalVerify from './pages/portal/PortalVerify';
 import PortalDashboard from './pages/portal/PortalDashboard';
 import PortalProjects from './pages/portal/PortalProjects';
@@ -99,11 +99,6 @@ function App() {
                             </ProtectedRoute>
                         } />
 
-                        <Route path="/email/send" element={
-                            <ProtectedRoute>
-                                <EmailSendPage />
-                            </ProtectedRoute>
-                        } />
 
                         {/* Protected Routes (Authenticated & Tenant) */}
                         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -134,11 +129,12 @@ function App() {
                             <Route path="/settings/*" element={<RoleGuard minRole="manager"><Settings /></RoleGuard>} />
                             <Route path="/billing" element={<RoleGuard minRole="owner"><Billing /></RoleGuard>} />
                             <Route path="/team" element={<RoleGuard minRole="owner"><Team /></RoleGuard>} />
-
+                            <Route path="/email/send" element={<EmailSendPage />} />
                         </Route>
 
                         {/* Portal Routes — public */}
-                        <Route path="/portal/login" element={<PortalLogin />} />
+                        <Route path="/portal/auth" element={<PortalAuthPage />} />
+                        <Route path="/portal/login" element={<Navigate to="/portal/auth" replace />} />
                         <Route path="/portal/verify/:token" element={
                             <PortalProvider>
                                 <PortalVerify />

@@ -35,7 +35,7 @@ portalApi.interceptors.response.use(
     const status = error.response.status;
     const errorData = error.response.data;
     const requestUrl = String(error.config?.url || '');
-    const isPortalLoginPage = window.location.pathname.startsWith('/portal/login');
+    const isPortalLoginPage = window.location.pathname === '/auth' || window.location.pathname.startsWith('/portal/login');
     const isPortalAuthRequest =
       requestUrl.includes('/portal/auth/login') ||
       requestUrl.includes('/portal/auth/request-link') ||
@@ -50,7 +50,7 @@ portalApi.interceptors.response.use(
         }
 
         localStorage.removeItem('portal_token');
-        window.location.href = '/portal/login';
+        window.location.href = '/auth';
         break;
       case 403:
         toast.error(errorData?.message || 'Sie haben keine Berechtigung für diese Aktion.');

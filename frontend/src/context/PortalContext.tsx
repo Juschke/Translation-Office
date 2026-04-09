@@ -56,7 +56,7 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       localStorage.removeItem('portal_token');
       setCustomer(null);
-      window.location.href = '/portal/login';
+      window.location.href = '/auth';
     }
   };
 

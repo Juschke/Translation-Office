@@ -27,7 +27,7 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
     const options = countries.map(c => ({
         value: c.name,
         label: c.name,
-        icon: getFlagUrl(c.code)
+        icon: <img src={getFlagUrl(c.code)} className="w-5 h-3.5 object-cover shadow-sm" alt="" />
     }));
 
     return (

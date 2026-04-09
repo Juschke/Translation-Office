@@ -433,7 +433,7 @@ const PortalNewRequest: React.FC = () => {
     if (currentStep === 'general') {
       return (
         <>
-          <Card className="border-0 bg-[#3f4143] text-white shadow-none">
+          <Card className="border border-white/20 bg-white/10 text-white shadow-none">
             <div className="mb-5 text-[16px] font-normal">Ihr Ansprechpartner</div>
             <div className="space-y-2 text-sm text-white/90">
               <div className="font-medium text-white">{contactName}</div>
@@ -442,7 +442,7 @@ const PortalNewRequest: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="border-0 bg-[#3f4143] text-white shadow-none">
+          <Card className="border border-white/20 bg-white/10 text-white shadow-none">
             <div className="space-y-4 text-sm leading-6 text-white/85">
               <div className="font-medium text-white">So starten Sie Ihre Anfrage</div>
               <div>Geben Sie zuerst einen klaren Projektnamen und eine kurze Beschreibung an.</div>
@@ -457,7 +457,7 @@ const PortalNewRequest: React.FC = () => {
     if (currentStep === 'languages') {
       return (
         <>
-          <Card className="border-0 bg-[#3f4143] text-white shadow-none">
+          <Card className="border border-white/20 bg-white/10 text-white shadow-none">
             <div className="mb-5 text-[16px] font-normal">Ihr Ansprechpartner</div>
             <div className="space-y-2 text-sm text-white/90">
               <div className="font-medium text-white">{contactName}</div>
@@ -466,7 +466,7 @@ const PortalNewRequest: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="border-0 bg-[#3f4143] text-white shadow-none">
+          <Card className="border border-white/20 bg-white/10 text-white shadow-none">
             <div className="space-y-4 text-sm leading-6 text-white/85">
               <div className="font-medium text-white">Hinweise zu den Sprachen</div>
               <div>Waehlen Sie die Hauptsprachkombination fuer diese Anfrage aus.</div>
@@ -481,7 +481,7 @@ const PortalNewRequest: React.FC = () => {
     if (currentStep === 'files') {
       return (
         <>
-          <Card className="border-0 bg-[#3f4143] text-white shadow-none">
+          <Card className="border border-white/20 bg-white/10 text-white shadow-none">
             <div className="mb-5 text-[16px] font-normal">Ihr Ansprechpartner</div>
             <div className="space-y-2 text-sm text-white/90">
               <div className="font-medium text-white">{contactName}</div>
@@ -490,7 +490,7 @@ const PortalNewRequest: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="border-0 bg-[#3f4143] text-white shadow-none">
+          <Card className="border border-white/20 bg-white/10 text-white shadow-none">
             <div className="space-y-4 text-sm leading-6 text-white/85">
               <div className="font-medium text-white">Dateien hochladen</div>
               <div>Fuegen Sie hier Ihre Ausgangsdokumente hinzu, damit Ihr Projektteam Umfang und Format direkt pruefen kann.</div>
@@ -504,7 +504,7 @@ const PortalNewRequest: React.FC = () => {
 
     return (
       <>
-        <Card className="border-0 bg-[#3f4143] text-white shadow-none">
+        <Card className="border border-white/20 bg-white/10 text-white shadow-none">
           <div className="mb-5 text-[16px] font-normal">Ihr Ansprechpartner</div>
           <div className="space-y-2 text-sm text-white/90">
             <div className="font-medium text-white">{contactName}</div>
@@ -513,7 +513,7 @@ const PortalNewRequest: React.FC = () => {
           </div>
         </Card>
 
-        <Card className="border-0 bg-[#3f4143] text-white shadow-none">
+        <Card className="border border-white/20 bg-white/10 text-white shadow-none">
           <div className="space-y-4 text-sm leading-6 text-white/85">
             <div className="font-medium text-white">Fast geschafft</div>
             <div>Bitte pruefen Sie Ihre Angaben noch einmal sorgfaeltig, bevor Sie die Anfrage absenden.</div>
@@ -572,7 +572,7 @@ const PortalNewRequest: React.FC = () => {
           })}
         </div>
 
-        <div className="grid gap-6 bg-[#f3f2ee] px-4 py-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:px-6">
+        <div className="grid gap-6 bg-white/5 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:px-6">
           <Card className="border border-slate-200 shadow-none">
             <Form
               form={form}

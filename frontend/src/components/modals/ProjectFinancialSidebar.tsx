@@ -14,9 +14,13 @@ export interface ProjectFinancialSidebarProps {
     profit: number;
     profitMargin: number;
     isCertified: boolean;
+    certifiedQty?: number;
     hasApostille: boolean;
+    apostilleQty?: number;
     isExpress: boolean;
+    expressQty?: number;
     classification: string;
+    classificationQty?: number;
     copies: number;
     copyPrice: string;
     isLocked?: boolean;
@@ -35,9 +39,13 @@ const ProjectFinancialSidebar = ({
     profit,
     profitMargin,
     isCertified,
+    certifiedQty = 1,
     hasApostille,
+    apostilleQty = 1,
     isExpress,
+    expressQty = 1,
     classification,
+    classificationQty = 1,
     copies,
     copyPrice,
     isLocked,
@@ -57,11 +65,36 @@ const ProjectFinancialSidebar = ({
                 {/* Extras - Minimalist */}
                 {(isCertified || hasApostille || isExpress || classification === 'ja' || copies > 0) && (
                     <div className="space-y-1.5 pl-1.5 border-l border-slate-100">
-                        {isCertified && <div className="flex justify-between text-[10px] text-slate-400"><span>Beglaubigung</span><span>5,00 €</span></div>}
-                        {hasApostille && <div className="flex justify-between text-[10px] text-slate-400"><span>Apostille</span><span>15,00 €</span></div>}
-                        {isExpress && <div className="flex justify-between text-[10px] text-slate-400"><span>Express</span><span>15,00 €</span></div>}
-                        {classification === 'ja' && <div className="flex justify-between text-[10px] text-slate-400"><span>Klassifizierung</span><span>15,00 €</span></div>}
-                        {copies > 0 && <div className="flex justify-between text-[10px] text-slate-400"><span>Kopien ({copies}x)</span><span>{(copies * Number(copyPrice)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span></div>}
+                        {isCertified && (
+                            <div className="flex justify-between text-[10px] text-slate-400">
+                                <span>Beglaubigung {certifiedQty > 1 ? `(${certifiedQty}×)` : ''}</span>
+                                <span>{(certifiedQty * 5).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                            </div>
+                        )}
+                        {hasApostille && (
+                            <div className="flex justify-between text-[10px] text-slate-400">
+                                <span>Apostille {apostilleQty > 1 ? `(${apostilleQty}×)` : ''}</span>
+                                <span>{(apostilleQty * 25).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                            </div>
+                        )}
+                        {isExpress && (
+                            <div className="flex justify-between text-[10px] text-slate-400">
+                                <span>Express {expressQty > 1 ? `(${expressQty}×)` : ''}</span>
+                                <span>{(expressQty * 15).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                            </div>
+                        )}
+                        {classification === 'ja' && (
+                            <div className="flex justify-between text-[10px] text-slate-400">
+                                <span>Klassifizierung {classificationQty > 1 ? `(${classificationQty}×)` : ''}</span>
+                                <span>{(classificationQty * 15).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                            </div>
+                        )}
+                        {copies > 0 && (
+                            <div className="flex justify-between text-[10px] text-slate-400">
+                                <span>Kopien ({copies}x)</span>
+                                <span>{(copies * Number(copyPrice)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

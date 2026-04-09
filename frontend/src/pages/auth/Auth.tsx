@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FaUser, FaLock, FaExclamationCircle, FaShieldAlt, FaEnvelope } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
 import AuthLayout from '../../components/auth/AuthLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
+import { portalAuthService } from '../../api/services/portal';
 
 const AuthPage = () => {
     const { t } = useTranslation();
@@ -60,26 +61,32 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
         setError(null);
 
         try {
-            const payload: any = { email, password };
-            if (showTwoFactor && twoFactorCode) {
-                payload.code = twoFactorCode;
+            // Versuche zuerst den Portal-Login (unterstützt Kunden, Partner und Staff)
+            const portalRes = await portalAuthService.login({ email, password });
+
+            if (portalRes.type === 'staff') {
+                // Staff-Nutzer (Projektmanager, Admin) → normaler App-Login
+                const payload: any = { email, password };
+                if (showTwoFactor && twoFactorCode) {
+                    payload.code = twoFactorCode;
+                }
+                if (showTwoFactor && !twoFactorCode) {
+                    setError("Bitte geben Sie den Bestätigungscode ein.");
+                    setIsLoading(false);
+                    return;
+                }
+                const response = await login(payload);
+                if (response && response.two_factor) {
+                    setShowTwoFactor(true);
+                    setIsLoading(false);
+                    return;
+                }
+                navigate('/');
+            } else {
+                // Kunden oder Partner → Portal
+                localStorage.setItem('portal_token', portalRes.token);
+                window.location.href = '/portal';
             }
-
-            if (showTwoFactor && !twoFactorCode) {
-                setError("Bitte geben Sie den Bestätigungscode ein.");
-                setIsLoading(false);
-                return;
-            }
-
-            const response = await login(payload);
-
-            if (response && response.two_factor) {
-                setShowTwoFactor(true);
-                setIsLoading(false);
-                return;
-            }
-
-            navigate('/');
         } catch (err: any) {
             let msg = 'Ungültige E-Mail-Adresse oder Passwort.';
             if (err.response?.data?.errors) {
@@ -231,6 +238,21 @@ const LoginForm = ({ login, navigate }: LoginFormProps) => {
                     showTwoFactor ? t('auth.confirming') : t('auth.sign_in')
                 )}
             </button>
+
+            <div className="mt-5 flex items-center gap-3 text-sm text-slate-400">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="shrink-0">oder</span>
+                <div className="h-px flex-1 bg-slate-200" />
+            </div>
+            <p className="mt-4 text-center text-sm text-slate-500">
+                Kunden- oder Partnerportal?{' '}
+                <Link
+                    to="/portal/auth"
+                    className="font-medium text-brand-primary hover:text-brand-primary/80 hover:underline"
+                >
+                    Zum Portal-Login
+                </Link>
+            </p>
         </form>
     );
 };
@@ -252,6 +274,8 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
         password: '',
         confirmPassword: '',
     });
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [privacyAccepted, setPrivacyAccepted] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -274,6 +298,10 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
             setError(t('auth.password_min_8'));
             return;
         }
+        if (!termsAccepted || !privacyAccepted) {
+            setError('Bitte akzeptieren Sie die Nutzungsbedingungen und die Datenschutzerklärung.');
+            return;
+        }
 
         setIsLoading(true);
         try {
@@ -281,7 +309,9 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
-                password_confirmation: formData.confirmPassword
+                password_confirmation: formData.confirmPassword,
+                terms_accepted: termsAccepted,
+                privacy_accepted: privacyAccepted
             });
             navigate('/onboarding');
         } catch (err: any) {
@@ -365,6 +395,10 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                         placeholder="Mindestens 8 Zeichen"
                     />
                 </div>
+                <p className="mt-1.5 text-[11px] text-slate-500 flex items-center gap-1">
+                    <FaShieldAlt className="text-brand-primary" />
+                    {t('auth.password_hint')}
+                </p>
             </div>
 
             <div>
@@ -387,6 +421,36 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                         placeholder="Passwort wiederholen"
                     />
                 </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+                <label className="relative flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:border-brand-primary/30 transition-colors cursor-pointer group">
+                    <div className="flex items-center h-5">
+                        <input
+                            type="checkbox"
+                            checked={termsAccepted}
+                            onChange={(e) => setTermsAccepted(e.target.checked)}
+                            className="h-4 w-4 text-brand-primary border-slate-300 rounded focus:ring-brand-primary cursor-pointer"
+                        />
+                    </div>
+                    <div className="text-xs leading-5 text-slate-600">
+                        {t('auth.terms_accepted')}
+                    </div>
+                </label>
+
+                <label className="relative flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:border-brand-primary/30 transition-colors cursor-pointer group">
+                    <div className="flex items-center h-5">
+                        <input
+                            type="checkbox"
+                            checked={privacyAccepted}
+                            onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                            className="h-4 w-4 text-brand-primary border-slate-300 rounded focus:ring-brand-primary cursor-pointer"
+                        />
+                    </div>
+                    <div className="text-xs leading-5 text-slate-600">
+                        {t('auth.privacy_accepted')}
+                    </div>
+                </label>
             </div>
 
             <button

@@ -4,7 +4,8 @@ import {
     FaComments, FaCopy, FaPaperclip, FaPaperPlane, FaExchangeAlt,
     FaFilePdf, FaFileWord, FaFileExcel, FaFileImage, FaFileArchive,
     FaFile, FaDownload, FaEye, FaEnvelope, FaStickyNote, FaFileInvoiceDollar,
-    FaChevronDown, FaChevronUp, FaCheck, FaClock
+    FaChevronDown, FaChevronUp, FaCheck, FaClock, FaLink, FaUniversity,
+    FaCreditCard, FaMoneyBillAlt, FaCheckDouble, FaExternalLinkAlt, FaUserCircle,
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -46,17 +47,17 @@ const Panel = ({ title, icon: Icon, count, children, defaultOpen = true, accent 
 }) => {
     const [open, setOpen] = useState(defaultOpen);
     return (
-        <div className="border border-slate-200 rounded-sm overflow-hidden">
+        <div className="border border-slate-200 rounded-sm overflow-hidden bg-white">
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 hover:bg-slate-100 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-slate-50 transition-colors border-b border-slate-100"
             >
                 <div className="flex items-center gap-2">
                     <Icon size={12} className={`text-${accent}-500`} />
                     <span className="text-xs font-semibold text-slate-700">{title}</span>
                     {count !== undefined && (
-                        <span className="text-[10px] font-bold bg-white border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full shadow-sm">{count}</span>
+                        <span className="text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full">{count}</span>
                     )}
                 </div>
                 {open ? <FaChevronUp size={9} className="text-slate-400" /> : <FaChevronDown size={9} className="text-slate-400" />}
@@ -64,6 +65,15 @@ const Panel = ({ title, icon: Icon, count, children, defaultOpen = true, accent 
             {open && <div className="bg-white">{children}</div>}
         </div>
     );
+};
+
+// ─── payment method icon ─────────────────────────────────────────────────────
+
+const MethodIcon = ({ method }: { method: string }) => {
+    if (method === 'Bar') return <FaMoneyBillAlt className="text-emerald-500" size={11} />;
+    if (method === 'Karte') return <FaCreditCard className="text-blue-500" size={11} />;
+    if (method === 'Überweisung') return <FaUniversity className="text-slate-500" size={11} />;
+    return <FaMoneyBillAlt className="text-slate-400" size={11} />;
 };
 
 // ─── main component ──────────────────────────────────────────────────────────
@@ -140,17 +150,28 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
         } catch { toast.error('Download fehlgeschlagen'); }
     };
 
+    const handleGenerateToken = async () => {
+        setIsGeneratingToken(true);
+        try {
+            await projectService.generateToken(projectId, chatMode);
+            await queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+            toast.success('Portal-Link generiert');
+        } catch { toast.error('Link konnte nicht generiert werden'); }
+        finally { setIsGeneratingToken(false); }
+    };
+
+    const handleCopyToken = () => {
+        const token = chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token;
+        if (token) {
+            navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/guest/project/${token}`);
+            toast.success('Link kopiert');
+        }
+    };
+
     const handleSendGuestLink = async () => {
-        let token = chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token;
+        const token = chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token;
         if (!token) {
-            setIsGeneratingToken(true);
-            try {
-                const response = await projectService.generateToken(projectId, chatMode);
-                token = response.access_token;
-                await queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
-                toast.success('Link wurde generiert');
-            } catch { toast.error('Link konnte nicht generiert werden'); return; }
-            finally { setIsGeneratingToken(false); }
+            await handleGenerateToken();
         } else {
             toast.success('Link bereits vorhanden');
         }
@@ -175,6 +196,10 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
 
     const activePerson = chatMode === 'customer' ? projectData.customer : projectData.translator;
     const tokenExists = chatMode === 'customer' ? !!projectData.access_token : !!projectData.partner_access_token;
+    const portalToken = chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token;
+    const portalUrl = portalToken
+        ? `${window.location.protocol}//${window.location.host}/guest/project/${portalToken}`
+        : null;
     const personName = chatMode === 'customer'
         ? (activePerson?.company_name || activePerson?.name || 'Kunde')
         : (activePerson?.name || 'Partner');
@@ -189,27 +214,20 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
 
     const statusBadge = (s: string) => {
         const map: Record<string, { label: string; cls: string }> = {
-            draft:     { label: 'Entwurf',    cls: 'bg-slate-100 text-slate-500' },
-            issued:    { label: 'Gestellt',   cls: 'bg-blue-50 text-blue-600' },
-            paid:      { label: 'Bezahlt',    cls: 'bg-emerald-50 text-emerald-600' },
-            cancelled: { label: 'Storniert',  cls: 'bg-red-50 text-red-500' },
+            draft:     { label: 'Entwurf',   cls: 'bg-slate-100 text-slate-500' },
+            issued:    { label: 'Gestellt',  cls: 'bg-blue-50 text-blue-600' },
+            paid:      { label: 'Bezahlt',   cls: 'bg-emerald-50 text-emerald-600' },
+            cancelled: { label: 'Storniert', cls: 'bg-red-50 text-red-500' },
         };
         const entry = map[s] || { label: s, cls: 'bg-slate-100 text-slate-500' };
         return <span className={clsx('text-[10px] font-bold px-1.5 py-0.5 rounded-sm', entry.cls)}>{entry.label}</span>;
     };
 
-    const methodIcon = (m: string) => {
-        if (m === 'Bar') return '💵';
-        if (m === 'Karte') return '💳';
-        if (m === 'Überweisung') return '🏦';
-        return '•';
-    };
-
     return (
         <div className="flex gap-4 h-[680px] animate-fadeIn mb-10">
 
-            {/* ── LEFT: Chat ─────────────────────────────────────────────── */}
-            <div className="flex-1 min-w-0 bg-white rounded-sm border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+            {/* ── LEFT: Chat (55%) ────────────────────────────────────────── */}
+            <div className="w-[55%] min-w-0 bg-white rounded-sm border border-slate-200 shadow-sm flex flex-col overflow-hidden">
 
                 {/* Chat Header */}
                 <div className="bg-white px-4 py-2.5 border-b border-slate-200 flex items-center justify-between shrink-0">
@@ -231,45 +249,14 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {/* Portal-Link */}
-                        <div className="hidden lg:flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-sm px-2 py-1 max-w-[260px]">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase shrink-0">Portal</span>
-                            <input
-                                readOnly
-                                value={
-                                    (chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token)
-                                        ? `${window.location.protocol}//${window.location.host}/guest/project/${chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token}`
-                                        : 'Kein Link'
-                                }
-                                onClick={e => (e.target as HTMLInputElement).select()}
-                                className="flex-1 w-full bg-transparent text-[10px] text-slate-400 outline-none cursor-default truncate"
-                            />
-                            <button
-                                onClick={() => {
-                                    const token = chatMode === 'customer' ? projectData.access_token : projectData.partner_access_token;
-                                    if (token) {
-                                        navigator.clipboard.writeText(`${window.location.protocol}//${window.location.host}/guest/project/${token}`);
-                                        toast.success('Link kopiert');
-                                    }
-                                }}
-                                className="text-slate-300 hover:text-teal-600 transition-colors"
-                            ><FaCopy size={9} /></button>
-                            <Button size="sm" onClick={handleSendGuestLink} disabled={isGeneratingToken} className="h-5 px-2 text-[10px] font-bold flex items-center gap-1">
-                                {isGeneratingToken ? <span className="animate-spin text-[10px]">○</span> : <FaPaperPlane size={7} />}
-                                {tokenExists ? 'Senden' : 'Generieren'}
-                            </Button>
-                        </div>
-
-                        <Button
-                            variant="ghost" size="sm"
-                            onClick={() => setChatMode(chatMode === 'customer' ? 'partner' : 'customer')}
-                            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-teal-600 h-7 px-3 rounded-sm"
-                        >
-                            <FaExchangeAlt size={9} />
-                            {chatMode === 'customer' ? 'Zum Partner' : 'Zum Kunden'}
-                        </Button>
-                    </div>
+                    <Button
+                        variant="ghost" size="sm"
+                        onClick={() => setChatMode(chatMode === 'customer' ? 'partner' : 'customer')}
+                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-teal-600 h-7 px-3 rounded-sm"
+                    >
+                        <FaExchangeAlt size={9} />
+                        {chatMode === 'customer' ? 'Zum Partner' : 'Zum Kunden'}
+                    </Button>
                 </div>
 
                 {/* Messages */}
@@ -322,7 +309,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                                             <span className="text-xs text-slate-400 font-medium">
                                                 {new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
-                                            {isMe && <span className="text-sky-400 text-xs font-bold">✓✓</span>}
+                                            {isMe && <FaCheckDouble size={10} className="text-sky-400" />}
                                         </div>
                                     </div>
                                 </div>
@@ -355,8 +342,88 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                 </div>
             </div>
 
-            {/* ── RIGHT: Sidebar Panels ───────────────────────────────────── */}
-            <div className="w-72 xl:w-80 flex-shrink-0 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-0.5">
+            {/* ── RIGHT: Sidebar (45%) ────────────────────────────────────── */}
+            <div className="w-[45%] flex-shrink-0 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-0.5">
+
+                {/* Portal-Einladung */}
+                <Panel title="Portal-Einladung" icon={FaLink} accent="teal" defaultOpen={true}>
+                    <div className="p-3 space-y-3">
+                        {/* Kontakt-Auswahl */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setChatMode('customer')}
+                                className={clsx(
+                                    "flex-1 flex items-center justify-center gap-1.5 h-7 rounded-sm text-[10px] font-bold uppercase tracking-widest border transition-colors",
+                                    chatMode === 'customer'
+                                        ? "bg-teal-600 text-white border-teal-600"
+                                        : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+                                )}
+                            >
+                                <FaUserCircle size={10} /> Kunde
+                            </button>
+                            <button
+                                onClick={() => setChatMode('partner')}
+                                className={clsx(
+                                    "flex-1 flex items-center justify-center gap-1.5 h-7 rounded-sm text-[10px] font-bold uppercase tracking-widest border transition-colors",
+                                    chatMode === 'partner'
+                                        ? "bg-blue-500 text-white border-blue-500"
+                                        : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+                                )}
+                            >
+                                <FaUserCircle size={10} /> Partner
+                            </button>
+                        </div>
+
+                        {/* Link-Anzeige */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-sm px-2.5 py-2 flex items-center gap-2">
+                            <FaLink size={9} className="text-slate-400 shrink-0" />
+                            <span className="flex-1 text-[10px] text-slate-400 truncate font-mono">
+                                {portalUrl ?? 'Noch kein Link generiert'}
+                            </span>
+                            {portalUrl && (
+                                <>
+                                    <button onClick={handleCopyToken} title="Link kopieren" className="text-slate-300 hover:text-teal-600 transition-colors shrink-0">
+                                        <FaCopy size={9} />
+                                    </button>
+                                    <a href={portalUrl} target="_blank" rel="noopener noreferrer" title="Link öffnen" className="text-slate-300 hover:text-teal-600 transition-colors shrink-0">
+                                        <FaExternalLinkAlt size={9} />
+                                    </a>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Aktionen */}
+                        <div className="flex gap-2">
+                            {!tokenExists && (
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={handleGenerateToken}
+                                    disabled={isGeneratingToken}
+                                    className="flex-1 h-7 text-[10px] font-bold gap-1"
+                                >
+                                    <FaLink size={8} />
+                                    {isGeneratingToken ? 'Generiere...' : 'Link generieren'}
+                                </Button>
+                            )}
+                            <Button
+                                size="sm"
+                                onClick={handleSendGuestLink}
+                                disabled={isGeneratingToken}
+                                className="flex-1 h-7 text-[10px] font-bold gap-1"
+                            >
+                                <FaPaperPlane size={8} />
+                                Per E-Mail senden
+                            </Button>
+                        </div>
+
+                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                            {chatMode === 'customer'
+                                ? 'Kunde kann Auftragsstatus, Dateien und Nachrichten einsehen.'
+                                : 'Partner erhält Zugang zu Auftragsunterlagen und Kommunikation.'}
+                        </p>
+                    </div>
+                </Panel>
 
                 {/* Notizen */}
                 <Panel title="Projektnotiz" icon={FaStickyNote} accent="amber" defaultOpen={true}>
@@ -414,7 +481,6 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                                     </div>
                                 </div>
                             ))}
-                            {/* Zahlungen Zusammenfassung */}
                             {payments.length > 0 && (
                                 <div className="px-3 py-2 bg-slate-50 flex items-center justify-between">
                                     <span className="text-[10px] text-slate-500 font-semibold">Bezahlt gesamt</span>
@@ -434,7 +500,7 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                             {payments.map((p: any) => (
                                 <div key={p.id} className="px-3 py-2.5 flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-base leading-none">{methodIcon(p.payment_method)}</span>
+                                        <MethodIcon method={p.payment_method} />
                                         <div className="flex flex-col leading-tight">
                                             <span className="text-[11px] font-semibold text-slate-700">{p.payment_method || '—'}</span>
                                             <span className="text-[10px] text-slate-400">{p.payment_date ? fmtShort(p.payment_date) : '—'}</span>
@@ -471,13 +537,13 @@ const MessagesTab = ({ projectData, projectId }: MessagesTabProps) => {
                     )}
                 </Panel>
 
-                {/* Letzte Aktivitäten (kompakt) */}
+                {/* Letzte Aktivitäten */}
                 <Panel title="Letzte Aktivitäten" icon={FaClock} accent="slate" defaultOpen={false}>
-                    {activitiesData.length === 0 ? (
+                    {(activitiesData as any[]).length === 0 ? (
                         <div className="px-3 py-4 text-center text-[11px] text-slate-300 italic">Keine Aktivitäten</div>
                     ) : (
                         <div className="divide-y divide-slate-50">
-                            {activitiesData.slice(0, 8).map((act: any, i: number) => (
+                            {(activitiesData as any[]).slice(0, 8).map((act: any, i: number) => (
                                 <div key={i} className="px-3 py-2 flex items-start gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-1.5 shrink-0" />
                                     <div className="flex flex-col leading-tight min-w-0">

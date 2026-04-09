@@ -19,7 +19,7 @@ const PortalGuard: React.FC<PortalGuardProps> = ({ children }) => {
   }
 
   if (!customer) {
-    return <Navigate to="/portal/login" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   return <>{children}</>;

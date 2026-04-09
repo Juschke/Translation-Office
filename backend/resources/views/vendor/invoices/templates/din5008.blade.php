@@ -38,11 +38,11 @@
         .items td { padding: 2.7mm 1.8mm; border-bottom: 0.6pt solid #d1d5db; vertical-align: top; }
         .items .desc strong { display: block; }
         .items .desc span { display: block; margin-top: 1mm; font-size: 8pt; line-height: 1.45; color: #4b5563; }
-        .totals { width: 82mm; margin-left: auto; margin-top: 6mm; }
-        .totals td { padding: 1.6mm 1mm; }
-        .grand td { border-top: 1.4pt solid {{ $primary }}; padding-top: 2.7mm; font-weight: 700; color: {{ $primary }}; }
-        .due td { border-top: 0.8pt solid #9ca3af; font-weight: 700; }
-        .notice { clear: both; margin-top: 10mm; padding-top: 4mm; border-top: 0.8pt solid #cbd5e1; line-height: 1.65; }
+        .totals { width: 75mm; margin-left: auto; margin-top: 4mm; page-break-inside: avoid; }
+        .totals td { padding: 1.2mm 1mm; font-size: 8.5pt; }
+        .grand td { border-top: 1.2pt solid {{ $primary }}; padding-top: 2mm; font-size: 10pt; font-weight: 700; color: {{ $primary }}; }
+        .due td { border-top: 0.8pt solid #9ca3af; font-weight: 700; font-size: 10pt; }
+        .notice { clear: both; margin-top: 8mm; padding-top: 4mm; border-top: 0.8pt solid #cbd5e1; line-height: 1.6; page-break-inside: avoid; }
         .footer { position: fixed; left: 0; right: 0; bottom: -16mm; border-top: 1pt solid #9ca3af; padding-top: 3mm; font-size: 7.3pt; color: #374151; }
         .footer td { width: 33.33%; vertical-align: top; padding-right: 4mm; }
         .footer strong { display: block; margin-bottom: 1mm; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.07em; color: #111; }
@@ -72,7 +72,7 @@
                 <table class="info-table">
                     <tr><td>{{ $document['type_label'] ?? 'Rechnung' }}-Nr.</td><td class="text-right"><strong>{{ $document['number'] ?? $invoice->name }}</strong></td></tr>
                     <tr><td>Datum</td><td class="text-right">{{ $document['date'] ?? '' }}</td></tr>
-                    @if(!empty($document['due_date']))<tr><td>Faellig am</td><td class="text-right">{{ $document['due_date'] }}</td></tr>@endif
+                    @if(!empty($document['due_date']))<tr><td>Fällig am</td><td class="text-right">{{ $document['due_date'] }}</td></tr>@endif
                     @if(!empty($document['delivery_date']))<tr><td>Leistungsdatum</td><td class="text-right">{{ $document['delivery_date'] }}</td></tr>@endif
                     @if(!empty($document['service_period']))<tr><td>Leistungszeitraum</td><td class="text-right">{{ $document['service_period'] }}</td></tr>@endif
                     @if(!empty($document['buyer_reference']))<tr><td>Ihr Zeichen</td><td class="text-right">{{ $document['buyer_reference'] }}</td></tr>@endif
@@ -85,7 +85,7 @@
     <div class="title">{{ $document['type_label'] ?? 'Rechnung' }} {{ $document['number'] ?? $invoice->name }}</div>
     <div class="lead">
         Sehr geehrte Damen und Herren,<br><br>
-        {!! nl2br(e($document['intro_text'] ?? 'wir berechnen Ihnen die nachfolgend aufgefuehrten Leistungen wie vereinbart.')) !!}
+        {!! nl2br(e($document['intro_text'] ?? 'wir berechnen Ihnen die nachfolgend aufgeführten Leistungen wie vereinbart.')) !!}
     </div>
 
     <table class="items">
@@ -118,23 +118,23 @@
         </tbody>
     </table>
 
-    <table class="totals">
-        <tr><td class="muted">Nettobetrag</td><td class="text-right">{{ number_format($invoice->taxable_amount, 2, ',', '.') }} EUR</td></tr>
+    <table class="totals" style="margin-top: 2mm;">
+        <tr><td class="muted">Zwischensumme (netto)</td><td class="text-right">{{ number_format($invoice->taxable_amount, 2, ',', '.') }} EUR</td></tr>
         @if(($amounts['tax'] ?? 0) > 0)
-            <tr><td class="muted">Umsatzsteuer {{ number_format($document['tax_rate'] ?? 19, 0, ',', '.') }}%</td><td class="text-right">{{ number_format($invoice->total_taxes, 2, ',', '.') }} EUR</td></tr>
+            <tr><td class="muted">zzgl. Umsatzsteuer {{ number_format($document['tax_rate'] ?? 19, 0, ',', '.') }}%</td><td class="text-right">{{ number_format($invoice->total_taxes, 2, ',', '.') }} EUR</td></tr>
         @elseif(!empty($document['is_tax_exempt']))
-            <tr><td colspan="2" class="text-right muted" style="font-size: 7.8pt;">Umsatzsteuer wird entsprechend der hinterlegten steuerlichen Behandlung nicht gesondert ausgewiesen.</td></tr>
+            <tr><td colspan="2" class="text-right muted" style="font-size: 7.4pt; padding-top: 2mm;">Umsatzsteuer wird entsprechend der hinterlegten steuerlichen Behandlung nicht gesondert ausgewiesen.</td></tr>
         @endif
-        @if(($amounts['shipping'] ?? 0) > 0)<tr><td class="muted">Versand</td><td class="text-right">{{ number_format($amounts['shipping'], 2, ',', '.') }} EUR</td></tr>@endif
-        @if(($amounts['discount'] ?? 0) > 0)<tr><td class="muted">Nachlass</td><td class="text-right">- {{ number_format($amounts['discount'], 2, ',', '.') }} EUR</td></tr>@endif
-        <tr class="grand"><td>Gesamtbetrag</td><td class="text-right">{{ number_format($invoice->total_amount, 2, ',', '.') }} EUR</td></tr>
+        @if(($amounts['shipping'] ?? 0) > 0)<tr><td class="muted">Versandkosten</td><td class="text-right">{{ number_format($amounts['shipping'], 2, ',', '.') }} EUR</td></tr>@endif
+        @if(($amounts['discount'] ?? 0) > 0)<tr><td class="muted">Rabatt/Nachlass</td><td class="text-right">- {{ number_format($amounts['discount'], 2, ',', '.') }} EUR</td></tr>@endif
+        <tr class="grand"><td>Rechnungsbetrag (brutto)</td><td class="text-right">{{ number_format($invoice->total_amount, 2, ',', '.') }} EUR</td></tr>
         @if(($amounts['paid'] ?? 0) > 0 && ($amounts['due'] ?? 0) > 0)
-            <tr><td class="muted">Bereits bezahlt</td><td class="text-right">- {{ number_format($amounts['paid'], 2, ',', '.') }} EUR</td></tr>
-            <tr class="due"><td>Zu zahlen</td><td class="text-right">{{ number_format($amounts['due'], 2, ',', '.') }} EUR</td></tr>
+            <tr><td class="muted">Bereits gezahlt</td><td class="text-right">- {{ number_format($amounts['paid'], 2, ',', '.') }} EUR</td></tr>
+            <tr class="due"><td>Noch zu zahlender Betrag</td><td class="text-right">{{ number_format($amounts['due'], 2, ',', '.') }} EUR</td></tr>
         @endif
     </table>
 
-    <div class="notice">
+    <div class="notice" style="margin-top: 4mm; padding-top: 2mm;">
         {!! nl2br(e(trim(($document['closing_text'] ?? '') . "\n" . ($document['notes'] ?? '')))) !!}
         @if(($amounts['due'] ?? 0) > 0)
             <br><br>Verwendungszweck: <strong>{{ $document['payment_reference'] ?? ($document['number'] ?? $invoice->name) }}</strong>

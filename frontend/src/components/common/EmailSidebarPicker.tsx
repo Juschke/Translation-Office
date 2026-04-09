@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useEmailVariables } from '../../hooks/useEmailVariables';
-import { FaSearch, FaSignature, FaCode, FaTerminal } from 'react-icons/fa';
+import { FaSearch, FaSignature, FaCode, FaTerminal, FaPlus } from 'react-icons/fa';
 import { ScrollArea, Button } from '../ui';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { mailService } from '../../api/services/mail';
 import clsx from 'clsx';
 import DOMPurify from 'dompurify';
+import NewEmailSignatureModal from '../modals/NewEmailSignatureModal';
 
 interface EmailSidebarPickerProps {
     onSelectVariable: (key: string) => void;
@@ -15,22 +16,30 @@ interface EmailSidebarPickerProps {
     className?: string;
 }
 
-const EmailSidebarPicker: React.FC<EmailSidebarPickerProps> = ({ 
-    onSelectVariable, 
+const EmailSidebarPicker: React.FC<EmailSidebarPickerProps> = ({
+    onSelectVariable,
     onSelectSignature,
-    currentBody = '', 
+    currentBody = '',
     currentSignature = null,
-    className 
+    className
 }) => {
     const [activeTab, setActiveTab] = useState<'variables' | 'signatures'>('variables');
     const { ALL_VARIABLES, VAR_GROUPS } = useEmailVariables();
     const [searchTerm, setSearchTerm] = useState('');
+    const [showCreateSignature, setShowCreateSignature] = useState(false);
+    const queryClient = useQueryClient();
 
     const { data: signatures = [], isLoading: isLoadingSignatures } = useQuery({
         queryKey: ['mailSignatures'],
         queryFn: () => mailService.getSignatures(),
         enabled: activeTab === 'signatures'
     });
+
+    const handleCreateSignature = async (data: any) => {
+        await mailService.createSignature(data);
+        queryClient.invalidateQueries({ queryKey: ['mailSignatures'] });
+        setShowCreateSignature(false);
+    };
 
     const filteredVariables = useMemo(() => {
         const q = searchTerm.toLowerCase();
@@ -47,8 +56,9 @@ const EmailSidebarPicker: React.FC<EmailSidebarPickerProps> = ({
     }, [searchTerm, signatures]);
 
     return (
+        <>
         <div className={clsx("flex flex-col h-full bg-slate-50/50 border-l border-slate-100", className)}>
-            {/* Tab Switcher - Same as EmailComposeContent */}
+            {/* Tab Switcher */}
             <div className="flex bg-white border-b border-slate-100 shrink-0 h-[60px] relative">
                 <Button
                     variant="ghost"
@@ -78,20 +88,45 @@ const EmailSidebarPicker: React.FC<EmailSidebarPickerProps> = ({
                 </Button>
             </div>
 
-            {/* Search */}
-            <div className="p-4 bg-white border-b border-slate-100 shrink-0">
-                <div className="relative h-[38px]">
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        placeholder={activeTab === 'variables' ? "Variable suchen..." : "Signatur suchen..."}
-                        className="w-full h-full bg-white border border-slate-200 rounded-sm px-3 pr-8 text-[11px] font-bold tracking-tight placeholder:text-slate-300 focus:border-brand-primary outline-none transition-all placeholder:font-normal"
-                    />
-                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <FaSearch size={11} className="text-slate-300" />
+            {/* Search + optional "Neue Signatur"-Button */}
+            <div className="p-3 bg-white border-b border-slate-100 shrink-0">
+                {activeTab === 'signatures' ? (
+                    <div className="flex items-stretch h-[38px]">
+                        <div className="relative flex-1">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                placeholder="Signatur suchen..."
+                                className="w-full h-full bg-white border border-slate-200 rounded-l-sm rounded-r-none px-3 pr-8 text-[11px] font-bold tracking-tight placeholder:text-slate-300 focus:border-brand-primary outline-none transition-all placeholder:font-normal"
+                            />
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <FaSearch size={10} className="text-slate-300" />
+                            </div>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={() => setShowCreateSignature(true)}
+                            className="h-full w-[38px] min-w-0 p-0 rounded-r-sm rounded-l-none border border-l-0 border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white shadow-none hover:from-[#2a7073] hover:to-[#235e62] transition-all flex items-center justify-center shrink-0"
+                            title="Neue Signatur erstellen"
+                        >
+                            <FaPlus size={10} />
+                        </Button>
                     </div>
-                </div>
+                ) : (
+                    <div className="relative h-[38px]">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            placeholder="Variable suchen..."
+                            className="w-full h-full bg-white border border-slate-200 rounded-sm px-3 pr-8 text-[11px] font-bold tracking-tight placeholder:text-slate-300 focus:border-brand-primary outline-none transition-all placeholder:font-normal"
+                        />
+                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <FaSearch size={10} className="text-slate-300" />
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* List content */}
@@ -191,6 +226,13 @@ const EmailSidebarPicker: React.FC<EmailSidebarPickerProps> = ({
                 </ScrollArea>
             </div>
         </div>
+
+        <NewEmailSignatureModal
+            isOpen={showCreateSignature}
+            onClose={() => setShowCreateSignature(false)}
+            onSubmit={handleCreateSignature}
+        />
+        </>
     );
 };
 

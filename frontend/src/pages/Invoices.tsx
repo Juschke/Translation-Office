@@ -7,7 +7,7 @@ import { parseISO, startOfDay, isValid } from 'date-fns';
 import {
     FaPlus, FaCheck, FaCheckCircle, FaHistory,
     FaFileInvoiceDollar, FaTrashRestore, FaPaperPlane, FaArchive,
-    FaFilter, FaTimes, FaUndo, FaChevronDown
+    FaFilter, FaTimes, FaUndo, FaChevronDown, FaEdit, FaTrash
 } from 'react-icons/fa';
 import { buildInvoiceColumns } from './invoiceColumns';
 import { Button } from '../components/ui/button';
@@ -439,7 +439,40 @@ const Invoices = () => {
                         selectedIds={selectedInvoices}
                         onSelectionChange={(ids) => setSelectedInvoices(ids as number[])}
                         bulkActions={[
-                            { label: t('invoices.actions.paid'), icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }), variant: 'success', show: statusView === 'active' && statusFilter !== 'cancelled' && statusFilter !== 'paid' },
+                            { label: t('common.edit'), icon: <FaEdit className="text-xs" />, onClick: () => navigate(`/invoices/${selectedInvoices[0]}/edit`), variant: 'default', show: statusView === 'active' && selectedInvoices.length === 1 && filteredInvoices.find(inv => inv.id === selectedInvoices[0])?.status === 'draft' },
+                            { label: t('common.delete'), icon: <FaTrash className="text-xs" />, onClick: () => {
+                                setConfirmTitle(t('common.delete'));
+                                setConfirmMessage(t('invoices.confirm.bulk_delete_message', { count: selectedInvoices.length }));
+                                setConfirmLabel(t('common.delete'));
+                                setConfirmVariant('danger');
+                                setConfirmAction(() => () => {
+                                    invoiceService.bulkDelete(selectedInvoices)
+                                        .then(() => {
+                                            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                                            setSelectedInvoices([]);
+                                            toast.success(t('invoices.messages.bulk_delete_success'));
+                                        })
+                                        .catch(() => toast.error(t('invoices.messages.bulk_error')));
+                                });
+                                setIsConfirmOpen(true);
+                            }, variant: 'danger', show: statusView === 'active' && selectedInvoices.every(id => filteredInvoices.find(inv => inv.id === id)?.status === 'draft') },
+                            { label: t('invoices.actions.issue'), icon: <FaCheckCircle className="text-xs" />, onClick: () => {
+                                setConfirmTitle(t('invoices.actions.issue'));
+                                setConfirmMessage(t('invoices.confirm.bulk_issue_message', { count: selectedInvoices.length }));
+                                setConfirmLabel(t('invoices.actions.issue'));
+                                setConfirmVariant('info');
+                                setConfirmAction(() => () => {
+                                    Promise.all(selectedInvoices.map(id => invoiceService.issue(id)))
+                                        .then(() => {
+                                            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                                            setSelectedInvoices([]);
+                                            toast.success(t('invoices.messages.bulk_issue_success'));
+                                        })
+                                        .catch(() => toast.error(t('invoices.messages.bulk_error')));
+                                });
+                                setIsConfirmOpen(true);
+                            }, variant: 'primary', show: statusView === 'active' && selectedInvoices.every(id => filteredInvoices.find(inv => inv.id === id)?.status === 'draft') },
+                            { label: t('invoices.actions.paid'), icon: <FaCheck className="text-xs" />, onClick: () => bulkUpdateMutation.mutate({ ids: selectedInvoices, data: { status: 'paid' } }), variant: 'success', show: statusView === 'active' && statusFilter !== 'cancelled' && statusFilter !== 'paid' && !selectedInvoices.some(id => filteredInvoices.find(inv => inv.id === id)?.status === 'draft') },
                             {
                                 label: t('invoices.actions.send_reminder'), icon: <FaPaperPlane className="text-xs text-amber-500" />, onClick: () => {
                                     setConfirmTitle(t('invoices.confirm.reminder_title'));

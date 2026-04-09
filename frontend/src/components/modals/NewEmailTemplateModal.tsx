@@ -139,16 +139,25 @@ const NewEmailTemplateModal: React.FC<NewEmailTemplateModalProps> = ({ isOpen, o
 
     const toggleVariable = (key: string) => {
         const varTag = `{{${key}}}`;
-        setFormData(prev => {
-            if (prev.body.includes(varTag)) {
-                // Remove it
-                const newBody = prev.body.replace(new RegExp(varTag, 'g'), '');
-                return { ...prev, body: newBody };
-            } else {
-                // Append it directly (no extra spaces)
+        const editor = quillRef.current?.getEditor();
+
+        if (editor) {
+            // Insert at cursor position in Quill
+            const range = editor.getSelection(true);
+            const index = range ? range.index : editor.getLength();
+            editor.insertText(index, varTag, 'user');
+            editor.setSelection(index + varTag.length, 0);
+            // Sync state from Quill
+            setFormData(prev => ({ ...prev, body: editor.root.innerHTML }));
+        } else {
+            // Fallback: toggle in raw body (HTML/textarea mode)
+            setFormData(prev => {
+                if (prev.body.includes(varTag)) {
+                    return { ...prev, body: prev.body.replace(new RegExp(varTag.replace(/[{}]/g, '\\$&'), 'g'), '') };
+                }
                 return { ...prev, body: prev.body + varTag };
-            }
-        });
+            });
+        }
     };
 
     const handleSelectSignature = (content: string) => {

@@ -57,7 +57,7 @@ const EmailComposeContent = ({
     const [selectedAccount, setSelectedAccount] = useState<any>(null);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isHtmlMode, setIsHtmlMode] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(isStandalone);
     const editorRef = useRef<HTMLTextAreaElement>(null);
     const gutterRef = useRef<HTMLDivElement>(null);
     const quillRef = useRef<any>(null);
@@ -749,8 +749,7 @@ const EmailComposeContent = ({
                     "border-l border-slate-100 flex-col shrink-0 overflow-hidden min-h-0 transition-all duration-300 ease-in-out z-30",
                     "bg-white md:bg-slate-50/30",
                     "fixed inset-y-0 right-0 w-64 md:relative md:flex md:w-80 md:translate-x-0 md:shadow-none shadow-2xl",
-                    isSidebarOpen ? "flex translate-x-0" : "flex translate-x-full md:translate-x-full",
-                    !isSidebarOpen && "hidden"
+                    isSidebarOpen ? "flex translate-x-0" : "flex translate-x-full md:translate-x-full"
                 )}>
                     {/* Mobile Overlay */}
                     {isSidebarOpen && (

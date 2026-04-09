@@ -99,6 +99,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Invoices
         Route::get('invoices/next-number', [\App\Http\Controllers\Api\InvoiceController::class, 'nextNumber']);
         Route::post('invoices/bulk-update', [\App\Http\Controllers\Api\InvoiceController::class, 'bulkUpdate']);
+        Route::post('invoices/bulk-delete', [\App\Http\Controllers\Api\InvoiceController::class, 'bulkDelete']);
         Route::post('invoices/datev-export', [\App\Http\Controllers\Api\InvoiceController::class, 'datevExport']);
         Route::post('invoices/gobd-export', [\App\Http\Controllers\Api\InvoiceController::class, 'gobdExport']);
         Route::post('invoices/{invoice}/generate-pdf', [\App\Http\Controllers\Api\InvoiceController::class, 'generatePdf']);
@@ -228,7 +229,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
 // ── Customer Portal ────────────────────────────────────────────────────────
 // Public: Auth
-Route::prefix('portal')->group(function () {
+Route::prefix('portal')->middleware(['throttle:10,1'])->group(function () {
     Route::post('auth/login', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'login']);
     Route::post('auth/request-link', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'requestMagicLink']);
     Route::post('auth/verify-reset-code', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'verifyResetCode']);

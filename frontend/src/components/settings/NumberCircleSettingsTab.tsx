@@ -12,138 +12,176 @@ import { Switch } from '../ui/switch';
 import { Select } from '../ui/select';
 import clsx from 'clsx';
 
-const SettingRow = ({ label, description, children, className, required }: any) => (
-    <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
-        <div className="col-span-12 md:col-span-4 space-y-1">
-            <label className="block text-sm font-medium text-slate-700">
-                {label}
-                {required && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            {description && <p className="text-xs text-slate-500 leading-relaxed font-normal">{description}</p>}
-        </div>
-        <div className="col-span-12 md:col-span-8">
-            {children}
-        </div>
-    </div>
-);
-
 const NumberCategory = ({ items, formData, handleChange, previews, t }: any) => (
-    <div className="space-y-4">
+    <div className="space-y-12">
         {items.map((item: any) => (
-            <div key={item.id} className="pb-10 border-b border-slate-200 last:border-0 last:pb-0 mb-10 last:mb-0">
-                <SettingRow
-                    label={item.label}
-                    description={t('settings.number_circles.base_desc', { label: item.label.toLowerCase() })}
-                    className="py-4"
-                >
-                    <div className="flex flex-wrap items-end gap-6 w-full">
-                        <div className="w-24 space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">{t('settings.number_circles.prefix_label')}</label>
-                            <input
-                                type="text"
-                                value={formData[item.prefixKey] || ''}
-                                onChange={(e) => handleChange(item.prefixKey, e.target.value)}
-                                className="w-full h-10 border border-slate-200 rounded-sm px-3 text-sm font-semibold text-slate-800 focus:border-brand-primary outline-none transition bg-white shadow-sm"
-                            />
-                        </div>
-                        <div className="w-32 space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">{t('settings.number_circles.start_nr_label')}</label>
-                            <input
-                                type="number"
-                                value={formData[item.startKey] || ''}
-                                onChange={(e) => handleChange(item.startKey, e.target.value)}
-                                className="w-full h-10 border border-slate-200 rounded-sm px-3 text-sm font-semibold text-slate-800 focus:border-brand-primary outline-none transition bg-white shadow-sm"
-                            />
+            <div key={item.id} id={"item-" + item.id} className="pb-12 border-b border-slate-100 last:border-0 last:pb-0 scroll-mt-24">
+                <div className="grid grid-cols-12 gap-10 items-start">
+                    {/* Label Column */}
+                    <div className="col-span-12 lg:col-span-3 space-y-2">
+                        <label className="block text-base font-bold text-slate-900 tracking-tight">{item.label}</label>
+                        <p className="text-xs text-slate-400 leading-relaxed max-w-[200px]">{t('settings.number_circles.base_desc', { label: item.label.toLowerCase() })}</p>
+                    </div>
+
+                    {/* Configuration Column */}
+                    <div className="col-span-12 lg:col-span-9">
+                        <div className="flex flex-wrap items-start gap-x-10 gap-y-8 mb-10">
+                            {/* Prefix & Start */}
+                            <div className="flex gap-4">
+                                <div className="w-24 space-y-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t('settings.number_circles.prefix_label')}</label>
+                                    <input
+                                        type="text"
+                                        value={formData[item.prefixKey] || ''}
+                                        onChange={(e) => handleChange(item.prefixKey, e.target.value)}
+                                        className="w-full h-11 border border-slate-200 rounded-sm px-4 text-sm font-bold text-slate-800 focus:border-brand-primary outline-none transition bg-white shadow-sm"
+                                    />
+                                </div>
+                                <div className="w-32 space-y-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t('settings.number_circles.start_nr_label')}</label>
+                                    <input
+                                        type="number"
+                                        value={formData[item.startKey] || ''}
+                                        onChange={(e) => handleChange(item.startKey, e.target.value)}
+                                        className="w-full h-11 border border-slate-200 rounded-sm px-4 text-sm font-bold text-slate-800 focus:border-brand-primary outline-none transition bg-white shadow-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Separator & Padding */}
+                            <div className="flex gap-4">
+                                <div className="w-32 space-y-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t('settings.number_circles.separator_label')}</label>
+                                    <Select
+                                        value={formData[item.separatorKey] || '-'}
+                                        onChange={(e: any) => handleChange(item.separatorKey, e.target.value)}
+                                        className="h-11 text-xs shadow-sm bg-white font-bold"
+                                    >
+                                        <option value="none">{t('settings.number_circles.sep_none')}</option>
+                                        <option value="-">{t('settings.number_circles.sep_dash')}</option>
+                                        <option value="/">{t('settings.number_circles.sep_slash')}</option>
+                                        <option value=".">{t('settings.number_circles.sep_dot')}</option>
+                                        <option value="_">{t('settings.number_circles.sep_underscore')}</option>
+                                    </Select>
+                                </div>
+                                <div className="w-32 space-y-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t('settings.number_circles.padding_label')}</label>
+                                    <Select
+                                        value={String(formData[item.paddingKey] || '5')}
+                                        onChange={(e: any) => handleChange(item.paddingKey, e.target.value)}
+                                        className="h-11 text-xs shadow-sm bg-white font-bold"
+                                    >
+                                        {[3, 4, 5, 6].map(n => (
+                                            <option key={n} value={String(n)}>{t('settings.number_circles.padding_n', { n })}</option>
+                                        ))}
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {/* Date Options (Pills) */}
+                            <div className="flex items-center gap-10 h-11 self-end pb-0.5 border-l border-slate-100 pl-8">
+                                {/* Year Pill Selection */}
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('settings.number_circles.year_label')}</span>
+                                    <div className="flex bg-slate-100 p-0.5 rounded-sm w-fit shadow-inner">
+                                        {[
+                                            { id: 'none', label: 'Kein' },
+                                            { id: 'YY', label: '24 (YY)' },
+                                            { id: 'YYYY', label: '2024 (YYYY)' }
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.id}
+                                                type="button"
+                                                onClick={() => handleChange(item.yearKey, opt.id)}
+                                                className={clsx(
+                                                    "px-3 py-1 text-[10px] font-bold rounded-sm transition-all whitespace-nowrap",
+                                                    formData[item.yearKey] === opt.id
+                                                        ? "bg-white text-brand-primary shadow-sm"
+                                                        : "text-slate-500 hover:text-slate-800"
+                                                )}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Month Pill Selection */}
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('settings.number_circles.month_label')}</span>
+                                    <div className="flex bg-slate-100 p-0.5 rounded-sm w-fit shadow-inner">
+                                        {[
+                                            { id: 'none', label: 'Kein' },
+                                            { id: 'M', label: '9 (M)' },
+                                            { id: 'MM', label: '09 (MM)' }
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.id}
+                                                type="button"
+                                                onClick={() => handleChange(item.monthKey, opt.id)}
+                                                className={clsx(
+                                                    "px-3 py-1 text-[10px] font-bold rounded-sm transition-all whitespace-nowrap",
+                                                    formData[item.monthKey] === opt.id
+                                                        ? "bg-white text-brand-primary shadow-sm"
+                                                        : "text-slate-500 hover:text-slate-800"
+                                                )}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Day Pill Selection */}
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('settings.number_circles.day_label')}</span>
+                                    <div className="flex bg-slate-100 p-0.5 rounded-sm w-fit shadow-inner">
+                                        {[
+                                            { id: 'none', label: 'Kein' },
+                                            { id: 'D', label: '1 (D)' },
+                                            { id: 'DD', label: '01 (DD)' }
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.id}
+                                                type="button"
+                                                onClick={() => handleChange(item.dayKey, opt.id)}
+                                                className={clsx(
+                                                    "px-3 py-1 text-[10px] font-bold rounded-sm transition-all whitespace-nowrap",
+                                                    formData[item.dayKey] === opt.id
+                                                        ? "bg-white text-brand-primary shadow-sm"
+                                                        : "text-slate-500 hover:text-slate-800"
+                                                )}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Reset Toggle */}
+                            <div className="flex items-center gap-4 h-11 self-end border-l border-slate-100 pl-8">
+                                <Switch
+                                    checked={formData[item.resetKey] || false}
+                                    onCheckedChange={(val) => handleChange(item.resetKey, val)}
+                                    className="scale-90"
+                                />
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{t('settings.number_circles.reset_label')}</span>
+                                    <span className="text-[10px] font-bold text-slate-600 block leading-tight">{t('settings.number_circles.reset_yearly')}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="flex-1 flex justify-end">
-                            <div className="bg-slate-50 px-4 py-2 border border-slate-200 rounded-sm shadow-sm flex items-center gap-3">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('settings.number_circles.preview_label')}</span>
-                                <span className="text-sm font-mono font-bold text-brand-primary tracking-widest select-all">{previews[item.id]}</span>
+                        {/* Large Modern Preview Area */}
+                        <div className="pt-2 animate-fadeIn">
+                            <div className="text-[10px] font-bold text-slate-400/60 uppercase tracking-[0.3em] mb-4 pl-1">{t('settings.number_circles.preview_label')}</div>
+                            <div className="text-6xl font-black text-slate-400 tracking-[-0.06em] leading-none select-all hover:text-brand-primary transition-all duration-300 transform origin-left">
+                                {previews[item.id]}
                             </div>
                         </div>
                     </div>
-                </SettingRow>
-
-                <SettingRow
-                    label={t('settings.number_circles.format_label')}
-                    description={t('settings.number_circles.format_desc')}
-                    className="py-4 bg-slate-50/30 -mx-4 px-4 rounded-sm"
-                >
-                    <div className="flex flex-wrap items-end gap-8">
-                        <div className="w-32 space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">{t('settings.number_circles.separator_label')}</label>
-                            <Select
-                                value={formData[item.separatorKey] || '-'}
-                                onChange={(e) => handleChange(item.separatorKey, e.target.value)}
-                                className="h-10 text-xs shadow-sm bg-white"
-                            >
-                                <option value="none">{t('settings.number_circles.sep_none')}</option>
-                                <option value="-">{t('settings.number_circles.sep_dash')}</option>
-                                <option value="/">{t('settings.number_circles.sep_slash')}</option>
-                                <option value=".">{t('settings.number_circles.sep_dot')}</option>
-                                <option value="_">{t('settings.number_circles.sep_underscore')}</option>
-                            </Select>
-                        </div>
-
-                        <div className="w-32 space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">{t('settings.number_circles.padding_label')}</label>
-                            <Select
-                                value={String(formData[item.paddingKey] || '5')}
-                                onChange={(e) => handleChange(item.paddingKey, e.target.value)}
-                                className="h-10 text-xs shadow-sm bg-white"
-                            >
-                                {[3, 4, 5, 6].map(n => (
-                                    <option key={n} value={String(n)}>{t('settings.number_circles.padding_n', { n })}</option>
-                                ))}
-                            </Select>
-                        </div>
-
-                        <div className="flex items-center gap-6 pb-0.5">
-                            <div className="flex items-center gap-2.5">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('settings.number_circles.year_label')}</span>
-                                <Switch
-                                    checked={formData[item.yearKey] !== 'none'}
-                                    onCheckedChange={(val) => handleChange(item.yearKey, val ? 'YYYY' : 'none')}
-                                    className="scale-90"
-                                />
-                            </div>
-                            <div className="flex items-center gap-2.5 border-l border-slate-200 pl-6">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('settings.number_circles.month_label')}</span>
-                                <Switch
-                                    checked={formData[item.monthKey] !== 'none'}
-                                    onCheckedChange={(val) => handleChange(item.monthKey, val ? 'MM' : 'none')}
-                                    className="scale-90"
-                                />
-                            </div>
-                            <div className="flex items-center gap-2.5 border-l border-slate-200 pl-6">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('settings.number_circles.day_label')}</span>
-                                <Switch
-                                    checked={formData[item.dayKey] !== 'none'}
-                                    onCheckedChange={(val) => handleChange(item.dayKey, val ? 'DD' : 'none')}
-                                    className="scale-90"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </SettingRow>
-
-                <SettingRow
-                    label={t('settings.number_circles.reset_label')}
-                    description={t('settings.number_circles.reset_desc')}
-                    className="py-4 border-0"
-                >
-                    <div className="flex items-center gap-4">
-                        <Switch
-                            checked={formData[item.resetKey] || false}
-                            onCheckedChange={(val) => handleChange(item.resetKey, val)}
-                        />
-                        <div>
-                            <span className="text-sm font-bold text-slate-700 block leading-tight">{t('settings.number_circles.reset_yearly')}</span>
-                            <span className="text-[11px] text-slate-500 font-medium">{t('settings.number_circles.reset_yearly_desc')}</span>
-                        </div>
-                    </div>
-                </SettingRow>
+                </div>
             </div>
         ))}
     </div>
@@ -174,7 +212,6 @@ const NumberCircleSettingsTab = () => {
         if (companyData) {
             const initial: any = {};
             categoriesList.forEach(cat => {
-                // Initialize with values from DB or defaults if empty
                 initial[cat.prefixKey] = companyData[cat.prefixKey] || cat.defaultPrefix;
                 initial[cat.startKey] = companyData[cat.startKey] || '1';
                 initial[cat.yearKey] = companyData[cat.yearKey] || 'YYYY';
@@ -193,7 +230,7 @@ const NumberCircleSettingsTab = () => {
         const section = searchParams.get('section');
         if (section) {
             setTimeout(() => {
-                const element = document.getElementById(`section-${section}`);
+                const element = document.getElementById(`section-${section}`) || document.getElementById(`item-${section}`);
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -223,7 +260,6 @@ const NumberCircleSettingsTab = () => {
         const dayShort = String(date.getDate()).padStart(2, '0');
 
         const generate = (cat: any) => {
-            // CRITICAL FIX: Use the correct keys from the category object
             const prefix = formData[cat.prefixKey] || '';
             const nrValue = formData[cat.startKey] || '1';
             const paddingValue = Number(formData[cat.paddingKey] || 5);
@@ -237,9 +273,11 @@ const NumberCircleSettingsTab = () => {
 
             let monthPart = '';
             if (formData[cat.monthKey] === 'MM') monthPart = monthShort;
+            else if (formData[cat.monthKey] === 'M') monthPart = String(date.getMonth() + 1);
 
             let dayPart = '';
             if (formData[cat.dayKey] === 'DD') dayPart = dayShort;
+            else if (formData[cat.dayKey] === 'D') dayPart = String(date.getDate());
 
             const parts = [prefix, yearPart, monthPart, dayPart, nr].filter(p => p !== '');
             return parts.join(sep);

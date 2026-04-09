@@ -143,7 +143,7 @@ function LandingPage() {
 
                     <div className="flex items-center gap-3">
                         <Link
-                            to="/portal/login"
+                            to="/auth"
                             className="hidden rounded-xl border border-stone-300 bg-white px-5 py-2.5 font-semibold text-stone-800 transition hover:border-stone-500 sm:inline-flex"
                         >
                             Login
@@ -178,7 +178,7 @@ function LandingPage() {
                                 </a>
                             ))}
                             <Link
-                                to="/portal/login"
+                                to="/auth"
                                 className="inline-flex justify-center rounded-xl border border-stone-300 bg-white px-5 py-3 text-stone-800"
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
@@ -637,7 +637,7 @@ function LandingPage() {
                             <div className="space-y-2 text-stone-400">
                                 <a href="#faq" className="footer-link" onClick={(event) => handleAnchorClick(event, '#faq')}>FAQ</a>
                                 <a href="#demo" className="footer-link" onClick={(event) => handleAnchorClick(event, '#demo')}>Demo</a>
-                                <Link to="/portal/login" className="footer-link">Portal-Login</Link>
+                                <Link to="/auth" className="footer-link">Portal-Login</Link>
                                 <a href="mailto:info@translationoffice.de" className="footer-link">info@translationoffice.de</a>
                             </div>
                         </div>

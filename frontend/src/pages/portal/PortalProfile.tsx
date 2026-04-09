@@ -52,8 +52,8 @@ const PortalProfile: React.FC = () => {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Mein Profil</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-white">Mein Profil</h1>
+        <p className="mt-1 text-sm text-white/70">
           Ihre Kontaktdaten und Profilinformationen verwalten.
         </p>
       </div>
