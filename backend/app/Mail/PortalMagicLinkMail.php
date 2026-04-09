@@ -21,7 +21,7 @@ class PortalMagicLinkMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Ihr Anmeldelink – ' . $this->companyName);
+        return new Envelope(subject: 'Ihr Sicherheitscode - ' . $this->companyName);
     }
 
     public function content(): Content

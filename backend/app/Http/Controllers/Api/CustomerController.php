@@ -140,6 +140,16 @@ class CustomerController extends Controller
         return response()->json($customer);
     }
 
+    public function downloadMasterDataSheet(\App\Models\Customer $customer)
+    {
+        $customer->load(['priceMatrix', 'creator', 'editor']);
+        $filename = 'Kundenstammdaten_' . ($customer->display_id ?: $customer->id) . '.pdf';
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.customer_master_data', [
+            'customer' => $customer,
+        ])->download($filename);
+    }
+
     public function update(Request $request, $id)
     {
         $customer = \App\Models\Customer::findOrFail($id);

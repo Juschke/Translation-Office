@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\Support\InvoiceTemplateDataFactory;
 
 /**
  * InvoiceController — GoBD-Compliant
@@ -202,6 +203,7 @@ class InvoiceController extends Controller
                         'payment_reference' => $validated['payment_reference'] ?? null,
 
                         // --- Customer snapshot (§ 14 UStG Pflichtangaben) ---
+                        'snapshot_customer_salutation' => $customer->salutation,
                         'snapshot_customer_name' => $customer->company_name ?: ($customer->first_name . ' ' . $customer->last_name),
                         'snapshot_customer_address' => trim(($customer->address_street ?? '') . ' ' . ($customer->address_house_no ?? '')),
                         'snapshot_customer_zip' => $customer->address_zip,
@@ -772,6 +774,10 @@ class InvoiceController extends Controller
             ->shipping($invoice->shipping_eur)
             ->totalDiscount($invoice->discount_eur)
             ->notes($this->buildInvoiceNotes($invoice));
+
+        $tenant = \App\Models\Tenant::find($invoice->tenant_id);
+        $settings = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->pluck('value', 'key')->toArray();
+        $dailyInvoice->setCustomData(InvoiceTemplateDataFactory::build($invoice, $tenant, $settings));
 
         // Load layout template from tenant settings (default: din5008)
         $layoutName = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)
@@ -1382,9 +1388,9 @@ class InvoiceController extends Controller
     {
         $validated = $request->validate([
             'date_from' => 'nullable|date',
-            'date_to'   => 'nullable|date|after_or_equal:date_from',
-            'ids'       => 'nullable|array',
-            'ids.*'     => 'integer|exists:invoices,id',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'ids' => 'nullable|array',
+            'ids.*' => 'integer|exists:invoices,id',
         ]);
 
         $tenantId = $request->user()->tenant_id;
@@ -1410,25 +1416,43 @@ class InvoiceController extends Controller
         }
 
         // ── Temporäres Verzeichnis ───────────────────────────────────────
-        $tmpDir  = sys_get_temp_dir() . '/gobd_export_' . uniqid();
+        $tmpDir = sys_get_temp_dir() . '/gobd_export_' . uniqid();
         $zipPath = $tmpDir . '.zip';
         mkdir($tmpDir, 0700, true);
 
         // ── 1. invoices.csv ─────────────────────────────────────────────
-        $invoicesCsvPath   = $tmpDir . '/invoices.csv';
+        $invoicesCsvPath = $tmpDir . '/invoices.csv';
         $invoicesCsvHandle = fopen($invoicesCsvPath, 'w');
         fprintf($invoicesCsvHandle, "\xEF\xBB\xBF"); // UTF-8 BOM für Excel
 
         $invoiceHeaders = [
-            'Rechnungsnummer', 'Typ', 'Status', 'Rechnungsdatum', 'Fälligkeitsdatum',
-            'Leistungsdatum', 'Ausgestellt am',
-            'Kunde ID', 'Kundenname', 'Kundenadresse', 'Kunden PLZ', 'Kunden Ort',
-            'Kunden Land', 'Kunden USt-IdNr.',
-            'Verkäufer Name', 'Verkäufer Steuernummer', 'Verkäufer USt-IdNr.',
-            'Nettobetrag (EUR)', 'MwSt-Betrag (EUR)', 'Bruttobetrag (EUR)',
-            'MwSt-Satz (%)', 'Steuerbefreiung',
-            'Projektname', 'Projektnummer',
-            'Storno-Rechnungsnummer', 'PDF SHA256', 'XML SHA256',
+            'Rechnungsnummer',
+            'Typ',
+            'Status',
+            'Rechnungsdatum',
+            'Fälligkeitsdatum',
+            'Leistungsdatum',
+            'Ausgestellt am',
+            'Kunde ID',
+            'Kundenname',
+            'Kundenadresse',
+            'Kunden PLZ',
+            'Kunden Ort',
+            'Kunden Land',
+            'Kunden USt-IdNr.',
+            'Verkäufer Name',
+            'Verkäufer Steuernummer',
+            'Verkäufer USt-IdNr.',
+            'Nettobetrag (EUR)',
+            'MwSt-Betrag (EUR)',
+            'Bruttobetrag (EUR)',
+            'MwSt-Satz (%)',
+            'Steuerbefreiung',
+            'Projektname',
+            'Projektnummer',
+            'Storno-Rechnungsnummer',
+            'PDF SHA256',
+            'XML SHA256',
         ];
         fputcsv($invoicesCsvHandle, $invoiceHeaders, ';');
 
@@ -1466,17 +1490,25 @@ class InvoiceController extends Controller
         fclose($invoicesCsvHandle);
 
         // ── 2. audit_log.csv ────────────────────────────────────────────
-        $auditCsvPath   = $tmpDir . '/audit_log.csv';
+        $auditCsvPath = $tmpDir . '/audit_log.csv';
         $auditCsvHandle = fopen($auditCsvPath, 'w');
         fprintf($auditCsvHandle, "\xEF\xBB\xBF");
 
         fputcsv($auditCsvHandle, [
-            'Log ID', 'Rechnungsnummer', 'Aktion', 'Alter Status', 'Neuer Status',
-            'Benutzer', 'IP-Adresse', 'Zeitstempel', 'Record Hash', 'Vorheriger Hash',
+            'Log ID',
+            'Rechnungsnummer',
+            'Aktion',
+            'Alter Status',
+            'Neuer Status',
+            'Benutzer',
+            'IP-Adresse',
+            'Zeitstempel',
+            'Record Hash',
+            'Vorheriger Hash',
         ], ';');
 
-        $invoiceIds     = $invoices->pluck('id');
-        $auditLogs      = InvoiceAuditLog::with('user:id,first_name,last_name')
+        $invoiceIds = $invoices->pluck('id');
+        $auditLogs = InvoiceAuditLog::with('user:id,first_name,last_name')
             ->whereIn('invoice_id', $invoiceIds)
             ->orderBy('id')
             ->get();
@@ -1504,10 +1536,10 @@ class InvoiceController extends Controller
         fclose($auditCsvHandle);
 
         // ── 3. index.xml (IDEA-Beschreibungsstandard) ────────────────────
-        $exportDate   = now()->format('Y-m-d\TH:i:s');
-        $dateFrom     = $validated['date_from'] ?? $invoices->min('date');
-        $dateTo       = $validated['date_to']   ?? $invoices->max('date');
-        $tenantName   = \App\Models\Tenant::find($tenantId)?->company_name ?? 'Unbekannt';
+        $exportDate = now()->format('Y-m-d\TH:i:s');
+        $dateFrom = $validated['date_from'] ?? $invoices->min('date');
+        $dateTo = $validated['date_to'] ?? $invoices->max('date');
+        $tenantName = \App\Models\Tenant::find($tenantId)?->company_name ?? 'Unbekannt';
         $invoiceCount = $invoices->count();
 
         $indexXml = <<<XML
@@ -1587,8 +1619,8 @@ XML;
         // ── ZIP erzeugen ─────────────────────────────────────────────────
         $zip = new \ZipArchive();
         $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
-        $zip->addFile($invoicesCsvPath,       'invoices.csv');
-        $zip->addFile($auditCsvPath,          'audit_log.csv');
+        $zip->addFile($invoicesCsvPath, 'invoices.csv');
+        $zip->addFile($auditCsvPath, 'audit_log.csv');
         $zip->addFile($tmpDir . '/index.xml', 'index.xml');
         $zip->close();
 
@@ -1609,8 +1641,8 @@ XML;
                 [
                     'export_format' => 'gobd_zip',
                     'invoice_count' => $invoiceCount,
-                    'date_from'     => $dateFrom,
-                    'date_to'       => $dateTo,
+                    'date_from' => $dateFrom,
+                    'date_to' => $dateTo,
                 ]
             );
         }
@@ -1788,6 +1820,10 @@ XML;
             ->totalDiscount($invoice->discount_eur)
             ->notes($this->buildInvoiceNotes($invoice))
             ->template('din5008');
+
+        $tenant = \App\Models\Tenant::find($invoice->tenant_id);
+        $settings = \App\Models\TenantSetting::where('tenant_id', $invoice->tenant_id)->pluck('value', 'key')->toArray();
+        $dailyInvoice->setCustomData(InvoiceTemplateDataFactory::build($invoice, $tenant, $settings));
 
         $dailyInvoice->tenant_id = $invoice->tenant_id;
         $dailyInvoice->invoice_type = $invoice->type; // Pass to template

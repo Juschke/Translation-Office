@@ -70,6 +70,15 @@ class PartnerController extends Controller
         return response()->json(Partner::findOrFail($id));
     }
 
+    public function downloadProfileCard(Partner $partner)
+    {
+        $filename = 'Partnerprofil_' . ($partner->display_id ?: $partner->id) . '.pdf';
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.partner_profile_card', [
+            'partner' => $partner,
+        ])->download($filename);
+    }
+
     public function update(Request $request, $id)
     {
         $partner = Partner::findOrFail($id);

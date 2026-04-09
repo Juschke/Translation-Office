@@ -111,7 +111,7 @@ const Navigation = () => {
                 <div className="flex items-center justify-between h-12">
                     {/* Left Side: Logo + Main Menu */}
                     <div className="flex items-center h-full gap-4 lg:gap-6">
-                        <Link to="/" className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
+                        <Link to="/dashboard" className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
                             <div className="bg-white w-8 h-8 rounded-sm flex items-center justify-center font-bold text-brand-primary shadow-sm">TO</div>
                             <span className="font-bold text-base tracking-tight hidden lg:inline text-white">Translator Office</span>
                         </Link>

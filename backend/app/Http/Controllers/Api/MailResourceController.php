@@ -84,7 +84,7 @@ class MailResourceController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
-            'subject' => 'required|string',
+            'subject' => 'nullable|string',
             'body' => 'required|string',
             'category' => 'nullable|string',
             'placeholders' => 'nullable|array',
@@ -99,7 +99,7 @@ class MailResourceController extends Controller
         $template = MailTemplate::findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string',
-            'subject' => 'required|string',
+            'subject' => 'nullable|string',
             'body' => 'required|string',
             'category' => 'nullable|string',
             'placeholders' => 'nullable|array',

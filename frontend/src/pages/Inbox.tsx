@@ -101,9 +101,8 @@ const CommunicationHub = () => {
     // Mutations
     const syncMutation = useMutation({
         mutationFn: mailService.sync,
-        onSuccess: (data: any) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mails'] });
-            toast.success(data.message || 'Postfach synchronisiert');
         },
         onError: () => toast.error(t('toast.sync_error'))
     });
@@ -157,9 +156,20 @@ const CommunicationHub = () => {
 
     // Handlers
     const handleViewMail = (mail: any) => {
-        setViewingMail(mail);
-        if (!mail.read && activeTab === 'inbox') markAsReadMutation.mutate(mail.id);
+        if (viewingMail?.id === mail.id) {
+            setViewingMail(null);
+        } else {
+            setViewingMail(mail);
+            if (!mail.read && activeTab === 'inbox') markAsReadMutation.mutate(mail.id);
+        }
     };
+
+    // Auto-sync on folder change
+    useEffect(() => {
+        if (activeTab === 'inbox' || activeTab === 'sent') {
+            syncMutation.mutate();
+        }
+    }, [activeTab]);
 
     const confirmDelete = () => {
         if (deleteType === 'bulk') {
@@ -295,6 +305,7 @@ const CommunicationHub = () => {
                                         <div className="flex-1 flex flex-col min-w-0 bg-white">
                                             <MailDetailPanel
                                                 mail={viewingMail}
+                                                isDraft={activeTab === 'drafts'}
                                                 onClose={() => setViewingMail(null)}
                                                 onDelete={(id: any) => { setMailToDelete(id); setDeleteType('single'); setIsConfirmOpen(true); }}
                                             />

@@ -3,8 +3,10 @@ import {
     FaStamp, FaBan, FaPen, FaFileCode, FaTrash, FaHistory, FaEllipsisV,
     FaFileInvoiceDollar,
 } from 'react-icons/fa';
-import { Dropdown } from 'antd';
+import { Dropdown, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
+import { formatDistanceToNow, format } from 'date-fns';
+import { de } from 'date-fns/locale';
 import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 import { ICON_ACTION_BUTTON_CLASS, ICON_SIZE_XS } from '../components/ui/icon-styles';
 
@@ -50,23 +52,33 @@ export function buildInvoiceColumns({
             id: 'invoice_number',
             header: t('fields.invoice_number'),
             accessor: (inv: any) => (
-                <div className="flex flex-col">
-                    <span className="font-semibold text-slate-800">{inv.invoice_number}</span>
-                    <span className="text-xs font-semibold text-slate-400">{new Date(inv.date).toLocaleDateString('de-DE')}</span>
-                </div>
+                <span className="font-semibold text-slate-800">{inv.invoice_number}</span>
             ),
             sortable: true,
             sortKey: 'invoice_number',
-            width: 100,
+            width: 90,
+        },
+        {
+            id: 'date',
+            header: t('fields.date'),
+            accessor: (inv: any) => (
+                <span className="text-xs font-medium text-slate-600">
+                    {format(new Date(inv.date), 'dd.MM.yyyy')}
+                </span>
+            ),
+            sortable: true,
+            sortKey: 'date',
+            width: 80,
         },
         {
             id: 'customer',
             header: t('fields.recipient'),
             accessor: (inv: any) => {
+                const salutation = (inv.snapshot_customer_salutation || inv.customer?.salutation) ? `${inv.snapshot_customer_salutation || inv.customer.salutation} ` : '';
                 const name = inv.snapshot_customer_name || inv.customer?.company_name || `${inv.customer?.first_name || ''} ${inv.customer?.last_name || ''}`;
                 return (
                     <div className="flex flex-col">
-                        <span className="font-medium text-slate-700">{name}</span>
+                        <span className="font-medium text-slate-700">{salutation}{name}</span>
                         {inv.type === 'credit_note' && <span className="text-xs font-medium text-brand-primary">{t('invoice.tabs.credit_notes')}</span>}
                     </div>
                 );
@@ -78,7 +90,7 @@ export function buildInvoiceColumns({
             id: 'project',
             header: t('fields.project'),
             accessor: (inv: any) => (
-                <span className="text-xs font-medium text-slate-500">{inv.snapshot_project_name || inv.project?.project_name || inv.snapshot_project_number || ''}</span>
+                <span className="text-xs font-bold text-slate-700">{inv.snapshot_project_number || inv.project?.project_number || ''}</span>
             ),
             sortable: true,
             width: 120,
@@ -86,24 +98,41 @@ export function buildInvoiceColumns({
         {
             id: 'due_date',
             header: t('fields.due_date'),
-            accessor: (inv: any) => (
-                <span className="text-slate-600 font-medium">
-                    {new Date(inv.due_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                </span>
-            ),
+            accessor: (inv: any) => {
+                const date = new Date(inv.due_date);
+                const isPast = date < new Date() && !['paid', 'cancelled'].includes(inv.status);
+                return (
+                    <div className="flex flex-col cursor-help">
+                        <span className={`text-[11px] font-semibold ${isPast ? 'text-red-500' : 'text-slate-600'}`}>
+                            {format(date, 'dd.MM.yyyy')}
+                        </span>
+                        <span className="text-[9px] text-slate-400 leading-tight">
+                            {formatDistanceToNow(date, { addSuffix: true, locale: de })}
+                        </span>
+                    </div>
+                );
+            },
             sortable: true,
             sortKey: 'due_date',
-            width: 90,
+            width: 100,
         },
         {
             id: 'amount_net',
             header: `${t('fields.amount')} (${t('fields.net')})`,
             accessor: (inv: any) => {
                 const eur = inv.amount_net_eur ?? (inv.amount_net / 100);
+                const gross = inv.amount_gross_eur ?? (inv.amount_gross / 100);
+                const sameValue = Math.abs(eur - gross) < 0.001;
+
                 return (
-                    <span className={`font-medium tabular-nums ${eur < 0 ? 'text-red-500' : 'text-slate-600'}`}>
-                        {eur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                    </span>
+                    <div className="flex flex-col items-end">
+                        <span className={`font-medium tabular-nums ${eur < 0 ? 'text-red-500' : 'text-slate-600'}`}>
+                            {eur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                        </span>
+                        {sameValue && inv.tax_rate === 0 && (
+                            <span className="text-[9px] text-slate-400 font-medium">0% USt.</span>
+                        )}
+                    </div>
                 );
             },
             sortable: true,
@@ -117,15 +146,17 @@ export function buildInvoiceColumns({
             accessor: (inv: any) => {
                 const eur = inv.amount_gross_eur ?? (inv.amount_gross / 100);
                 return (
-                    <span className={`font-bold tabular-nums ${eur < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                        {eur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                    </span>
+                    <Tooltip title={inv.tax_rate > 0 ? `${inv.tax_rate}% USt. enthalten` : 'Steuerfrei / 0% USt.'}>
+                        <span className={`font-bold tabular-nums cursor-help ${eur < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {eur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                        </span>
+                    </Tooltip>
                 );
             },
             sortable: true,
             sortKey: 'amount_gross',
             align: 'right' as const,
-            width: 80,
+            width: 85,
         },
         {
             id: 'status',

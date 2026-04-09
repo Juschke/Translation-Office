@@ -399,7 +399,7 @@ class ProjectController extends Controller
         $project = \App\Models\Project::with(['customer', 'positions'])->findOrFail($id);
 
         $validated = $request->validate([
-            'type' => 'required|string|in:confirmation,pickup,reminder,delivery_note',
+            'type' => 'required|string|in:confirmation,pickup,reminder,delivery_note,offer,request',
         ]);
 
         try {
@@ -409,6 +409,8 @@ class ProjectController extends Controller
                 'pickup' => 'Abholbestätigung',
                 'reminder' => 'Mahnung / Erinnerung',
                 'delivery_note' => 'Lieferschein',
+                'offer' => 'Angebot',
+                'request' => 'Anfragezusammenfassung',
                 default => 'Dokument'
             };
 
@@ -523,6 +525,22 @@ class ProjectController extends Controller
         }
 
         return $pdf->download($filename);
+    }
+
+    public function downloadBusinessDocument(Request $request, \App\Models\Project $project, $type)
+    {
+        if (!in_array($type, ['offer', 'request'], true)) {
+            abort(404);
+        }
+
+        $project->load(['customer', 'tenant', 'positions', 'sourceLanguage', 'targetLanguage', 'partner', 'documentType', 'payments', 'invoices']);
+
+        $view = $type === 'offer' ? 'pdf.offer' : 'pdf.request_summary';
+        $filenamePrefix = $type === 'offer' ? 'Angebot_' : 'Anfrage_';
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView($view, [
+            'project' => $project,
+        ])->download($filenamePrefix . ($project->project_number ?? $project->id) . '.pdf');
     }
 
     public function postMessage(Request $request, $id)

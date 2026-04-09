@@ -69,7 +69,7 @@ const LoginPage = () => {
                 return;
             }
 
-            navigate('/');
+            navigate('/dashboard');
         } catch (err: any) {
             // Extract error message
             let msg = t('auth.invalid_credentials');

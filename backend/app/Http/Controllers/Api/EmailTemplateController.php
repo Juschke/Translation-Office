@@ -17,7 +17,7 @@ class EmailTemplateController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
-            'subject' => 'required|string',
+            'subject' => 'nullable|string',
             'body' => 'required|string',
             'type' => 'nullable|string',
             'status' => 'in:active,inactive',
@@ -37,7 +37,7 @@ class EmailTemplateController extends Controller
         $template = EmailTemplate::findOrFail($id);
         $validated = $request->validate([
             'name' => 'string',
-            'subject' => 'string',
+            'subject' => 'nullable|string',
             'body' => 'string',
             'type' => 'nullable|string',
             'status' => 'in:active,inactive',

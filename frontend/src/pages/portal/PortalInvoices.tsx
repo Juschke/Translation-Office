@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Tag, Spin, Alert, Table, Tooltip } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
+import { Download } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
@@ -8,7 +8,7 @@ import { portalInvoiceService } from '../../api/services/portal';
 import { Button } from '../../components/ui/button';
 import type { PortalInvoice } from '../../types/portal';
 
-const formatCents = (cents: number) => (cents / 100).toFixed(2) + ' €';
+const formatCents = (cents: number) => `${(cents / 100).toFixed(2)} €`;
 
 const statusLabel: Record<string, string> = {
   draft: 'Entwurf',
@@ -55,9 +55,7 @@ const PortalInvoices: React.FC = () => {
       title: 'Rechnungsnummer',
       dataIndex: 'invoice_number',
       key: 'invoice_number',
-      render: (num: string) => (
-        <span className="font-medium text-slate-800">{num}</span>
-      ),
+      render: (num: string) => <span className="font-medium text-slate-800">{num}</span>,
     },
     {
       title: 'Datum',
@@ -83,20 +81,14 @@ const PortalInvoices: React.FC = () => {
       title: 'Betrag',
       dataIndex: 'amount_gross',
       key: 'amount_gross',
-      render: (amount: number) => (
-        <span className="font-semibold text-slate-700">{formatCents(amount)}</span>
-      ),
+      render: (amount: number) => <span className="font-semibold text-slate-700">{formatCents(amount)}</span>,
       align: 'right',
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
-        <Tag color={statusColor[status] ?? 'default'}>
-          {statusLabel[status] ?? status}
-        </Tag>
-      ),
+      render: (status: string) => <Tag color={statusColor[status] ?? 'default'}>{statusLabel[status] ?? status}</Tag>,
       responsive: ['sm'],
     },
     {
@@ -105,12 +97,8 @@ const PortalInvoices: React.FC = () => {
       align: 'center',
       render: (_, record) => (
         <Tooltip title="PDF herunterladen">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleDownload(record)}
-          >
-            <DownloadOutlined />
+          <Button variant="secondary" size="sm" onClick={() => handleDownload(record)}>
+            <Download className="h-4 w-4" />
           </Button>
         </Tooltip>
       ),
@@ -121,15 +109,12 @@ const PortalInvoices: React.FC = () => {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-slate-800">Rechnungen</h1>
-        <p className="text-slate-500 text-sm mt-1">
+        <p className="mt-1 text-sm text-slate-500">
           Alle Ihre Rechnungen auf einen Blick. PDFs können direkt heruntergeladen werden.
         </p>
       </div>
 
-      <Card
-        className="rounded-xl border border-slate-200 shadow-sm bg-white"
-        styles={{ body: { padding: 0 } }}
-      >
+      <Card className="rounded-xl border border-slate-200 shadow-sm bg-white" styles={{ body: { padding: 0 } }}>
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Spin size="large" tip="Wird geladen..." />

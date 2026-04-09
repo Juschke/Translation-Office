@@ -8,7 +8,7 @@ import { useProjectModals } from '../hooks/useProjectModals';
 import { useProjectFinancials } from '../hooks/useProjectFinancials';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaFlag, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaFlag, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope, FaFileSignature, FaClipboardList } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -617,6 +617,20 @@ const ProjectDetail = () => {
         }
     };
 
+    const handleDownloadBusinessDocument = async (type: 'offer' | 'request') => {
+        try {
+            const toastId = toast.loading(type === 'offer' ? 'Angebot wird erstellt...' : 'Anfrage wird erstellt...');
+            const response = await projectService.downloadBusinessDocument(id!, type);
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            openBlobInNewTab(blob);
+            toast.dismiss(toastId);
+            toast.success(type === 'offer' ? 'Angebot geoeffnet' : 'Anfrage geoeffnet');
+        } catch (error) {
+            toast.dismiss();
+            toast.error('Dokument konnte nicht geladen werden');
+        }
+    };
+
     return (
         <div className="flex-1 flex flex-col overflow-hidden fade-in bg-slate-50/30">
             <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -726,6 +740,18 @@ const ProjectDetail = () => {
                                                 <FaFilePdf className="text-red-400 shrink-0" /> Dolmetscherbestätigung
                                             </button>
 
+                                            <button
+                                                onClick={() => { handleDownloadBusinessDocument('offer'); setIsActionsOpen(false); }}
+                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
+                                            >
+                                                <FaFileSignature className="text-blue-500 shrink-0" /> Angebot
+                                            </button>
+                                            <button
+                                                onClick={() => { handleDownloadBusinessDocument('request'); setIsActionsOpen(false); }}
+                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
+                                            >
+                                                <FaClipboardList className="text-slate-500 shrink-0" /> Anfragezusammenfassung
+                                            </button>
                                             <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-t border-b border-slate-100 mt-1">Rechnung</div>
                                             {(() => {
                                                 const activeInvoice = projectData.invoices?.find((inv: any) => !['cancelled'].includes(inv.status));

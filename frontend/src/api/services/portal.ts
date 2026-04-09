@@ -34,9 +34,21 @@ portalApi.interceptors.response.use(
 
     const status = error.response.status;
     const errorData = error.response.data;
+    const requestUrl = String(error.config?.url || '');
+    const isPortalLoginPage = window.location.pathname.startsWith('/portal/login');
+    const isPortalAuthRequest =
+      requestUrl.includes('/portal/auth/login') ||
+      requestUrl.includes('/portal/auth/request-link') ||
+      requestUrl.includes('/portal/auth/verify-reset-code') ||
+      requestUrl.includes('/portal/auth/reset-password');
 
     switch (status) {
       case 401:
+        if (isPortalAuthRequest || isPortalLoginPage) {
+          toast.error(errorData?.message || 'Die Anmeldung war nicht erfolgreich.');
+          break;
+        }
+
         localStorage.removeItem('portal_token');
         window.location.href = '/portal/login';
         break;
@@ -71,13 +83,33 @@ portalApi.interceptors.response.use(
 );
 
 export const portalAuthService = {
-  login: async (credentials: any): Promise<{ token: string; type: string; user: any }> => {
+  login: async (credentials: { email: string; password: string; account_type?: 'customer' | 'partner' }): Promise<{ token: string; type: string; user: any }> => {
     const response = await portalApi.post('/portal/auth/login', credentials);
     return response.data;
   },
 
-  requestLink: async (email: string): Promise<void> => {
-    await portalApi.post('/portal/auth/request-link', { email });
+  requestLink: async (email: string, accountType?: 'customer' | 'partner'): Promise<void> => {
+    await portalApi.post('/portal/auth/request-link', { email, account_type: accountType });
+  },
+
+  verifyResetCode: async (payload: {
+    email: string;
+    code: string;
+    account_type?: 'customer' | 'partner';
+  }): Promise<{ message: string }> => {
+    const response = await portalApi.post('/portal/auth/verify-reset-code', payload);
+    return response.data;
+  },
+
+  resetPassword: async (payload: {
+    email: string;
+    code: string;
+    password: string;
+    password_confirmation: string;
+    account_type?: 'customer' | 'partner';
+  }): Promise<{ message: string }> => {
+    const response = await portalApi.post('/portal/auth/reset-password', payload);
+    return response.data;
   },
 
   verify: async (token: string): Promise<{ token: string; customer: PortalCustomer }> => {

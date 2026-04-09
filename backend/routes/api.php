@@ -173,6 +173,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Partner management
         Route::apiResource('partners', App\Http\Controllers\Api\PartnerController::class);
         Route::get('/partners/stats', [App\Http\Controllers\Api\PartnerController::class, 'stats']);
+        Route::get('/partners/{partner}/profile-card/pdf', [App\Http\Controllers\Api\PartnerController::class, 'downloadProfileCard']);
 
         // External Costs
         Route::get('external-costs/stats', [\App\Http\Controllers\Api\ExternalCostController::class, 'stats']);
@@ -184,6 +185,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('customers/check-duplicates', [\App\Http\Controllers\Api\CustomerController::class, 'checkDuplicates']);
     Route::get('/customers/stats', [\App\Http\Controllers\Api\CustomerController::class, 'stats']);
     Route::apiResource('customers', \App\Http\Controllers\Api\CustomerController::class);
+    Route::get('/customers/{customer}/master-data/pdf', [\App\Http\Controllers\Api\CustomerController::class, 'downloadMasterDataSheet']);
 
     // Partners (Deduplication Check)
     Route::post('partners/check-duplicates', [\App\Http\Controllers\Api\PartnerController::class, 'checkDuplicates']);
@@ -205,6 +207,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::apiResource('projects', \App\Http\Controllers\Api\ProjectController::class);
     Route::post('projects/{project}/invite', [\App\Http\Controllers\Api\ProjectController::class, 'inviteParticipant']);
     Route::post('projects/{project}/generate-document', [\App\Http\Controllers\Api\ProjectController::class, 'generateDocument']);
+    Route::get('projects/{project}/documents/{type}', [\App\Http\Controllers\Api\ProjectController::class, 'downloadBusinessDocument']);
     Route::get('projects/{project}/activities', [\App\Http\Controllers\Api\ProjectController::class, 'getActivities']);
     Route::post('projects/{project}/generate-token', [\App\Http\Controllers\Api\ProjectController::class, 'generateToken']);
     Route::get('projects/{project}/confirmation/{type}', [\App\Http\Controllers\Api\ProjectController::class, 'downloadConfirmation']);
@@ -228,6 +231,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 Route::prefix('portal')->group(function () {
     Route::post('auth/login', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'login']);
     Route::post('auth/request-link', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'requestMagicLink']);
+    Route::post('auth/verify-reset-code', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'verifyResetCode']);
+    Route::post('auth/reset-password', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'resetPassword']);
     Route::get('auth/verify/{token}', [\App\Http\Controllers\Api\Portal\PortalAuthController::class, 'verifyMagicLink']);
 });
 

@@ -9,6 +9,15 @@ import clsx from 'clsx';
 import { settingsService } from '../../api/services';
 import Input from '../common/Input';
 import { Button } from '../ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '../ui/dialog';
+import { Label } from '../ui/label';
 
 const SettingRow = ({ label, description, children, className }: any) => (
     <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
@@ -52,10 +61,10 @@ const InvoiceSettingsTab = () => {
 
         // Steuersätze
         tax_rates: [
-            { id: '1', rate: '19.00', label: '19% MwSt.', paragraph: '§ 1 Abs. 1 Nr. 1 UStG', is_default: true },
-            { id: '2', rate: '7.00', label: '7% MwSt.', paragraph: '§ 12 Abs. 2 UStG', is_default: false },
-            { id: '3', rate: '0.00', label: '0% (§ 19 UStG)', paragraph: 'Kleinunternehmerregelung gem. § 19 UStG', is_default: false },
-            { id: '4', rate: '0.00', label: '0% (Reverse Charge)', paragraph: 'Steuerschuldnerschaft gem. § 13b UStG', is_default: false },
+            { id: '1', rate: '19.00', label: '19% MwSt.', is_default: true },
+            { id: '2', rate: '7.00', label: '7% MwSt.', is_default: false },
+            { id: '3', rate: '0.00', label: '0% (§ 19 UStG)', is_default: false },
+            { id: '4', rate: '0.00', label: '0% (Reverse Charge)', is_default: false },
         ],
 
         // Textvorlagen
@@ -81,7 +90,8 @@ const InvoiceSettingsTab = () => {
         invoice_primary_color: '#000000',
     });
 
-    const [newTaxRate, setNewTaxRate] = useState({ rate: '', label: '', paragraph: '' });
+    const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
+    const [newTaxRate, setNewTaxRate] = useState({ rate: '', label: '' });
 
     // Scroll effect for sidebar navigation
     useEffect(() => {
@@ -146,8 +156,10 @@ const InvoiceSettingsTab = () => {
             return;
         }
         const id = Date.now().toString();
-        handleChange('tax_rates', [...formData.tax_rates, { ...newTaxRate, id, is_default: false }]);
-        setNewTaxRate({ rate: '', label: '', paragraph: '' });
+        // Paragraph is being removed as per user request
+        handleChange('tax_rates', [...formData.tax_rates, { ...newTaxRate, id, is_default: false, paragraph: '' }]);
+        setNewTaxRate({ rate: '', label: '' });
+        setIsTaxModalOpen(false);
     };
 
     const removeTaxRate = (id: string) => {
@@ -266,7 +278,6 @@ const InvoiceSettingsTab = () => {
                                         <tr>
                                             <th className="px-4 py-2.5">{t('settings.invoice.tax_col_rate')}</th>
                                             <th className="px-4 py-2.5">{t('settings.invoice.tax_col_label')}</th>
-                                            <th className="px-4 py-2.5">{t('settings.invoice.tax_col_paragraph')}</th>
                                             <th className="px-4 py-2.5 text-center">{t('settings.invoice.tax_col_default')}</th>
                                             <th className="px-4 py-2.5 w-10"></th>
                                         </tr>
@@ -276,7 +287,6 @@ const InvoiceSettingsTab = () => {
                                             <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-4 py-2.5 font-medium text-slate-900">{t.rate}%</td>
                                                 <td className="px-4 py-2.5 text-slate-700">{t.label}</td>
-                                                <td className="px-4 py-2.5 text-slate-500 text-xs">{t.paragraph}</td>
                                                 <td className="px-4 py-2.5 text-center">
                                                     <button
                                                         onClick={() => setDefaultTaxRate(t.id)}
@@ -300,39 +310,14 @@ const InvoiceSettingsTab = () => {
                                 </table>
                             </div>
 
-                            {/* Add new tax rate */}
-                            <div className="border border-dashed border-slate-200 rounded-sm p-4 bg-slate-50/50">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <FaPlus className="text-slate-400 text-[10px]" />
-                                    <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('settings.invoice.tax_new_title')}</h5>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <Input
-                                        placeholder={t('settings.invoice.tax_rate_placeholder')}
-                                        type="number"
-                                        value={newTaxRate.rate}
-                                        onChange={(e) => setNewTaxRate({ ...newTaxRate, rate: e.target.value })}
-                                        className="h-8"
-                                    />
-                                    <Input
-                                        placeholder={t('settings.invoice.tax_label_placeholder')}
-                                        value={newTaxRate.label}
-                                        onChange={(e) => setNewTaxRate({ ...newTaxRate, label: e.target.value })}
-                                        className="h-8"
-                                    />
-                                    <Input
-                                        placeholder={t('settings.invoice.tax_paragraph_placeholder')}
-                                        value={newTaxRate.paragraph}
-                                        onChange={(e) => setNewTaxRate({ ...newTaxRate, paragraph: e.target.value })}
-                                        className="h-8"
-                                    />
-                                </div>
-                                <button
-                                    onClick={addTaxRate}
-                                    className="mt-3 px-4 py-1.5 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider hover:bg-slate-800 transition rounded-sm flex items-center gap-2 shadow-sm"
+                            <div className="flex justify-start">
+                                <Button
+                                    variant="default"
+                                    onClick={() => setIsTaxModalOpen(true)}
+                                    className="flex items-center gap-2"
                                 >
-                                    <FaPlus className="text-[10px]" /> {t('settings.invoice.tax_add')}
-                                </button>
+                                    <FaPlus className="text-xs" /> {t('settings.invoice.tax_add')}
+                                </Button>
                             </div>
                         </div>
                     </SettingRow>
@@ -746,6 +731,54 @@ const InvoiceSettingsTab = () => {
                 </div>
 
             </div>
+
+            {/* Tax Rate Modal */}
+            <Dialog open={isTaxModalOpen} onOpenChange={setIsTaxModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{t('settings.invoice.tax_new_title')}</DialogTitle>
+                        <DialogDescription>
+                            {t('settings.invoice.tax_manage_desc')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="tax-rate" className="text-right">
+                                {t('settings.invoice.tax_col_rate')}
+                            </Label>
+                            <Input
+                                id="tax-rate"
+                                type="number"
+                                step="any"
+                                value={newTaxRate.rate}
+                                onChange={(e) => setNewTaxRate({ ...newTaxRate, rate: e.target.value })}
+                                className="col-span-3"
+                                placeholder="19.00"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="tax-label" className="text-right">
+                                {t('settings.invoice.tax_col_label')}
+                            </Label>
+                            <Input
+                                id="tax-label"
+                                value={newTaxRate.label}
+                                onChange={(e) => setNewTaxRate({ ...newTaxRate, label: e.target.value })}
+                                className="col-span-3"
+                                placeholder="Regelbesteuerung"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="secondary" onClick={() => setIsTaxModalOpen(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button type="button" onClick={addTaxRate}>
+                            {t('settings.invoice.tax_add')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

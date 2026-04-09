@@ -2,9 +2,10 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService, projectService } from '../api/services';
+import { openBlobInNewTab } from '../utils/download';
 import {
     FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaBriefcase,
-    FaFileContract, FaChartLine
+    FaFileContract, FaChartLine, FaFilePdf
 } from 'react-icons/fa';
 import DetailSkeleton from '../components/common/DetailSkeleton';
 import { useState } from 'react';
@@ -45,6 +46,16 @@ const CustomerDetail = () => {
             navigate('/customers');
         }
     });
+
+    const handleDownloadMasterData = async () => {
+        try {
+            const response = await customerService.downloadMasterDataSheet(parseInt(id!));
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            openBlobInNewTab(blob);
+        } catch {
+            // keep detail view calm; this page currently has no global toast contract
+        }
+    };
 
     if (isLoading) return <DetailSkeleton />;
     if (!customer) return <div className="p-10 text-center text-slate-500">Kunde nicht gefunden</div>;
@@ -94,6 +105,13 @@ const CustomerDetail = () => {
                                 className="px-3 py-2 text-xs font-medium flex items-center gap-2"
                             >
                                 <FaEdit /> Bearbeiten
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={handleDownloadMasterData}
+                                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaFilePdf /> PDF
                             </Button>
                             <Button
                                 variant="destructive"

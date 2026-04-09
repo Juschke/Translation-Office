@@ -25,6 +25,7 @@ export function useEmailCompose() {
     const [isProjectFilesModalOpen, setIsProjectFilesModalOpen] = useState(false);
     const [showToSuggestions, setShowToSuggestions] = useState(false);
     const [suggestionIndex, setSuggestionIndex] = useState(0);
+    const [draftId, setDraftId] = useState<string | number | null>(null);
 
     // Öffnet Compose automatisch wenn über Navigation mit State navigiert wird
     useEffect(() => {
@@ -46,6 +47,7 @@ export function useEmailCompose() {
         setSelectedProjectId(null);
         setSelectedCustomerId(null);
         setShowToSuggestions(false);
+        setDraftId(null);
     };
 
     const sendMutation = useMutation({
@@ -57,6 +59,9 @@ export function useEmailCompose() {
             formData.append('body', bodyOverride ?? composeBody);
             if (isDraft) {
                 formData.append('is_draft', '1');
+            }
+            if (draftId) {
+                formData.append('draft_id', draftId.toString());
             }
             if (selectedProjectId) {
                 formData.append('project_id', selectedProjectId.toString());
@@ -141,5 +146,6 @@ export function useEmailCompose() {
         handleApplyTemplate,
         handleFileChange,
         removeAttachment,
+        draftId, setDraftId
     };
 }

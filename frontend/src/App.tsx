@@ -39,7 +39,7 @@ import RecurringInvoices from './pages/RecurringInvoices';
 
 
 
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { PortalProvider } from './context/PortalContext';
 import { ProtectedRoute, PublicRoute, RoleGuard } from './components/auth/AuthGuard';
 import { Toaster } from 'react-hot-toast';
@@ -56,8 +56,24 @@ import PortalProjectDetail from './pages/portal/PortalProjectDetail';
 import PortalInvoices from './pages/portal/PortalInvoices';
 import PortalNewRequest from './pages/portal/PortalNewRequest';
 import PortalProfile from './pages/portal/PortalProfile';
+import LandingPage from './pages/LandingPage';
 
 
+const RootRoute = () => {
+    const { user, isLoading } = useAuth();
+    if (isLoading) return null;
+
+    if (user) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    const portalToken = localStorage.getItem('portal_token');
+    if (portalToken) {
+        return <Navigate to="/portal" replace />;
+    }
+
+    return <LandingPage />;
+};
 
 function App() {
     return (
@@ -67,6 +83,7 @@ function App() {
                 <Router>
                     <Routes>
                         {/* Public Routes */}
+                        <Route path="/" element={<RootRoute />} />
                         <Route path="/guest/project/:token" element={<GuestProjectView />} />
                         <Route path="/file-preview" element={<FilePreviewPage />} />
                         <Route path="/verify-email" element={<VerifyEmail />} />
@@ -90,7 +107,7 @@ function App() {
 
                         {/* Protected Routes (Authenticated & Tenant) */}
                         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/dashboard" element={<Dashboard />} />
                             <Route path="/requests" element={<Requests />} />
                             <Route path="/quotes" element={<Quotes />} />
                             <Route path="/projects" element={<Projects />} />
@@ -145,7 +162,7 @@ function App() {
                         } />
 
                         {/* Catch all */}
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                 </Router>
             </AuthProvider>

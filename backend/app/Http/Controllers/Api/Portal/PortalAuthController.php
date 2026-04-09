@@ -7,11 +7,11 @@ use App\Mail\PortalMagicLinkMail;
 use App\Models\Customer;
 use App\Models\Partner;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class PortalAuthController extends Controller
 {
@@ -19,13 +19,14 @@ class PortalAuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
+            'account_type' => 'nullable|in:customer,partner',
         ]);
 
         $email = $request->email;
         $password = $request->password;
+        $accountType = $request->input('account_type');
 
-        // 1. Check for Demo Account
         if ($email === 'demo@itc-ks.com' && $password === 'demo1234') {
             $user = Customer::where('portal_access', true)->first();
             if ($user) {
@@ -33,13 +34,8 @@ class PortalAuthController extends Controller
             }
         }
 
-        // 2. Check internal Users (Managers/Staff)
         $user = User::where('email', $email)->first();
         if ($user && Hash::check($password, $user->password)) {
-            // For staff, we might want a different session or just reuse the logic
-            // But the Portal expectations are usually Customer/Partner models.
-            // If a staff logs in, we might want to return 'type' => 'staff'
-            // so the frontend can redirect to /dashboard instead of /portal
             return response()->json([
                 'token' => $user->createToken('admin-login')->plainTextToken,
                 'type' => 'staff',
@@ -47,21 +43,23 @@ class PortalAuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $user->role
-                ]
+                    'role' => $user->role,
+                ],
             ]);
         }
 
-        // 3. Check Customers
-        $user = Customer::where('email', $email)->where('portal_access', true)->first();
-        if ($user && $user->password && Hash::check($password, $user->password)) {
-            return $this->createSession($user, 'customer');
+        if ($accountType !== 'partner') {
+            $user = Customer::where('email', $email)->where('portal_access', true)->first();
+            if ($user && $user->password && Hash::check($password, $user->password)) {
+                return $this->createSession($user, 'customer');
+            }
         }
 
-        // 4. Check Partners
-        $user = Partner::where('email', $email)->where('portal_access', true)->first();
-        if ($user && $user->password && Hash::check($password, $user->password)) {
-            return $this->createSession($user, 'partner');
+        if ($accountType !== 'customer') {
+            $user = Partner::where('email', $email)->where('portal_access', true)->first();
+            if ($user && $user->password && Hash::check($password, $user->password)) {
+                return $this->createSession($user, 'partner');
+            }
         }
 
         return response()->json(['message' => 'Ungültige Anmeldedaten.'], 401);
@@ -85,42 +83,114 @@ class PortalAuthController extends Controller
 
     public function requestMagicLink(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate([
+            'email' => 'required|email',
+            'account_type' => 'nullable|in:customer,partner',
+        ]);
 
-        $user = Customer::where('email', $request->email)
-            ->where('portal_access', true)
-            ->first();
+        $accountType = $request->input('account_type');
+        $user = null;
 
-        $type = 'customer';
+        if ($accountType !== 'partner') {
+            $user = Customer::where('email', $request->email)
+                ->where('portal_access', true)
+                ->first();
+        }
 
-        if (!$user) {
+        if (!$user && $accountType !== 'customer') {
             $user = Partner::where('email', $request->email)
                 ->where('portal_access', true)
                 ->first();
-            $type = 'partner';
         }
 
-        // Always return success to prevent email enumeration
         if (!$user) {
-            return response()->json(['message' => 'Falls ein Konto existiert, erhalten Sie einen Anmeldelink.']);
+            return response()->json(['message' => 'Wenn Ihr Portalzugang freigeschaltet ist, wurde ein Sicherheitscode per E-Mail versendet.']);
         }
 
-        $token = Str::random(64);
-        $user->portal_token = hash('sha256', $token);
+        $resetCode = (string) random_int(100000, 999999);
+        $user->portal_token = hash('sha256', $resetCode);
         $user->portal_token_expires_at = Carbon::now()->addHours(24);
         $user->save();
-
-        $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
-        $magicLink = $frontendUrl . '/portal/verify/' . $token;
 
         $companyName = \App\Models\Tenant::where('id', $user->tenant_id)->value('company_name') ?? 'Ihr Übersetzungsbüro';
 
         Mail::mailer('smtp')->to($user->email)->send(
-            (new PortalMagicLinkMail($user, $magicLink, $companyName))
+            (new PortalMagicLinkMail($user, $resetCode, $companyName))
                 ->from('versand@itc-ks.com', $companyName)
         );
 
-        return response()->json(['message' => 'Falls ein Konto existiert, erhalten Sie einen Anmeldelink.']);
+        return response()->json(['message' => 'Wenn Ihr Portalzugang freigeschaltet ist, wurde ein Sicherheitscode per E-Mail versendet.']);
+    }
+
+    public function verifyResetCode(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|string|size:6',
+            'account_type' => 'nullable|in:customer,partner',
+        ]);
+
+        $user = $this->findPortalUser($request->email, $request->input('account_type'));
+
+        if (
+            !$user ||
+            !$user->portal_token ||
+            !$user->portal_token_expires_at ||
+            $user->portal_token_expires_at->isPast() ||
+            !hash_equals($user->portal_token, hash('sha256', $request->code))
+        ) {
+            return response()->json(['message' => 'Der Code ist ungültig oder abgelaufen.'], 422);
+        }
+
+        return response()->json(['message' => 'Code bestätigt.']);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|string|size:6',
+            'password' => 'required|string|min:8|confirmed',
+            'account_type' => 'nullable|in:customer,partner',
+        ]);
+
+        $user = $this->findPortalUser($request->email, $request->input('account_type'));
+
+        if (
+            !$user ||
+            !$user->portal_token ||
+            !$user->portal_token_expires_at ||
+            $user->portal_token_expires_at->isPast() ||
+            !hash_equals($user->portal_token, hash('sha256', $request->code))
+        ) {
+            return response()->json(['message' => 'Der Code ist ungültig oder abgelaufen.'], 422);
+        }
+
+        $user->password = $request->password;
+        $user->portal_token = null;
+        $user->portal_token_expires_at = null;
+        $user->save();
+
+        return response()->json(['message' => 'Das Passwort wurde erfolgreich neu gesetzt.']);
+    }
+
+    private function findPortalUser(string $email, ?string $accountType)
+    {
+        $user = null;
+
+        if ($accountType !== 'partner') {
+            $user = Customer::where('email', $email)
+                ->where('portal_access', true)
+                ->first();
+        }
+
+        if (!$user && $accountType !== 'customer') {
+            $user = Partner::where('email', $email)
+                ->where('portal_access', true)
+                ->first();
+        }
+
+        return $user;
     }
 
     public function verifyMagicLink(Request $request, string $token)
@@ -164,9 +234,7 @@ class PortalAuthController extends Controller
         $user = $request->attributes->get('portal_customer') ?: $request->attributes->get('portal_partner');
         $type = $request->attributes->get('portal_customer') ? 'customer' : 'partner';
 
-        // Check if it's an internal user (staff) - though middleware usually prevents this from being null if protected
         if (!$user) {
-            // If we are using Sanctum for staff, $request->user() might be populated
             if ($request->user()) {
                 return response()->json([
                     'type' => 'staff',
@@ -174,16 +242,17 @@ class PortalAuthController extends Controller
                         'id' => $request->user()->id,
                         'name' => $request->user()->name,
                         'email' => $request->user()->email,
-                        'role' => $request->user()->role
-                    ]
+                        'role' => $request->user()->role,
+                    ],
                 ]);
             }
+
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         return response()->json([
             'type' => $type,
-            'user' => $this->userData($user)
+            'user' => $this->userData($user),
         ]);
     }
 
@@ -195,6 +264,7 @@ class PortalAuthController extends Controller
             $user->portal_session_expires_at = null;
             $user->save();
         }
+
         return response()->json(['message' => 'Abgemeldet.']);
     }
 

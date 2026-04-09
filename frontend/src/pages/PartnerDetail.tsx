@@ -3,9 +3,10 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { partnerService, projectService } from '../api/services';
+import { openBlobInNewTab } from '../utils/download';
 import {
     FaArrowLeft, FaEdit, FaTrash, FaEnvelope, FaStar,
-    FaUserTie, FaFileContract, FaBriefcase, FaChartLine
+    FaUserTie, FaFileContract, FaBriefcase, FaChartLine, FaFilePdf
 } from 'react-icons/fa';
 import DetailSkeleton from '../components/common/DetailSkeleton';
 import { getFlagUrl, getLanguageName } from '../utils/flags';
@@ -45,6 +46,16 @@ const PartnerDetail = () => {
             navigate('/partners');
         }
     });
+
+    const handleDownloadProfileCard = async () => {
+        try {
+            const response = await partnerService.downloadProfileCard(parseInt(id!));
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            openBlobInNewTab(blob);
+        } catch {
+            // no-op
+        }
+    };
 
     if (isLoading) return <DetailSkeleton />;
     if (!partner) return <div className="p-10 text-center text-slate-500">{t('empty.partner_not_found')}</div>;
@@ -94,6 +105,13 @@ const PartnerDetail = () => {
                                 className="px-3 py-2 text-xs font-medium flex items-center gap-2"
                             >
                                 <FaEdit /> Bearbeiten
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={handleDownloadProfileCard}
+                                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                            >
+                                <FaFilePdf /> Profilkarte
                             </Button>
                             <Button
                                 variant="destructive"

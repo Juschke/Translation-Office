@@ -1,29 +1,34 @@
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
-import { FaTimes, FaReply, FaForward, FaTrashAlt, FaPaperclip, FaFileAlt } from 'react-icons/fa';
+import { FaTimes, FaReply, FaForward, FaTrashAlt, FaPaperclip, FaFileAlt, FaEdit } from 'react-icons/fa';
 import { ScrollArea, Button } from '../ui';
 
 interface MailDetailPanelProps {
     mail: any;
+    isDraft?: boolean;
     onClose: () => void;
     onDelete: (id: any) => void;
 }
 
-const MailDetailPanel = ({ mail, onClose, onDelete }: MailDetailPanelProps) => {
+const MailDetailPanel = ({ mail, isDraft, onClose, onDelete }: MailDetailPanelProps) => {
     const { } = useTranslation();
     if (!mail) return null;
 
-    const handleAction = (type: 'reply' | 'forward') => {
+    const handleAction = (type: 'reply' | 'forward' | 'edit') => {
         const sid = `compose_${Date.now()}`;
         const data: any = {
-            subject: type === 'reply' ? `Re: ${mail.subject}` : `Fwd: ${mail.subject}`,
-            to: type === 'reply' ? mail.from : '',
-            body: `\n\n--- Ursprüngliche Nachricht ---\nVon: ${mail.from}\nGesendet: ${mail.full_time}\nAn: ${mail.to_emails?.join(', ') || mail.target_email}\nBetreff: ${mail.subject}\n\n${mail.body}`,
+            subject: type === 'reply' ? `Re: ${mail.subject}` : (type === 'forward' ? `Fwd: ${mail.subject}` : mail.subject),
+            to: type === 'reply' ? mail.from : (type === 'edit' ? (mail.target_email || mail.to_emails?.[0] || '') : ''),
+            body: type === 'edit' ? mail.body : `\n\n--- Ursprüngliche Nachricht ---\nVon: ${mail.from}\nGesendet: ${mail.full_time}\nAn: ${mail.to_emails?.join(', ') || mail.target_email}\nBetreff: ${mail.subject}\n\n${mail.body}`,
             projectId: mail.project_id
         };
 
-        // Attachments only for forward
-        if (type === 'forward' && mail.attachments) {
+        if (type === 'edit') {
+            data.draftId = mail.id;
+        }
+
+        // Attachments only for forward or edit
+        if ((type === 'forward' || type === 'edit') && mail.attachments) {
             data.attachments = mail.attachments;
         }
 
@@ -34,7 +39,7 @@ const MailDetailPanel = ({ mail, onClose, onDelete }: MailDetailPanelProps) => {
     return (
         <div className="h-full flex flex-col bg-white overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
             {/* Header / Toolbar */}
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10 shrink-0">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between sticky top-0 z-10 shrink-0 h-[60px]">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onClose}
@@ -43,19 +48,30 @@ const MailDetailPanel = ({ mail, onClose, onDelete }: MailDetailPanelProps) => {
                         <FaTimes size={16} />
                     </button>
                     <div className="hidden lg:flex items-center gap-1.5 ml-4 pl-0">
-                        <Button
-                            variant="secondary"
-                            onClick={() => handleAction('reply')}
-                            className="h-8 px-3 text-[10px] font-bold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#f5f5f5] text-slate-600 hover:border-[#adadad] hover:text-slate-900 active:bg-slate-100 transition flex items-center gap-1.5 uppercase tracking-tight shadow-sm"
-                        >
-                            <FaReply size={9} /> Antworten
-                        </Button>
-                        <Button
-                            onClick={() => handleAction('forward')}
-                            className="h-8 px-4 text-[10px] font-bold rounded-[3px] border border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white hover:from-[#2a7073] hover:to-[#235e62] active:shadow-inner transition flex items-center gap-1.5 uppercase tracking-tight shadow-md"
-                        >
-                            <FaForward size={9} /> Weiterleiten
-                        </Button>
+                        {isDraft ? (
+                            <Button
+                                onClick={() => handleAction('edit')}
+                                className="h-8 px-4 text-[10px] font-bold rounded-[3px] border border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white hover:from-[#2a7073] hover:to-[#235e62] active:shadow-inner transition flex items-center gap-1.5 uppercase tracking-tight shadow-md"
+                            >
+                                <FaEdit size={9} /> Bearbeiten
+                            </Button>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => handleAction('reply')}
+                                    className="h-8 px-3 text-[10px] font-bold rounded-[3px] border border-[#ccc] bg-gradient-to-b from-white to-[#f5f5f5] text-slate-600 hover:border-[#adadad] hover:text-slate-900 active:bg-slate-100 transition flex items-center gap-1.5 uppercase tracking-tight shadow-sm"
+                                >
+                                    <FaReply size={9} /> Antworten
+                                </Button>
+                                <Button
+                                    onClick={() => handleAction('forward')}
+                                    className="h-8 px-4 text-[10px] font-bold rounded-[3px] border border-[#123a3c] bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white hover:from-[#2a7073] hover:to-[#235e62] active:shadow-inner transition flex items-center gap-1.5 uppercase tracking-tight shadow-md"
+                                >
+                                    <FaForward size={9} /> Weiterleiten
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-0">

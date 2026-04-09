@@ -1,19 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Tag, Spin, Alert } from 'antd';
-import {
-  ProjectOutlined,
-  CheckCircleOutlined,
-  FileTextOutlined,
-  MessageOutlined,
-  ArrowRightOutlined,
-} from '@ant-design/icons';
+import { Alert, Spin } from 'antd';
+import { ArrowRight, FileText, MessageSquare, PlusCircle, FolderKanban, UserRound } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { portalDashboardService } from '../../api/services/portal';
 import { usePortal } from '../../context/PortalContext';
-import type { PortalProject, PortalInvoice } from '../../types/portal';
+import type { PortalInvoice, PortalProject } from '../../types/portal';
 
-const formatCents = (cents: number) => (cents / 100).toFixed(2) + ' €';
+const formatCents = (cents: number) => `${(cents / 100).toFixed(2)} EUR`;
 
 const statusLabel: Record<string, string> = {
   draft: 'Entwurf',
@@ -26,17 +20,6 @@ const statusLabel: Record<string, string> = {
   cancelled: 'Storniert',
 };
 
-const statusColor: Record<string, string> = {
-  draft: 'default',
-  pending: 'processing',
-  offer: 'gold',
-  quote_sent: 'blue',
-  in_progress: 'processing',
-  review: 'purple',
-  completed: 'success',
-  cancelled: 'error',
-};
-
 const invoiceStatusLabel: Record<string, string> = {
   draft: 'Entwurf',
   issued: 'Ausgestellt',
@@ -45,38 +28,21 @@ const invoiceStatusLabel: Record<string, string> = {
   overdue: 'Überfällig',
 };
 
-const invoiceStatusColor: Record<string, string> = {
-  draft: 'default',
-  issued: 'processing',
-  paid: 'success',
-  cancelled: 'error',
-  overdue: 'warning',
-};
-
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  color: string;
+const ActionCard: React.FC<{
   to: string;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ icon, label, value, color, to }) => (
-  <Link to={to}>
-    <Card
-      className="rounded-xl border border-slate-200 shadow-sm bg-white hover:shadow-md transition-shadow cursor-pointer"
-      styles={{ body: { padding: '1.25rem' } }}
-    >
-      <div className="flex items-center gap-4">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${color}`}>
-          {icon}
-        </div>
-        <div>
-          <div className="text-2xl font-bold text-slate-800">{value}</div>
-          <div className="text-sm text-slate-500">{label}</div>
-        </div>
-      </div>
-    </Card>
+  title: string;
+  copy: string;
+  icon: React.ReactNode;
+}> = ({ to, title, copy, icon }) => (
+  <Link
+    to={to}
+    className="border border-slate-300 bg-white px-5 py-5 transition hover:border-[#0e5a67] hover:bg-[#f9fbfc]"
+  >
+    <div className="mb-4 inline-flex h-11 w-11 items-center justify-center bg-[#e2ebf2] text-[#0e5a67]">
+      {icon}
+    </div>
+    <div className="mb-2 text-base font-medium text-slate-900">{title}</div>
+    <p className="text-sm leading-6 text-slate-600">{copy}</p>
   </Link>
 );
 
@@ -99,160 +65,168 @@ const PortalDashboard: React.FC = () => {
     return (
       <Alert
         type="error"
-        message="Dashboard konnte nicht geladen werden."
+        message="Die Portalansicht konnte nicht geladen werden."
         showIcon
-        className="max-w-lg"
+        className="max-w-xl"
       />
     );
   }
 
   const { stats, recent_projects, recent_invoices } = data;
+  const displayName = customer?.company_name || customer?.first_name || 'Portal';
+  const nextProject = recent_projects[0];
+  const nextInvoice = recent_invoices[0];
 
   return (
     <div className="space-y-6">
-      {/* Greeting */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">
-          Willkommen, {customer?.first_name ?? customer?.company_name ?? 'Kunde'}!
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Hier finden Sie eine Übersicht Ihrer aktuellen Projekte und Rechnungen.
-        </p>
-      </div>
+      <section className="border border-slate-300 bg-[#f6f6f4] px-6 py-6 sm:px-8">
+        <div className="max-w-3xl">
+          <div className="mb-2 text-sm font-medium uppercase tracking-[0.18em] text-[#0e5a67]">Start</div>
+          <h1 className="text-3xl font-normal tracking-tight text-slate-900">
+            Guten Tag, {displayName}
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Hier finden Sie die wichtigsten Bereiche für Ihr Serviceportal. Sie können Projekte einsehen, Dateien und Nachrichten prüfen, Rechnungen herunterladen, neue Anfragen senden und Ihre Kontaktdaten pflegen.
+          </p>
+        </div>
+      </section>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={<ProjectOutlined />}
-          label="Offene Projekte"
-          value={stats.open_projects}
-          color="bg-teal-50 text-teal-700"
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <ActionCard
           to="/portal/projects"
+          title="Meine Projekte"
+          copy="Projektstatus, Dateien, Rückfragen und Liefertermine übersichtlich einsehen."
+          icon={<FolderKanban className="h-5 w-5" />}
         />
-        <StatCard
-          icon={<CheckCircleOutlined />}
-          label="Abgeschlossene Projekte"
-          value={stats.completed_projects}
-          color="bg-green-50 text-green-700"
-          to="/portal/projects"
-        />
-        <StatCard
-          icon={<FileTextOutlined />}
-          label="Offene Rechnungen"
-          value={stats.unpaid_invoices}
-          color="bg-amber-50 text-amber-700"
+        <ActionCard
           to="/portal/invoices"
+          title="Rechnungen"
+          copy="Offene und abgeschlossene Rechnungen ansehen und PDF-Dateien herunterladen."
+          icon={<FileText className="h-5 w-5" />}
         />
-        <StatCard
-          icon={<MessageOutlined />}
-          label="Offene Nachrichten"
-          value={stats.open_messages}
-          color="bg-blue-50 text-blue-700"
-          to="/portal/projects"
+        <ActionCard
+          to="/portal/new-request"
+          title="Neue Anfrage"
+          copy="Neue Übersetzungs- oder Serviceanfragen direkt im Portal an das Team senden."
+          icon={<PlusCircle className="h-5 w-5" />}
         />
-      </div>
+        <ActionCard
+          to="/portal/profile"
+          title="Mein Profil"
+          copy="Kontaktdaten, Anschrift und weitere wichtige Stammdaten prüfen und aktualisieren."
+          icon={<UserRound className="h-5 w-5" />}
+        />
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Projects */}
-        <Card
-          className="rounded-xl border border-slate-200 shadow-sm bg-white"
-          title={
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-700">Aktuelle Projekte</span>
-              <Link
-                to="/portal/projects"
-                className="text-teal-600 hover:text-teal-700 text-sm flex items-center gap-1"
-              >
-                Alle anzeigen <ArrowRightOutlined />
+      <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="border border-slate-300 bg-white">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <div className="text-base font-medium text-slate-900">Wichtige Hinweise</div>
+          </div>
+          <div className="grid gap-0">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <div className="mb-1 text-sm font-medium text-slate-900">Projekte und Rückfragen</div>
+              <p className="text-sm leading-6 text-slate-600">
+                Wenn Sie zu einem Projekt eine Rückfrage haben oder Dateien nachreichen möchten, öffnen Sie bitte das jeweilige Projekt. Dort finden Sie Nachrichten, Dateibereich und Statusinformationen an einem Ort.
+              </p>
+            </div>
+            <div className="border-b border-slate-200 px-5 py-4">
+              <div className="mb-1 text-sm font-medium text-slate-900">Rechnungen und Dokumente</div>
+              <p className="text-sm leading-6 text-slate-600">
+                Im Bereich Rechnungen können Sie aktuelle Dokumente einsehen und herunterladen. Falls Angaben fehlen, wenden Sie sich bitte direkt an Ihren Projektmanager.
+              </p>
+            </div>
+            <div className="px-5 py-4">
+              <div className="mb-1 text-sm font-medium text-slate-900">Profil und Kontaktdaten</div>
+              <p className="text-sm leading-6 text-slate-600">
+                Bitte halten Sie Ihre E-Mail-Adresse, Telefonnummer und Anschrift aktuell. So vermeiden Sie Rückfragen und Verzögerungen bei Projekten und Abrechnungen.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="border border-slate-300 bg-white px-5 py-4">
+            <div className="mb-3 text-base font-medium text-slate-900">Ihr aktueller Stand</div>
+            <div className="grid gap-3 text-sm text-slate-700">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <span>Offene Projekte</span>
+                <span className="font-medium text-slate-900">{stats.open_projects}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <span>Abgeschlossene Projekte</span>
+                <span className="font-medium text-slate-900">{stats.completed_projects}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <span>Offene Rechnungen</span>
+                <span className="font-medium text-slate-900">{stats.unpaid_invoices}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Offene Nachrichten</span>
+                <span className="font-medium text-slate-900">{stats.open_messages}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-slate-300 bg-white px-5 py-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="text-base font-medium text-slate-900">Nächstes Projekt</div>
+              <Link to="/portal/projects" className="text-sm text-[#0e5a67] hover:underline">
+                Projekte öffnen
               </Link>
             </div>
-          }
-          styles={{ body: { padding: 0 } }}
-        >
-          {recent_projects.length === 0 ? (
-            <div className="px-5 py-8 text-center text-slate-400 text-sm">
-              Noch keine Projekte vorhanden.
-            </div>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {recent_projects.map((project: PortalProject) => (
-                <li key={project.id}>
-                  <Link
-                    to={`/portal/projects/${project.id}`}
-                    className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-slate-800 truncate">
-                        {project.title}
-                      </div>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        {project.source_language && project.target_language
-                          ? `${project.source_language} → ${project.target_language}`
-                          : ''}
-                      </div>
-                    </div>
-                    <Tag color={statusColor[project.status] ?? 'default'} className="ml-3 shrink-0">
-                      {statusLabel[project.status] ?? project.status}
-                    </Tag>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+            {nextProject ? (
+              <div className="space-y-2 text-sm text-slate-600">
+                <div className="font-medium text-slate-900">{nextProject.title}</div>
+                <div>Status: {statusLabel[nextProject.status] ?? nextProject.status}</div>
+                {nextProject.deadline && <div>Termin: {new Date(nextProject.deadline).toLocaleDateString('de-DE')}</div>}
+                {(nextProject.source_language || nextProject.target_language) && (
+                  <div>
+                    Sprachen: {nextProject.source_language ?? '-'} nach {nextProject.target_language ?? '-'}
+                  </div>
+                )}
+                <Link to={`/portal/projects/${nextProject.id}`} className="inline-flex items-center gap-2 pt-2 text-sm font-medium text-[#0e5a67] hover:underline">
+                  Projekt ansehen <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            ) : (
+              <p className="text-sm leading-6 text-slate-500">Derzeit sind keine Projekte im Portal sichtbar.</p>
+            )}
+          </div>
 
-        {/* Recent Invoices */}
-        <Card
-          className="rounded-xl border border-slate-200 shadow-sm bg-white"
-          title={
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-700">Aktuelle Rechnungen</span>
-              <Link
-                to="/portal/invoices"
-                className="text-teal-600 hover:text-teal-700 text-sm flex items-center gap-1"
-              >
-                Alle anzeigen <ArrowRightOutlined />
+          <div className="border border-slate-300 bg-white px-5 py-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="text-base font-medium text-slate-900">Letzte Rechnung</div>
+              <Link to="/portal/invoices" className="text-sm text-[#0e5a67] hover:underline">
+                Rechnungen öffnen
               </Link>
             </div>
-          }
-          styles={{ body: { padding: 0 } }}
-        >
-          {recent_invoices.length === 0 ? (
-            <div className="px-5 py-8 text-center text-slate-400 text-sm">
-              Noch keine Rechnungen vorhanden.
-            </div>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {recent_invoices.map((invoice: PortalInvoice) => (
-                <li key={invoice.id}>
-                  <Link
-                    to="/portal/invoices"
-                    className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-slate-800">
-                        {invoice.invoice_number}
-                      </div>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        {new Date(invoice.date).toLocaleDateString('de-DE')}
-                        {invoice.project ? ` · ${invoice.project.title}` : ''}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 ml-3 shrink-0">
-                      <span className="text-sm font-semibold text-slate-700">
-                        {formatCents(invoice.amount_gross)}
-                      </span>
-                      <Tag color={invoiceStatusColor[invoice.status] ?? 'default'}>
-                        {invoiceStatusLabel[invoice.status] ?? invoice.status}
-                      </Tag>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+            {nextInvoice ? (
+              <div className="space-y-2 text-sm text-slate-600">
+                <div className="font-medium text-slate-900">{nextInvoice.invoice_number}</div>
+                <div>Status: {invoiceStatusLabel[nextInvoice.status] ?? nextInvoice.status}</div>
+                <div>Betrag: {formatCents(nextInvoice.amount_gross)}</div>
+                <div>Datum: {new Date(nextInvoice.date).toLocaleDateString('de-DE')}</div>
+              </div>
+            ) : (
+              <p className="text-sm leading-6 text-slate-500">Derzeit ist keine Rechnung im Portal vorhanden.</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="border border-slate-300 bg-[#edf2f6] px-6 py-5">
+        <div className="mb-2 flex items-center gap-2 text-base font-medium text-slate-900">
+          <MessageSquare className="h-5 w-5 text-[#0e5a67]" />
+          <span>Was Sie hier direkt erledigen können</span>
+        </div>
+        <div className="grid gap-2 text-sm leading-6 text-slate-700 md:grid-cols-2">
+          <div>Projektstatus prüfen und Dateien herunterladen</div>
+          <div>Rückfragen direkt am Projekt senden</div>
+          <div>Neue Anfrage an das Team übermitteln</div>
+          <div>Rechnungen einsehen und speichern</div>
+        </div>
+      </section>
     </div>
   );
 };

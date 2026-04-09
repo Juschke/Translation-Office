@@ -37,4 +37,10 @@ export const customerService = {
         const response = await api.post('/customers/check-duplicates', data);
         return response.data;
     },
+    downloadMasterDataSheet: async (id: number) => {
+        const response = await api.get(`/customers/${id}/master-data/pdf`, {
+            responseType: 'blob',
+        });
+        return response;
+    },
 };

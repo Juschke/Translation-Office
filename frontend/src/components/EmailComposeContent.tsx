@@ -8,8 +8,8 @@ import { useEmailVariables } from '../hooks/useEmailVariables';
 import Checkbox from './common/Checkbox';
 import {
     FaPaperPlane, FaTimes, FaPaperclip, FaFileAlt, FaEye,
-    FaProjectDiagram, FaSearchPlus, FaCheckCircle, FaLayerGroup,
-    FaSignature, FaChevronRight, FaPlus, FaEdit, FaEyeSlash, FaCode, FaSearch, FaTools
+    FaProjectDiagram, FaCheckCircle, FaLayerGroup,
+    FaSignature, FaChevronRight, FaChevronLeft, FaPlus, FaEdit, FaEyeSlash, FaCode, FaSearch, FaSave, FaTrash, FaTerminal
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import ReactQuill from 'react-quill-new';
@@ -35,6 +35,7 @@ interface EmailComposeContentProps {
     subject?: string;
     body?: string;
     attachments?: string[];
+    draftId?: string | number | null;
     isStandalone?: boolean;
     onSuccess?: () => void;
 }
@@ -46,6 +47,7 @@ const EmailComposeContent = ({
     subject: initialSubject,
     body: initialBody,
     attachments: initialAttachments = [],
+    draftId: initialDraftId = null,
     isStandalone = false,
     onSuccess,
 }: EmailComposeContentProps) => {
@@ -111,6 +113,24 @@ const EmailComposeContent = ({
         onError: () => toast.error('Fehler beim Erstellen der Signatur')
     });
 
+    const deleteTemplateMutation = useMutation({
+        mutationFn: (id: number) => mailService.deleteTemplate(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'templates'] });
+            toast.success('Vorlage gelöscht');
+        },
+        onError: () => toast.error('Fehler beim Löschen der Vorlage')
+    });
+
+    const deleteSignatureMutation = useMutation({
+        mutationFn: (id: number) => mailService.deleteSignature(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['mail', 'signatures'] });
+            toast.success('Signatur gelöscht');
+        },
+        onError: () => toast.error('Fehler beim Löschen der Signatur')
+    });
+
     const {
         setIsComposeOpen,
         composeTo, setComposeTo,
@@ -127,7 +147,22 @@ const EmailComposeContent = ({
         handleApplyTemplate,
         handleFileChange,
         removeAttachment,
+        draftId, setDraftId
     } = useEmailCompose();
+
+    // Init from props
+    useEffect(() => {
+        setIsComposeOpen(true);
+        if (initialProjectId) setSelectedProjectId(initialProjectId);
+        if (initialTo) setComposeTo(initialTo);
+        if (initialSubject) setComposeSubject(initialSubject);
+        if (initialBody) setComposeBody(initialBody);
+        if (initialDraftId) setDraftId(initialDraftId);
+
+        return () => {
+            if (!isStandalone) resetCompose();
+        };
+    }, [initialProjectId, initialTo, initialSubject, initialBody, initialDraftId, isStandalone]);
 
     // Data Queries
     const { data: accounts = [] } = useQuery({
@@ -373,24 +408,11 @@ const EmailComposeContent = ({
 
             <div className="flex-1 flex overflow-hidden min-h-0 relative">
                 {/* 2. MAIN COMPOSER AREA */}
-                <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden relative min-h-0 min-w-0 bg-white">
+                <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden relative min-h-0 min-w-0 bg-white custom-scrollbar">
                     {/* INPUT SECTION */}
                     <div className="px-4 pt-4 pb-2 space-y-2.5 shrink-0 bg-white z-10">
                         {/* PROJEKT (Project Selection) */}
                         <div className="pb-3 border-b border-slate-100 mb-2 relative">
-                            {/* Mobile Sidebar Toggle Button */}
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className={clsx(
-                                    "md:hidden absolute -top-5 right-0 h-7 px-2 text-[9px] font-bold transition-all border border-slate-100 shadow-sm",
-                                    isSidebarOpen ? "text-brand-primary bg-brand-primary/5 border-brand-primary/20" : "text-slate-500 bg-white hover:bg-slate-50"
-                                )}
-                                title={isSidebarOpen ? "Tools schließen" : "Tools öffnen"}
-                            >
-                                <FaTools size={10} className="mr-2" /> WERKZEUGE
-                            </Button>
 
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 group">
                                 <span className="text-[9px] font-bold text-slate-400 tracking-widest sm:w-10 shrink-0">PROJEKT</span>
@@ -578,6 +600,20 @@ const EmailComposeContent = ({
                             <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
                                 <div className="flex items-center gap-1">
                                     <button
+                                        type="button"
+                                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                        className={clsx(
+                                            "h-7 px-3 rounded-sm text-[10px] font-bold  tracking-tight flex items-center gap-1.5 transition-all border",
+                                            isSidebarOpen
+                                                ? "bg-brand-primary text-white border-brand-primary shadow-sm"
+                                                : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                                        )}
+                                        title={isSidebarOpen ? "Sidebar schließen" : "Sidebar öffnen"}
+                                    >
+                                        {isSidebarOpen ? <FaChevronRight size={8} /> : <FaChevronLeft size={8} />}
+                                        SIDEBAR
+                                    </button>
+                                    <button
                                         onClick={() => setIsComposePreview(!isComposePreview)}
                                         className={clsx(
                                             "h-7 px-3 rounded-sm text-[10px] font-bold  tracking-tight flex items-center gap-1.5 transition-all border",
@@ -713,8 +749,8 @@ const EmailComposeContent = ({
                     "border-l border-slate-100 flex-col shrink-0 overflow-hidden min-h-0 transition-all duration-300 ease-in-out z-30",
                     "bg-white md:bg-slate-50/30",
                     "fixed inset-y-0 right-0 w-64 md:relative md:flex md:w-80 md:translate-x-0 md:shadow-none shadow-2xl",
-                    isSidebarOpen ? "flex translate-x-0" : "flex translate-x-full md:translate-x-0",
-                    !isSidebarOpen && "hidden md:flex"
+                    isSidebarOpen ? "flex translate-x-0" : "flex translate-x-full md:translate-x-full",
+                    !isSidebarOpen && "hidden"
                 )}>
                     {/* Mobile Overlay */}
                     {isSidebarOpen && (
@@ -757,7 +793,7 @@ const EmailComposeContent = ({
                             )}
                         >
                             <div className="relative">
-                                <FaSearchPlus size={12} className="mb-1" />
+                                <FaTerminal size={12} className="mb-1" />
                                 <span className="absolute -top-1.5 -right-2.5 text-[7px] font-black bg-slate-200 text-slate-500 px-1 py-px rounded-sm leading-none">{ALL_VARIABLES.length}</span>
                             </div>
                             <span className="text-[9px] font-bold tracking-widest block">Variable</span>
@@ -861,32 +897,50 @@ const EmailComposeContent = ({
 
                         <div className="flex-1 min-h-0 overflow-hidden">
                             <ScrollArea className="h-full">
-                                <div className="p-3 pb-8 overflow-x-hidden w-full">
+                                <div className="pb-8 overflow-x-hidden w-full">
                                     {sidebarTab === 'templates' && (
                                         <div className="w-full space-y-2 animate-in fade-in slide-in-from-right-2 duration-300 overflow-hidden">
                                             {templates.filter((tpl: any) => !tplSearch || tpl.name.toLowerCase().includes(tplSearch.toLowerCase()) || tpl.subject?.toLowerCase().includes(tplSearch.toLowerCase())).map((tpl: any) => (
-                                                <div key={tpl.id} className="relative group/tpl shadow-sm">
+                                                <div key={tpl.id} className="relative group/tpl border-b border-slate-100 last:border-0">
                                                     <button
                                                         onClick={() => handleApplyTemplate(tpl)}
-                                                        className="w-full text-left p-3 pr-10 bg-white border border-slate-200 hover:border-brand-primary hover:shadow-md transition-all rounded-sm relative overflow-hidden max-h-24 min-w-0 flex flex-col"
+                                                        className="w-full text-left p-4 pr-10 bg-white hover:bg-slate-50 transition-all relative overflow-hidden min-w-0 flex flex-col"
                                                     >
                                                         <div className="font-bold text-slate-800 text-[10px] mb-0.5 tracking-tight group-hover:text-brand-primary line-clamp-2 break-words uppercase">{tpl.name}</div>
                                                         <div className="text-slate-400 text-[9px] line-clamp-2 leading-tight font-medium break-words">{tpl.subject}</div>
-                                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-brand-primary">
+                                                        <div 
+                                                            className="text-slate-300 text-[8px] line-clamp-1 leading-tight font-medium mt-1 truncate" 
+                                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tpl.body || tpl.content || '').substring(0, 80) }} 
+                                                        />
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-brand-primary">
                                                             <FaChevronRight size={10} />
                                                         </div>
                                                     </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setTemplateToEdit(tpl);
-                                                            setIsTemplateModalOpen(true);
-                                                        }}
-                                                        className="absolute right-7 bottom-2 w-6 h-6 flex items-center justify-center bg-transparent text-slate-300 hover:text-brand-primary transition-all opacity-0 group-hover/tpl:opacity-100"
-                                                        title="Vorlage bearbeiten"
-                                                    >
-                                                        <FaEdit size={10} />
-                                                    </button>
+                                                    <div className="absolute right-2 bottom-2 flex items-center gap-0.5 opacity-0 group-hover/tpl:opacity-100 transition-all">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setTemplateToEdit(tpl);
+                                                                setIsTemplateModalOpen(true);
+                                                            }}
+                                                            className="w-6 h-6 flex items-center justify-center bg-transparent text-slate-300 hover:text-brand-primary transition-all"
+                                                            title="Vorlage bearbeiten"
+                                                        >
+                                                            <FaEdit size={11} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (window.confirm(`Möchten Sie die Vorlage "${tpl.name}" wirklich löschen?`)) {
+                                                                    deleteTemplateMutation.mutate(tpl.id);
+                                                                }
+                                                            }}
+                                                            className="w-6 h-6 flex items-center justify-center bg-transparent text-slate-300 hover:text-red-500 transition-all"
+                                                            title="Vorlage löschen"
+                                                        >
+                                                            <FaTrash size={11} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                             {templates.filter((tpl: any) => !tplSearch || tpl.name.toLowerCase().includes(tplSearch.toLowerCase()) || tpl.subject?.toLowerCase().includes(tplSearch.toLowerCase())).length === 0 && (
@@ -921,23 +975,23 @@ const EmailComposeContent = ({
                                                                             key={v.key}
                                                                             onClick={() => {
                                                                                 if (isSelected) {
-                                                                                    const regex = new RegExp(`\\s?{{${v.key}}}\\s?|\\s?{${v.key}}\\s?`, 'g');
-                                                                                    setComposeBody(prev => prev.replace(regex, ' '));
+                                                                                    const regex = new RegExp(`{{${v.key}}}|{${v.key}}`, 'g');
+                                                                                    setComposeBody(prev => prev.replace(regex, ''));
                                                                                 } else {
-                                                                                    insertAtCursor(` {{${v.key}}} `);
+                                                                                    insertAtCursor(`{{${v.key}}}`);
                                                                                 }
                                                                             }}
-                                                                            className="w-full text-left p-2.5 bg-white border border-slate-100 hover:border-brand-primary cursor-pointer transition-all rounded-sm group flex items-start gap-3 relative shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                                                                            className="w-full text-left p-4 bg-white border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-all group flex items-start gap-4 relative"
                                                                         >
                                                                             <div className="mt-0.5 shrink-0">
                                                                                 <Checkbox
                                                                                     checked={isSelected}
                                                                                     onChange={() => {
                                                                                         if (isSelected) {
-                                                                                            const regex = new RegExp(`\\s?{{${v.key}}}\\s?|\\s?{${v.key}}\\s?`, 'g');
-                                                                                            setComposeBody(prev => prev.replace(regex, ' '));
+                                                                                            const regex = new RegExp(`{{${v.key}}}|{${v.key}}`, 'g');
+                                                                                            setComposeBody(prev => prev.replace(regex, ''));
                                                                                         } else {
-                                                                                            insertAtCursor(` {{${v.key}}} `);
+                                                                                            insertAtCursor(`{{${v.key}}}`);
                                                                                         }
                                                                                     }}
                                                                                 />
@@ -946,7 +1000,7 @@ const EmailComposeContent = ({
                                                                                 <div className="text-[10px] font-bold text-slate-700  tracking-tight group-hover:text-brand-primary">{v.label}</div>
                                                                                 <div className="text-[9px] text-slate-400 font-medium leading-normal mt-0.5">{v.desc}</div>
                                                                             </div>
-                                                                            <code className="absolute right-2 top-2 text-[8px] font-mono text-slate-300 shrink-0 bg-slate-50 px-1 py-0.5 border border-slate-100 rounded group-hover:border-brand-primary group-hover:text-brand-primary transition-all">
+                                                                            <code className="absolute right-3 top-4 text-[8px] font-mono text-slate-300 shrink-0 bg-slate-50 px-1 py-0.5 border border-slate-100 rounded group-hover:border-brand-primary group-hover:text-brand-primary transition-all">
                                                                                 {`{{${v.key}}}`}
                                                                             </code>
                                                                         </div>
@@ -963,15 +1017,15 @@ const EmailComposeContent = ({
                                     {sidebarTab === 'signatures' && (
                                         <div className="w-full space-y-2 animate-in fade-in slide-in-from-right-2 duration-300 overflow-hidden">
                                             {signatures.filter((s: any) => !sigSearch || s.name.toLowerCase().includes(sigSearch.toLowerCase())).map((s: any) => (
-                                                <div key={s.id} className="relative group/sig shadow-sm">
+                                                <div key={s.id} className="relative group/sig border-b border-slate-100 last:border-0">
                                                     <button
                                                         type="button"
                                                         onClick={() => setSelectedSignature(prev => prev?.id === s.id ? null : s)}
                                                         className={clsx(
-                                                            "w-full text-left p-3 pr-10 border hover:shadow-md transition-all rounded-sm relative overflow-hidden max-h-24 min-w-0 flex flex-col",
+                                                            "w-full text-left p-4 pr-10 transition-all relative overflow-hidden min-w-0 flex flex-col",
                                                             selectedSignature?.id === s.id
-                                                                ? "bg-white border-brand-primary shadow-sm"
-                                                                : "bg-white border-slate-200 hover:border-brand-primary"
+                                                                ? "bg-brand-primary/5 hover:bg-brand-primary/10"
+                                                                : "bg-white hover:bg-slate-50"
                                                         )}
                                                         style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                                                     >
@@ -993,17 +1047,31 @@ const EmailComposeContent = ({
                                                             </div>
                                                         )}
                                                     </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSignatureToEdit(s);
-                                                            setIsSignatureModalOpen(true);
-                                                        }}
-                                                        className="absolute right-7 bottom-2 w-6 h-6 flex items-center justify-center bg-transparent text-slate-300 hover:text-brand-primary transition-all opacity-0 group-hover/sig:opacity-100"
-                                                        title="Signatur bearbeiten"
-                                                    >
-                                                        <FaEdit size={10} />
-                                                    </button>
+                                                    <div className="absolute right-2 bottom-2 flex items-center gap-0.5 opacity-0 group-hover/sig:opacity-100 transition-all">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSignatureToEdit(s);
+                                                                setIsSignatureModalOpen(true);
+                                                            }}
+                                                            className="w-6 h-6 flex items-center justify-center bg-transparent text-slate-300 hover:text-brand-primary transition-all"
+                                                            title="Signatur bearbeiten"
+                                                        >
+                                                            <FaEdit size={11} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (window.confirm(`Möchten Sie die Signatur "${s.name}" wirklich löschen?`)) {
+                                                                    deleteSignatureMutation.mutate(s.id);
+                                                                }
+                                                            }}
+                                                            className="w-6 h-6 flex items-center justify-center bg-transparent text-slate-300 hover:text-red-500 transition-all"
+                                                            title="Signatur löschen"
+                                                        >
+                                                            <FaTrash size={11} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                             {signatures.length === 0 && (
@@ -1029,25 +1097,26 @@ const EmailComposeContent = ({
                         <Button
                             variant="secondary"
                             onClick={onClose}
-                            className="h-9 px-6 text-slate-500 text-[11px] font-bold tracking-widest transition-all rounded-sm border border-slate-200 bg-white hover:bg-slate-50 shadow-sm"
+                            className="h-9 px-4 text-[11px] font-bold tracking-widest transition-all rounded-sm flex items-center gap-2"
                         >
-                            Abbrechen
+                            <FaTimes /> Abbrechen
                         </Button>
                     )}
                 </div>
                 <div className="flex items-center gap-3">
                     <Button
-                        variant="ghost"
+                        variant="secondary"
                         onClick={handleSaveDraft}
                         disabled={sendMutation.isPending || !selectedAccount}
-                        className="text-slate-400 hover:text-slate-900 text-[10px] font-bold tracking-widest px-4 h-9 uppercase transition-all rounded-sm border border-transparent hover:border-slate-100"
+                        className="h-9 px-4 text-[11px] font-bold tracking-widest uppercase transition-all rounded-sm flex items-center gap-2"
                     >
-                        {sendMutation.isPending ? 'Warten...' : 'Als Entwurf speichern'}
+                        {sendMutation.isPending ? <FaSave className="animate-pulse" /> : <FaSave />}
+                        {sendMutation.isPending ? 'Warten...' : 'Entwurf speichern'}
                     </Button>
                     <Button
                         onClick={handleSend}
                         disabled={sendMutation.isPending || !composeTo || !composeSubject}
-                        className="bg-gradient-to-b from-[#235e62] to-[#1B4D4F] hover:from-[#2a7073] hover:to-[#235e62] text-white text-[11px] font-bold tracking-widest px-8 h-9 border border-[#123a3c] shadow-[0_2px_8px_rgba(27,77,79,0.2)] transition-all group rounded-sm"
+                        className="bg-gradient-to-b from-[#235e62] to-[#1B4D4F] hover:from-[#2a7073] hover:to-[#235e62] text-white text-[11px] font-bold tracking-widest px-8 h-9 border border-[#123a3c] shadow-[0_2px_8px_rgba(27,77,79,0.2)] transition-all group rounded-sm flex items-center"
                     >
                         {sendMutation.isPending ? 'Sende...' : 'Nachricht senden'}
                         <FaPaperPlane size={10} className="ml-3 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />

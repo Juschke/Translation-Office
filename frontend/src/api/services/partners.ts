@@ -79,4 +79,10 @@ export const partnerService = {
         const response = await api.post('/partners/check-duplicates', mapped);
         return response.data;
     },
+    downloadProfileCard: async (id: number) => {
+        const response = await api.get(`/partners/${id}/profile-card/pdf`, {
+            responseType: 'blob',
+        });
+        return response;
+    },
 };

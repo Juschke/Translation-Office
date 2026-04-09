@@ -69,7 +69,7 @@ export const projectService = {
         const response = await api.post(`/projects/${projectId}/invite`, data);
         return response.data;
     },
-    generateDocument: async (projectId: string, type: 'confirmation' | 'pickup' | 'reminder') => {
+    generateDocument: async (projectId: string, type: 'confirmation' | 'pickup' | 'reminder' | 'offer' | 'request') => {
         const response = await api.post(`/projects/${projectId}/generate-document`, { type });
         return response.data;
     },
@@ -94,6 +94,12 @@ export const projectService = {
         type: 'order_confirmation' | 'pickup_confirmation' | 'interpreter_confirmation',
     ) => {
         const response = await api.get(`/projects/${projectId}/confirmation/${type}`, {
+            responseType: 'blob',
+        });
+        return response;
+    },
+    downloadBusinessDocument: async (projectId: string, type: 'offer' | 'request') => {
+        const response = await api.get(`/projects/${projectId}/documents/${type}`, {
             responseType: 'blob',
         });
         return response;

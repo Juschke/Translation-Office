@@ -27,6 +27,7 @@ const EmailSendPage = () => {
     const subject = emailData?.subject || searchParams.get('subject') || '';
     const body = emailData?.body || searchParams.get('body') || '';
     const projectId = emailData?.projectId || searchParams.get('projectId') || null;
+    const draftId = emailData?.draftId || null;
 
     return (
         <div className="h-screen w-screen overflow-hidden flex flex-col bg-slate-100 items-center">
@@ -38,6 +39,7 @@ const EmailSendPage = () => {
                     subject={subject}
                     body={body}
                     projectId={projectId}
+                    draftId={draftId}
                     attachments={emailData?.attachments || []}
                 />
             </div>

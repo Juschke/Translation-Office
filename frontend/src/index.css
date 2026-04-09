@@ -278,8 +278,22 @@ body,
   border-radius: 3px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.3);
+.custom-scrollbar-green::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+
+.custom-scrollbar-green::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-green::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 10px;
+}
+
+.custom-scrollbar-green::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-hover);
 }
 
 /* Hide scrollbar but keep scroll behavior */

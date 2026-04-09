@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { FaPaperclip, FaTrashAlt, FaSyncAlt } from 'react-icons/fa';
+import { FaPaperclip, FaTrashAlt, FaSyncAlt, FaInbox, FaMailBulk } from 'react-icons/fa';
 import Checkbox from '../common/Checkbox';
 
 interface MailListPanelProps {
@@ -62,13 +62,13 @@ const MailListPanel = ({
             </div>
         </div>
 
-        <div className="flex-1 overflow-auto divide-y divide-slate-100 custom-scrollbar-minimal">
+        <div className="flex-1 overflow-auto divide-y divide-slate-100 flex flex-col custom-scrollbar-minimal">
             {mails.length === 0 ? (
-                <div className="px-4 py-12 flex flex-col items-center justify-center gap-3 text-slate-400 opacity-60">
-                    <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-xl">
-                        {folder === 'inbox' ? '📥' : '✉️'}
+                <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-400 bg-slate-50/50">
+                    <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-xl shadow-sm">
+                        {folder === 'inbox' ? <FaInbox className="text-slate-200" /> : <FaMailBulk className="text-slate-200" />}
                     </div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-center opacity-60">
                         Keine E-Mails vorhanden
                     </p>
                 </div>
