@@ -90,7 +90,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
     return (
         <div className="grid grid-cols-12 gap-x-4 gap-y-4">
             <div className="col-span-12 md:col-span-9 relative">
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                     Straße <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <Input
@@ -121,7 +121,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 )}
             </div>
             <div className="col-span-12 md:col-span-3">
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                     Hausnr. <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <Input
@@ -135,7 +135,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 />
             </div>
             <div className="col-span-12 md:col-span-4">
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                     PLZ <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <Input
@@ -149,7 +149,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 />
             </div>
             <div className="col-span-12 md:col-span-8">
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                     Stadt <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <Input

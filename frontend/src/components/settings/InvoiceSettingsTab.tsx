@@ -8,6 +8,7 @@ import { FaSave, FaPlus, FaTrash, FaPalette, FaFileInvoice } from 'react-icons/f
 import clsx from 'clsx';
 import { settingsService } from '../../api/services';
 import Input from '../common/Input';
+import SettingRow from '../common/SettingRow';
 import { Button } from '../ui/button';
 import {
     Dialog,
@@ -19,17 +20,6 @@ import {
 } from '../ui/dialog';
 import { Label } from '../ui/label';
 
-const SettingRow = ({ label, description, children, className }: any) => (
-    <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
-        <div className="col-span-12 md:col-span-4 space-y-1">
-            <label className="block text-sm font-medium text-slate-700">{label}</label>
-            {description && <p className="text-xs text-slate-500 leading-relaxed">{description}</p>}
-        </div>
-        <div className="col-span-12 md:col-span-8">
-            {children}
-        </div>
-    </div>
-);
 
 const InvoiceSettingsTab = () => {
     const { t } = useTranslation();

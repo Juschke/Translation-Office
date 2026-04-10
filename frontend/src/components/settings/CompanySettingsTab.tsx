@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import Input from '../common/Input';
 import CountrySelect from '../common/CountrySelect';
 import SearchableSelect from '../common/SearchableSelect';
+import SettingRow from '../common/SettingRow';
 import { IMaskInput } from 'react-imask';
 import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
@@ -23,20 +24,6 @@ import finanzamt from 'finanzamt';
 import { normalizeSteuernummer } from 'normalize-steuernummer';
 import taxOfficesData from '../../data/tax_offices.json';
 
-const SettingRow = ({ label, description, children, className, required }: any) => (
-    <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0 items-start', className)}>
-        <div className="col-span-12 md:col-span-4 space-y-1">
-            <label className="block text-sm font-medium text-slate-700">
-                {label}
-                {required && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            {description && <p className="text-xs text-slate-500 leading-relaxed">{description}</p>}
-        </div>
-        <div className="col-span-12 md:col-span-8">
-            {children}
-        </div>
-    </div>
-);
 
 const LogoUpload = ({ logoPath, onUploaded }: { logoPath?: string; onUploaded: () => void }) => {
     const { t } = useTranslation();

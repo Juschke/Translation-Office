@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 import {
     FaHome, FaLayerGroup, FaUsers, FaUserTie,
     FaCommentDots, FaFileInvoiceDollar, FaEnvelope, FaCalendarAlt,
-    FaChartBar, FaCog, FaChevronDown, FaBuilding, FaHashtag,
+    FaChartBar, FaCog, FaChevronDown, FaBuilding,
     FaFileInvoice, FaDatabase, FaBell, FaHistory,
-    FaInbox, FaFileContract, FaAddressBook
+    FaInbox, FaFileContract, FaAddressBook, FaGavel, FaShieldAlt, FaListOl
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
@@ -76,11 +76,13 @@ const DesktopLinks = ({
     };
 
     const SETTINGS_TABS = [
-        { id: 'company', label: t('settings.tabs.company'), icon: FaBuilding },
-        { id: 'objects', label: t('settings.tabs.number_circles'), icon: FaHashtag },
-        { id: 'invoice', label: t('settings.tabs.document_layout'), icon: FaFileInvoice },
         { id: 'master_data', label: t('settings.tabs.master_data'), icon: FaDatabase },
+        { id: 'company', label: t('settings.tabs.company'), icon: FaBuilding },
+        { id: 'objects', label: t('settings.tabs.numbering'), icon: FaListOl },
+        { id: 'invoice', label: t('settings.tabs.document_layout'), icon: FaFileInvoice },
         { id: 'notifications', label: t('settings.tabs.notifications'), icon: FaBell },
+        { id: 'dunning', label: 'Mahnwesen', icon: FaGavel },
+        { id: 'compliance', label: 'Compliance & Sicherheit', icon: FaShieldAlt },
         { id: 'audit', label: t('settings.tabs.audit'), icon: FaHistory },
     ];
 

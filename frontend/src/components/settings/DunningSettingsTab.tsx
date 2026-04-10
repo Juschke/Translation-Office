@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { dunningService } from '../../api/services/invoices';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import SettingRow from '../common/SettingRow';
 import clsx from 'clsx';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -18,32 +19,6 @@ const PREVIEW_DATA: Record<string, string> = {
     '{{new_due_date}}': '22.04.2026'
 };
 
-const SettingRow = ({ label, description, children, className, variables, onVariableClick, alignCenter = true }: any) => (
-    <div className={clsx('grid grid-cols-12 gap-6 py-6 border-b border-slate-100 last:border-0', alignCenter ? 'items-center' : 'items-start', className)}>
-        <div className="col-span-12 md:col-span-4 space-y-3">
-            <div className="space-y-1">
-                <label className="block text-sm font-medium text-slate-700">{label}</label>
-                {description && <p className="text-xs text-slate-500 leading-relaxed font-normal">{description}</p>}
-            </div>
-            {variables && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                    {variables.map((v: string) => (
-                        <button
-                            key={v}
-                            onClick={() => onVariableClick?.(v)}
-                            className="px-2 py-0.5 bg-white text-slate-500 rounded-sm text-[10px] font-mono border border-slate-200 hover:border-brand-primary hover:text-brand-primary hover:bg-brand-primary/5 transition-all cursor-pointer active:scale-95"
-                        >
-                            {v}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-        <div className="col-span-12 md:col-span-8">
-            {children}
-        </div>
-    </div>
-);
 
 const DUNNING_VARIABLES = Object.keys(PREVIEW_DATA);
 

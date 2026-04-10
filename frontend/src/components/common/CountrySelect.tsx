@@ -33,7 +33,7 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
     return (
         <div className="w-full">
             {label && (
-                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                <label className="flex items-center gap-1 text-xs font-semibold text-slate-600 mb-1">
                     {label}
                     {required && <span className="text-red-500 ml-0.5">*</span>}
                 </label>

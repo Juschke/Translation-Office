@@ -8,7 +8,7 @@ import Switch from './Switch';
 import type { BulkActionItem, BulkActionVariant } from './BulkActions';
 import TableSkeleton from './TableSkeleton';
 import { Button } from '../ui/button';
-import { ICON_ACTION_BUTTON_CLASS, ICON_COLOR_BRAND, ICON_COLOR_DANGER, ICON_COLOR_SUCCESS, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_XS } from '../ui/icon-styles';
+import { ICON_COLOR_BRAND, ICON_COLOR_DANGER, ICON_COLOR_SUCCESS, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_XS } from '../ui/icon-styles';
 import { useTranslation } from 'react-i18next';
 import SearchableSelect from './SearchableSelect';
 
@@ -485,9 +485,10 @@ const DataTable = <T extends { id: string | number }>({
                         </div>
                     </div>
                 )}
-                <div className="flex-1 flex items-end justify-between gap-2">
+                <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-end justify-between gap-3 min-w-0">
                     {preSearchControls}
-                    <div className="relative flex-1 md:w-64 shrink-0 flex flex-col">
+                    
+                    <div className="relative flex-1 min-w-[200px] flex flex-col">
                         {searchLabel && (
                             <label className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider leading-none">
                                 {searchLabel}
@@ -500,50 +501,49 @@ const DataTable = <T extends { id: string | number }>({
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                                 placeholder={searchPlaceholder}
-                                className="w-full pl-8 pr-4 py-1.5 border border-[#D1D9D8] rounded-[3px] text-sm focus:outline-none focus:border-[#1B4D4F] bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.07)] transition-colors"
+                                className="w-full h-9 pl-8 pr-4 py-1.5 border border-[#D1D9D8] rounded-[3px] text-sm focus:outline-none focus:border-[#1B4D4F] bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.07)] transition-colors"
                             />
                         </div>
                     </div>
-                    {extraControls}
-                    {(filters && filters.length > 0 || onFilterToggle) && (
-                        <button
-                            onClick={() => onFilterToggle ? onFilterToggle() : setIsFilterOpen(v => !v)}
-                            className={clsx(
-                                `${ICON_ACTION_BUTTON_CLASS} relative h-9 w-9 shadow-[0_1px_2px_rgba(0,0,0,0.08)]`,
-                                (onFilterToggle ? isFilterOpen_external : isFilterOpen) || activeFilterCount
-                                    ? "bg-gradient-to-b from-[#235e62] to-[#1B4D4F] text-white border-[#123a3c] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
-                                    : "text-slate-500 hover:text-[#1B4D4F] bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc]"
-                            )}
-                            title={t('common.filter')}
-                        >
-                            <FaFilter className={ICON_SIZE_MD} />
-                            {activeFilterCount ? (
-                                <span className={clsx(
-                                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-xs font-bold flex items-center justify-center border",
-                                    (onFilterToggle ? isFilterOpen_external : isFilterOpen)
-                                        ? "bg-white text-[#1B4D4F] border-transparent"
-                                        : "bg-rose-500 text-white border-rose-600 shadow-sm"
-                                )}>
-                                    {activeFilterCount}
-                                </span>
-                            ) : null}
-                        </button>
-                    )}
-                    {showSettings && (
-                        <button
-                            ref={settingsBtnRef}
-                            onClick={openSettings}
-                            className={clsx(
-                                `${ICON_ACTION_BUTTON_CLASS} h-9 w-9 shadow-[0_1px_2px_rgba(0,0,0,0.08)]`,
-                                isSettingsOpen
-                                    ? "bg-[#e8e8e8] border-[#aaa] text-slate-700"
-                                    : "bg-gradient-to-b from-white to-[#ebebeb] border-[#ccc]"
-                            )}
-                            title={t('data_table.adjust_columns')}
-                        >
-                            <FaColumns className={ICON_SIZE_MD} />
-                        </button>
-                    )}
+
+                    <div className="flex items-center gap-2 shrink-0">
+                        {extraControls}
+                        
+                        {(filters && filters.length > 0 || onFilterToggle) && (
+                            <Button
+                                variant={(onFilterToggle ? isFilterOpen_external : isFilterOpen) || activeFilterCount ? "default" : "secondary"}
+                                size="icon"
+                                onClick={() => onFilterToggle ? onFilterToggle() : setIsFilterOpen(v => !v)}
+                                className="relative h-9 w-9"
+                                title={t('common.filter')}
+                            >
+                                <FaFilter size={14} />
+                                {activeFilterCount ? (
+                                    <span className={clsx(
+                                        "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-xs font-bold flex items-center justify-center border",
+                                        (onFilterToggle ? isFilterOpen_external : isFilterOpen)
+                                            ? "bg-white text-[#1B4D4F] border-transparent"
+                                            : "bg-rose-500 text-white border-rose-600 shadow-sm"
+                                    )}>
+                                        {activeFilterCount}
+                                    </span>
+                                ) : null}
+                            </Button>
+                        )}
+
+                        {showSettings && (
+                            <Button
+                                ref={settingsBtnRef}
+                                variant={isSettingsOpen ? "default" : "secondary"}
+                                size="icon"
+                                onClick={openSettings}
+                                className="h-9 w-9"
+                                title={t('data_table.adjust_columns')}
+                            >
+                                <FaColumns size={14} />
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -750,19 +750,19 @@ const DataTable = <T extends { id: string | number }>({
                     className="fixed z-[1000] w-48 bg-white rounded-sm shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden animate-slideUp"
                 >
                     <button
-                        onClick={() => { onExport('xlsx'); setIsExportOpen(false); }}
+                        onClick={() => { onExport?.('xlsx'); setIsExportOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"
                     >
                         <FaFileExcel className={`${ICON_SIZE_MD} ${ICON_COLOR_SUCCESS}`} /> Excel (.xlsx)
                     </button>
                     <button
-                        onClick={() => { onExport('csv'); setIsExportOpen(false); }}
+                        onClick={() => { onExport?.('csv'); setIsExportOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 transition"
                     >
                         <FaFileCsv className={`${ICON_SIZE_MD} ${ICON_COLOR_BRAND}`} /> CSV (.csv)
                     </button>
                     <button
-                        onClick={() => { onExport('pdf'); setIsExportOpen(false); }}
+                        onClick={() => { onExport?.('pdf'); setIsExportOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 flex items-center gap-3 text-slate-600 border-t border-slate-50 transition"
                     >
                         <FaFilePdf className={`${ICON_SIZE_MD} ${ICON_COLOR_DANGER}`} /> PDF Report

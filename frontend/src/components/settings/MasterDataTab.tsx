@@ -225,19 +225,21 @@ const MasterDataTab = () => {
                             pageSize={100}
                             onAddClick={() => handleOpenModal()}
                             preSearchControls={(
-                                <SearchableSelect
-                                    options={[
-                                        { value: '', label: 'Alle Kategorien' },
-                                        ...Array.from(new Set(docTypes.map((d: any) => d.category).filter(Boolean))).map(cat => ({
-                                            value: cat as string,
-                                            label: cat as string,
-                                        }))
-                                    ]}
-                                    value={docTypeCategoryFilter}
-                                    onChange={(val) => setDocTypeCategoryFilter(val)}
-                                    placeholder={t('settings.master_data_category_placeholder')}
-                                    className="min-w-[220px] !h-8 !shadow-none"
-                                />
+                                <div className="flex-1 min-w-[150px]">
+                                    <SearchableSelect
+                                        options={[
+                                            { value: '', label: 'Alle Kategorien' },
+                                            ...Array.from(new Set(docTypes.map((d: any) => d.category).filter(Boolean))).map(cat => ({
+                                                value: cat as string,
+                                                label: cat as string,
+                                            }))
+                                        ]}
+                                        value={docTypeCategoryFilter}
+                                        onChange={(val) => setDocTypeCategoryFilter(val)}
+                                        placeholder={t('settings.master_data_category_placeholder')}
+                                        className="!h-8 !shadow-none w-full"
+                                    />
+                                </div>
                             )}
                             columns={[
                                 {

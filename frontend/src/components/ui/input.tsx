@@ -2,6 +2,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { FaInfoCircle } from "react-icons/fa"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip"
+import { INPUT_CLASSES, LABEL_CLASSES } from "@/constants/designTokens"
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string
@@ -19,7 +20,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         return (
             <div className={cn("w-full", containerClassName)}>
                 {label && (
-                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                    <label className={cn("flex items-center gap-1", LABEL_CLASSES.default)}>
                         {label}
                         {props.required && <span className="text-red-500 ml-0.5">*</span>}
                         {tooltip && (
@@ -47,13 +48,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     <input
                         type={type}
                         className={cn(
-                            "flex h-9 w-full rounded-sm bg-white px-3 py-1 text-sm text-brand-text transition-all",
-                            "border border-brand-border hover:border-brand-primary",
-                            "placeholder:text-brand-muted",
-                            "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
-                            "disabled:cursor-not-allowed disabled:opacity-50",
+                            error ? INPUT_CLASSES.error : INPUT_CLASSES.standard,
                             "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-                            error && "border-red-500 focus:border-red-500 focus:ring-red-500/10",
                             startIcon && "pl-9",
                             endIcon && "pr-9",
                             className

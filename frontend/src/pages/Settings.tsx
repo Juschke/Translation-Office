@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-    FaBuilding, FaDatabase, FaShieldAlt, FaFileInvoice, FaBell, FaListOl, FaChevronDown, FaGavel, FaCog
+    FaBuilding, FaDatabase, FaShieldAlt, FaFileInvoice, FaBell, FaListOl, FaChevronDown, FaGavel, FaCog, FaHistory
 } from 'react-icons/fa';
 import clsx from 'clsx';
 import CompanySettingsTab from '../components/settings/CompanySettingsTab';
@@ -48,7 +48,7 @@ const Settings: React.FC = () => {
         notifications: { label: t('settings.tabs.notifications'), icon: FaBell, description: t('settings.tabs.notifications_desc') },
         dunning: { label: 'Mahnwesen', icon: FaGavel, description: 'Automatisierte Zahlungserinnerungen und Mahngebühren.' },
         compliance: { label: 'Compliance & Sicherheit', icon: FaShieldAlt, description: 'GoBD, DSGVO und Sicherheits-Monitoring.' },
-        audit: { label: t('settings.tabs.audit'), icon: FaListOl, description: t('settings.tabs.audit_log_desc') },
+        audit: { label: t('settings.tabs.audit'), icon: FaHistory, description: t('settings.tabs.audit_log_desc') },
     };
 
     const MASTER_DATA_SUBTABS = [

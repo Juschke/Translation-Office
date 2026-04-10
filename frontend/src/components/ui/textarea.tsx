@@ -2,6 +2,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { FaInfoCircle } from "react-icons/fa"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip"
+import { TEXTAREA_CLASSES, LABEL_CLASSES } from "@/constants/designTokens"
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
  label?: string
@@ -16,7 +17,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
  return (
  <div className={cn("w-full", containerClassName)}>
  {label && (
- <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+ <label className={cn("flex items-center gap-1", LABEL_CLASSES.default)}>
  {label}
  {props.required && <span className="text-red-500 ml-0.5">*</span>}
  {tooltip && (
@@ -37,12 +38,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
  )}
  <textarea
  className={cn(
- "flex min-h-[80px] w-full rounded-sm bg-transparent px-3 py-2 text-sm text-slate-900 transition-colors resize-none",
- "border border-slate-200 hover:border-slate-300",
- "placeholder:text-slate-400",
- "focus:outline-none focus:ring-1 focus:ring-slate-950/10 focus:border-slate-400",
- "disabled:cursor-not-allowed disabled:opacity-50",
- error && "border-red-500 focus:border-red-500 focus:ring-red-500/10",
+ error ? TEXTAREA_CLASSES.error : TEXTAREA_CLASSES.standard,
  className
  )}
  ref={ref}

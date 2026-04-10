@@ -2,6 +2,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { FaInfoCircle } from "react-icons/fa"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip"
+import { SELECT_CLASSES, LABEL_CLASSES } from "@/constants/designTokens"
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     label?: string
@@ -16,7 +17,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         return (
             <div className={cn("w-full", containerClassName)}>
                 {label && (
-                    <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
+                    <label className={cn("flex items-center gap-1", LABEL_CLASSES.default)}>
                         {label}
                         {props.required && <span className="text-red-500 ml-0.5">*</span>}
                         {tooltip && (
@@ -38,11 +39,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 <div className="relative">
                     <select
                         className={cn(
-                            "flex h-9 w-full appearance-none rounded-sm bg-transparent px-3 py-1 pr-8 text-sm text-slate-900 transition-colors",
-                            "border border-slate-200 hover:border-slate-300",
-                            "focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-400",
-                            "disabled:cursor-not-allowed disabled:opacity-50",
-                            error && "border-red-500 focus:border-red-500 focus:ring-red-500/10",
+                            error ? SELECT_CLASSES.error : SELECT_CLASSES.standard,
                             className
                         )}
                         ref={ref}
