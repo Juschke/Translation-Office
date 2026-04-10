@@ -24,7 +24,8 @@ export function mapProjectResponse(projectResponse: any) {
                     ? `${projectResponse.customer.first_name} ${projectResponse.customer.last_name}`
                     : 'Privatkunde',
                 email: projectResponse.customer.email || '',
-                phone: projectResponse.customer.phone || '',
+                phone: projectResponse.customer.phone || projectResponse.customer.telephone || '',
+                mobile_phone: projectResponse.customer.mobile_phone || projectResponse.customer.mobile || '',
                 initials: (
                     (projectResponse.customer.first_name?.[0] || '') +
                     (projectResponse.customer.last_name?.[0] || 'K')
@@ -84,7 +85,8 @@ export function mapProjectResponse(projectResponse: any) {
                     (projectResponse.partner.first_name?.[0] || '') +
                     (projectResponse.partner.last_name?.[0] || 'P')
                 ).toUpperCase(),
-                phone: projectResponse.partner.phone || '',
+                phone: projectResponse.partner.phone || projectResponse.partner.telephone || '',
+                mobile_phone: projectResponse.partner.mobile_phone || projectResponse.partner.mobile || '',
                 address_street: projectResponse.partner.address_street,
                 address_house_no: projectResponse.partner.address_house_no,
                 address_zip: projectResponse.partner.address_zip,
@@ -92,6 +94,7 @@ export function mapProjectResponse(projectResponse: any) {
                 address_country: projectResponse.partner.address_country,
                 rating: projectResponse.partner.rating,
                 languages: projectResponse.partner.languages,
+                type: projectResponse.partner.type,
                 unit_rates: Array.isArray(projectResponse.partner.unit_rates)
                     ? projectResponse.partner.unit_rates
                     : typeof projectResponse.partner.unit_rates === 'string'
@@ -103,7 +106,7 @@ export function mapProjectResponse(projectResponse: any) {
                         ? JSON.parse(projectResponse.partner.flat_rates)
                         : [],
             }
-            : { name: '-', email: '', initials: '?', phone: '' },
+            : { name: '-', email: '', initials: '?', phone: '', mobile_phone: '' },
         documentsSent: !!projectResponse.documents_sent,
         pm: projectResponse.pm?.name || 'Admin',
         createdAt: new Date(projectResponse.created_at).toLocaleDateString('de-DE'),

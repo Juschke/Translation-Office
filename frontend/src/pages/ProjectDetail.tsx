@@ -8,7 +8,7 @@ import { useProjectModals } from '../hooks/useProjectModals';
 import { useProjectFinancials } from '../hooks/useProjectFinancials';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaFlag, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaFilePdf, FaChevronDown, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope, FaFileSignature, FaClipboardList } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaFlag, FaTrashAlt, FaClock, FaFileInvoiceDollar, FaChevronDown, FaBolt, FaInfoCircle, FaComments, FaFileAlt, FaExclamationTriangle, FaEnvelope, FaFileSignature, FaClipboardList } from 'react-icons/fa';
 import PartnerSelectionModal from '../components/modals/PartnerSelectionModal';
 import PaymentModal from '../components/modals/PaymentModal';
 import CustomerSelectionModal from '../components/modals/CustomerSelectionModal';
@@ -18,7 +18,6 @@ import NewPartnerModal from '../components/modals/NewPartnerModal';
 import FileUploadModal from '../components/modals/FileUploadModal';
 import ConfirmModal from '../components/modals/ConfirmModal';
 import InviteParticipantModal from '../components/modals/InviteParticipantModal';
-import InterpreterConfirmationModal from '../components/modals/InterpreterConfirmationModal';
 import InvoicePreviewModal from '../components/modals/InvoicePreviewModal';
 import clsx from 'clsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -208,7 +207,6 @@ const ProjectDetail = () => {
         isPartnerEditModalOpen, setIsPartnerEditModalOpen,
         isProjectDeleteConfirmOpen, setIsProjectDeleteConfirmOpen,
         isInviteModalOpen, setIsInviteModalOpen,
-        isInterpreterModalOpen, setIsInterpreterModalOpen,
         deleteFileConfirm, setDeleteFileConfirm,
         paymentDeleteConfirm, setPaymentDeleteConfirm,
     } = useProjectModals();
@@ -640,19 +638,7 @@ const ProjectDetail = () => {
     const targetLang = getLanguageInfo(projectData.target, projectData.target_language);
     const deadlineStatus = getDeadlineStatus();
 
-    const handleDownloadConfirmation = async (type: 'order_confirmation' | 'pickup_confirmation') => {
-        try {
-            const toastId = toast.loading(t('messages.creating_document'));
-            const response = await projectService.downloadConfirmation(id!, type);
-            const blob = new Blob([response.data], { type: 'application/pdf' });
-            openBlobInNewTab(blob);
-            toast.dismiss(toastId);
-            toast.success(t('messages.document_opened'));
-        } catch (error) {
-            toast.dismiss();
-            toast.error(t('messages.document_load_error'));
-        }
-    };
+
 
     const handleDownloadBusinessDocument = async (type: 'offer' | 'request') => {
         try {
@@ -758,24 +744,7 @@ const ProjectDetail = () => {
                                     {isActionsOpen && (
                                         <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-sm shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-1">
                                             <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">PDF Dokumente</div>
-                                            <button
-                                                onClick={() => { handleDownloadConfirmation('order_confirmation'); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
-                                            >
-                                                <FaFilePdf className="text-red-400 shrink-0" /> Auftragsbestätigung
-                                            </button>
-                                            <button
-                                                onClick={() => { handleDownloadConfirmation('pickup_confirmation'); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
-                                            >
-                                                <FaFilePdf className="text-red-400 shrink-0" /> Abholbestätigung
-                                            </button>
-                                            <button
-                                                onClick={() => { setIsInterpreterModalOpen(true); setIsActionsOpen(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-gradient-to-b hover:from-slate-50 hover:to-slate-100 flex items-center gap-3 transition rounded-sm"
-                                            >
-                                                <FaFilePdf className="text-red-400 shrink-0" /> Dolmetscherbestätigung
-                                            </button>
+
 
                                             <button
                                                 onClick={() => { handleDownloadBusinessDocument('offer'); setIsActionsOpen(false); }}
@@ -1200,11 +1169,7 @@ const ProjectDetail = () => {
                     projectId={id!}
                 />
 
-                <InterpreterConfirmationModal
-                    isOpen={isInterpreterModalOpen}
-                    onClose={() => setIsInterpreterModalOpen(false)}
-                    project={projectData}
-                />
+
 
                 <InvoicePreviewModal
                     isOpen={!!previewInvoice}

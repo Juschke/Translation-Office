@@ -283,7 +283,57 @@ const NewProject = () => {
         }
     }, [initialData]);
 
-    // Let's remove the IntersectionObserver logic and handle it via onScroll on the container instead for better edge cases (like bottom of page)
+    // ── Intersection Observer for Scroll Spy ──
+    useEffect(() => {
+        const sections = [
+            'section-basis', 'section-kunde', 'section-sprachen', 
+            'section-partner', 'section-leistungen', 'section-kalkulation', 
+            'section-zahlungen', 'section-anmerkungen'
+        ];
+
+        const container = document.getElementById('project-scroll-container');
+
+        const observerOptions = {
+            root: container,
+            rootMargin: '-5% 0px -85% 0px',
+            threshold: 0
+        };
+
+        const observerCallback = (entries: IntersectionObserverEntry[]) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    setActiveSection(entry.target.id);
+                }
+            });
+        };
+
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) observer.observe(el);
+        });
+
+        // Special case: Force highlight last section when at the bottom
+        const handleScroll = () => {
+            if (!container) return;
+            const isBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+            if (isBottom) {
+                setActiveSection('section-anmerkungen');
+            }
+        };
+
+        if (container) {
+            container.addEventListener('scroll', handleScroll, { passive: true });
+        }
+
+        return () => {
+            observer.disconnect();
+            if (container) {
+                container.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, [initialData]); // Re-run when initialData (and thus sections) are rendered
 
     // ── Mutations ──
     const createMutation = useMutation({
@@ -467,7 +517,7 @@ const NewProject = () => {
                     <div className="flex-1 min-w-0 space-y-8">
 
                         {/* Section 1: Basis-Daten */}
-                        <section id="section-basis" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-basis" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>01</div>
                                 <h3 className={SECTION_TITLE}>Basis-Daten</h3>
@@ -530,7 +580,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 2: Kunde */}
-                        <section id="section-kunde" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-kunde" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>02</div>
                                 <h3 className={SECTION_TITLE}>Kunde</h3>
@@ -549,7 +599,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 3: Sprachen */}
-                        <section id="section-sprachen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-sprachen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>03</div>
                                 <h3 className={SECTION_TITLE}>Sprachen</h3>
@@ -565,7 +615,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 4: Partner */}
-                        <section id="section-partner" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-partner" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>04</div>
                                 <h3 className={SECTION_TITLE}>Partner & Übersetzer</h3>
@@ -641,7 +691,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 5: Leistungen & Optionen */}
-                        <section id="section-leistungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-leistungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>05</div>
                                 <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
@@ -711,7 +761,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 6: Kalkulation */}
-                        <section id="section-kalkulation" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-kalkulation" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>06</div>
                                 <h3 className={SECTION_TITLE}>Positionen</h3>
@@ -722,7 +772,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 7: Zahlungen */}
-                        <section id="section-zahlungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-zahlungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center')}>
                                 <div className="flex items-center gap-3">
                                     <div className={SECTION_NUM}>07</div>
@@ -764,7 +814,7 @@ const NewProject = () => {
                         </section>
 
                         {/* Section 8: Anmerkungen */}
-                        <section id="section-anmerkungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <section id="section-anmerkungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
                             <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
                                 <div className={SECTION_NUM}>08</div>
                                 <h3 className={SECTION_TITLE}>Anmerkungen</h3>

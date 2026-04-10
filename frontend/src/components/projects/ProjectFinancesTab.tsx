@@ -1,11 +1,33 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FaInfoCircle, FaPlus, FaMinus, FaSave } from 'react-icons/fa';
+import { FaInfoCircle, FaPlus, FaMinus, FaSave, FaQuestionCircle } from 'react-icons/fa';
 import clsx from 'clsx';
 import ProjectPositionsTable from '../modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../modals/ProjectPaymentsTable';
 import ProjectFinancialSidebar from '../modals/ProjectFinancialSidebar';
 import { type ProjectPosition } from '../modals/projectTypes';
 import { Button } from '../ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '../ui/tooltip';
+
+/* ─── Tooltip Helper ─── */
+const FieldTip = ({ text }: { text: string }) => (
+    <TooltipProvider delayDuration={200}>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <span className="text-slate-300 hover:text-slate-500 transition cursor-help">
+                    <FaQuestionCircle className="text-[11px]" />
+                </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[260px] text-xs z-[200]">
+                {text}
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
+);
 
 const SECTION_HEADER = 'flex items-center gap-3 pb-3 mb-1 border-b border-slate-200';
 const SECTION_TITLE = 'text-sm font-semibold text-slate-800 tracking-tight';
@@ -293,127 +315,151 @@ const ProjectFinancesTab = ({
                                 )}
                             </div>
                         </div>
-                        <div className="px-6 py-6">
-                            <div className="grid grid-cols-1 gap-8 pb-6 border-b border-slate-100">
+                        <div className="px-6 py-6 border-b border-slate-100">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 {[
                                     { term: 'Beglaubigung', label: 'Beglaubigung', enabled: !!certSvc, price: parseFloat(certSvc?.customerRate || '5.00'), tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
                                     { term: 'Express', label: 'Express', enabled: !!expSvc, price: parseFloat(expSvc?.customerRate || '15.00'), tip: 'Eilzuschlag für schnelle Bearbeitung.' },
                                     { term: 'Apostille', label: 'Apostille', enabled: !!aposSvc, price: parseFloat(aposSvc?.customerRate || '25.00'), tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
-                                    { term: 'FS-Klassifizierung', label: 'FS-Klassifizierung', enabled: !!fsSvc, price: parseFloat(fsSvc?.customerRate || '15.00'), tip: 'Führerschein-Klassifizierung.' },
+                                    { term: 'FS-Klassifizierung', label: 'Führerschein', enabled: !!fsSvc, price: parseFloat(fsSvc?.customerRate || '15.00'), tip: 'Führerschein-Klassifizierung.' },
                                 ].map(opt => (
-                                    <div key={opt.term} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                                        <div className="space-y-2">
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5">
-                                                {opt.label} Anzeigen
-                                                <FaInfoCircle className="text-slate-200 text-[10px]" title={opt.tip} />
-                                            </label>
+                                    <div key={opt.term} className="space-y-1">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5">
+                                            {opt.label} <FieldTip text={opt.tip} />
+                                        </label>
+                                        <div className="flex flex-col gap-2">
                                             <div
                                                 className={clsx(
-                                                    'h-10 flex items-center gap-2.5',
-                                                    isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer group/toggle'
+                                                    'h-9 flex items-center gap-2',
+                                                    isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer group'
                                                 )}
                                                 onClick={() => !isLocked && handleToggleService(opt.term, opt.term, opt.price)}
                                             >
                                                 <div className={clsx(
-                                                    'w-10 h-5 rounded-full relative transition-all duration-300',
+                                                    'w-8 h-4 rounded-full relative transition-all duration-300',
                                                     opt.enabled ? 'bg-emerald-500' : 'bg-slate-300'
                                                 )}>
                                                     <div className={clsx(
-                                                        'absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-sm',
-                                                        opt.enabled ? 'left-5.5' : 'left-0.5'
+                                                        'absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-300 shadow-sm',
+                                                        opt.enabled ? 'left-4.5' : 'left-0.5'
                                                     )} />
                                                 </div>
                                                 <span className={clsx(
-                                                    'text-[10px] font-bold tracking-widest transition-colors',
+                                                    'text-[10px] font-bold',
                                                     opt.enabled ? 'text-emerald-600' : 'text-slate-400'
                                                 )}>
-                                                    {opt.enabled ? 'AKTIV' : 'INAKTIV'}
+                                                    {opt.enabled ? 'JA' : 'NEIN'}
                                                 </span>
                                             </div>
-                                        </div>
 
-                                        <div className={clsx("space-y-2", !opt.enabled && "opacity-30 pointer-events-none")}>
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">Preis</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    disabled={isLocked || !opt.enabled}
-                                                    value={opt.price}
-                                                    onChange={(e) => {
-                                                        const newPrice = parseFloat(e.target.value) || 0;
-                                                        setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, customerRate: newPrice.toFixed(2) } : p));
-                                                    }}
-                                                    className="w-full h-10 px-4 text-sm font-bold text-slate-700 border border-slate-200 rounded-md outline-none focus:ring-1 focus:ring-brand-primary/30 focus:border-brand-primary transition-all bg-white pr-8 shadow-sm"
-                                                />
-                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-300">€</span>
-                                            </div>
-                                        </div>
+                                            {opt.enabled && (
+                                                <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    <div className="flex gap-2 pt-3">
+                                                        {/* Quantity Input with Floating Label */}
+                                                        <div className="flex-1 relative">
+                                                            <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Menge</label>
+                                                            <div className="flex items-center h-8 border border-slate-200 rounded overflow-hidden bg-white shadow-xs focus-within:border-brand-primary/50 transition-colors">
+                                                                <button 
+                                                                    disabled={isLocked}
+                                                                    onClick={() => {
+                                                                        const current = parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || '1');
+                                                                        const newQty = Math.max(1, current - 1).toString();
+                                                                        setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, quantity: newQty } : p));
+                                                                    }}
+                                                                    className="px-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100 h-full"
+                                                                >
+                                                                    <FaMinus className="text-[8px]" />
+                                                                </button>
+                                                                <input 
+                                                                    type="text"
+                                                                    readOnly={isLocked}
+                                                                    value={parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || '1')}
+                                                                    onChange={(e) => {
+                                                                        const val = parseInt(e.target.value) || 1;
+                                                                        setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, quantity: val.toString() } : p));
+                                                                    }}
+                                                                    className="w-full text-center text-[10px] font-bold text-slate-700 outline-none bg-transparent"
+                                                                />
+                                                                <button 
+                                                                    disabled={isLocked}
+                                                                    onClick={() => {
+                                                                        const current = parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || '1');
+                                                                        const newQty = (current + 1).toString();
+                                                                        setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, quantity: newQty } : p));
+                                                                    }}
+                                                                    className="px-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100 h-full"
+                                                                >
+                                                                    <FaPlus className="text-[8px]" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
 
-                                        <div className={clsx("space-y-2", !opt.enabled && "opacity-30 pointer-events-none")}>
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">Anzahl</label>
-                                            <div className="flex items-center h-10 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm">
-                                                <button
-                                                    disabled={isLocked || !opt.enabled}
-                                                    onClick={() => {
-                                                        const current = parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || '1');
-                                                        const newQty = Math.max(1, current - 1).toString();
-                                                        setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, quantity: newQty } : p));
-                                                    }}
-                                                    className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100 disabled:cursor-not-allowed"
-                                                >
-                                                    <FaMinus className="text-xs" />
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    disabled={isLocked || !opt.enabled}
-                                                    value={parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || '1')}
-                                                    onChange={(e) => {
-                                                        const newQty = Math.max(1, parseInt(e.target.value) || 1).toString();
-                                                        setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, quantity: newQty } : p));
-                                                    }}
-                                                    className="flex-1 w-full h-full text-center text-sm font-bold text-slate-700 outline-none bg-transparent"
-                                                />
-                                                <button
-                                                    disabled={isLocked || !opt.enabled}
-                                                    onClick={() => {
-                                                        const current = parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || '1');
-                                                        const newQty = (current + 1).toString();
-                                                        setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, quantity: newQty } : p));
-                                                    }}
-                                                    className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100 disabled:cursor-not-allowed"
-                                                >
-                                                    <FaPlus className="text-xs" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className={clsx("space-y-2", !opt.enabled && "opacity-30")}>
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">Gesamt (Netto)</label>
-                                            <div className="h-10 flex items-center px-4 bg-slate-50 border border-slate-100 rounded-md text-sm font-bold text-slate-500">
-                                                {(opt.price * parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || (opt.enabled ? '1' : '0'))).toFixed(2)} €
-                                            </div>
+                                                        {/* Price Input with Floating Label */}
+                                                        <div className="flex-1 relative">
+                                                            <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Preis</label>
+                                                            <div className="relative">
+                                                                <input 
+                                                                    type="text"
+                                                                    readOnly={isLocked}
+                                                                    value={opt.price}
+                                                                    onChange={(e) => {
+                                                                        const pVal = parseFloat(e.target.value) || 0;
+                                                                        setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, customerRate: pVal.toFixed(2) } : p));
+                                                                    }}
+                                                                    className="w-full h-8 px-2 pr-5 text-[10px] font-bold text-slate-700 border border-slate-200 rounded outline-none focus:ring-1 focus:ring-brand-primary/30 shadow-xs"
+                                                                />
+                                                                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300">€</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {/* Individual Service Sum */}
+                                                    <div className="mt-2 px-1 flex justify-between items-center text-[9px] font-bold uppercase tracking-tight">
+                                                        <span className="text-slate-300">Summe:</span>
+                                                        <span className="text-slate-900">
+                                                            {(opt.price * parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || '1')).toFixed(2)} €
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-                                <div>
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Anzahl Kopien</label>
-                                    <div className={clsx(
-                                        "flex items-center h-10 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm ring-1 ring-slate-100/50",
-                                        isLocked && "opacity-60"
-                                    )}>
-                                        <button disabled={isLocked} onClick={() => setCopyData(d => ({ ...d, count: Math.max(0, d.count - 1) }))} className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100 disabled:cursor-not-allowed"><FaMinus className="text-xs" /></button>
-                                        <input type="number" value={copyData.count} readOnly={isLocked} onChange={(e) => !isLocked && setCopyData(d => ({ ...d, count: Math.max(0, parseInt(e.target.value) || 0) }))} className="flex-1 w-full h-full text-center text-sm font-bold text-slate-700 outline-none bg-transparent read-only:cursor-not-allowed" />
-                                        <button disabled={isLocked} onClick={() => setCopyData(d => ({ ...d, count: d.count + 1 }))} className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100 disabled:cursor-not-allowed"><FaPlus className="text-xs" /></button>
+                        </div>
+
+                        {/* Copies Section - Grid Aligned Row */}
+                        <div className="px-6 py-4 bg-slate-50/10">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                                {/* Inputs span 2 columns to match 2 service icons above */}
+                                <div className="md:col-span-2 flex items-center gap-4">
+                                    <div className="flex-1 relative pt-2">
+                                        <label className="absolute top-0 left-2 px-1 bg-[#fcfdfe] text-[9px] font-bold text-slate-400 uppercase tracking-widest z-10 rounded-sm">Anzahl Kopien</label>
+                                        <div className={clsx(
+                                            "flex items-center h-8 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm transition-all focus-within:ring-1 focus-within:ring-brand-primary/20",
+                                            isLocked && "opacity-60"
+                                        )}>
+                                            <button disabled={isLocked} onClick={() => setCopyData(d => ({ ...d, count: Math.max(0, d.count - 1) }))} className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100 disabled:cursor-not-allowed"><FaMinus className="text-xs" /></button>
+                                            <input type="number" value={copyData.count} readOnly={isLocked} onChange={(e) => !isLocked && setCopyData(d => ({ ...d, count: Math.max(0, parseInt(e.target.value) || 0) }))} className="flex-1 w-full h-full text-center text-sm font-bold text-slate-700 outline-none bg-transparent read-only:cursor-not-allowed" />
+                                            <button disabled={isLocked} onClick={() => setCopyData(d => ({ ...d, count: d.count + 1 }))} className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100 disabled:cursor-not-allowed"><FaPlus className="text-xs" /></button>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 relative pt-2">
+                                        <label className="absolute top-0 left-2 px-1 bg-[#fcfdfe] text-[9px] font-bold text-slate-400 uppercase tracking-widest z-10 rounded-sm">Preis pro Kopie</label>
+                                        <div className="relative">
+                                            <input type="number" step="0.01" value={copyData.price} readOnly={isLocked} onChange={(e) => !isLocked && setCopyData(d => ({ ...d, price: parseFloat(e.target.value) || 0 }))} className={clsx("w-full h-8 px-4 text-sm font-bold text-slate-700 border border-slate-200 rounded-md outline-none focus:ring-1 focus:ring-brand-primary/30 focus:border-brand-primary transition-all bg-white pr-8 shadow-sm", isLocked && "opacity-60 cursor-not-allowed")} />
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-300">€</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Preis pro Kopie</label>
-                                    <div className="relative">
-                                        <input type="number" step="0.01" value={copyData.price} readOnly={isLocked} onChange={(e) => !isLocked && setCopyData(d => ({ ...d, price: parseFloat(e.target.value) || 0 }))} className={clsx("w-full h-10 px-4 text-sm font-bold text-slate-700 border border-slate-200 rounded-md outline-none focus:ring-1 focus:ring-brand-primary/30 focus:border-brand-primary transition-all bg-white pr-8 shadow-sm", isLocked && "opacity-60 cursor-not-allowed")} />
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-300">€</span>
+                                <div className="md:col-span-3 flex justify-end">
+                                    <div className="text-right py-2 border-l border-slate-100 pl-6">
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Summe Kopien</div>
+                                        <div className={clsx(
+                                            "text-xl font-black tracking-tight leading-none transition-colors",
+                                            copyData.count > 0 ? "text-slate-900" : "text-slate-300"
+                                        )}>
+                                            {(copyData.count * copyData.price).toFixed(2)} €
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -90,7 +90,9 @@ const AddressForm: React.FC<AddressFormProps> = ({
     return (
         <div className="grid grid-cols-12 gap-x-4 gap-y-4">
             <div className="col-span-12 md:col-span-9 relative">
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Straße *</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                    Straße <span className="text-red-500 ml-0.5">*</span>
+                </label>
                 <Input
                     name="address_street"
                     value={street}
@@ -119,7 +121,9 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 )}
             </div>
             <div className="col-span-12 md:col-span-3">
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Hausnr. *</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                    Hausnr. <span className="text-red-500 ml-0.5">*</span>
+                </label>
                 <Input
                     name="address_house_no"
                     value={houseNo}
@@ -131,7 +135,9 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 />
             </div>
             <div className="col-span-12 md:col-span-4">
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">PLZ *</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                    PLZ <span className="text-red-500 ml-0.5">*</span>
+                </label>
                 <Input
                     name="address_zip"
                     value={zip}
@@ -143,7 +149,9 @@ const AddressForm: React.FC<AddressFormProps> = ({
                 />
             </div>
             <div className="col-span-12 md:col-span-8">
-                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Stadt *</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">
+                    Stadt <span className="text-red-500 ml-0.5">*</span>
+                </label>
                 <Input
                     name="address_city"
                     value={city}

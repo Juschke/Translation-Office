@@ -24,7 +24,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
 
     return (
         <div className="w-full transition-all animate-fadeIn">
-            {label && <label className={labelClasses}>{label}{required && ' *'}</label>}
+            {label && <label className={labelClasses}>{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>}
             <div className={clsx(
                 "phone-input-container",
                 error && "phone-input-error"

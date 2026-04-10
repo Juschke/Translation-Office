@@ -18,6 +18,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
  {label && (
  <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">
  {label}
+ {props.required && <span className="text-red-500 ml-0.5">*</span>}
  {tooltip && (
  <TooltipProvider delayDuration={200}>
  <Tooltip>

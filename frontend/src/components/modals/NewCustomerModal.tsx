@@ -516,12 +516,12 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                                 <button type="button" onClick={() => handleTypeChange('company')} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'company' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Firma</button>
                                                 <button type="button" onClick={() => handleTypeChange('authority')} className={`px-4 py-1.5 rounded-sm text-xs font-medium transition-all ${formData.type === 'authority' ? 'bg-white shadow-sm text-slate-900 border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Behörde</button>
                                             </div>
-                                            <p className="mt-1 text-xs text-slate-400 font-medium ml-1">Wählen Sie die Rechtsform des Kunden für korrekte Rechnungsstellung</p>
                                         </div>
 
                                         {(formData.type === 'company' || formData.type === 'authority') && (
                                             <div className="col-span-12 animate-fadeIn grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                                 <Input
+                                                    required
                                                     label={formData.type === 'authority' ? 'Behörde / Institution' : 'Firmenname'}
                                                     name="company_name"
                                                     value={formData.company_name}
@@ -554,35 +554,73 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                         )}
 
                                         <div className="col-span-12 grid grid-cols-12 gap-x-6 items-end">
-                                            <div className="col-span-12 md:col-span-2">
-                                                <Input
-                                                    isSelect
-                                                    label="Anrede"
-                                                    tooltip="Förmliche Anrede für Briefkopf und E-Mail-Vorlagen"
-                                                    name="salutation"
-                                                    value={formData.salutation}
-                                                    onChange={handleChange}
-                                                >
-                                                    <option value="Herr">Herr</option>
-                                                    <option value="Frau">Frau</option>
-                                                    <option value="Divers">Divers</option>
-                                                </Input>
+                                            <div className="col-span-12 pt-1 pb-1">
+                                                <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-2 ml-1">
+                                                    Anrede {<FieldTip text="Förmliche Anrede für Briefkopf und E-Mail-Vorlagen" />}
+                                                </label>
+                                                <div className="flex items-center gap-10 h-6 ml-1">
+                                                    <label className="flex items-center gap-3 cursor-pointer group relative">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="salutation_customer"
+                                                            checked={formData.salutation === 'Herr'}
+                                                            onChange={() => setFormData(prev => ({ ...prev, salutation: 'Herr' }))}
+                                                            className="sr-only"
+                                                        />
+                                                        <div className={clsx(
+                                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200",
+                                                            formData.salutation === 'Herr' ? "border-brand-primary bg-brand-primary/5 shadow-[0_0_0_4px_rgba(var(--brand-primary-rgb),0.1)]" : "border-slate-300 group-hover:border-slate-400 bg-white"
+                                                        )}>
+                                                            <div className={clsx(
+                                                                "w-2.5 h-2.5 rounded-full bg-brand-primary transition-all duration-200 transform",
+                                                                formData.salutation === 'Herr' ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                                                            )} />
+                                                        </div>
+                                                        <span className={clsx(
+                                                            "text-sm font-semibold transition-colors",
+                                                            formData.salutation === 'Herr' ? "text-brand-primary" : "text-slate-600 group-hover:text-slate-900"
+                                                        )}>Herr</span>
+                                                    </label>
+
+                                                    <label className="flex items-center gap-3 cursor-pointer group relative">
+                                                        <input 
+                                                            type="radio" 
+                                                            name="salutation_customer"
+                                                            checked={formData.salutation === 'Frau'}
+                                                            onChange={() => setFormData(prev => ({ ...prev, salutation: 'Frau' }))}
+                                                            className="sr-only"
+                                                        />
+                                                        <div className={clsx(
+                                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200",
+                                                            formData.salutation === 'Frau' ? "border-brand-primary bg-brand-primary/5 shadow-[0_0_0_4px_rgba(var(--brand-primary-rgb),0.1)]" : "border-slate-300 group-hover:border-slate-400 bg-white"
+                                                        )}>
+                                                            <div className={clsx(
+                                                                "w-2.5 h-2.5 rounded-full bg-brand-primary transition-all duration-200 transform",
+                                                                formData.salutation === 'Frau' ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                                                            )} />
+                                                        </div>
+                                                        <span className={clsx(
+                                                            "text-sm font-semibold transition-colors",
+                                                            formData.salutation === 'Frau' ? "text-brand-primary" : "text-slate-600 group-hover:text-slate-900"
+                                                        )}>Frau</span>
+                                                    </label>
+                                                </div>
                                             </div>
-                                            <div className="col-span-12 md:col-span-4">
+                                            <div className="col-span-12 md:col-span-6">
                                                 <Input
-                                                    label="Vorname *"
+                                                    label="Vorname"
                                                     tooltip="Vorname des Ansprechpartners"
                                                     name="first_name"
                                                     value={formData.first_name}
                                                     onChange={handleChange}
                                                     required
                                                     placeholder="Max"
-                                                    error={!!getError('first_name') || duplicates.some(d => d.first_name === formData.first_name && d.last_name === formData.last_name && formData.first_name !== '')}
+                                                    error={!!getError('first_name')}
                                                 />
                                             </div>
                                             <div className="col-span-12 md:col-span-6">
                                                 <Input
-                                                    label="Nachname *"
+                                                    label="Nachname"
                                                     tooltip="Nachname des Ansprechpartners"
                                                     name="last_name"
                                                     value={formData.last_name}

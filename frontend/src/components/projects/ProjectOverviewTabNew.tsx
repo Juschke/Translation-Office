@@ -151,52 +151,8 @@ const ProjectOverviewTabNew = ({
                                     </InfoRow>
                                 </div>
 
-                                <SectionLabel>Leistungen & Optionen</SectionLabel>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4 border-b border-slate-100 mb-4">
-                                    {[
-                                        { label: 'Beglaubigung', enabled: projectData.is_certified || projectData.isCertified, qty: projectData.certified_count, color: 'emerald' },
-                                        { label: 'Express', enabled: projectData.is_express || projectData.isExpress, qty: projectData.express_count, color: 'rose' },
-                                        { label: 'Apostille', enabled: projectData.has_apostille || projectData.hasApostille, qty: projectData.apostille_count, color: 'blue' },
-                                        { label: 'Klassifizierung', enabled: projectData.classification === 'ja' || projectData.classification === true, qty: projectData.classification_count, color: 'amber' },
-                                    ].map(opt => (
-                                        <div key={opt.label} className="p-3 bg-slate-50 border border-slate-200 rounded-sm space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{opt.label}</span>
-                                                <div className={`w-2 h-2 rounded-full ${opt.enabled ? `bg-${opt.color}-500 shadow-[0_0_8px_rgba(255,255,255,0.5)]` : 'bg-slate-300'}`} />
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-xs font-bold ${opt.enabled ? 'text-slate-900' : 'text-slate-300'}`}>
-                                                    {opt.enabled ? 'AKTIV' : 'INAKTIV'}
-                                                </span>
-                                                {opt.enabled && opt.qty > 0 && (
-                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold bg-white border border-${opt.color}-100 text-${opt.color}-700`}>
-                                                        {opt.qty}x
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <SectionLabel>Kopien & Mehraufwand</SectionLabel>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mb-1">Anzahl Kopien</div>
-                                        <div className="text-sm font-bold text-slate-800">{projectData.copies || projectData.copies_count || 0} Stk.</div>
-                                    </div>
-                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-sm">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mb-1">Preis / Kopie</div>
-                                        <div className="text-sm font-bold text-slate-800">{parseFloat(projectData.copyPrice || projectData.copy_price || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</div>
-                                    </div>
-                                    <div className="p-3 bg-brand-primary/5 border border-brand-primary/10 rounded-sm">
-                                        <div className="text-[10px] font-bold text-brand-primary/60 uppercase tracking-tight mb-1">Summe Kopien</div>
-                                        <div className="text-sm font-bold text-brand-primary">
-                                            {((projectData.copies || projectData.copies_count || 0) * (parseFloat(projectData.copyPrice || projectData.copy_price || 0))).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div className="space-y-1">
+                                    <SectionLabel>Versand & Status</SectionLabel>
                                     <InfoRow label="Versand">
                                         {projectData.shipping_type === 'email' ? 'Per E-Mail'
                                             : projectData.shipping_type === 'pickup' ? 'Abholung'
@@ -366,6 +322,13 @@ const ProjectOverviewTabNew = ({
                                         {projectData.translator.display_id && (
                                             <InfoRow label="Partnernr.">{projectData.translator.display_id}</InfoRow>
                                         )}
+                                        <InfoRow label="Typ">
+                                            {projectData.translator?.type === 'translator' ? 'Übersetzer'
+                                                : projectData.translator?.type === 'interpreter' ? 'Dolmetscher'
+                                                    : (projectData.translator?.type === 'both' || projectData.translator?.type === 'trans_interp') ? 'Übersetzer & Dolmetscher'
+                                                        : projectData.translator?.type === 'agency' ? 'Agentur'
+                                                            : projectData.translator?.type || 'Übersetzer'}
+                                        </InfoRow>
                                         <InfoRow label="E-Mail">
                                             {projectData.translator.email
                                                 ? <a href={`mailto:${projectData.translator.email}`} className="text-slate-700 hover:text-brand-primary hover:underline break-all">{projectData.translator.email}</a>

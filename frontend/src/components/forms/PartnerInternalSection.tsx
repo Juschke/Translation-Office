@@ -23,7 +23,6 @@ const PartnerInternalSection = ({ formData, updateFormData }: PartnerInternalSec
                     className="font-medium"
                     value={formData.status}
                     onChange={e => updateFormData({ status: e.target.value })}
-                    helperText="Bestimmt die Sichtbarkeit in Projekten"
                 >
                     <option value="available">Verfügbar / Aktiv</option>
                     <option value="busy">Derzeit ausgelastet</option>
@@ -46,7 +45,6 @@ const PartnerInternalSection = ({ formData, updateFormData }: PartnerInternalSec
                     ))}
                     <span className="ml-2 text-xs font-semibold text-slate-600">{formData.rating}.0</span>
                 </div>
-                <p className="text-xs text-slate-400 font-medium ml-1">Qualitätsindex basierend auf Feedback</p>
             </div>
             <div className="col-span-2">
                 <Input
@@ -55,7 +53,6 @@ const PartnerInternalSection = ({ formData, updateFormData }: PartnerInternalSec
                     placeholder="Interne Anmerkungen / Erfahrungen / Feedback (nur für Admins sichtbar)..."
                     value={formData.notes}
                     onChange={(e) => updateFormData({ notes: e.target.value })}
-                    helperText="Informationen werden nicht an den Partner kommuniziert"
                 />
             </div>
             <div className="col-span-2 flex items-center gap-2 p-4 bg-slate-50 border border-slate-200 rounded-sm">

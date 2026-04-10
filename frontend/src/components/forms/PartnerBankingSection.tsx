@@ -35,7 +35,6 @@ const PartnerBankingSection = ({
                     value={formData.bankAccountHolder}
                     onChange={e => updateFormData({ bankAccountHolder: e.target.value })}
                     placeholder={formData.type === 'agency' ? formData.company || 'Agenturname' : `${formData.firstName || 'Vorname'} ${formData.lastName || 'Nachname'}`.trim()}
-                    helperText="Automatisch vorausgefüllt basierend auf dem Namen."
                 />
             </div>
             <div className="col-span-12">
@@ -68,7 +67,7 @@ const PartnerBankingSection = ({
                 </div>
             </div>
             <div className="col-span-12 sm:col-span-4">
-                <Input label="Bankname" placeholder="Name der Bank" value={formData.bankName} onChange={e => updateFormData({ bankName: e.target.value })} helperText="Name der Bankgesellschaft" />
+                <Input label="Bankname" placeholder="Name der Bank" value={formData.bankName} onChange={e => updateFormData({ bankName: e.target.value })} />
             </div>
             <div className="col-span-12 sm:col-span-4">
                 <Input label="BLZ" placeholder="000 000 00" value={formData.bankCode} onChange={e => updateFormData({ bankCode: e.target.value })} />
@@ -102,7 +101,6 @@ const PartnerBankingSection = ({
                     value={formData.paymentTerms}
                     onChange={e => updateFormData({ paymentTerms: e.target.value })}
                     className="font-medium"
-                    helperText="Frist in Tagen ab Rechnungserhalt"
                 />
             </div>
             <div className="col-span-12 md:col-span-8">
@@ -112,7 +110,6 @@ const PartnerBankingSection = ({
                     value={formData.taxId}
                     onChange={e => updateFormData({ taxId: e.target.value })}
                     className="font-medium"
-                    helperText="Wichtig für die korrekte Abrechnung von Honoraren"
                 />
             </div>
         </div>
