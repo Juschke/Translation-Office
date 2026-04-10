@@ -43,6 +43,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'company_name' => 'nullable|string',
             'legal_form' => 'nullable|string',
+            'industry' => 'nullable|string',
             'managing_director' => 'nullable|string',
             'address_street' => 'nullable|string',
             'address_house_no' => 'nullable|string',
@@ -163,6 +164,7 @@ class SettingsController extends Controller
         $tenantFields = [
             'company_name',
             'legal_form',
+            'industry',
             'managing_director',
             'address_street',
             'address_house_no',

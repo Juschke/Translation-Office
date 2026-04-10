@@ -264,6 +264,7 @@ body,
 
 /* ====== SCROLLBAR ====== */
 
+/* Chrome, Edge, Safari */
 .custom-scrollbar::-webkit-scrollbar {
   height: 6px;
   width: 6px;
@@ -274,8 +275,18 @@ body,
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 3px;
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* slate-400 */
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .custom-scrollbar-green::-webkit-scrollbar {
@@ -598,6 +609,51 @@ body,
 .ant-table-wrapper .ant-table {
   border-radius: 3px !important;
   overflow: hidden;
+}
+
+/* ── Apply custom scrollbar to Ant Design Table areas ── */
+.ant-table-body,
+.ant-table-content {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  /* Firefox: hide vertical only is hard, but we can set thin for horizontal and none for vertical if we use specific selectors or just let it scroll */
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e1 transparent !important;
+}
+
+/* Chrome, Safari, Edge: Hide vertical scrollbar specifically */
+.ant-table-body::-webkit-scrollbar,
+.ant-table-content::-webkit-scrollbar {
+  width: 0px !important; /* Hide vertical */
+  height: 6px !important; /* Show horizontal */
+}
+
+.ant-table-body::-webkit-scrollbar-thumb,
+.ant-table-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 10px !important;
+}
+
+.ant-table-header {
+  scrollbar-width: none !important;
+  overflow: hidden !important;
+}
+
+.ant-table-body::-webkit-scrollbar,
+.ant-table-content::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb,
+.ant-table-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 10px !important;
+}
+
+.ant-table-body::-webkit-scrollbar-track,
+.ant-table-content::-webkit-scrollbar-track {
+  background: transparent !important;
 }
 
 .dt-antd-table .ant-table {

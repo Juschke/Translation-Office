@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
-    FaPlus, FaMinus, FaFlag, FaClock, FaBolt,
+    FaPlus, FaMinus, FaClock, FaArrowDown, FaExclamationTriangle, FaExclamationCircle,
     FaSearch, FaCheck, FaTimes, FaArrowLeft, FaSave,
     FaInfoCircle, FaQuestionCircle
 } from 'react-icons/fa';
@@ -99,19 +99,23 @@ const NewProject = () => {
     const [name, setName] = useState('');
     const [customer, setCustomer] = useState('');
     const [deadline, setDeadline] = useState('');
-    const [source, setSource] = useState('de-DE');
-    const [target, setTarget] = useState<string[]>(['en-US']);
+    const [source, setSource] = useState('');
+    const [target, setTarget] = useState<string[]>([]);
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
     const [status, setStatus] = useState('offer');
     const [withTax, setWithTax] = useState(true);
     const [isCertified, setIsCertified] = useState(true);
     const [certifiedQty, setCertifiedQty] = useState(1);
+    const [certifiedPrice, setCertifiedPrice] = useState('5.00');
     const [hasApostille, setHasApostille] = useState(false);
     const [apostilleQty, setApostilleQty] = useState(1);
+    const [apostillePrice, setApostillePrice] = useState('25.00');
     const [isExpress, setIsExpress] = useState(false);
     const [expressQty, setExpressQty] = useState(1);
+    const [expressPrice, setExpressPrice] = useState('15.00');
     const [classification, setClassification] = useState('nein');
     const [classificationQty, setClassificationQty] = useState(1);
+    const [classificationPrice, setClassificationPrice] = useState('15.00');
     const [copies, setCopies] = useState(0);
     const [copyPrice, setCopyPrice] = useState('5.00');
     const [positions, setPositions] = useState<ProjectPosition[]>([{
@@ -130,6 +134,7 @@ const NewProject = () => {
     const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
     const [partnerSearch, setPartnerSearch] = useState('');
     const [activeSection, setActiveSection] = useState('section-basis');
+    const [suggestedName, setSuggestedName] = useState('');
 
     // UI modals
     const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -157,6 +162,12 @@ const NewProject = () => {
         enabled: isEditing,
     });
 
+    const get2LetterLangCode = (iso: string) => {
+        if (!iso) return 'XX';
+        const code = iso.split('-')[0].toUpperCase();
+        return code.substring(0, 2);
+    };
+
     const getFullLanguageName = (code: string) => {
         return getLanguageName(code);
     };
@@ -164,12 +175,12 @@ const NewProject = () => {
     // ── Derived ──
     const custOptions = useMemo(() => (Array.isArray(customersData) ? customersData : []).map((c: any) => ({
         value: c.id.toString(),
-        label: `${c.company_name || `${c.first_name} ${c.last_name}`} (${c.display_id || c.id}) - ${c.address_city || ''}`
+        label: `${c.display_id || c.id} ${c.company_name || `${c.first_name} ${c.last_name}`}`
     })), [customersData]);
 
     const partnerOptions = useMemo(() => (Array.isArray(partnersData) ? partnersData : []).map((p: any) => ({
         value: p.id.toString(),
-        label: `${p.company_name || `${p.first_name} ${p.last_name}`} (${p.display_id || p.id}) - ${p.address_city || ''}`
+        label: `${p.display_id || p.id} ${p.company_name || `${p.first_name} ${p.last_name}`}`
     })), [partnersData]);
 
     const { matchingPartners, otherPartners } = useMemo(() => {
@@ -196,9 +207,8 @@ const NewProject = () => {
     const displayNr = useMemo(() => {
         if (initialData?.project_number) return initialData.project_number;
         const prefix = companyData?.project_id_prefix || 'P';
-        const datePart = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
         const nextNum = companyData?.project_start_number || '0001';
-        return `${prefix}-${datePart}-${nextNum}`;
+        return `${prefix}-${nextNum}`;
     }, [initialData?.project_number, companyData]);
 
     // ── Position calculations ──
@@ -225,18 +235,33 @@ const NewProject = () => {
         setTotalPrice(updated.reduce((s, p) => s + parseFloat(p.customerTotal || '0'), 0).toFixed(2));
     }, [positions]);
 
-    // Auto-generate name
+    // Auto-generate project name suggestion
     useEffect(() => {
-        if (!isEditing && source && target && Array.isArray(projectsData)) {
+        if (!isEditing && source && target && target.length > 0 && Array.isArray(projectsData)) {
+            const cleanSource = get2LetterLangCode(source);
             const targetArray = Array.isArray(target) ? target : [target];
-            const sourceName = getLanguageName(source)?.split(' ')[0] || source.toUpperCase();
-            const targetName = targetArray[0] ? (getLanguageName(targetArray[0])?.split(' ')[0] || targetArray[0].toUpperCase()) : 'XX';
+            const cleanTarget = get2LetterLangCode(targetArray[0]);
+
             const now = new Date();
-            const dp = String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
-            const base = `${sourceName}_${targetName}_${dp}`.replace(/\s+/g, '');
-            const list = Array.isArray(projectsData) ? projectsData : [];
-            const cnt = list.filter((p: any) => (p.project_name || '').startsWith(base)).length;
-            setName(`${base}_${String(cnt + 1).padStart(2, '0')}`);
+            const yy = String(now.getFullYear()).slice(-2);
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const datePart = yy + mm + dd;
+
+            const basePrefix = `${cleanSource}_${cleanTarget}_${datePart}`.toUpperCase();
+
+            const list = Array.isArray(projectsData) ? projectsData : ((projectsData as any).data || []);
+            const todayProjectsCount = list.filter((p: any) => {
+                const pName = (p.project_name || p.name || '').toUpperCase();
+                return pName.startsWith(basePrefix);
+            }).length;
+
+            const sequence = String(todayProjectsCount + 1).padStart(2, '0');
+            const generatedName = `${basePrefix}_${sequence}`;
+
+            setSuggestedName(generatedName);
+        } else {
+            setSuggestedName('');
         }
     }, [source, target, projectsData, isEditing]);
 
@@ -295,13 +320,15 @@ const NewProject = () => {
 
         const observerOptions = {
             root: container,
-            rootMargin: '-5% 0px -85% 0px',
-            threshold: 0
+            rootMargin: '-10% 0px -80% 0px',
+            threshold: [0, 1.0]
         };
 
+        let lastActive = '';
         const observerCallback = (entries: IntersectionObserverEntry[]) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
+                if (entry.isIntersecting && entry.target.id !== lastActive) {
+                    lastActive = entry.target.id;
                     setActiveSection(entry.target.id);
                 }
             });
@@ -314,11 +341,11 @@ const NewProject = () => {
             if (el) observer.observe(el);
         });
 
-        // Special case: Force highlight last section when at the bottom
         const handleScroll = () => {
             if (!container) return;
-            const isBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-            if (isBottom) {
+            const isBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+            if (isBottom && lastActive !== 'section-anmerkungen') {
+                lastActive = 'section-anmerkungen';
                 setActiveSection('section-anmerkungen');
             }
         };
@@ -333,7 +360,7 @@ const NewProject = () => {
                 container.removeEventListener('scroll', handleScroll);
             }
         };
-    }, [initialData]); // Re-run when initialData (and thus sections) are rendered
+    }, []);
 
     // ── Mutations ──
     const createMutation = useMutation({
@@ -364,7 +391,11 @@ const NewProject = () => {
     });
 
     // ── Financials ──
-    const extraCosts = (isCertified ? 5 * certifiedQty : 0) + (hasApostille ? 25 * apostilleQty : 0) + (isExpress ? 15 * expressQty : 0) + (classification === 'ja' ? 15 * classificationQty : 0) + (copies * Number(copyPrice) || 0);
+    const extraCosts = (isCertified ? Number(certifiedPrice) * certifiedQty : 0) + 
+                       (hasApostille ? Number(apostillePrice) * apostilleQty : 0) + 
+                       (isExpress ? Number(expressPrice) * expressQty : 0) + 
+                       (classification === 'ja' ? Number(classificationPrice) * classificationQty : 0) + 
+                       (copies * Number(copyPrice) || 0);
     const baseNet = parseFloat(totalPrice) || 0;
     const calcNet = baseNet + extraCosts;
     const calcTax = withTax ? calcNet * 0.19 : 0;
@@ -397,17 +428,20 @@ const NewProject = () => {
             return;
         }
         const targetDisplayString = targetArray.join(', ').toUpperCase();
-        let finalName = name || `${source.toUpperCase()}_${targetDisplayString}_${Date.now()}`;
+        let finalName = name;
+        if (!finalName) {
+            finalName = suggestedName || `PROJ_${get2LetterLangCode(source)}_${get2LetterLangCode(targetArray[0])}`.toUpperCase();
+        }
         finalName = finalName.replace(/\s+/g, '_').substring(0, 100);
         const sourceLangId = languages.find((l: any) => l.iso_code.startsWith(source))?.id || 1;
         const targetLangIds = targetArray.map(t => languages.find((l: any) => l.iso_code.startsWith(t))?.id || 2);
         const payload: any = {
             project_name: finalName, customer_id: parseInt(customer), partner_id: translator ? parseInt(translator) : null,
             source_lang_id: sourceLangId, target_lang_id: targetLangIds[0], target_lang_ids: targetLangIds, deadline, priority, status,
-            is_certified: isCertified, certified_count: certifiedQty,
-            has_apostille: hasApostille, apostille_count: apostilleQty,
-            is_express: isExpress, express_count: expressQty,
-            classification: classification === 'ja', classification_count: classificationQty,
+            is_certified: isCertified, certified_count: certifiedQty, certified_price: parseFloat(certifiedPrice) || 0,
+            has_apostille: hasApostille, apostille_count: apostilleQty, apostille_price: parseFloat(apostillePrice) || 0,
+            is_express: isExpress, express_count: expressQty, express_price: parseFloat(expressPrice) || 0,
+            classification: classification === 'ja', classification_count: classificationQty, classification_price: parseFloat(classificationPrice) || 0,
             copies_count: copies, copy_price: parseFloat(copyPrice) || 0, price_total: calcNet,
             partner_cost_net: parseFloat(partnerPrice) || 0, document_type_id: docType.length > 0 ? parseInt(docType[0]) : null,
             additional_doc_types: docType.length > 1 ? docType.slice(1) : null, notes,
@@ -450,27 +484,16 @@ const NewProject = () => {
                             <FaArrowLeft />
                         </button>
                         <div>
-                            <h1 className="text-lg font-semibold text-slate-800 tracking-tight">
-                                {isEditing ? 'Projekt bearbeiten' : 'Neues Projekt erfassen'}
+                            <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none mb-1">
+                                {displayNr}
                             </h1>
-                            <span className="text-xs text-slate-400 font-medium">Nr: {displayNr}</span>
+                            <p className="text-xs text-slate-500 font-medium">
+                                {isEditing ? 'Projekt bearbeiten' : 'Neues Projekt erfassen'}
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        {/* Priority */}
-                        <div className="flex bg-slate-100 rounded-md p-0.5 border border-slate-200 h-9">
-                            {(['low', 'medium', 'high'] as const).map(p => (
-                                <button key={p} onClick={() => setPriority(p)} className={clsx('px-3 h-full text-xs font-medium rounded-sm transition-all flex items-center gap-1.5', priority === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600')}>
-                                    {p === 'low' && <FaClock className="text-xs" />}
-                                    {p === 'medium' && <FaFlag className="text-xs" />}
-                                    {p === 'high' && <FaBolt className="text-xs" />}
-                                    <span className="hidden sm:inline">{p === 'low' ? t('projects.priority_standard') : p === 'medium' ? t('projects.priority_urgent') : t('projects.priority_express')}</span>
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {renderActionButtons()}
-                        </div>
+                        {renderActionButtons()}
                     </div>
                 </div>
             </div>
@@ -524,7 +547,21 @@ const NewProject = () => {
                             </div>
                             <div className="px-6 pb-5">
                                 <FormRow label="Projektname" tooltip="Wird automatisch generiert aus Sprachpaar und Datum. Leerzeichen werden durch Unterstriche ersetzt.">
-                                    <Input placeholder="z.B. DE_EN_260326_01" value={name} onChange={e => setName(e.target.value)} />
+                                    <div className="relative">
+                                        <Input placeholder="z.B. DE_EN_260326_01" value={name} onChange={e => setName(e.target.value)} />
+                                        {suggestedName && !name && (
+                                            <div className="mt-1.5 flex items-center gap-2">
+                                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-tight">Vorschlag:</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setName(suggestedName)}
+                                                    className="px-2 py-0.5 bg-brand-primary/5 hover:bg-brand-primary/10 border border-brand-primary/20 text-brand-primary rounded-full text-[10px] font-bold transition-all shadow-sm"
+                                                >
+                                                    {suggestedName}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </FormRow>
                                 <FormRow label="Dokumentenart" required tooltip="Art des zu übersetzenden Dokuments. Mehrfachauswahl möglich." error={validationErrors.has('docType')} id="field-docType">
                                     <DocumentTypeSelect
@@ -548,32 +585,60 @@ const NewProject = () => {
                                             className="w-full h-9"
                                             placeholder="Datum & Zeit wählen"
                                         />
-                                        <div className="flex gap-2 mt-2">
-                                            {[3, 5, 7, 12].map(days => (
-                                                <button
-                                                    key={days}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        let target = dayjs();
-                                                        let added = 0;
-                                                        while (added < days) {
-                                                            target = target.add(1, 'day');
-                                                            // Nur wenn Mo-Fr
-                                                            if (target.day() !== 0 && target.day() !== 6) {
-                                                                added++;
-                                                            }
-                                                        }
-                                                        // Fallback für den Fall das wir auf einem Wochenende landen würden (theoretisch nicht möglich durch while)
-                                                        // Standardzeit auf 17:00 Uhr setzen
-                                                        target = target.set('hour', 17).set('minute', 0).set('second', 0);
-                                                        setDeadline(target.toISOString());
-                                                    }}
-                                                    className="px-2 py-1 text-xs font-bold uppercase border border-brand-accent/20 bg-brand-slate text-slate-700 rounded-sm hover:bg-brand-accent/10 hover:border-brand-accent/30 transition-all shadow-xs"
-                                                >
-                                                    {days} Werktage
-                                                </button>
-                                            ))}
+                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                            {[0, 1, 3, 5, 7, 14].map(days => {
+                                                const getSuggestedDate = (d: number) => {
+                                                    if (d === 0) return dayjs().set('second', 0).set('millisecond', 0);
+                                                    return dayjs().add(d, 'day').set('hour', 17).set('minute', 0).set('second', 0);
+                                                };
+                                                const suggestion = getSuggestedDate(days);
+                                                const isActive = deadline && dayjs(deadline).isSame(suggestion, days === 0 ? 'hour' : 'minute');
+                                                const label = days === 0 ? 'Sofort' : `+ ${days} ${days === 1 ? 'Tag' : 'Tage'}`;
+
+                                                return (
+                                                    <button
+                                                        key={days}
+                                                        type="button"
+                                                        onClick={() => setDeadline(suggestion.toISOString())}
+                                                        className={clsx(
+                                                            "px-2.5 py-0.5 rounded-full text-[9px] font-bold transition-all shadow-sm border whitespace-nowrap",
+                                                            isActive 
+                                                                ? "bg-[#1B4D4F] border-[#1B4D4F] text-white" 
+                                                                : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-brand-primary/10 hover:border-brand-primary/30 hover:text-brand-primary"
+                                                        )}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
+                                    </div>
+                                </FormRow>
+                                <FormRow label="Priorität" tooltip="Eilbedürftigkeit des Auftrags. Express-Aufträge haben höchste Priorität.">
+                                    <div className="flex gap-2 h-9">
+                                        {(['low', 'medium', 'high'] as const).map(p => {
+                                            const isActive = priority === p;
+                                            return (
+                                                <button
+                                                    key={p}
+                                                    type="button"
+                                                    onClick={() => setPriority(p)}
+                                                    className={clsx(
+                                                        "px-4 h-full text-[10px] font-bold rounded-sm transition-all flex items-center justify-center gap-2 border",
+                                                        isActive 
+                                                            ? (p === 'low' ? "bg-slate-50 border-slate-300 text-slate-700 shadow-sm"
+                                                                : p === 'medium' ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
+                                                                : "bg-red-50 border-red-200 text-red-700 shadow-sm")
+                                                            : "bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-500"
+                                                    )}
+                                                >
+                                                    <span>{p === 'low' ? 'Standard' : p === 'medium' ? 'Dringend' : 'Express'}</span>
+                                                    {p === 'low' && <FaArrowDown size={10} className={isActive ? "text-slate-500" : "text-slate-300"} />}
+                                                    {p === 'medium' && <FaExclamationTriangle size={10} className={isActive ? "text-amber-500" : "text-slate-300"} />}
+                                                    {p === 'high' && <FaExclamationCircle size={10} className={isActive ? "text-red-500" : "text-slate-300"} />}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </FormRow>
                             </div>
@@ -692,71 +757,73 @@ const NewProject = () => {
 
                         {/* Section 5: Leistungen & Optionen */}
                         <section id="section-leistungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden scroll-mt-6">
-                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5')}>
-                                <div className={SECTION_NUM}>05</div>
-                                <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
+                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5 bg-white justify-between')}>
+                                <div className="flex items-center gap-3">
+                                    <div className={SECTION_NUM}>05</div>
+                                    <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
+                                </div>
                             </div>
-                            <div className="px-6 pb-5">
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-4 border-b border-slate-100">
+                            <div className="px-6 py-6 border-b border-slate-100">
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                     {[
-                                        { label: 'Beglaubigung (5€)', enabled: isCertified, toggle: () => setIsCertified(!isCertified), qty: certifiedQty, setQty: setCertifiedQty, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
-                                        { label: 'Express (15€)', enabled: isExpress, toggle: () => setIsExpress(!isExpress), qty: expressQty, setQty: setExpressQty, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
-                                        { label: 'Apostille (25€)', enabled: hasApostille, toggle: () => setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
-                                        { label: 'Klassifizierung (15€)', enabled: classification === 'ja', toggle: () => setClassification(classification === 'ja' ? 'nein' : 'ja'), qty: classificationQty, setQty: setClassificationQty, tip: 'Führerschein-Klassifizierung.' },
+                                        { label: 'Beglaubigung', enabled: isCertified, toggle: () => setIsCertified(!isCertified), qty: certifiedQty, setQty: setCertifiedQty, price: certifiedPrice, setPrice: setCertifiedPrice, tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
+                                        { label: 'Express', enabled: isExpress, toggle: () => setIsExpress(!isExpress), qty: expressQty, setQty: setExpressQty, price: expressPrice, setPrice: setExpressPrice, tip: 'Eilzuschlag für schnelle Bearbeitung.' },
+                                        { label: 'Apostille', enabled: hasApostille, toggle: () => setHasApostille(!hasApostille), qty: apostilleQty, setQty: setApostilleQty, price: apostillePrice, setPrice: setApostillePrice, tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
+                                        { label: 'FS-Klassifizierung', enabled: classification === 'ja', toggle: () => setClassification(classification === 'ja' ? 'nein' : 'ja'), qty: classificationQty, setQty: setClassificationQty, price: classificationPrice, setPrice: setClassificationPrice, tip: 'Führerschein-Klassifizierung.' },
+                                        { label: 'Kopien', enabled: copies > 0, toggle: () => setCopies(copies > 0 ? 0 : 1), qty: copies, setQty: setCopies, price: copyPrice, setPrice: setCopyPrice, tip: 'Anzahl der zusätzlich benötigten Papierkopien.' },
                                     ].map(opt => (
                                         <div key={opt.label} className="space-y-1">
-                                            <label className="text-xs font-medium text-slate-400 flex items-center gap-1">{opt.label} <FieldTip text={opt.tip} /></label>
+                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5">
+                                                {opt.label} <FieldTip text={opt.tip} />
+                                            </label>
                                             <div className="flex flex-col gap-2">
-                                                <div className="h-9 flex items-center gap-2 cursor-pointer" onClick={opt.toggle}>
-                                                    <div className={clsx('w-8 h-4 rounded-full relative transition-colors', opt.enabled ? 'bg-emerald-500' : 'bg-slate-300')}>
-                                                        <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', opt.enabled ? 'left-4' : 'left-0.5')} />
+                                                <div className="h-9 flex items-center gap-2 cursor-pointer group" onClick={opt.toggle}>
+                                                    <div className={clsx('w-8 h-4 rounded-full relative transition-all duration-300', opt.enabled ? 'bg-emerald-500' : 'bg-slate-300')}>
+                                                        <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-300 shadow-sm', opt.enabled ? 'left-4.5' : 'left-0.5')} />
                                                     </div>
                                                     <span className={clsx('text-[10px] font-bold', opt.enabled ? 'text-emerald-600' : 'text-slate-400')}>{opt.enabled ? 'JA' : 'NEIN'}</span>
                                                 </div>
                                                 {opt.enabled && (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] text-slate-400 font-medium">Menge:</span>
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            value={opt.qty}
-                                                            onChange={e => opt.setQty(Math.max(1, parseInt(e.target.value) || 1))}
-                                                            className="w-12 h-7 text-center text-xs font-medium text-slate-700 border border-slate-200 rounded-sm outline-none focus:ring-1 focus:ring-brand-500"
-                                                        />
+                                                    <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                                        <div className="flex gap-2 pt-3">
+                                                            <div className="flex-1 relative">
+                                                                <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Menge</label>
+                                                                <div className="flex items-center h-8 border border-slate-200 rounded overflow-hidden bg-white shadow-xs focus-within:border-brand-primary/50 transition-colors">
+                                                                    <button onClick={() => opt.setQty(Math.max(1, opt.qty - 1))} className="px-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100 h-full"><FaMinus className="text-[8px]" /></button>
+                                                                    <input type="text" value={opt.qty} onChange={e => opt.setQty(Math.max(1, parseInt(e.target.value) || 1))} className="w-full text-center text-[10px] font-bold text-slate-700 outline-none bg-transparent" />
+                                                                    <button onClick={() => opt.setQty(opt.qty + 1)} className="px-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100 h-full"><FaPlus className="text-[8px]" /></button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex-1 relative">
+                                                                <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Preis</label>
+                                                                <div className="relative">
+                                                                    <input type="text" value={opt.price} onChange={e => opt.setPrice(e.target.value)} onBlur={() => opt.setPrice(parseFloat(opt.price || '0').toFixed(2))} className="w-full h-8 px-2 pr-5 text-[10px] font-bold text-slate-700 border border-slate-200 rounded outline-none focus:ring-1 focus:ring-brand-primary/30 shadow-xs" />
+                                                                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300">€</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-2 px-1 flex justify-between items-center text-[9px] font-bold uppercase tracking-tight">
+                                                            <span className="text-slate-300">Summe:</span>
+                                                            <span className="text-slate-900">{(Number(opt.price) * opt.qty).toFixed(2)} €</span>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     ))}
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-slate-400 flex items-center gap-1">MwSt. (19%) <FieldTip text="Umsatzsteuer auf den Nettobetrag." /></label>
-                                        <div className="h-9 flex items-center gap-2 cursor-pointer" onClick={() => setWithTax(!withTax)}>
-                                            <div className={clsx('w-8 h-4 rounded-full relative transition-colors', withTax ? 'bg-emerald-500' : 'bg-slate-300')}>
-                                                <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow-sm', withTax ? 'left-4' : 'left-0.5')} />
-                                            </div>
-                                            <span className={clsx('text-xs font-bold', withTax ? 'text-emerald-600' : 'text-slate-400')}>{withTax ? 'AKTIV' : 'AUS'}</span>
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
+                                    <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setWithTax(!withTax)}>
+                                        <div className="flex flex-col">
+                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">Umsatzsteuer (19%)</span>
+                                            <span className="text-[10px] text-slate-300">MwSt. auf alle Leistungen berechnen</span>
+                                        </div>
+                                        <div className={clsx('w-8 h-4 rounded-full relative transition-all duration-300', withTax ? 'bg-emerald-500' : 'bg-slate-300')}>
+                                            <div className={clsx('absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-300 shadow-sm', withTax ? 'left-4.5' : 'left-0.5')} />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Copies */}
-                                <div className="grid grid-cols-12 gap-4 pt-4">
-                                    <div className="col-span-4">
-                                        <label className="text-xs font-medium text-slate-400 mb-1 block">Anzahl Kopien</label>
-                                        <div className="flex items-center h-9 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm">
-                                            <button onClick={() => setCopies(Math.max(0, copies - 1))} className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100"><FaMinus className="text-xs" /></button>
-                                            <input type="number" value={copies} onChange={e => setCopies(Math.max(0, parseInt(e.target.value) || 0))} className="flex-1 w-full h-full text-center text-sm font-medium text-slate-700 outline-none" />
-                                            <button onClick={() => setCopies(copies + 1)} className="h-full px-3 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100"><FaPlus className="text-xs" /></button>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-4">
-                                        <label className="text-xs font-medium text-slate-400 mb-1 block">Preis / Kopie</label>
-                                        <Input type="number" step="0.01" value={copyPrice} onChange={e => setCopyPrice(e.target.value)} onBlur={() => setCopyPrice(parseFloat(copyPrice).toFixed(2))} containerClassName="h-9" />
-                                    </div>
-                                    <div className="col-span-4 flex items-end pb-1.5">
-                                        <span className="text-xs text-slate-400 italic">Summe: <span className="text-slate-800 font-medium">{(copies * parseFloat(copyPrice || '0')).toFixed(2)} €</span></span>
-                                    </div>
-                                </div>
                             </div>
                         </section>
 
@@ -846,11 +913,11 @@ const NewProject = () => {
                             <h4 className="text-xs font-semibold text-slate-500 pb-2 border-b border-slate-100">Rechnungsvorschau</h4>
                             <div className="space-y-2 text-xs">
                                 <div className="flex justify-between text-slate-500"><span>Positionen Netto</span><span>{fmtEur(baseNet)}</span></div>
-                                {isCertified && <div className="flex justify-between text-slate-400 pl-2"><span>+ Beglaubigung {certifiedQty > 1 ? `(${certifiedQty}×)` : ''}</span><span>{fmtEur(5 * certifiedQty)}</span></div>}
-                                {hasApostille && <div className="flex justify-between text-slate-400 pl-2"><span>+ Apostille {apostilleQty > 1 ? `(${apostilleQty}×)` : ''}</span><span>{fmtEur(25 * apostilleQty)}</span></div>}
-                                {isExpress && <div className="flex justify-between text-slate-400 pl-2"><span>+ Express {expressQty > 1 ? `(${expressQty}×)` : ''}</span><span>{fmtEur(15 * expressQty)}</span></div>}
-                                {classification === 'ja' && <div className="flex justify-between text-slate-400 pl-2"><span>+ Klassifizierung {classificationQty > 1 ? `(${classificationQty}×)` : ''}</span><span>{fmtEur(15 * classificationQty)}</span></div>}
-                                {copies > 0 && <div className="flex justify-between text-slate-400 pl-2"><span>+ Kopien ({copies}×)</span><span>{fmtEur(copies * Number(copyPrice))}</span></div>}
+                                {isCertified && <div className="flex justify-between text-slate-400 pl-2"><span>+ Beglaubigung {certifiedQty > 1 ? `(${certifiedQty}×)` : ''}</span><span>{fmtEur((parseFloat(certifiedPrice) || 5) * certifiedQty)}</span></div>}
+                                {hasApostille && <div className="flex justify-between text-slate-400 pl-2"><span>+ Apostille {apostilleQty > 1 ? `(${apostilleQty}×)` : ''}</span><span>{fmtEur((parseFloat(apostillePrice) || 25) * apostilleQty)}</span></div>}
+                                {isExpress && <div className="flex justify-between text-slate-400 pl-2"><span>+ Express {expressQty > 1 ? `(${expressQty}×)` : ''}</span><span>{fmtEur((parseFloat(expressPrice) || 15) * expressQty)}</span></div>}
+                                {classification === 'ja' && <div className="flex justify-between text-slate-400 pl-2"><span>+ Klassifizierung {classificationQty > 1 ? `(${classificationQty}×)` : ''}</span><span>{fmtEur((parseFloat(classificationPrice) || 15) * classificationQty)}</span></div>}
+                                {copies > 0 && <div className="flex justify-between text-slate-400 pl-2"><span>+ Kopien ({copies}×)</span><span>{fmtEur(copies * (parseFloat(copyPrice) || 5))}</span></div>}
                                 <div className="pt-2 border-t border-slate-100 flex justify-between font-medium text-slate-800"><span>Gesamt Netto</span><span>{fmtEur(calcNet)}</span></div>
                                 <div className="flex justify-between text-slate-400"><span>MwSt. 19%</span><span>{fmtEur(calcTax)}</span></div>
                                 <div className="pt-2 border-t-2 border-slate-100 flex justify-between text-lg font-semibold text-slate-900"><span>Gesamt</span><span>{fmtEur(calcGross)}</span></div>

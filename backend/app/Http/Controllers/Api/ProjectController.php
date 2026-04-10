@@ -74,9 +74,13 @@ class ProjectController extends Controller
             'down_payment_note' => 'nullable|string',
             'deadline' => 'nullable|date',
             'is_certified' => 'nullable|boolean',
+            'certified_price' => 'nullable|numeric',
             'has_apostille' => 'nullable|boolean',
+            'apostille_price' => 'nullable|numeric',
             'is_express' => 'nullable|boolean',
+            'express_price' => 'nullable|numeric',
             'classification' => 'nullable|boolean',
+            'classification_price' => 'nullable|numeric',
             'copies_count' => 'nullable|integer',
             'copy_price' => 'nullable|numeric',
             'notes' => 'nullable|string',
@@ -112,10 +116,10 @@ class ProjectController extends Controller
             $partnerNet = (float) $project->positions()->sum('partner_total');
 
             // Include extra services in the root price_total
-            $extraNet = ($project->is_certified ? 5 : 0) +
-                ($project->has_apostille ? 15 : 0) +
-                ($project->is_express ? 15 : 0) +
-                ($project->classification ? 15 : 0) +
+            $extraNet = ($project->is_certified ? ($project->certified_price ?: 5.00) : 0) +
+                ($project->has_apostille ? ($project->apostille_price ?: 25.00) : 0) +
+                ($project->is_express ? ($project->express_price ?: 15.00) : 0) +
+                ($project->classification ? ($project->classification_price ?: 15.00) : 0) +
                 ((($project->copies_count && $project->copies_count > 0) ? $project->copies_count : 0) * (float) ($project->copy_price && $project->copy_price > 0 ? $project->copy_price : 5));
 
             $project->update([
@@ -250,9 +254,13 @@ class ProjectController extends Controller
             'currency' => 'sometimes|string|max:3',
             'deadline' => 'nullable|date',
             'is_certified' => 'nullable|boolean',
+            'certified_price' => 'nullable|numeric',
             'has_apostille' => 'nullable|boolean',
+            'apostille_price' => 'nullable|numeric',
             'is_express' => 'nullable|boolean',
+            'express_price' => 'nullable|numeric',
             'classification' => 'nullable|boolean',
+            'classification_price' => 'nullable|numeric',
             'copies_count' => 'nullable|integer',
             'copy_price' => 'nullable|numeric',
             'notes' => 'nullable|string',
@@ -292,10 +300,10 @@ class ProjectController extends Controller
             $partnerNet = (float) $project->positions()->sum('partner_total');
 
             // Include extra services in the root price_total
-            $extraNet = ($project->is_certified ? 5 : 0) +
-                ($project->has_apostille ? 15 : 0) +
-                ($project->is_express ? 15 : 0) +
-                ($project->classification ? 15 : 0) +
+            $extraNet = ($project->is_certified ? ($project->certified_price ?: 5.00) : 0) +
+                ($project->has_apostille ? ($project->apostille_price ?: 25.00) : 0) +
+                ($project->is_express ? ($project->express_price ?: 15.00) : 0) +
+                ($project->classification ? ($project->classification_price ?: 15.00) : 0) +
                 ((($project->copies_count && $project->copies_count > 0) ? $project->copies_count : 0) * (float) ($project->copy_price && $project->copy_price > 0 ? $project->copy_price : 5));
 
             $project->update([

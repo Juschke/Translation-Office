@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FaPlus, FaChevronDown } from 'react-icons/fa';
+import { 
+  FaPlus, FaChevronDown, FaFileContract, FaPassport, FaBriefcase, 
+  FaUserGraduate, FaHeartbeat, FaCogs, FaGavel, FaGlobe, FaFileAlt 
+} from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { settingsService } from '../../api/services';
@@ -23,6 +26,19 @@ interface QuickAddData {
   name: string;
   category: string;
 }
+
+const getCategoryIcon = (category: string) => {
+    const c = category?.toLowerCase() || '';
+    if (c.includes('urkunde') || c.includes('zeugnis') || c.includes('diplom')) return <FaUserGraduate className="text-[10px]" />;
+    if (c.includes('vertrag') || c.includes('recht') || c.includes('justiz') || c.includes('legal')) return <FaFileContract className="text-[10px]" />;
+    if (c.includes('ausweis') || c.includes('pass') || c.includes('ident')) return <FaPassport className="text-[10px]" />;
+    if (c.includes('wirtschaft') || c.includes('business') || c.includes('finanz')) return <FaBriefcase className="text-[10px]" />;
+    if (c.includes('medizin') || c.includes('arzt') || c.includes('klinik') || c.includes('gesundheit')) return <FaHeartbeat className="text-[10px]" />;
+    if (c.includes('technik') || c.includes('industrie') || c.includes('bau')) return <FaCogs className="text-[10px]" />;
+    if (c.includes('patent')) return <FaGavel className="text-[10px]" />;
+    if (c.includes('web') || c.includes('it')) return <FaGlobe className="text-[10px]" />;
+    return <FaFileAlt className="text-[10px]" />;
+};
 
 const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
   options,
@@ -70,13 +86,18 @@ const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
   };
 
   const extendedOptions = React.useMemo(() => {
-    const baseOptions = options;
+    const baseOptions = options.map(opt => ({
+        ...opt,
+        icon: opt.group ? getCategoryIcon(opt.group) : <FaFileAlt className="text-[10px]" />
+    }));
+
     if (shouldShowAddNewOption) {
       return [
         ...baseOptions,
         {
           value: `__new_${searchInput}__`,
-          label: `+ ${searchInput} hinzufügen`
+          label: `+ ${searchInput} hinzufügen`,
+          icon: <FaPlus className="text-[8px]" />
         }
       ];
     }
@@ -186,6 +207,7 @@ const DocumentTypeSelect: React.FC<DocumentTypeSelectProps> = ({
             roundedSide="left"
             isMulti={isMulti}
             onSearch={setSearchInput}
+            badgeVariant="gray"
           />
         </div>
         <Button

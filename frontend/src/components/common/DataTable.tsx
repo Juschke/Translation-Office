@@ -585,7 +585,7 @@ const DataTable = <T extends { id: string | number }>({
                 {sidebarFilterPanel}
 
                 {/* ── Ant Design Table ── */}
-                <div className={clsx("flex flex-col flex-1 min-h-0 relative overflow-auto custom-scrollbar bg-gray-200")}>
+                <div className={clsx("flex flex-col flex-1 min-h-0 relative overflow-hidden bg-white")}>
                     {isLoading ? (
                         <TableSkeleton rows={pageSize === ALL_SENTINEL ? 10 : pageSize} columns={activeColumns.length + (selectable ? 1 : 0)} />
                     ) : isEmpty ? (
@@ -604,8 +604,8 @@ const DataTable = <T extends { id: string | number }>({
                             onChange={handleTableChange}
                             rowSelection={rowSelection}
                             sticky={{ offsetHeader: 0 }}
-                            tableLayout="auto"
-                            scroll={{ x: 'max-content' }}
+                            tableLayout="fixed"
+                            scroll={{ x: 1200 }}
                             onRow={record => ({
                                 onClick: () => {
                                     setSelectedRowKey((record as any).id);

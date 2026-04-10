@@ -1,25 +1,24 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
     Building2, MapPin, CreditCard, Settings2,
     ChevronRight, ChevronLeft, Check, AlertCircle,
-    Info, ShieldCheck, Rocket, Globe, FileText, Users
+    Info, ShieldCheck, Rocket
 } from 'lucide-react';
 import clsx from 'clsx';
 // @ts-ignore
 import finanzamt from 'finanzamt';
 // @ts-ignore
 import { normalizeSteuernummer } from 'normalize-steuernummer';
+import { Select, AutoComplete } from 'antd';
+import { IMaskInput } from 'react-imask';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import CountrySelect from '../../components/common/CountrySelect';
+import taxOfficesData from '../../data/tax_offices.json';
 
-// ─── IBAN ───────────────────────────────────────────────────────────────────
-const formatIBAN = (v: string) => {
-    const s = v.replace(/\s+/g, '').toUpperCase();
-    const parts: string[] = [];
-    for (let i = 0; i < s.length; i += 4) parts.push(s.substring(i, i + 4));
-    return parts.join(' ').trim();
-};
 const isValidIBAN = (iban: string) => {
     const c = iban.replace(/\s+/g, '');
     if (c.length < 15 || c.length > 34) return false;
@@ -31,11 +30,14 @@ const isValidIBAN = (iban: string) => {
 type FormData = {
     // Schritt 1
     company_name: string;
+    managing_director: string;
     legal_form: string;
     industry: string;
-    founded_year: string;
-    managing_director: string;
+    phone: string;
+    mobile: string;
+    email: string;
     website: string;
+    website_protocol: string;
     // Schritt 2
     address_street: string;
     address_house_no: string;
@@ -46,6 +48,8 @@ type FormData = {
     bank_name: string;
     bank_iban: string;
     bank_bic: string;
+    bank_code: string;
+    bank_account_holder: string;
     tax_number: string;
     tax_office: string;
     vat_id: string;
@@ -55,8 +59,11 @@ type FormData = {
     // Schritt 4
     project_id_prefix: string;
     invoice_prefix: string;
-    default_languages: string[];
+    quote_prefix: string;
+    customer_prefix: string;
+    vendor_prefix: string;
     email_signature: string;
+    company_logo: string | null;
     // Plan
     subscription_plan: string;
     license_key: string;
@@ -82,7 +89,6 @@ const SELECT_CLS =
     'bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] ' +
     'outline-none transition-colors cursor-pointer appearance-none ' +
     'focus:border-[#1B4D4F] focus:ring-1 focus:ring-[#1B4D4F]/20';
-
 const LABEL_CLS = 'block text-xs font-semibold text-slate-600 mb-1';
 
 const INFO_BOX_CLS =
@@ -92,40 +98,6 @@ const INFO_BOX_CLS =
 const SECTION_TITLE_CLS = 'text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3';
 
 const DIVIDER = <div className="border-t border-[#D1D9D8] my-5" />;
-
-// ─── Chip-Auswahl ────────────────────────────────────────────────────────────
-const ChipGroup = ({
-    label,
-    options,
-    value,
-    onChange,
-}: {
-    label: string;
-    options: string[];
-    value: string;
-    onChange: (v: string) => void;
-}) => (
-    <div>
-        <p className={LABEL_CLS}>{label}</p>
-        <div className="flex flex-wrap gap-1.5">
-            {options.map(opt => (
-                <button
-                    key={opt}
-                    type="button"
-                    onClick={() => onChange(opt === value ? '' : opt)}
-                    className={clsx(
-                        'text-xs px-3 py-1.5 rounded-[3px] border transition-all font-medium',
-                        value === opt
-                            ? 'bg-[#1B4D4F] text-white border-[#123a3c]'
-                            : 'border-[#ccc] text-slate-600 bg-gradient-to-b from-white to-[#f8f8f8] hover:border-[#1B4D4F] hover:text-[#1B4D4F]'
-                    )}
-                >
-                    {opt}
-                </button>
-            ))}
-        </div>
-    </div>
-);
 
 // ─── Field ───────────────────────────────────────────────────────────────────
 const Field = ({
@@ -229,6 +201,56 @@ const SelectField = ({
     </div>
 );
 
+// ─── SearchSelect ────────────────────────────────────────────────────────────
+const SearchSelect = ({
+    label,
+    options,
+    value,
+    onChange,
+    placeholder,
+    className = '',
+    error,
+    required = false,
+}: {
+    label: string;
+    options: string[];
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    className?: string;
+    error?: string;
+    required?: boolean;
+}) => (
+    <div className={clsx('flex flex-col', className)}>
+        <label className={LABEL_CLS}>
+            {label}
+            {required && <span className="text-red-500 ml-0.5">*</span>}
+        </label>
+        <Select
+            showSearch
+            placeholder={placeholder}
+            optionFilterProp="children"
+            onChange={onChange}
+            value={value || undefined}
+            className={clsx('w-full ant-select-custom', error && 'ant-select-error')}
+            style={{ height: '36px' }}
+            dropdownStyle={{ borderRadius: '3px' }}
+        >
+            {options.map(opt => (
+                <Select.Option key={opt} value={opt}>
+                    {opt}
+                </Select.Option>
+            ))}
+        </Select>
+        {error && (
+            <span className="flex items-center gap-1 text-[11px] text-red-500 mt-1">
+                <AlertCircle size={10} className="shrink-0" />
+                {error}
+            </span>
+        )}
+    </div>
+);
+
 // ─── Konstanten ───────────────────────────────────────────────────────────────
 const STEPS = [
     { label: 'Firmenprofil', icon: Building2 },
@@ -239,21 +261,6 @@ const STEPS = [
 
 const LEGAL_FORMS = ['GmbH', 'UG', 'e.K.', 'GbR', 'Einzelunternehmen', 'AG', 'Freiberufler', 'Sonstige'];
 const INDUSTRIES = ['Übersetzungsbüro', 'Dolmetscherbüro', 'Sprachdienstleister', 'Beeidigter Übersetzer', 'Sonstige'];
-
-const COUNTRIES = [
-    { value: 'Deutschland', label: 'Deutschland' },
-    { value: 'Österreich', label: 'Österreich' },
-    { value: 'Schweiz', label: 'Schweiz' },
-    { value: 'Luxemburg', label: 'Luxemburg' },
-    { value: 'Frankreich', label: 'Frankreich' },
-    { value: 'Italien', label: 'Italien' },
-    { value: 'Spanien', label: 'Spanien' },
-    { value: 'Niederlande', label: 'Niederlande' },
-    { value: 'Belgien', label: 'Belgien' },
-    { value: 'Polen', label: 'Polen' },
-    { value: 'USA', label: 'USA' },
-    { value: 'Andere', label: 'Andere' },
-];
 
 const PAYMENT_TERMS = [
     { value: '0', label: 'Sofort fällig' },
@@ -327,20 +334,75 @@ const LEFT_PANEL = [
 export default function OnboardingPage() {
     const { onboard } = useAuth();
     const navigate = useNavigate();
+    const detectFinanzamt = (city: string) => {
+        if (!city) return '';
+        const lowerCity = city.toLowerCase();
+        const found = taxOfficesData.find((fa: any) => 
+            fa.ort.toLowerCase() === lowerCity || 
+            fa.name.toLowerCase().includes(lowerCity)
+        );
+        return found ? `Finanzamt ${found.name}` : '';
+    };
+ 
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setForm(p => ({ ...p, company_logo: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+    };
 
     const [step, setStep] = useState(0);
+    const searchCache = useRef<Record<string, any>>({});
+    const searchTimeout = useRef<any>(null);
+    const [streetOptions, setStreetOptions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [errors, setErrors] = useState<Errors>({});
+
+
+    const handleIbanAutoDetect = async (iban: string) => {
+        const clean = iban.replace(/\s/g, '');
+        if (clean.length < 15) {
+            // Optional: clear if too short? 
+            // User said "wenn ausgetauscht", so maybe only when we have a result.
+            return;
+        }
+        try {
+            const res = await fetch(`https://openiban.com/validate/${clean}?getBIC=true&validateBankCode=true`);
+            const data = await res.json();
+            
+            setForm(p => ({
+                ...p,
+                bank_name: data.valid ? (data.bankData?.name || '') : '',
+                bank_bic: data.valid ? (data.bankData?.bic || '') : '',
+                bank_code: data.valid ? (data.bankData?.bankCode || '') : ''
+            }));
+
+            if (data.valid && data.bankData?.name) {
+                toast.success(`Bank erkannt: ${data.bankData.name}`);
+            }
+        } catch (e) {
+            console.error('IBAN AutoDetect Error:', e);
+            // On error, clear to be safe
+            setForm(p => ({ ...p, bank_name: '', bank_bic: '', bank_code: '' }));
+        }
+    };
+
     const [zipLoading, setZipLoading] = useState(false);
 
     const [form, setForm] = useState<FormData>({
         company_name: '',
+        managing_director: '',
         legal_form: '',
         industry: '',
-        founded_year: '',
-        managing_director: '',
+        phone: '',
+        mobile: '',
+        email: '',
         website: '',
+        website_protocol: 'https://',
         address_street: '',
         address_house_no: '',
         address_zip: '',
@@ -349,6 +411,8 @@ export default function OnboardingPage() {
         bank_name: '',
         bank_iban: '',
         bank_bic: '',
+        bank_code: '',
+        bank_account_holder: '',
         tax_number: '',
         tax_office: '',
         vat_id: '',
@@ -357,19 +421,31 @@ export default function OnboardingPage() {
         currency: 'EUR',
         project_id_prefix: 'PR',
         invoice_prefix: 'RE',
-        default_languages: [],
+        quote_prefix: 'AN',
+        customer_prefix: 'KD',
+        vendor_prefix: 'KP',
         email_signature: '',
+        company_logo: null,
         subscription_plan: 'pro',
         license_key: '',
     });
+
+    // Auto-detect Finanzamt when entering Finance step
+    useEffect(() => {
+        if (step === 2 && form.address_city && !form.tax_office) {
+            const fa = detectFinanzamt(form.address_city);
+            if (fa) setForm(p => ({ ...p, tax_office: fa }));
+        }
+    }, [step, form.address_city, detectFinanzamt]);
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
     const set = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         const key = name as keyof FormData;
-        if (key === 'bank_iban') {
-            const f = formatIBAN(value);
-            if (f.replace(/\s/g, '').length <= 34) setForm(p => ({ ...p, bank_iban: f }));
+        if (key === 'address_zip') {
+            const v = value.replace(/\D/g, '').substring(0, 5);
+            setForm(p => ({ ...p, address_zip: v }));
+            if (v.length === 5) handleZipAutoDetect(v);
         } else {
             setForm(p => ({ ...p, [key]: value }));
         }
@@ -389,19 +465,21 @@ export default function OnboardingPage() {
         setForm(p => ({ ...p, email_signature: sig }));
     };
 
-    // ─── PLZ Auto-Erkennung ───────────────────────────────────────────────────
-    const handleZipBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
-        const zip = e.target.value.trim();
-        if (zip.length !== 5 || !/^\d{5}$/.test(zip)) return;
-        if (form.address_city) return; // already filled
+
+    const handleZipAutoDetect = async (zip: string) => {
+        if (zip.length !== 5) return;
         setZipLoading(true);
         try {
             const res = await fetch(`https://openplzapi.org/de/Localities?postalCode=${zip}`);
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
                 const city = data[0].name as string;
-                setForm(p => ({ ...p, address_city: city }));
-                toast.success(`Stadt automatisch erkannt: ${city}`);
+                setForm(p => ({ 
+                    ...p, 
+                    address_city: city,
+                    tax_office: detectFinanzamt(city) || p.tax_office
+                }));
+                toast.success(`Stadt erkannt: ${city}`);
             }
         } catch {
             // silent fail
@@ -410,21 +488,89 @@ export default function OnboardingPage() {
         }
     };
 
+    const fetchStreetSuggestions = (searchText: string) => {
+        if (searchText.length < 3) {
+            setStreetOptions([]);
+            return;
+        }
+
+        // Check Cache immediately (no debounce for cached hits)
+        if (searchCache.current[searchText]) {
+            setStreetOptions(searchCache.current[searchText]);
+            return;
+        }
+
+        if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        
+        searchTimeout.current = setTimeout(async () => {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchText)}&addressdetails=1&countrycodes=de,at,ch,lu&limit=10`
+                );
+                const data = await res.json();
+                const suggestions = data
+                    .filter((item: any) => item.address?.road)
+                    .map((item: any) => ({
+                        value: `${item.address.road}|${item.address.postcode || ''}|${item.address.city || item.address.town || item.address.village || ''}|${item.address.country || ''}`,
+                        label: `${item.address.road}${item.address.postcode ? ', ' + item.address.postcode : ''} ${item.address.city || item.address.town || item.address.village || ''}${item.address.country ? ' (' + item.address.country + ')' : ''}`,
+                        street: item.address.road || '',
+                        zip: item.address.postcode || '',
+                        city: item.address.city || item.address.town || item.address.village || '',
+                        country: item.address.country || ''
+                    }));
+                
+                // Remove duplicates by label
+                const unique = suggestions.filter((v: any, i: number, a: any[]) => a.findIndex((t: any) => t.label === v.label) === i);
+                
+                searchCache.current[searchText] = unique;
+                setStreetOptions(unique);
+            } catch { /* silent */ }
+        }, 400); // 400ms delay
+    };
+
+    const handleStreetSelect = (val: string, option: any) => {
+        const city = option.city || '';
+        const street = option.street || '';
+        setForm(p => ({
+            ...p,
+            address_street: street || p.address_street,
+            address_zip: option.zip || p.address_zip,
+            address_city: city || p.address_city,
+            address_country: option.country || p.address_country,
+            tax_office: (city ? detectFinanzamt(city) : '') || p.tax_office
+        }));
+        
+        // Clear errors for auto-filled fields
+        setErrors(p => {
+            const e = { ...p };
+            delete e.address_street;
+            if (option.zip) delete e.address_zip;
+            if (option.city) delete e.address_city;
+            return e;
+        });
+    };
+
     // ─── Steuernummer Auto-Erkennung ─────────────────────────────────────────
     const handleTaxNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
         const raw = e.target.value.trim();
-        if (!raw || form.tax_office) return;
+        if (!raw) return;
         try {
-            const normalized = normalizeSteuernummer(raw, { state: 'BE' });
+            const normalized = normalizeSteuernummer(raw);
             if (normalized) {
                 const result = finanzamt(normalized);
                 if (result && result.name) {
-                    setForm(p => ({ ...p, tax_office: result.name }));
+                    setForm(p => ({ 
+                        ...p, 
+                        tax_office: `Finanzamt ${result.name}`,
+                        // Also try to fill address if empty
+                        address_zip: p.address_zip || result.hausanschrift?.plz || '',
+                        address_city: p.address_city || result.hausanschrift?.ort || '',
+                    }));
                     toast.success(`Finanzamt erkannt: ${result.name}`);
                 }
             }
         } catch {
-            // silent fail — user can type manually
+            // silent fail
         }
     };
 
@@ -433,12 +579,20 @@ export default function OnboardingPage() {
         const e: Errors = {};
         if (step === 0) {
             if (!form.company_name.trim()) e.company_name = 'Firmenname ist erforderlich.';
+            if (!form.managing_director.trim()) e.managing_director = 'Geschäftsführer ist erforderlich.';
+            if (!form.legal_form.trim()) e.legal_form = 'Rechtsform ist erforderlich.';
+            if (!form.email.trim()) {
+                e.email = 'E-Mail ist erforderlich.';
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+                e.email = 'Ungültiges E-Mail-Format.';
+            }
         }
         if (step === 1) {
             if (!form.address_street.trim()) e.address_street = 'Straße ist erforderlich.';
-            if (!form.address_house_no.trim()) e.address_house_no = 'Hausnummer ist erforderlich.';
-            if (!form.address_zip.trim()) e.address_zip = 'PLZ ist erforderlich.';
+            if (!form.address_house_no.trim()) e.address_house_no = 'Nr. ist erforderlich.';
+            if (!form.address_zip.trim()) e.address_zip = 'Postleitzahl ist erforderlich.';
             if (!form.address_city.trim()) e.address_city = 'Stadt ist erforderlich.';
+            if (!form.address_country.trim()) e.address_country = 'Land ist erforderlich.';
         }
         if (step === 2 && form.bank_iban && !isValidIBAN(form.bank_iban)) {
             e.bank_iban = 'Ungültige IBAN (z. B. DE89 3704 0044 0532 0130 00).';
@@ -463,8 +617,13 @@ export default function OnboardingPage() {
         setLoading(true);
         setSubmitError(null);
         try {
+            const finalWebsite = form.website 
+                ? (form.website.startsWith('http') ? form.website : `${form.website_protocol}${form.website}`)
+                : '';
+
             await onboard({
                 ...form,
+                website: finalWebsite,
                 bank_iban: form.bank_iban.replace(/\s+/g, ''),
             });
             navigate('/');
@@ -505,47 +664,86 @@ export default function OnboardingPage() {
                         error={errors.company_name}
                         autoComplete="organization"
                     />
-                    <div className="col-span-2">
-                        <ChipGroup
-                            label="Rechtsform"
-                            options={LEGAL_FORMS}
-                            value={form.legal_form}
-                            onChange={v => setField('legal_form', v)}
-                        />
-                    </div>
-                    <div className="col-span-2">
-                        <ChipGroup
-                            label="Branche"
-                            options={INDUSTRIES}
-                            value={form.industry}
-                            onChange={v => setField('industry', v)}
-                        />
-                    </div>
-                    <Field
-                        label="Gründungsjahr"
-                        name="founded_year"
-                        value={form.founded_year}
-                        onChange={set}
-                        placeholder="z. B. 2015"
-                        type="number"
-                    />
                     <Field
                         label="Geschäftsführer / Inhaber"
                         name="managing_director"
                         value={form.managing_director}
                         onChange={set}
                         placeholder="z. B. Maria Müller"
+                        required
+                        className="col-span-2"
+                        error={errors.managing_director}
                         autoComplete="name"
                     />
-                    <Field
-                        label="Website"
-                        name="website"
-                        value={form.website}
-                        onChange={set}
-                        placeholder="https://www.beispiel.de"
-                        className="col-span-2"
-                        type="url"
+                    <SearchSelect
+                        label="Rechtsform"
+                        options={LEGAL_FORMS}
+                        value={form.legal_form}
+                        onChange={v => setField('legal_form', v)}
+                        placeholder="Wählen..."
+                        required
+                        error={errors.legal_form}
                     />
+                    <SearchSelect
+                        label="Branche"
+                        options={INDUSTRIES}
+                        value={form.industry}
+                        onChange={v => setField('industry', v)}
+                        placeholder="Wählen..."
+                    />
+                    <Field
+                        label="E-Mail (Unternehmen)"
+                        name="email"
+                        value={form.email}
+                        onChange={set}
+                        placeholder="info@firma.de"
+                        required
+                        type="email"
+                        className="col-span-2"
+                        error={errors.email}
+                        autoComplete="email"
+                    />
+                    <div>
+                        <label className={LABEL_CLS}>Festnetztelefon</label>
+                        <PhoneInput
+                            international
+                            defaultCountry="DE"
+                            value={form.phone}
+                            onChange={v => setField('phone', v || '')}
+                            className="phone-input-custom"
+                        />
+                    </div>
+                    <div>
+                        <label className={LABEL_CLS}>Mobiltelefon</label>
+                        <PhoneInput
+                            international
+                            defaultCountry="DE"
+                            value={form.mobile}
+                            onChange={v => setField('mobile', v || '')}
+                            className="phone-input-custom"
+                        />
+                    </div>
+                    <div className="col-span-2">
+                        <label className={LABEL_CLS}>Website</label>
+                        <div className="flex h-9 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                            <select
+                                name="website_protocol"
+                                value={form.website_protocol}
+                                onChange={set}
+                                className="h-full px-2 text-xs border border-[#ccc] border-r-0 rounded-l-[3px] bg-[#f8f8f8] outline-none focus:border-[#1B4D4F] transition-colors"
+                            >
+                                <option value="https://">https://</option>
+                                <option value="http://">http://</option>
+                            </select>
+                            <input
+                                name="website"
+                                value={form.website}
+                                onChange={set}
+                                placeholder="www.beispiel.de"
+                                className="flex-1 h-full px-3 text-sm border border-[#ccc] rounded-r-[3px] bg-white outline-none focus:border-[#1B4D4F] transition-colors"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -567,45 +765,54 @@ export default function OnboardingPage() {
         <div className="space-y-5" key="s1">
             <div>
                 <p className={SECTION_TITLE_CLS}>Geschäftsadresse</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <SelectField
-                        label="Land"
-                        name="address_country"
-                        value={form.address_country}
-                        onChange={set}
-                        options={COUNTRIES}
-                        className="col-span-2"
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                    <div className="col-span-1 sm:col-span-9 flex flex-col">
+                        <label className={LABEL_CLS}>
+                            Straße <span className="text-red-500 ml-0.5">*</span>
+                        </label>
+                        <AutoComplete
+                            options={streetOptions}
+                            onSearch={fetchStreetSuggestions}
+                            onSelect={handleStreetSelect}
+                            value={form.address_street}
+                            filterOption={false}
+                            getPopupContainer={trigger => trigger.parentElement!}
+                        >
+                            <input
+                                placeholder="Musterstraße"
+                                className={errors.address_street ? INPUT_ERROR_CLS : INPUT_CLS}
+                                onChange={(e) => setField('address_street', e.target.value)}
+                                autoComplete="off"
+                            />
+                        </AutoComplete>
+                        {errors.address_street && (
+                            <span className="flex items-center gap-1 text-[11px] text-red-500 mt-1">
+                                <AlertCircle size={10} className="shrink-0" />
+                                {errors.address_street}
+                            </span>
+                        )}
+                    </div>
                     <Field
-                        label="Straße"
-                        name="address_street"
-                        value={form.address_street}
-                        onChange={set}
-                        placeholder="Musterstraße"
-                        required
-                        error={errors.address_street}
-                        autoComplete="street-address"
-                    />
-                    <Field
-                        label="Hausnummer"
+                        label="Nr."
                         name="address_house_no"
                         value={form.address_house_no}
                         onChange={set}
                         placeholder="12 a"
                         required
                         error={errors.address_house_no}
+                        className="col-span-1 sm:col-span-3"
                     />
                     <Field
                         label="Postleitzahl"
                         name="address_zip"
                         value={form.address_zip}
                         onChange={set}
-                        onBlur={handleZipBlur}
                         placeholder="10115"
                         required
                         error={errors.address_zip}
                         autoComplete="postal-code"
                         helpText={zipLoading ? 'Stadt wird ermittelt…' : undefined}
+                        className="col-span-1 sm:col-span-4"
                     />
                     <Field
                         label="Stadt"
@@ -616,7 +823,26 @@ export default function OnboardingPage() {
                         required
                         error={errors.address_city}
                         autoComplete="address-level2"
+                        className="col-span-1 sm:col-span-8"
                     />
+                    <div className="col-span-1 sm:col-span-12 flex flex-col">
+                        <label className={LABEL_CLS}>
+                            Land <span className="text-red-500 ml-0.5">*</span>
+                        </label>
+                        <CountrySelect
+                            label=""
+                            value={form.address_country}
+                            onChange={v => setField('address_country', v)}
+                            error={!!errors.address_country}
+                            className="onboarding-country-select"
+                        />
+                        {errors.address_country && (
+                            <span className="flex items-center gap-1 text-[11px] text-red-500 mt-1">
+                                <AlertCircle size={10} className="shrink-0" />
+                                {errors.address_country}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -636,21 +862,49 @@ export default function OnboardingPage() {
     // ─── Step 3: Finanzen & Steuern ───────────────────────────────────────────
     const step2 = (
         <div className="space-y-5" key="s2">
-            {/* Info-Banner */}
-            <div className="bg-amber-50 border border-amber-200 rounded-[3px] px-4 py-3 flex items-start gap-3">
-                <ShieldCheck size={14} className="text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800 leading-relaxed">
-                    Diese Angaben sind <strong>optional</strong>, werden aber für
-                    GoBD-konforme Rechnungen und den DATEV-Export benötigt.
-                    Sie können alle Felder auch später unter{' '}
-                    <em>Einstellungen → Unternehmen</em> ergänzen.
-                </p>
-            </div>
-
-            {/* Bankverbindung */}
             <div>
                 <p className={SECTION_TITLE_CLS}>Bankverbindung</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                        <label className={LABEL_CLS}>IBAN</label>
+                        <IMaskInput
+                            mask="aa00 0000 0000 0000 0000 00"
+                            prepare={v => v.toUpperCase()}
+                            value={form.bank_iban}
+                            onAccept={(v) => {
+                                setField('bank_iban', v);
+                                if (v.replace(/\s/g, '').length >= 15) handleIbanAutoDetect(v);
+                            }}
+                            onBlur={(e) => {
+                                const v = e.target.value;
+                                if (v.replace(/\s/g, '').length >= 15) handleIbanAutoDetect(v);
+                            }}
+                            placeholder="DE00 0000 0000 0000 0000 00"
+                            className={clsx(INPUT_CLS, errors.bank_iban && "border-red-500 bg-red-50")}
+                        />
+                        {errors.bank_iban && <p className="text-red-500 text-[10px] mt-1">{errors.bank_iban}</p>}
+                    </div>
+                    <div>
+                        <label className={LABEL_CLS}>BIC / SWIFT</label>
+                        <IMaskInput
+                            mask="aaaaaaaaaaa"
+                            prepare={v => v.toUpperCase()}
+                            value={form.bank_bic}
+                            onAccept={(v) => setField('bank_bic', v)}
+                            placeholder="XXXXXXXX"
+                            className={INPUT_CLS}
+                        />
+                    </div>
+                    <div>
+                        <label className={LABEL_CLS}>Bankleitzahl (BLZ)</label>
+                        <IMaskInput
+                            mask="00000000"
+                            value={form.bank_code}
+                            onAccept={(v) => setField('bank_code', v)}
+                            placeholder="12345678"
+                            className={INPUT_CLS}
+                        />
+                    </div>
                     <Field
                         label="Kreditinstitut"
                         name="bank_name"
@@ -660,90 +914,65 @@ export default function OnboardingPage() {
                         className="col-span-2"
                     />
                     <Field
-                        label="IBAN"
-                        name="bank_iban"
-                        value={form.bank_iban}
+                        label="Kontoinhaber"
+                        name="bank_account_holder"
+                        value={form.bank_account_holder || form.company_name}
                         onChange={set}
-                        placeholder="DE89 3704 0044 0532 0130 00"
+                        placeholder="Name des Inhabers"
                         className="col-span-2"
-                        error={errors.bank_iban}
-                        helpText="Wird auf Rechnungen angezeigt. Automatische Formatierung aktiv."
-                    />
-                    <Field
-                        label="BIC / SWIFT"
-                        name="bank_bic"
-                        value={form.bank_bic}
-                        onChange={set}
-                        placeholder="COBADEFFXXX"
+                        autoComplete="name"
                     />
                 </div>
             </div>
 
             {DIVIDER}
 
-            {/* Steuerdaten */}
             <div>
                 <p className={SECTION_TITLE_CLS}>Steuerdaten</p>
-
-                {/* Kleinunternehmer Toggle */}
-                <div className="mb-4 p-3 border border-[#D1D9D8] rounded-[3px] bg-[#f6f8f8] flex items-center justify-between gap-4">
-                    <div>
-                        <p className="text-xs font-semibold text-slate-700">
-                            Kleinunternehmerregelung §19 UStG
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                            Ich bin nach §19 UStG steuerbefreit (Kleinunternehmer)
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setField('is_small_business', !form.is_small_business)}
-                        className={clsx(
-                            'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 transition-colors',
-                            form.is_small_business
-                                ? 'bg-[#1B4D4F] border-[#1B4D4F]'
-                                : 'bg-slate-200 border-slate-200'
-                        )}
-                        role="switch"
-                        aria-checked={form.is_small_business}
-                    >
-                        <span
+                <div className="mb-4">
+                    <div className="p-3 border border-[#D1D9D8] rounded-[3px] bg-[#f6f8f8] flex items-center justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-700">
+                                Kleinunternehmerregelung §19 UStG
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                                Ich bin nach §19 UStG steuerbefreit (Kleinunternehmer)
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setField('is_small_business', !form.is_small_business)}
                             className={clsx(
-                                'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform',
-                                form.is_small_business ? 'translate-x-4' : 'translate-x-0'
+                                'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 transition-colors',
+                                form.is_small_business
+                                    ? 'bg-[#1B4D4F] border-[#1B4D4F]'
+                                    : 'bg-slate-200 border-slate-200'
                             )}
-                        />
-                    </button>
+                            role="switch"
+                            aria-checked={form.is_small_business}
+                        >
+                            <span
+                                className={clsx(
+                                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform',
+                                    form.is_small_business ? 'translate-x-4' : 'translate-x-0'
+                                )}
+                            />
+                        </button>
+                    </div>
                 </div>
 
-                {form.is_small_business && (
-                    <div className={clsx(INFO_BOX_CLS, 'mb-4')}>
-                        <Info size={14} className="text-[#1B4D4F] shrink-0 mt-0.5" />
-                        <span>
-                            Als Kleinunternehmer werden Ihre Rechnungen <strong>ohne Umsatzsteuer</strong> ausgestellt.
-                            Es wird automatisch der §19-UStG-Hinweis eingefügt.
-                        </span>
-                    </div>
-                )}
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field
-                        label="Steuernummer"
-                        name="tax_number"
-                        value={form.tax_number}
-                        onChange={set}
-                        onBlur={handleTaxNumberBlur}
-                        placeholder="12/345/67890"
-                        helpText="Automatische Finanzamt-Erkennung beim Verlassen des Feldes."
-                    />
-                    <Field
-                        label="Zuständiges Finanzamt"
-                        name="tax_office"
-                        value={form.tax_office}
-                        onChange={set}
-                        placeholder="z. B. Finanzamt Berlin-Mitte"
-                        helpText="Wird automatisch aus der Steuernummer ermittelt."
-                    />
+                    <div>
+                        <label className={LABEL_CLS}>Steuernummer</label>
+                        <IMaskInput
+                            mask="00/000/00000"
+                            value={form.tax_number}
+                            onAccept={(v) => setField('tax_number', v)}
+                            onBlur={handleTaxNumberBlur}
+                            placeholder="12/345/67890"
+                            className={INPUT_CLS}
+                        />
+                    </div>
                     {!form.is_small_business && (
                         <Field
                             label="USt-IdNr."
@@ -751,16 +980,31 @@ export default function OnboardingPage() {
                             value={form.vat_id}
                             onChange={set}
                             placeholder="DE123456789"
-                            className="col-span-2"
-                            helpText="Nur für Unternehmen mit Umsatzsteuerpflicht. Steuerbefreite Übersetzer lassen dieses Feld leer."
                         />
                     )}
+                    <div className="col-span-2 flex flex-col">
+                        <label className={LABEL_CLS}>Finanzamt</label>
+                        <AutoComplete
+                            options={taxOfficesData.map(fa => ({ value: `Finanzamt ${fa.name}`, label: `Finanzamt ${fa.name} (${fa.ort})` }))}
+                            value={form.tax_office}
+                            onSearch={(v) => setField('tax_office', v)}
+                            onSelect={(v) => setField('tax_office', v)}
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                        >
+                            <input
+                                placeholder="Finanzamt suchen..."
+                                className={INPUT_CLS}
+                                onChange={(e) => setField('tax_office', e.target.value)}
+                            />
+                        </AutoComplete>
+                    </div>
                 </div>
             </div>
 
             {DIVIDER}
 
-            {/* Rechnungs-Einstellungen */}
             <div>
                 <p className={SECTION_TITLE_CLS}>Rechnungs-Einstellungen</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -783,66 +1027,121 @@ export default function OnboardingPage() {
         </div>
     );
 
-    // ─── Step 4: Systemkonfiguration ─────────────────────────────────────────
     const step3 = (
-        <div className="space-y-5" key="s3">
+        <div className="space-y-6" key="s3">
+            {/* Logo Upload */}
+            <div>
+                <p className={SECTION_TITLE_CLS}>Unternehmenslogo</p>
+                <div className="flex items-center gap-6 mt-2">
+                    <div 
+                        className={clsx(
+                            "w-24 h-24 rounded-[3px] border-2 border-dashed flex items-center justify-center overflow-hidden transition-all",
+                            form.company_logo ? "border-[#1B4D4F] bg-white" : "border-slate-300 bg-slate-50 hover:border-[#1B4D4F]"
+                        )}
+                    >
+                        {form.company_logo ? (
+                            <img src={form.company_logo} alt="Logo Preview" className="w-full h-full object-contain" />
+                        ) : (
+                            <Building2 className="text-slate-300" size={32} />
+                        )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="cursor-pointer bg-white border border-[#ccc] px-4 py-2 rounded-[3px] text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                            Logo hochladen
+                            <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
+                        </label>
+                        {form.company_logo && (
+                            <button 
+                                type="button" 
+                                onClick={() => setForm(p => ({ ...p, company_logo: null }))}
+                                className="text-[10px] text-red-500 hover:underline text-left"
+                            >
+                                Logo entfernen
+                            </button>
+                        )}
+                        <p className="text-[10px] text-slate-400">PNG, JPG oder SVG. Max. 2MB. Empfohlen: Quadratisch.</p>
+                    </div>
+                </div>
+            </div>
+
+            {DIVIDER}
+
             {/* Nummerierung */}
             <div>
-                <p className={SECTION_TITLE_CLS}>Nummerierung</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <p className={SECTION_TITLE_CLS}>Beleg-Nummerierung (Präfixe)</p>
+                <p className="text-[11px] text-slate-500 mb-4">
+                    Legen Sie fest, wie Ihre IDs beginnen sollen. Diese können später nicht mehr einfach geändert werden.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <Field
-                        label="Projekt-ID Präfix"
+                        label="Projekt-ID"
                         name="project_id_prefix"
                         value={form.project_id_prefix}
                         onChange={set}
                         placeholder="PR"
-                        helpText={`z.B. 'PR' → PR-${new Date().getFullYear()}-0001. Erscheint auf allen Projekten.`}
                     />
                     <Field
-                        label="Rechnungs-Präfix"
+                        label="Angebot-ID"
+                        name="quote_prefix"
+                        value={form.quote_prefix}
+                        onChange={set}
+                        placeholder="AN"
+                    />
+                    <Field
+                        label="Rechnung-ID"
                         name="invoice_prefix"
                         value={form.invoice_prefix}
                         onChange={set}
                         placeholder="RE"
-                        helpText={`z.B. 'RE' → RE-${new Date().getFullYear()}-0001`}
+                    />
+                    <Field
+                        label="Kunden-ID"
+                        name="customer_prefix"
+                        value={form.customer_prefix}
+                        onChange={set}
+                        placeholder="KD"
+                    />
+                    <Field
+                        label="Partner-ID"
+                        name="vendor_prefix"
+                        value={form.vendor_prefix}
+                        onChange={set}
+                        placeholder="KP"
                     />
                 </div>
-                <div className="mt-2 bg-amber-50 border border-amber-200 rounded-[3px] px-3 py-2 flex items-start gap-2">
-                    <AlertCircle size={12} className="text-amber-600 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-amber-800">
-                        Präfixe können nach Anlegen erster Datensätze nicht mehr ohne Datenverlust geändert werden.
+                <div className="mt-3 bg-amber-50 border border-amber-100 rounded-[3px] p-2 flex items-start gap-2">
+                    <AlertCircle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-amber-700 leading-tight">
+                        Wichtig: Präfixe definieren den Startwert Ihres Systems. Nach der ersten Erstellung sind Änderungen an der Struktur riskant.
                     </p>
                 </div>
             </div>
 
             {DIVIDER}
 
-            {/* Sprachpaare */}
+            {/* Default Settings */}
             <div>
-                <p className={SECTION_TITLE_CLS}>Hauptsächlich genutzte Sprachpaare</p>
-                <p className="text-[11px] text-slate-500 mb-3">
-                    Gewählte Paare werden nach Abschluss als Master-Daten angelegt.
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                    {LANGUAGE_PAIRS.map(lang => {
-                        const active = form.default_languages.includes(lang);
-                        return (
-                            <button
-                                key={lang}
-                                type="button"
-                                onClick={() => toggleLanguage(lang)}
-                                className={clsx(
-                                    'text-xs px-3 py-1.5 rounded-[3px] border font-mono font-medium transition-all',
-                                    active
-                                        ? 'bg-[#1B4D4F] text-white border-[#123a3c]'
-                                        : 'border-[#ccc] text-slate-600 bg-gradient-to-b from-white to-[#f8f8f8] hover:border-[#1B4D4F] hover:text-[#1B4D4F]'
-                                )}
-                            >
-                                {active && <Check size={10} className="inline mr-1" strokeWidth={3} />}
-                                {lang}
-                            </button>
-                        );
-                    })}
+                <p className={SECTION_TITLE_CLS}>Standard-Einstellungen</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                        <label className={LABEL_CLS}>Amtssprache der Platform</label>
+                        <Select
+                            value="Deutsch"
+                            className="ant-select-custom h-9"
+                            disabled
+                            options={[{ value: 'Deutsch', label: 'Deutsch' }]}
+                        />
+                        <span className="text-[10px] text-slate-400 mt-1 italic">Aktuell nur Deutsch verfügbar.</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <label className={LABEL_CLS}>Zeitzone</label>
+                        <Select
+                            value="Europe/Berlin"
+                            className="ant-select-custom h-9"
+                            disabled
+                            options={[{ value: 'Europe/Berlin', label: '(GMT+01:00) Berlin' }]}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -852,9 +1151,6 @@ export default function OnboardingPage() {
             <div>
                 <p className={SECTION_TITLE_CLS}>E-Mail-Signatur (Vorschau)</p>
                 <div className="flex flex-col">
-                    <label htmlFor="email_signature" className={LABEL_CLS}>
-                        Standardsignatur für ausgehende E-Mails
-                    </label>
                     <textarea
                         id="email_signature"
                         name="email_signature"
@@ -864,51 +1160,15 @@ export default function OnboardingPage() {
                         className={clsx(
                             'w-full px-3 py-2 text-sm border border-[#ccc] rounded-[3px] font-mono',
                             'bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
-                            'outline-none resize-none transition-colors',
+                            'outline-none resize-none transition-colors leading-relaxed',
                             'focus:border-[#1B4D4F] focus:ring-1 focus:ring-[#1B4D4F]/20'
                         )}
                         placeholder={'Mit freundlichen Grüßen\n[Firmenname]\n[Adresse]'}
                     />
                     <span className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
                         <Info size={10} />
-                        Basiert auf Ihren Firmendaten aus Schritt 1 und 2.
+                        Wird automatisch am Ende aller System-E-Mails angefügt.
                     </span>
-                </div>
-            </div>
-
-            {DIVIDER}
-
-            {/* Nächste Schritte */}
-            <div>
-                <p className={SECTION_TITLE_CLS}>Nach dem Einrichten empfohlen</p>
-                <div className="bg-[#f6f8f8] border border-[#D1D9D8] rounded-[3px] divide-y divide-[#D1D9D8]">
-                    {[
-                        {
-                            icon: FileText,
-                            title: 'Logo hochladen',
-                            path: 'Einstellungen → Unternehmen',
-                        },
-                        {
-                            icon: Globe,
-                            title: 'E-Mail-Konto verknüpfen',
-                            path: 'Einstellungen → Unternehmen → E-Mail',
-                        },
-                        {
-                            icon: Users,
-                            title: 'Übersetzer einladen',
-                            path: 'Team → Mitglieder einladen',
-                        },
-                    ].map(({ icon: Icon, title, path }) => (
-                        <div key={title} className="flex items-center gap-3 px-4 py-3">
-                            <div className="w-7 h-7 rounded-[3px] bg-[#1B4D4F]/10 flex items-center justify-center shrink-0">
-                                <Icon size={13} className="text-[#1B4D4F]" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-slate-700">{title}</p>
-                                <p className="text-[11px] text-slate-400">{path}</p>
-                            </div>
-                        </div>
-                    ))}
                 </div>
             </div>
         </div>
@@ -921,8 +1181,8 @@ export default function OnboardingPage() {
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-[#F4F7F6] flex items-center justify-center p-4 sm:p-6">
-            <div className="w-full max-w-5xl border border-[#D1D9D8] rounded-sm shadow-[0_2px_12px_rgba(0,0,0,0.10)] overflow-hidden flex bg-white">
+        <div className="min-h-screen bg-[#F4F7F6] flex flex-col items-center justify-center py-8 px-4 sm:px-6">
+            <div className="w-full max-w-5xl min-h-[500px] lg:h-[850px] max-h-[95vh] border border-[#D1D9D8] rounded-sm shadow-[0_2px_12px_rgba(0,0,0,0.10)] overflow-hidden flex flex-col lg:flex-row bg-white my-auto">
 
                 {/* ── Linke Spalte ──────────────────────────────────────────── */}
                 <div className="hidden lg:flex w-[35%] shrink-0 flex-col bg-[#1B4D4F] relative overflow-hidden">
@@ -930,7 +1190,7 @@ export default function OnboardingPage() {
                     <div className="absolute -top-16 -left-16 w-64 h-64 bg-white/[0.03] rounded-full pointer-events-none" />
                     <div className="absolute bottom-0 right-0 w-72 h-72 bg-[#9BCB56]/[0.06] rounded-full pointer-events-none" />
 
-                    <div className="relative z-10 flex flex-col h-full px-8 py-8">
+                    <div className="relative z-10 flex flex-col h-full px-8 py-8 overflow-y-auto custom-scrollbar">
                         {/* Logo */}
                         <div className="flex items-center gap-2.5 mb-10">
                             <div className="w-8 h-8 rounded-[3px] bg-[#9BCB56]/20 border border-[#9BCB56]/30 flex items-center justify-center">
@@ -1001,7 +1261,7 @@ export default function OnboardingPage() {
                 </div>
 
                 {/* ── Rechte Spalte ─────────────────────────────────────────── */}
-                <div className="flex-1 flex flex-col min-h-[680px]">
+                <div className="flex-1 flex flex-col h-full overflow-hidden">
 
                     {/* Step-Indicator */}
                     <div className="flex items-center px-10 pt-7 pb-5 border-b border-[#D1D9D8] gap-1">
@@ -1064,7 +1324,7 @@ export default function OnboardingPage() {
                     )}
 
                     {/* Formular */}
-                    <div className="flex-1 overflow-y-auto px-10 py-5">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar-slate px-10 py-5">
                         <div key={step} className="onboarding-fade">
                             {stepContent[step]}
                         </div>
@@ -1145,6 +1405,82 @@ export default function OnboardingPage() {
                     to   { opacity: 1; transform: translateY(0); }
                 }
                 .onboarding-fade { animation: onboardFade 0.25s ease-out forwards; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(155, 203, 86, 0.2); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(155, 203, 86, 0.4); }
+                .custom-scrollbar-slate::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar-slate::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar-slate::-webkit-scrollbar-thumb { background: rgba(30, 41, 59, 0.1); border-radius: 10px; }
+                .custom-scrollbar-slate::-webkit-scrollbar-thumb:hover { background: rgba(30, 41, 59, 0.2); }
+                
+                .ant-select-custom .ant-select-selector {
+                    border-radius: 3px !important;
+                    border-color: #ccc !important;
+                    height: 36px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    background: linear-gradient(to bottom, #fff, #fbfbfb) !important;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+                }
+                .ant-select-custom.ant-select-focused .ant-select-selector {
+                    border-color: #1B4D4F !important;
+                    box-shadow: 0 0 0 1px rgba(27, 77, 79, 0.2) !important;
+                }
+                .ant-select-custom.ant-select-error .ant-select-selector {
+                    border-color: #ef4444 !important;
+                    background: #fef2f2 !important;
+                }
+                .ant-select-custom .ant-select-selection-placeholder {
+                    color: #cbd5e1 !important;
+                    font-size: 14px !important;
+                }
+                .ant-select-custom .ant-select-selection-item {
+                    font-size: 14px !important;
+                    color: #334155 !important;
+                }
+
+                /* Phone Input Customization */
+                .phone-input-custom {
+                    display: flex;
+                    align-items: center;
+                    border: 1px solid #ccc;
+                    border-radius: 3px;
+                    height: 36px;
+                    padding: 0 8px;
+                    background: linear-gradient(to bottom, #fff, #fbfbfb);
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                }
+                .phone-input-custom:focus-within {
+                    border-color: #1B4D4F;
+                    box-shadow: 0 0 0 1px rgba(27, 77, 79, 0.2);
+                }
+                .phone-input-custom .PhoneInputInput {
+                    border: none !important;
+                    outline: none !important;
+                    background: transparent !important;
+                    font-size: 14px;
+                    padding-left: 8px;
+                    width: 100%;
+                }
+                .phone-input-custom .PhoneInputCountry {
+                    margin-right: 4px;
+                }
+
+                /* Country Select Alignment */
+                .onboarding-country-select {
+                    border-color: #ccc !important;
+                    border-radius: 3px !important;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+                }
+                .onboarding-country-select:hover {
+                    border-color: #1B4D4F !important;
+                }
+                .onboarding-country-select[data-error="true"],
+                div[data-error="true"] .onboarding-country-select {
+                    border-color: #ef4444 !important;
+                    background: #fef2f2 !important;
+                }
             `}</style>
         </div>
     );

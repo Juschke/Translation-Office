@@ -10,6 +10,7 @@ class Tenant extends Model
         'name',
         'company_name',
         'legal_form',
+        'industry',
         'managing_director',
         'domain',
         'address_street',

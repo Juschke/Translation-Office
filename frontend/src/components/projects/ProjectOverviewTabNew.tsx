@@ -1,4 +1,5 @@
-import { FaArrowRight, FaStar, FaEnvelope, FaEdit, FaChevronDown, FaEllipsisV, FaFileInvoice, FaExclamationCircle, FaArrowUp, FaMinus } from 'react-icons/fa';
+import { FaArrowRight, FaStar, FaEnvelope, FaEdit, FaChevronDown, FaEllipsisV, FaFileInvoice, FaExclamationCircle, FaMinus, FaExclamationTriangle, FaInfoCircle, FaArrowDown } from 'react-icons/fa';
+import clsx from 'clsx';
 import { Button } from '../ui/button';
 import { useState, useEffect } from 'react';
 
@@ -80,10 +81,6 @@ const ProjectOverviewTabNew = ({
     const estimatedTotal = (projectData.positions || []).reduce((sum: number, pos: any) =>
         sum + (parseFloat(pos.rate || 0) * parseFloat(pos.units || 0)), 0);
 
-    const daysUntilDue = projectData.due
-        ? Math.ceil((new Date(projectData.due).getTime() - Date.now()) / (1000 * 3600 * 24))
-        : null;
-    const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
 
     const toggleDropdown = (section: string) =>
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -146,17 +143,38 @@ const ProjectOverviewTabNew = ({
                                     {projectData.notes && (
                                         <InfoRow label="Notizen">{projectData.notes}</InfoRow>
                                     )}
-                                    <InfoRow label="Dokumenttyp">
-                                        {projectData.docType?.length > 0 ? projectData.docType.join(', ') : '–'}
+                                    <InfoRow label="Liefertermin">
+                                        {projectData.due
+                                            ? new Date(projectData.due).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })
+                                            : 'Keine Angaben'}
                                     </InfoRow>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <SectionLabel>Versand & Status</SectionLabel>
+                                    <InfoRow label="Priorität">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-slate-800 font-medium">
+                                                {projectData.priority === 'urgent' ? 'Dringend'
+                                                    : projectData.priority === 'high' ? 'Hoch'
+                                                        : projectData.priority === 'medium' ? 'Mittel'
+                                                            : projectData.priority === 'low' ? 'Niedrig'
+                                                                : 'Keine Angaben'}
+                                            </span>
+                                            {projectData.priority === 'urgent'
+                                                ? <FaExclamationCircle size={10} className="text-red-500 font-bold" />
+                                                : projectData.priority === 'high'
+                                                    ? <FaExclamationTriangle size={10} className="text-amber-500" />
+                                                    : projectData.priority === 'medium'
+                                                        ? <FaInfoCircle size={10} className="text-sky-500" />
+                                                        : projectData.priority === 'low'
+                                                            ? <FaArrowDown size={10} className="text-slate-400" />
+                                                            : <FaMinus size={10} className="text-slate-300" />}
+                                        </div>
+                                    </InfoRow>
+                                    <InfoRow label="Dokumenttyp">
+                                        {projectData.docType?.length > 0 ? projectData.docType.join(', ') : 'Keine Angaben'}
+                                    </InfoRow>
                                     <InfoRow label="Versand">
                                         {projectData.shipping_type === 'email' ? 'Per E-Mail'
                                             : projectData.shipping_type === 'pickup' ? 'Abholung'
-                                                : '–'}
+                                                : 'Keine Angaben'}
                                     </InfoRow>
                                     <InfoRow label="Status">
                                         <StatusBadge status={projectData.status} />
@@ -207,7 +225,7 @@ const ProjectOverviewTabNew = ({
                                 <InfoRow label="Name">
                                     <span className="font-semibold text-slate-800">
                                         {projectData.customer?.salutation ? `${projectData.customer.salutation} ` : ''}
-                                        {projectData.customer?.name || '–'}
+                                        {projectData.customer?.name || 'Keine Angaben'}
                                     </span>
                                 </InfoRow>
                                 {projectData.customer?.display_id && (
@@ -227,17 +245,17 @@ const ProjectOverviewTabNew = ({
                                 <InfoRow label="E-Mail">
                                     {projectData.customer?.email
                                         ? <a href={`mailto:${projectData.customer.email}`} className="text-slate-700 hover:text-brand-primary hover:underline break-all">{projectData.customer.email}</a>
-                                        : '–'}
+                                        : 'Keine Angaben'}
                                 </InfoRow>
                                 <InfoRow label="Mobil">
                                     {projectData.customer?.mobile_phone
                                         ? <a href={`tel:${projectData.customer.mobile_phone}`} className="text-slate-700 hover:text-brand-primary hover:underline">{projectData.customer.mobile_phone}</a>
-                                        : '–'}
+                                        : 'Keine Angaben'}
                                 </InfoRow>
                                 <InfoRow label="Telefon">
                                     {projectData.customer?.phone
                                         ? <a href={`tel:${projectData.customer.phone}`} className="text-slate-700 hover:text-brand-primary hover:underline">{projectData.customer.phone}</a>
-                                        : '–'}
+                                        : 'Keine Angaben'}
                                 </InfoRow>
                                 {projectData.customer?.address_street && (
                                     <InfoRow label="Adresse">
@@ -257,7 +275,7 @@ const ProjectOverviewTabNew = ({
                                 <InfoRow label="Zahlungsziel">
                                     {projectData.customer?.payment_terms_days
                                         ? `${projectData.customer.payment_terms_days} Tage`
-                                        : '–'}
+                                        : 'Keine Angaben'}
                                 </InfoRow>
                                 <InfoRow label="Kundenportal">
                                     <span className="flex items-center gap-1.5">
@@ -329,20 +347,26 @@ const ProjectOverviewTabNew = ({
                                                         : projectData.translator?.type === 'agency' ? 'Agentur'
                                                             : projectData.translator?.type || 'Übersetzer'}
                                         </InfoRow>
+                                        {projectData.translator?.company && (
+                                            <InfoRow label="Firma">{projectData.translator.company}</InfoRow>
+                                        )}
+                                        {projectData.translator?.contact_person && (
+                                            <InfoRow label="Ansprechp.">{projectData.translator.contact_person}</InfoRow>
+                                        )}
                                         <InfoRow label="E-Mail">
                                             {projectData.translator.email
                                                 ? <a href={`mailto:${projectData.translator.email}`} className="text-slate-700 hover:text-brand-primary hover:underline break-all">{projectData.translator.email}</a>
-                                                : '–'}
+                                                : 'Keine Angaben'}
                                         </InfoRow>
                                         <InfoRow label="Mobil">
                                             {projectData.translator?.mobile_phone
                                                 ? <a href={`tel:${projectData.translator.mobile_phone}`} className="text-slate-700 hover:text-brand-primary hover:underline">{projectData.translator.mobile_phone}</a>
-                                                : '–'}
+                                                : 'Keine Angaben'}
                                         </InfoRow>
                                         <InfoRow label="Telefon">
                                             {projectData.translator?.phone
                                                 ? <a href={`tel:${projectData.translator.phone}`} className="text-slate-700 hover:text-brand-primary hover:underline">{projectData.translator.phone}</a>
-                                                : '–'}
+                                                : 'Keine Angaben'}
                                         </InfoRow>
                                         {projectData.translator?.address_street && (
                                             <InfoRow label="Adresse">
@@ -379,7 +403,7 @@ const ProjectOverviewTabNew = ({
                                                 <span className="text-slate-500">
                                                     {projectData.translator.rating
                                                         ? `${parseFloat(projectData.translator.rating.toFixed(1)).toString()}/5`
-                                                        : '–'}
+                                                        : 'Keine Angaben'}
                                                 </span>
                                             </span>
                                         </InfoRow>
@@ -388,6 +412,16 @@ const ProjectOverviewTabNew = ({
                                                 {[wordRate && `Wort: ${parseFloat(wordRate).toFixed(3)} €`, lineRate && `Zeile: ${parseFloat(lineRate).toFixed(3)} €`].filter(Boolean).join(' · ')}
                                             </InfoRow>
                                         )}
+                                        <InfoRow label="Partnerportal">
+                                            <span className="flex items-center gap-1.5">
+                                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${projectData.translator?.portal_access ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                                                {projectData.translator?.portal_access
+                                                    ? projectData.translator.portal_last_login_at
+                                                        ? `Aktiv · zuletzt ${new Date(projectData.translator.portal_last_login_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}`
+                                                        : 'Aktiv · noch nie eingeloggt'
+                                                    : 'Nicht aktiv'}
+                                            </span>
+                                        </InfoRow>
                                     </div>
 
                                 </>
@@ -414,116 +448,95 @@ const ProjectOverviewTabNew = ({
 
                     {/* FINANZEN */}
                     <div className="bg-white border border-slate-200 rounded-sm p-4">
-                        <div className="text-[11px] font-semibold text-slate-500 mb-2.5">Finanzen</div>
-                        <div className="space-y-0">
-                            <InfoRow label="Geschätzt">
-                                {estimatedTotal.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
-                            </InfoRow>
-                            <InfoRow label="Positionen">
-                                {(projectData.positions || []).length}
-                            </InfoRow>
-                        </div>
-
-                        {activeInvoice && (
-                            <div className="mt-3 pt-3 border-t border-slate-100">
-                                <button
-                                    onClick={() => setPreviewInvoice(activeInvoice)}
-                                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-sm border border-slate-200 hover:border-brand-primary hover:bg-slate-50 transition group mb-2.5"
-                                >
-                                    <FaFileInvoice size={12} className="text-slate-400 group-hover:text-brand-primary shrink-0" />
-                                    <span className="text-xs font-medium text-slate-700 group-hover:text-brand-primary flex-1 text-left">
-                                        {activeInvoice.invoice_number || 'Rechnung'}
-                                    </span>
-                                    <span className="text-[10px] text-slate-400 shrink-0">öffnen →</span>
-                                </button>
-                                <div className="space-y-0 pl-1">
-                                    <InfoRow label="Netto">
-                                        {(activeInvoice.amount_net_eur ?? (activeInvoice.amount_net / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
-                                    </InfoRow>
-                                    <InfoRow label={`MwSt. ${activeInvoice.tax_rate ?? ''}%`}>
-                                        {(activeInvoice.amount_tax_eur ?? (activeInvoice.amount_tax / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
-                                    </InfoRow>
-                                    <InfoRow label="Gesamt">
-                                        <span className="font-semibold text-slate-800">
-                                            {(activeInvoice.amount_gross_eur ?? (activeInvoice.amount_gross / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
-                                        </span>
-                                    </InfoRow>
-                                    {(activeInvoice.paid_amount_eur > 0 || activeInvoice.paid_amount_cents > 0) && (
-                                        <InfoRow label="Anzahlung">
-                                            {(activeInvoice.paid_amount_eur ?? (activeInvoice.paid_amount_cents / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
-                                        </InfoRow>
-                                    )}
-                                    {(activeInvoice.amount_due_eur > 0 || activeInvoice.amount_due > 0) && (
-                                        <InfoRow label="Offen">
-                                            <span className="text-amber-600 font-medium">
-                                                {(activeInvoice.amount_due_eur ?? (activeInvoice.amount_due / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
-                                            </span>
-                                        </InfoRow>
-                                    )}
-                                </div>
+                        <div className="text-[11px] font-bold text-slate-500 mb-3 uppercase tracking-widest">Finanzen</div>
+                        
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[11px] text-slate-500">
+                                <span>Positionen Netto</span>
+                                <span>{estimatedTotal.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
                             </div>
-                        )}
+                            
+                            {projectData.isCertified && (
+                                <div className="flex justify-between text-[11px] text-slate-400 pl-2">
+                                    <span>+ Beglaubigung {projectData.certified_count > 1 ? `(${projectData.certified_count}×)` : ''}</span>
+                                    <span>{(5 * (projectData.certified_count || 1)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                                </div>
+                            )}
+                            {projectData.hasApostille && (
+                                <div className="flex justify-between text-[11px] text-slate-400 pl-2">
+                                    <span>+ Apostille {projectData.apostille_count > 1 ? `(${projectData.apostille_count}×)` : ''}</span>
+                                    <span>{(25 * (projectData.apostille_count || 1)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                                </div>
+                            )}
+                            {projectData.isExpress && (
+                                <div className="flex justify-between text-[11px] text-slate-400 pl-2">
+                                    <span>+ Express {projectData.express_count > 1 ? `(${projectData.express_count}×)` : ''}</span>
+                                    <span>{(15 * (projectData.express_count || 1)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                                </div>
+                            )}
+                            {projectData.copies > 0 && (
+                                <div className="flex justify-between text-[11px] text-slate-400 pl-2">
+                                    <span>+ Kopien ({projectData.copies}×)</span>
+                                    <span>{(projectData.copies * parseFloat(projectData.copy_price || '5')).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                                </div>
+                            )}
+
+                            <div className="pt-2 border-t border-slate-100 flex justify-between text-[11px] font-bold text-slate-700">
+                                <span>Gesamt Netto</span>
+                                <span>{(activeInvoice?.amount_net_eur ?? estimatedTotal).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                            </div>
+
+                            <div className="flex justify-between text-[11px] text-slate-400">
+                                <span>MwSt. {activeInvoice?.tax_rate || 19}%</span>
+                                <span>{(activeInvoice?.amount_tax_eur ?? (estimatedTotal * 0.19)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                            </div>
+
+                            <div className="pt-2 border-t-2 border-slate-100 flex justify-between text-base font-bold text-slate-900">
+                                <span>Gesamt</span>
+                                <span>{(activeInvoice?.amount_gross_eur ?? (estimatedTotal * 1.19)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                            </div>
+
+                            {activeInvoice && (activeInvoice.paid_amount_eur > 0 || activeInvoice.paid_amount_cents > 0) && (
+                                <div className="flex justify-between text-[11px] text-emerald-600 font-bold">
+                                    <span>Bezahlt</span>
+                                    <span>-{(activeInvoice.paid_amount_eur ?? (activeInvoice.paid_amount_cents / 100)).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                                </div>
+                            )}
+
+                            <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase">Restbetrag</span>
+                                <span className={clsx(
+                                    'text-base font-black',
+                                    (activeInvoice?.amount_due_eur || 0) <= 0.01 && activeInvoice ? 'text-emerald-600' : 'text-slate-900'
+                                )}>
+                                    {(activeInvoice?.amount_due_eur || 0) <= 0.01 && activeInvoice ? 'BEZAHLT' : (activeInvoice?.amount_due_eur ?? (estimatedTotal * 1.19)).toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €'}
+                                </span>
+                            </div>
+
+                            {activeInvoice && (
+                                <div className="mt-4 pt-4 border-t border-slate-100">
+                                    <Button
+                                        onClick={() => setPreviewInvoice(activeInvoice)}
+                                        className="w-full px-4 py-2.5 text-xs md:text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                    >
+                                        <FaFileInvoice className="text-sm md:text-base" />
+                                        <span>{activeInvoice.invoice_number || 'Rechnung'} öffnen</span>
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* TERMINE */}
+                    {/* AKTIVITÄT */}
                     <div className="bg-white border border-slate-200 rounded-sm p-4">
-                        <div className="text-[11px] font-semibold text-slate-500 mb-2.5">Übersicht</div>
+                        <div className="text-[11px] font-semibold text-slate-500 mb-2.5">Aktivität</div>
                         <div className="space-y-0">
-                            <InfoRow label="Termin">
-                                {projectData.due
-                                    ? new Date(projectData.due).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })
-                                    : '–'}
-                            </InfoRow>
-                            {daysUntilDue !== null && (
-                                <InfoRow label="Verbleibend">
-                                    <span className={isOverdue ? 'text-red-600' : 'text-slate-800'}>
-                                        {isOverdue ? `${Math.abs(daysUntilDue)} Tage überfällig` : `${daysUntilDue} Tage`}
-                                    </span>
-                                </InfoRow>
-                            )}
-                            <InfoRow label="Priorität">
-                                <span className="flex items-center gap-1.5">
-                                    {projectData.priority === 'high' || projectData.priority === 'urgent'
-                                        ? <FaExclamationCircle size={9} className="text-red-400" />
-                                        : projectData.priority === 'medium'
-                                            ? <FaArrowUp size={9} className="text-amber-400" />
-                                            : <FaMinus size={9} className="text-slate-300" />}
-                                    {projectData.priority === 'high' ? 'Hoch'
-                                        : projectData.priority === 'urgent' ? 'Dringend'
-                                            : projectData.priority === 'medium' ? 'Mittel'
-                                                : projectData.priority === 'low' ? 'Niedrig'
-                                                    : '–'}
-                                </span>
-                            </InfoRow>
                             <InfoRow label="Dateien">
                                 {sourceFiles.length} Quell · {targetFiles.length} Ziel
                             </InfoRow>
                             <InfoRow label="Nachrichten">
                                 {(projectData.messages || []).length}
                             </InfoRow>
-                        </div>
-                    </div>
-
-                    {/* VERWEISE */}
-                    <div className="bg-white border border-slate-200 rounded-sm p-4">
-                        <div className="text-[11px] font-semibold text-slate-500 mb-2">Verweise</div>
-                        <div className="space-y-0.5">
-                            {projectData.customer_id && (
-                                <button
-                                    onClick={() => navigate(`/customers/${projectData.customer_id}`)}
-                                    className="w-full text-left px-2 py-1.5 text-xs text-slate-600 hover:text-brand-primary hover:bg-slate-50 rounded transition"
-                                >
-                                    Kundenprofil öffnen
-                                </button>
-                            )}
-                            {projectData.translator?.id && (
-                                <button
-                                    onClick={() => navigate(`/partners/${projectData.translator.id}`)}
-                                    className="w-full text-left px-2 py-1.5 text-xs text-slate-600 hover:text-brand-primary hover:bg-slate-50 rounded transition"
-                                >
-                                    Partnerprofil öffnen
-                                </button>
-                            )}
                         </div>
                     </div>
 

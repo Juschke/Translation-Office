@@ -23,6 +23,12 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
     const [newCategoryName, setNewCategoryName] = useState('');
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
+    // ─── Design Tokens ──────────────────────────────────────────────────────────
+    const INPUT_CLS = "w-full h-9 px-3 text-sm border border-[#ccc] rounded-[3px] bg-gradient-to-b from-white to-[#fbfbfb] shadow-[0_1px_2px_rgba(0,0,0,0.05)] outline-none transition-colors placeholder:text-slate-300 focus:border-[#1B4D4F] focus:ring-1 focus:ring-[#1B4D4F]/20";
+    const LABEL_CLS = "block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1.5";
+    const PRIMARY_BTN = "px-6 py-2.5 bg-[#1B4D4F] text-white rounded-[3px] text-xs font-semibold hover:bg-[#153a3c] shadow-sm transition-all flex items-center gap-2";
+    const SECONDARY_BTN = "px-6 py-2.5 bg-white border border-[#ccc] text-slate-600 rounded-[3px] text-xs font-medium hover:bg-slate-50 transition-all";
+
     const availableVariables = [
         { label: 'Auftragsnummer', value: '{offer_number}' },
         { label: 'Datum', value: '{date}' },
@@ -111,6 +117,7 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
             if (!formData.name_internal) { newErrors.name_internal = true; if (!firstErrorId) firstErrorId = 'name_internal'; }
             if (!formData.name_native) { newErrors.name_native = true; if (!firstErrorId) firstErrorId = 'name_native'; }
             if (!formData.iso_code) { newErrors.iso_code = true; if (!firstErrorId) firstErrorId = 'iso_code'; }
+            // code removed from required if languages, handled automatically
         }
         if (type === 'doc_types') {
             if (!formData.category) { newErrors.category = true; if (!firstErrorId) firstErrorId = 'category'; }
@@ -161,6 +168,11 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
             // Ensure status is at least active if unset
             if (!payload.status) payload.status = 'active';
 
+            // Auto-generate code for languages if missing
+            if (type === 'languages' && !payload.code) {
+                payload.code = 'L' + Math.floor(1000 + Math.random() * 9000);
+            }
+
             // Specific backend mapping for Languages
             if (type === 'languages') {
                 if (payload.status === 'inactive') payload.status = 'archived';
@@ -173,10 +185,62 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
     };
 
     const handleChange = (field: string, value: any) => {
-        setFormData((prev: any) => ({ ...prev, [field]: value }));
+        setFormData((prev: any) => {
+            const newData = { ...prev, [field]: value };
+            
+            // Auto-detect ISO and Flag for languages
+            if (type === 'languages' && (field === 'name_internal' || field === 'name_native') && value) {
+                const detected = detectLanguageInfo(value);
+                if (detected) {
+                    if (!newData.iso_code) newData.iso_code = detected.iso;
+                    if (!newData.flag_icon) newData.flag_icon = detected.flag;
+                }
+            }
+            
+            return newData;
+        });
+
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: false }));
         }
+    };
+
+    const detectLanguageInfo = (name: string) => {
+        if (!name) return null;
+        const n = name.toLowerCase();
+        const map: Record<string, { iso: string; flag: string }> = {
+            'deutsch': { iso: 'de-DE', flag: 'de' },
+            'german': { iso: 'de-DE', flag: 'de' },
+            'englisch': { iso: 'en-GB', flag: 'gb' },
+            'english': { iso: 'en-GB', flag: 'gb' },
+            'französich': { iso: 'fr-FR', flag: 'fr' },
+            'french': { iso: 'fr-FR', flag: 'fr' },
+            'italienisch': { iso: 'it-IT', flag: 'it' },
+            'italian': { iso: 'it-IT', flag: 'it' },
+            'spanisch': { iso: 'es-ES', flag: 'es' },
+            'spanish': { iso: 'es-ES', flag: 'es' },
+            'russisch': { iso: 'ru-RU', flag: 'ru' },
+            'russian': { iso: 'ru-RU', flag: 'ru' },
+            'türkisch': { iso: 'tr-TR', flag: 'tr' },
+            'turkish': { iso: 'tr-TR', flag: 'tr' },
+            'polnisch': { iso: 'pl-PL', flag: 'pl' },
+            'polish': { iso: 'pl-PL', flag: 'pl' },
+            'ukrainisch': { iso: 'uk-UA', flag: 'ua' },
+            'ukrainian': { iso: 'uk-UA', flag: 'ua' },
+            'arabisch': { iso: 'ar-SA', flag: 'sa' },
+            'arabic': { iso: 'ar-SA', flag: 'sa' },
+            'holländisch': { iso: 'nl-NL', flag: 'nl' },
+            'dutch': { iso: 'nl-NL', flag: 'nl' },
+            'portugiesisch': { iso: 'pt-PT', flag: 'pt' },
+            'portuguese': { iso: 'pt-PT', flag: 'pt' },
+            'chinesisch': { iso: 'zh-CN', flag: 'cn' },
+            'chinese': { iso: 'zh-CN', flag: 'cn' }
+        };
+
+        for (const [key, val] of Object.entries(map)) {
+            if (n.includes(key)) return val;
+        }
+        return null;
     };
 
     const getTitle = () => {
@@ -210,27 +274,28 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
     return (
         <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
             <div className={clsx(
-                "bg-white rounded-sm shadow-sm w-full overflow-hidden animate-fadeInUp",
+                "bg-white rounded-[3px] border border-[#ccc] shadow-[0_10px_40px_rgba(0,0,0,0.1)] w-full overflow-hidden animate-fadeInUp",
                 type === 'email_templates' ? "max-w-2xl" : "max-w-lg"
             )}>
                 {/* Header */}
-                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <div className="bg-gradient-to-b from-white to-[#f9f9f9] px-6 py-4 border-b border-[#eee] flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-sm bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                        <div className="w-8 h-8 rounded-[3px] bg-white border border-[#eee] flex items-center justify-center shadow-sm">
                             {getIcon()}
                         </div>
-                        <h3 className="font-medium text-slate-800 text-sm">
+                        <h3 className="font-semibold text-slate-800 text-sm tracking-tight">
                             {initialData ? 'Eintrag bearbeiten' : getTitle()}
                         </h3>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
-                        <FaTimes />
+                    <button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition p-1">
+                        <FaTimes className="text-xs" />
                     </button>
                 </div>
 
                 {/* Body */}
                 <div className="p-6 space-y-5">
-                    {/* Status Field - Common for all */}
+                    {/* Status Field - Common for all, hidden for languages */}
+                    {type !== 'languages' && (
                     <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-slate-400">Status</label>
                         <div className="flex bg-slate-100 p-0.5 rounded-sm border border-slate-200 h-11">
@@ -248,27 +313,18 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             </button>
                         </div>
                     </div>
+                    )}
 
                     {/* Language Fields */}
                     {type === 'languages' && (
                         <>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-medium text-slate-400">{t('fields.code')}</label>
-                                    <input
-                                        type="text"
-                                        className="w-full h-11 px-3 border border-slate-300 bg-white rounded-sm outline-none focus:border-slate-900 text-sm font-mono"
-                                        placeholder="001"
-                                        value={formData.code || ''}
-                                        onChange={(e) => handleChange('code', e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-1.5 col-span-2">
-                                    <label className="block text-xs font-medium text-slate-400">Name der Sprache <span className="text-red-500">*</span></label>
+                                    <label className={LABEL_CLS}>Name der Sprache <span className="text-red-500">*</span></label>
                                     <input
                                         id="name_internal"
                                         type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all shadow-sm", errors.name_internal ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                        className={clsx(INPUT_CLS, errors.name_internal && "border-red-400 bg-red-50 focus:border-red-500")}
                                         placeholder="z.B. Deutsch (Deutschland)"
                                         value={formData.name_internal || ''}
                                         onChange={(e) => handleChange('name_internal', e.target.value)}
@@ -276,11 +332,11 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-400">Name (Native) <span className="text-red-500">*</span></label>
+                                <label className={LABEL_CLS}>Name (Native) <span className="text-red-500">*</span></label>
                                 <input
                                     id="name_native"
                                     type="text"
-                                    className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.name_native ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                    className={clsx(INPUT_CLS, errors.name_native && "border-red-400 bg-red-50 focus:border-red-500")}
                                     placeholder="z.B. Deutsch"
                                     value={formData.name_native || ''}
                                     onChange={(e) => handleChange('name_native', e.target.value)}
@@ -288,21 +344,21 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-medium text-slate-400">ISO Code <span className="text-red-500">*</span></label>
+                                    <label className={LABEL_CLS}>ISO Code <span className="text-red-500">*</span></label>
                                     <input
                                         id="iso_code"
                                         type="text"
-                                        className={clsx("w-full h-11 px-3 border rounded-sm outline-none focus:border-slate-900 text-sm transition-all", errors.iso_code ? "border-red-500 bg-red-50" : "border-slate-300 bg-white")}
+                                        className={clsx(INPUT_CLS, errors.iso_code && "border-red-400 bg-red-50 focus:border-red-500")}
                                         placeholder="de-DE"
                                         value={formData.iso_code || ''}
                                         onChange={(e) => handleChange('iso_code', e.target.value)}
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-medium text-slate-400">Flaggen-Code (2-Stellig)</label>
+                                    <label className={LABEL_CLS}>Flaggen-Code (2-Stellig)</label>
                                     <input
                                         type="text"
-                                        className="w-full h-11 px-3 border border-slate-300 rounded-sm outline-none focus:border-slate-900 text-sm bg-white"
+                                        className={INPUT_CLS}
                                         placeholder="de"
                                         maxLength={2}
                                         value={formData.flag_icon || ''}
@@ -630,16 +686,16 @@ const NewMasterDataModal: React.FC<NewMasterDataModalProps> = ({ isOpen, onClose
                 </div>
 
                 {/* Footer */}
-                <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <div className="bg-[#fbfcff] px-6 py-4 border-t border-[#eee] flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2.5 rounded-sm border border-slate-300 text-slate-600 text-xs font-medium hover:bg-white transition"
+                        className={SECONDARY_BTN}
                     >
                         Abbrechen
                     </button>
                     <button
                         onClick={handleSubmit}
-                        className="px-6 py-2.5 bg-slate-900 text-white rounded-sm text-xs font-medium hover:bg-slate-800 shadow-sm transition flex items-center gap-2"
+                        className={PRIMARY_BTN}
                     >
                         <FaSave /> Speichern
                     </button>

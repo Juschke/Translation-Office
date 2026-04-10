@@ -274,8 +274,6 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
         password: '',
         confirmPassword: '',
     });
-    const [termsAccepted, setTermsAccepted] = useState(false);
-    const [privacyAccepted, setPrivacyAccepted] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -294,12 +292,9 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
             setError(t('auth.passwords_no_match'));
             return;
         }
-        if (formData.password.length < 8) {
-            setError(t('auth.password_min_8'));
-            return;
-        }
-        if (!termsAccepted || !privacyAccepted) {
-            setError('Bitte akzeptieren Sie die Nutzungsbedingungen und die Datenschutzerklärung.');
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$/;
+        if (!passwordRegex.test(formData.password)) {
+            setError(t('auth.password_invalid_requirements'));
             return;
         }
 
@@ -310,8 +305,8 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                 email: formData.email,
                 password: formData.password,
                 password_confirmation: formData.confirmPassword,
-                terms_accepted: termsAccepted,
-                privacy_accepted: privacyAccepted
+                terms_accepted: true,
+                privacy_accepted: true
             });
             navigate('/onboarding');
         } catch (err: any) {
@@ -395,10 +390,6 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                         placeholder="Mindestens 8 Zeichen"
                     />
                 </div>
-                <p className="mt-1.5 text-[11px] text-slate-500 flex items-center gap-1">
-                    <FaShieldAlt className="text-brand-primary" />
-                    {t('auth.password_hint')}
-                </p>
             </div>
 
             <div>
@@ -423,35 +414,6 @@ const RegisterForm = ({ register, navigate }: RegisterFormProps) => {
                 </div>
             </div>
 
-            <div className="space-y-3 pt-2">
-                <label className="relative flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:border-brand-primary/30 transition-colors cursor-pointer group">
-                    <div className="flex items-center h-5">
-                        <input
-                            type="checkbox"
-                            checked={termsAccepted}
-                            onChange={(e) => setTermsAccepted(e.target.checked)}
-                            className="h-4 w-4 text-brand-primary border-slate-300 rounded focus:ring-brand-primary cursor-pointer"
-                        />
-                    </div>
-                    <div className="text-xs leading-5 text-slate-600">
-                        {t('auth.terms_accepted')}
-                    </div>
-                </label>
-
-                <label className="relative flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:border-brand-primary/30 transition-colors cursor-pointer group">
-                    <div className="flex items-center h-5">
-                        <input
-                            type="checkbox"
-                            checked={privacyAccepted}
-                            onChange={(e) => setPrivacyAccepted(e.target.checked)}
-                            className="h-4 w-4 text-brand-primary border-slate-300 rounded focus:ring-brand-primary cursor-pointer"
-                        />
-                    </div>
-                    <div className="text-xs leading-5 text-slate-600">
-                        {t('auth.privacy_accepted')}
-                    </div>
-                </label>
-            </div>
 
             <button
                 type="submit"

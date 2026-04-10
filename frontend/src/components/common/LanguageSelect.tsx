@@ -1,12 +1,20 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { FaChevronDown, FaTimes, FaSearch, FaCheck, FaPlus } from 'react-icons/fa';
+import { FaChevronDown, FaTimes, FaSearch, FaCheck, FaPlus, FaMinus } from 'react-icons/fa';
 import { getFlagUrl, getLanguageName } from '../../utils/flags';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
 import { Button } from '../ui/button';
 import { useTranslation } from 'react-i18next';
+
+
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '../ui/tooltip';
 
 
 interface LanguageOption {
@@ -148,11 +156,12 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                 ? values.filter(v => v !== code)
                 : [...values, code];
             onChange(newValue);
+            // Don't clear search or close for multi-select to allow multiple selections
         } else {
             onChange(code);
             setIsOpen(false);
+            setSearch('');
         }
-        setSearch('');
     };
 
     const getLangLabel = (code: string) => {
@@ -194,7 +203,7 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                             {(isMulti && values.length >= 4 ? values.slice(0, 3) : values).map(v => (
                                 <div key={v} className={clsx(
                                     "flex items-center gap-1.5",
-                                    isMulti ? "bg-brand-accent/10 border border-brand-accent/20 px-2 py-0.5 text-xs font-semibold text-slate-800" : "text-sm font-medium text-slate-800"
+                                    isMulti ? "text-sm font-medium text-slate-800" : "text-sm font-medium text-slate-800"
                                 )}>
                                     <img src={getFlagUrl(v.includes('-') ? v : (languages.find((l: LanguageOption) => l.code === v)?.flagCode || v))} className="w-6 h-4.5 object-cover shadow-sm shrink-0" alt="" />
                                     <span>{getLangLabel(v)}</span>
@@ -207,9 +216,25 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                                 </div>
                             ))}
                             {isMulti && values.length >= 4 && (
-                                <div className="bg-brand-accent/20 border border-brand-accent/30 px-2 py-0.5 text-xs font-bold text-slate-900">
-                                    + {values.length - 3} weitere
-                                </div>
+                                <TooltipProvider delayDuration={100}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <div className="bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500 rounded-sm cursor-help hover:bg-slate-200 transition-colors">
+                                                + {values.length - 3} weitere
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="bg-slate-900 text-white font-medium">
+                                            <div className="flex flex-col gap-1">
+                                                {values.slice(3).map(v => (
+                                                    <div key={v} className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-brand-accent shrink-0" />
+                                                        <span>{getLangLabel(v)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                             )}
                         </>
                     ) : (
@@ -231,18 +256,52 @@ const LanguageSelect: React.FC<LanguageSelectProps> = ({
                         width: coords.width
                     }}
                 >
-                    <div className="sticky top-0 bg-white border-b border-slate-100 p-0 z-10">
-                        <div className="relative">
-                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
-                            <input
-                                type="text"
-                                className="w-full pl-9 pr-3 py-2.5 bg-white border-none text-sm focus:outline-none transition-all"
-                                placeholder="Sprache suchen..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                                autoFocus
-                            />
+                    <div className="sticky top-0 bg-white px-4 py-2 z-10">
+                        <div className="flex items-center gap-3">
+                            {isMulti && filteredOptions.length > 0 && (
+                                <div className="flex items-center cursor-pointer group shrink-0"
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onMouseUp={(e) => e.stopPropagation()}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        const allFilteredCodes = filteredOptions.map((o: LanguageOption) => o.code);
+                                        const allVisibleSelected = allFilteredCodes.every((code: string) => values.includes(code));
+                                        
+                                        if (allVisibleSelected) {
+                                            onChange(values.filter(v => !allFilteredCodes.includes(v)));
+                                        } else {
+                                            const nextValue = [...new Set([...values, ...allFilteredCodes])];
+                                            onChange(nextValue);
+                                        }
+                                    }}
+                                >
+                                    <div className={clsx(
+                                        "w-4 h-4 border rounded-[3px] flex items-center justify-center transition-all",
+                                        filteredOptions.some((o: LanguageOption) => values.includes(o.code)) 
+                                            ? "bg-brand-primary border-brand-primary text-white" 
+                                            : "border-slate-300 bg-white shadow-xs"
+                                    )}>
+                                        {filteredOptions.every((o: LanguageOption) => values.includes(o.code)) ? (
+                                            <FaCheck className="text-[9px]" />
+                                        ) : filteredOptions.some((o: LanguageOption) => values.includes(o.code)) ? (
+                                            <FaMinus className="text-[8px]" />
+                                        ) : null}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="relative flex-1">
+                                <FaSearch className="absolute left-1 top-1/2 -translate-y-1/2 text-slate-400 text-[11px]" />
+                                <input
+                                    type="text"
+                                    className="w-full pl-8 pr-3 py-1.5 bg-white border-none text-sm focus:outline-none transition-all placeholder:text-slate-300"
+                                    placeholder="Sprache suchen..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    autoFocus
+                                />
+                            </div>
                         </div>
                     </div>
 

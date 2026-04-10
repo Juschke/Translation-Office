@@ -705,14 +705,6 @@ const ProjectDetail = () => {
                                 </Button>
 
                                 <Button
-                                    variant="destructive"
-                                    onClick={() => setIsProjectDeleteConfirmOpen(true)}
-                                    className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
-                                >
-                                    <FaTrashAlt /> Löschen
-                                </Button>
-
-                                <Button
                                     variant="default"
                                     onClick={() => {
                                         const sid = 'email_prefill_' + Date.now();
@@ -729,7 +721,15 @@ const ProjectDetail = () => {
                                     }}
                                     className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
-                                    <FaEnvelope /> E-Mail senden
+                                    <FaEnvelope /> {t('common.send_email') || 'E-Mail senden'}
+                                </Button>
+
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => setIsProjectDeleteConfirmOpen(true)}
+                                    className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
+                                >
+                                    <FaTrashAlt /> {t('common.delete') || 'Löschen'}
                                 </Button>
 
                                 <div className="relative flex-1 sm:flex-none" ref={actionsRef}>

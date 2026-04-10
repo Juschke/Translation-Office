@@ -77,7 +77,8 @@ trait HasDisplayId
         $padding = (int) ($settings[$padKey] ?? 4);
 
         $yearPart = '';
-        $yearFormat = $settings[$yearKey] ?? 'YY';
+        // Default to 'none' for all groups unless settings say otherwise
+        $yearFormat = $settings[$yearKey] ?? 'none';
         if ($yearFormat === 'YYYY')
             $yearPart = $date->format('Y');
         elseif ($yearFormat === 'YY')

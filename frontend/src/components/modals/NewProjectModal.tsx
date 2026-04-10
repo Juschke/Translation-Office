@@ -56,8 +56,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [name, setName] = useState('');
     const [customer, setCustomer] = useState('');
     const [deadline, setDeadline] = useState('');
-    const [source, setSource] = useState('de-DE');
-    const [target, setTarget] = useState<string[]>(['en-US']);
+    const [source, setSource] = useState('');
+    const [target, setTarget] = useState<string[]>([]);
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('low');
     const [status, setStatus] = useState('offer');
     const [withTax, setWithTax] = useState(true);
@@ -109,6 +109,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const [langTrigger, setLangTrigger] = useState<'source' | 'target' | null>(null);
     const [editingPayment, setEditingPayment] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'services'>('general');
+    const [suggestedName, setSuggestedName] = useState('');
 
     // API Data
     const { data: customersData = [] } = useQuery({
@@ -160,22 +161,21 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
     const displayNr = useMemo(() => {
         if (initialData?.display_id || initialData?.project_number) return initialData.display_id || initialData.project_number;
         const prefix = companyData?.project_id_prefix || 'P';
-        const datePart = new Date().toLocaleDateString('de-DE', { year: '2-digit', month: '2-digit' }).replace('.', '');
         const nextNum = companyData?.project_start_number || '0001';
-        return `${prefix}-${datePart}-${nextNum}`;
+        return `${prefix}-${nextNum}`;
     }, [initialData?.display_id, initialData?.project_number, companyData]);
 
     const custOptions = useMemo(() => {
         return Array.isArray(customersData) ? customersData.map((c: any) => ({
             value: c.id.toString(),
-            label: `${c.display_id || c.id} - ${c.company_name || `${c.first_name} ${c.last_name}`}`
+            label: `${c.display_id || c.id} | ${c.company_name || `${c.first_name} ${c.last_name}`}`
         })) : [];
     }, [customersData]);
 
     const partnerOptions = useMemo(() => {
         return Array.isArray(partnersData) ? partnersData.map((p: any) => ({
             value: p.id.toString(),
-            label: `${p.display_id || p.id} - ${p.company_name || `${p.first_name} ${p.last_name}`}`
+            label: `${p.display_id || p.id} | ${p.company_name || `${p.first_name} ${p.last_name}`}`
         })) : [];
     }, [partnersData]);
 
@@ -248,8 +248,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setName('');
         setCustomer('');
         setDeadline('');
-        setSource('de-DE');
-        setTarget(['en-US']);
+        setSource('');
+        setTarget([]);
         setPriority('low');
         setStatus('offer');
         setIsCertified(true);
@@ -372,12 +372,18 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         setTotalPrice(totalC.toFixed(2));
     }, [positions]);
 
-    // Auto-generate project name
+    const get2LetterLangCode = (iso: string) => {
+        if (!iso) return 'XX';
+        const code = iso.split('-')[0].toUpperCase();
+        return code.substring(0, 2);
+    };
+
+    // Auto-generate project name suggestion
     useEffect(() => {
-        if (!initialData && source && target && Array.isArray(projectsData)) {
-            const cleanSource = source.split('-')[0].toLowerCase();
+        if (!initialData && source && target && target.length > 0 && Array.isArray(projectsData)) {
+            const cleanSource = get2LetterLangCode(source);
             const targetArray = Array.isArray(target) ? target : [target];
-            const cleanTarget = targetArray[0]?.split('-')[0].toLowerCase() || 'xx';
+            const cleanTarget = get2LetterLangCode(targetArray[0]);
 
             const now = new Date();
             const yy = String(now.getFullYear()).slice(-2);
@@ -396,7 +402,9 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
             const sequence = String(todayProjectsCount + 1).padStart(2, '0');
             const generatedName = `${basePrefix}_${sequence}`;
 
-            setName(generatedName);
+            setSuggestedName(generatedName);
+        } else {
+            setSuggestedName('');
         }
     }, [source, target, projectsData, initialData]);
 
@@ -575,13 +583,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
         const targetArray = Array.isArray(target) ? target : [target];
         let finalName = name;
         if (!finalName) {
-            const customerName = customersData.find((c: any) => c.id.toString() === customer)?.company_name || 'Project';
-            const now = new Date();
-            const yyyy = String(now.getFullYear());
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
-            const dd = String(now.getDate()).padStart(2, '0');
-            const targetDisplayString = targetArray.join(', ').toUpperCase();
-            finalName = `${customerName}_${source.toUpperCase()}_${targetDisplayString}_${yyyy}${mm}${dd}`.replace(/\s+/g, '_').substring(0, 100);
+            finalName = suggestedName || `PROJ_${get2LetterLangCode(source)}_${get2LetterLangCode(targetArray[0])}`.toUpperCase();
         } else {
             // Remove spaces from manual name entry
             finalName = finalName.replace(/\s+/g, '_');
@@ -714,12 +716,12 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                 )}
                 {/* Header */}
                 <div className="bg-white px-4 sm:px-6 py-3 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
-                    <div className="flex flex-col gap-1">
-                        <h3 className="font-medium text-slate-800 text-base sm:text-lg flex flex-wrap items-center gap-2 sm:gap-3">
-                            {initialData ? 'Projekt Editieren' : 'Neues Projekt Erfassen'}
+                    <div className="flex flex-col gap-0.5">
+                        <h3 className="font-bold text-slate-900 text-lg sm:text-xl tracking-tight leading-tight">
+                            {displayNr}
                         </h3>
-                        <span className="text-[10px] sm:text-xs font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded-sm border border-slate-200 w-fit">
-                            Nr: {displayNr}
+                        <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-widest">
+                            {initialData ? 'Projekt bearbeiten' : 'Neues Projekt erfassen'}
                         </span>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-red-500 rounded-full transition-colors"><FaTimes /></button>
@@ -833,6 +835,33 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                                 )}
                                                 placeholder="Datum & Zeit wählen"
                                             />
+                                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                                {[0, 1, 3, 5, 7, 14].map(days => {
+                                                    const getSuggestedDate = (d: number) => {
+                                                        if (d === 0) return dayjs().set('second', 0).set('millisecond', 0);
+                                                        return dayjs().add(d, 'day').set('hour', 17).set('minute', 0).set('second', 0);
+                                                    };
+                                                    const suggestion = getSuggestedDate(days);
+                                                    const isActive = deadline && dayjs(deadline).isSame(suggestion, days === 0 ? 'hour' : 'minute');
+                                                    const label = days === 0 ? 'Sofort' : `+ ${days} ${days === 1 ? 'Tag' : 'Tage'}`;
+
+                                                    return (
+                                                        <button
+                                                            key={days}
+                                                            type="button"
+                                                            onClick={() => setDeadline(suggestion.toISOString())}
+                                                            className={clsx(
+                                                                "px-2.5 py-0.5 rounded-full text-[9px] font-bold transition-all shadow-sm border whitespace-nowrap",
+                                                                isActive 
+                                                                    ? "bg-[#1B4D4F] border-[#1B4D4F] text-white" 
+                                                                    : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-brand-primary/10 hover:border-brand-primary/30 hover:text-brand-primary"
+                                                            )}
+                                                        >
+                                                            {label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">Priorität</label>
@@ -1058,14 +1087,27 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ isOpen, onClose, onSu
                                         <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm">07</div>
                                         <h4 className="text-sm font-medium text-slate-800">Weitere Details</h4>
                                     </div>
-                                    <Input
-                                        label="Projektname"
-                                        placeholder="Projektname eingeben..."
-                                        value={name}
-                                        onChange={e => setName(e.target.value)}
-                                        helperText="Wird automatisch generiert — bei Bedarf anpassen."
-                                        className="bg-white"
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            label="Projektname"
+                                            placeholder="z.B. DE_EN_260326_01"
+                                            value={name}
+                                            onChange={e => setName(e.target.value)}
+                                            className="bg-white"
+                                        />
+                                        {suggestedName && !name && (
+                                            <div className="mt-1 flex items-center gap-2">
+                                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-tight">Vorschlag:</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setName(suggestedName)}
+                                                    className="px-2 py-0.5 bg-brand-primary/5 hover:bg-brand-primary/10 border border-brand-primary/20 text-brand-primary rounded-full text-[10px] font-bold transition-all shadow-sm"
+                                                >
+                                                    {suggestedName}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                     <Input
                                         isTextArea
                                         label="Interne Anmerkungen (Optional)"

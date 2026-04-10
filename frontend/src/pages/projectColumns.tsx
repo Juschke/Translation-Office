@@ -57,7 +57,7 @@ export function buildProjectColumns({
 
                 return (
                     <div className="flex flex-col cursor-pointer group/link w-fit">
-                        <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-50 px-2 py-0.5 border border-slate-200/50 rounded-sm group-hover/link:border-brand-primary/30 transition">
+                        <span className="text-xs sm:text-sm font-bold text-brand-primary group-hover/link:underline transition">
                             {projectNumber}
                         </span>
                     </div>
@@ -66,85 +66,6 @@ export function buildProjectColumns({
             sortable: true,
             sortKey: 'project_number',
             width: 140,
-        },
-        {
-            id: 'project_name',
-            header: (
-                <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('common.project_name') || 'Bezeichnung'}</span>
-                </div>
-            ),
-            accessor: (p: any) => (
-                <div className="flex flex-col cursor-pointer group/link w-fit">
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[200px]" title={p.project_name || `Projekt #${p.id}`}>
-                        {p.project_name || <span className="text-slate-400 italic font-normal text-xs">Unbenannt</span>}
-                    </span>
-                </div>
-            ),
-            sortable: true,
-            sortKey: 'project_name',
-            width: 180,
-        },
-        {
-            id: 'customer',
-            header: (
-                <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('projects.filters.customers.label')}</span>
-                </div>
-            ),
-            accessor: (p: any) => {
-                const salutation = p.customer?.salutation ? `${p.customer.salutation} ` : '';
-                const name = p.customer?.company_name || `${salutation}${p.customer?.first_name} ${p.customer?.last_name}` || 'Unbekannt';
-                return (
-                    <div className="flex items-center gap-2 max-w-[200px] group/cust cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/cust:border-brand-primary/30 transition-colors">
-                            {getInitials(name)}
-                        </div>
-                        <div className="flex flex-col leading-snug overflow-hidden">
-                            <span className="font-semibold text-slate-800 truncate group-hover/cust:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
-                            {(p.customer?.address_street || p.customer?.address_city) && (
-                                <div className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight mb-0.5">
-                                    {p.customer.address_street}{p.customer.address_street && (p.customer.address_zip || p.customer.address_city) ? ', ' : ''}
-                                    {p.customer.address_zip} {p.customer.address_city}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            },
-            sortable: true,
-            sortKey: 'customer_id',
-            width: 150,
-        },
-        {
-            id: 'partner',
-            header: (
-                <div className="flex flex-col gap-1.5 w-full text-left">
-                    <span className="text-xs">{t('projects.filters.partners.label')}</span>
-                </div>
-            ),
-            accessor: (p: any) => {
-                if (!p.partner) return <span className="text-slate-300 italic text-[11px] px-2">-</span>;
-                const salutation = p.partner.salutation ? `${p.partner.salutation} ` : '';
-                const name = p.partner.company || `${salutation}${p.partner.first_name} ${p.partner.last_name}`;
-                return (
-                    <div className="flex items-center gap-2 max-w-[200px] group/part cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/part:border-brand-primary/30 transition-colors">
-                            {getInitials(name)}
-                        </div>
-                        <div className="flex flex-col leading-snug overflow-hidden">
-                            <span className="font-semibold text-slate-800 truncate group-hover/part:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
-                            {p.partner.email && (
-                                <div className="flex items-center gap-1 min-w-0 mt-0.5">
-                                    <FaEnvelope className="shrink-0 text-[10px] text-slate-300" />
-                                    <span className="text-[10px] text-slate-400 truncate tracking-tight" title={p.partner.email}>{p.partner.email}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            },
-            width: 150,
         },
         {
             id: 'languages',
@@ -185,6 +106,56 @@ export function buildProjectColumns({
             sortable: true,
             sortKey: 'status',
             width: 110,
+        },
+        {
+            id: 'project_name',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">{t('common.project_name') || 'Bezeichnung'}</span>
+                </div>
+            ),
+            accessor: (p: any) => (
+                <div className="flex flex-col cursor-pointer group/link w-fit">
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover/link:text-brand-primary group-hover/link:underline transition truncate max-w-[200px]" title={p.project_name || `Projekt #${p.id}`}>
+                        {p.project_name || <span className="text-slate-400 italic font-normal text-xs">Unbenannt</span>}
+                    </span>
+                </div>
+            ),
+            sortable: true,
+            sortKey: 'project_name',
+            width: 180,
+            defaultVisible: false,
+        },
+        {
+            id: 'customer',
+            header: (
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                    <span className="text-xs">{t('projects.filters.customers.label')}</span>
+                </div>
+            ),
+            accessor: (p: any) => {
+                const salutation = p.customer?.salutation ? `${p.customer.salutation} ` : '';
+                const name = p.customer?.company_name || `${salutation}${p.customer?.first_name} ${p.customer?.last_name}` || 'Unbekannt';
+                return (
+                    <div className="flex items-center gap-2 max-w-[200px] group/cust cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                        <div className="w-7 h-7 bg-slate-50 border border-slate-100 text-slate-900 flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-sm rounded-sm group-hover/cust:border-brand-primary/30 transition-colors">
+                            {getInitials(name)}
+                        </div>
+                        <div className="flex flex-col leading-snug overflow-hidden">
+                            <span className="font-semibold text-slate-800 truncate group-hover/cust:text-brand-primary transition-colors text-xs" title={name}>{name}</span>
+                            {(p.customer?.address_street || p.customer?.address_city) && (
+                                <div className="text-[10px] text-slate-400 truncate max-w-[150px] leading-tight mb-0.5">
+                                    {p.customer.address_street}{p.customer.address_street && (p.customer.address_zip || p.customer.address_city) ? ', ' : ''}
+                                    {p.customer.address_zip} {p.customer.address_city}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+            sortable: true,
+            sortKey: 'customer_id',
+            width: 150,
         },
         {
             id: 'deadline',

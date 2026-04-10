@@ -355,7 +355,6 @@ const ProjectFinancesTab = ({
                                             {opt.enabled && (
                                                 <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                                                     <div className="flex gap-2 pt-3">
-                                                        {/* Quantity Input with Floating Label */}
                                                         <div className="flex-1 relative">
                                                             <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Menge</label>
                                                             <div className="flex items-center h-8 border border-slate-200 rounded overflow-hidden bg-white shadow-xs focus-within:border-brand-primary/50 transition-colors">
@@ -393,8 +392,6 @@ const ProjectFinancesTab = ({
                                                                 </button>
                                                             </div>
                                                         </div>
-
-                                                        {/* Price Input with Floating Label */}
                                                         <div className="flex-1 relative">
                                                             <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Preis</label>
                                                             <div className="relative">
@@ -412,7 +409,6 @@ const ProjectFinancesTab = ({
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    {/* Individual Service Sum */}
                                                     <div className="mt-2 px-1 flex justify-between items-center text-[9px] font-bold uppercase tracking-tight">
                                                         <span className="text-slate-300">Summe:</span>
                                                         <span className="text-slate-900">
@@ -424,92 +420,94 @@ const ProjectFinancesTab = ({
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-                        </div>
 
-                        {/* Copies Section - Grid Aligned Row */}
-                        <div className="px-6 py-4 bg-slate-50/10">
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                                {/* Inputs span 2 columns to match 2 service icons above */}
-                                <div className="md:col-span-2 flex items-center gap-4">
-                                    <div className="flex-1 relative pt-2">
-                                        <label className="absolute top-0 left-2 px-1 bg-[#fcfdfe] text-[9px] font-bold text-slate-400 uppercase tracking-widest z-10 rounded-sm">Anzahl Kopien</label>
-                                        <div className={clsx(
-                                            "flex items-center h-8 border border-slate-200 rounded-md overflow-hidden bg-white shadow-sm transition-all focus-within:ring-1 focus-within:ring-brand-primary/20",
-                                            isLocked && "opacity-60"
-                                        )}>
-                                            <button disabled={isLocked} onClick={() => setCopyData(d => ({ ...d, count: Math.max(0, d.count - 1) }))} className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100 disabled:cursor-not-allowed"><FaMinus className="text-xs" /></button>
-                                            <input type="number" value={copyData.count} readOnly={isLocked} onChange={(e) => !isLocked && setCopyData(d => ({ ...d, count: Math.max(0, parseInt(e.target.value) || 0) }))} className="flex-1 w-full h-full text-center text-sm font-bold text-slate-700 outline-none bg-transparent read-only:cursor-not-allowed" />
-                                            <button disabled={isLocked} onClick={() => setCopyData(d => ({ ...d, count: d.count + 1 }))} className="h-full px-4 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100 disabled:cursor-not-allowed"><FaPlus className="text-xs" /></button>
+                                {/* Kopien Item */}
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5">
+                                        Kopien <FieldTip text="Anzahl der zusätzlich benötigten Papierkopien." />
+                                    </label>
+                                    <div className="flex flex-col gap-2">
+                                        <div
+                                            className={clsx(
+                                                'h-9 flex items-center gap-2',
+                                                isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer group'
+                                            )}
+                                            onClick={() => !isLocked && setCopyData(d => ({ ...d, count: d.count > 0 ? 0 : 1 }))}
+                                        >
+                                            <div className={clsx(
+                                                'w-8 h-4 rounded-full relative transition-all duration-300',
+                                                copyData.count > 0 ? 'bg-emerald-500' : 'bg-slate-300'
+                                            )}>
+                                                <div className={clsx(
+                                                    'absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-300 shadow-sm',
+                                                    copyData.count > 0 ? 'left-4.5' : 'left-0.5'
+                                                )} />
+                                            </div>
+                                            <span className={clsx(
+                                                'text-[10px] font-bold',
+                                                copyData.count > 0 ? 'text-emerald-600' : 'text-slate-400'
+                                            )}>
+                                                {copyData.count > 0 ? 'JA' : 'NEIN'}
+                                            </span>
                                         </div>
-                                    </div>
-                                    <div className="flex-1 relative pt-2">
-                                        <label className="absolute top-0 left-2 px-1 bg-[#fcfdfe] text-[9px] font-bold text-slate-400 uppercase tracking-widest z-10 rounded-sm">Preis pro Kopie</label>
-                                        <div className="relative">
-                                            <input type="number" step="0.01" value={copyData.price} readOnly={isLocked} onChange={(e) => !isLocked && setCopyData(d => ({ ...d, price: parseFloat(e.target.value) || 0 }))} className={clsx("w-full h-8 px-4 text-sm font-bold text-slate-700 border border-slate-200 rounded-md outline-none focus:ring-1 focus:ring-brand-primary/30 focus:border-brand-primary transition-all bg-white pr-8 shadow-sm", isLocked && "opacity-60 cursor-not-allowed")} />
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-300">€</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="md:col-span-3 flex justify-end">
-                                    <div className="text-right py-2 border-l border-slate-100 pl-6">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Summe Kopien</div>
-                                        <div className={clsx(
-                                            "text-xl font-black tracking-tight leading-none transition-colors",
-                                            copyData.count > 0 ? "text-slate-900" : "text-slate-300"
-                                        )}>
-                                            {(copyData.count * copyData.price).toFixed(2)} €
-                                        </div>
+
+                                        {copyData.count > 0 && (
+                                            <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                                <div className="flex gap-2 pt-3">
+                                                    <div className="flex-1 relative">
+                                                        <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Menge</label>
+                                                        <div className="flex items-center h-8 border border-slate-200 rounded overflow-hidden bg-white shadow-xs focus-within:border-brand-primary/50 transition-colors">
+                                                            <button 
+                                                                disabled={isLocked}
+                                                                onClick={() => setCopyData(d => ({ ...d, count: Math.max(1, d.count - 1) }))}
+                                                                className="px-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-r border-slate-100 h-full"
+                                                            >
+                                                                <FaMinus className="text-[8px]" />
+                                                            </button>
+                                                            <input 
+                                                                type="text"
+                                                                readOnly={isLocked}
+                                                                value={copyData.count}
+                                                                onChange={(e) => !isLocked && setCopyData(d => ({ ...d, count: Math.max(1, parseInt(e.target.value) || 1) }))}
+                                                                className="w-full text-center text-[10px] font-bold text-slate-700 outline-none bg-transparent"
+                                                            />
+                                                            <button 
+                                                                disabled={isLocked}
+                                                                onClick={() => setCopyData(d => ({ ...d, count: d.count + 1 }))}
+                                                                className="px-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition border-l border-slate-100 h-full"
+                                                            >
+                                                                <FaPlus className="text-[8px]" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 relative">
+                                                        <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Preis</label>
+                                                        <div className="relative">
+                                                            <input 
+                                                                type="text"
+                                                                readOnly={isLocked}
+                                                                value={copyData.price}
+                                                                onChange={(e) => !isLocked && setCopyData(d => ({ ...d, price: parseFloat(e.target.value) || 0 }))}
+                                                                className="w-full h-8 px-2 pr-5 text-[10px] font-bold text-slate-700 border border-slate-200 rounded outline-none focus:ring-1 focus:ring-brand-primary/30 shadow-xs"
+                                                            />
+                                                            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300">€</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-2 px-1 flex justify-between items-center text-[9px] font-bold uppercase tracking-tight">
+                                                    <span className="text-slate-300">Summe:</span>
+                                                    <span className="text-slate-900">
+                                                        {(copyData.count * copyData.price).toFixed(2)} €
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    {/* Section 07: Marge (nur wenn Rechnung vorhanden) */}
-                    {isLocked && (
-                        <section id="section-marge" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                            <div className={clsx(SECTION_HEADER, 'px-6 pt-5 bg-white')}>
-                                <h3 className={SECTION_TITLE}>Projektmarge</h3>
-                            </div>
-                            <div className="px-6 py-5 space-y-4">
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    <div className="bg-slate-50 rounded-md border border-slate-100 p-3 space-y-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Netto (Kunde)</p>
-                                        <p className="text-sm font-bold text-slate-800">{financials.netTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-                                    </div>
-                                    <div className="bg-slate-50 rounded-md border border-slate-100 p-3 space-y-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Partner-Kosten</p>
-                                        <p className="text-sm font-bold text-rose-600">{financials.partnerTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-                                    </div>
-                                    <div className="bg-slate-50 rounded-md border border-slate-100 p-3 space-y-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Marge (€)</p>
-                                        <p className={clsx("text-sm font-bold", financials.margin >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                                            {financials.margin.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                                        </p>
-                                    </div>
-                                    <div className="bg-slate-50 rounded-md border border-slate-100 p-3 space-y-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Marge (%)</p>
-                                        <p className={clsx("text-sm font-bold", financials.marginPercent >= 20 ? "text-emerald-600" : financials.marginPercent >= 0 ? "text-amber-600" : "text-rose-600")}>
-                                            {financials.marginPercent.toFixed(1)} %
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                    <div
-                                        className={clsx(
-                                            'h-full transition-all duration-700',
-                                            financials.marginPercent > 40 ? 'bg-emerald-500' : financials.marginPercent > 20 ? 'bg-slate-500' : 'bg-amber-400'
-                                        )}
-                                        style={{ width: `${Math.min(100, Math.max(0, financials.marginPercent))}%` }}
-                                    />
-                                </div>
-                                <p className="text-[10px] text-slate-400">
-                                    Rechnung <span className="font-semibold text-slate-600">{activeInvoice?.invoice_number}</span> – Positionen und Leistungen sind gesperrt.
-                                </p>
-                            </div>
-                        </section>
-                    )}
 
                     {/* Section 09: Anzahlungen */}
                     <section id="section-zahlungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
@@ -566,6 +564,7 @@ const ProjectFinancesTab = ({
                     copyPrice={copyData.price.toString()}
                     isLocked={isLocked}
                     onCreateInvoice={onCreateInvoice}
+                    onPreviewInvoice={() => onPreviewInvoice?.(activeInvoice)}
                 />
             </div>
         </div>

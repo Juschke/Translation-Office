@@ -23,12 +23,14 @@ interface SearchableSelectProps {
     disabled?: boolean;
     isClearable?: boolean;
     onEdit?: () => void;
+    badgeVariant?: 'brand' | 'gray';
 }
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
     options, value, onChange, placeholder = "Bitte wählen...", label, error, className = "",
     isMulti = false, onAddNew, onSearch, id, preserveOrder = false,
-    maxVisibleItems = 2, roundedSide = 'both', disabled = false, isClearable = true, onEdit
+    maxVisibleItems = 2, roundedSide = 'both', disabled = false, isClearable = true, onEdit,
+    badgeVariant = 'brand'
 }) => {
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
@@ -379,8 +381,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                                 if (!opt) return null;
                                 return (
                                     <div key={v} className={clsx(
-                                        "flex items-center gap-1",
-                                        isMulti ? "bg-brand-accent/10 border border-brand-accent/20 pl-1.5 pr-1 py-0.5 rounded-sm text-sm font-medium text-brand-text whitespace-nowrap" : "text-brand-text font-normal"
+                                        "flex items-center gap-1.5 transition-all",
+                                        isMulti && (
+                                            badgeVariant === 'gray' 
+                                            ? "bg-slate-50 border border-slate-200 pl-2 pr-1 py-0.5 rounded-[3px] text-[11px] font-semibold text-slate-700 whitespace-nowrap shadow-sm"
+                                            : "bg-brand-primary/5 border border-brand-primary/10 pl-1.5 pr-1 py-0.5 rounded-sm text-xs font-medium text-brand-primary whitespace-nowrap"
+                                        ),
+                                        !isMulti && "text-brand-text font-normal"
                                     )}>
                                         {opt.icon && <span className="shrink-0 text-slate-400">{opt.icon}</span>}
                                         <span className="truncate">{opt.label}</span>
