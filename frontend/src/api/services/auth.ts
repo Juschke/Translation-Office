@@ -3,21 +3,17 @@ import api from '../axios';
 export const authService = {
     login: async (credentials: any) => {
         const response = await api.post('/login', credentials);
-        if (response.data.access_token) {
-            localStorage.setItem('token', response.data.access_token);
-        }
+        // Token is now stored in HttpOnly cookie, no need to save to localStorage
         return response.data;
     },
     register: async (data: any) => {
         const response = await api.post('/register', data);
-        if (response.data.access_token) {
-            localStorage.setItem('token', response.data.access_token);
-        }
+        // Token is now stored in HttpOnly cookie, no need to save to localStorage
         return response.data;
     },
     logout: async () => {
         await api.post('/logout');
-        localStorage.removeItem('token');
+        // Cookies are cleared by server response
     },
     me: async () => {
         const response = await api.get('/user');

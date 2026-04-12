@@ -1,18 +1,14 @@
 import clsx from 'clsx';
-import { FaInfoCircle, FaFileInvoiceDollar } from 'react-icons/fa';
+import { FaFileInvoiceDollar } from 'react-icons/fa';
 import { Button } from '../ui/button';
 
 export interface ProjectFinancialSidebarProps {
-    creationDate: string;
-    projectManager: string;
     baseNet: number;
     calcNet: number;
     calcTax: number;
     calcGross: number;
     totalPaid: number;
     remainingBalance: number;
-    profit: number;
-    profitMargin: number;
     isCertified: boolean;
     certifiedQty?: number;
     hasApostille: boolean;
@@ -29,16 +25,12 @@ export interface ProjectFinancialSidebarProps {
 }
 
 const ProjectFinancialSidebar = ({
-    creationDate,
-    projectManager,
     baseNet,
     calcNet,
     calcTax,
     calcGross,
     totalPaid,
     remainingBalance,
-    profit,
-    profitMargin,
     isCertified,
     certifiedQty = 1,
     hasApostille,
@@ -54,18 +46,6 @@ const ProjectFinancialSidebar = ({
     onPreviewInvoice,
 }: ProjectFinancialSidebarProps) => (
     <div className="w-full lg:w-80 shrink-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
-        {/* Meta Card - Promoted to top */}
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4 space-y-2">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-1">
-                <FaInfoCircle className="text-slate-300 text-xs" />
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Projekt-Info</h4>
-            </div>
-            <div className="space-y-1.5 text-[11px]">
-                <div className="flex justify-between"><span className="text-slate-400">Erstellt:</span><span className="font-semibold text-slate-700">{creationDate}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Manager:</span><span className="font-semibold text-slate-700">{projectManager}</span></div>
-            </div>
-        </div>
-
         {/* Main Financial Card with Integrated Action */}
         <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-3">
             <h4 className="text-xs font-semibold text-slate-500 pb-2 border-b border-slate-100">Kalkulation</h4>

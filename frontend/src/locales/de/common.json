@@ -13,9 +13,10 @@
     "actions": "Aktionen",
     "details": "Details",
     "export": "Export",
-    "all": "Alle",
+    "save": "Speichern",
     "yes": "Ja",
     "no": "Nein",
+    "more_actions": "Mehr Aktionen",
     "search": "Suchen",
     "filter": "Filter",
     "loading": "Laden...",
@@ -117,7 +118,49 @@
     "bulk_delete_message": "Diese Aktion kann nicht rückgängig gemacht werden. Sind Sie sicher?",
     "confirm_action": "Sind Sie sicher, dass Sie fortfahren möchten?",
     "delete_payment": "Möchten Sie diese Zahlung wirklich löschen?",
-    "delete_payment_amount": "Möchten Sie die Zahlung in Höhe von {{amount}} € wirklich löschen?"
+    "delete_payment_amount": "Möchten Sie die Zahlung in Höhe von {{amount}} € wirklich löschen?",
+    "duplicate": "Duplizieren"
+  },
+  "finances": {
+    "invoice_exists_title": "Rechnung bereits erstellt",
+    "invoice_exists_desc": "Für dieses Projekt wurde bereits die Rechnung {{number}} ausgestellt.",
+    "open_invoice": "Rechnung öffnen",
+    "cancel_invoice": "Rechnung stornieren",
+    "positions": "Positionen",
+    "read_only": "Schreibgeschützt",
+    "save_positions": "Positionsänderungen speichern",
+    "saving": "Speichern...",
+    "services_options": "Leistungen & Optionen",
+    "quantity": "Menge",
+    "price": "Preis",
+    "sum": "Summe",
+    "down_payments": "Anzahlungen",
+    "record_payment": "Zahlung erfassen",
+    "payment_complete": "Vollständig bezahlt",
+    "certified": "Beglaubigung",
+    "express": "Express",
+    "apostille": "Apostille",
+    "drivers_license": "Führerschein",
+    "copies": "Kopien",
+    "certified_tip": "Beglaubigte Übersetzung mit Stempel und Unterschrift.",
+    "express_tip": "Eilzuschlag für schnelle Bearbeitung.",
+    "apostille_tip": "Apostille-Beglaubigung für internationalen Gebrauch.",
+    "drivers_license_tip": "Führerschein-Klassifizierung.",
+    "copies_tip": "Anzahl der zusätzlich benötigten Papierkopien."
+  },
+  "history": {
+    "date_time": "Datum / Zeit",
+    "user": "Benutzer",
+    "action": "Aktion",
+    "field": "Feld",
+    "old_value": "Alter Wert",
+    "new_value": "Neuer Wert",
+    "event_created": "Erstellt",
+    "event_updated": "Aktualisiert",
+    "event_deleted": "Gelöscht",
+    "project_created": "Projekt erstellt",
+    "project_deleted": "Projekt gelöscht",
+    "project_created_info": "Projekt angelegt"
   },
   "pagination": {
     "previous": "Zurück",
@@ -508,14 +551,14 @@
     "edit_title": "Projekt bearbeiten",
     "new_title": "Neues Projekt erfassen",
     "status": {
-      "draft": "Neu",
+      "all": "Alle Projekte",
       "offer": "Angebot",
       "pending": "Neu",
       "in_progress": "In Bearbeitung",
       "review": "In Bearbeitung",
       "ready_for_pickup": "Abholbereit",
-      "invoiced": "Abgerechnet",
       "delivered": "Geliefert",
+      "invoiced": "Abgerechnet",
       "completed": "Abgeschlossen",
       "cancelled": "Storniert",
       "archived": "Archiviert",
@@ -613,7 +656,9 @@
       "target": "Ziel"
     },
     "detail": {
-      "project_label": "Projekt:"
+      "project_label": "Projekt:",
+      "change_customer": "Kunde wechseln",
+      "change_partner": "Partner wechseln"
     },
     "confirm": {
       "delete_file": "Datei löschen",
@@ -626,7 +671,20 @@
     },
     "form": {
       "target_language": "Zielsprache",
-      "target_language_tooltip": "Sprache, in die übersetzt werden soll."
+      "target_language_tooltip": "Sprache, in die übersetzt werden soll.",
+      "duplicate": "Duplizieren",
+      "new_service_catalog": "Neue Leistung im Katalog anlegen",
+      "service_name": "Bezeichnung",
+      "unit": "Einheit",
+      "base_price": "Grundpreis",
+      "add_position": "Position hinzufügen",
+      "service_catalog": "Leistungskatalog",
+      "search_service": "Leistung suchen…",
+      "no_hits": "Keine Treffer",
+      "empty_catalog": "Noch keine Leistungen im Katalog",
+      "add_new_service": "Neue Leistung anlegen",
+      "delete_title": "Position löschen",
+      "delete_message": "Möchten Sie diese Position wirklich entfernen?"
     },
     "messages": {
       "create_success": "Projekt erfolgreich erstellt",
@@ -651,7 +709,20 @@
     "project_creating": "Speichert...",
     "project_updating": "Aktualisiert...",
     "create_project": "Projekt Anlegen",
-    "update_project": "Projekt Aktualisieren"
+    "update_project": "Projekt Aktualisieren",
+    "files": {
+      "upload_title": "Dateien hochladen",
+      "upload_subtitle": "Multi-Upload & Kategorisierung",
+      "upload": "Dateien hochladen",
+      "drop_here": "Dateien hier ablegen",
+      "drag_or_click": "Ziehe Dateien herein oder klicke zum Auswählen",
+      "supported_formats": "Unterstützte Formate",
+      "max_size": "<strong>Max. Größe:</strong> 50 MB pro Datei",
+      "scan_camera": "Dokument scannen (Kamera)",
+      "scan": "Scannen",
+      "upload_button": "Hochladen",
+      "uploading": "Wird übertragen..."
+    }
   },
   "customers": {
     "title": "Kunden",
@@ -706,6 +777,7 @@
       "subject_to": "Nachricht an: {{name}}"
     },
     "detail": {
+      "view_profile": "Zum Kundenprofil",
       "customer_id": "Kunden-ID:",
       "master_data": "Stammdatenblatt",
       "contact_info": "Kontaktinformationen",
@@ -831,6 +903,7 @@
       "subject_message": "Nachricht an Partner"
     },
     "detail": {
+      "view_profile": "Zum Partnerprofil",
       "partner_id": "Partner-ID:",
       "master_data": "Stammdatenblatt",
       "contact_info": "Kontaktinformationen",

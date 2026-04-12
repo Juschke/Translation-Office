@@ -18,7 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.role' => \App\Http\Middleware\EnsureTenantRole::class,
             'portal.customer' => \App\Http\Middleware\EnsurePortalCustomer::class,
             'log.access' => \App\Http\Middleware\LogDataAccess::class,
+            'bulk-rate-limit' => \App\Http\Middleware\RateLimitBulkOperations::class,
         ]);
+
+        // Extract token from HttpOnly cookie and add to Authorization header
+        $middleware->appendToGroup('api', \App\Http\Middleware\ExtractTokenFromCookie::class);
+
+        // Validate WebSocket origin
+        $middleware->appendToGroup('api', \App\Http\Middleware\ValidateWebSocketOrigin::class);
+
         $middleware->appendToGroup('api', \App\Http\Middleware\SetLocaleMiddleware::class);
         $middleware->appendToGroup('api', \App\Http\Middleware\LogApiRequests::class);
 

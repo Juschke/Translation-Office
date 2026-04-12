@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
-import { FaCloudUploadAlt, FaTimes, FaTrash, FaCamera } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTimes, FaTrash, FaCamera, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaImage, FaFile } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface FileUploadModalProps {
     isOpen: boolean;
@@ -19,6 +20,7 @@ const DOC_TYPES: { value: DocType; label: string; color: string }[] = [
 ];
 
 const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) => {
+    const { t } = useTranslation();
     const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -150,8 +152,8 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-transparent">
                     <div>
-                        <h2 className="text-sm font-semibold text-slate-800">Dateien hochladen</h2>
-                        <p className="text-xs text-slate-400 font-medium">Multi-Upload & Kategorisierung</p>
+                        <h2 className="text-sm font-semibold text-slate-800">{t('projects.files.upload_title', 'Dateien hochladen')}</h2>
+                        <p className="text-xs text-slate-400 font-medium">{t('projects.files.upload_subtitle', 'Multi-Upload & Kategorisierung')}</p>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
                         <FaTimes />
@@ -160,35 +162,110 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
 
                 {/* Content */}
                 <div className="p-6 flex-1 overflow-y-auto max-h-[65vh] custom-scrollbar">
-                    {/* Dropzone */}
-                    <div
-                        className={clsx(
-                            'border-2 border-dashed rounded-sm p-8 flex flex-col items-center justify-center transition-all cursor-pointer group mb-4',
-                            dragActive ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300 bg-transparent hover:bg-slate-50'
-                        )}
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-                        onDragLeave={() => setDragActive(false)}
-                        onDrop={(e) => { e.preventDefault(); setDragActive(false); addFiles(Array.from(e.dataTransfer.files)); }}
-                    >
-                        <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
-                        <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                            <FaCloudUploadAlt className="text-xl text-slate-700" />
+                    {/* Upload Section with Illustration */}
+                    <div className="mb-8">
+                        {/* Dropzone with Animation */}
+                        <div
+                            className={clsx(
+                                'border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center transition-all cursor-pointer group mb-6 relative overflow-hidden',
+                                dragActive
+                                    ? 'border-brand-primary bg-brand-primary/5 shadow-md scale-[1.01]'
+                                    : 'border-slate-200 hover:border-brand-primary/50 bg-slate-50/30 hover:bg-slate-50 hover:shadow-sm'
+                            )}
+                            onClick={() => fileInputRef.current?.click()}
+                            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                            onDragLeave={() => setDragActive(false)}
+                            onDrop={(e) => { e.preventDefault(); setDragActive(false); addFiles(Array.from(e.dataTransfer.files)); }}
+                        >
+                            {/* Animated Background */}
+                            <div className={clsx(
+                                "absolute inset-0 transition-opacity duration-300",
+                                dragActive ? "opacity-100" : "opacity-0"
+                            )}>
+                                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/10 via-transparent to-transparent" />
+                            </div>
+
+                            <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
+
+                            {/* Icon Animation */}
+                            <div className={clsx(
+                                "w-16 h-16 rounded-full bg-white shadow-md border-2 flex items-center justify-center mb-4 transition-all relative z-10",
+                                dragActive ? 'border-brand-primary shadow-lg scale-110 animate-bounce' : 'border-slate-100 group-hover:border-brand-primary/30 group-hover:shadow-lg group-hover:scale-105'
+                            )}>
+                                <FaCloudUploadAlt className={clsx(
+                                    "text-3xl transition-colors",
+                                    dragActive ? 'text-brand-primary' : 'text-slate-600 group-hover:text-brand-primary'
+                                )} />
+                            </div>
+
+                            {/* Text Content */}
+                            <div className="text-center relative z-10">
+                                <div className="text-lg font-bold text-slate-800 mb-1">
+                                    {dragActive ? t('projects.files.drop_here', 'Dateien hier ablegen') : t('projects.files.upload', 'Dateien hochladen')}
+                                </div>
+                                <div className="text-sm text-slate-500 font-medium mb-4">
+                                    {t('projects.files.drag_or_click', 'Ziehe Dateien herein oder <span>klicke zum Auswählen</span>').includes('<span>') ? (
+                                        <>
+                                            Ziehe Dateien herein oder <span className="text-brand-primary font-semibold">klicke zum Auswählen</span>
+                                        </>
+                                    ) : (
+                                        t('projects.files.drag_or_click')
+                                    )}
+                                </div>
+
+                                {/* Supported Formats */}
+                                <div className="bg-white/80 rounded-lg p-4 mb-3 border border-slate-100">
+                                    <div className="text-xs font-semibold text-slate-600 mb-3 uppercase tracking-wider">{t('projects.files.supported_formats', 'Unterstützte Formate')}</div>
+                                    <div className="flex flex-wrap justify-center gap-3 mb-3">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <FaFilePdf className="text-red-500 text-lg" />
+                                            <span className="text-slate-700">PDF</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <FaFileWord className="text-blue-500 text-lg" />
+                                            <span className="text-slate-700">DOC, DOCX</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <FaFileExcel className="text-green-600 text-lg" />
+                                            <span className="text-slate-700">XLSX</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <FaImage className="text-purple-500 text-lg" />
+                                            <span className="text-slate-700">JPG, PNG, GIF</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <FaFileArchive className="text-orange-500 text-lg" />
+                                            <span className="text-slate-700">ZIP</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <FaFile className="text-slate-400 text-lg" />
+                                            <span className="text-slate-700">TXT, PPTX, IDML</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Size Info */}
+                                    <div className="text-xs text-slate-500 font-medium pt-3 border-t border-slate-200">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-primary/10 text-brand-primary text-xs font-bold">📦</span>
+                                            <span>{t('projects.files.max_size', '<strong>Max. Größe:</strong> 50 MB pro Datei', { interpolation: { escapeValue: false } })}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div className="text-sm font-medium text-slate-700">Dateien auswählen oder hierher ziehen</div>
-                        <div className="text-xs text-slate-400 font-medium mt-1">Erlaubt: PDF, DOC, Bilder, TXT, etc. — bis zu 50 MB pro Datei</div>
                     </div>
 
                     {/* Camera / Scanner button */}
                     <div className="flex items-center justify-center gap-3 mb-6">
-                        <div className="h-px flex-1 bg-slate-100" />
+                        <div className="h-px flex-1 bg-slate-200" />
                         <button
                             type="button"
                             onClick={() => cameraInputRef.current?.click()}
-                            className="flex items-center gap-2 px-4 py-2 rounded-sm border border-brand-primary/20 bg-brand-primary/[0.03] text-brand-primary hover:bg-brand-primary/[0.08] text-xs font-bold uppercase tracking-wider transition-all shadow-sm group"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 text-xs font-semibold uppercase tracking-wider transition-all shadow-sm group hover:shadow-md"
                         >
                             <FaCamera className="text-sm transition-transform group-hover:scale-110" />
-                            Dokument scannen (Kamera)
+                            <span className="hidden sm:inline">{t('projects.files.scan_camera', 'Dokument scannen (Kamera)')}</span>
+                            <span className="inline sm:hidden">{t('projects.files.scan', 'Scannen')}</span>
                         </button>
                         {/* capture="environment" → rear camera on mobile; file picker on desktop */}
                         <input
@@ -203,7 +280,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                                 e.target.value = '';
                             }}
                         />
-                        <div className="h-px flex-1 bg-slate-100" />
+                        <div className="h-px flex-1 bg-slate-200" />
                     </div>
 
                     {/* File List as Table */}
@@ -288,14 +365,14 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }: FileUploadModalProps) =>
                         disabled={uploading}
                         className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                     >
-                        Abbrechen
+                        {t('actions.cancel', 'Abbrechen')}
                     </Button>
                     <Button
                         disabled={selectedFiles.length === 0 || !selectedFiles.some(f => f.isValid) || uploading}
                         onClick={handleUpload}
                         className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                     >
-                        {uploading ? 'Wird übertragen...' : `Hochladen (${selectedFiles.filter(f => f.isValid).length})`}
+                        {uploading ? t('projects.files.uploading', 'Wird übertragen...') : `${t('projects.files.upload_button', 'Hochladen')} (${selectedFiles.filter(f => f.isValid).length})`}
                     </Button>
                 </div>
             </div>

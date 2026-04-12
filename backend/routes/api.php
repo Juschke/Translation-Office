@@ -10,6 +10,9 @@ Route::middleware(['throttle:10,1'])->group(function () {
     Route::post('/reset-password', [\App\Http\Controllers\Api\AuthController::class, 'resetPassword']);
 });
 
+// Token Refresh (requires valid refresh_token cookie)
+Route::middleware(['auth:sanctum'])->post('/auth/refresh', [\App\Http\Controllers\Api\AuthController::class, 'refresh']);
+
 Route::get('/email/verify/{id}/{hash}', [\App\Http\Controllers\Api\VerificationController::class, 'verify'])
     ->name('verification.verify');
 
@@ -68,10 +71,15 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/subscription/payment-method', [\App\Http\Controllers\Api\SubscriptionController::class, 'paymentMethod']);
         Route::get('/subscription/invoices', [\App\Http\Controllers\Api\SubscriptionController::class, 'invoices']);
 
-        // Bulk delete operations
-        Route::post('customers/bulk-delete', [\App\Http\Controllers\Api\CustomerController::class, 'bulkDelete']);
-        Route::post('partners/bulk-delete', [\App\Http\Controllers\Api\PartnerController::class, 'bulkDelete']);
-        Route::post('projects/bulk-delete', [\App\Http\Controllers\Api\ProjectController::class, 'bulkDelete']);
+        // Bulk delete operations (rate-limited)
+        Route::middleware('bulk-rate-limit')->group(function () {
+            Route::post('customers/bulk-delete', [\App\Http\Controllers\Api\CustomerController::class, 'bulkDelete']);
+            Route::post('partners/bulk-delete', [\App\Http\Controllers\Api\PartnerController::class, 'bulkDelete']);
+            Route::post('projects/bulk-delete', [\App\Http\Controllers\Api\ProjectController::class, 'bulkDelete']);
+            Route::post('customers/bulk-update', [\App\Http\Controllers\Api\CustomerController::class, 'bulkUpdate']);
+            Route::post('partners/bulk-update', [\App\Http\Controllers\Api\PartnerController::class, 'bulkUpdate']);
+            Route::post('projects/bulk-update', [\App\Http\Controllers\Api\ProjectController::class, 'bulkUpdate']);
+        });
     });
 
     // ── Manager+ routes ──
@@ -179,6 +187,19 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // External Costs
         Route::get('external-costs/stats', [\App\Http\Controllers\Api\ExternalCostController::class, 'stats']);
         Route::apiResource('external-costs', \App\Http\Controllers\Api\ExternalCostController::class);
+
+        // ──────── B2B Features ────────────────────────────────────
+        // Payments & Stripe Integration
+        Route::post('payments/create-intent', [\App\Http\Controllers\Api\PaymentController::class, 'createIntent']);
+        Route::post('payments/confirm', [\App\Http\Controllers\Api\PaymentController::class, 'confirm']);
+        Route::get('payments/invoice/{invoice}', [\App\Http\Controllers\Api\PaymentController::class, 'list']);
+        Route::post('payments/{payment}/refund', [\App\Http\Controllers\Api\PaymentController::class, 'refund']);
+
+        // API Keys Management
+        Route::apiResource('api-keys', \App\Http\Controllers\Api\ApiKeyController::class);
+
+        // Webhooks
+        Route::apiResource('webhooks', \App\Http\Controllers\Api\WebhookController::class);
     });
 
     // ── Employee+ routes (all authenticated users) ──
@@ -252,6 +273,13 @@ Route::prefix('portal')
         Route::put('profile', [\App\Http\Controllers\Api\Portal\PortalController::class, 'updateProfile']);
         Route::post('requests', [\App\Http\Controllers\Api\Portal\PortalRequestController::class, 'store']);
     });
+
+// ──────── Public Webhooks (no auth required) ────────────────
+// Stripe Webhook
+Route::post('/webhooks/stripe', [\App\Http\Controllers\Api\WebhookController::class, 'stripe']);
+
+// Custom Webhook for external integrations
+Route::post('/webhooks/custom', [\App\Http\Controllers\Api\WebhookController::class, 'custom']);
 
 // Admin routes - only accessible by platform admin users
 Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureUserIsAdmin::class, 'throttle:120,1'])->prefix('admin')->group(function () {

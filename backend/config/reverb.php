@@ -30,11 +30,14 @@ return [
 
         'reverb' => [
             'host' => env('REVERB_SERVER_HOST', '0.0.0.0'),
-            'port' => env('REVERB_SERVER_PORT', 8080),
+            'port' => env('REVERB_SERVER_PORT', 443), // HTTPS port by default
             'path' => env('REVERB_SERVER_PATH', ''),
             'hostname' => env('REVERB_HOST'),
             'options' => [
-                'tls' => [],
+                'tls' => env('APP_ENV') === 'production' ? [
+                    'cert_path' => env('REVERB_CERT_PATH', '/etc/letsencrypt/live/your-domain.com/fullchain.pem'),
+                    'key_path' => env('REVERB_KEY_PATH', '/etc/letsencrypt/live/your-domain.com/privkey.pem'),
+                ] : [],
             ],
             'max_request_size' => env('REVERB_MAX_REQUEST_SIZE', 10_000),
             'scaling' => [
@@ -82,7 +85,7 @@ return [
                     'scheme' => env('REVERB_SCHEME', 'https'),
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
                 ],
-                'allowed_origins' => ['*'],
+                'allowed_origins' => explode(',', env('REVERB_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173')),
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),

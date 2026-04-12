@@ -15,25 +15,34 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'admin/*'],
 
-    'allowed_methods' => ['*'],
+    // Only allow necessary HTTP methods
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173',
-        'http://127.0.0.1:3000',
-    ],
+    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000')),
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    // Only allow necessary headers
+    'allowed_headers' => [
+        'Accept',
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'X-CSRF-Token',
+    ],
 
-    'exposed_headers' => [],
+    // Expose rate-limit and other useful headers
+    'exposed_headers' => [
+        'Content-Disposition',
+        'X-RateLimit-Limit',
+        'X-RateLimit-Remaining',
+        'X-RateLimit-Reset',
+    ],
 
-    'max_age' => 0,
+    'max_age' => 3600, // Cache preflight requests for 1 hour
 
-    'supports_credentials' => true,
+    'supports_credentials' => true, // Required for HttpOnly cookies
 
 ];

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Jobs\LogApiRequest;
 use App\Models\ApiRequestLog;
 use Closure;
 use Illuminate\Http\Request;
@@ -48,53 +49,33 @@ class LogApiRequests
     }
 
     /**
-     * Log the request to database.
+     * Dispatch async job to log the request to database (non-blocking)
      */
     protected function logRequest(Request $request, Response $response, float $duration, int $memoryUsage, string $requestId): void
     {
         $user = $request->user();
 
         // Prepare request body (exclude sensitive data)
-        $requestBody = $request->except(['password', 'password_confirmation', 'current_password', 'code', 'token', 'api_token']);
-
-        // Prepare response body (limit size)
-        $responseBody = null;
-        if ($response->getContent()) {
-            $content = $response->getContent();
-            // Limit response body to 50KB to avoid DB bloat
-            if (strlen($content) < 50000) {
-                $responseBody = json_decode($content, true);
-            } else {
-                $responseBody = ['_truncated' => true, '_size' => strlen($content)];
-            }
-        }
-
-        // Sanitize headers (remove sensitive data)
-        $requestHeaders = $this->sanitizeHeaders($request->headers->all());
-        $responseHeaders = $this->sanitizeHeaders($response->headers->all());
-
-        ApiRequestLog::create([
-            'request_id' => $requestId,
-            'method' => $request->method(),
-            'url' => $request->fullUrl(),
-            'endpoint' => $request->path(),
-            'status_code' => $response->getStatusCode(),
-            'query_params' => $request->query->all(),
-            'request_body' => $requestBody,
-            'request_headers' => $requestHeaders,
-            'response_body' => $responseBody,
-            'response_headers' => $responseHeaders,
-            'duration_ms' => round($duration, 2),
-            'memory_usage' => $memoryUsage,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'referer' => $request->headers->get('referer'),
-            'user_id' => $user?->id,
-            'tenant_id' => $user?->tenant_id,
-            'user_email' => $user?->email,
-            'session_id' => $request->hasSession() ? $request->session()->getId() : null,
-            'error_message' => $response->getStatusCode() >= 400 ? $this->getErrorMessage($response) : null,
+        $requestData = $request->except([
+            'password', 'password_confirmation', 'current_password',
+            'code', 'token', 'api_token', 'api_key', 'api_secret',
+            'credit_card', 'cvv', 'iban', 'bic'
         ]);
+
+        // ✅ Dispatch async job (non-blocking)
+        LogApiRequest::dispatch(
+            method: $request->method(),
+            path: $request->path(),
+            statusCode: $response->getStatusCode(),
+            duration: $duration / 1000, // Convert ms to seconds
+            memory: $memoryUsage,
+            userId: $user?->id,
+            ip: $request->ip(),
+            requestData: $requestData,
+            userAgent: $request->userAgent(),
+        );
+
+        // Log wird in LogApiRequest Job erstellt
     }
 
     /**
@@ -123,37 +104,4 @@ class LogApiRequests
         return false;
     }
 
-    /**
-     * Sanitize headers to remove sensitive information.
-     */
-    protected function sanitizeHeaders(array $headers): array
-    {
-        $sensitiveHeaders = [
-            'authorization',
-            'cookie',
-            'php-auth-pw',
-            'x-csrf-token',
-        ];
-
-        foreach ($sensitiveHeaders as $header) {
-            if (isset($headers[$header])) {
-                $headers[$header] = ['***REDACTED***'];
-            }
-        }
-
-        return $headers;
-    }
-
-    /**
-     * Extract error message from response.
-     */
-    protected function getErrorMessage(Response $response): ?string
-    {
-        try {
-            $content = json_decode($response->getContent(), true);
-            return $content['message'] ?? $content['error'] ?? 'Unknown error';
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
 }

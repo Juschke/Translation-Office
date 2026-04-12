@@ -275,12 +275,14 @@ body,
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* slate-300 */
+  background: #cbd5e1;
+  /* slate-300 */
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* slate-400 */
+  background: #94a3b8;
+  /* slate-400 */
 }
 
 /* Firefox */
@@ -539,6 +541,32 @@ body,
   animation: fadeInRight 0.3s ease-out;
 }
 
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.animate-slideOutRight {
+  animation: slideOutRight 0.3s ease-in;
+}
+
 @keyframes fadeInLeft {
   from {
     opacity: 0;
@@ -624,8 +652,10 @@ body,
 /* Chrome, Safari, Edge: Hide vertical scrollbar specifically */
 .ant-table-body::-webkit-scrollbar,
 .ant-table-content::-webkit-scrollbar {
-  width: 0px !important; /* Hide vertical */
-  height: 6px !important; /* Show horizontal */
+  width: 0px !important;
+  /* Hide vertical */
+  height: 6px !important;
+  /* Show horizontal */
 }
 
 .ant-table-body::-webkit-scrollbar-thumb,

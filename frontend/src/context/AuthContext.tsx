@@ -50,19 +50,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
  const [isLoading, setIsLoading] = useState(true);
 
  const refreshUser = async () => {
- const token = localStorage.getItem('token');
- if (!token) {
- setUser(null);
- setIsLoading(false);
- return;
- }
-
  try {
+ // Token is automatically sent via HttpOnly cookie
+ // No need to manually read from localStorage
  const userData = await authService.me();
  setUser(userData);
  } catch (error) {
  console.error('Failed to fetch user', error);
- localStorage.removeItem('token');
+ // Token might be expired or invalid
+ // Axios interceptor will handle 401 and redirect to login
  setUser(null);
  } finally {
  setIsLoading(false);
@@ -89,11 +85,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
  const logout = async () => {
  try {
+ // Call logout endpoint to revoke tokens on server
+ // Cookies will be cleared by server response
  await authService.logout();
  } catch (err) {
  console.error('Logout error', err);
  } finally {
- localStorage.removeItem('token');
+ // Clear local user state
+ // Cookies are automatically cleared by server
  setUser(null);
  }
  };

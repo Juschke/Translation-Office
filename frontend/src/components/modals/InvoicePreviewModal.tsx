@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaFileInvoice, FaPaperPlane, FaStamp, FaBan, FaLock, FaArchive, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaFileInvoice, FaPaperPlane, FaStamp, FaBan, FaLock, FaArchive, FaTrash, FaDownload, FaPrint, FaEnvelope, FaEllipsisV } from 'react-icons/fa';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '../../api/services';
 import api from '../../api/axios';
@@ -8,6 +8,12 @@ import { Button } from '../ui/button';
 import DataTable from '../common/DataTable';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../common/ConfirmModal';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 interface InvoicePreviewModalProps {
     isOpen: boolean;
@@ -20,7 +26,6 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
     const queryClient = useQueryClient();
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [isFetchingPreview, setIsFetchingPreview] = useState(false);
-    const [activeTab, setActiveTab] = useState<'preview' | 'audit'>('preview');
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
@@ -49,29 +54,57 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                 }
             };
             fetchPreview();
-
-            if (activeTab === 'audit') {
-                fetchAuditLogs();
-            }
         }
 
         return () => {
             if (previewUrl) URL.revokeObjectURL(previewUrl);
         };
-    }, [isOpen, invoice?.id, activeTab]);
+    }, [isOpen, invoice?.id]);
 
-    const fetchAuditLogs = async () => {
-        if (!invoice?.id) return;
-        setIsLoadingLogs(true);
+    const handleDownload = async () => {
         try {
-            const logs = await invoiceService.getAuditLogs(invoice.id);
-            setAuditLogs(logs);
+            const response = await invoiceService.download(invoice.id);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${invoice.type === 'credit_note' ? 'Gutschrift' : 'Rechnung'}_${invoice.invoice_number}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Failed to fetch audit logs:', error);
-            toast.error('Audit Trail konnte nicht geladen werden');
-        } finally {
-            setIsLoadingLogs(false);
+            toast.error('Download fehlgeschlagen');
         }
+    };
+
+    const handlePrint = async () => {
+        try {
+            const response = await invoiceService.download(invoice.id);
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const printWindow = window.open(url);
+            if (printWindow) {
+                printWindow.onload = () => {
+                    printWindow.print();
+                };
+            }
+        } catch (error) {
+            toast.error('Drucken fehlgeschlagen');
+        }
+    };
+
+    const handleSendEmail = async () => {
+        try {
+            await toast.promise(
+                invoiceService.sendEmail(invoice.id),
+                {
+                    loading: 'E-Mail wird vorbereitet...',
+                    success: 'E-Mail erfolgreich versendet',
+                    error: 'E-Mail konnte nicht versendet werden'
+                }
+            );
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        } catch (error) { }
     };
 
     // Draft-only delete
@@ -138,14 +171,12 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
     const isCreditNote = invoice.type === 'credit_note';
     const canCancel = ['issued', 'sent', 'paid', 'overdue'].includes(invoice.status) && !invoice.credit_note;
 
-
-
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fadeIn p-4 md:p-10">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fadeIn p-2 md:p-10">
             <div className="bg-white shadow-2xl w-full max-w-6xl h-full flex flex-col overflow-hidden rounded-xl animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="px-5 py-3.5 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white gap-3 shrink-0">
-                    <div className="flex items-center gap-4">
+                <div className="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-white gap-3 shrink-0">
+                    <div className="flex items-center gap-4 min-w-0">
                         <div className={`w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center text-lg ${isCreditNote ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-900'}`}>
                             <FaFileInvoice />
                         </div>
@@ -154,39 +185,137 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                 <h2 className="text-sm font-bold text-slate-800 tracking-tight truncate">
                                     {isCreditNote ? 'Gutschrift' : 'Rechnung'} {invoiceNumber}
                                 </h2>
-                                <InvoiceStatusBadge status={invoice.status} reminderLevel={invoice.reminder_level} type={invoice.type} />
+                                <div className="hidden sm:block">
+                                    <InvoiceStatusBadge status={invoice.status} reminderLevel={invoice.reminder_level} type={invoice.type} />
+                                </div>
                                 {isLocked && <FaLock className="text-slate-300 text-[10px]" title="GoBD-gesperrt" />}
                             </div>
-
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 group">
-                        {/* Reminder button (for issued/sent/overdue) */}
-                        {!isDraft && !isCreditNote && invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-                            <button
-                                onClick={() => {
-                                    setConfirmTitle('Mahnung erstellen');
-                                    setConfirmMessage('Mahnung für diese Rechnung erstellen/hochstufen?');
-                                    setConfirmVariant('warning');
-                                    setConfirmAction(() => () => {
-                                        const nextLevel = (invoice.reminder_level || 0) + 1;
-                                        invoiceService.bulkUpdate([invoice.id], {
-                                            reminder_level: nextLevel,
-                                            last_reminder_date: new Date().toISOString().split('T')[0]
-                                        }).then(() => {
-                                            queryClient.invalidateQueries({ queryKey: ['invoices'] });
-                                        });
-                                    });
-                                    setConfirmOpen(true);
-                                }}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
-                            >
-                                <FaPaperPlane className="text-[10px]" />
-                                Mahnung
-                            </button>
-                        )}
 
-                        {/* Stornieren button */}
+                    <div className="flex items-center gap-2 group">
+                        
+                        {/* DESKTOP ACTIONS */}
+                        <div className="hidden xl:flex items-center gap-2">
+                            {/* Download button */}
+                            {!isDraft && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-600 border-slate-200"
+                                    onClick={handleDownload}
+                                >
+                                    <FaDownload className="text-[10px]" />
+                                    Download
+                                </Button>
+                            )}
+
+                            {/* Print button */}
+                            {!isDraft && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-600 border-slate-200"
+                                    onClick={handlePrint}
+                                >
+                                    <FaPrint className="text-[10px]" />
+                                    Drucken
+                                </Button>
+                            )}
+
+                            {/* Email button */}
+                            {!isDraft && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-600 border-slate-200"
+                                    onClick={handleSendEmail}
+                                >
+                                    <FaEnvelope className="text-[10px]" />
+                                    E-Mail
+                                </Button>
+                            )}
+
+                            {/* Reminder button (for issued/sent/overdue) */}
+                            {!isDraft && !isCreditNote && invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
+                                <button
+                                    onClick={() => {
+                                        setConfirmTitle('Mahnung erstellen');
+                                        setConfirmMessage('Mahnung für diese Rechnung erstellen/hochstufen?');
+                                        setConfirmVariant('warning');
+                                        setConfirmAction(() => () => {
+                                            const nextLevel = (invoice.reminder_level || 0) + 1;
+                                            invoiceService.bulkUpdate([invoice.id], {
+                                                reminder_level: nextLevel,
+                                                last_reminder_date: new Date().toISOString().split('T')[0]
+                                            }).then(() => {
+                                                queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                                            });
+                                        });
+                                        setConfirmOpen(true);
+                                    }}
+                                    className="h-8 px-3 rounded flex items-center gap-2 bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                >
+                                    <FaPaperPlane className="text-[10px]" />
+                                    Mahnung
+                                </button>
+                            )}
+
+                            {/* Archivieren button */}
+                            {invoice.status === 'cancelled' && (
+                                <button
+                                    onClick={() => {
+                                        setConfirmTitle('Rechnung archivieren');
+                                        setConfirmMessage('Möchten Sie diese stornierte Rechnung archivieren? Sie wird aus der Hauptliste entfernt.');
+                                        setConfirmVariant('info');
+                                        setConfirmAction(() => () => archiveMutation.mutate());
+                                        setConfirmOpen(true);
+                                    }}
+                                    className="h-8 px-3 rounded flex items-center gap-2 bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                >
+                                    <FaArchive className="text-[10px]" />
+                                    Archivieren
+                                </button>
+                            )}
+
+                            {/* Ausstellen button */}
+                            {isDraft && (
+                                <button
+                                    onClick={() => {
+                                        setConfirmTitle('Rechnung ausstellen');
+                                        setConfirmMessage('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform)');
+                                        setConfirmVariant('info');
+                                        setConfirmAction(() => () => issueMutation.mutate());
+                                        setConfirmOpen(true);
+                                    }}
+                                    className="h-8 px-4 rounded flex items-center gap-2 bg-brand-primary text-white hover:bg-brand-primary/90 transition-colors text-[10px] font-bold uppercase tracking-widest shadow-none"
+                                >
+                                    <FaStamp className="text-[10px]" />
+                                    Ausstellen
+                                </button>
+                            )}
+
+                            {/* Löschen button */}
+                            {isDraft && (
+                                <button
+                                    onClick={() => {
+                                        setConfirmTitle('Entwurf löschen');
+                                        setConfirmMessage('Rechnungsentwurf endgültig löschen?');
+                                        setConfirmVariant('danger');
+                                        setConfirmAction(() => () => deleteMutation.mutate());
+                                        setConfirmOpen(true);
+                                    }}
+                                    className="h-8 px-3 rounded flex items-center gap-2 bg-white text-red-500 border border-red-100 hover:bg-red-50 transition-colors text-[10px] font-bold uppercase tracking-widest"
+                                >
+                                    <FaTrash className="text-[10px]" />
+                                    Löschen
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="hidden xl:block w-px h-4 bg-slate-200 mx-1" />
+
+                        {/* Stornieren button - Always Visible on both desktop & mobile (per request) */}
                         {canCancel && (
                             <Button
                                 variant="destructive"
@@ -202,77 +331,104 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
                                 }}
                             >
                                 <FaBan className="text-[10px]" />
-                                {isCreditNote ? 'Gutschrift stornieren' : 'Stornieren'}
+                                <span className="hidden xs:inline">{isCreditNote ? 'Gutschrift stornieren' : 'Stornieren'}</span>
                             </Button>
                         )}
 
-                        {/* Archivieren button */}
-                        {invoice.status === 'cancelled' && (
-                            <button
-                                onClick={() => {
-                                    setConfirmTitle('Rechnung archivieren');
-                                    setConfirmMessage('Möchten Sie diese stornierte Rechnung archivieren? Sie wird aus der Hauptliste entfernt.');
-                                    setConfirmVariant('info');
-                                    setConfirmAction(() => () => archiveMutation.mutate());
-                                    setConfirmOpen(true);
-                                }}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition-colors text-[10px] font-bold uppercase tracking-widest"
-                            >
-                                <FaArchive className="text-[10px]" />
-                                Archivieren
-                            </button>
-                        )}
+                        {/* MOBILE ACTIONS DROPDOWN */}
+                        <div className="flex xl:hidden">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500">
+                                        <FaEllipsisV size={14} />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                    {!isDraft && (
+                                        <>
+                                            <DropdownMenuItem onClick={handleDownload} className="text-xs font-bold gap-2">
+                                                <FaDownload size={12} /> Download
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handlePrint} className="text-xs font-bold gap-2">
+                                                <FaPrint size={12} /> Drucken
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleSendEmail} className="text-xs font-bold gap-2">
+                                                <FaEnvelope size={12} /> E-Mail senden
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
 
-                        {/* Ausstellen button */}
-                        {isDraft && (
-                            <button
-                                onClick={() => {
-                                    setConfirmTitle('Rechnung ausstellen');
-                                    setConfirmMessage('Rechnung ausstellen und unwiderruflich sperren? (GoBD-konform)');
-                                    setConfirmVariant('info');
-                                    setConfirmAction(() => () => issueMutation.mutate());
-                                    setConfirmOpen(true);
-                                }}
-                                className="h-8 px-4 rounded flex items-center gap-2 bg-brand-primary text-white hover:bg-brand-primary/90 transition-colors text-[10px] font-bold uppercase tracking-widest shadow-none"
-                            >
-                                <FaStamp className="text-[10px]" />
-                                Ausstellen
-                            </button>
-                        )}
+                                    {!isDraft && !isCreditNote && invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
+                                        <DropdownMenuItem 
+                                            onClick={() => {
+                                                setConfirmTitle('Mahnung erstellen');
+                                                setConfirmMessage('Mahnung für diese Rechnung erstellen/hochstufen?');
+                                                setConfirmVariant('warning');
+                                                setConfirmAction(() => () => {
+                                                    const nextLevel = (invoice.reminder_level || 0) + 1;
+                                                    invoiceService.bulkUpdate([invoice.id], {
+                                                        reminder_level: nextLevel,
+                                                        last_reminder_date: new Date().toISOString().split('T')[0]
+                                                    }).then(() => {
+                                                        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                                                    });
+                                                });
+                                                setConfirmOpen(true);
+                                            }}
+                                            className="text-xs font-bold gap-2 text-amber-600"
+                                        >
+                                            <FaPaperPlane size={12} /> Mahnung
+                                        </DropdownMenuItem>
+                                    )}
 
-                        {/* Löschen button */}
-                        {isDraft && (
-                            <button
-                                onClick={() => {
-                                    setConfirmTitle('Entwurf löschen');
-                                    setConfirmMessage('Rechnungsentwurf endgültig löschen?');
-                                    setConfirmVariant('danger');
-                                    setConfirmAction(() => () => deleteMutation.mutate());
-                                    setConfirmOpen(true);
-                                }}
-                                className="h-8 px-3 rounded flex items-center gap-2 bg-white text-red-500 border border-red-100 hover:bg-red-50 transition-colors text-[10px] font-bold uppercase tracking-widest"
-                            >
-                                <FaTrash className="text-[10px]" />
-                                Löschen
-                            </button>
-                        )}
+                                    {invoice.status === 'cancelled' && (
+                                        <DropdownMenuItem 
+                                            onClick={() => {
+                                                setConfirmTitle('Rechnung archivieren');
+                                                setConfirmMessage('Möchten Sie diese stornierte Rechnung archivieren?');
+                                                setConfirmVariant('info');
+                                                setConfirmAction(() => () => archiveMutation.mutate());
+                                                setConfirmOpen(true);
+                                            }}
+                                            className="text-xs font-bold gap-2"
+                                        >
+                                            <FaArchive size={12} /> Archivieren
+                                        </DropdownMenuItem>
+                                    )}
 
-                        <div className="w-px h-6 bg-slate-200 mx-2" />
-
-                        <div className="flex bg-slate-100 p-0.5 rounded-lg mr-2">
-                            <button
-                                onClick={() => setActiveTab('preview')}
-                                className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${activeTab === 'preview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                            >
-                                Vorschau
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('audit')}
-                                className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${activeTab === 'audit' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                            >
-                                Verlauf
-                            </button>
+                                    {isDraft && (
+                                        <>
+                                            <DropdownMenuItem 
+                                                onClick={() => {
+                                                    setConfirmTitle('Rechnung ausstellen');
+                                                    setConfirmMessage('Rechnung ausstellen und unwiderruflich sperren?');
+                                                    setConfirmVariant('info');
+                                                    setConfirmAction(() => () => issueMutation.mutate());
+                                                    setConfirmOpen(true);
+                                                }}
+                                                className="text-xs font-bold gap-2 text-brand-primary"
+                                            >
+                                                <FaStamp size={12} /> Ausstellen
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem 
+                                                onClick={() => {
+                                                    setConfirmTitle('Entwurf löschen');
+                                                    setConfirmMessage('Rechnungsentwurf endgültig löschen?');
+                                                    setConfirmVariant('danger');
+                                                    setConfirmAction(() => () => deleteMutation.mutate());
+                                                    setConfirmOpen(true);
+                                                }}
+                                                className="text-xs font-bold gap-2 text-red-600"
+                                            >
+                                                <FaTrash size={12} /> Löschen
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
+
+                        <div className="w-px h-6 bg-slate-200 mx-1" />
 
                         <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded transition">
                             <FaTimes />
@@ -282,81 +438,25 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
 
                 {/* Content Area */}
                 <div className="flex-1 bg-white overflow-hidden flex flex-col">
-                    {activeTab === 'preview' ? (
-                        isFetchingPreview ? (
-                            <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
-                                <span className="text-[10px] font-bold uppercase tracking-widest">Generiere Vorschau...</span>
-                            </div>
-                        ) : (
-                            <div className="w-full h-full">
-                                {previewUrl ? (
-                                    <iframe
-                                        title="Invoice Preview"
-                                        src={previewUrl}
-                                        className="w-full h-full border-none block"
-                                    />
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-2 p-20 text-center">
-                                        <FaFileInvoice size={40} className="mb-2 opacity-20" />
-                                        <span className="text-xs font-bold uppercase tracking-widest">Vorschau konnte nicht geladen werden</span>
-                                    </div>
-                                )}
-                            </div>
-                        )
+                    {isFetchingPreview ? (
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Generiere Vorschau...</span>
+                        </div>
                     ) : (
-                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
-                            <div className="max-w-4xl mx-auto">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
-                                    GoBD-konformer Verlauf & Ereignisprotokoll
-                                </h3>
-
-                                <DataTable
-                                    isLoading={isLoadingLogs}
-                                    data={auditLogs}
-                                    columns={[
-                                        {
-                                            id: 'action',
-                                            header: 'Aktion',
-                                            accessor: (log: any) => (
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${log.action === 'issued' ? 'bg-brand-primary/10 text-brand-primary' :
-                                                    log.action === 'cancelled' ? 'bg-red-50 text-red-600' :
-                                                        log.action === 'paid' ? 'bg-green-50 text-green-600' :
-                                                            'bg-slate-100 text-slate-600'
-                                                    }`}>
-                                                    {log.action}
-                                                </span>
-                                            )
-                                        },
-                                        {
-                                            id: 'date',
-                                            header: 'Zeitpunkt',
-                                            accessor: (log: any) => <span className="text-[10px] font-bold text-slate-500">{new Date(log.created_at).toLocaleString('de-DE')}</span>
-                                        },
-                                        {
-                                            id: 'user',
-                                            header: 'Benutzer',
-                                            accessor: (log: any) => <span className="text-[10px] font-bold text-slate-600">{log.user?.name || 'System'}</span>
-                                        },
-                                        {
-                                            id: 'status',
-                                            header: 'Statuswechsel',
-                                            accessor: (log: any) => (
-                                                <span className="text-[11px] text-slate-600 font-medium whitespace-nowrap">
-                                                    {log.old_status || '-'} <span className="text-slate-300 mx-1">→</span> {log.new_status || '-'}
-                                                </span>
-                                            )
-                                        },
-                                        {
-                                            id: 'ip',
-                                            header: 'IP-Adresse',
-                                            accessor: (log: any) => <span className="text-[9px] text-slate-400 font-mono">{log.ip_address || '-'}</span>
-                                        }
-                                    ]}
-                                    pageSize={15}
+                        <div className="w-full h-full">
+                            {previewUrl ? (
+                                <iframe
+                                    title="Invoice Preview"
+                                    src={previewUrl}
+                                    className="w-full h-full border-none block"
                                 />
-                            </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-2 p-20 text-center">
+                                    <FaFileInvoice size={40} className="mb-2 opacity-20" />
+                                    <span className="text-xs font-bold uppercase tracking-widest">Vorschau konnte nicht geladen werden</span>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

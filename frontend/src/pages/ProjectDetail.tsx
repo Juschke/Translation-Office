@@ -678,7 +678,7 @@ const ProjectDetail = () => {
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-3 flex-wrap">
                                             <div className="flex flex-wrap items-baseline gap-2 mb-1">
-                                                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
+                                                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
                                                     {displayProjectNumber}
                                                 </h1>
                                             </div>
@@ -688,7 +688,7 @@ const ProjectDetail = () => {
                                                     projectData.priority === 'express' ? "bg-red-50 text-red-600 border-red-100" : "bg-orange-50 text-orange-600 border-orange-100"
                                                 )}>
                                                     {projectData.priority === 'express' ? <FaBolt /> : <FaFlag />}
-                                                    <span>{projectData.priority === 'express' ? 'Express' : 'Dringend'}</span>
+                                                    <span>{projectData.priority === 'express' ? t('projects.filters.priority.express') : t('projects.priority_urgent')}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -701,7 +701,7 @@ const ProjectDetail = () => {
                                     onClick={() => navigate(`/projects/${id}/edit`)}
                                     className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-none justify-center"
                                 >
-                                    <FaEdit /> Bearbeiten
+                                    <FaEdit /> {t('actions.edit')}
                                 </Button>
 
                                 <Button
@@ -721,7 +721,7 @@ const ProjectDetail = () => {
                                     }}
                                     className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
-                                    <FaEnvelope /> {t('common.send_email') || 'E-Mail senden'}
+                                    <FaEnvelope /> {t('projects.actions.send_email')}
                                 </Button>
 
                                 <Button
@@ -729,7 +729,7 @@ const ProjectDetail = () => {
                                     onClick={() => setIsProjectDeleteConfirmOpen(true)}
                                     className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition flex-1 sm:flex-none justify-center"
                                 >
-                                    <FaTrashAlt /> {t('common.delete') || 'Löschen'}
+                                    <FaTrashAlt /> {t('actions.delete')}
                                 </Button>
 
                                 <div className="relative flex-1 sm:flex-none" ref={actionsRef}>
@@ -738,7 +738,7 @@ const ProjectDetail = () => {
                                         onClick={() => setIsActionsOpen(v => !v)}
                                         className="w-full px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 shadow-sm transition justify-center"
                                     >
-                                        Mehr Aktionen <FaChevronDown className={clsx('text-[10px] transition-transform', isActionsOpen && 'rotate-180')} />
+                                        {t('common.more_actions')} <FaChevronDown className={clsx('text-[10px] transition-transform', isActionsOpen && 'rotate-180')} />
                                     </Button>
 
                                     {isActionsOpen && (
@@ -1156,9 +1156,9 @@ const ProjectDetail = () => {
                     isOpen={isProjectDeleteConfirmOpen}
                     onClose={() => setIsProjectDeleteConfirmOpen(false)}
                     onConfirm={() => deleteProjectMutation.mutate(id!)}
-                    title="Projekt löschen"
-                    message={`Möchten Sie das Projekt "${projectData?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-                    confirmText={t('actions.delete')}
+                    title={t('projects.confirm.delete_project')}
+                    message={t('confirm.deleteMessage')}
+                    confirmText={t('common.yes')}
                     cancelText={t('actions.cancel')}
                     type="danger"
                     isLoading={deleteProjectMutation.isPending}

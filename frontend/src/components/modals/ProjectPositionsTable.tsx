@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
-import { FaPlus, FaTrash, FaBook, FaChevronDown, FaSearch, FaGripVertical } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaChevronDown, FaSearch, FaGripVertical, FaCopy } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '../../api/services';
 import ConfirmModal from './ConfirmModal';
@@ -299,6 +299,14 @@ const ProjectPositionsTable = ({
             (search === '' || s.name.toLowerCase().includes(search.toLowerCase())),
     );
 
+    const duplicate = (index: number) => {
+        if (disabled) return;
+        const next = [...positions];
+        const copy = { ...next[index], id: Date.now().toString() + Math.random().toString(36).substring(2, 5) };
+        next.splice(index + 1, 0, copy);
+        setPositions(next);
+    };
+
     const onDragEnd = (result: DropResult) => {
         if (!result.destination || disabled) return;
         const items = Array.from(positions);
@@ -317,8 +325,7 @@ const ProjectPositionsTable = ({
                         className="h-8 px-4 text-xs font-bold gap-2"
                         variant="default"
                     >
-                        <FaBook className="text-[10px]" />
-                        Leistungskatalog
+                        {t('invoice.form.service_catalog')}
                     </Button>
 
                     {!disabled && catalogOpen && createPortal(
@@ -332,7 +339,7 @@ const ProjectPositionsTable = ({
                                     <input
                                         ref={searchRef}
                                         type="text"
-                                        placeholder="Leistung suchen…"
+                                        placeholder={t('invoice.form.search_service')}
                                         value={search}
                                         onChange={e => setSearch(e.target.value)}
                                         className="w-full h-9 pl-8 pr-3 text-xs border border-slate-200 rounded-sm focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 outline-none transition-all placeholder:text-slate-400"
@@ -345,7 +352,7 @@ const ProjectPositionsTable = ({
                             <div className="max-h-60 overflow-y-auto">
                                 {activeItems.length === 0 ? (
                                     <p className="text-xs text-slate-400 text-center py-4 italic">
-                                        {search ? 'Keine Treffer' : 'Noch keine Leistungen im Katalog'}
+                                        {search ? t('invoice.form.no_hits') : t('invoice.form.empty_catalog')}
                                     </p>
                                 ) : (
                                     activeItems.map((item: any) => (
@@ -369,7 +376,7 @@ const ProjectPositionsTable = ({
                             <div className="border-t border-slate-100 bg-white p-2">
                                 <Button variant="secondary" onClick={() => { setShowCreate(true); setCatalogOpen(false); }} className="w-full h-9 text-xs font-bold gap-2">
                                     <FaPlus className="text-[10px]" />
-                                    Neue Leistung anlegen
+                                    {t('invoice.form.add_new_service')}
                                 </Button>
                             </div>
                         </div>,
@@ -380,25 +387,25 @@ const ProjectPositionsTable = ({
                         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
                             <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                    <h4 className="text-sm font-bold text-slate-800">Neue Leistung im Katalog anlegen</h4>
+                                    <h4 className="text-sm font-bold text-slate-800">{t('invoice.form.new_service_catalog')}</h4>
                                     <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                                         <FaPlus className="text-xs rotate-45" />
                                     </button>
                                 </div>
                                 <div className="p-6 space-y-5">
                                     <div className="space-y-1.5">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bezeichnung</label>
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('invoice.form.service_name')}</label>
                                         <input type="text" placeholder="z.B. Lektorat Spanisch" autoFocus value={newSvc.name} onChange={e => setNewSvc(s => ({ ...s, name: e.target.value }))} className="w-full text-sm border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors" />
                                     </div>
                                     <div className="flex gap-4">
                                         <div className="flex-1 space-y-1.5">
-                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Einheit</label>
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('invoice.form.unit')}</label>
                                             <select value={newSvc.unit} onChange={e => setNewSvc(s => ({ ...s, unit: e.target.value }))} className="w-full text-sm border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-600 transition-colors">
-                                                {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                                {UNITS.map(u => <option key={u} value={u}>{t(`common.units.${Object.keys(t('common.units', { returnObjects: true })).find(k => (t('common.units', { returnObjects: true }) as any)[k] === u) || u}`)}</option>)}
                                             </select>
                                         </div>
                                         <div className="w-32 space-y-1.5">
-                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Grundpreis</label>
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('invoice.form.base_price')}</label>
                                             <div className="flex items-end gap-1">
                                                 <input type="number" step="0.01" min="0" placeholder="0,00" value={newSvc.base_price} onChange={e => setNewSvc(s => ({ ...s, base_price: e.target.value }))} className="w-full text-right text-sm font-mono border-b-2 border-slate-200 focus:border-brand-primary bg-transparent outline-none pb-px text-slate-700 placeholder:text-slate-300 transition-colors" />
                                                 <span className="text-sm text-slate-400 pb-px">€</span>
@@ -407,9 +414,9 @@ const ProjectPositionsTable = ({
                                     </div>
                                 </div>
                                 <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex gap-3">
-                                    <Button variant="secondary" onClick={() => setShowCreate(false)} className="flex-1">Abbrechen</Button>
+                                    <Button variant="secondary" onClick={() => setShowCreate(false)} className="flex-1">{t('actions.cancel')}</Button>
                                     <Button disabled={!newSvc.name.trim() || createServiceMutation.isPending} onClick={() => createServiceMutation.mutate({ name: newSvc.name.trim(), unit: newSvc.unit, base_price: parseFloat(newSvc.base_price) || 0, status: 'active' })} className="flex-1">
-                                        {createServiceMutation.isPending ? 'Speichern…' : 'Leistung anlegen'}
+                                        {createServiceMutation.isPending ? t('actions.saving') : t('invoice.form.add_new_service')}
                                     </Button>
                                 </div>
                             </div>
@@ -428,7 +435,7 @@ const ProjectPositionsTable = ({
                                 <th className="px-4 py-3 min-w-[200px]">{t('invoice.form.description')}</th>
                                 <th className="px-2 py-3 w-20 text-right">{t('invoice.form.quantity')}</th>
                                 <th className="px-2 py-3 w-20 text-right">{t('invoice.form.unit')}</th>
-                                <th className="px-2 py-3 w-24 text-right">Preis (€)</th>
+                                <th className="px-2 py-3 w-24 text-right">{t('finances.price')} (€)</th>
                                 <th className="px-2 py-3 w-16 text-right">MwSt</th>
                                 <th className="px-2 py-3 w-24 text-right">Rabatt</th>
                                 <th className="px-4 py-3 w-28 text-right">{t('invoice.form.total_price')}</th>
@@ -559,11 +566,28 @@ const ProjectPositionsTable = ({
                                                         <td className="px-6 py-2 text-right text-slate-900 font-bold tabular-nums text-[11px]">
                                                             {fmt2(pos.customerTotal)} €
                                                         </td>
-                                                        <td className="px-4 py-2 text-center">
-                                                            {!disabled && positions.length > 1 ? (
-                                                                <button onClick={() => setDeleteConfirm({ isOpen: true, index })} className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100" title={t('actions.delete')}><FaTrash size={10} /></button>
-                                                            ) : (
-                                                                <span className="p-1.5 block text-slate-100"><FaTrash size={10} /></span>
+                                                        <td className="px-4 py-2 text-center whitespace-nowrap">
+                                                            {!disabled && (
+                                                                <div className="flex items-center justify-center gap-1">
+                                                                    <button 
+                                                                        onClick={() => duplicate(index)} 
+                                                                        className="p-1.5 text-slate-200 hover:text-brand-primary hover:bg-brand-primary/10 rounded-full transition-all opacity-0 group-hover:opacity-100" 
+                                                                        title={t('invoice.form.duplicate')}
+                                                                    >
+                                                                        <FaCopy size={11} />
+                                                                    </button>
+                                                                    {positions.length > 1 ? (
+                                                                        <button 
+                                                                            onClick={() => setDeleteConfirm({ isOpen: true, index })} 
+                                                                            className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100" 
+                                                                            title={t('actions.delete')}
+                                                                        >
+                                                                            <FaTrash size={10} />
+                                                                        </button>
+                                                                    ) : (
+                                                                        <span className="p-1.5 block text-slate-100"><FaTrash size={10} /></span>
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </td>
                                                     </tr>
@@ -583,7 +607,7 @@ const ProjectPositionsTable = ({
                 <div className="border-t border-dashed border-slate-200 flex justify-center py-6 bg-slate-50/5 mt-4">
                     <button onClick={() => setPositions([...positions, EMPTY_POSITION()])} className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-slate-600 border border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:text-slate-800 hover:bg-white hover:shadow-md transition-all group/addbtn bg-transparent">
                         <FaPlus className="text-[10px] group-hover/addbtn:scale-110 transition-transform" />
-                        Position hinzufügen
+                        {t('invoice.form.add_position')}
                     </button>
                 </div>
             )}
@@ -599,9 +623,9 @@ const ProjectPositionsTable = ({
                     }
                     setDeleteConfirm({ isOpen: false, index: null });
                 }}
-                title="Position löschen"
-                message="Möchten Sie diese Position wirklich entfernen?"
-                confirmText="Entfernen"
+                title={t('invoice.form.delete_title')}
+                message={t('invoice.form.delete_message')}
+                confirmText={t('common.yes')}
             />
         </div>
     );

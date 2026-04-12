@@ -10,9 +10,11 @@
     "actions": "Actions",
     "details": "Details",
     "export": "Export",
-    "all": "All",
+    "save": "Save",
     "yes": "Yes",
     "no": "No",
+    "more_actions": "More Actions",
+    "all": "All",
     "search": "Search",
     "filter": "Filter",
     "loading": "Loading...",
@@ -114,7 +116,49 @@
     "bulk_delete_message": "This action cannot be undone. Are you sure?",
     "confirm_action": "Are you sure you want to proceed?",
     "delete_payment": "Really delete this payment?",
-    "delete_payment_amount": "Really delete this payment of {{amount}} €?"
+    "delete_payment_amount": "Really delete this payment of {{amount}} €?",
+    "duplicate": "Duplicate"
+  },
+  "finances": {
+    "invoice_exists_title": "Invoice already created",
+    "invoice_exists_desc": "The invoice {{number}} has already been issued for this project.",
+    "open_invoice": "Open invoice",
+    "cancel_invoice": "Cancel invoice",
+    "positions": "Positions",
+    "read_only": "Read-only",
+    "save_positions": "Save changes",
+    "saving": "Saving...",
+    "services_options": "Services & Options",
+    "quantity": "Quantity",
+    "price": "Price",
+    "sum": "Sum",
+    "down_payments": "Down Payments",
+    "record_payment": "Record payment",
+    "payment_complete": "Fully paid",
+    "certified": "Certification",
+    "express": "Express",
+    "apostille": "Apostille",
+    "drivers_license": "Driver's license",
+    "copies": "Copies",
+    "certified_tip": "Certified translation with stamp and signature.",
+    "express_tip": "Express surcharge for fast processing.",
+    "apostille_tip": "Apostille certification for international use.",
+    "drivers_license_tip": "Driver's license classification.",
+    "copies_tip": "Number of additional paper copies required."
+  },
+  "history": {
+    "date_time": "Date / Time",
+    "user": "User",
+    "action": "Action",
+    "field": "Field",
+    "old_value": "Old Value",
+    "new_value": "New Value",
+    "event_created": "Created",
+    "event_updated": "Updated",
+    "event_deleted": "Deleted",
+    "project_created": "Project created",
+    "project_deleted": "Project deleted",
+    "project_created_info": "Project created"
   },
   "pagination": {
     "previous": "Previous",
@@ -505,17 +549,14 @@
     "edit_title": "Edit Project",
     "new_title": "Create New Project",
     "status": {
-      "draft": "New",
+      "all": "All Projects",
       "offer": "Offer",
-      "pending": "New",
       "in_progress": "In Progress",
-      "review": "In Progress",
       "ready_for_pickup": "Ready for Pickup",
-      "invoiced": "Invoiced",
       "delivered": "Delivered",
+      "invoiced": "Invoiced",
       "completed": "Completed",
       "cancelled": "Cancelled",
-      "archived": "Archived",
       "deleted": "Deleted"
     },
     "kpi": {
@@ -590,6 +631,19 @@
     "project_updating": "Updating...",
     "create_project": "Create Project",
     "update_project": "Update Project",
+    "files": {
+      "upload_title": "Upload Files",
+      "upload_subtitle": "Multi-Upload & Categorization",
+      "upload": "Upload Files",
+      "drop_here": "Drop files here",
+      "drag_or_click": "Drag files in or click to select",
+      "supported_formats": "Supported Formats",
+      "max_size": "<strong>Max Size:</strong> 50 MB per file",
+      "scan_camera": "Scan Document (Camera)",
+      "scan": "Scan",
+      "upload_button": "Upload",
+      "uploading": "Uploading..."
+    },
     "export": {
       "excel": "Excel (.xlsx)",
       "csv": "CSV (.csv)",
@@ -604,7 +658,9 @@
       "target": "Target"
     },
     "detail": {
-      "project_label": "Project:"
+      "project_label": "Project:",
+      "change_customer": "Change Customer",
+      "change_partner": "Change Partner"
     },
     "confirm": {
       "delete_file": "Delete File",
@@ -617,7 +673,20 @@
     },
     "form": {
       "target_language": "Target Language",
-      "target_language_tooltip": "Language to translate into."
+      "target_language_tooltip": "Language to translate into.",
+      "duplicate": "Duplicate",
+      "new_service_catalog": "Create new service in catalog",
+      "service_name": "Description",
+      "unit": "Unit",
+      "base_price": "Base Price",
+      "add_position": "Add Position",
+      "service_catalog": "Service Catalog",
+      "search_service": "Search service…",
+      "no_hits": "No hits",
+      "empty_catalog": "No services in catalog yet",
+      "add_new_service": "Create new service",
+      "delete_title": "Delete position",
+      "delete_message": "Do you really want to remove this position?"
     },
     "messages": {
       "create_success": "Project created successfully",
@@ -703,6 +772,7 @@
       "subject_to": "Message to: {{name}}"
     },
     "detail": {
+      "view_profile": "View Customer Profile",
       "customer_id": "Customer ID:",
       "master_data": "Master Data Sheet",
       "contact_info": "Contact Information",
@@ -828,6 +898,7 @@
       "subject_message": "Message to partner"
     },
     "detail": {
+      "view_profile": "View Partner Profile",
       "partner_id": "Partner ID:",
       "master_data": "Master Data Sheet",
       "contact_info": "Contact Information",

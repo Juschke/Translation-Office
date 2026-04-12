@@ -287,6 +287,14 @@ class Invoice extends Model
         return $this->hasMany(DunningLog::class)->orderBy('sent_at');
     }
 
+    /**
+     * Payments recorded for this invoice (Stripe, bank transfer, etc.)
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class)->orderByDesc('created_at');
+    }
+
     // ─── Helper Methods ──────────────────────────────────────────────
 
     /**

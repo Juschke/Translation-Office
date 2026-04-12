@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Encrypted;
 
 class Partner extends Model
 {
@@ -63,6 +64,14 @@ class Partner extends Model
         'portal_token_expires_at' => 'datetime',
         'portal_session_expires_at' => 'datetime',
         'portal_last_login_at' => 'datetime',
+        // Encrypt sensitive banking and tax information
+        'iban' => Encrypted::class,
+        'bic' => Encrypted::class,
+        'bank_name' => Encrypted::class,
+        'tax_id' => Encrypted::class,
+        'email' => Encrypted::class,
+        'phone' => Encrypted::class,
+        'mobile' => Encrypted::class,
     ];
 
     public function projects()

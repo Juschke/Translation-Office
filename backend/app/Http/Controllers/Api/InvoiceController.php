@@ -508,16 +508,18 @@ class InvoiceController extends Controller
             $invoice->save();
 
             $invoice = $invoice->fresh();
-            $this->generatePdfInternal($invoice);
-            $invoice = $invoice->fresh();
+
+            // ✅ Dispatch async PDF generation (non-blocking)
+            \App\Jobs\GenerateInvoicePdf::dispatch($invoice);
+
             $this->logAuditEvent($invoice, $request, InvoiceAuditLog::ACTION_ISSUED, $oldStatus, Invoice::STATUS_ISSUED, [
-                'pdf_sha256' => $invoice->pdf_sha256,
-                'xml_sha256' => $invoice->xml_sha256,
+                'message' => 'Invoice marked as issued. PDF generation in progress...',
             ]);
 
-            return response()->json($invoice->load('items'));
-
-            // 3. Generate PDF + ZUGFeRD
+            return response()->json([
+                'message' => 'Rechnung ausgestellt. PDF wird generiert...',
+                'invoice' => $invoice->load('items'),
+            ], 202); // 202 Accepted - async processing
         });
     }
 

@@ -15,6 +15,8 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Auth\Events\Registered;
+use Carbon\Carbon;
+use App\Services\TwoFactorService;
 
 class AuthController extends Controller
 {
@@ -52,14 +54,34 @@ class AuthController extends Controller
         // Trigger Laravel's built-in registration event (sends verification email)
         event(new Registered($user));
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Create tokens with expiration
+        $accessToken = $user->createToken('access', ['*'], now()->addHours(1))->plainTextToken;
+        $refreshToken = $user->createToken('refresh', ['refresh'], now()->addDays(7))->plainTextToken;
 
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user->load('tenant'),
             'message' => 'Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse und vervollständigen Sie Ihr Profil.',
-        ], 201);
+            'user' => $user->load('tenant'),
+        ], 201)
+        ->cookie(
+            name: 'access_token',
+            value: $accessToken,
+            minutes: 60, // 1 hour
+            path: '/',
+            domain: $this->getCookieDomain(),
+            secure: $this->isSecureCookie(),
+            httpOnly: true,
+            sameSite: 'strict'
+        )
+        ->cookie(
+            name: 'refresh_token',
+            value: $refreshToken,
+            minutes: 10080, // 7 days
+            path: '/api/auth/refresh',
+            domain: $this->getCookieDomain(),
+            secure: $this->isSecureCookie(),
+            httpOnly: true,
+            sameSite: 'strict'
+        );
     }
 
     public function login(Request $request)
@@ -95,15 +117,19 @@ class AuthController extends Controller
                 // Ignore decryption error, assume invalid
             }
 
-            // Check Recovery Codes if TOTP invalid
+            // Check Recovery Codes if TOTP invalid (use hashed recovery codes)
             if (!$isValid) {
-                $recoveryCodes = $user->two_factor_recovery_codes ? json_decode(decrypt($user->two_factor_recovery_codes), true) : [];
-                if (in_array($request->code, $recoveryCodes)) {
+                $twoFactorService = new TwoFactorService();
+                if ($twoFactorService->validateRecoveryCode($user, $request->code)) {
                     $isValid = true;
-                    // Remove used code
-                    $recoveryCodes = array_values(array_diff($recoveryCodes, [$request->code]));
-                    $user->two_factor_recovery_codes = encrypt(json_encode($recoveryCodes));
-                    $user->save();
+
+                    // Notify user if running out of recovery codes
+                    if ($twoFactorService->shouldRegenerate($user)) {
+                        \Illuminate\Support\Facades\Log::warning('User should regenerate recovery codes', [
+                            'user_id' => $user->id,
+                            'remaining' => $twoFactorService->getRemainingRecoveryCodesCount($user),
+                        ]);
+                    }
                 }
             }
 
@@ -118,19 +144,84 @@ class AuthController extends Controller
         $user->last_login_at = now();
         $user->save();
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Create tokens with expiration (HttpOnly Cookie friendly)
+        $accessToken = $user->createToken('access', ['*'], now()->addHours(1))->plainTextToken;
+        $refreshToken = $user->createToken('refresh', ['refresh'], now()->addDays(7))->plainTextToken;
 
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
+            'message' => 'Erfolgreich angemeldet',
             'user' => $user->load('tenant'),
-        ]);
+        ])
+        ->cookie(
+            name: 'access_token',
+            value: $accessToken,
+            minutes: 60, // 1 hour
+            path: '/',
+            domain: $this->getCookieDomain(),
+            secure: $this->isSecureCookie(),
+            httpOnly: true,
+            sameSite: 'strict'
+        )
+        ->cookie(
+            name: 'refresh_token',
+            value: $refreshToken,
+            minutes: 10080, // 7 days
+            path: '/api/auth/refresh',
+            domain: $this->getCookieDomain(),
+            secure: $this->isSecureCookie(),
+            httpOnly: true,
+            sameSite: 'strict'
+        );
     }
 
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
-        return response()->json(['message' => 'Abgemeldet']);
+
+        return response()->json(['message' => 'Abgemeldet'])
+            ->cookie('access_token', '', -1)
+            ->cookie('refresh_token', '', -1);
+    }
+
+    /**
+     * Refresh access token using refresh token from cookie
+     */
+    public function refresh(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Revoke old tokens (security: prevent token reuse)
+        $user->tokens()->delete();
+
+        // Generate new tokens
+        $accessToken = $user->createToken('access', ['*'], now()->addHours(1))->plainTextToken;
+        $refreshToken = $user->createToken('refresh', ['refresh'], now()->addDays(7))->plainTextToken;
+
+        return response()->json(['message' => 'Token refreshed'])
+            ->cookie(
+                name: 'access_token',
+                value: $accessToken,
+                minutes: 60,
+                path: '/',
+                domain: $this->getCookieDomain(),
+                secure: $this->isSecureCookie(),
+                httpOnly: true,
+                sameSite: 'strict'
+            )
+            ->cookie(
+                name: 'refresh_token',
+                value: $refreshToken,
+                minutes: 10080,
+                path: '/api/auth/refresh',
+                domain: $this->getCookieDomain(),
+                secure: $this->isSecureCookie(),
+                httpOnly: true,
+                sameSite: 'strict'
+            );
     }
 
     public function me(Request $request)
@@ -334,27 +425,77 @@ class AuthController extends Controller
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
+            'password' => [
+                'required',
+                'min:8',
+                'confirmed',
+                PasswordRule::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+            ],
         ]);
 
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password)
-                ]);
-                $user->setRememberToken(Str::random(60));
-                $user->save();
+        // Find the password reset token with expiration check
+        $resetRecord = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->where('token', hash('sha256', $request->token))
+            ->where('expires_at', '>', now()) // ✅ Check expiration!
+            ->first();
 
-                event(new PasswordReset($user));
+        if (!$resetRecord) {
+            return response()->json([
+                'message' => 'Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.'
+            ], 400);
+        }
 
-                // Revoke all tokens after reset
-                $user->tokens()->delete();
-            }
-        );
+        // Update password
+        $user = User::where('email', $request->email)->first();
 
-        return $status === Password::PASSWORD_RESET
-            ? response()->json(['message' => 'Ihr Passwort wurde erfolgreich zurückgesetzt.'])
-            : response()->json(['message' => 'Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.'], 400);
+        if (!$user) {
+            return response()->json(['message' => 'Benutzer nicht gefunden.'], 404);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($request->password)
+        ]);
+        $user->setRememberToken(Str::random(60));
+        $user->save();
+
+        // Delete token after use
+        DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->delete();
+
+        // Revoke all tokens after reset
+        $user->tokens()->delete();
+
+        event(new PasswordReset($user));
+
+        return response()->json(['message' => 'Ihr Passwort wurde erfolgreich zurückgesetzt.']);
+    }
+
+    /**
+     * Get cookie domain based on environment
+     */
+    private function getCookieDomain(): ?string
+    {
+        if (config('app.env') === 'local') {
+            return null; // localhost doesn't need domain
+        }
+
+        $url = parse_url(config('app.url'));
+        return $url['host'] ?? null;
+    }
+
+    /**
+     * Check if cookies should be secure (HTTPS only)
+     */
+    private function isSecureCookie(): bool
+    {
+        return config('app.env') === 'production' ||
+               str_starts_with(config('app.url'), 'https');
     }
 }

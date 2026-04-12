@@ -47,7 +47,7 @@ return [
     |
     */
 
-    'expiration' => null,
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION', 60), // Access tokens expire after 60 minutes
 
     /*
     |--------------------------------------------------------------------------
@@ -62,7 +62,7 @@ return [
     |
     */
 
-    'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
+    'token_prefix' => env('SANCTUM_TOKEN_PREFIX', 'auth_'), // Prefix for GitHub Secret Scanning
 
     /*
     |--------------------------------------------------------------------------

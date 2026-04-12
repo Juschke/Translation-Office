@@ -11,6 +11,10 @@ import { Button } from '../ui/button';
 import { ICON_COLOR_BRAND, ICON_COLOR_DANGER, ICON_COLOR_SUCCESS, ICON_SIZE_MD, ICON_SIZE_SM, ICON_SIZE_XS } from '../ui/icon-styles';
 import { useTranslation } from 'react-i18next';
 import SearchableSelect from './SearchableSelect';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
+import 'dayjs/locale/de';
+dayjs.locale('de');
 
 export interface FilterDef {
     id: string;
@@ -57,7 +61,7 @@ interface DataTableProps<T> {
     activeFilterCount?: number;
     onResetFilters?: () => void;
     onExport?: (format: 'xlsx' | 'csv' | 'pdf') => void;
-    filterLayout?: 'top' | 'sidebar';
+    filterLayout?: 'top' | 'sidebar' | 'drawer';
     onFilterToggle?: () => void;
     isFilterOpen_external?: boolean;
     preSearchControls?: React.ReactNode;
@@ -73,7 +77,7 @@ const variantStyles: Record<BulkActionVariant, string> = {
     primary: 'bg-[#1B4D4F] text-white border-[#123a3c] hover:bg-[#235e62]',
     danger: 'bg-white text-red-600 border-slate-300 hover:border-red-300 hover:bg-red-50',
     dangerSolid: 'bg-red-600 text-white border-red-700 hover:bg-red-700',
-    success: 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700',
+    success: 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-800',
     warning: 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600',
 };
 
@@ -337,7 +341,7 @@ const DataTable = <T extends { id: string | number }>({
         <div
             className={clsx(
                 "flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out border-r border-[#D1D9D8] bg-[#f6f8f8] flex flex-col",
-                isFilterOpen ? "w-56" : "w-0"
+                (onFilterToggle ? isFilterOpen_external : isFilterOpen) ? "w-56" : "w-0"
             )}
         >
             <div className="w-56 flex flex-col gap-0 overflow-y-auto custom-scrollbar flex-1">
@@ -397,8 +401,125 @@ const DataTable = <T extends { id: string | number }>({
         </div>
     );
 
+    // ── Drawer filter panel ──
+    const drawerFilterPanel = filterLayout === 'drawer' && filters && filters.length > 0 && isFilterOpen_external && createPortal(
+        <div className="fixed inset-0 z-[1001] flex justify-end">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fadeIn" onClick={onFilterToggle} />
+            <div className="relative w-96 bg-white shadow-2xl h-full flex flex-col animate-slideInRight border-l border-slate-200">
+                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-800">Filter</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t('common.search_options')}</span>
+                    </div>
+                    <button onClick={onFilterToggle} className="p-2 hover:bg-slate-100 rounded text-slate-400 transition-colors">
+                        <FaTimes size={16} />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar bg-slate-50/30">
+                    <div className="flex flex-col gap-5">
+                        {filters.map((filter, index) => {
+                            // Spezielle Logik für Datum von/bis nebeneinander
+                            if (filter.id === 'dateFrom' && filters[index + 1]?.id === 'dateTo') {
+                                return (
+                                    <div key="date-range" className="grid grid-cols-2 gap-3 animate-slideUp">
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{filter.label}</label>
+                                            <DatePicker
+                                                value={filter.value ? dayjs(filter.value) : null}
+                                                onChange={(date) => filter.onChange(date ? date.format('YYYY-MM-DD') : '')}
+                                                format="DD.MM.YYYY"
+                                                placeholder="Ab"
+                                                className="w-full h-10 text-xs border-slate-200 rounded-sm shadow-inner"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{filters[index + 1].label}</label>
+                                            <DatePicker
+                                                value={filters[index + 1].value ? dayjs(filters[index + 1].value) : null}
+                                                onChange={(date) => filters[index + 1].onChange(date ? date.format('YYYY-MM-DD') : '')}
+                                                format="DD.MM.YYYY"
+                                                placeholder="Bis"
+                                                className="w-full h-10 text-xs border-slate-200 rounded-sm shadow-inner"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // Überspringe dateTo da es bereits mit dateFrom gerendert wurde
+                            if (filter.id === 'dateTo' && filters[index - 1]?.id === 'dateFrom') {
+                                return null;
+                            }
+
+                            return (
+                                <div key={filter.id} className="flex flex-col gap-1.5 animate-slideUp">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{filter.label}</label>
+                                    {filter.type === 'searchableSelect' ? (
+                                        <SearchableSelect
+                                            options={filter.options?.map(o => ({ value: String(o.value), label: o.label, icon: (o as any).icon })) || []}
+                                            value={String(filter.value)}
+                                            onChange={filter.onChange}
+                                            placeholder={filter.placeholder}
+                                            className="border-slate-200 hover:border-slate-300"
+                                        />
+                                    ) : filter.type === 'select' ? (
+                                        <div className="relative group">
+                                            <select
+                                                className="w-full h-10 text-xs border border-slate-200 rounded-sm px-3 bg-white shadow-sm focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary outline-none appearance-none pr-9 cursor-pointer hover:border-slate-300 transition"
+                                                value={filter.value}
+                                                onChange={e => filter.onChange(e.target.value)}
+                                            >
+                                                {filter.options?.map(opt => (
+                                                    <option key={String(opt.value)} value={String(opt.value)}>
+                                                        {opt.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <FaChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 group-hover:text-slate-400 transition-colors" size={10} />
+                                        </div>
+                                    ) : filter.type === 'date' ? (
+                                        <DatePicker
+                                            value={filter.value ? dayjs(filter.value) : null}
+                                            onChange={(date) => filter.onChange(date ? date.format('YYYY-MM-DD') : '')}
+                                            format="DD.MM.YYYY"
+                                            placeholder={filter.placeholder || 'Datum wählen'}
+                                            className="w-full h-10 text-xs border-slate-200 rounded-sm shadow-inner"
+                                        />
+                                    ) : (
+                                        <input
+                                            type={filter.type}
+                                            value={filter.value}
+                                            onChange={e => filter.onChange(e.target.value)}
+                                            placeholder={filter.placeholder}
+                                            className="w-full h-10 text-xs border border-slate-200 rounded-sm px-3 bg-white shadow-inner focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition"
+                                        />
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {onResetFilters && (
+                    <div className="p-5 border-t border-slate-100 bg-white">
+                        <Button
+                            variant="outline"
+                            onClick={() => { onResetFilters(); onFilterToggle?.(); }}
+                            className="w-full h-10 font-bold flex items-center justify-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm"
+                        >
+                            <FaUndo size={11} /> {t('data_table.reset_filters')}
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </div>,
+        document.body
+    );
+
     return (
         <div className="dt-skeuomorphic flex flex-col h-full bg-white border border-[#D1D9D8] rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.1)] fade-in overflow-hidden">
+            {drawerFilterPanel}
 
             {/* ── Filter Panel (top layout) ── */}
             {filterLayout === 'top' && filters && filters.length > 0 && (
@@ -511,23 +632,26 @@ const DataTable = <T extends { id: string | number }>({
                         
                         {(filters && filters.length > 0 || onFilterToggle) && (
                             <Button
-                                variant={(onFilterToggle ? isFilterOpen_external : isFilterOpen) || activeFilterCount ? "default" : "secondary"}
+                                variant="default"
                                 size="icon"
                                 onClick={() => onFilterToggle ? onFilterToggle() : setIsFilterOpen(v => !v)}
-                                className="relative h-9 w-9"
+                                className={clsx(
+                                    "relative h-9 w-9 shadow-sm transition-all duration-200",
+                                    !(onFilterToggle ? isFilterOpen_external : isFilterOpen) && "opacity-90 hover:opacity-100"
+                                )}
                                 title={t('common.filter')}
                             >
                                 <FaFilter size={14} />
-                                {activeFilterCount ? (
+                                {(activeFilterCount ?? 0) > 0 && (
                                     <span className={clsx(
-                                        "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-xs font-bold flex items-center justify-center border",
+                                        "absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full text-[10px] font-black flex items-center justify-center border-2",
                                         (onFilterToggle ? isFilterOpen_external : isFilterOpen)
-                                            ? "bg-white text-[#1B4D4F] border-transparent"
-                                            : "bg-rose-500 text-white border-rose-600 shadow-sm"
+                                            ? "bg-white text-brand-primary border-brand-primary"
+                                            : "bg-red-500 text-white border-white shadow-sm"
                                     )}>
                                         {activeFilterCount}
                                     </span>
-                                ) : null}
+                                )}
                             </Button>
                         )}
 

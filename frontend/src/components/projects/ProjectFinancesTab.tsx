@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FaInfoCircle, FaPlus, FaMinus, FaSave, FaQuestionCircle } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
+import { FaInfoCircle, FaPlus, FaMinus, FaSave, FaQuestionCircle, FaFileInvoice, FaTimesCircle } from 'react-icons/fa';
 import clsx from 'clsx';
 import ProjectPositionsTable from '../modals/ProjectPositionsTable';
 import ProjectPaymentsTable from '../modals/ProjectPaymentsTable';
@@ -41,6 +42,7 @@ interface ProjectFinancesTabProps {
     isPendingSave: boolean;
     onCreateInvoice?: () => void;
     onPreviewInvoice?: (invoice: any) => void;
+    onCancelInvoice?: (invoiceId: number) => void;
 }
 
 const ProjectFinancesTab = ({
@@ -52,7 +54,9 @@ const ProjectFinancesTab = ({
     isPendingSave,
     onCreateInvoice,
     onPreviewInvoice,
+    onCancelInvoice,
 }: ProjectFinancesTabProps) => {
+    const { t } = useTranslation();
 
     // Helper to check if a position list has a specific service
     const findService = (list: ProjectPosition[], term: string) =>
@@ -129,8 +133,6 @@ const ProjectFinancesTab = ({
 
     // Calculation Logic
     useEffect(() => {
-        if (isLocked) return;
-
         const updatedPositions = positions.map(pos => {
             const qty = parseFloat(pos.quantity) || 0;
             const pRate = parseFloat(pos.partnerRate) || 0;
@@ -166,7 +168,7 @@ const ProjectFinancesTab = ({
         if (JSON.stringify(updatedPositions) !== JSON.stringify(positions)) {
             setPositions(updatedPositions);
         }
-    }, [positions, isLocked]);
+    }, [positions]);
 
     const financials = useMemo(() => {
         const extraNet = copyData.count * copyData.price;
@@ -262,22 +264,55 @@ const ProjectFinancesTab = ({
     return (
         <div className="flex flex-col gap-6 mb-10 animate-fadeIn h-full">
             <div className="flex flex-col xl:flex-row gap-8 flex-1">
-                <div className="flex-1 space-y-12 flex flex-col">
+                <div className="flex-1 space-y-8 flex flex-col">
+
+                    {/* RECHNUNGS-HINWEIS (Falls Rechnung vorhanden) */}
+                    {isLocked && (
+                        <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-2.5 bg-brand-primary/10 rounded-full text-brand-primary shrink-0">
+                                        <FaInfoCircle size={20} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-slate-800">{t('finances.invoice_exists_title')}</h4>
+                                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                            {t('finances.invoice_exists_desc', { number: activeInvoice.invoice_number })}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <Button
+                                        size="sm"
+                                        onClick={() => onPreviewInvoice?.(activeInvoice)}
+                                        className="h-9 px-5 text-xs font-bold gap-2"
+                                    >
+                                        <FaFileInvoice className="text-[11px]" />
+                                        {t('finances.open_invoice')}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => onCancelInvoice?.(activeInvoice.id)}
+                                        className="h-9 px-5 text-xs font-bold gap-2"
+                                    >
+                                        <FaTimesCircle className="text-[11px]" />
+                                        {t('finances.cancel_invoice')}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Section 05: Positionen */}
                     <section id="section-kalkulation" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5 bg-white justify-between')}>
                             <div className="flex items-center gap-3">
-                                <h3 className={SECTION_TITLE}>Positionen</h3>
+                                <h3 className={SECTION_TITLE}>{t('finances.positions')}</h3>
                                 {isLocked && (
-                                    <button
-                                        onClick={() => onPreviewInvoice ? onPreviewInvoice(activeInvoice) : onCreateInvoice?.()}
-                                        className="flex items-center gap-1.5 px-2 py-0.5 bg-gradient-to-b from-amber-50 to-amber-100 border border-amber-200 rounded text-amber-700 hover:from-amber-100 hover:to-amber-200 transition shadow-sm group/lock ml-2"
-                                    >
-                                        <FaInfoCircle size={10} className="text-amber-500 group-hover/lock:text-amber-600 transition-colors" />
-                                        <span className="text-[10px] font-bold uppercase tracking-tight">Gesperrt</span>
-                                        <span className="text-[10px] font-medium opacity-70">({activeInvoice.invoice_number})</span>
-                                    </button>
+                                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded text-slate-400">
+                                        <span className="text-[9px] font-bold uppercase tracking-tight">{t('finances.read_only')}</span>
+                                    </div>
                                 )}
                             </div>
 
@@ -289,7 +324,7 @@ const ProjectFinancesTab = ({
                                     variant="default"
                                 >
                                     <FaSave className="text-[10px]" />
-                                    {isPendingSave ? 'Speichern...' : 'Positionsänderungen speichern'}
+                                    {isPendingSave ? t('finances.saving') : t('finances.save_positions')}
                                 </Button>
                             )}
                         </div>
@@ -307,21 +342,16 @@ const ProjectFinancesTab = ({
                     <section id="section-leistungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5 bg-white justify-between')}>
                             <div className="flex items-center gap-3">
-                                <h3 className={SECTION_TITLE}>Leistungen & Optionen</h3>
-                                {isLocked && (
-                                    <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 uppercase tracking-tight">
-                                        Schreibgeschützt
-                                    </span>
-                                )}
+                                <h3 className={SECTION_TITLE}>{t('finances.services_options')}</h3>
                             </div>
                         </div>
                         <div className="px-6 py-6 border-b border-slate-100">
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 {[
-                                    { term: 'Beglaubigung', label: 'Beglaubigung', enabled: !!certSvc, price: parseFloat(certSvc?.customerRate || '5.00'), tip: 'Beglaubigte Übersetzung mit Stempel und Unterschrift.' },
-                                    { term: 'Express', label: 'Express', enabled: !!expSvc, price: parseFloat(expSvc?.customerRate || '15.00'), tip: 'Eilzuschlag für schnelle Bearbeitung.' },
-                                    { term: 'Apostille', label: 'Apostille', enabled: !!aposSvc, price: parseFloat(aposSvc?.customerRate || '25.00'), tip: 'Apostille-Beglaubigung für internationalen Gebrauch.' },
-                                    { term: 'FS-Klassifizierung', label: 'Führerschein', enabled: !!fsSvc, price: parseFloat(fsSvc?.customerRate || '15.00'), tip: 'Führerschein-Klassifizierung.' },
+                                    { term: 'Beglaubigung', label: t('finances.certified'), enabled: !!certSvc, price: parseFloat(certSvc?.customerRate || '5.00'), tip: t('finances.certified_tip') },
+                                    { term: 'Express', label: t('finances.express'), enabled: !!expSvc, price: parseFloat(expSvc?.customerRate || '15.00'), tip: t('finances.express_tip') },
+                                    { term: 'Apostille', label: t('finances.apostille'), enabled: !!aposSvc, price: parseFloat(aposSvc?.customerRate || '25.00'), tip: t('finances.apostille_tip') },
+                                    { term: 'FS-Klassifizierung', label: t('finances.drivers_license'), enabled: !!fsSvc, price: parseFloat(fsSvc?.customerRate || '15.00'), tip: t('finances.drivers_license_tip') },
                                 ].map(opt => (
                                     <div key={opt.term} className="space-y-1">
                                         <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5">
@@ -330,7 +360,7 @@ const ProjectFinancesTab = ({
                                         <div className="flex flex-col gap-2">
                                             <div
                                                 className={clsx(
-                                                    'h-9 flex items-center gap-2',
+                                                    'h-9 flex items-center gap-2 transition-opacity',
                                                     isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer group'
                                                 )}
                                                 onClick={() => !isLocked && handleToggleService(opt.term, opt.term, opt.price)}
@@ -356,8 +386,11 @@ const ProjectFinancesTab = ({
                                                 <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                                                     <div className="flex gap-2 pt-3">
                                                         <div className="flex-1 relative">
-                                                            <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Menge</label>
-                                                            <div className="flex items-center h-8 border border-slate-200 rounded overflow-hidden bg-white shadow-xs focus-within:border-brand-primary/50 transition-colors">
+                                                            <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">{t('finances.quantity')}</label>
+                                                            <div className={clsx(
+                                                                "flex items-center h-8 border border-slate-200 rounded overflow-hidden shadow-xs transition-colors",
+                                                                isLocked ? "bg-slate-50 opacity-60" : "bg-white focus-within:border-brand-primary/50"
+                                                            )}>
                                                                 <button 
                                                                     disabled={isLocked}
                                                                     onClick={() => {
@@ -393,7 +426,7 @@ const ProjectFinancesTab = ({
                                                             </div>
                                                         </div>
                                                         <div className="flex-1 relative">
-                                                            <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Preis</label>
+                                                            <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">{t('finances.price')}</label>
                                                             <div className="relative">
                                                                 <input 
                                                                     type="text"
@@ -403,14 +436,17 @@ const ProjectFinancesTab = ({
                                                                         const pVal = parseFloat(e.target.value) || 0;
                                                                         setPositions(prev => prev.map(p => p.description.includes(opt.term) ? { ...p, customerRate: pVal.toFixed(2) } : p));
                                                                     }}
-                                                                    className="w-full h-8 px-2 pr-5 text-[10px] font-bold text-slate-700 border border-slate-200 rounded outline-none focus:ring-1 focus:ring-brand-primary/30 shadow-xs"
+                                                                    className={clsx(
+                                                                        "w-full h-8 px-2 pr-5 text-[10px] font-bold text-slate-700 border border-slate-200 rounded outline-none shadow-xs transition-opacity",
+                                                                        isLocked ? "bg-slate-50 opacity-60" : "focus:ring-1 focus:ring-brand-primary/30"
+                                                                    )}
                                                                 />
                                                                 <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300">€</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="mt-2 px-1 flex justify-between items-center text-[9px] font-bold uppercase tracking-tight">
-                                                        <span className="text-slate-300">Summe:</span>
+                                                        <span className="text-slate-300">{t('finances.sum')}:</span>
                                                         <span className="text-slate-900">
                                                             {(opt.price * parseInt(positions.find(p => p.description.includes(opt.term))?.quantity || '1')).toFixed(2)} €
                                                         </span>
@@ -424,12 +460,12 @@ const ProjectFinancesTab = ({
                                 {/* Kopien Item */}
                                 <div className="space-y-1">
                                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5">
-                                        Kopien <FieldTip text="Anzahl der zusätzlich benötigten Papierkopien." />
+                                        {t('finances.copies')} <FieldTip text={t('finances.copies_tip')} />
                                     </label>
                                     <div className="flex flex-col gap-2">
                                         <div
                                             className={clsx(
-                                                'h-9 flex items-center gap-2',
+                                                'h-9 flex items-center gap-2 transition-opacity',
                                                 isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer group'
                                             )}
                                             onClick={() => !isLocked && setCopyData(d => ({ ...d, count: d.count > 0 ? 0 : 1 }))}
@@ -455,8 +491,11 @@ const ProjectFinancesTab = ({
                                             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                                                 <div className="flex gap-2 pt-3">
                                                     <div className="flex-1 relative">
-                                                        <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Menge</label>
-                                                        <div className="flex items-center h-8 border border-slate-200 rounded overflow-hidden bg-white shadow-xs focus-within:border-brand-primary/50 transition-colors">
+                                                        <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">{t('finances.quantity')}</label>
+                                                        <div className={clsx(
+                                                            "flex items-center h-8 border border-slate-200 rounded overflow-hidden shadow-xs transition-colors",
+                                                            isLocked ? "bg-slate-50 opacity-60" : "bg-white focus-within:border-brand-primary/50"
+                                                        )}>
                                                             <button 
                                                                 disabled={isLocked}
                                                                 onClick={() => setCopyData(d => ({ ...d, count: Math.max(1, d.count - 1) }))}
@@ -481,21 +520,24 @@ const ProjectFinancesTab = ({
                                                         </div>
                                                     </div>
                                                     <div className="flex-1 relative">
-                                                        <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">Preis</label>
+                                                        <label className="absolute -top-1.5 left-1.5 px-1 bg-white text-[8px] font-bold text-slate-400 uppercase tracking-tight z-10 rounded-sm">{t('finances.price')}</label>
                                                         <div className="relative">
                                                             <input 
                                                                 type="text"
                                                                 readOnly={isLocked}
                                                                 value={copyData.price}
                                                                 onChange={(e) => !isLocked && setCopyData(d => ({ ...d, price: parseFloat(e.target.value) || 0 }))}
-                                                                className="w-full h-8 px-2 pr-5 text-[10px] font-bold text-slate-700 border border-slate-200 rounded outline-none focus:ring-1 focus:ring-brand-primary/30 shadow-xs"
+                                                                className={clsx(
+                                                                    "w-full h-8 px-2 pr-5 text-[10px] font-bold text-slate-700 border border-slate-200 rounded outline-none shadow-xs transition-opacity",
+                                                                    isLocked ? "bg-slate-50 opacity-60" : "focus:ring-1 focus:ring-brand-primary/30"
+                                                                )}
                                                             />
                                                             <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300">€</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="mt-2 px-1 flex justify-between items-center text-[9px] font-bold uppercase tracking-tight">
-                                                    <span className="text-slate-300">Summe:</span>
+                                                    <span className="text-slate-300">{t('finances.sum')}:</span>
                                                     <span className="text-slate-900">
                                                         {(copyData.count * copyData.price).toFixed(2)} €
                                                     </span>
@@ -513,7 +555,7 @@ const ProjectFinancesTab = ({
                     <section id="section-zahlungen" className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className={clsx(SECTION_HEADER, 'px-6 pt-5 flex justify-between items-center bg-white')}>
                             <div className="flex items-center gap-3">
-                                <h3 className={SECTION_TITLE}>Anzahlungen</h3>
+                                <h3 className={SECTION_TITLE}>{t('finances.down_payments')}</h3>
                             </div>
                             <Button
                                 onClick={onRecordPayment}
@@ -524,7 +566,7 @@ const ProjectFinancesTab = ({
                                 )}
                             >
                                 <FaPlus className="mr-1.5" />
-                                {financials.open <= 0.01 ? 'Vollständig bezahlt' : 'Zahlung erfassen'}
+                                {financials.open <= 0.01 ? t('finances.payment_complete') : t('finances.record_payment')}
                             </Button>
                         </div>
                         <div className="px-6 pb-6 pt-2">
@@ -542,16 +584,12 @@ const ProjectFinancesTab = ({
 
                 {/* Right Column: Financial Sidebar */}
                 <ProjectFinancialSidebar
-                    creationDate={projectData.createdAt || new Date(projectData.created_at || Date.now()).toLocaleDateString('de-DE')}
-                    projectManager={projectData.pm || 'System'}
                     baseNet={financials.baseNet}
                     calcNet={financials.netTotal}
                     calcTax={financials.taxTotal}
                     calcGross={financials.grossTotal}
                     totalPaid={financials.paid}
                     remainingBalance={financials.open}
-                    profit={financials.margin}
-                    profitMargin={financials.marginPercent}
                     isCertified={!!certSvc}
                     certifiedQty={parseFloat(certSvc?.quantity || '1')}
                     hasApostille={!!aposSvc}
@@ -572,6 +610,3 @@ const ProjectFinancesTab = ({
 };
 
 export default ProjectFinancesTab;
-
-
-

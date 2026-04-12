@@ -29,18 +29,26 @@ const api = axios.create({
     }
 });
 
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
+// Note: Token is now sent via HttpOnly cookie automatically
+// No need to manually add it to headers
+// Axios sends cookies automatically when withCredentials: true
+
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+const onRefreshed = (token: string) => {
+    refreshSubscribers.forEach(cb => cb(token));
+    refreshSubscribers = [];
+};
+
+const addRefreshSubscriber = (cb: (token: string) => void) => {
+    refreshSubscribers.push(cb);
+};
 
 // Add response interceptor for centralized error handling
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         // Network error (no response)
         if (!error.response) {
             toast.error('Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.');
@@ -49,12 +57,41 @@ api.interceptors.response.use(
 
         const status = error.response.status;
         const errorData = error.response.data;
+        const originalRequest = error.config;
 
         switch (status) {
             case 401:
-                // Unauthorized - token expired or invalid
-                localStorage.removeItem('token');
-                window.location.href = '/login';
+                // Unauthorized - try to refresh token
+                if (!isRefreshing) {
+                    isRefreshing = true;
+
+                    try {
+                        // Attempt token refresh
+                        // Cookies (refresh_token) will be sent automatically
+                        await api.post('/auth/refresh');
+                        onRefreshed('');
+
+                        // Retry original request
+                        return api(originalRequest);
+                    } catch (refreshError) {
+                        // Refresh failed - redirect to login
+                        toast.error('Sitzung abgelaufen. Bitte melden Sie sich erneut an.');
+                        window.location.href = '/login';
+                        return Promise.reject(refreshError);
+                    } finally {
+                        isRefreshing = false;
+                    }
+                } else {
+                    // Already refreshing - wait and retry
+                    return new Promise((resolve) => {
+                        addRefreshSubscriber(() => {
+                            api(originalRequest).then(resolve).catch((err) => {
+                                window.location.href = '/login';
+                                return Promise.reject(err);
+                            });
+                        });
+                    });
+                }
                 break;
 
             case 403:
