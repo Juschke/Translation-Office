@@ -62,6 +62,8 @@ type FormData = {
     quote_prefix: string;
     customer_prefix: string;
     vendor_prefix: string;
+    system_language: string;
+    system_timezone: string;
     email_signature: string;
     company_logo: string | null;
     // Plan
@@ -281,6 +283,19 @@ const LANGUAGE_PAIRS = [
     'DE↔RU', 'DE↔AR', 'DE↔IT', 'DE↔ES',
 ];
 
+const LANGUAGES_OPTIONS = [
+    { value: 'de', label: 'Deutsch' },
+    { value: 'en', label: 'English' },
+];
+
+const TIMEZONES_OPTIONS = [
+    { value: 'Europe/Berlin', label: '(GMT+01:00) Berlin' },
+    { value: 'Europe/London', label: '(GMT+00:00) London' },
+    { value: 'Europe/Paris', label: '(GMT+01:00) Paris' },
+    { value: 'Europe/Zurich', label: '(GMT+01:00) Zürich' },
+    { value: 'Europe/Vienna', label: '(GMT+01:00) Wien' },
+];
+
 // ─── Step Left Panel Content ─────────────────────────────────────────────────
 const LEFT_PANEL = [
     {
@@ -320,12 +335,12 @@ const LEFT_PANEL = [
     {
         icon: Settings2,
         title: 'System-\nkonfiguration',
-        subtitle: 'Nummerierung, Sprachen, Signatur',
-        body: 'Legen Sie jetzt Präfixe für Projektnummern und Rechnungen fest. Diese können später nicht mehr ohne Datenverlust geändert werden — wählen Sie sorgfältig.',
+        subtitle: 'Sprache, Zeitzone, Signatur',
+        body: 'Legen Sie die grundlegenden Systemeinstellungen für Ihr Büro fest. Diese können Sie jederzeit in den Einstellungen anpassen.',
         bullets: [
-            'Projekt-Präfix: z.B. "PR" → PR-2026-0001',
-            'Rechnungs-Präfix: z.B. "RE" → RE-2026-0001',
-            'Vorausgefüllte Sprachpaare als Master-Daten',
+            'Standardsprache für die Benutzeroberfläche',
+            'Zeitzone für korrekte Deadline-Berechnungen',
+            'Vorausgefüllte E-Mail-Signatur für Dokumente',
         ],
     },
 ];
@@ -424,6 +439,8 @@ export default function OnboardingPage() {
         quote_prefix: 'AN',
         customer_prefix: 'KD',
         vendor_prefix: 'KP',
+        system_language: 'de',
+        system_timezone: 'Europe/Berlin',
         email_signature: '',
         company_logo: null,
         subscription_plan: 'pro',
@@ -594,8 +611,13 @@ export default function OnboardingPage() {
             if (!form.address_city.trim()) e.address_city = 'Stadt ist erforderlich.';
             if (!form.address_country.trim()) e.address_country = 'Land ist erforderlich.';
         }
-        if (step === 2 && form.bank_iban && !isValidIBAN(form.bank_iban)) {
-            e.bank_iban = 'Ungültige IBAN (z. B. DE89 3704 0044 0532 0130 00).';
+        if (step === 2) {
+            if (form.bank_iban && !isValidIBAN(form.bank_iban)) {
+                e.bank_iban = 'Ungültige IBAN (z. B. DE89 3704 0044 0532 0130 00).';
+            }
+            if (!form.tax_number.trim()) {
+                e.tax_number = 'Steuernummer ist erforderlich.';
+            }
         }
         return e;
     };
@@ -963,15 +985,16 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className={LABEL_CLS}>Steuernummer</label>
+                        <label className={LABEL_CLS}>Steuernummer <span className="text-red-500 ml-0.5">*</span></label>
                         <IMaskInput
                             mask="00/000/00000"
                             value={form.tax_number}
                             onAccept={(v) => setField('tax_number', v)}
                             onBlur={handleTaxNumberBlur}
                             placeholder="12/345/67890"
-                            className={INPUT_CLS}
+                            className={clsx(INPUT_CLS, errors.tax_number && "border-red-500 bg-red-50")}
                         />
+                        {errors.tax_number && <p className="text-red-500 text-[10px] mt-1">{errors.tax_number}</p>}
                     </div>
                     {!form.is_small_business && (
                         <Field
@@ -1066,58 +1089,6 @@ export default function OnboardingPage() {
 
             {DIVIDER}
 
-            {/* Nummerierung */}
-            <div>
-                <p className={SECTION_TITLE_CLS}>Beleg-Nummerierung (Präfixe)</p>
-                <p className="text-[11px] text-slate-500 mb-4">
-                    Legen Sie fest, wie Ihre IDs beginnen sollen. Diese können später nicht mehr einfach geändert werden.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <Field
-                        label="Projekt-ID"
-                        name="project_id_prefix"
-                        value={form.project_id_prefix}
-                        onChange={set}
-                        placeholder="PR"
-                    />
-                    <Field
-                        label="Angebot-ID"
-                        name="quote_prefix"
-                        value={form.quote_prefix}
-                        onChange={set}
-                        placeholder="AN"
-                    />
-                    <Field
-                        label="Rechnung-ID"
-                        name="invoice_prefix"
-                        value={form.invoice_prefix}
-                        onChange={set}
-                        placeholder="RE"
-                    />
-                    <Field
-                        label="Kunden-ID"
-                        name="customer_prefix"
-                        value={form.customer_prefix}
-                        onChange={set}
-                        placeholder="KD"
-                    />
-                    <Field
-                        label="Partner-ID"
-                        name="vendor_prefix"
-                        value={form.vendor_prefix}
-                        onChange={set}
-                        placeholder="KP"
-                    />
-                </div>
-                <div className="mt-3 bg-amber-50 border border-amber-100 rounded-[3px] p-2 flex items-start gap-2">
-                    <AlertCircle size={12} className="text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-[10px] text-amber-700 leading-tight">
-                        Wichtig: Präfixe definieren den Startwert Ihres Systems. Nach der ersten Erstellung sind Änderungen an der Struktur riskant.
-                    </p>
-                </div>
-            </div>
-
-            {DIVIDER}
 
             {/* Default Settings */}
             <div>
@@ -1125,22 +1096,41 @@ export default function OnboardingPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col">
                         <label className={LABEL_CLS}>Amtssprache der Platform</label>
-                        <Select
-                            value="Deutsch"
-                            className="ant-select-custom h-9"
-                            disabled
-                            options={[{ value: 'Deutsch', label: 'Deutsch' }]}
-                        />
-                        <span className="text-[10px] text-slate-400 mt-1 italic">Aktuell nur Deutsch verfügbar.</span>
+                        <select
+                            name="system_language"
+                            value={form.system_language}
+                            onChange={set}
+                            className={SELECT_CLS}
+                            style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 10px center',
+                                paddingRight: '28px',
+                            }}
+                        >
+                            {LANGUAGES_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
                     </div>
                     <div className="flex flex-col">
                         <label className={LABEL_CLS}>Zeitzone</label>
-                        <Select
-                            value="Europe/Berlin"
-                            className="ant-select-custom h-9"
-                            disabled
-                            options={[{ value: 'Europe/Berlin', label: '(GMT+01:00) Berlin' }]}
-                        />
+                        <select
+                            name="system_timezone"
+                            value={form.system_timezone}
+                            onChange={set}
+                            className={SELECT_CLS}
+                            style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 10px center',
+                                paddingRight: '28px',
+                            }}
+                        >
+                            {TIMEZONES_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
             </div>

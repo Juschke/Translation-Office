@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Encrypted;
+use Illuminate\Database\Eloquent\Casts\AsEncrypted;
 
 class Partner extends Model
 {
@@ -65,13 +65,13 @@ class Partner extends Model
         'portal_session_expires_at' => 'datetime',
         'portal_last_login_at' => 'datetime',
         // Encrypt sensitive banking and tax information
-        'iban' => Encrypted::class,
-        'bic' => Encrypted::class,
-        'bank_name' => Encrypted::class,
-        'tax_id' => Encrypted::class,
-        'email' => Encrypted::class,
-        'phone' => Encrypted::class,
-        'mobile' => Encrypted::class,
+        'iban' => AsEncrypted::class,
+        'bic' => AsEncrypted::class,
+        'bank_name' => AsEncrypted::class,
+        'tax_id' => AsEncrypted::class,
+        'email' => AsEncrypted::class,
+        'phone' => AsEncrypted::class,
+        'mobile' => AsEncrypted::class,
     ];
 
     public function projects()

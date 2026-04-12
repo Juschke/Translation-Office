@@ -503,10 +503,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             <div className={clsx("space-y-6", activeTab !== 'general' && "hidden")}>
                                 {/* Section 1: Classification */}
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">01</div>
-                                        <h4 className="text-xs font-semibold text-slate-800">Klassifizierung & Name</h4>
-                                    </div>
 
                                     <div className="grid grid-cols-12 gap-x-6 gap-y-3">
                                         <div className="col-span-12">
@@ -636,10 +632,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
                                 {/* Section 2: Contact */}
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">02</div>
-                                        <h4 className="text-xs font-semibold text-slate-800">Kontaktdaten</h4>
-                                    </div>
 
                                     <div className="grid grid-cols-12 gap-4">
                                         <div className="col-span-12 md:col-span-6 space-y-4">
@@ -735,10 +727,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                                 </div>
                                 {/* Section 3: Address */}
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">03</div>
-                                        <h4 className="text-xs font-semibold text-slate-800">Standort & Adresse</h4>
-                                    </div>
 
                                     <AddressForm
                                         street={formData.address_street}
@@ -770,10 +758,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             <div className={clsx("space-y-6", activeTab !== 'accounting' && "hidden")}>
                                 {/* Section 4: Bookkeeping */}
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">04</div>
-                                        <h4 className="text-xs font-semibold text-slate-800">Buchhaltung & Zahlungsdaten</h4>
-                                    </div>
 
                                     <div className="grid grid-cols-12 gap-x-6 gap-y-3">
                                         <div className="col-span-12 md:col-span-4">
@@ -816,10 +800,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
 
                                 {/* Section 5: Bank */}
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">05</div>
-                                        <h4 className="text-xs font-semibold text-slate-800">Bankverbindung</h4>
-                                    </div>
 
                                     <div className="grid grid-cols-12 gap-x-6 gap-y-3">
                                         <div className="col-span-12">
@@ -909,10 +889,6 @@ const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose, on
                             <div className={clsx("space-y-6", activeTab !== 'notes' && "hidden")}>
                                 {/* Section 6: Notes */}
                                 <div className="space-y-4 pb-10">
-                                    <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                                        <div className="w-6 h-6 rounded-sm bg-white border border-slate-200 text-slate-900 flex items-center justify-center text-xs font-semibold shadow-sm">06</div>
-                                        <h4 className="text-xs font-semibold text-slate-800">Interne Akte</h4>
-                                    </div>
                                     <div className="flex flex-col">
                                         <label className="flex items-center gap-1 text-xs font-medium text-slate-400 mb-1 ml-1">Interne Notizen <FieldTip text="Nur für Mitarbeiter sichtbar — Besonderheiten, Präferenzen, Kundenhistorie" /></label>
                                         <Input

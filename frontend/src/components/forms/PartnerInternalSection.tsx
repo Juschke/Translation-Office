@@ -10,11 +10,6 @@ interface PartnerInternalSectionProps {
 
 const PartnerInternalSection = ({ formData, updateFormData }: PartnerInternalSectionProps) => (
     <div className="space-y-6">
-        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-            <div className="w-6 h-6 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">07</div>
-            <h4 className="text-xs font-semibold text-slate-800">Interne Akte & Notizen</h4>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
                 <Input

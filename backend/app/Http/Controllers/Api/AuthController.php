@@ -62,7 +62,7 @@ class AuthController extends Controller
             'message' => 'Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse und vervollständigen Sie Ihr Profil.',
             'user' => $user->load('tenant'),
         ], 201)
-        ->cookie(
+        ->withCookie(cookie(
             name: 'access_token',
             value: $accessToken,
             minutes: 60, // 1 hour
@@ -71,8 +71,8 @@ class AuthController extends Controller
             secure: $this->isSecureCookie(),
             httpOnly: true,
             sameSite: 'strict'
-        )
-        ->cookie(
+        ))
+        ->withCookie(cookie(
             name: 'refresh_token',
             value: $refreshToken,
             minutes: 10080, // 7 days
@@ -81,7 +81,7 @@ class AuthController extends Controller
             secure: $this->isSecureCookie(),
             httpOnly: true,
             sameSite: 'strict'
-        );
+        ));
     }
 
     public function login(Request $request)
@@ -152,7 +152,7 @@ class AuthController extends Controller
             'message' => 'Erfolgreich angemeldet',
             'user' => $user->load('tenant'),
         ])
-        ->cookie(
+        ->withCookie(cookie(
             name: 'access_token',
             value: $accessToken,
             minutes: 60, // 1 hour
@@ -161,8 +161,8 @@ class AuthController extends Controller
             secure: $this->isSecureCookie(),
             httpOnly: true,
             sameSite: 'strict'
-        )
-        ->cookie(
+        ))
+        ->withCookie(cookie(
             name: 'refresh_token',
             value: $refreshToken,
             minutes: 10080, // 7 days
@@ -171,7 +171,7 @@ class AuthController extends Controller
             secure: $this->isSecureCookie(),
             httpOnly: true,
             sameSite: 'strict'
-        );
+        ));
     }
 
     public function logout(Request $request)
@@ -202,7 +202,7 @@ class AuthController extends Controller
         $refreshToken = $user->createToken('refresh', ['refresh'], now()->addDays(7))->plainTextToken;
 
         return response()->json(['message' => 'Token refreshed'])
-            ->cookie(
+            ->withCookie(cookie(
                 name: 'access_token',
                 value: $accessToken,
                 minutes: 60,
@@ -211,8 +211,8 @@ class AuthController extends Controller
                 secure: $this->isSecureCookie(),
                 httpOnly: true,
                 sameSite: 'strict'
-            )
-            ->cookie(
+            ))
+            ->withCookie(cookie(
                 name: 'refresh_token',
                 value: $refreshToken,
                 minutes: 10080,
@@ -221,7 +221,7 @@ class AuthController extends Controller
                 secure: $this->isSecureCookie(),
                 httpOnly: true,
                 sameSite: 'strict'
-            );
+            ));
     }
 
     public function me(Request $request)
@@ -254,6 +254,8 @@ class AuthController extends Controller
             'tax_office' => 'nullable|string|max:255',
             'vat_id' => 'nullable|string|max:100',
             'opening_hours' => 'nullable|string|max:255',
+            'system_language' => 'nullable|string|in:de,en',
+            'system_timezone' => 'nullable|string|max:100',
             'subscription_plan' => 'required|string',
             'license_key' => 'nullable|string|max:255',
             'invitations' => 'nullable|string', // JSON string from FormData
@@ -295,13 +297,21 @@ class AuthController extends Controller
 
         // Handle settings & logo
         $settings = [];
+        if ($request->has('system_language')) {
+            $settings['language'] = $validated['system_language'];
+            $user->locale = $validated['system_language'];
+        }
+        if ($request->has('system_timezone')) {
+            $settings['timezone'] = $validated['system_timezone'];
+        }
+
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('tenant_logos', 'public');
             $settings['company_logo'] = $path;
         }
 
         if (!empty($settings)) {
-            $tenant->settings = $settings;
+            $tenant->settings = array_merge($tenant->settings ?? [], $settings);
             $tenant->save();
         }
 

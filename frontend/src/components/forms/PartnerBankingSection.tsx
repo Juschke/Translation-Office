@@ -23,11 +23,6 @@ const PartnerBankingSection = ({
     isValidatingIban,
 }: PartnerBankingSectionProps) => (
     <div className="space-y-6">
-        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-            <div className="w-6 h-6 rounded-sm bg-slate-50 text-slate-900 flex items-center justify-center text-xs font-semibold">05</div>
-            <h4 className="text-xs font-semibold text-slate-800">Finanzen & Steuer</h4>
-        </div>
-
         <div className="grid grid-cols-12 gap-x-8 gap-y-6">
             <div className="col-span-12">
                 <Input

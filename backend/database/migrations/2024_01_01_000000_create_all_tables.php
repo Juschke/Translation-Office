@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('company_name')->nullable();
             $table->string('legal_form')->nullable();
+            $table->string('industry')->nullable();
             $table->string('managing_director')->nullable();
             $table->string('domain')->nullable();
             $table->string('address_street')->nullable();
@@ -45,6 +46,7 @@ return new class extends Migration
         // ── 2. users ────────────────────────────────────────────────────
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('custom_id')->nullable()->index();
             $table->foreignId('tenant_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->string('email')->unique();
@@ -55,9 +57,11 @@ return new class extends Migration
             $table->string('locale')->default('de');
             $table->boolean('is_admin')->default(false);
             $table->timestamp('last_login_at')->nullable();
+            $table->timestamp('terms_accepted_at')->nullable();
+            $table->timestamp('privacy_accepted_at')->nullable();
             // 2FA (pragmarx/google2fa)
             $table->string('two_factor_secret')->nullable();
-            $table->text('two_factor_recovery_codes')->nullable();
+            $table->text('two_factor_recovery_codes_hash')->nullable();
             $table->timestamp('two_factor_confirmed_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
@@ -66,7 +70,9 @@ return new class extends Migration
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
+            $table->timestamp('expires_at')->default(DB::raw('DATE_ADD(NOW(), INTERVAL 1 HOUR)'));
             $table->timestamp('created_at')->nullable();
+            $table->index('expires_at');
         });
 
         Schema::create('sessions', function (Blueprint $table) {
@@ -253,7 +259,9 @@ return new class extends Migration
         // ── 14. customers ───────────────────────────────────────────────
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
+            $table->string('custom_id')->nullable()->index();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            $table->string('stripe_customer_id')->nullable();
             $table->string('type')->default('company'); // company | private
             $table->string('salutation')->nullable();
             $table->string('first_name')->nullable();
@@ -261,6 +269,7 @@ return new class extends Migration
             $table->string('company_name')->nullable();
             $table->string('contact_person')->nullable();
             $table->string('email')->nullable();
+            $table->string('password')->nullable();
             $table->json('additional_emails')->nullable();
             $table->string('phone')->nullable();
             $table->string('mobile')->nullable();
@@ -298,6 +307,7 @@ return new class extends Migration
         // ── 15. partners ────────────────────────────────────────────────
         Schema::create('partners', function (Blueprint $table) {
             $table->id();
+            $table->string('custom_id')->nullable()->index();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->string('type')->default('freelancer'); // freelancer | agency
             $table->string('salutation')->nullable();
@@ -305,6 +315,7 @@ return new class extends Migration
             $table->string('last_name')->nullable();
             $table->string('company')->nullable();
             $table->string('email')->nullable();
+            $table->string('password')->nullable();
             $table->json('additional_emails')->nullable();
             $table->string('phone')->nullable();
             $table->string('mobile')->nullable();
@@ -327,6 +338,12 @@ return new class extends Migration
             $table->string('status')->default('active');
             $table->unsignedTinyInteger('rating')->default(0);
             $table->text('notes')->nullable();
+            $table->boolean('portal_access')->default(false);
+            $table->string('portal_token', 64)->nullable();
+            $table->timestamp('portal_token_expires_at')->nullable();
+            $table->string('portal_session_token', 64)->nullable();
+            $table->timestamp('portal_session_expires_at')->nullable();
+            $table->timestamp('portal_last_login_at')->nullable();
             $table->timestamps();
         });
 
@@ -335,6 +352,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->string('project_number')->nullable();
+            $table->string('custom_id')->nullable()->index();
             $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('partner_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('source_lang_id')->nullable()->constrained('languages')->nullOnDelete();
@@ -432,6 +450,7 @@ return new class extends Migration
             $table->decimal('amount', 10, 2)->default(0);
             $table->datetime('payment_date')->nullable();
             $table->string('payment_method')->nullable();
+            $table->string('reference')->nullable();
             $table->string('note')->nullable();
             $table->timestamps();
         });
@@ -509,9 +528,11 @@ return new class extends Migration
             $table->unsignedBigInteger('paid_amount_cents')->default(0);
             $table->string('currency', 3)->default('EUR');
             $table->string('payment_method')->nullable();
+            $table->string('stripe_intent_id')->nullable();
             $table->string('status')->default('draft');
             $table->boolean('is_locked')->default(false);
             $table->timestamp('issued_at')->nullable();
+            $table->timestamp('paid_at')->nullable();
             $table->string('pdf_path')->nullable();
             $table->string('pdf_sha256', 64)->nullable();
             $table->timestamp('pdf_generated_at')->nullable();
@@ -815,7 +836,173 @@ return new class extends Migration
             $table->integer('expiration');
         });
 
-        // ── 38. notifications ───────────────────────────────────────────
+        // ── 38. payments ────────────────────────────────────────────────
+        Schema::create('payments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('invoice_id')->constrained();
+            $table->foreignId('tenant_id')->constrained();
+            $table->decimal('amount', 12, 2);
+            $table->string('currency', 3)->default('EUR');
+            $table->string('payment_method')->default('stripe');
+            $table->string('stripe_intent_id')->nullable();
+            $table->string('stripe_charge_id')->nullable();
+            $table->string('status')->default('pending'); // pending, completed, failed, refunded
+            $table->timestamp('paid_at')->nullable();
+            $table->decimal('refunded_amount', 12, 2)->nullable();
+            $table->timestamp('refunded_at')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+
+            $table->index(['invoice_id']);
+            $table->index(['tenant_id']);
+            $table->index(['status']);
+            $table->index(['stripe_intent_id']);
+        });
+
+        // ── 39. api_keys ────────────────────────────────────────────────
+        Schema::create('api_keys', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tenant_id')->constrained();
+            $table->string('name');
+            $table->string('key')->unique();
+            $table->longText('secret'); // Verschlüsselt
+            $table->json('scopes')->default('[]'); // ['invoices:read', 'projects:write', ...]
+            $table->integer('rate_limit')->default(1000); // Requests pro Minute
+            $table->json('ip_whitelist')->nullable(); // ['192.168.1.1', ...]
+            $table->timestamp('last_used_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+
+            $table->index(['tenant_id']);
+            $table->index(['key']);
+            $table->index(['is_active']);
+        });
+
+        // ── 40. webhooks ────────────────────────────────────────────────
+        Schema::create('webhooks', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tenant_id')->constrained();
+            $table->string('name');
+            $table->string('url');
+            $table->longText('token'); // Verschlüsselt
+            $table->json('events')->default('[]'); // ['invoice.created', 'payment.completed', ...]
+            $table->json('headers')->nullable(); // Custom headers
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('last_triggered_at')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+
+            $table->index(['tenant_id']);
+            $table->index(['is_active']);
+        });
+
+        // ── 41. health_check_result_history_items ──────────────────────
+        Schema::create('health_check_result_history_items', function (Blueprint $table) {
+            $table->id();
+            $table->string('check_name');
+            $table->string('check_label');
+            $table->string('status');
+            $table->text('notification_message')->nullable();
+            $table->string('short_summary')->nullable();
+            $table->json('meta');
+            $table->timestamp('ended_at')->useCurrent()->useCurrentOnUpdate();
+            $table->uuid('batch')->index();
+            $table->timestamps();
+
+            $table->index('created_at');
+        });
+
+        // ── 42. pulse_values ─────────────────────────────────────────────
+        Schema::create('pulse_values', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('timestamp')->index();
+            $table->string('type', 60)->index();
+            $table->mediumText('key');
+            $table->char('key_hash', 16)->charset('binary')->virtualAs('unhex(md5(`key`))');
+            $table->mediumText('value');
+
+            $table->unique(['type', 'key_hash']);
+        });
+
+        // ── 43. pulse_entries ────────────────────────────────────────────
+        Schema::create('pulse_entries', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('timestamp')->index();
+            $table->string('type', 60)->index();
+            $table->mediumText('key');
+            $table->char('key_hash', 16)->charset('binary')->virtualAs('unhex(md5(`key`))');
+            $table->bigInteger('value')->nullable();
+
+            $table->index('key_hash');
+            $table->index(['timestamp', 'type', 'key_hash', 'value']);
+        });
+
+        // ── 44. pulse_aggregates ────────────────────────────────────────
+        Schema::create('pulse_aggregates', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('bucket');
+            $table->unsignedMediumInteger('period');
+            $table->string('type', 60);
+            $table->mediumText('key');
+            $table->char('key_hash', 16)->charset('binary')->virtualAs('unhex(md5(`key`))');
+            $table->string('aggregate', 60);
+            $table->decimal('value', 20, 2);
+            $table->unsignedInteger('count')->nullable();
+
+            $table->unique(['bucket', 'period', 'type', 'aggregate', 'key_hash']);
+            $table->index(['period', 'bucket']);
+            $table->index('type');
+            $table->index(['period', 'type', 'aggregate', 'bucket']);
+        });
+
+        // ── 45. sent_emails ──────────────────────────────────────────────
+        Schema::create('sent_emails', function (Blueprint $table) {
+            $table->id();
+            $table->date('date')->nullable();
+            $table->string('from')->nullable();
+            $table->text('to')->nullable();
+            $table->text('cc')->nullable();
+            $table->text('bcc')->nullable();
+            $table->string('subject')->nullable();
+            $table->text('body')->nullable();
+            $table->timestamps();
+        });
+
+        // ── 46. telescope_entries ────────────────────────────────────────
+        Schema::create('telescope_entries', function (Blueprint $table) {
+            $table->bigIncrements('sequence');
+            $table->uuid('uuid')->unique();
+            $table->uuid('batch_id')->index();
+            $table->string('family_hash')->nullable()->index();
+            $table->boolean('should_display_on_index')->default(true);
+            $table->string('type', 20);
+            $table->longText('content');
+            $table->dateTime('created_at')->nullable()->index();
+
+            $table->index(['type', 'should_display_on_index']);
+        });
+
+        // ── 47. telescope_entries_tags ───────────────────────────────────
+        Schema::create('telescope_entries_tags', function (Blueprint $table) {
+            $table->uuid('entry_uuid');
+            $table->string('tag');
+
+            $table->primary(['entry_uuid', 'tag']);
+            $table->index('tag');
+            $table->foreign('entry_uuid')
+                ->references('uuid')
+                ->on('telescope_entries')
+                ->cascadeOnDelete();
+        });
+
+        // ── 48. telescope_monitoring ─────────────────────────────────────
+        Schema::create('telescope_monitoring', function (Blueprint $table) {
+            $table->string('tag')->primary();
+        });
+
+        // ── 49. notifications ───────────────────────────────────────────
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('type');
@@ -830,6 +1017,17 @@ return new class extends Migration
     {
         // Drop in reverse order to avoid FK constraint issues
         Schema::dropIfExists('notifications');
+        Schema::dropIfExists('telescope_monitoring');
+        Schema::dropIfExists('telescope_entries_tags');
+        Schema::dropIfExists('telescope_entries');
+        Schema::dropIfExists('sent_emails');
+        Schema::dropIfExists('pulse_aggregates');
+        Schema::dropIfExists('pulse_entries');
+        Schema::dropIfExists('pulse_values');
+        Schema::dropIfExists('health_check_result_history_items');
+        Schema::dropIfExists('webhooks');
+        Schema::dropIfExists('api_keys');
+        Schema::dropIfExists('payments');
         Schema::dropIfExists('cache_locks');
         Schema::dropIfExists('cache');
         Schema::dropIfExists('failed_jobs');

@@ -23,12 +23,15 @@ interface DesktopLinksProps {
     dashboardData: any;
     unreadEmails: number;
     hasMinRole: (role: UserRole) => boolean;
+    isProjectOpen: boolean;
+    setIsProjectOpen: (open: boolean) => void;
     isContactsOpen: boolean;
     setIsContactsOpen: (open: boolean) => void;
     isFinanceOpen: boolean;
     setIsFinanceOpen: (open: boolean) => void;
     isSettingsOpen: boolean;
     setIsSettingsOpen: (open: boolean) => void;
+    projectRef: React.RefObject<HTMLDivElement | null>;
     contactsRef: React.RefObject<HTMLDivElement | null>;
     financeRef: React.RefObject<HTMLDivElement | null>;
     settingsRef: React.RefObject<HTMLDivElement | null>;
@@ -42,12 +45,15 @@ const DesktopLinks = ({
     dashboardData,
     unreadEmails,
     hasMinRole,
+    isProjectOpen,
+    setIsProjectOpen,
     isContactsOpen,
     setIsContactsOpen,
     isFinanceOpen,
     setIsFinanceOpen,
     isSettingsOpen,
     setIsSettingsOpen,
+    projectRef,
     contactsRef,
     financeRef,
     settingsRef,
@@ -68,6 +74,7 @@ const DesktopLinks = ({
     );
 
     const closeAllDropdowns = () => {
+        setIsProjectOpen(false);
         setIsContactsOpen(false);
         setIsFinanceOpen(false);
         setIsSettingsOpen(false);
@@ -86,8 +93,9 @@ const DesktopLinks = ({
         { id: 'audit', label: t('settings.tabs.audit'), icon: FaHistory },
     ];
 
+    const isProjectActive = isStartsWith('/projects') || isStartsWith('/requests');
     const isContactsActive = isStartsWith('/customers') || isStartsWith('/partners') || isStartsWith('/interpreting');
-    const isFinanceActive = isStartsWith('/requests') || isStartsWith('/quotes') || isStartsWith('/invoices') || isStartsWith('/reports') || isStartsWith('/dunning') || isStartsWith('/recurring-invoices');
+    const isFinanceActive = isStartsWith('/quotes') || isStartsWith('/invoices') || isStartsWith('/reports') || isStartsWith('/dunning') || isStartsWith('/recurring-invoices');
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -106,19 +114,65 @@ const DesktopLinks = ({
                     </TooltipContent>
                 </Tooltip>
 
-                {/* Aufträge */}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link to="/projects" className={navLinkClass("/projects", isStartsWith('/projects'))}>
-                            <FaLayerGroup className="text-base lg:hidden" />
-                            <span className="hidden lg:inline">{t('nav.orders')}</span>
-                            <NavBadge count={dashboardData?.stats?.open_projects} label="Offene Projekte" activeColor="bg-white/25" />
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent className="z-[100] bg-brand-primary text-white border-white/10 shadow-xl lg:hidden">
-                        <span className="font-semibold text-sm">Projekte</span>
-                    </TooltipContent>
-                </Tooltip>
+                {/* Projekt Dropdown */}
+                <div className="relative h-full" ref={projectRef}>
+                    <button
+                        onClick={() => {
+                            const next = !isProjectOpen;
+                            closeAllDropdowns();
+                            setIsProjectOpen(next);
+                        }}
+                        className={navLinkClass("", isProjectOpen || isStartsWith('/projects') || isStartsWith('/requests'))}
+                    >
+                        <FaLayerGroup className="text-base lg:hidden" />
+                        <span className="hidden lg:inline">{t('nav.orders')}</span>
+                        <FaChevronDown className={clsx("text-[10px] ml-1 transition-transform opacity-60", isProjectOpen && "rotate-180")} />
+                    </button>
+
+                    {isProjectOpen && (
+                        <div className="absolute left-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
+                            <div className="py-1">
+                                {/* Projekte */}
+                                <Link
+                                    to="/projects"
+                                    className={clsx(
+                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
+                                        isStartsWith('/projects') && !isStartsWith('/requests') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FaLayerGroup className="text-slate-400 w-3.5 h-3.5" />
+                                        <span>{t('nav.orders')}</span>
+                                    </div>
+                                    {dashboardData?.stats?.open_projects > 0 && (
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                            {dashboardData.stats.open_projects}
+                                        </span>
+                                    )}
+                                </Link>
+
+                                {/* Anfragen */}
+                                <Link
+                                    to="/requests"
+                                    className={clsx(
+                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors border-t border-slate-50",
+                                        isActive('/requests') ? "text-brand-primary bg-slate-50" : "text-slate-700"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <FaInbox className="text-slate-400 w-3.5 h-3.5" />
+                                        <span>{t('nav.requests')}</span>
+                                    </div>
+                                    {dashboardData?.stats?.open_requests > 0 && (
+                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                                            {dashboardData.stats.open_requests}
+                                        </span>
+                                    )}
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
 
                 {/* Finanzen Dropdown */}
@@ -139,25 +193,6 @@ const DesktopLinks = ({
                     {isFinanceOpen && (
                         <div className="absolute left-0 mt-0 w-52 bg-white rounded-sm shadow-xl border border-slate-200 z-[9999] text-slate-800 animate-slideUp overflow-hidden">
                             <div className="py-1">
-                                {/* Anfragen */}
-                                <Link
-                                    to="/requests"
-                                    className={clsx(
-                                        "px-4 py-2.5 text-sm font-medium flex items-center justify-between hover:bg-slate-50 transition-colors",
-                                        isActive('/requests') ? "text-brand-primary bg-slate-50" : "text-slate-700"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FaInbox className="text-slate-400 w-3.5 h-3.5" />
-                                        <span>{t('nav.requests')}</span>
-                                    </div>
-                                    {dashboardData?.stats?.open_requests > 0 && (
-                                        <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                                            {dashboardData.stats.open_requests}
-                                        </span>
-                                    )}
-                                </Link>
-
                                 {/* Angebote */}
                                 <Link
                                     to="/quotes"

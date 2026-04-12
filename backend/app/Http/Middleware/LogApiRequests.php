@@ -33,6 +33,16 @@ class LogApiRequests
         // Process the request
         $response = $next($request);
 
+        // Debug authentication
+        if (!$this->shouldSkip($request)) {
+            \Illuminate\Support\Facades\Log::debug('Request Auth Status', [
+                'user_id' => $request->user()?->id,
+                'path' => $request->path(),
+                'status' => $response->getStatusCode(),
+                'has_auth_header' => $request->hasHeader('Authorization'),
+            ]);
+        }
+
         // Calculate duration and memory
         $duration = (microtime(true) - $startTime) * 1000; // Convert to milliseconds
         $memoryUsage = memory_get_usage() - $startMemory;

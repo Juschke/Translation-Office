@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Extract token from HttpOnly cookie and add to Authorization header
-        $middleware->appendToGroup('api', \App\Http\Middleware\ExtractTokenFromCookie::class);
+        $middleware->prependToGroup('api', \App\Http\Middleware\ExtractTokenFromCookie::class);
 
         // Validate WebSocket origin
         $middleware->appendToGroup('api', \App\Http\Middleware\ValidateWebSocketOrigin::class);

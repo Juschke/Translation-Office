@@ -19,6 +19,7 @@ const Navigation = () => {
     const queryClient = useQueryClient();
 
     // Menu States
+    const [isProjectOpen, setIsProjectOpen] = useState(false);
     const [isContactsOpen, setIsContactsOpen] = useState(false);
     const [isFinanceOpen, setIsFinanceOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -28,6 +29,7 @@ const Navigation = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Refs for Click-Outside
+    const projectRef = useRef<HTMLDivElement>(null);
     const contactsRef = useRef<HTMLDivElement>(null);
     const financeRef = useRef<HTMLDivElement>(null);
     const settingsRef = useRef<HTMLDivElement>(null);
@@ -40,6 +42,7 @@ const Navigation = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
+            if (projectRef.current && !projectRef.current.contains(target)) setIsProjectOpen(false);
             if (contactsRef.current && !contactsRef.current.contains(target)) setIsContactsOpen(false);
             if (financeRef.current && !financeRef.current.contains(target)) setIsFinanceOpen(false);
             if (settingsRef.current && !settingsRef.current.contains(target)) setIsSettingsOpen(false);
@@ -57,6 +60,7 @@ const Navigation = () => {
         setIsMobileMenuOpen(false);
         setIsProfileOpen(false);
         setIsNotifOpen(false);
+        setIsProjectOpen(false);
         setIsContactsOpen(false);
         setIsFinanceOpen(false);
         setIsSettingsOpen(false);
@@ -121,12 +125,15 @@ const Navigation = () => {
                             dashboardData={dashboardData}
                             unreadEmails={unreadEmails}
                             hasMinRole={hasMinRole}
+                            isProjectOpen={isProjectOpen}
+                            setIsProjectOpen={setIsProjectOpen}
                             isContactsOpen={isContactsOpen}
                             setIsContactsOpen={setIsContactsOpen}
                             isFinanceOpen={isFinanceOpen}
                             setIsFinanceOpen={setIsFinanceOpen}
                             isSettingsOpen={isSettingsOpen}
                             setIsSettingsOpen={setIsSettingsOpen}
+                            projectRef={projectRef}
                             contactsRef={contactsRef}
                             financeRef={financeRef}
                             settingsRef={settingsRef}

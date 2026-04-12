@@ -166,10 +166,10 @@ const CommunicationHub = () => {
 
     // Auto-sync on folder change
     useEffect(() => {
-        if (activeTab === 'inbox' || activeTab === 'sent') {
+        if (accounts.length > 0 && (activeTab === 'inbox' || activeTab === 'sent')) {
             syncMutation.mutate();
         }
-    }, [activeTab]);
+    }, [activeTab, accounts.length]);
 
     const confirmDelete = () => {
         if (deleteType === 'bulk') {
@@ -210,164 +210,213 @@ const CommunicationHub = () => {
                         <h1 className="text-xl font-bold text-slate-900 leading-tight">E-Mail</h1>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        <Button
-                            onClick={() => {
-                                const w = 1250;
-                                const h = 850;
-                                const left = (window.screen.width - w) / 2;
-                                const top = (window.screen.height - h) / 2;
-                                window.open('/email/send', 'email_composer', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-sm"
-                        >
-                            <FaPlus className="text-[10px]" />
-                            <span className="hidden sm:inline">E-Mail schreiben</span>
-                            <span className="sm:hidden">Neu</span>
-                        </Button>
+                        {accounts.length > 0 && (
+                            <Button
+                                onClick={() => {
+                                    const w = 1250;
+                                    const h = 850;
+                                    const left = (window.screen.width - w) / 2;
+                                    const top = (window.screen.height - h) / 2;
+                                    window.open('/email/send', 'email_composer', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-sm"
+                            >
+                                <FaPlus className="text-[10px]" />
+                                <span className="hidden sm:inline">E-Mail schreiben</span>
+                                <span className="sm:hidden">Neu</span>
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* ── Inbox-Container ── */}
                 <div className="flex-1 flex flex-col bg-white border border-slate-200 shadow-sm rounded-sm overflow-hidden">
-                    <div className="flex-1 flex overflow-hidden">
-                        <InboxSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+                    {accounts.length === 0 && !['accounts', 'templates'].includes(activeTab) ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50/30">
+                            <div className="max-w-md w-full text-center space-y-6">
+                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <FaPlus className="text-slate-400 text-3xl" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-900 mb-2">Kein E-Mail-Konto verknüpft</h2>
+                                    <p className="text-sm text-slate-500 leading-relaxed">
+                                        Um E-Mails empfangen und senden zu können, müssen Sie zuerst ein externes Postfach (IMAP/SMTP) integrieren.
+                                    </p>
+                                </div>
+                                <div className="p-4 bg-white border border-slate-200 rounded-sm text-left shadow-sm">
+                                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Anleitung</h3>
+                                    <ul className="space-y-2 text-[12px] text-slate-600">
+                                        <li className="flex gap-2">
+                                            <span className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center shrink-0 font-bold text-[10px]">1</span>
+                                            Klicken Sie unten auf den Button "Konto hinzufügen".
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center shrink-0 font-bold text-[10px]">2</span>
+                                            Geben Sie Ihre IMAP (Empfang) und SMTP (Versand) Daten ein.
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center shrink-0 font-bold text-[10px]">3</span>
+                                            Das System synchronisiert automatisch Ihre Nachrichten.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                                    <Button 
+                                        onClick={() => { setAccountToEdit(null); setIsAccountModalOpen(true); }}
+                                        className="gap-2"
+                                    >
+                                        <FaPlus size={12} /> Konto jetzt hinzufügen
+                                    </Button>
+                                </div>
+                                <p className="text-[10px] text-slate-400 italic">
+                                    Tipp: Sie können auch Gmail, Outlook oder eigene Firmendomains nutzen.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex overflow-hidden">
+                            <InboxSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-                        <div className="flex-1 overflow-hidden flex flex-col bg-white">
-                            {['inbox', 'sent', 'trash', 'archive', 'drafts'].includes(activeTab) && (
-                                <div className="flex-1 flex min-h-0 overflow-hidden">
-                                    <div className={clsx(
-                                        "flex flex-col border-r border-slate-200 transition-all overflow-hidden shrink-0",
-                                        viewingMail ? "w-full md:w-[320px]" : "w-full"
-                                    )}>
-                                        {selectedMails.length > 0 && (
-                                            <div className="bg-slate-50 border-b border-slate-200">
-                                                <BulkActions
-                                                    selectedCount={selectedMails.length}
-                                                    onClearSelection={() => setSelectedMails([])}
-                                                    actions={[
-                                                        {
-                                                            label: 'Wiederherstellen',
-                                                            icon: <FaSyncAlt className="text-xs" />,
-                                                            onClick: () => {
-                                                                if (activeTab === 'trash') restoreMailsMutation.mutate(selectedMails);
-                                                                else if (activeTab === 'archive') unarchiveMailsMutation.mutate(selectedMails);
+                            <div className="flex-1 overflow-hidden flex flex-col bg-white">
+                                {['inbox', 'sent', 'trash', 'archive', 'drafts'].includes(activeTab) && (
+                                    <div className="flex-1 flex min-h-0 overflow-hidden">
+                                        <div className={clsx(
+                                            "flex flex-col border-r border-slate-200 transition-all overflow-hidden shrink-0",
+                                            viewingMail ? "w-full md:w-[320px]" : "w-full"
+                                        )}>
+                                            {selectedMails.length > 0 && (
+                                                <div className="bg-slate-50 border-b border-slate-200">
+                                                    <BulkActions
+                                                        selectedCount={selectedMails.length}
+                                                        onClearSelection={() => setSelectedMails([])}
+                                                        actions={[
+                                                            {
+                                                                label: 'Wiederherstellen',
+                                                                icon: <FaSyncAlt className="text-xs" />,
+                                                                onClick: () => {
+                                                                    if (activeTab === 'trash') restoreMailsMutation.mutate(selectedMails);
+                                                                    else if (activeTab === 'archive') unarchiveMailsMutation.mutate(selectedMails);
+                                                                },
+                                                                variant: 'default',
+                                                                show: ['trash', 'archive'].includes(activeTab)
                                                             },
-                                                            variant: 'default',
-                                                            show: ['trash', 'archive'].includes(activeTab)
-                                                        },
-                                                        {
-                                                            label: 'Archivieren',
-                                                            icon: <FaArchive className="text-xs" />,
-                                                            onClick: () => archiveMailsMutation.mutate(selectedMails),
-                                                            variant: 'default',
-                                                            show: activeTab !== 'archive' && activeTab !== 'trash'
-                                                        },
-                                                        {
-                                                            label: activeTab === 'trash' ? 'Endgültig löschen' : 'In den Papierkorb',
-                                                            icon: <FaTrashAlt className="text-xs" />,
-                                                            onClick: () => { setDeleteType('bulk'); setIsConfirmOpen(true); },
-                                                            variant: 'danger',
-                                                            show: true
-                                                        }
-                                                    ]}
-                                                />
-                                            </div>
-                                        )}
-                                        <MailListPanel
-                                            mails={
-                                                activeTab === 'inbox' ? inboxMessages :
-                                                    activeTab === 'sent' ? sentMessages :
-                                                        activeTab === 'trash' ? trashMessages :
-                                                            activeTab === 'archive' ? archiveMessages :
-                                                                draftsMessages
-                                            }
-                                            folder={activeTab}
-                                            onView={handleViewMail}
-                                            selectedId={viewingMail?.id}
-                                            selectedMails={selectedMails}
-                                            onSelectMail={(id) => setSelectedMails(prev => prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id])}
-                                            onSelectAll={() => {
-                                                const currentMails =
+                                                            {
+                                                                label: 'Archivieren',
+                                                                icon: <FaArchive className="text-xs" />,
+                                                                onClick: () => archiveMailsMutation.mutate(selectedMails),
+                                                                variant: 'default',
+                                                                show: activeTab !== 'archive' && activeTab !== 'trash'
+                                                            },
+                                                            {
+                                                                label: activeTab === 'trash' ? 'Endgültig löschen' : 'In den Papierkorb',
+                                                                icon: <FaTrashAlt className="text-xs" />,
+                                                                onClick: () => { setDeleteType('bulk'); setIsConfirmOpen(true); },
+                                                                variant: 'danger',
+                                                                show: true
+                                                            }
+                                                        ]}
+                                                    />
+                                                </div>
+                                            )}
+                                            <MailListPanel
+                                                mails={
                                                     activeTab === 'inbox' ? inboxMessages :
                                                         activeTab === 'sent' ? sentMessages :
                                                             activeTab === 'trash' ? trashMessages :
                                                                 activeTab === 'archive' ? archiveMessages :
-                                                                    draftsMessages;
-                                                setSelectedMails(selectedMails.length === currentMails.length ? [] : currentMails.map((m: any) => m.id));
-                                            }}
-                                            onDelete={(id: number) => { setMailToDelete(id); setDeleteType('single'); setIsConfirmOpen(true); }}
-                                            onSync={() => syncMutation.mutate()}
-                                            isSyncing={syncMutation.isPending}
-                                        />
-                                    </div>
-
-                                    {viewingMail && (
-                                        <div className="flex-1 flex flex-col min-w-0 bg-white">
-                                            <MailDetailPanel
-                                                mail={viewingMail}
-                                                isDraft={activeTab === 'drafts'}
-                                                onClose={() => setViewingMail(null)}
-                                                onDelete={(id: any) => { setMailToDelete(id); setDeleteType('single'); setIsConfirmOpen(true); }}
+                                                                    draftsMessages
+                                                }
+                                                folder={activeTab}
+                                                onView={handleViewMail}
+                                                selectedId={viewingMail?.id}
+                                                selectedMails={selectedMails}
+                                                onSelectMail={(id) => setSelectedMails(prev => prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id])}
+                                                onSelectAll={() => {
+                                                    const currentMails =
+                                                        activeTab === 'inbox' ? inboxMessages :
+                                                            activeTab === 'sent' ? sentMessages :
+                                                                activeTab === 'trash' ? trashMessages :
+                                                                    activeTab === 'archive' ? archiveMessages :
+                                                                        draftsMessages;
+                                                    setSelectedMails(selectedMails.length === currentMails.length ? [] : currentMails.map((m: any) => m.id));
+                                                }}
+                                                onDelete={(id: number) => { setMailToDelete(id); setDeleteType('single'); setIsConfirmOpen(true); }}
+                                                onSync={() => {
+                                                    if (accounts.length > 0) syncMutation.mutate();
+                                                    else toast.error('Kein E-Mail-Konto konfiguriert');
+                                                }}
+                                                isSyncing={syncMutation.isPending}
                                             />
                                         </div>
-                                    )}
-                                </div>
-                            )}
 
-                            {activeTab === 'templates' && (
-                                <div className="flex-1 overflow-auto bg-white">
-                                    <MailResourceTable
-                                        title="E-Mail Vorlagen"
-                                        items={templates}
-                                        headers={['Name', 'Betreff', 'Kategorie']}
-                                        addLabel={t('forms.create_template')}
-                                        onAdd={() => { setTemplateToEdit(null); setIsTemplateModalOpen(true); }}
-                                        onEdit={(tpl: any) => { setTemplateToEdit(tpl); setIsTemplateModalOpen(true); }}
-                                        onDelete={(tpl: any) => { setItemToDelete(tpl); setDeleteType('template'); setIsConfirmOpen(true); }}
-                                        renderRow={(tpl: any) => (
-                                            <>
-                                                <td className="px-6 py-4 text-xs font-medium text-slate-800">{tpl.name}</td>
-                                                <td className="px-6 py-4 text-xs text-slate-500">{tpl.subject}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className="px-2 py-0.5 bg-slate-100 text-xs font-semibold">{tpl.type || t('inbox.template_general')}</span>
-                                                </td>
-                                            </>
+                                        {viewingMail && (
+                                            <div className="flex-1 flex flex-col min-w-0 bg-white">
+                                                <MailDetailPanel
+                                                    mail={viewingMail}
+                                                    isDraft={activeTab === 'drafts'}
+                                                    onClose={() => setViewingMail(null)}
+                                                    onDelete={(id: any) => { setMailToDelete(id); setDeleteType('single'); setIsConfirmOpen(true); }}
+                                                />
+                                            </div>
                                         )}
-                                    />
-                                </div>
-                            )}
+                                    </div>
+                                )}
 
-                            {activeTab === 'accounts' && (
-                                <div className="flex-1 overflow-auto bg-white">
-                                    <MailResourceTable
-                                        title="E-Mail Konten"
-                                        items={accounts}
-                                        headers={['Bezeichnung', 'Email', 'Server', 'Status']}
-                                        addLabel={t('auth.add_account')}
-                                        onAdd={() => { setAccountToEdit(null); setIsAccountModalOpen(true); }}
-                                        onEdit={(acc: any) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }}
-                                        onDelete={(acc: any) => { setItemToDelete(acc); setDeleteType('account'); setIsConfirmOpen(true); }}
-                                        renderRow={(acc: any) => (
-                                            <>
-                                                <td className="px-6 py-4 text-xs font-medium text-slate-800">
-                                                    <div className="flex items-center gap-2">
-                                                        {acc.name}
-                                                        {acc.is_default && <span className="bg-slate-50 text-slate-900 text-xs px-1.5 py-0.5 font-semibold">Standard</span>}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-xs font-mono text-slate-500">{acc.email}</td>
-                                                <td className="px-6 py-4 text-xs font-mono text-slate-400">
-                                                    <div>SMTP: {acc.smtp_host}</div>
-                                                    <div>IMAP: {acc.imap_host}</div>
-                                                </td>
-                                                <td className="px-6 py-4"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span></td>
-                                            </>
-                                        )}
-                                    />
-                                </div>
-                            )}
+                                {activeTab === 'templates' && (
+                                    <div className="flex-1 overflow-auto bg-white">
+                                        <MailResourceTable
+                                            title="E-Mail Vorlagen"
+                                            items={templates}
+                                            headers={['Name', 'Betreff', 'Kategorie']}
+                                            addLabel={t('forms.create_template')}
+                                            onAdd={() => { setTemplateToEdit(null); setIsTemplateModalOpen(true); }}
+                                            onEdit={(tpl: any) => { setTemplateToEdit(tpl); setIsTemplateModalOpen(true); }}
+                                            onDelete={(tpl: any) => { setItemToDelete(tpl); setDeleteType('template'); setIsConfirmOpen(true); }}
+                                            renderRow={(tpl: any) => (
+                                                <>
+                                                    <td className="px-6 py-4 text-xs font-medium text-slate-800">{tpl.name}</td>
+                                                    <td className="px-6 py-4 text-xs text-slate-500">{tpl.subject}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-2 py-0.5 bg-slate-100 text-xs font-semibold">{tpl.type || t('inbox.template_general')}</span>
+                                                    </td>
+                                                </>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+
+                                {activeTab === 'accounts' && (
+                                    <div className="flex-1 overflow-auto bg-white">
+                                        <MailResourceTable
+                                            title="E-Mail Konten"
+                                            items={accounts}
+                                            headers={['Bezeichnung', 'Email', 'Server', 'Status']}
+                                            addLabel={t('auth.add_account')}
+                                            onAdd={() => { setAccountToEdit(null); setIsAccountModalOpen(true); }}
+                                            onEdit={(acc: any) => { setAccountToEdit(acc); setIsAccountModalOpen(true); }}
+                                            onDelete={(acc: any) => { setItemToDelete(acc); setDeleteType('account'); setIsConfirmOpen(true); }}
+                                            renderRow={(acc: any) => (
+                                                <>
+                                                    <td className="px-6 py-4 text-xs font-medium text-slate-800">
+                                                        <div className="flex items-center gap-2">
+                                                            {acc.name}
+                                                            {acc.is_default && <span className="bg-slate-50 text-slate-900 text-xs px-1.5 py-0.5 font-semibold">Standard</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-xs font-mono text-slate-500">{acc.email}</td>
+                                                    <td className="px-6 py-4 text-xs font-mono text-slate-400">
+                                                        <div>SMTP: {acc.smtp_host}</div>
+                                                        <div>IMAP: {acc.imap_host}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span></td>
+                                                </>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Modals */}

@@ -133,17 +133,15 @@ const Dashboard = () => {
                             {t('dashboard.actions.new_project')}
                         </Button>
                         <Button
-                            variant="outline"
-                            onClick={() => navigate('/customers', { state: { openNewModal: true } })}
-                            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition font-bold"
+                            variant="default"
+                            onClick={() => setIsNewCustomerModalOpen(true)}
                         >
                             <FaUserPlus className="mr-2 h-4 w-4" />
                             {t('dashboard.actions.create_customer')}
                         </Button>
                         <Button
-                            variant="outline"
-                            onClick={() => navigate('/partners', { state: { openNewModal: true } })}
-                            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition font-bold"
+                            variant="default"
+                            onClick={() => setIsNewPartnerModalOpen(true)}
                         >
                             <FaHandshake className="mr-2 h-4 w-4" />
                             {t('dashboard.actions.create_partner')}

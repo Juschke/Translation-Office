@@ -380,6 +380,7 @@ const Customers = () => {
                     searchPlaceholder={t('customers.search_placeholder')}
                     searchFields={['company_name', 'contact_person', 'email']}
                     onExport={handleExport}
+                    onAddClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}
                     selectable
                     selectedIds={selectedCustomers}
                     onSelectionChange={(ids) => setSelectedCustomers(ids as number[])}
