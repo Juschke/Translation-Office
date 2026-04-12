@@ -293,11 +293,21 @@ class MailController extends Controller
                     $attachmentsInfo = [];
                     if ($message->getAttachments()->count() > 0) {
                         foreach ($message->getAttachments() as $attachment) {
-                            $attachmentsInfo[] = [
-                                'name' => $attachment->getName(),
-                                'size' => $attachment->getSize(),
-                                'extension' => $attachment->getExtension()
-                            ];
+                            try {
+                                $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', $attachment->getName());
+                                $path = 'mail_attachments/' . uniqid() . '_' . $safeName;
+                                \Storage::put($path, $attachment->getContent());
+                                
+                                $attachmentsInfo[] = [
+                                    'name' => $attachment->getName(),
+                                    'size' => $attachment->getSize(),
+                                    'extension' => $attachment->getExtension(),
+                                    'path' => $path,
+                                    'mime' => $attachment->getMimeType()
+                                ];
+                            } catch (\Exception $atEx) {
+                                \Log::warning("Could not save attachment for mail: " . $atEx->getMessage());
+                            }
                         }
                     }
 
@@ -337,5 +347,25 @@ class MailController extends Controller
             'new_count' => $totalCreated,
             'errors' => $errors
         ]);
+    }
+
+    public function downloadAttachment(Request $request, $id, $index)
+    {
+        $tenantId = $request->user()->tenant_id ?? 1;
+        $mail = Mail::where('tenant_id', $tenantId)->findOrFail($id);
+        
+        $attachments = $mail->attachments ?? [];
+        if (!isset($attachments[$index])) {
+            return response()->json(['message' => 'Anhang nicht gefunden.'], 404);
+        }
+        
+        $attachment = $attachments[$index];
+        $path = $attachment['path'] ?? null;
+        
+        if (!$path || !\Storage::exists($path)) {
+            return response()->json(['message' => 'Datei nicht auf dem Server gefunden.'], 404);
+        }
+        
+        return \Storage::download($path, $attachment['name'] ?? 'attachment');
     }
 }

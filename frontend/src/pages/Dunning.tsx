@@ -277,9 +277,6 @@ const Dunning: React.FC = () => {
                     <Button variant="default" onClick={() => navigate('/invoices')}>
                         <FaPlus className="mr-2 h-4 w-4" /> Neue Mahnung
                     </Button>
-                    <Button variant="secondary" onClick={() => navigate('/settings?tab=dunning')}>
-                        <FaCog className="mr-2 h-4 w-4" /> Einstellungen
-                    </Button>
                 </div>
             </div>
 

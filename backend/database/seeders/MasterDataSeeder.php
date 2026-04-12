@@ -223,11 +223,41 @@ class MasterDataSeeder extends Seeder
 
         // 4. Email Templates
         $emailTemplatesData = [
-            ['name' => 'Angebot Standard', 'type' => 'Angebot', 'subject' => 'Angebot {{project_number}} – {{project_name}}', 'status' => 'active', 'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage..."],
-            ['name' => 'Rechnung Standard', 'type' => 'Rechnung', 'subject' => 'Rechnung {{invoice_number}} – {{project_name}}', 'status' => 'active', 'body' => "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die Rechnung..."],
-            ['name' => 'Auftragsbestätigung', 'type' => 'Auftragsbestätigung', 'subject' => 'Auftragsbestätigung – {{project_number}}', 'status' => 'active', 'body' => "Sehr geehrte Damen und Herren,\n\nhiermit bestätigen wir..."],
-            ['name' => 'Partner-Anfrage', 'type' => 'Partner-Anfrage', 'subject' => 'Verfügbarkeitsanfrage – {{project_name}}', 'status' => 'active', 'body' => "Guten Tag {{partner_name}},\n\nwir haben einen neuen Auftrag..."],
-            ['name' => 'Abholbestätigung', 'type' => 'Abholbestätigung', 'subject' => 'Ihr Auftrag ist abholbereit – {{project_number}}', 'status' => 'active', 'body' => "Sehr geehrte Damen und Herren,\n\nIhr Auftrag ist fertiggestellt..."],
+            [
+                'name' => 'Angebot Standard', 
+                'type' => 'Angebot', 
+                'subject' => 'Angebot {{project_number}} – {{project_name}}', 
+                'status' => 'active', 
+                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Anfrage und das damit verbundene Interesse an unseren Dienstleistungen.\n\nAnbei erhalten Sie unser unverbindliches Angebot für Ihr Projekt {{project_name}} (Referenz: {{project_number}}). Wir würden uns freuen, Sie bei diesem Vorhaben unterstützen zu dürfen.\n\nFür Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.\n\nMit freundlichen Grüßen\n\nIhr Projekt-Team"
+            ],
+            [
+                'name' => 'Rechnung Standard', 
+                'type' => 'Rechnung', 
+                'subject' => 'Rechnung {{invoice_number}} – {{project_name}}', 
+                'status' => 'active', 
+                'body' => "Sehr geehrte Damen und Herren,\n\nwie vereinbart übersenden wir Ihnen anbei die Rechnung {{invoice_number}} zu Ihrem Projekt {{project_name}}.\n\nBitte begleichen Sie den offenen Betrag bis zum angegebenen Zahlungsziel auf unser unten genanntes Bankkonto.\n\nVielen Dank für die gute Zusammenarbeit.\n\nMit freundlichen Grüßen\n\nIhre Buchhaltung"
+            ],
+            [
+                'name' => 'Auftragsbestätigung', 
+                'type' => 'Auftragsbestätigung', 
+                'subject' => 'Auftragsbestätigung – Ihr Projekt {{project_number}}', 
+                'status' => 'active', 
+                'body' => "Sehr geehrte Damen und Herren,\n\nvielen Dank für die Erteilung des Auftrags. Hiermit bestätigen wir formell den Beginn der Arbeiten gemäß unserem Angebot für das Projekt {{project_number}}.\n\nWir werden Sie über den Fortschritt auf dem Laufenden halten und die Lieferung zum vereinbarten Termin sicherstellen.\n\nMit freundlichen Grüßen\n\nIhr Projekt-Management"
+            ],
+            [
+                'name' => 'Partner-Anfrage', 
+                'type' => 'Partner-Anfrage', 
+                'subject' => 'Verfügbarkeitsanfrage für das Projekt {{project_name}}', 
+                'status' => 'active', 
+                'body' => "Guten Tag {{partner_name}},\n\nwir haben aktuell einen neuen Übersetzungsauftrag vorliegen und würden uns freuen, diesen mit Ihnen zusammenzuarbeiten.\n\nKönnten Sie uns bitte mitteilen, ob Sie für das Projekt {{project_name}} zeitlich verfügbar sind?\n\nÜber eine kurze Rückmeldung würden wir uns sehr freuen.\n\nBeste Grüße\n\nIhr Vendor-Management"
+            ],
+            [
+                'name' => 'Abholbereit', 
+                'type' => 'Abholbestätigung', 
+                'subject' => 'Ihre bearbeiteten Dokumente sind abholbereit – {{project_number}}', 
+                'status' => 'active', 
+                'body' => "Sehr geehrte Damen und Herren,\n\nwir freuen uns, Ihnen mitteilen zu können, dass Ihr Auftrag mit der Nummer {{project_number}} erfolgreich fertiggestellt wurde.\n\nDie Dokumente stehen ab sofort zur Abholung bereit oder werden Ihnen, sofern vereinbart, auf dem Postweg zugestellt.\n\nMit freundlichen Grüßen\n\nIhr Service-Team"
+            ],
         ];
 
         $i = 1;

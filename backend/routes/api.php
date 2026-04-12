@@ -162,6 +162,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('mails/bulk-archive', [\App\Http\Controllers\Api\MailController::class, 'bulkArchive']);
         Route::post('mails/bulk-unarchive', [\App\Http\Controllers\Api\MailController::class, 'bulkUnarchive']);
         Route::post('mails/{id}/read', [\App\Http\Controllers\Api\MailController::class, 'markAsRead']);
+        Route::get('mails/{id}/attachments/{index}', [\App\Http\Controllers\Api\MailController::class, 'downloadAttachment']);
         Route::delete('mails/{id}', [\App\Http\Controllers\Api\MailController::class, 'destroy']);
 
         Route::get('mail/accounts', [\App\Http\Controllers\Api\MailResourceController::class, 'getAccounts']);

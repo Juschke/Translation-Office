@@ -381,6 +381,11 @@ const CommunicationHub = () => {
                                                     </td>
                                                 </>
                                             )}
+                                            renderSubRow={(tpl: any) => (
+                                                <div className="text-[10px] text-slate-400 italic max-w-3xl truncate">
+                                                    {tpl.body?.substring(0, 120)}...
+                                                </div>
+                                            )}
                                         />
                                     </div>
                                 )}

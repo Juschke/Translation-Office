@@ -11,6 +11,7 @@ interface MailResourceTableProps {
     onEdit: (item: any) => void;
     onDelete: (item: any) => void;
     renderRow: (item: any) => React.ReactNode;
+    renderSubRow?: (item: any) => React.ReactNode;
 }
 
 const MailResourceTable: React.FC<MailResourceTableProps> = ({
@@ -21,7 +22,8 @@ const MailResourceTable: React.FC<MailResourceTableProps> = ({
     onAdd,
     onEdit,
     onDelete,
-    renderRow
+    renderRow,
+    renderSubRow
 }) => {
     // Simplify title (remove "E-Mail " prefix if present)
     const displayTitle = title.replace(/^E-Mail\s+/, '');
@@ -69,27 +71,36 @@ const MailResourceTable: React.FC<MailResourceTableProps> = ({
                             </tr>
                         ) : (
                             items.map((item, idx) => (
-                                <tr key={item.id || idx} className="hover:bg-slate-50/50 transition-colors group">
-                                    {renderRow(item)}
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => onEdit(item)}
-                                                className="p-1.5 text-slate-400 hover:text-brand-primary hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all shadow-sm"
-                                                title="Bearbeiten"
-                                            >
-                                                <FaEdit size={12} />
-                                            </button>
-                                            <button
-                                                onClick={() => onDelete(item)}
-                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all shadow-sm"
-                                                title="Löschen"
-                                            >
-                                                <FaTrashAlt size={12} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <React.Fragment key={item.id || idx}>
+                                    <tr className="hover:bg-slate-50/50 transition-colors group">
+                                        {renderRow(item)}
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => onEdit(item)}
+                                                    className="p-1.5 text-slate-400 hover:text-brand-primary hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all shadow-sm"
+                                                    title="Bearbeiten"
+                                                >
+                                                    <FaEdit size={12} />
+                                                </button>
+                                                <button
+                                                    onClick={() => onDelete(item)}
+                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all shadow-sm"
+                                                    title="Löschen"
+                                                >
+                                                    <FaTrashAlt size={12} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {renderSubRow && (
+                                        <tr className="bg-slate-50/20">
+                                            <td colSpan={headers.length + 1} className="px-6 pb-4 pt-0">
+                                                {renderSubRow(item)}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
                             ))
                         )}
                     </tbody>

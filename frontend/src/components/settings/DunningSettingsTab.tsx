@@ -166,12 +166,11 @@ const DunningSettingsTab = () => {
                     { id: 'level3', label: 'Stufe 3: Zweite Mahnung', color: 'bg-rose-500', subjectField: 'level3_subject', bodyField: 'level3_body', daysField: 'level3_days_after_due', feeField: 'level3_fee_cents', feeDesc: 'Zusätzliche Kosten für den Kunden.' }
                 ].map((lvl, index) => (
                     <div key={lvl.id} className={clsx(index > 0 && "mt-12 pt-12 border-t border-slate-100", "mb-16 last:mb-6")}>
-                        <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
-                            <span className={clsx("w-1.5 h-1.5 rounded-full", lvl.color)}></span>
+                        <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">
                             {lvl.label}
                         </h4>
 
-                        <SettingRow label="Tage nach Fälligkeit" className="border-0 pb-2" alignCenter={true} description="Tage nach Rechnungsfälligkeit.">
+                        <SettingRow label="Tage nach Fälligkeit" className="border-0 pb-2" alignCenter={true} description="Anzahl Tage nach Rechnungsfälligkeit bis diese Mahnstufe automatisch ausgelöst wird.">
                             <Input
                                 type="number"
                                 value={formData[lvl.daysField]}
@@ -181,7 +180,7 @@ const DunningSettingsTab = () => {
                         </SettingRow>
 
                         {lvl.feeField && (
-                            <SettingRow label="Mahngebühr (€)" className="border-0 pb-2" alignCenter={true} description={lvl.feeDesc}>
+                            <SettingRow label="Mahngebühr (€)" className="border-0 pb-2" alignCenter={true} description="Zusätzliche Kosten, die dem Kunden für diese Mahnstufe berechnet werden.">
                                 <Input
                                     type="number"
                                     value={formData[lvl.feeField] / 100}
@@ -191,7 +190,7 @@ const DunningSettingsTab = () => {
                             </SettingRow>
                         )}
 
-                        <SettingRow label="Betreff" className="border-0 pb-4" alignCenter={true}>
+                        <SettingRow label="Betreff" className="border-0 pb-4" alignCenter={true} description="Betreffzeile der Mahnungs-Email an den Kunden.">
                             <Input
                                 value={formData[lvl.subjectField]}
                                 onChange={(e) => handleChange(lvl.subjectField, e.target.value)}
