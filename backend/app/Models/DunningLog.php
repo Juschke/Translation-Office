@@ -10,20 +10,20 @@ class DunningLog extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'tenant_id',
         'invoice_id',
-        'level',
-        'fee_cents',
+        'tenant_id',
+        'reminder_level',
+        'outstanding_amount',
         'sent_at',
-        'sent_by_user_id',
+        'status',
         'pdf_path',
+        'pdf_hash',
         'notes',
     ];
 
     protected $casts = [
-        'level'     => 'integer',
-        'fee_cents' => 'integer',
-        'sent_at'   => 'datetime',
+        'outstanding_amount' => 'decimal:2',
+        'sent_at' => 'datetime',
     ];
 
     public function invoice()
@@ -31,23 +31,19 @@ class DunningLog extends Model
         return $this->belongsTo(Invoice::class);
     }
 
-    public function sentBy()
+    /**
+     * Scope: nur versendete Mahnungen
+     */
+    public function scopeSent($query)
     {
-        return $this->belongsTo(User::class, 'sent_by_user_id');
+        return $query->where('status', 'sent');
     }
 
-    public function getLevelLabelAttribute(): string
+    /**
+     * Scope: für spezifische Mahnstufe
+     */
+    public function scopeLevel($query, int $level)
     {
-        return match ($this->level) {
-            1 => 'Zahlungserinnerung',
-            2 => '1. Mahnung',
-            3 => '2. Mahnung',
-            default => "Mahnstufe {$this->level}",
-        };
-    }
-
-    public function getFeeCentsEurAttribute(): float
-    {
-        return $this->fee_cents / 100;
+        return $query->where('reminder_level', $level);
     }
 }
